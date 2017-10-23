@@ -1,14 +1,14 @@
-pbjsChunk([18],{
+pbjsChunk([21],{
 
-/***/ 237:
+/***/ 244:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(238);
+module.exports = __webpack_require__(245);
 
 
 /***/ }),
 
-/***/ 238:
+/***/ 245:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -82,7 +82,7 @@ function UcfunnelAdapter() {
     var language = navigator.language;
     var dnt = navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' ? 1 : 0;
 
-    var queryString = ['ifr', 0, 'bl', language, 'je', 1, 'dnt', dnt, 'host', host, 'u', page, 'ru', refer, 'adid', bid.params.adid, 'w', bid.params.width, 'h', bid.params.height, 'ver', VER];
+    var queryString = ['ifr', 0, 'bl', language, 'je', 1, 'dnt', dnt, 'host', host, 'u', page, 'ru', refer, 'adid', bid.params.adid, 'ver', VER];
 
     return queryString.reduce((function (memo, curr, index) {
       return index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo;
@@ -115,4 +115,4 @@ module.exports = UcfunnelAdapter;
 
 /***/ })
 
-},[237]);
+},[244]);

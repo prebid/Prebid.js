@@ -1,14 +1,14 @@
-pbjsChunk([5],{
+pbjsChunk([6],{
 
-/***/ 176:
+/***/ 180:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(177);
+module.exports = __webpack_require__(181);
 
 
 /***/ }),
 
-/***/ 177:
+/***/ 181:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36,17 +36,13 @@ var _ajax = __webpack_require__(6);
 
 var _constants = __webpack_require__(4);
 
-var _userSync = __webpack_require__(15);
-
-var _cookie = __webpack_require__(178);
+var _cookie = __webpack_require__(182);
 
 var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-var _config = __webpack_require__(8);
-
-var _storagemanager = __webpack_require__(28);
+var _config = __webpack_require__(9);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -56,6 +52,7 @@ var getConfig = _config.config.getConfig;
 
 var TYPE = _constants.S2S.SRC;
 var cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
+var _synced = false;
 
 /**
  * Try to convert a value to a type.
@@ -148,15 +145,25 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function (bidRequest) {
     var isDebug = !!getConfig('debug');
-    convertTypes(bidRequest.ad_units);
+    var adUnits = utils.cloneJson(bidRequest.ad_units);
+    adUnits.forEach((function (adUnit) {
+      var videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (videoMediaType) {
+        // pbs expects a ad_unit.video attribute if the imp is video
+        adUnit.video = _extends({}, videoMediaType);
+        delete adUnit.mediaTypes.video;
+      }
+    }));
+    convertTypes(adUnits);
     var requestJson = {
       account_id: config.accountId,
       tid: bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
+      secure: config.secure,
       url: utils.getTopWindowUrl(),
-      prebid_version: '0.29.0',
-      ad_units: bidRequest.ad_units.filter(hasSizes),
+      prebid_version: '0.31.0',
+      ad_units: adUnits.filter(hasSizes),
       is_debug: isDebug
     };
 
@@ -181,6 +188,27 @@ function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
+  /**
+   * Run a cookie sync for the given type, url, and bidder
+   *
+   * @param {string} type the type of sync, "image", "redirect", "iframe"
+   * @param {string} url the url to sync
+   * @param {string} bidder name of bidder doing sync for
+   */
+  function doBidderSync(type, url, bidder) {
+    if (!url) {
+      utils.logError('No sync url for bidder "' + bidder + '": ' + url);
+    } else if (type === 'image' || type === 'redirect') {
+      utils.logMessage('Invoking image pixel user sync for bidder: "' + bidder + '"');
+      utils.triggerPixel(url);
+    } else if (type == 'iframe') {
+      utils.logMessage('Invoking iframe user sync for bidder: "' + bidder + '"');
+      utils.insertUserSyncIframe(url);
+    } else {
+      utils.logError('User sync type "' + type + '" not supported for bidder: "' + bidder + '"');
+    }
+  }
+
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response, requestedBidders) {
     var result = void 0;
@@ -191,7 +219,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach((function (bidder) {
             if (bidder.no_cookie && !_cookiesQueued) {
-              _userSync.userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
+              doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
             }
           }));
         }
@@ -263,14 +291,10 @@ function PrebidServer() {
   baseAdapter.queueSync = function (_ref) {
     var bidderCodes = _ref.bidderCodes;
 
-    var syncedList = _storagemanager.StorageManager.get(_storagemanager.pbjsSyncsKey) || [];
-    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
-    syncedList = bidderCodes.filter((function (bidder) {
-      return !syncedList.includes(bidder);
-    }));
-    if (syncedList.length === 0) {
+    if (_synced) {
       return;
     }
+    _synced = true;
     var payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
@@ -278,13 +302,8 @@ function PrebidServer() {
     (0, _ajax.ajax)(config.syncEndpoint, (function (response) {
       try {
         response = JSON.parse(response);
-        if (response.status === 'ok') {
-          bidderCodes.forEach((function (code) {
-            return _storagemanager.StorageManager.add(_storagemanager.pbjsSyncsKey, code, true);
-          }));
-        }
         response.bidder_status.forEach((function (bidder) {
-          return queueSync({ bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type });
+          return doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
         }));
       } catch (e) {
         utils.logError(e);
@@ -310,7 +329,7 @@ module.exports = PrebidServer;
 
 /***/ }),
 
-/***/ 178:
+/***/ 182:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -339,4 +358,4 @@ cookie.cookieSet = function (cookieSetUrl) {
 
 /***/ })
 
-},[176]);
+},[180]);

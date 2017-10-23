@@ -1,14 +1,14 @@
-pbjsChunk([92],{
+pbjsChunk([95],{
 
-/***/ 67:
+/***/ 71:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(68);
+module.exports = __webpack_require__(72);
 
 
 /***/ }),
 
-/***/ 68:
+/***/ 72:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -47,7 +47,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
-  var _VERSION = '0.1';
+  var _VERSION = '0.2';
 
   var baseAdapter = new _adapter2['default']('adyoulike');
 
@@ -64,7 +64,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
       return bid.params.placement;
     }));
     if (!utils.isEmpty(placements)) {
-      var body = createBody(placements);
+      var body = createBody(bidRequests, placements);
       var endpoint = createEndpoint();
       (0, _ajax.ajax)(endpoint, (function (response) {
         handleResponse(bidRequests, response);
@@ -103,10 +103,11 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   }
 
   /* Create request body */
-  function createBody(placements) {
+  function createBody(bidRequests, placements) {
     var body = {
       Version: _VERSION,
-      Placements: placements
+      Placements: placements,
+      TransactionIds: {}
     };
 
     // performance isn't supported by mobile safari iOS7. window.performance works, but
@@ -121,6 +122,10 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     } catch (e) {
       body.PageRefreshed = false;
     }
+
+    placements.forEach((function (placement) {
+      body.TransactionIds[placement] = bidRequests[placement].transactionId;
+    }));
 
     return JSON.stringify(body);
   }
@@ -244,4 +249,4 @@ module.exports = AdyoulikeAdapter;
 
 /***/ })
 
-},[67]);
+},[71]);

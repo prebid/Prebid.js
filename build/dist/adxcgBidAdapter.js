@@ -1,14 +1,14 @@
-pbjsChunk([93],{
+pbjsChunk([96],{
 
-/***/ 65:
+/***/ 69:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(66);
+module.exports = __webpack_require__(70);
 
 
 /***/ }),
 
-/***/ 66:
+/***/ 70:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -124,26 +124,26 @@ function AdxcgAdapter() {
 
         var nativeResponse = adxcgBidReponse.nativeResponse;
 
-        bid.native = {
+        bid['native'] = {
           clickUrl: escape(nativeResponse.link.url),
           impressionTrackers: nativeResponse.imptrackers
         };
 
         nativeResponse.assets.forEach((function (asset) {
           if (asset.title && asset.title.text) {
-            bid.native.title = asset.title.text;
+            bid['native'].title = asset.title.text;
           }
 
           if (asset.img && asset.img.url) {
-            bid.native.image = asset.img.url;
+            bid['native'].image = asset.img.url;
           }
 
           if (asset.data && asset.data.label == 'DESC' && asset.data.value) {
-            bid.native.body = asset.data.value;
+            bid['native'].body = asset.data.value;
           }
 
           if (asset.data && asset.data.label == 'SPONSORED' && asset.data.value) {
-            bid.native.sponsoredBy = asset.data.value;
+            bid['native'].sponsoredBy = asset.data.value;
           }
         }));
       }
@@ -176,4 +176,4 @@ module.exports = AdxcgAdapter;
 
 /***/ })
 
-},[65]);
+},[69]);

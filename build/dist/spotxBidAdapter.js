@@ -1,14 +1,14 @@
-pbjsChunk([28],{
+pbjsChunk([31],{
 
-/***/ 217:
+/***/ 224:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(218);
+module.exports = __webpack_require__(225);
 
 
 /***/ }),
 
-/***/ 218:
+/***/ 225:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -52,6 +52,18 @@ function Spotx() {
   var baseAdapter = new _adapter2['default']('Spotx');
   var bidReq = void 0;
   var KVP_Object = void 0;
+
+  var _defaultBidderSettings = {
+    alwaysUseBid: true,
+    adserverTargeting: [{
+      key: 'hb_adid',
+      val: function val(bidResponse) {
+        return bidResponse.spotx_ad_key;
+      }
+    }]
+  };
+
+  _bidmanager2['default'].registerDefaultBidderSetting('spotx', _defaultBidderSettings);
 
   baseAdapter.callBids = function (bidRequest) {
     if (!bidRequest || !bidRequest.bids || bidRequest.bids.length === 0) {
@@ -127,7 +139,7 @@ function Spotx() {
 
       bid.cpm = KVP_Object.spotx_bid;
       bid.vastUrl = url;
-      bid.ad = url;
+      bid.spotx_ad_key = KVP_Object.spotx_ad_key;
 
       var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
       bid.height = sizes[1];
@@ -172,4 +184,4 @@ module.exports = Spotx;
 
 /***/ })
 
-},[217]);
+},[224]);

@@ -1,20 +1,20 @@
-pbjsChunk([17],{
+pbjsChunk([20],{
 
-/***/ 239:
+/***/ 246:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(240);
+module.exports = __webpack_require__(247);
 
 
 /***/ }),
 
-/***/ 240:
+/***/ 247:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -130,4 +130,4 @@ module.exports = UnderdogMediaAdapter;
 
 /***/ })
 
-},[239]);
+},[246]);

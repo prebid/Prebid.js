@@ -1,14 +1,14 @@
-pbjsChunk([73],{
+pbjsChunk([75],{
 
-/***/ 114:
+/***/ 120:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(115);
+module.exports = __webpack_require__(121);
 
 
 /***/ }),
 
-/***/ 115:
+/***/ 121:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -41,6 +41,8 @@ pbjs.express = function () {
     utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
+  // store gpt slots in a more performant hash lookup by elementId (adUnit code)
+  var gptSlotCache = {};
   // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce((function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
@@ -91,7 +93,7 @@ pbjs.express = function () {
         var adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
-          adUnit._gptSlot = gptSlot;
+          gptSlotCache[elemId] = gptSlot; // store by elementId
           adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
@@ -159,7 +161,7 @@ pbjs.express = function () {
             bidsBackHandler: function bidsBackHandler() {
               pbjs.setTargetingForGPTAsync();
               fGptRefresh.apply(pads(), [adUnits.map((function (adUnit) {
-                return adUnit._gptSlot;
+                return gptSlotCache[adUnit.code];
               }))]);
             }
           });
@@ -174,7 +176,7 @@ pbjs.express = function () {
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
       var adUnits = pickAdUnits( /* mutated: */aGptSlots).filter((function (adUnit) {
-        return adUnit._gptSlot._displayed;
+        return gptSlotCache[adUnit.code]._displayed;
       }));
 
       if (aGptSlots.length) {
@@ -187,7 +189,7 @@ pbjs.express = function () {
           bidsBackHandler: function bidsBackHandler() {
             pbjs.setTargetingForGPTAsync();
             fGptRefresh.apply(pads(), [adUnits.map((function (adUnit) {
-              return adUnit._gptSlot;
+              return gptSlotCache[adUnit.code];
             })), options]);
           }
         });
@@ -220,4 +222,4 @@ pbjs.express = function () {
 
 /***/ })
 
-},[114]);
+},[120]);

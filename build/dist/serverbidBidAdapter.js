@@ -1,14 +1,14 @@
-pbjsChunk([34],{
+pbjsChunk([37],{
 
-/***/ 203:
+/***/ 210:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(204);
+module.exports = __webpack_require__(211);
 
 
 /***/ }),
 
-/***/ 204:
+/***/ 211:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53,6 +53,10 @@ ServerBidAdapter = function ServerBidAdapter() {
     },
     'connectad': {
       'BASE_URI': 'https://i.connectad.io/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    },
+    'onefiftytwo': {
+      'BASE_URI': 'https://e.serverbid.com/api/v2',
       'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
     }
   };
@@ -203,9 +207,10 @@ ServerBidAdapter.createNew = function () {
 
 _adaptermanager2['default'].registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 _adaptermanager2['default'].aliasBidAdapter('serverbid', 'connectad');
+_adaptermanager2['default'].aliasBidAdapter('serverbid', 'onefiftytwo');
 
 module.exports = ServerBidAdapter;
 
 /***/ })
 
-},[203]);
+},[210]);

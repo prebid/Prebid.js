@@ -1,14 +1,14 @@
-pbjsChunk([14],{
+pbjsChunk([17],{
 
-/***/ 245:
+/***/ 252:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(246);
+module.exports = __webpack_require__(253);
 
 
 /***/ }),
 
-/***/ 246:
+/***/ 253:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -49,7 +49,8 @@ function VertozAdapter() {
         _rqsrc: reqSrc,
         _cb: cb,
         _slotBidId: slotBidId,
-        _cpm: cpm
+        _cpm: cpm,
+        _cbn: 'pbjs'
       };
 
       var queryParamValue = JSON.stringify(vzReq);
@@ -88,4 +89,4 @@ module.exports = VertozAdapter;
 
 /***/ })
 
-},[245]);
+},[252]);

@@ -1,14 +1,14 @@
-pbjsChunk([56],{
+pbjsChunk([59],{
 
-/***/ 148:
+/***/ 152:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(149);
+module.exports = __webpack_require__(153);
 
 
 /***/ }),
 
-/***/ 149:
+/***/ 153:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -101,4 +101,4 @@ module.exports = KruxAdapter;
 
 /***/ })
 
-},[148]);
+},[152]);

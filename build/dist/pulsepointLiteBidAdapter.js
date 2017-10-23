@@ -1,36 +1,37 @@
-pbjsChunk([40],{
+pbjsChunk([3],{
 
-/***/ 189:
+/***/ 193:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(190);
+__webpack_require__(194);
+module.exports = __webpack_require__(195);
 
 
 /***/ }),
 
-/***/ 190:
+/***/ 194:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidmanager = __webpack_require__(2);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
 var _utils = __webpack_require__(0);
 
-var _ajax = __webpack_require__(6);
+var _bidderFactory = __webpack_require__(15);
 
-var _constants = __webpack_require__(4);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+/* eslint dot-notation:0, quote-props:0 */
+var NATIVE_DEFAULTS = {
+  TITLE_LEN: 100,
+  DESCR_LEN: 200,
+  SPONSORED_BY_LEN: 50,
+  IMG_MIN: 150,
+  ICON_MIN: 50
+};
 
 /**
  * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
@@ -38,189 +39,200 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
  * dependencies and relies on a single OpenRTB request to the PulsePoint
  * bidder instead of separate requests per slot.
  */
-function PulsePointLiteAdapter() {
-  var bidUrl = window.location.protocol + '//bid.contextweb.com/header/ortb';
-  var ajaxOptions = {
-    method: 'POST',
-    withCredentials: true,
-    contentType: 'text/plain'
-  };
-  var NATIVE_DEFAULTS = {
-    TITLE_LEN: 100,
-    DESCR_LEN: 200,
-    SPONSORED_BY_LEN: 50,
-    IMG_MIN: 150,
-    ICON_MIN: 50
-  };
+var spec = exports.spec = {
 
-  /**
-   * Makes the call to PulsePoint endpoint and registers bids.
-   */
-  function _callBids(bidRequest) {
-    try {
-      // construct the openrtb bid request from slots
-      var request = {
-        imp: bidRequest.bids.map((function (slot) {
-          return impression(slot);
-        })),
-        site: site(bidRequest),
-        device: device()
-      };
-      (0, _ajax.ajax)(bidUrl, (function (rawResponse) {
-        bidResponseAvailable(bidRequest, rawResponse);
-      }), JSON.stringify(request), ajaxOptions);
-    } catch (e) {
-      // register passback on any exceptions while attempting to fetch response.
-      (0, _utils.logError)('pulsepoint.requestBid', 'ERROR', e);
-      bidResponseAvailable(bidRequest);
-    }
-  }
+  code: 'pulseLite',
 
-  /**
-   * Callback for bids, after the call to PulsePoint completes.
-   */
-  function bidResponseAvailable(bidRequest, rawResponse) {
-    var idToSlotMap = {};
-    var idToBidMap = {};
-    // extract the request bids and the response bids, keyed by impr-id
-    bidRequest.bids.forEach((function (slot) {
-      idToSlotMap[slot.bidId] = slot;
-    }));
-    var bidResponse = parse(rawResponse);
-    if (bidResponse) {
-      bidResponse.seatbid.forEach((function (seatBid) {
-        return seatBid.bid.forEach((function (bid) {
-          idToBidMap[bid.impid] = bid;
-        }));
-      }));
-    }
-    // register the responses
-    Object.keys(idToSlotMap).forEach((function (id) {
-      if (idToBidMap[id]) {
-        var size = adSize(idToSlotMap[id]);
-        var bid = (0, _bidfactory.createBid)(_constants.STATUS.GOOD, bidRequest);
-        bid.bidderCode = bidRequest.bidderCode;
-        bid.cpm = idToBidMap[id].price;
-        bid.adId = id;
-        if (isNative(idToSlotMap[id])) {
-          bid.native = nativeResponse(idToSlotMap[id], idToBidMap[id]);
-          bid.mediaType = 'native';
-        } else {
-          bid.ad = idToBidMap[id].adm;
-          bid.width = size[0];
-          bid.height = size[1];
-        }
-        (0, _bidmanager.addBidResponse)(idToSlotMap[id].placementCode, bid);
-      } else {
-        var passback = (0, _bidfactory.createBid)(_constants.STATUS.NO_BID, bidRequest);
-        passback.bidderCode = bidRequest.bidderCode;
-        passback.adId = id;
-        (0, _bidmanager.addBidResponse)(idToSlotMap[id].placementCode, passback);
-      }
-    }));
-  }
+  aliases: ['pulsepointLite'],
 
-  /**
-   * Produces an OpenRTBImpression from a slot config.
-   */
-  function impression(slot) {
+  supportedMediaTypes: ['native'],
+
+  isBidRequestValid: function isBidRequestValid(bid) {
+    return !!(bid && bid.params && bid.params.cp && bid.params.ct);
+  },
+
+  buildRequests: function buildRequests(bidRequests) {
+    var request = {
+      id: bidRequests[0].bidderRequestId,
+      imp: bidRequests.map((function (slot) {
+        return impression(slot);
+      })),
+      site: site(bidRequests),
+      app: app(bidRequests),
+      device: device()
+    };
     return {
-      id: slot.bidId,
-      banner: banner(slot),
-      native: native(slot),
-      tagid: slot.params.ct.toString()
+      method: 'POST',
+      url: '//bid.contextweb.com/header/ortb',
+      data: JSON.stringify(request)
     };
+  },
+
+  interpretResponse: function interpretResponse(response, request) {
+    return bidResponseAvailable(request, response);
+  },
+
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//bh.contextweb.com/visitormatch'
+      }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//bh.contextweb.com/visitormatch/prebid'
+      }];
+    }
   }
 
-  /**
-   * Produces an OpenRTB Banner object for the slot given.
-   */
-  function banner(slot) {
-    var size = adSize(slot);
-    return slot.nativeParams ? null : {
-      w: size[0],
-      h: size[1]
-    };
-  }
+};
 
-  /**
-   * Produces an OpenRTB Native object for the slot given.
-   */
-  function native(slot) {
-    if (slot.nativeParams) {
-      var assets = [];
-      addAsset(assets, titleAsset(assets.length + 1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
-      addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
-      addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.sponsoredBy, 1, NATIVE_DEFAULTS.SPONSORED_BY_LEN));
-      addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.icon, 1, NATIVE_DEFAULTS.ICON_MIN, NATIVE_DEFAULTS.ICON_MIN));
-      addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.image, 3, NATIVE_DEFAULTS.IMG_MIN, NATIVE_DEFAULTS.IMG_MIN));
-      return {
-        request: JSON.stringify({ assets: assets }),
-        ver: '1.1'
+/**
+ * Callback for bids, after the call to PulsePoint completes.
+ */
+function bidResponseAvailable(bidRequest, bidResponse) {
+  var idToImpMap = {};
+  var idToBidMap = {};
+  // extract the request bids and the response bids, keyed by impr-id
+  var ortbRequest = parse(bidRequest.data);
+  ortbRequest.imp.forEach((function (imp) {
+    idToImpMap[imp.id] = imp;
+  }));
+  if (bidResponse) {
+    bidResponse.seatbid.forEach((function (seatBid) {
+      return seatBid.bid.forEach((function (bid) {
+        idToBidMap[bid.impid] = bid;
+      }));
+    }));
+  }
+  var bids = [];
+  Object.keys(idToImpMap).forEach((function (id) {
+    if (idToBidMap[id]) {
+      var bid = {
+        requestId: id,
+        cpm: idToBidMap[id].price,
+        creative_id: id,
+        creativeId: id,
+        adId: id
       };
-    }
-    return null;
-  }
-
-  /**
-   * Helper method to add an asset to the assets list.
-   */
-  function addAsset(assets, asset) {
-    if (asset) {
-      assets.push(asset);
-    }
-  }
-
-  /**
-   * Produces a Native Title asset for the configuration given.
-   */
-  function titleAsset(id, params, defaultLen) {
-    if (params) {
-      return {
-        id: id,
-        required: params.required ? 1 : 0,
-        title: {
-          len: params.len || defaultLen
-        }
-      };
-    }
-    return null;
-  }
-
-  /**
-   * Produces a Native Image asset for the configuration given.
-   */
-  function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
-    return params ? {
-      id: id,
-      required: params.required ? 1 : 0,
-      img: {
-        type: type,
-        wmin: params.wmin || defaultMinWidth,
-        hmin: params.hmin || defaultMinHeight
+      if (idToImpMap[id]['native']) {
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.mediaType = 'native';
+      } else {
+        bid.ad = idToBidMap[id].adm;
+        bid.width = idToImpMap[id].banner.w;
+        bid.height = idToImpMap[id].banner.h;
       }
-    } : null;
-  }
+      bids.push(bid);
+    }
+  }));
+  return bids;
+}
 
-  /**
-   * Produces a Native Data asset for the configuration given.
-   */
-  function dataAsset(id, params, type, defaultLen) {
-    return params ? {
+/**
+ * Produces an OpenRTBImpression from a slot config.
+ */
+function impression(slot) {
+  return {
+    id: slot.bidId,
+    banner: banner(slot),
+    'native': nativeImpression(slot),
+    tagid: slot.params.ct.toString()
+  };
+}
+
+/**
+ * Produces an OpenRTB Banner object for the slot given.
+ */
+function banner(slot) {
+  var size = adSize(slot);
+  return slot.nativeParams ? null : {
+    w: size[0],
+    h: size[1]
+  };
+}
+
+/**
+ * Produces an OpenRTB Native object for the slot given.
+ */
+function nativeImpression(slot) {
+  if (slot.nativeParams) {
+    var assets = [];
+    addAsset(assets, titleAsset(assets.length + 1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
+    addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
+    addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.sponsoredBy, 1, NATIVE_DEFAULTS.SPONSORED_BY_LEN));
+    addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.icon, 1, NATIVE_DEFAULTS.ICON_MIN, NATIVE_DEFAULTS.ICON_MIN));
+    addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.image, 3, NATIVE_DEFAULTS.IMG_MIN, NATIVE_DEFAULTS.IMG_MIN));
+    return {
+      request: JSON.stringify({ assets: assets }),
+      ver: '1.1'
+    };
+  }
+  return null;
+}
+
+/**
+ * Helper method to add an asset to the assets list.
+ */
+function addAsset(assets, asset) {
+  if (asset) {
+    assets.push(asset);
+  }
+}
+
+/**
+ * Produces a Native Title asset for the configuration given.
+ */
+function titleAsset(id, params, defaultLen) {
+  if (params) {
+    return {
       id: id,
       required: params.required ? 1 : 0,
-      data: {
-        type: type,
+      title: {
         len: params.len || defaultLen
       }
-    } : null;
+    };
   }
+  return null;
+}
 
-  /**
-   * Produces an OpenRTB site object.
-   */
-  function site(bidderRequest) {
-    var pubId = bidderRequest.bids.length > 0 ? bidderRequest.bids[0].params.cp : '0';
+/**
+ * Produces a Native Image asset for the configuration given.
+ */
+function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
+  return params ? {
+    id: id,
+    required: params.required ? 1 : 0,
+    img: {
+      type: type,
+      wmin: params.wmin || defaultMinWidth,
+      hmin: params.hmin || defaultMinHeight
+    }
+  } : null;
+}
+
+/**
+ * Produces a Native Data asset for the configuration given.
+ */
+function dataAsset(id, params, type, defaultLen) {
+  return params ? {
+    id: id,
+    required: params.required ? 1 : 0,
+    data: {
+      type: type,
+      len: params.len || defaultLen
+    }
+  } : null;
+}
+
+/**
+ * Produces an OpenRTB site object.
+ */
+function site(bidderRequest) {
+  var pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
+  var appParams = bidderRequest[0].params.app;
+  if (!appParams) {
     return {
       publisher: {
         id: pubId.toString()
@@ -229,108 +241,111 @@ function PulsePointLiteAdapter() {
       page: (0, _utils.getTopWindowLocation)().href
     };
   }
-
-  /**
-   * Attempts to capture the referrer url.
-   */
-  function referrer() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) {
-      return document.referrer;
-    }
-  }
-
-  /**
-   * Produces an OpenRTB Device object.
-   */
-  function device() {
-    return {
-      ua: navigator.userAgent,
-      language: navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage
-    };
-  }
-
-  /**
-   * Safely parses the input given. Returns null on
-   * parsing failure.
-   */
-  function parse(rawResponse) {
-    try {
-      if (rawResponse) {
-        return JSON.parse(rawResponse);
-      }
-    } catch (ex) {
-      (0, _utils.logError)('pulsepointLite.safeParse', 'ERROR', ex);
-    }
-    return null;
-  }
-
-  /**
-   * Determines the AdSize for the slot.
-   */
-  function adSize(slot) {
-    if (slot.params.cf) {
-      var size = slot.params.cf.toUpperCase().split('X');
-      var width = parseInt(slot.params.cw || size[0], 10);
-      var height = parseInt(slot.params.ch || size[1], 10);
-      return [width, height];
-    }
-    return [1, 1];
-  }
-
-  /**
-   * Parses the native response from the Bid given.
-   */
-  function nativeResponse(slot, bid) {
-    if (slot.nativeParams) {
-      var nativeAd = parse(bid.adm);
-      var keys = {};
-      if (nativeAd && nativeAd.native && nativeAd.native.assets) {
-        nativeAd.native.assets.forEach((function (asset) {
-          keys.title = asset.title ? asset.title.text : keys.title;
-          keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
-          keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
-          keys.image = asset.img && asset.img.type === 3 ? asset.img.url : keys.image;
-          keys.icon = asset.img && asset.img.type === 1 ? asset.img.url : keys.icon;
-        }));
-        if (nativeAd.native.link) {
-          keys.clickUrl = encodeURIComponent(nativeAd.native.link.url);
-        }
-        keys.impressionTrackers = nativeAd.native.imptrackers;
-        return keys;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Parses the native response from the Bid given.
-   */
-  function isNative(slot) {
-    return !!slot.nativeParams;
-  }
-
-  return _extends(this, {
-    callBids: _callBids
-  });
+  return null;
 }
 
 /**
- * "pulseLite" will be the adapter name going forward. "pulsepointLite" to be
- * deprecated, but kept here for backwards compatibility.
- * Reason is key truncation. When the Publisher opts for sending all bids to DFP, then
- * the keys get truncated due to the limit in key-size (20 characters, detailed
- * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an
- * example, where keys got truncated when using the "pulsepointLite" alias - "hb_adid_pulsepointLi=1300bd87d59c4c2"
-*/
-_adaptermanager2['default'].registerBidAdapter(new PulsePointLiteAdapter(), 'pulseLite', {
-  supportedMediaTypes: ['native']
-});
-_adaptermanager2['default'].aliasBidAdapter('pulseLite', 'pulsepointLite');
+ * Produces an OpenRTB App object.
+ */
+function app(bidderRequest) {
+  var pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
+  var appParams = bidderRequest[0].params.app;
+  if (appParams) {
+    return {
+      publisher: {
+        id: pubId.toString()
+      },
+      bundle: appParams.bundle,
+      storeurl: appParams.storeUrl,
+      domain: appParams.domain
+    };
+  }
+  return null;
+}
 
-module.exports = PulsePointLiteAdapter;
+/**
+ * Attempts to capture the referrer url.
+ */
+function referrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+}
+
+/**
+ * Produces an OpenRTB Device object.
+ */
+function device() {
+  return {
+    ua: navigator.userAgent,
+    language: navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage
+  };
+}
+
+/**
+ * Safely parses the input given. Returns null on
+ * parsing failure.
+ */
+function parse(rawResponse) {
+  try {
+    if (rawResponse) {
+      return JSON.parse(rawResponse);
+    }
+  } catch (ex) {
+    (0, _utils.logError)('pulsepointLite.safeParse', 'ERROR', ex);
+  }
+  return null;
+}
+
+/**
+ * Determines the AdSize for the slot.
+ */
+function adSize(slot) {
+  if (slot.params.cf) {
+    var size = slot.params.cf.toUpperCase().split('X');
+    var width = parseInt(slot.params.cw || size[0], 10);
+    var height = parseInt(slot.params.ch || size[1], 10);
+    return [width, height];
+  }
+  return [1, 1];
+}
+
+/**
+ * Parses the native response from the Bid given.
+ */
+function nativeResponse(imp, bid) {
+  if (imp['native']) {
+    var nativeAd = parse(bid.adm);
+    var keys = {};
+    if (nativeAd && nativeAd['native'] && nativeAd['native'].assets) {
+      nativeAd['native'].assets.forEach((function (asset) {
+        keys.title = asset.title ? asset.title.text : keys.title;
+        keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
+        keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
+        keys.image = asset.img && asset.img.type === 3 ? asset.img.url : keys.image;
+        keys.icon = asset.img && asset.img.type === 1 ? asset.img.url : keys.icon;
+      }));
+      if (nativeAd['native'].link) {
+        keys.clickUrl = encodeURIComponent(nativeAd['native'].link.url);
+      }
+      keys.impressionTrackers = nativeAd['native'].imptrackers;
+      return keys;
+    }
+  }
+  return null;
+}
+
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 195:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[189]);
+},[193]);

@@ -1,14 +1,14 @@
-pbjsChunk([16],{
+pbjsChunk([19],{
 
-/***/ 241:
+/***/ 248:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(242);
+module.exports = __webpack_require__(249);
 
 
 /***/ }),
 
-/***/ 242:
+/***/ 249:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -47,20 +47,20 @@ function createRenderHandler(_ref) {
       rendererConfig = _ref.rendererConfig;
 
   function createApi() {
-    parent.window.unruly.native.prebid = parent.window.unruly.native.prebid || {};
-    parent.window.unruly.native.prebid.uq = parent.window.unruly.native.prebid.uq || [];
+    parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
+    parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
 
     return {
       render: function render(bidResponseBid) {
-        parent.window.unruly.native.prebid.uq.push(['render', bidResponseBid]);
+        parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
       },
       onLoaded: function onLoaded(bidResponseBid) {}
     };
   }
 
   parent.window.unruly = parent.window.unruly || {};
-  parent.window.unruly.native = parent.window.unruly.native || {};
-  parent.window.unruly.native.siteId = parent.window.unruly.native.siteId || rendererConfig.siteId;
+  parent.window.unruly['native'] = parent.window.unruly['native'] || {};
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || rendererConfig.siteId;
 
   var api = createApi();
   return {
@@ -151,4 +151,4 @@ module.exports = UnrulyAdapter;
 
 /***/ })
 
-},[241]);
+},[248]);

@@ -1,14 +1,14 @@
-pbjsChunk([78],{
+pbjsChunk([80],{
 
-/***/ 101:
+/***/ 107:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(102);
+module.exports = __webpack_require__(108);
 
 
 /***/ }),
 
-/***/ 102:
+/***/ 108:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -62,7 +62,7 @@ var CriteoAdapter = function CriteoAdapter() {
           var w = parseInt(sizeString.substring(0, xIndex));
           var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length));
           return new Criteo.PubTag.DirectBidding.Size(w, h);
-        }))));
+        })), bid.params.publisherSubId));
 
         networkid = bid.params.networkId || networkid;
         if (bid.params.integrationMode !== undefined) {
@@ -143,13 +143,13 @@ var CriteoAdapter = function CriteoAdapter() {
       bidObject.cpm = bidResponse.cpm;
 
       // in case of native
-      if (slot.nativeCallback && bidResponse.native) {
+      if (slot.nativeCallback && bidResponse['native']) {
         if (typeof slot.nativeCallback !== 'function') {
           utils.logError('Criteo bid: nativeCallback parameter is not a function');
         } else {
           // store the callbacks in a global object
           window.criteo_pubtag.native_slots = window.criteo_pubtag.native_slots || {};
-          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse.native };
+          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse['native'] };
 
           // this code is executed in an iframe, we need to get a reference to the
           // publishertag in the main window to retrieve native responses and callbacks.
@@ -180,4 +180,4 @@ module.exports = CriteoAdapter;
 
 /***/ })
 
-},[101]);
+},[107]);

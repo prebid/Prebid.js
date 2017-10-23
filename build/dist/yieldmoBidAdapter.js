@@ -1,14 +1,14 @@
-pbjsChunk([9],{
+pbjsChunk([12],{
 
-/***/ 255:
+/***/ 262:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(256);
+module.exports = __webpack_require__(263);
 
 
 /***/ }),
 
-/***/ 256:
+/***/ 263:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -68,6 +68,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
       placement.callback_id = bid.bidId;
       placement.placement_id = bid.placementCode;
       placement.sizes = bid.sizes;
+
+      if (bid.params && bid.params.placementId) {
+        placement.ym_placement_id = bid.params.placementId;
+      }
 
       placements.push(placement);
     }
@@ -170,4 +174,4 @@ module.exports = YieldmoAdapter;
 
 /***/ })
 
-},[255]);
+},[262]);

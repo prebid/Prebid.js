@@ -1,14 +1,14 @@
-pbjsChunk([77],{
+pbjsChunk([79],{
 
-/***/ 103:
+/***/ 109:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(104);
+module.exports = __webpack_require__(110);
 
 
 /***/ }),
 
-/***/ 104:
+/***/ 110:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -40,7 +40,7 @@ var _bidmanager = __webpack_require__(2);
 
 var _bidmanager2 = _interopRequireDefault(_bidmanager);
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -299,4 +299,4 @@ function roundFloat(num, dec) {
 
 /***/ })
 
-},[103]);
+},[109]);

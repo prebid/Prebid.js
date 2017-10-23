@@ -1,14 +1,14 @@
-pbjsChunk([20],{
+pbjsChunk([23],{
 
-/***/ 233:
+/***/ 240:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(234);
+module.exports = __webpack_require__(241);
 
 
 /***/ }),
 
-/***/ 234:
+/***/ 241:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53,7 +53,7 @@ var TrustxAdapter = function TrustxAdapter() {
     query.push('u=' + encodeURIComponent(location.href));
     query.push('auids=' + encodeURIComponent(auids.join(',')));
     query.push('cb=' + _makeHandler(auids, placementMap));
-    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'net' ? 'net' : 'gross'));
+    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'gross' ? 'gross' : 'net'));
 
     adloader.loadScript(reqHost + path + query.join('&'));
   }
@@ -180,4 +180,4 @@ module.exports = TrustxAdapter;
 
 /***/ })
 
-},[233]);
+},[240]);

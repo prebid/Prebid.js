@@ -1,14 +1,14 @@
-pbjsChunk([68],{
+pbjsChunk([70],{
 
-/***/ 124:
+/***/ 130:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(125);
+module.exports = __webpack_require__(131);
 
 
 /***/ }),
 
-/***/ 125:
+/***/ 131:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -84,7 +84,7 @@ var GumgumAdapter = function GumgumAdapter() {
 
       var timestamp = _getTimeStamp();
       var trackingId = params.inScreen;
-      var nativeId = params.native;
+      var nativeId = params['native'];
       var slotId = params.inSlot;
       var bid = { tmax: pbjs.cbTimeout };
 
@@ -96,7 +96,7 @@ var GumgumAdapter = function GumgumAdapter() {
           bid.pi = 2;break;
         case !!params.inSlot:
           bid.pi = 3;break;
-        case !!params.native:
+        case !!params['native']:
           bid.pi = 5;break;
         default:
           return utils.logWarn('[GumGum] No product selected for the placement ' + placementCode + ', please check your implementation.');
@@ -189,4 +189,4 @@ module.exports = GumgumAdapter;
 
 /***/ })
 
-},[124]);
+},[130]);

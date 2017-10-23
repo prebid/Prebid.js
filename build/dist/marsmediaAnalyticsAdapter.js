@@ -1,6 +1,84 @@
-pbjsChunk([6],{
+pbjsChunk([7],{
 
-/***/ 10:
+/***/ 160:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(161);
+
+
+/***/ }),
+
+/***/ 161:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _ajax = __webpack_require__(6);
+
+var _AnalyticsAdapter = __webpack_require__(8);
+
+var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+/****
+ * Mars Media Analytics
+ * Contact: prebid@m-m-g.com‏
+ * Developer: Chen Saadia
+ */
+
+var MARS_BIDDER_CODE = 'marsmedia';
+var analyticsType = 'endpoint';
+var MARS_VERSION = '1.0.1';
+var MARS_ANALYTICS_URL = '//prebid_stats.mars.media/prebidjs/api/analytics.php';
+var events = {};
+
+var marsmediaAnalyticsAdapter = _extends((0, _AnalyticsAdapter2['default'])({
+  MARS_ANALYTICS_URL: MARS_ANALYTICS_URL,
+  analyticsType: analyticsType
+}), {
+  track: function track(_ref) {
+    var eventType = _ref.eventType,
+        args = _ref.args;
+
+    if (typeof args !== 'undefined' && args.bidderCode === MARS_BIDDER_CODE) {
+      events[eventType] = args;
+    }
+
+    if (eventType === 'auctionEnd') {
+      setTimeout((function () {
+        (0, _ajax.ajax)(MARS_ANALYTICS_URL, {
+          success: function success() {},
+          error: function error() {}
+        }, JSON.stringify({ act: 'prebid_analytics', params: events, 'pbjs': pbjs.getBidResponses(), ver: MARS_VERSION }), {
+          method: 'POST'
+        });
+      }), 3000);
+    }
+  }
+});
+
+_adaptermanager2['default'].registerAnalyticsAdapter({
+  adapter: marsmediaAnalyticsAdapter,
+  code: 'marsmedia'
+});
+
+exports['default'] = marsmediaAnalyticsAdapter;
+
+/***/ }),
+
+/***/ 8:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -26,7 +104,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var events = __webpack_require__(9);
+var events = __webpack_require__(10);
 var utils = __webpack_require__(0);
 
 var AUCTION_INIT = _constants2['default'].EVENTS.AUCTION_INIT;
@@ -206,84 +284,6 @@ function AnalyticsAdapter(_ref) {
   }
 }
 
-/***/ }),
-
-/***/ 156:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(157);
-
-
-/***/ }),
-
-/***/ 157:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _ajax = __webpack_require__(6);
-
-var _AnalyticsAdapter = __webpack_require__(10);
-
-var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-/****
- * Mars Media Analytics
- * Contact: prebid@m-m-g.com‏
- * Developer: Chen Saadia
- */
-
-var MARS_BIDDER_CODE = 'marsmedia';
-var analyticsType = 'endpoint';
-var MARS_VERSION = '1.0.1';
-var MARS_ANALYTICS_URL = '//prebid_stats.mars.media/prebidjs/api/analytics.php';
-var events = {};
-
-var marsmediaAnalyticsAdapter = _extends((0, _AnalyticsAdapter2['default'])({
-  MARS_ANALYTICS_URL: MARS_ANALYTICS_URL,
-  analyticsType: analyticsType
-}), {
-  track: function track(_ref) {
-    var eventType = _ref.eventType,
-        args = _ref.args;
-
-    if (typeof args !== 'undefined' && args.bidderCode === MARS_BIDDER_CODE) {
-      events[eventType] = args;
-    }
-
-    if (eventType === 'auctionEnd') {
-      setTimeout((function () {
-        (0, _ajax.ajax)(MARS_ANALYTICS_URL, {
-          success: function success() {},
-          error: function error() {}
-        }, JSON.stringify({ act: 'prebid_analytics', params: events, 'pbjs': pbjs.getBidResponses(), ver: MARS_VERSION }), {
-          method: 'POST'
-        });
-      }), 3000);
-    }
-  }
-});
-
-_adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: marsmediaAnalyticsAdapter,
-  code: 'marsmedia'
-});
-
-exports['default'] = marsmediaAnalyticsAdapter;
-
 /***/ })
 
-},[156]);
+},[160]);

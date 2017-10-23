@@ -1,20 +1,20 @@
-pbjsChunk([48],{
+pbjsChunk([51],{
 
-/***/ 166:
+/***/ 170:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(167);
+module.exports = __webpack_require__(171);
 
 
 /***/ }),
 
-/***/ 167:
+/***/ 171:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -29,6 +29,7 @@ var OpenxAdapter = function OpenxAdapter() {
   var BIDDER_VERSION = '1.0.1';
   var startTime = void 0;
   var timeout = _config.config.getConfig('bidderTimeout');
+  var shouldSendBoPixel = true;
 
   var pdNode = null;
 
@@ -83,7 +84,9 @@ var OpenxAdapter = function OpenxAdapter() {
       beaconParams.bp = adUnit.pub_rev;
       beaconParams.ts = adUnit.ts;
       addBidResponse(adUnit, bid);
-      buildBoPixel(adUnit.creative[0], beaconParams);
+      if (shouldSendBoPixel === true) {
+        buildBoPixel(adUnit.creative[0], beaconParams);
+      }
     }
   };
 
@@ -202,6 +205,16 @@ var OpenxAdapter = function OpenxAdapter() {
     return found;
   }
 
+  function formatCustomParms(customKey, customParams) {
+    var value = customParams[customKey];
+    if (Array.isArray(value)) {
+      // if value is an array, join them with commas first
+      value = value.join(',');
+    }
+    // return customKey=customValue format, escaping + to . and / to _ 
+    return (customKey + '=' + value).replace('+', '.').replace('/', '_');
+  }
+
   function buildRequest(bids, params, delDomain) {
     if (!utils.isArray(bids)) {
       return;
@@ -217,13 +230,37 @@ var OpenxAdapter = function OpenxAdapter() {
       return utils.parseSizesInput(bid.sizes).join(',');
     })).join('|');
 
+    var customParamsForAllBids = [];
+    var hasCustomParam = false;
     bids.forEach((function (bid) {
-      for (var customParam in bid.params.customParams) {
-        if (bid.params.customParams.hasOwnProperty(customParam)) {
-          params['c.' + customParam] = bid.params.customParams[customParam];
-        }
+      if (bid.params.customParams) {
+        var customParamsForBid = utils._map(Object.keys(bid.params.customParams), (function (customKey) {
+          return formatCustomParms(customKey, bid.params.customParams);
+        }));
+        var formattedCustomParams = window.btoa(customParamsForBid.join('&'));
+        hasCustomParam = true;
+        customParamsForAllBids.push(formattedCustomParams);
+      } else {
+        customParamsForAllBids.push('');
       }
     }));
+    if (hasCustomParam) {
+      params.tps = customParamsForAllBids.join('%2C');
+    }
+
+    var customFloorsForAllBids = [];
+    var hasCustomFloor = false;
+    bids.forEach((function (bid) {
+      if (bid.params.customFloor) {
+        customFloorsForAllBids.push(bid.params.customFloor * 1000);
+        hasCustomFloor = true;
+      } else {
+        customFloorsForAllBids.push(0);
+      }
+    }));
+    if (hasCustomFloor) {
+      params.aumfs = customFloorsForAllBids.join('%2C');
+    }
 
     try {
       var queryString = buildQueryStringFromParams(params);
@@ -251,10 +288,14 @@ var OpenxAdapter = function OpenxAdapter() {
     }
 
     var delDomain = bids[0].params.delDomain;
+    var bcOverride = bids[0].params.bc;
 
     startTime = new Date(params.start);
     if (params.timeout) {
       timeout = params.timeout;
+    }
+    if (bids[0].params.hasOwnProperty('sendBoPixel') && typeof bids[0].params.sendBoPixel === 'boolean') {
+      shouldSendBoPixel = bids[0].params.sendBoPixel;
     }
 
     buildRequest(bids, {
@@ -267,7 +308,7 @@ var OpenxAdapter = function OpenxAdapter() {
       tws: getViewportDimensions(isIfr),
       ef: 'bt%2Cdb',
       be: 1,
-      bc: BIDDER_CONFIG + '_' + BIDDER_VERSION,
+      bc: bcOverride || BIDDER_CONFIG + '_' + BIDDER_VERSION,
       nocache: new Date().getTime()
     }, delDomain);
   }
@@ -283,4 +324,4 @@ module.exports = OpenxAdapter;
 
 /***/ })
 
-},[166]);
+},[170]);

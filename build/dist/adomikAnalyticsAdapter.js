@@ -1,14 +1,14 @@
-pbjsChunk([5],{
+pbjsChunk([11],{
 
-/***/ 187:
+/***/ 63:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(188);
+module.exports = __webpack_require__(64);
 
 
 /***/ }),
 
-/***/ 188:
+/***/ 64:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20,148 +20,237 @@ Object.defineProperty(exports, "__esModule", {
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _ajax = __webpack_require__(6);
-
 var _AnalyticsAdapter = __webpack_require__(8);
 
 var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
 var _constants = __webpack_require__(4);
 
 var _constants2 = _interopRequireDefault(_constants);
 
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var utils = __webpack_require__(0);
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-/****
- * PubWise.io Analytics
- * Contact: support@pubwise.io
- * Developer: Stephen Johnston
- *
- * For testing:
- *
- pbjs.enableAnalytics({
-  provider: 'pubwise',
-  options: {
-    site: 'test-test-test-test',
-    endpoint: 'https://api.pubwise.io/api/v4/event/add/',
-  }
- });
- */
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-var analyticsType = 'endpoint';
-var analyticsName = 'PubWise Analytics: ';
-var defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
-var pubwiseVersion = '2.2';
-var configOptions = { site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: '' };
-var pwAnalyticsEnabled = false;
-var utmKeys = { utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: '' };
+// import utils from 'src/utils';
 
-function markEnabled() {
-  utils.logInfo(analyticsName + 'Enabled', configOptions);
-  pwAnalyticsEnabled = true;
-}
+// Events used in adomik analytics adapter
+var auctionInit = _constants2['default'].EVENTS.AUCTION_INIT;
+var auctionEnd = _constants2['default'].EVENTS.AUCTION_END;
+var bidRequested = _constants2['default'].EVENTS.BID_REQUESTED;
+var bidResponse = _constants2['default'].EVENTS.BID_RESPONSE;
+var bidWon = _constants2['default'].EVENTS.BID_WON;
+var bidTimeout = _constants2['default'].EVENTS.BID_TIMEOUT;
 
-function enrichWithMetrics(dataBag) {
-  try {
-    dataBag['pw_version'] = pubwiseVersion;
-    dataBag['pbjs_version'] = pbjs.version;
-    dataBag['debug'] = configOptions.debug;
-  } catch (e) {
-    dataBag['error_metric'] = 1;
-  }
+var bidwonTimeout = 1000;
 
-  return dataBag;
-}
-
-function enrichWithUTM(dataBag) {
-  var newUtm = false;
-  try {
-    for (var prop in utmKeys) {
-      var urlValue = utils.getParameterByName(prop);
-      utmKeys[prop] = urlValue;
-      if (utmKeys[prop] != '') {
-        newUtm = true;
-        dataBag[prop] = utmKeys[prop];
-      }
-    }
-
-    if (newUtm === false) {
-      for (var _prop in utmKeys) {
-        var itemValue = localStorage.getItem('pw-' + _prop);
-        if (itemValue.length !== 0) {
-          dataBag[_prop] = itemValue;
-        }
-      }
-    } else {
-      for (var _prop2 in utmKeys) {
-        localStorage.setItem('pw-' + _prop2, utmKeys[_prop2]);
-      }
-    }
-  } catch (e) {
-    utils.logInfo(analyticsName + 'Error', e);
-    dataBag['error_utm'] = 1;
-  }
-  return dataBag;
-}
-
-function sendEvent(eventType, data) {
-  utils.logInfo(analyticsName + 'Event ' + eventType + ' ' + pwAnalyticsEnabled, data);
-
-  // put the typical items in the data bag
-  var dataBag = {
-    eventType: eventType,
-    args: data,
-    target_site: configOptions.site,
-    debug: configOptions.debug ? 1 : 0
-  };
-
-  // for certain events, track additional info
-  if (eventType == _constants2['default'].EVENTS.AUCTION_INIT) {
-    dataBag = enrichWithMetrics(dataBag);
-    dataBag = enrichWithUTM(dataBag);
-  }
-
-  (0, _ajax.ajax)(configOptions.endpoint, (function (result) {
-    return utils.logInfo(analyticsName + 'Result', result);
-  }), JSON.stringify(dataBag));
-}
-
-var pubwiseAnalytics = _extends((0, _AnalyticsAdapter2['default'])({
-  defaultUrl: defaultUrl,
-  analyticsType: analyticsType
-}), {
-  // Override AnalyticsAdapter functions by supplying custom methods
+var adomikAdapter = _extends((0, _AnalyticsAdapter2['default'])({}), {
+  // Track every event needed
   track: function track(_ref) {
     var eventType = _ref.eventType,
         args = _ref.args;
 
-    sendEvent(eventType, args);
+    switch (eventType) {
+      case auctionInit:
+        adomikAdapter.currentContext.id = args.requestId;
+        adomikAdapter.currentContext.timeout = args.timeout;
+        if (args.config.bidwonTimeout !== undefined && typeof args.config.bidwonTimeout === 'number') {
+          bidwonTimeout = args.config.bidwonTimeout;
+        }
+        break;
+
+      case bidTimeout:
+        adomikAdapter.currentContext.timeouted = true;
+        break;
+
+      case bidResponse:
+        adomikAdapter.bucketEvents.push({
+          type: 'response',
+          event: adomikAdapter.buildBidResponse(args)
+        });
+        break;
+
+      case bidWon:
+        adomikAdapter.bucketEvents.push({
+          type: 'winner',
+          event: {
+            id: args.adId,
+            placementCode: args.adUnitCode
+          }
+        });
+        break;
+
+      case bidRequested:
+        args.bids.forEach((function (bid) {
+          adomikAdapter.bucketEvents.push({
+            type: 'request',
+            event: {
+              bidder: bid.bidder.toUpperCase(),
+              placementCode: bid.placementCode
+            }
+          });
+        }));
+        break;
+
+      case auctionEnd:
+        setTimeout((function () {
+          if (adomikAdapter.bucketEvents.length > 0) {
+            adomikAdapter.sendTypedEvent();
+          }
+        }), bidwonTimeout);
+        break;
+    }
   }
 });
 
-pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
+adomikAdapter.sendTypedEvent = function () {
+  var groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
-pubwiseAnalytics.enableAnalytics = function (config) {
-  if (config.options.debug === undefined) {
-    config.options.debug = utils.debugTurnedOn();
+  var bulkEvents = {
+    uid: adomikAdapter.currentContext.uid,
+    ahbaid: adomikAdapter.currentContext.id,
+    timeout: adomikAdapter.currentContext.timeout,
+    hostname: window.location.hostname,
+    eventsByPlacementCode: groupedTypedEvents.map((function (typedEventsByType) {
+      var sizes = [];
+      var eventKeys = ['request', 'response', 'winner'];
+      var events = {};
+
+      eventKeys.forEach((function (eventKey) {
+        events[eventKey + 's'] = [];
+        if (typedEventsByType[eventKey] !== undefined) {
+          typedEventsByType[eventKey].forEach((function (typedEvent) {
+            if (typedEvent.event.size !== undefined) {
+              var size = adomikAdapter.sizeUtils.handleSize(sizes, typedEvent.event.size);
+              if (size !== null) {
+                sizes = [].concat(_toConsumableArray(sizes), [size]);
+              }
+            }
+            events[eventKey + 's'] = [].concat(_toConsumableArray(events[eventKey + 's']), [typedEvent.event]);
+          }));
+        }
+      }));
+
+      return {
+        placementCode: typedEventsByType.placementCode,
+        sizes: sizes,
+        events: events
+      };
+    }))
+  };
+
+  // Encode object in base64
+  var encodedBuf = window.btoa(JSON.stringify(bulkEvents));
+
+  // Create final url and split it in 1600 characters max (+endpoint length)
+  var encodedUri = encodeURIComponent(encodedBuf);
+  var splittedUrl = encodedUri.match(/.{1,1600}/g);
+
+  splittedUrl.forEach((function (split, i) {
+    var partUrl = split + '&id=' + adomikAdapter.currentContext.id + '&part=' + i + '&on=' + (splittedUrl.length - 1);
+    var img = new Image(1, 1);
+    img.src = 'https://' + adomikAdapter.currentContext.url + '/?q=' + partUrl;
+  }));
+};
+
+adomikAdapter.buildBidResponse = function (bid) {
+  return {
+    bidder: bid.bidderCode.toUpperCase(),
+    placementCode: bid.adUnitCode,
+    id: bid.adId,
+    status: bid.statusMessage === 'Bid available' ? 'VALID' : 'EMPTY_OR_ERROR',
+    cpm: parseFloat(bid.cpm),
+    size: {
+      width: Number(bid.width),
+      height: Number(bid.height)
+    },
+    timeToRespond: bid.timeToRespond,
+    afterTimeout: adomikAdapter.currentContext.timeouted
+  };
+};
+
+adomikAdapter.sizeUtils = {
+  sizeAlreadyExists: function sizeAlreadyExists(sizes, typedEventSize) {
+    return sizes.find((function (size) {
+      return size.height === typedEventSize.height && size.width === typedEventSize.width;
+    }));
+  },
+  formatSize: function formatSize(typedEventSize) {
+    return {
+      width: Number(typedEventSize.width),
+      height: Number(typedEventSize.height)
+    };
+  },
+  handleSize: function handleSize(sizes, typedEventSize) {
+    var formattedSize = null;
+    if (adomikAdapter.sizeUtils.sizeAlreadyExists(sizes, typedEventSize) === undefined) {
+      formattedSize = adomikAdapter.sizeUtils.formatSize(typedEventSize);
+    }
+    return formattedSize;
   }
-  configOptions = config.options;
-  markEnabled();
-  pubwiseAnalytics.adapterEnableAnalytics(config);
+};
+
+adomikAdapter.buildTypedEvents = function () {
+  var groupedTypedEvents = [];
+  adomikAdapter.bucketEvents.forEach((function (typedEvent, i) {
+    var _ref2 = [typedEvent.event.placementCode, typedEvent.type],
+        placementCode = _ref2[0],
+        type = _ref2[1];
+
+    var existTypedEvent = groupedTypedEvents.findIndex((function (groupedTypedEvent) {
+      return groupedTypedEvent.placementCode === placementCode;
+    }));
+
+    if (existTypedEvent === -1) {
+      groupedTypedEvents.push(_defineProperty({
+        placementCode: placementCode
+      }, type, [typedEvent]));
+      existTypedEvent = groupedTypedEvents.length - 1;
+    }
+
+    if (groupedTypedEvents[existTypedEvent][type]) {
+      groupedTypedEvents[existTypedEvent][type] = [].concat(_toConsumableArray(groupedTypedEvents[existTypedEvent][type]), [typedEvent]);
+    } else {
+      groupedTypedEvents[existTypedEvent][type] = [typedEvent];
+    }
+  }));
+
+  return groupedTypedEvents;
+};
+
+// Initialize adomik object
+adomikAdapter.currentContext = {};
+adomikAdapter.bucketEvents = [];
+
+adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
+
+adomikAdapter.enableAnalytics = function (config) {
+  var initOptions = config.options;
+  if (initOptions) {
+    adomikAdapter.currentContext = {
+      uid: initOptions.id,
+      url: initOptions.url,
+      debug: initOptions.debug,
+      id: '',
+      timeouted: false,
+      timeout: 0
+    };
+    adomikAdapter.adapterEnableAnalytics(config);
+  }
 };
 
 _adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: pubwiseAnalytics,
-  code: 'pubwise'
+  adapter: adomikAdapter,
+  code: 'adomik'
 });
 
-exports['default'] = pubwiseAnalytics;
+exports['default'] = adomikAdapter;
 
 /***/ }),
 
@@ -373,4 +462,4 @@ function AnalyticsAdapter(_ref) {
 
 /***/ })
 
-},[187]);
+},[63]);

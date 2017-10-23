@@ -1,14 +1,14 @@
-pbjsChunk([90],{
+pbjsChunk([93],{
 
-/***/ 71:
+/***/ 75:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(72);
+module.exports = __webpack_require__(76);
 
 
 /***/ }),
 
-/***/ 72:
+/***/ 76:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -198,12 +198,17 @@ var AolAdapter = function AolAdapter() {
         dcn = _bid$params.dcn,
         pos = _bid$params.pos;
 
+    var isSecure = document.location.protocol === 'https:';
     var nexageApi = nexageBaseApiTemplate({
-      protocol: document.location.protocol === 'https:' ? 'https' : 'http',
+      protocol: isSecure ? 'https' : 'http',
       host: bid.params.host || NEXAGE_SERVER
     });
     if (dcn && pos) {
       var ext = '';
+      if (isSecure) {
+        bid.params.ext = bid.params.ext || {};
+        bid.params.ext.secure = 1;
+      }
       utils._each(bid.params.ext, (function (value, key) {
         ext += '&' + key + '=' + encodeURIComponent(value);
       }));
@@ -362,4 +367,4 @@ module.exports = AolAdapter;
 
 /***/ })
 
-},[71]);
+},[75]);

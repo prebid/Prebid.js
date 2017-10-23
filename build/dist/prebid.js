@@ -1,5 +1,5 @@
-/* prebid.js v0.29.0
-Updated : 2017-09-21 */
+/* prebid.js v0.31.0
+Updated : 2017-10-23 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// install a JSONP callback for chunk loading
 /******/ 	var parentJsonpFunction = window["pbjsChunk"];
@@ -36,7 +36,7 @@ Updated : 2017-09-21 */
 /******/
 /******/ 	// objects to store loaded and loading chunks
 /******/ 	var installedChunks = {
-/******/ 		104: 0
+/******/ 		107: 0
 /******/ 	};
 /******/
 /******/ 	// The require function
@@ -108,7 +108,7 @@ Updated : 2017-09-21 */
 /******/ 	__webpack_require__.oe = function(err) { console.error(err); throw err; };
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 257);
+/******/ 	return __webpack_require__(__webpack_require__.s = 264);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -152,7 +152,7 @@ exports.deepAccess = deepAccess;
 exports.getDefinedParams = getDefinedParams;
 exports.isValidMediaTypes = isValidMediaTypes;
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -622,7 +622,7 @@ exports.triggerPixel = function (url) {
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
 exports.insertUserSyncIframe = function (url) {
-  var iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts');
+  var iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   var div = document.createElement('div');
   div.innerHTML = iframeHtml;
   var iframe = div.firstChild;
@@ -959,11 +959,12 @@ var _sizeMapping = __webpack_require__(45);
 
 var _native = __webpack_require__(13);
 
-var _storagemanager = __webpack_require__(28);
+var _bidderFactory = __webpack_require__(15);
 
 var utils = __webpack_require__(0);
 var CONSTANTS = __webpack_require__(4);
-var events = __webpack_require__(9);
+var events = __webpack_require__(10);
+var s2sTestingModule = void 0; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -1004,18 +1005,19 @@ function getBids(_ref) {
         sizes = sizeMapping;
       }
 
-      if (adUnit.nativeParams) {
-        bid = _extends({}, bid, {
-          nativeParams: (0, _native.processNativeAdUnitParams)(adUnit.nativeParams)
-        });
-      }
-
       if (adUnit.mediaTypes) {
         if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
           bid = _extends({}, bid, { mediaTypes: adUnit.mediaTypes });
         } else {
           utils.logError('mediaTypes is not correctly configured for adunit ' + adUnit.code);
         }
+      }
+
+      var nativeParams = adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+      if (nativeParams) {
+        bid = _extends({}, bid, {
+          nativeParams: (0, _native.processNativeAdUnitParams)(nativeParams)
+        });
       }
 
       bid = _extends({}, bid, (0, _utils.getDefinedParams)(adUnit, ['mediaType', 'renderer']));
@@ -1049,7 +1051,6 @@ exports.callBids = function (_ref2) {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   var bidderCodes = (0, _utils.getBidderCodes)(adUnits);
-  var syncedBidders = _storagemanager.StorageManager.get(_storagemanager.pbjsSyncsKey);
   if (_bidderSequence === RANDOM) {
     bidderCodes = (0, _utils.shuffle)(bidderCodes);
   }
@@ -1060,27 +1061,34 @@ exports.callBids = function (_ref2) {
     s2sAdapter.queueSync({ bidderCodes: bidderCodes });
   }
 
+  var clientTestAdapters = [];
+  var s2sTesting = false;
   if (_s2sConfig.enabled) {
-    // these are called on the s2s adapter
-    var adaptersServerSide = _s2sConfig.bidders.filter((function (bidder) {
-      return syncedBidders.includes(bidder);
-    }));
+    // if s2sConfig.bidderControl testing is turned on
+    s2sTesting = _s2sConfig.testing && typeof s2sTestingModule !== 'undefined';
+    if (s2sTesting) {
+      // get all adapters doing client testing
+      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+    }
 
-    // don't call these client side
+    // these are called on the s2s adapter
+    var adaptersServerSide = _s2sConfig.bidders;
+
+    // don't call these client side (unless client request is needed for testing)
     bidderCodes = bidderCodes.filter((function (elm) {
-      return !adaptersServerSide.includes(elm);
+      return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
     }));
-    var adUnitsCopy = utils.cloneJson(adUnits);
+    var adUnitsS2SCopy = utils.cloneJson(adUnits);
 
     // filter out client side bids
-    adUnitsCopy.forEach((function (adUnit) {
+    adUnitsS2SCopy.forEach((function (adUnit) {
       if (adUnit.sizeMapping) {
         adUnit.sizes = (0, _sizeMapping.mapSizes)(adUnit);
         delete adUnit.sizeMapping;
       }
       adUnit.sizes = transformHeightWidth(adUnit);
       adUnit.bids = adUnit.bids.filter((function (bid) {
-        return adaptersServerSide.includes(bid.bidder);
+        return adaptersServerSide.includes(bid.bidder) && (!s2sTesting || bid.finalSource !== s2sTestingModule.CLIENT);
       })).map((function (bid) {
         bid.bid_id = utils.getUniqueIdentifierStr();
         return bid;
@@ -1088,7 +1096,7 @@ exports.callBids = function (_ref2) {
     }));
 
     // don't send empty requests
-    adUnitsCopy = adUnitsCopy.filter((function (adUnit) {
+    adUnitsS2SCopy = adUnitsS2SCopy.filter((function (adUnit) {
       return adUnit.bids.length !== 0;
     }));
 
@@ -1100,7 +1108,7 @@ exports.callBids = function (_ref2) {
         requestId: requestId,
         bidderRequestId: bidderRequestId,
         tid: tid,
-        bids: getBids({ bidderCode: bidderCode, requestId: requestId, bidderRequestId: bidderRequestId, 'adUnits': adUnitsCopy }),
+        bids: getBids({ bidderCode: bidderCode, requestId: requestId, bidderRequestId: bidderRequestId, 'adUnits': adUnitsS2SCopy }),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
@@ -1111,12 +1119,27 @@ exports.callBids = function (_ref2) {
       }
     }));
 
-    var s2sBidRequest = { tid: tid, 'ad_units': adUnitsCopy };
+    var s2sBidRequest = { tid: tid, 'ad_units': adUnitsS2SCopy };
     utils.logMessage('CALLING S2S HEADER BIDDERS ==== ' + adaptersServerSide.join(','));
     if (s2sBidRequest.ad_units.length) {
       s2sAdapter.callBids(s2sBidRequest);
     }
   }
+
+  var _bidderRequests = [];
+  // client side adapters
+  var adUnitsClientCopy = utils.cloneJson(adUnits);
+  // filter out s2s bids
+  adUnitsClientCopy.forEach((function (adUnit) {
+    adUnit.bids = adUnit.bids.filter((function (bid) {
+      return !s2sTesting || bid.finalSource !== s2sTestingModule.SERVER;
+    }));
+  }));
+
+  // don't send empty requests
+  adUnitsClientCopy = adUnitsClientCopy.filter((function (adUnit) {
+    return adUnit.bids.length !== 0;
+  }));
 
   bidderCodes.forEach((function (bidderCode) {
     var adapter = _bidderRegistry[bidderCode];
@@ -1126,19 +1149,28 @@ exports.callBids = function (_ref2) {
         bidderCode: bidderCode,
         requestId: requestId,
         bidderRequestId: bidderRequestId,
-        bids: getBids({ bidderCode: bidderCode, requestId: requestId, bidderRequestId: bidderRequestId, adUnits: adUnits }),
-        start: new Date().getTime(),
+        bids: getBids({ bidderCode: bidderCode, requestId: requestId, bidderRequestId: bidderRequestId, 'adUnits': adUnitsClientCopy }),
         auctionStart: auctionStart,
         timeout: cbTimeout
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
-        utils.logMessage('CALLING BIDDER ======= ' + bidderCode);
         pbjs._bidsRequested.push(bidderRequest);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-        adapter.callBids(bidderRequest);
+        _bidderRequests.push(bidderRequest);
+      }
+    }
+  }));
+
+  _bidderRequests.forEach((function (bidRequest) {
+    bidRequest.start = new Date().getTime();
+    var adapter = _bidderRegistry[bidRequest.bidderCode];
+    if (adapter) {
+      if (bidRequest.bids && bidRequest.bids.length !== 0) {
+        utils.logMessage('CALLING BIDDER ======= ' + bidRequest.bidderCode);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+        adapter.callBids(bidRequest);
       }
     } else {
-      utils.logError('Adapter trying to be called which does not exist: ' + bidderCode + ' adaptermanager.callBids');
+      utils.logError('Adapter trying to be called which does not exist: ' + bidRequest.bidderCode + ' adaptermanager.callBids');
     }
   }));
 };
@@ -1155,6 +1187,13 @@ function transformHeightWidth(adUnit) {
     sizesObj.push(sizeObj);
   }));
   return sizesObj;
+}
+
+function getSupportedMediaTypes(bidderCode) {
+  var result = [];
+  if (exports.videoAdapters.includes(bidderCode)) result.push('video');
+  if (_native.nativeAdapters.includes(bidderCode)) result.push('native');
+  return result;
 }
 
 exports.videoAdapters = []; // added by adapterLoader for now
@@ -1187,14 +1226,24 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
   if (typeof existingAlias === 'undefined') {
     var bidAdaptor = _bidderRegistry[bidderCode];
-
     if (typeof bidAdaptor === 'undefined') {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        var newAdapter = new bidAdaptor.constructor();
-        newAdapter.setBidderCode(alias);
-        this.registerBidAdapter(newAdapter, alias);
+        var newAdapter = void 0;
+        var supportedMediaTypes = getSupportedMediaTypes(bidderCode);
+        // Have kept old code to support backward compatibilitiy.
+        // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
+        if (bidAdaptor.constructor.prototype != Object.prototype) {
+          newAdapter = new bidAdaptor.constructor();
+          newAdapter.setBidderCode(alias);
+        } else {
+          var spec = bidAdaptor.getSpec();
+          newAdapter = (0, _bidderFactory.newBidder)(_extends({}, spec, { code: alias }));
+        }
+        this.registerBidAdapter(newAdapter, alias, {
+          supportedMediaTypes: supportedMediaTypes
+        });
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
@@ -1247,6 +1296,12 @@ exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
 
+// the s2sTesting module is injected when it's loaded rather than being imported
+// importing it causes the packager to include it even when it's not explicitly included in the build
+exports.setS2STestingModule = function (module) {
+  s2sTestingModule = module;
+};
+
 /***/ }),
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -1270,12 +1325,12 @@ var _videoCache = __webpack_require__(46);
 
 var _Renderer = __webpack_require__(18);
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 var CONSTANTS = __webpack_require__(4);
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = __webpack_require__(0);
-var events = __webpack_require__(9);
+var events = __webpack_require__(10);
 
 var externalCallbacks = { byAdUnit: [], all: [], oneTime: null, timer: false };
 var defaultBidderSettingsMap = {};
@@ -1549,15 +1604,8 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     custBidObj.sendStandardTargeting = defaultBidderSettingsMap[bidderCode].sendStandardTargeting;
   }
 
-  // set native key value targeting
-  if (custBidObj.native) {
-    Object.keys(custBidObj.native).forEach((function (asset) {
-      var key = _native.NATIVE_KEYS[asset];
-      var value = custBidObj.native[asset];
-      if (key) {
-        keyValues[key] = value;
-      }
-    }));
+  if (custBidObj['native']) {
+    keyValues = _extends({}, keyValues, (0, _native.getNativeTargeting)(custBidObj));
   }
 
   return keyValues;
@@ -1702,10 +1750,16 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, (function (bid) {
 function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
-  if (code && pbjs.bidderSettings && pbjs.bidderSettings[code]) {
-    if (typeof pbjs.bidderSettings[code].bidCpmAdjustment === 'function') {
+  var bidCpmAdjustment = void 0;
+  if (pbjs.bidderSettings) {
+    if (code && pbjs.bidderSettings[code] && typeof pbjs.bidderSettings[code].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = pbjs.bidderSettings[code].bidCpmAdjustment;
+    } else if (pbjs.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof pbjs.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = pbjs.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
+    }
+    if (bidCpmAdjustment) {
       try {
-        bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, _extends({}, bid));
+        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, _extends({}, bid));
       } catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
       }
@@ -1725,46 +1779,47 @@ function getStandardBidderSettings() {
   var granularity = _config.config.getConfig('priceGranularity');
   var bidder_settings = pbjs.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
-      adserverTargeting: [{
-        key: 'hb_bidder',
-        val: function val(bidResponse) {
-          return bidResponse.bidderCode;
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
+  }
+  if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [{
+      key: 'hb_bidder',
+      val: function val(bidResponse) {
+        return bidResponse.bidderCode;
+      }
+    }, {
+      key: 'hb_adid',
+      val: function val(bidResponse) {
+        return bidResponse.adId;
+      }
+    }, {
+      key: 'hb_pb',
+      val: function val(bidResponse) {
+        if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+          return bidResponse.pbAg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+          return bidResponse.pbDg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+          return bidResponse.pbLg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+          return bidResponse.pbMg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+          return bidResponse.pbHg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+          return bidResponse.pbCg;
         }
-      }, {
-        key: 'hb_adid',
-        val: function val(bidResponse) {
-          return bidResponse.adId;
-        }
-      }, {
-        key: 'hb_pb',
-        val: function val(bidResponse) {
-          if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-            return bidResponse.pbAg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-            return bidResponse.pbDg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-            return bidResponse.pbLg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-            return bidResponse.pbMg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-            return bidResponse.pbHg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-            return bidResponse.pbCg;
-          }
-        }
-      }, {
-        key: 'hb_size',
-        val: function val(bidResponse) {
-          return bidResponse.size;
-        }
-      }, {
-        key: 'hb_deal',
-        val: function val(bidResponse) {
-          return bidResponse.dealId;
-        }
-      }]
-    };
+      }
+    }, {
+      key: 'hb_size',
+      val: function val(bidResponse) {
+        return bidResponse.size;
+      }
+    }, {
+      key: 'hb_deal',
+      val: function val(bidResponse) {
+        return bidResponse.dealId;
+      }
+    }];
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
@@ -1841,7 +1896,7 @@ exports.createBid = function (statusCode, bidRequest) {
 /* 4 */
 /***/ (function(module, exports) {
 
-module.exports = {"JSON_MAPPING":{"PL_CODE":"code","PL_SIZE":"sizes","PL_BIDS":"bids","BD_BIDDER":"bidder","BD_ID":"paramsd","BD_PL_ID":"placementId","ADSERVER_TARGETING":"adserverTargeting","BD_SETTING_STANDARD":"standard"},"REPO_AND_VERSION":"prebid_prebid_0.29.0","DEBUG_MODE":"pbjs_debug","STATUS":{"GOOD":1,"NO_BID":2},"CB":{"TYPE":{"ALL_BIDS_BACK":"allRequestedBidsBack","AD_UNIT_BIDS_BACK":"adUnitBidsBack","BID_WON":"bidWon","REQUEST_BIDS":"requestBids"}},"EVENTS":{"AUCTION_INIT":"auctionInit","AUCTION_END":"auctionEnd","BID_ADJUSTMENT":"bidAdjustment","BID_TIMEOUT":"bidTimeout","BID_REQUESTED":"bidRequested","BID_RESPONSE":"bidResponse","BID_WON":"bidWon","SET_TARGETING":"setTargeting","REQUEST_BIDS":"requestBids"},"EVENT_ID_PATHS":{"bidWon":"adUnitCode"},"GRANULARITY_OPTIONS":{"LOW":"low","MEDIUM":"medium","HIGH":"high","AUTO":"auto","DENSE":"dense","CUSTOM":"custom"},"TARGETING_KEYS":["hb_bidder","hb_adid","hb_pb","hb_size","hb_deal"],"S2S":{"DEFAULT_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/auction","SRC":"s2s","ADAPTER":"prebidServer","SYNC_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/cookie_sync","SYNCED_BIDDERS_KEY":"pbjsSyncs"}}
+module.exports = {"JSON_MAPPING":{"PL_CODE":"code","PL_SIZE":"sizes","PL_BIDS":"bids","BD_BIDDER":"bidder","BD_ID":"paramsd","BD_PL_ID":"placementId","ADSERVER_TARGETING":"adserverTargeting","BD_SETTING_STANDARD":"standard"},"REPO_AND_VERSION":"prebid_prebid_0.31.0","DEBUG_MODE":"pbjs_debug","STATUS":{"GOOD":1,"NO_BID":2},"CB":{"TYPE":{"ALL_BIDS_BACK":"allRequestedBidsBack","AD_UNIT_BIDS_BACK":"adUnitBidsBack","BID_WON":"bidWon","REQUEST_BIDS":"requestBids"}},"EVENTS":{"AUCTION_INIT":"auctionInit","AUCTION_END":"auctionEnd","BID_ADJUSTMENT":"bidAdjustment","BID_TIMEOUT":"bidTimeout","BID_REQUESTED":"bidRequested","BID_RESPONSE":"bidResponse","BID_WON":"bidWon","SET_TARGETING":"setTargeting","REQUEST_BIDS":"requestBids","ADD_AD_UNITS":"addAdUnits"},"EVENT_ID_PATHS":{"bidWon":"adUnitCode"},"GRANULARITY_OPTIONS":{"LOW":"low","MEDIUM":"medium","HIGH":"high","AUTO":"auto","DENSE":"dense","CUSTOM":"custom"},"TARGETING_KEYS":["hb_bidder","hb_adid","hb_pb","hb_size","hb_deal"],"S2S":{"DEFAULT_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/auction","SRC":"s2s","ADAPTER":"prebidServer","SYNC_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/cookie_sync","SYNCED_BIDDERS_KEY":"pbjsSyncs"}}
 
 /***/ }),
 /* 5 */
@@ -2089,7 +2144,8 @@ function Adapter(code) {
 }
 
 /***/ }),
-/* 8 */
+/* 8 */,
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2134,12 +2190,12 @@ var DEFAULT_USERSYNC = {
 };
 
 var GRANULARITY_OPTIONS = {
-  'LOW': 'low',
-  'MEDIUM': 'medium',
-  'HIGH': 'high',
-  'AUTO': 'auto',
-  'DENSE': 'dense',
-  'CUSTOM': 'custom'
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  AUTO: 'auto',
+  DENSE: 'dense',
+  CUSTOM: 'custom'
 };
 
 var ALL_TOPICS = '*';
@@ -2287,6 +2343,7 @@ function newConfig() {
   function setConfig(options) {
     if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) !== 'object') {
       utils.logError('setConfig options must be an object');
+      return;
     }
 
     _extends(config, options);
@@ -2367,7 +2424,7 @@ function newConfig() {
 var config = exports.config = newConfig();
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2527,7 +2584,6 @@ module.exports = (function () {
 })();
 
 /***/ }),
-/* 10 */,
 /* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2584,7 +2640,7 @@ function parse(url, options) {
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host
+    host: parsed.host || window.location.host
   };
 }
 
@@ -2613,7 +2669,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.hasNonNativeBidder = exports.nativeBidder = exports.nativeAdUnit = exports.NATIVE_TARGETING_KEYS = exports.NATIVE_KEYS = exports.nativeAdapters = undefined;
 exports.processNativeAdUnitParams = processNativeAdUnitParams;
 exports.nativeBidIsValid = nativeBidIsValid;
-exports.fireNativeImpressions = fireNativeImpressions;
+exports.fireNativeTrackers = fireNativeTrackers;
+exports.getNativeTargeting = getNativeTargeting;
 
 var _utils = __webpack_require__(0);
 
@@ -2677,7 +2734,9 @@ function typeIsSupported(type) {
  * adunit validation helper functions
  */
 var nativeAdUnit = exports.nativeAdUnit = function nativeAdUnit(adUnit) {
-  return adUnit.mediaType === 'native';
+  var mediaType = adUnit.mediaType === 'native';
+  var mediaTypes = (0, _utils.deepAccess)(adUnit, 'mediaTypes.native');
+  return mediaType || mediaTypes;
 };
 var nativeBidder = exports.nativeBidder = function nativeBidder(bid) {
   return nativeAdapters.includes(bid.bidder);
@@ -2698,6 +2757,11 @@ function nativeBidIsValid(bid) {
     return false;
   }
 
+  // all native bid responses must define a landing page url
+  if (!(0, _utils.deepAccess)(bid, 'native.clickUrl')) {
+    return false;
+  }
+
   var requestedAssets = bidRequest.nativeParams;
   if (!requestedAssets) {
     return true;
@@ -2706,8 +2770,8 @@ function nativeBidIsValid(bid) {
   var requiredAssets = Object.keys(requestedAssets).filter((function (key) {
     return requestedAssets[key].required;
   }));
-  var returnedAssets = Object.keys(bid.native).filter((function (key) {
-    return bid.native[key];
+  var returnedAssets = Object.keys(bid['native']).filter((function (key) {
+    return bid['native'][key];
   }));
 
   return requiredAssets.every((function (asset) {
@@ -2716,15 +2780,60 @@ function nativeBidIsValid(bid) {
 }
 
 /*
- * Native responses may have impression trackers. This retrieves the
- * impression tracker urls for the given ad object and fires them.
+ * Native responses may have associated impression or click trackers.
+ * This retrieves the appropriate tracker urls for the given ad object and
+ * fires them. As a native creatives may be in a cross-origin frame, it may be
+ * necessary to invoke this function via postMessage. secureCreatives is
+ * configured to fire this function when it receives a `message` of 'Prebid Native'
+ * and an `adId` with the value of the `bid.adId`. When a message is posted with
+ * these parameters, impression trackers are fired. To fire click trackers, the
+ * message should contain an `action` set to 'click'.
+ *
+ * // Native creative template example usage
+ * <a href="%%CLICK_URL_UNESC%%%%PATTERN:hb_native_linkurl%%"
+ *    target="_blank"
+ *    onclick="fireTrackers('click')">
+ *    %%PATTERN:hb_native_title%%
+ * </a>
+ *
+ * <script>
+ *   function fireTrackers(action) {
+ *     var message = {message: 'Prebid Native', adId: '%%PATTERN:hb_adid%%'};
+ *     if (action === 'click') {message.action = 'click';} // fires click trackers
+ *     window.parent.postMessage(JSON.stringify(message), '*');
+ *   }
+ *   fireTrackers(); // fires impressions when creative is loaded
+ * </script>
  */
-function fireNativeImpressions(adObject) {
-  var impressionTrackers = adObject.native && adObject.native.impressionTrackers;
+function fireNativeTrackers(message, adObject) {
+  var trackers = void 0;
 
-  (impressionTrackers || []).forEach((function (tracker) {
-    (0, _utils.triggerPixel)(tracker);
+  if (message.action === 'click') {
+    trackers = adObject['native'] && adObject['native'].clickTrackers;
+  } else {
+    trackers = adObject['native'] && adObject['native'].impressionTrackers;
+  }
+
+  (trackers || []).forEach(_utils.triggerPixel);
+}
+
+/**
+ * Gets native targeting key-value paris
+ * @param {Object} bid
+ * @return {Object} targeting
+ */
+function getNativeTargeting(bid) {
+  var keyValues = {};
+
+  Object.keys(bid['native']).forEach((function (asset) {
+    var key = NATIVE_KEYS[asset];
+    var value = bid['native'][asset];
+    if (key) {
+      keyValues[key] = value;
+    }
   }));
+
+  return keyValues;
 }
 
 /***/ }),
@@ -2749,220 +2858,344 @@ if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.userSync = undefined;
 
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-exports.newUserSync = newUserSync;
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.registerBidder = registerBidder;
+exports.newBidder = newBidder;
+
+var _adapter = __webpack_require__(7);
+
+var _adapter2 = _interopRequireDefault(_adapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+var _config = __webpack_require__(9);
+
+var _ajax = __webpack_require__(6);
+
+var _bidmanager = __webpack_require__(2);
+
+var _bidmanager2 = _interopRequireDefault(_bidmanager);
+
+var _bidfactory = __webpack_require__(3);
+
+var _bidfactory2 = _interopRequireDefault(_bidfactory);
+
+var _constants = __webpack_require__(4);
+
+var _userSync = __webpack_require__(28);
 
 var _utils = __webpack_require__(0);
 
-var utils = _interopRequireWildcard(_utils);
-
-var _config = __webpack_require__(8);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 /**
- * Factory function which creates a new UserSyncPool.
+ * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
  *
- * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
- *   UserSync object needs in order to behave properly.
+ * Prebid 1.x and Prebid 0.x will be in separate branches--perhaps for a long time.
+ * This function defines an API for adapter construction which is compatible with both versions.
+ * Adapters which use it can maintain their code in master, and only this file will need to change
+ * in the 1.x branch.
+ *
+ * Typical usage looks something like:
+ *
+ * const adapter = registerBidder({
+ *   code: 'myBidderCode',
+ *   aliases: ['alias1', 'alias2'],
+ *   supportedMediaTypes: ['video', 'native'],
+ *   isBidRequestValid: function(paramsObject) { return true/false },
+ *   buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
+ *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
+ * });
+ *
+ * @see BidderSpec for the full API and more thorough descriptions.
  */
-function newUserSync(userSyncDependencies) {
-  var publicApi = {};
-  // A queue of user syncs for each adapter
-  // Let getDefaultQueue() set the defaults
-  var queue = getDefaultQueue();
 
-  // Whether or not user syncs have been trigger on this page load
-  var hasFired = false;
-  // How many bids for each adapter
-  var numAdapterBids = {};
+/**
+ * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
+ * make a Bidder.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
+ * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
+ * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
+ *   needed to make a valid request.
+ * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
+ *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
+ *   passed the isBidRequestValid() test.
+ * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
+ *   interpret it and return the Bid objects. This function will be run inside a try/catch.
+ *   If it throws any errors, your bids will be discarded.
+ * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
+ *   from the server, determine which user syncs should occur. The argument array will contain every element
+ *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
+ *   important ones should come first, since publishers may limit how many are dropped on their page.
+ */
 
-  // Use what is in config by default
-  var config = userSyncDependencies.config;
+/**
+ * @typedef {object} BidRequest
+ *
+ * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ */
 
-  /**
-   * @function getDefaultQueue
-   * @summary Returns the default empty queue
-   * @private
-   * @return {object} A queue with no syncs
-   */
-  function getDefaultQueue() {
-    return {
-      image: [],
-      iframe: []
-    };
+/**
+ * @typedef {object} ServerRequest
+ *
+ * @property {('GET'|'POST')} method The type of request which this is.
+ * @property {string} url The endpoint for the request. For example, "//bids.example.com".
+ * @property {string|object} data Data to be sent in the request.
+ * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
+ *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
+ *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
+ *   JSON-serialized into the Request body.
+ */
+
+/**
+ * @typedef {object} Bid
+ *
+ * @property {string} requestId The specific BidRequest which this bid is aimed at.
+ *   This should correspond to one of the
+ * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {string} currency The currency code for the cpm value
+ * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
+ * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
+ * @property {number} height The height of the ad, in pixels.
+ * @property {number} width The width of the ad, in pixels.
+ *
+ * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
+ *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
+ */
+
+/**
+ * @typedef {Object} SyncOptions
+ *
+ * An object containing information about usersyncs which the adapter should obey.
+ *
+ * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
+ * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
+ */
+
+/**
+ * TODO: Move this to the UserSync module after that PR is merged.
+ *
+ * @typedef {object} UserSync
+ *
+ * @property {('image'|'iframe')} type The type of user sync to be done.
+ * @property {string} url The URL which makes the sync happen.
+ */
+
+/**
+ * Register a bidder with prebid, using the given spec.
+ *
+ * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
+ *
+ * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
+ */
+function registerBidder(spec) {
+  var mediaTypes = Array.isArray(spec.supportedMediaTypes) ? { supportedMediaTypes: spec.supportedMediaTypes } : undefined;
+  function putBidder(spec) {
+    var bidder = newBidder(spec);
+    _adaptermanager2['default'].registerBidAdapter(bidder, spec.code, mediaTypes);
   }
 
-  /**
-   * @function fireSyncs
-   * @summary Trigger all user syncs in the queue
-   * @private
-   */
-  function fireSyncs() {
-    if (!config.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
-      return;
-    }
-
-    try {
-      // Image pixels
-      fireImagePixels();
-      // Iframe syncs
-      loadIframes();
-    } catch (e) {
-      return utils.logError('Error firing user syncs', e);
-    }
-    // Reset the user sync queue
-    queue = getDefaultQueue();
-    hasFired = true;
-  }
-
-  /**
-   * @function fireImagePixels
-   * @summary Loops through user sync pixels and fires each one
-   * @private
-   */
-  function fireImagePixels() {
-    if (!config.pixelEnabled) {
-      return;
-    }
-    // Randomize the order of the pixels before firing
-    // This is to avoid giving any bidder who has registered multiple syncs
-    // any preferential treatment and balancing them out
-    utils.shuffle(queue.image).forEach((function (sync) {
-      var _sync = _slicedToArray(sync, 2),
-          bidderName = _sync[0],
-          trackingPixelUrl = _sync[1];
-
-      utils.logMessage('Invoking image pixel user sync for bidder: ' + bidderName);
-      // Create image object and add the src url
-      utils.triggerPixel(trackingPixelUrl);
+  putBidder(spec);
+  if (Array.isArray(spec.aliases)) {
+    spec.aliases.forEach((function (alias) {
+      putBidder(_extends({}, spec, { code: alias }));
     }));
   }
-
-  /**
-   * @function loadIframes
-   * @summary Loops through iframe syncs and loads an iframe element into the page
-   * @private
-   */
-  function loadIframes() {
-    if (!config.iframeEnabled) {
-      return;
-    }
-    // Randomize the order of these syncs just like the pixels above
-    utils.shuffle(queue.iframe).forEach((function (sync) {
-      var _sync2 = _slicedToArray(sync, 2),
-          bidderName = _sync2[0],
-          iframeUrl = _sync2[1];
-
-      utils.logMessage('Invoking iframe user sync for bidder: ' + bidderName);
-      // Create image object and add the src url
-      utils.insertUserSyncIframe(iframeUrl);
-    }));
-  }
-
-  /**
-   * @function incrementAdapterBids
-   * @summary Increment the count of user syncs queue for the adapter
-   * @private
-   * @params {object} numAdapterBids The object contain counts for all adapters
-   * @params {string} bidder The name of the bidder adding a sync
-   * @returns {object} The updated version of numAdapterBids
-   */
-  function incrementAdapterBids(numAdapterBids, bidder) {
-    if (!numAdapterBids[bidder]) {
-      numAdapterBids[bidder] = 1;
-    } else {
-      numAdapterBids[bidder] += 1;
-    }
-    return numAdapterBids;
-  }
-
-  /**
-   * @function registerSync
-   * @summary Add sync for this bidder to a queue to be fired later
-   * @public
-   * @params {string} type The type of the sync including image, iframe
-   * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
-    * @example <caption>Using Image Sync</caption>
-   * // registerSync(type, adapter, pixelUrl)
-   * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
-   */
-  publicApi.registerSync = function (type, bidder, url) {
-    if (!config.syncEnabled || !utils.isArray(queue[type])) {
-      return utils.logWarn('User sync type "{$type}" not supported');
-    }
-    if (!bidder) {
-      return utils.logWarn('Bidder is required for registering sync');
-    }
-    if (Number(numAdapterBids[bidder]) >= config.syncsPerBidder) {
-      return utils.logWarn('Number of user syncs exceeded for "{$bidder}"');
-    }
-    // All bidders are enabled by default. If specified only register for enabled bidders.
-    var hasEnabledBidders = config.enabledBidders && config.enabledBidders.length;
-    if (hasEnabledBidders && config.enabledBidders.indexOf(bidder) < 0) {
-      return utils.logWarn('Bidder "' + bidder + '" not supported');
-    }
-    queue[type].push([bidder, url]);
-    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
-  };
-
-  /**
-   * @function syncUsers
-   * @summary Trigger all the user syncs based on publisher-defined timeout
-   * @public
-   * @params {int} timeout The delay in ms before syncing data - default 0
-   */
-  publicApi.syncUsers = function () {
-    var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-
-    if (timeout) {
-      return window.setTimeout(fireSyncs, Number(timeout));
-    }
-    fireSyncs();
-  };
-
-  /**
-   * @function triggerUserSyncs
-   * @summary A `syncUsers` wrapper for determining if enableOverride has been turned on
-   * @public
-   */
-  publicApi.triggerUserSyncs = function () {
-    if (config.enableOverride) {
-      publicApi.syncUsers();
-    }
-  };
-
-  return publicApi;
 }
 
-var browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
-
-var userSync = exports.userSync = newUserSync({
-  config: _config.config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
-
 /**
- * @typedef {Object} UserSyncDependencies
+ * Make a new bidder from the given spec. This is exported mainly for testing.
+ * Adapters will probably find it more convenient to use registerBidder instead.
  *
- * @property {UserSyncConfig} config
- * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
+ * @param {BidderSpec} spec
  */
+function newBidder(spec) {
+  return _extends(new _adapter2['default'](spec.code), {
+    getSpec: function getSpec() {
+      return Object.freeze(spec);
+    },
+    callBids: function callBids(bidderRequest) {
+      if (!Array.isArray(bidderRequest.bids)) {
+        return;
+      }
 
-/**
- * @typedef {Object} UserSyncConfig
- *
- * @property {boolean} enableOverride
- * @property {boolean} syncEnabled
- * @property {boolean} pixelEnabled
- * @property {boolean} iframeEnabled
- * @property {int} syncsPerBidder
- * @property {string[]} enabledBidders
- */
+      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
+      // end properly. This map stores placement codes which we've made _real_ bids on.
+      //
+      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
+      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
+      // will end the auction.
+      //
+      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
+      var adUnitCodesHandled = {};
+      function addBidWithCode(adUnitCode, bid) {
+        adUnitCodesHandled[adUnitCode] = true;
+        addBid(adUnitCode, bid);
+      }
+      function fillNoBids() {
+        bidderRequest.bids.map((function (bidRequest) {
+          return bidRequest.placementCode;
+        })).forEach((function (adUnitCode) {
+          if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
+            addBid(adUnitCode, newEmptyBid());
+          }
+        }));
+      }
+
+      function addBid(code, bid) {
+        try {
+          _bidmanager2['default'].addBidResponse(code, bid);
+        } catch (err) {
+          (0, _utils.logError)('Error adding bid', code, err);
+        }
+      }
+
+      // After all the responses have come back, fill up the "no bid" bids and
+      // register any required usersync pixels.
+      var responses = [];
+      function afterAllResponses() {
+        fillNoBids();
+        if (spec.getUserSyncs) {
+          var syncs = spec.getUserSyncs({
+            iframeEnabled: _config.config.getConfig('userSync.iframeEnabled'),
+            pixelEnabled: _config.config.getConfig('userSync.pixelEnabled')
+          }, responses);
+          if (syncs) {
+            if (!Array.isArray(syncs)) {
+              syncs = [syncs];
+            }
+            syncs.forEach((function (sync) {
+              _userSync.userSync.registerSync(sync.type, spec.code, sync.url);
+            }));
+          }
+        }
+      }
+
+      var validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      if (validBidRequests.length === 0) {
+        afterAllResponses();
+        return;
+      }
+      var bidRequestMap = {};
+      validBidRequests.forEach((function (bid) {
+        bidRequestMap[bid.bidId] = bid;
+      }));
+
+      var requests = spec.buildRequests(validBidRequests, bidderRequest);
+      if (!requests || requests.length === 0) {
+        afterAllResponses();
+        return;
+      }
+      if (!Array.isArray(requests)) {
+        requests = [requests];
+      }
+
+      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
+      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
+      // we need to rig up a function which only executes after all the requests have been responded.
+      var onResponse = (0, _utils.delayExecution)(afterAllResponses, requests.length);
+      requests.forEach(processRequest);
+
+      function processRequest(request) {
+        switch (request.method) {
+          case 'GET':
+            (0, _ajax.ajax)(request.url + '?' + (_typeof(request.data) === 'object' ? (0, _utils.parseQueryStringParameters)(request.data) : request.data), {
+              success: onSuccess,
+              error: onFailure
+            }, undefined, _extends({
+              method: 'GET',
+              withCredentials: true
+            }, request.options));
+            break;
+          case 'POST':
+            (0, _ajax.ajax)(request.url, {
+              success: onSuccess,
+              error: onFailure
+            }, typeof request.data === 'string' ? request.data : JSON.stringify(request.data), _extends({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            }, request.options));
+            break;
+          default:
+            (0, _utils.logWarn)('Skipping invalid request from ' + spec.code + '. Request type ' + request.type + ' must be GET or POST');
+            onResponse();
+        }
+
+        // If the server responds successfully, use the adapter code to unpack the Bids from it.
+        // If the adapter code fails, no bids should be added. After all the bids have been added, make
+        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        function onSuccess(response) {
+          try {
+            response = JSON.parse(response);
+          } catch (e) {/* response might not be JSON... that's ok. */}
+          responses.push(response);
+
+          var bids = void 0;
+          try {
+            bids = spec.interpretResponse(response, request);
+          } catch (err) {
+            (0, _utils.logError)('Bidder ' + spec.code + ' failed to interpret the server\'s response. Continuing without bids', null, err);
+            onResponse();
+            return;
+          }
+
+          if (bids) {
+            if (bids.forEach) {
+              bids.forEach(addBidUsingRequestMap);
+            } else {
+              addBidUsingRequestMap(bids);
+            }
+          }
+          onResponse();
+
+          function addBidUsingRequestMap(bid) {
+            var bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              var prebidBid = _extends(_bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.placementCode, prebidBid);
+            } else {
+              (0, _utils.logWarn)('Bidder ' + spec.code + ' made bid for unknown request ID: ' + bid.requestId + '. Ignoring.');
+            }
+          }
+        }
+
+        // If the server responds with an error, there's not much we can do. Log it, and make sure to
+        // call onResponse() so that we're one step closer to calling fillNoBids().
+        function onFailure(err) {
+          (0, _utils.logError)('Server call for ' + spec.code + ' failed: ' + err + '. Continuing without bids.');
+          onResponse();
+        }
+      }
+    }
+  });
+
+  function filterAndWarn(bid) {
+    if (!spec.isBidRequestValid(bid)) {
+      (0, _utils.logWarn)('Invalid bid sent to bidder ' + spec.code + ': ' + JSON.stringify(bid));
+      return false;
+    }
+    return true;
+  }
+
+  function newEmptyBid() {
+    var bid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID);
+    bid.code = spec.code;
+    bid.bidderCode = spec.code;
+    return bid;
+  }
+}
 
 /***/ }),
 /* 16 */
@@ -2971,7 +3204,7 @@ var userSync = exports.userSync = newUserSync({
 var global = __webpack_require__(14);
 var core = __webpack_require__(12);
 var hide = __webpack_require__(20);
-var redefine = __webpack_require__(268);
+var redefine = __webpack_require__(275);
 var ctx = __webpack_require__(32);
 var PROTOTYPE = 'prototype';
 
@@ -3143,7 +3376,7 @@ Renderer.prototype.process = function () {
 
 var _utils = __webpack_require__(0);
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 var _native = __webpack_require__(13);
 
@@ -3359,8 +3592,8 @@ function getEmptyBid(adUnitCode) {
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var dP = __webpack_require__(262);
-var createDesc = __webpack_require__(267);
+var dP = __webpack_require__(269);
+var createDesc = __webpack_require__(274);
 module.exports = __webpack_require__(21) ? function (object, key, value) {
   return dP.f(object, key, createDesc(1, value));
 } : function (object, key, value) {
@@ -3639,58 +3872,226 @@ function isValidVideoBid(bid) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.StorageManager = exports.pbjsSyncsKey = undefined;
-exports.newStorageManager = newStorageManager;
+exports.userSync = undefined;
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.newUserSync = newUserSync;
 
 var _utils = __webpack_require__(0);
 
-var pbjsSyncsKey = exports.pbjsSyncsKey = 'pbjsSyncs'; /**
-                                                        * Storage Manager aims to provide a consistent but concise API to persist data where conditions may require alternatives
-                                                        * to localStorage (storing as cookie, in indexedDB, etc), or potentially a mechanism for x-domain storage
-                                                        *
-                                                        * Only html5 localStorage implemented currently.
-                                                        *
-                                                       */
+var utils = _interopRequireWildcard(_utils);
 
-function newStorageManager() {
-  function set(key, item) {
-    try {
-      localStorage.setItem(key, JSON.stringify(item));
-    } catch (e) {
-      (0, _utils.logWarn)('could not set storage item: ', e);
-    }
+var _config = __webpack_require__(9);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+/**
+ * Factory function which creates a new UserSyncPool.
+ *
+ * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
+ *   UserSync object needs in order to behave properly.
+ */
+function newUserSync(userSyncDependencies) {
+  var publicApi = {};
+  // A queue of user syncs for each adapter
+  // Let getDefaultQueue() set the defaults
+  var queue = getDefaultQueue();
+
+  // Whether or not user syncs have been trigger on this page load
+  var hasFired = false;
+  // How many bids for each adapter
+  var numAdapterBids = {};
+
+  // Use what is in config by default
+  var usConfig = userSyncDependencies.config;
+  // Update if it's (re)set
+  _config.config.getConfig('userSync', (function (conf) {
+    usConfig = _extends(usConfig, conf.userSync);
+  }));
+
+  /**
+   * @function getDefaultQueue
+   * @summary Returns the default empty queue
+   * @private
+   * @return {object} A queue with no syncs
+   */
+  function getDefaultQueue() {
+    return {
+      image: [],
+      iframe: []
+    };
   }
 
-  function get(key) {
-    try {
-      var item = JSON.parse(localStorage.getItem(key));
-      return item && item.length ? item : [];
-    } catch (e) {
-      (0, _utils.logWarn)('could not get storage item: ', e);
-      return [];
+  /**
+   * @function fireSyncs
+   * @summary Trigger all user syncs in the queue
+   * @private
+   */
+  function fireSyncs() {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
+      return;
     }
+
+    try {
+      // Image pixels
+      fireImagePixels();
+      // Iframe syncs
+      loadIframes();
+    } catch (e) {
+      return utils.logError('Error firing user syncs', e);
+    }
+    // Reset the user sync queue
+    queue = getDefaultQueue();
+    hasFired = true;
   }
 
-  return {
-    get: get,
-    set: set,
+  /**
+   * @function fireImagePixels
+   * @summary Loops through user sync pixels and fires each one
+   * @private
+   */
+  function fireImagePixels() {
+    if (!usConfig.pixelEnabled) {
+      return;
+    }
+    // Randomize the order of the pixels before firing
+    // This is to avoid giving any bidder who has registered multiple syncs
+    // any preferential treatment and balancing them out
+    utils.shuffle(queue.image).forEach((function (sync) {
+      var _sync = _slicedToArray(sync, 2),
+          bidderName = _sync[0],
+          trackingPixelUrl = _sync[1];
 
-    add: function add(key, element) {
-      var unique = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      utils.logMessage('Invoking image pixel user sync for bidder: ' + bidderName);
+      // Create image object and add the src url
+      utils.triggerPixel(trackingPixelUrl);
+    }));
+  }
 
-      set(key, get(key).concat([element]).filter((function (value, index, array) {
-        return unique ? array.indexOf(value) === index : true;
-      })));
-    },
-    remove: function remove(key, element) {
-      set(key, get(key).filter((function (value) {
-        return value !== element;
-      })));
+  /**
+   * @function loadIframes
+   * @summary Loops through iframe syncs and loads an iframe element into the page
+   * @private
+   */
+  function loadIframes() {
+    if (!usConfig.iframeEnabled) {
+      return;
+    }
+    // Randomize the order of these syncs just like the pixels above
+    utils.shuffle(queue.iframe).forEach((function (sync) {
+      var _sync2 = _slicedToArray(sync, 2),
+          bidderName = _sync2[0],
+          iframeUrl = _sync2[1];
+
+      utils.logMessage('Invoking iframe user sync for bidder: ' + bidderName);
+      // Insert iframe into DOM
+      utils.insertUserSyncIframe(iframeUrl);
+    }));
+  }
+
+  /**
+   * @function incrementAdapterBids
+   * @summary Increment the count of user syncs queue for the adapter
+   * @private
+   * @params {object} numAdapterBids The object contain counts for all adapters
+   * @params {string} bidder The name of the bidder adding a sync
+   * @returns {object} The updated version of numAdapterBids
+   */
+  function incrementAdapterBids(numAdapterBids, bidder) {
+    if (!numAdapterBids[bidder]) {
+      numAdapterBids[bidder] = 1;
+    } else {
+      numAdapterBids[bidder] += 1;
+    }
+    return numAdapterBids;
+  }
+
+  /**
+   * @function registerSync
+   * @summary Add sync for this bidder to a queue to be fired later
+   * @public
+   * @params {string} type The type of the sync including image, iframe
+   * @params {string} bidder The name of the adapter. e.g. "rubicon"
+   * @params {string} url Either the pixel url or iframe url depending on the type
+    * @example <caption>Using Image Sync</caption>
+   * // registerSync(type, adapter, pixelUrl)
+   * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
+   */
+  publicApi.registerSync = function (type, bidder, url) {
+    if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
+      return utils.logWarn('User sync type "' + type + '" not supported');
+    }
+    if (!bidder) {
+      return utils.logWarn('Bidder is required for registering sync');
+    }
+    if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
+      return utils.logWarn('Number of user syncs exceeded for "{$bidder}"');
+    }
+    // All bidders are enabled by default. If specified only register for enabled bidders.
+    var hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
+    if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
+      return utils.logWarn('Bidder "' + bidder + '" not supported');
+    }
+    queue[type].push([bidder, url]);
+    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
+  };
+
+  /**
+   * @function syncUsers
+   * @summary Trigger all the user syncs based on publisher-defined timeout
+   * @public
+   * @params {int} timeout The delay in ms before syncing data - default 0
+   */
+  publicApi.syncUsers = function () {
+    var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+    if (timeout) {
+      return window.setTimeout(fireSyncs, Number(timeout));
+    }
+    fireSyncs();
+  };
+
+  /**
+   * @function triggerUserSyncs
+   * @summary A `syncUsers` wrapper for determining if enableOverride has been turned on
+   * @public
+   */
+  publicApi.triggerUserSyncs = function () {
+    if (usConfig.enableOverride) {
+      publicApi.syncUsers();
     }
   };
+
+  return publicApi;
 }
 
-var StorageManager = exports.StorageManager = newStorageManager();
+var browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+
+var userSync = exports.userSync = newUserSync({
+  config: _config.config.getConfig('userSync'),
+  browserSupportsCookies: browserSupportsCookies
+});
+
+/**
+ * @typedef {Object} UserSyncDependencies
+ *
+ * @property {UserSyncConfig} config
+ * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
+ */
+
+/**
+ * @typedef {Object} UserSyncConfig
+ *
+ * @property {boolean} enableOverride
+ * @property {boolean} syncEnabled
+ * @property {boolean} pixelEnabled
+ * @property {boolean} iframeEnabled
+ * @property {int} syncsPerBidder
+ * @property {string[]} enabledBidders
+ */
 
 /***/ }),
 /* 29 */
@@ -3755,7 +4156,7 @@ module.exports = function (it, key) {
 /***/ (function(module, exports, __webpack_require__) {
 
 // optional / simple context binding
-var aFunction = __webpack_require__(269);
+var aFunction = __webpack_require__(276);
 module.exports = function (fn, that, length) {
   aFunction(fn);
   if (that === undefined) return fn;
@@ -3791,7 +4192,7 @@ var ctx = __webpack_require__(32);
 var IObject = __webpack_require__(24);
 var toObject = __webpack_require__(35);
 var toLength = __webpack_require__(37);
-var asc = __webpack_require__(270);
+var asc = __webpack_require__(277);
 module.exports = function (TYPE, $create) {
   var IS_MAP = TYPE == 1;
   var IS_FILTER = TYPE == 2;
@@ -3920,7 +4321,7 @@ module.exports = function (key) {
 // true  -> Array#includes
 var toIObject = __webpack_require__(42);
 var toLength = __webpack_require__(37);
-var toAbsoluteIndex = __webpack_require__(277);
+var toAbsoluteIndex = __webpack_require__(284);
 module.exports = function (IS_INCLUDES) {
   return function ($this, el, fromIndex) {
     var O = toIObject($this);
@@ -4382,14 +4783,21 @@ function getCacheUrl(id) {
 /* 254 */,
 /* 255 */,
 /* 256 */,
-/* 257 */
+/* 257 */,
+/* 258 */,
+/* 259 */,
+/* 260 */,
+/* 261 */,
+/* 262 */,
+/* 263 */,
+/* 264 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(258);
+module.exports = __webpack_require__(265);
 
 
 /***/ }),
-/* 258 */
+/* 265 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4407,19 +4815,19 @@ var _video = __webpack_require__(27);
 
 var _native = __webpack_require__(13);
 
-__webpack_require__(259);
+__webpack_require__(266);
 
 var _url = __webpack_require__(11);
 
-var _secureCreatives = __webpack_require__(287);
+var _secureCreatives = __webpack_require__(294);
 
-var _userSync = __webpack_require__(15);
+var _userSync = __webpack_require__(28);
 
 var _adloader = __webpack_require__(5);
 
 var _ajax = __webpack_require__(6);
 
-var _config = __webpack_require__(8);
+var _config = __webpack_require__(9);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; } /** @module pbjs */
 
@@ -4430,8 +4838,8 @@ var utils = __webpack_require__(0);
 var bidmanager = __webpack_require__(2);
 var adaptermanager = __webpack_require__(1);
 var bidfactory = __webpack_require__(3);
-var events = __webpack_require__(9);
-var adserver = __webpack_require__(288);
+var events = __webpack_require__(10);
+var adserver = __webpack_require__(295);
 var targeting = __webpack_require__(19);
 var syncUsers = _userSync.userSync.syncUsers,
     triggerUserSyncs = _userSync.userSync.triggerUserSyncs;
@@ -4440,6 +4848,7 @@ var syncUsers = _userSync.userSync.syncUsers,
 
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -4478,8 +4887,8 @@ pbjs.publisherDomain = pbjs.publisherDomain;
 pbjs.libLoaded = true;
 
 // version auto generated from build
-pbjs.version = 'v0.29.0';
-utils.logInfo('Prebid.js v0.29.0 loaded');
+pbjs.version = 'v0.31.0';
+utils.logInfo('Prebid.js v0.31.0 loaded');
 
 // create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
@@ -4884,6 +5293,8 @@ pbjs.addAdUnits = function (adUnitArr) {
     adUnitArr.transactionId = utils.generateUUID();
     pbjs.adUnits.push(adUnitArr);
   }
+  // emit event
+  events.emit(ADD_AD_UNITS);
 };
 
 /**
@@ -5047,8 +5458,17 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
 };
 
 /**
- * Will enable sending a prebid.js to data provider specified
- * @param  {Object} config object {provider : 'string', options : {}}
+ * Enable sending analytics data to the analytics provider of your
+ * choice.
+ *
+ * For usage, see [Integrate with the Prebid Analytics
+ * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
+ *
+ * For a list of supported analytics adapters, see [Analytics for
+ * Prebid](http://prebid.org/overview/analytics.html).
+ * @param  {Object} config
+ * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.
+ * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
  */
 pbjs.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -5093,6 +5513,45 @@ pbjs.enableSendAllBids = function () {
   _config.config.setConfig({ enableSendAllBids: true });
 };
 
+/**
+ * The bid response object returned by an external bidder adapter during the auction.
+ * @typedef {Object} AdapterBidResponse
+ * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
+ * @property {string} pbCg Custom price bucket.  For example setup, see {@link setPriceGranularity}.  Example: `"0.84"`.
+ * @property {string} pbDg Dense granularity price bucket; CPM <= 3 ? increment = 0.01 : CPM > 3 && CPM <= 8 ? increment = 0.05 : CPM > 8 && CPM <= 20 ? increment = 0.50 : CPM > 20? priceCap = 20.00.  Example: `"0.84"`.
+ * @property {string} pbLg Low granularity price bucket; $0.50 increment, capped at $5, floored to two decimal places.  Example: `"0.50"`.
+ * @property {string} pbMg Medium granularity price bucket; $0.10 increment, capped at $20, floored to two decimal places.  Example: `"0.80"`.
+ * @property {string} pbHg High granularity price bucket; $0.01 increment, capped at $20, floored to two decimal places.  Example: `"0.84"`.
+ *
+ * @property {string} bidder The string name of the bidder.  This *may* be the same as the `bidderCode`.  For For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
+ * @property {string} bidderCode The unique string that identifies this bidder.  For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
+ *
+ * @property {string} requestId The [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) representing the bid request.
+ * @property {number} requestTimestamp The time at which the bid request was sent out, expressed in milliseconds.
+ * @property {number} responseTimestamp The time at which the bid response was received, expressed in milliseconds.
+ * @property {number} timeToRespond How long it took for the bidder to respond with this bid, expressed in milliseconds.
+ *
+ * @property {string} size The size of the ad creative, expressed in `"AxB"` format, where A and B are numbers of pixels.  Example: `"320x50"`.
+ * @property {string} width The width of the ad creative in pixels.  Example: `"320"`.
+ * @property {string} height The height of the ad creative in pixels.  Example: `"50"`.
+ *
+ * @property {string} ad The actual ad creative content, often HTML with CSS, JavaScript, and/or links to additional content.  Example: `"<div id='beacon_-YQbipJtdxmMCgEPHExLhmqzEm' style='position: absolute; left: 0px; top: 0px; visibility: hidden;'><img src='http://aplus-...'/></div><iframe src=\"http://aax-us-east.amazon-adsystem.com/e/is/8dcfcd..." width=\"728\" height=\"90\" frameborder=\"0\" ...></iframe>",`.
+ * @property {number} ad_id The ad ID of the creative, as understood by the bidder's system.  Used by the line item's [creative in the ad server](http://prebid.org/adops/send-all-bids-adops.html#step-3-add-a-creative).
+ * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page.
+ *
+ * @property {string} statusMessage The status of the bid.  Allowed values: `"Bid available"` or `"Bid returned empty or error response"`.
+ * @property {number} cpm The exact bid price from the bidder, expressed to the thousandths place.  Example: `"0.849"`.
+ *
+ * @property {Object} adserverTargeting An object whose values represent the ad server's targeting on the bid.
+ * @property {string} adserverTargeting.hb_adid The ad ID of the creative, as understood by the ad server.
+ * @property {string} adserverTargeting.hb_pb The price paid to show the creative, as logged in the ad server.
+ * @property {string} adserverTargeting.hb_bidder The winning bidder whose ad creative will be served by the ad server.
+*/
+
+/**
+ * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+*/
 pbjs.getAllWinningBids = function () {
   return pbjs._winningBids;
 };
@@ -5197,8 +5656,50 @@ pbjs.setS2SConfig = function (options) {
 pbjs.getConfig = _config.config.getConfig;
 
 /**
- * Set Prebid config options
- * @param {Object} options
+ * Set Prebid config options.
+ * (Added in version 0.27.0).
+ *
+ * `setConfig` is designed to allow for advanced configuration while
+ * reducing the surface area of the public API.  For more information
+ * about the move to `setConfig` (and the resulting deprecations of
+ * some other public methods), see [the Prebid 1.0 public API
+ * proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
+ *
+ * #### Troubleshooting your configuration
+ *
+ * If you call `pbjs.setConfig` without an object, e.g.,
+ *
+ * `pbjs.setConfig('debug', 'true'))`
+ *
+ * then Prebid.js will print an error to the console that says:
+ *
+ * ```
+ * ERROR: setConfig options must be an object
+ * ```
+ *
+ * If you don't see that message, you can assume the config object is valid.
+ *
+ * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @param {string} options.bidderSequence The order in which bidders are called.  Example: `pbjs.setConfig({ bidderSequence: "fixed" })`.  Allowed values: `"fixed"` (order defined in `adUnit.bids` array on page), `"random"`.
+ * @param {boolean} options.debug Turn debug logging on/off. Example: `pbjs.setConfig({ debug: true })`.
+ * @param {string} options.priceGranularity The bid price granularity to use.  Example: `pbjs.setConfig({ priceGranularity: "medium" })`. Allowed values: `"low"` ($0.50), `"medium"` ($0.10), `"high"` ($0.01), `"auto"` (sliding scale), `"dense"` (like `"auto"`, with smaller increments at lower CPMs), or a custom price bucket object, e.g., `{ "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]}`.
+ * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
+ * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
+ * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
+ * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
+ * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
+ * ```
+ * pbjs.setConfig({
+ *     s2sConfig: {
+ *         accountId: '1',
+ *         enabled: true,
+ *         bidders: ['appnexus', 'pubmatic'],
+ *         timeout: 1000,
+ *         adapter: 'prebidServer',
+ *         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+ *     }
+ * })
+ * ```
  */
 pbjs.setConfig = _config.config.setConfig;
 
@@ -5259,7 +5760,7 @@ pbjs.processQueue = function () {
 };
 
 /***/ }),
-/* 259 */
+/* 266 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5268,10 +5769,10 @@ pbjs.processQueue = function () {
 /** @module polyfill
 Misc polyfills
 */
-__webpack_require__(260);
-__webpack_require__(273);
-__webpack_require__(275);
-__webpack_require__(278);
+__webpack_require__(267);
+__webpack_require__(280);
+__webpack_require__(282);
+__webpack_require__(285);
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
 Number.isInteger = Number.isInteger || function (value) {
@@ -5279,15 +5780,15 @@ Number.isInteger = Number.isInteger || function (value) {
 };
 
 /***/ }),
-/* 260 */
+/* 267 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(261);
+__webpack_require__(268);
 module.exports = __webpack_require__(12).Array.find;
 
 
 /***/ }),
-/* 261 */
+/* 268 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5308,12 +5809,12 @@ __webpack_require__(25)(KEY);
 
 
 /***/ }),
-/* 262 */
+/* 269 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var anObject = __webpack_require__(263);
-var IE8_DOM_DEFINE = __webpack_require__(264);
-var toPrimitive = __webpack_require__(266);
+var anObject = __webpack_require__(270);
+var IE8_DOM_DEFINE = __webpack_require__(271);
+var toPrimitive = __webpack_require__(273);
 var dP = Object.defineProperty;
 
 exports.f = __webpack_require__(21) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
@@ -5330,7 +5831,7 @@ exports.f = __webpack_require__(21) ? Object.defineProperty : function definePro
 
 
 /***/ }),
-/* 263 */
+/* 270 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(17);
@@ -5341,16 +5842,16 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 264 */
+/* 271 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = !__webpack_require__(21) && !__webpack_require__(22)((function () {
-  return Object.defineProperty(__webpack_require__(265)('div'), 'a', { get: function () { return 7; } }).a != 7;
+  return Object.defineProperty(__webpack_require__(272)('div'), 'a', { get: function () { return 7; } }).a != 7;
 }));
 
 
 /***/ }),
-/* 265 */
+/* 272 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(17);
@@ -5363,7 +5864,7 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 266 */
+/* 273 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.1 ToPrimitive(input [, PreferredType])
@@ -5381,7 +5882,7 @@ module.exports = function (it, S) {
 
 
 /***/ }),
-/* 267 */
+/* 274 */
 /***/ (function(module, exports) {
 
 module.exports = function (bitmap, value) {
@@ -5395,7 +5896,7 @@ module.exports = function (bitmap, value) {
 
 
 /***/ }),
-/* 268 */
+/* 275 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var global = __webpack_require__(14);
@@ -5432,7 +5933,7 @@ __webpack_require__(12).inspectSource = function (it) {
 
 
 /***/ }),
-/* 269 */
+/* 276 */
 /***/ (function(module, exports) {
 
 module.exports = function (it) {
@@ -5442,11 +5943,11 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 270 */
+/* 277 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 9.4.2.3 ArraySpeciesCreate(originalArray, length)
-var speciesConstructor = __webpack_require__(271);
+var speciesConstructor = __webpack_require__(278);
 
 module.exports = function (original, length) {
   return new (speciesConstructor(original))(length);
@@ -5454,11 +5955,11 @@ module.exports = function (original, length) {
 
 
 /***/ }),
-/* 271 */
+/* 278 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(17);
-var isArray = __webpack_require__(272);
+var isArray = __webpack_require__(279);
 var SPECIES = __webpack_require__(39)('species');
 
 module.exports = function (original) {
@@ -5476,7 +5977,7 @@ module.exports = function (original) {
 
 
 /***/ }),
-/* 272 */
+/* 279 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.2.2 IsArray(argument)
@@ -5487,15 +5988,15 @@ module.exports = Array.isArray || function isArray(arg) {
 
 
 /***/ }),
-/* 273 */
+/* 280 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(274);
+__webpack_require__(281);
 module.exports = __webpack_require__(12).Array.findIndex;
 
 
 /***/ }),
-/* 274 */
+/* 281 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5516,15 +6017,15 @@ __webpack_require__(25)(KEY);
 
 
 /***/ }),
-/* 275 */
+/* 282 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(276);
+__webpack_require__(283);
 module.exports = __webpack_require__(12).Array.includes;
 
 
 /***/ }),
-/* 276 */
+/* 283 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5543,7 +6044,7 @@ __webpack_require__(25)('includes');
 
 
 /***/ }),
-/* 277 */
+/* 284 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var toInteger = __webpack_require__(38);
@@ -5556,33 +6057,33 @@ module.exports = function (index, length) {
 
 
 /***/ }),
-/* 278 */
+/* 285 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(279);
+__webpack_require__(286);
 module.exports = __webpack_require__(12).Object.assign;
 
 
 /***/ }),
-/* 279 */
+/* 286 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.3.1 Object.assign(target, source)
 var $export = __webpack_require__(16);
 
-$export($export.S + $export.F, 'Object', { assign: __webpack_require__(280) });
+$export($export.S + $export.F, 'Object', { assign: __webpack_require__(287) });
 
 
 /***/ }),
-/* 280 */
+/* 287 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
-var getKeys = __webpack_require__(281);
-var gOPS = __webpack_require__(285);
-var pIE = __webpack_require__(286);
+var getKeys = __webpack_require__(288);
+var gOPS = __webpack_require__(292);
+var pIE = __webpack_require__(293);
 var toObject = __webpack_require__(35);
 var IObject = __webpack_require__(24);
 var $assign = Object.assign;
@@ -5615,12 +6116,12 @@ module.exports = !$assign || __webpack_require__(22)((function () {
 
 
 /***/ }),
-/* 281 */
+/* 288 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.2.14 / 15.2.3.14 Object.keys(O)
-var $keys = __webpack_require__(282);
-var enumBugKeys = __webpack_require__(284);
+var $keys = __webpack_require__(289);
+var enumBugKeys = __webpack_require__(291);
 
 module.exports = Object.keys || function keys(O) {
   return $keys(O, enumBugKeys);
@@ -5628,13 +6129,13 @@ module.exports = Object.keys || function keys(O) {
 
 
 /***/ }),
-/* 282 */
+/* 289 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var has = __webpack_require__(31);
 var toIObject = __webpack_require__(42);
 var arrayIndexOf = __webpack_require__(41)(false);
-var IE_PROTO = __webpack_require__(283)('IE_PROTO');
+var IE_PROTO = __webpack_require__(290)('IE_PROTO');
 
 module.exports = function (object, names) {
   var O = toIObject(object);
@@ -5651,7 +6152,7 @@ module.exports = function (object, names) {
 
 
 /***/ }),
-/* 283 */
+/* 290 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var shared = __webpack_require__(40)('keys');
@@ -5662,7 +6163,7 @@ module.exports = function (key) {
 
 
 /***/ }),
-/* 284 */
+/* 291 */
 /***/ (function(module, exports) {
 
 // IE 8- don't enum bug keys
@@ -5672,21 +6173,21 @@ module.exports = (
 
 
 /***/ }),
-/* 285 */
+/* 292 */
 /***/ (function(module, exports) {
 
 exports.f = Object.getOwnPropertySymbols;
 
 
 /***/ }),
-/* 286 */
+/* 293 */
 /***/ (function(module, exports) {
 
 exports.f = {}.propertyIsEnumerable;
 
 
 /***/ }),
-/* 287 */
+/* 294 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5697,7 +6198,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.listenMessagesFromCreative = listenMessagesFromCreative;
 
-var _events = __webpack_require__(9);
+var _events = __webpack_require__(10);
 
 var _events2 = _interopRequireDefault(_events);
 
@@ -5745,7 +6246,7 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      (0, _native.fireNativeImpressions)(adObject);
+      (0, _native.fireNativeTrackers)(data, adObject);
       pbjs._winningBids.push(adObject);
       _events2['default'].emit(BID_WON, adObject);
     }
@@ -5787,7 +6288,7 @@ function resizeRemoteCreative(_ref) {
 }
 
 /***/ }),
-/* 288 */
+/* 295 */
 /***/ ((function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5852,629 +6353,18 @@ exports.dfpAdserver = function (options, urlComponents) {
 
 /***/ }))
 /******/ ]);
-pbjsChunk([92],{
-
-/***/ 67:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(68);
-
-
-/***/ }),
-
-/***/ 68:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidfactory2 = _interopRequireDefault(_bidfactory);
-
-var _bidmanager = __webpack_require__(2);
-
-var _bidmanager2 = _interopRequireDefault(_bidmanager);
-
-var _utils = __webpack_require__(0);
-
-var utils = _interopRequireWildcard(_utils);
-
-var _url = __webpack_require__(11);
-
-var _ajax = __webpack_require__(6);
-
-var _constants = __webpack_require__(4);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var AdyoulikeAdapter = function AdyoulikeAdapter() {
-  var _VERSION = '0.1';
-
-  var baseAdapter = new _adapter2['default']('adyoulike');
-
-  baseAdapter.callBids = function (bidRequest) {
-    var bidRequests = {};
-    var bids = bidRequest.bids || [];
-
-    var validBids = bids.filter(valid);
-    validBids.forEach((function (bid) {
-      bidRequests[bid.params.placement] = bid;
-    }));
-
-    var placements = validBids.map((function (bid) {
-      return bid.params.placement;
-    }));
-    if (!utils.isEmpty(placements)) {
-      var body = createBody(placements);
-      var endpoint = createEndpoint();
-      (0, _ajax.ajax)(endpoint, (function (response) {
-        handleResponse(bidRequests, response);
-      }), body, {
-        contentType: 'text/json',
-        withCredentials: true
-      });
-    }
-  };
-
-  /* Create endpoint url */
-  function createEndpoint() {
-    return (0, _url.format)({
-      protocol: document.location.protocol === 'https:' ? 'https' : 'http',
-      host: 'hb-api.omnitagjs.com',
-      pathname: '/hb-api/prebid',
-      search: createEndpointQS()
-    });
-  }
-
-  /* Create endpoint query string */
-  function createEndpointQS() {
-    var qs = {};
-
-    var ref = getReferrerUrl();
-    if (ref) {
-      qs.RefererUrl = encodeURIComponent(ref);
-    }
-
-    var can = getCanonicalUrl();
-    if (can) {
-      qs.CanonicalUrl = encodeURIComponent(can);
-    }
-
-    return qs;
-  }
-
-  /* Create request body */
-  function createBody(placements) {
-    var body = {
-      Version: _VERSION,
-      Placements: placements
-    };
-
-    // performance isn't supported by mobile safari iOS7. window.performance works, but
-    // evaluates to true on a unit test which expects false.
-    //
-    // try/catch was added to un-block the Prebid 0.25 release, but the adyoulike adapter
-    // maintainers should revisit this and see if it's really what they want.
-    try {
-      if (performance && performance.navigation) {
-        body.PageRefreshed = performance.navigation.type === performance.navigation.TYPE_RELOAD;
-      }
-    } catch (e) {
-      body.PageRefreshed = false;
-    }
-
-    return JSON.stringify(body);
-  }
-
-  /* Response handler */
-  function handleResponse(bidRequests, response) {
-    var responses = [];
-    try {
-      responses = JSON.parse(response);
-    } catch (error) {
-      utils.logError(error);
-    }
-
-    var bidResponses = {};
-    responses.forEach((function (response) {
-      bidResponses[response.Placement] = response;
-    }));
-
-    Object.keys(bidRequests).forEach((function (placement) {
-      addResponse(placement, bidRequests[placement], bidResponses[placement]);
-    }));
-  }
-
-  /* Check that a bid has required parameters */
-  function valid(bid) {
-    var sizes = getSize(bid.sizes);
-    if (!bid.params.placement || !sizes.width || !sizes.height) {
-      return false;
-    }
-    return true;
-  }
-
-  /* Get current page referrer url */
-  function getReferrerUrl() {
-    var referer = '';
-    if (window.self !== window.top) {
-      try {
-        referer = window.top.document.referrer;
-      } catch (e) {}
-    } else {
-      referer = document.referrer;
-    }
-    return referer;
-  }
-
-  /* Get current page canonical url */
-  function getCanonicalUrl() {
-    var link = void 0;
-    if (window.self !== window.top) {
-      try {
-        link = window.top.document.head.querySelector('link[rel="canonical"][href]');
-      } catch (e) {}
-    } else {
-      link = document.head.querySelector('link[rel="canonical"][href]');
-    }
-
-    if (link) {
-      return link.href;
-    }
-    return '';
-  }
-
-  /* Get parsed size from request size */
-  function getSize(requestSizes) {
-    var parsed = {};
-    var size = utils.parseSizesInput(requestSizes)[0];
-
-    if (typeof size !== 'string') {
-      return parsed;
-    }
-
-    var parsedSize = size.toUpperCase().split('X');
-    var width = parseInt(parsedSize[0], 10);
-    if (width) {
-      parsed.width = width;
-    }
-
-    var height = parseInt(parsedSize[1], 10);
-    if (height) {
-      parsed.height = height;
-    }
-
-    return parsed;
-  }
-
-  /* Create bid from response */
-  function createBid(placementId, bidRequest, response) {
-    var bid = void 0;
-    if (!response || !response.Banner) {
-      bid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID, bidRequest);
-    } else {
-      bid = _bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest);
-      var size = getSize(bidRequest.sizes);
-      bid.width = size.width;
-      bid.height = size.height;
-      bid.cpm = response.Price;
-      bid.ad = response.Banner;
-    }
-
-    bid.bidderCode = baseAdapter.getBidderCode();
-
-    return bid;
-  }
-
-  /* Add response to bidmanager */
-  function addResponse(placementId, bidRequest, response) {
-    var bid = createBid(placementId, bidRequest, response);
-    var placement = bidRequest.placementCode;
-    _bidmanager2['default'].addBidResponse(placement, bid);
-  }
-
-  return _extends(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
-  });
-};
-
-_adaptermanager2['default'].registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');
-
-module.exports = AdyoulikeAdapter;
-
-/***/ })
-
-},[67]);
-pbjsChunk([90],{
-
-/***/ 71:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(72);
-
-
-/***/ }),
-
-/***/ 72:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _templateObject = _taggedTemplateLiteral(['', '://', '/pubapi/3.0/', '/', '/', '/', '/ADTECH;v=2;cmd=bid;cors=yes;alias=', '', ';misc=', ''], ['', '://', '/pubapi/3.0/', '/', '/', '/', '/ADTECH;v=2;cmd=bid;cors=yes;alias=', '', ';misc=', '']),
-    _templateObject2 = _taggedTemplateLiteral(['', '://', '/bidRequest?'], ['', '://', '/bidRequest?']),
-    _templateObject3 = _taggedTemplateLiteral(['dcn=', '&pos=', '&cmd=bid', ''], ['dcn=', '&pos=', '&cmd=bid', '']);
-
-function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-var utils = __webpack_require__(0);
-var ajax = __webpack_require__(6).ajax;
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var constants = __webpack_require__(4);
-var adaptermanager = __webpack_require__(1);
-var BaseAdapter = __webpack_require__(7)['default'];
-
-var AOL_BIDDERS_CODES = {
-  aol: 'aol',
-  onemobile: 'onemobile',
-  onedisplay: 'onedisplay'
-};
-
-pbjs.aolGlobals = {
-  pixelsDropped: false
-};
-
-var AolAdapter = function AolAdapter() {
-  var showCpmAdjustmentWarning = true;
-  var pubapiTemplate = template(_templateObject, 'protocol', 'host', 'network', 'placement', 'pageid', 'sizeid', 'alias', 'bidfloor', 'misc');
-  var nexageBaseApiTemplate = template(_templateObject2, 'protocol', 'host');
-  var nexageGetApiTemplate = template(_templateObject3, 'dcn', 'pos', 'ext');
-  var MP_SERVER_MAP = {
-    us: 'adserver-us.adtech.advertising.com',
-    eu: 'adserver-eu.adtech.advertising.com',
-    as: 'adserver-as.adtech.advertising.com'
-  };
-  var NEXAGE_SERVER = 'hb.nexage.com';
-  var SYNC_TYPES = {
-    iframe: 'IFRAME',
-    img: 'IMG'
-  };
-
-  var domReady = (function () {
-    var readyEventFired = false;
-    return function (fn) {
-      var idempotentFn = function idempotentFn() {
-        if (readyEventFired) {
-          return;
-        }
-        readyEventFired = true;
-        return fn();
-      };
-
-      if (document.readyState === 'complete') {
-        return idempotentFn();
-      }
-
-      document.addEventListener('DOMContentLoaded', idempotentFn, false);
-      window.addEventListener('load', idempotentFn, false);
-    };
-  })();
-
-  function dropSyncCookies(pixels) {
-    if (!pbjs.aolGlobals.pixelsDropped) {
-      var pixelElements = parsePixelItems(pixels);
-      renderPixelElements(pixelElements);
-      pbjs.aolGlobals.pixelsDropped = true;
-    }
-  }
-
-  function parsePixelItems(pixels) {
-    var itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-    var tagNameRegExp = /\w*(?=\s)/;
-    var srcRegExp = /src=("|')(.*?)\1/;
-    var pixelsItems = [];
-
-    if (pixels) {
-      var matchedItems = pixels.match(itemsRegExp);
-      if (matchedItems) {
-        matchedItems.forEach((function (item) {
-          var tagNameMatches = item.match(tagNameRegExp);
-          var sourcesPathMatches = item.match(srcRegExp);
-          if (tagNameMatches && sourcesPathMatches) {
-            pixelsItems.push({
-              tagName: tagNameMatches[0].toUpperCase(),
-              src: sourcesPathMatches[2]
-            });
-          }
-        }));
-      }
-    }
-
-    return pixelsItems;
-  }
-
-  function renderPixelElements(pixelsElements) {
-    pixelsElements.forEach((function (element) {
-      switch (element.tagName) {
-        case SYNC_TYPES.img:
-          return renderPixelImage(element);
-        case SYNC_TYPES.iframe:
-          return renderPixelIframe(element);
-      }
-    }));
-  }
-
-  function renderPixelImage(pixelsItem) {
-    var image = new Image();
-    image.src = pixelsItem.src;
-  }
-
-  function renderPixelIframe(pixelsItem) {
-    var iframe = document.createElement('iframe');
-    iframe.width = 1;
-    iframe.height = 1;
-    iframe.style.display = 'none';
-    iframe.src = pixelsItem.src;
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
-      document.body.appendChild(iframe);
-    } else {
-      domReady((function () {
-        document.body.appendChild(iframe);
-      }));
-    }
-  }
-
-  function template(strings) {
-    for (var _len = arguments.length, keys = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      keys[_key - 1] = arguments[_key];
-    }
-
-    return function () {
-      for (var _len2 = arguments.length, values = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        values[_key2] = arguments[_key2];
-      }
-
-      var dict = values[values.length - 1] || {};
-      var result = [strings[0]];
-      keys.forEach((function (key, i) {
-        var value = Number.isInteger(key) ? values[key] : dict[key];
-        result.push(value, strings[i + 1]);
-      }));
-      return result.join('');
-    };
-  }
-
-  function _buildMarketplaceUrl(bid) {
-    var params = bid.params;
-    var serverParam = params.server;
-    var regionParam = params.region || 'us';
-    var server = void 0;
-
-    if (!MP_SERVER_MAP.hasOwnProperty(regionParam)) {
-      utils.logWarn('Unknown region \'' + regionParam + '\' for AOL bidder.');
-      regionParam = 'us'; // Default region.
-    }
-
-    if (serverParam) {
-      server = serverParam;
-    } else {
-      server = MP_SERVER_MAP[regionParam];
-    }
-
-    // Set region param, used by AOL analytics.
-    params.region = regionParam;
-
-    return pubapiTemplate({
-      protocol: document.location.protocol === 'https:' ? 'https' : 'http',
-      host: server,
-      network: params.network,
-      placement: parseInt(params.placement),
-      pageid: params.pageId || 0,
-      sizeid: params.sizeId || 0,
-      alias: params.alias || utils.getUniqueIdentifierStr(),
-      bidfloor: typeof params.bidFloor !== 'undefined' ? ';bidfloor=' + params.bidFloor.toString() : '',
-      misc: new Date().getTime() // cache busting
-    });
-  }
-
-  function _buildNexageApiUrl(bid) {
-    var _bid$params = bid.params,
-        dcn = _bid$params.dcn,
-        pos = _bid$params.pos;
-
-    var nexageApi = nexageBaseApiTemplate({
-      protocol: document.location.protocol === 'https:' ? 'https' : 'http',
-      host: bid.params.host || NEXAGE_SERVER
-    });
-    if (dcn && pos) {
-      var ext = '';
-      utils._each(bid.params.ext, (function (value, key) {
-        ext += '&' + key + '=' + encodeURIComponent(value);
-      }));
-      nexageApi += nexageGetApiTemplate({ dcn: dcn, pos: pos, ext: ext });
-    }
-    return nexageApi;
-  }
-
-  function _addErrorBidResponse(bid) {
-    var response = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    var bidResponse = bidfactory.createBid(2, bid);
-    bidResponse.bidderCode = bid.bidder;
-    bidResponse.reason = response.nbr;
-    bidResponse.raw = response;
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  function _addBidResponse(bid, response) {
-    var bidData = void 0;
-
-    try {
-      bidData = response.seatbid[0].bid[0];
-    } catch (e) {
-      _addErrorBidResponse(bid, response);
-      return;
-    }
-
-    var cpm = void 0;
-
-    if (bidData.ext && bidData.ext.encp) {
-      cpm = bidData.ext.encp;
-    } else {
-      cpm = bidData.price;
-
-      if (cpm === null || isNaN(cpm)) {
-        utils.logError('Invalid price in bid response', AOL_BIDDERS_CODES.aol, bid);
-        _addErrorBidResponse(bid, response);
-        return;
-      }
-    }
-
-    var ad = bidData.adm;
-    if (response.ext && response.ext.pixels) {
-      if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
-        dropSyncCookies(response.ext.pixels);
-      } else {
-        var formattedPixels = response.ext.pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
-
-        ad += '<script>if(!parent.pbjs.aolGlobals.pixelsDropped){' + 'parent.pbjs.aolGlobals.pixelsDropped=true;' + formattedPixels + '}</script>';
-      }
-    }
-
-    var bidResponse = bidfactory.createBid(1, bid);
-    bidResponse.bidderCode = bid.bidder;
-    bidResponse.ad = ad;
-    bidResponse.cpm = cpm;
-    bidResponse.width = bidData.w;
-    bidResponse.height = bidData.h;
-    bidResponse.creativeId = bidData.crid;
-    bidResponse.pubapiId = response.id;
-    bidResponse.currencyCode = response.cur;
-    if (bidData.dealid) {
-      bidResponse.dealId = bidData.dealid;
-    }
-
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  function _isMarketplaceBidder(bidder) {
-    return bidder === AOL_BIDDERS_CODES.aol || bidder === AOL_BIDDERS_CODES.onedisplay;
-  }
-
-  function _isNexageBidder(bidder) {
-    return bidder === AOL_BIDDERS_CODES.aol || bidder === AOL_BIDDERS_CODES.onemobile;
-  }
-
-  function _isNexageRequestPost(bid) {
-    if (_isNexageBidder(bid.bidder) && bid.params.id && bid.params.imp && bid.params.imp[0]) {
-      var imp = bid.params.imp[0];
-      return imp.id && imp.tagid && (imp.banner && imp.banner.w && imp.banner.h || imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration);
-    }
-  }
-
-  function _isNexageRequestGet(bid) {
-    return _isNexageBidder(bid.bidder) && bid.params.dcn && bid.params.pos;
-  }
-
-  function _isMarketplaceRequest(bid) {
-    return _isMarketplaceBidder(bid.bidder) && bid.params.placement && bid.params.network;
-  }
-
-  function _callBids(params) {
-    utils._each(params.bids, (function (bid) {
-      var apiUrl = void 0;
-      var data = null;
-      var options = {
-        withCredentials: true
-      };
-      var isNexageRequestPost = _isNexageRequestPost(bid);
-      var isNexageRequestGet = _isNexageRequestGet(bid);
-      var isMarketplaceRequest = _isMarketplaceRequest(bid);
-
-      if (isNexageRequestGet || isNexageRequestPost) {
-        apiUrl = _buildNexageApiUrl(bid);
-        if (isNexageRequestPost) {
-          data = bid.params;
-          options.customHeaders = {
-            'x-openrtb-version': '2.2'
-          };
-          options.method = 'POST';
-          options.contentType = 'application/json';
-        }
-      } else if (isMarketplaceRequest) {
-        apiUrl = _buildMarketplaceUrl(bid);
-      }
-
-      if (apiUrl) {
-        ajax(apiUrl, (function (response) {
-          // Needs to be here in case bidderSettings are defined after requestBids() is called
-          if (showCpmAdjustmentWarning && pbjs.bidderSettings && pbjs.bidderSettings.aol && typeof pbjs.bidderSettings.aol.bidCpmAdjustment === 'function') {
-            utils.logWarn('bidCpmAdjustment is active for the AOL adapter. ' + 'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.');
-          }
-          showCpmAdjustmentWarning = false; // warning is shown at most once
-
-          if (!response && response.length <= 0) {
-            utils.logError('Empty bid response', AOL_BIDDERS_CODES.aol, bid);
-            _addErrorBidResponse(bid, response);
-            return;
-          }
-
-          try {
-            response = JSON.parse(response);
-          } catch (e) {
-            utils.logError('Invalid JSON in bid response', AOL_BIDDERS_CODES.aol, bid);
-            _addErrorBidResponse(bid, response);
-            return;
-          }
-
-          _addBidResponse(bid, response);
-        }), data, options);
-      }
-    }));
-  }
-
-  return _extends(this, new BaseAdapter(AOL_BIDDERS_CODES.aol), {
-    callBids: _callBids
-  });
-};
-
-adaptermanager.registerBidAdapter(new AolAdapter(), AOL_BIDDERS_CODES.aol);
-adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onedisplay);
-adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onemobile);
-
-module.exports = AolAdapter;
-
-/***/ })
-
-},[71]);
 pbjsChunk([0],{
 
-/***/ 75:
+/***/ 79:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(76);
+__webpack_require__(80);
+module.exports = __webpack_require__(82);
 
 
 /***/ }),
 
-/***/ 76:
+/***/ 80:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6495,9 +6385,9 @@ var _utils = __webpack_require__(0);
 
 var utils = _interopRequireWildcard(_utils);
 
-var _bidderFactory = __webpack_require__(77);
+var _bidderFactory = __webpack_require__(15);
 
-var _mediaTypes = __webpack_require__(78);
+var _mediaTypes = __webpack_require__(81);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -6513,11 +6403,13 @@ var NATIVE_MAPPING = {
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] }
   },
   icon: {
     serverName: 'icon',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] }
   },
   sponsoredBy: 'sponsored_by'
 };
@@ -6543,7 +6435,7 @@ var spec = exports.spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function buildRequests(bidRequests) {
+  buildRequests: function buildRequests(bidRequests, bidderRequest) {
     var tags = bidRequests.map(bidToTag);
     var userObjBid = bidRequests.find(hasUserInfo);
     var userObj = void 0;
@@ -6564,7 +6456,7 @@ var spec = exports.spec = {
       user: userObj,
       sdk: {
         source: SOURCE,
-        version: '0.29.0'
+        version: '0.31.0'
       }
     };
     if (member > 0) {
@@ -6574,7 +6466,8 @@ var spec = exports.spec = {
     return {
       method: 'POST',
       url: URL,
-      data: payloadString
+      data: payloadString,
+      bidderRequest: bidderRequest
     };
   },
 
@@ -6584,18 +6477,31 @@ var spec = exports.spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function interpretResponse(serverResponse) {
+  interpretResponse: function interpretResponse(serverResponse, _ref) {
+    var bidderRequest = _ref.bidderRequest;
+
     var bids = [];
-    serverResponse.tags.forEach((function (serverBid) {
-      var rtbBid = getRtbBid(serverBid);
-      if (rtbBid) {
-        if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
-          var bid = newBid(serverBid, rtbBid);
-          bid.mediaType = parseMediaType(rtbBid);
-          bids.push(bid);
-        }
+    if (!serverResponse || serverResponse.error) {
+      var errorMessage = 'in response for ' + bidderRequest.bidderCode + ' adapter';
+      if (serverResponse && serverResponse.error) {
+        errorMessage += ': ' + serverResponse.error;
       }
-    }));
+      utils.logError(errorMessage);
+      return bids;
+    }
+
+    if (serverResponse.tags) {
+      serverResponse.tags.forEach((function (serverBid) {
+        var rtbBid = getRtbBid(serverBid);
+        if (rtbBid) {
+          if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
+            var bid = newBid(serverBid, rtbBid);
+            bid.mediaType = parseMediaType(rtbBid);
+            bids.push(bid);
+          }
+        }
+      }));
+    }
     return bids;
   },
 
@@ -6696,17 +6602,18 @@ function newBid(serverBid, rtbBid) {
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb.native) {
-    var native = rtbBid.rtb.native;
-    bid.native = {
-      title: native.title,
-      body: native.desc,
-      cta: native.ctatext,
-      sponsoredBy: native.sponsored,
-      image: native.main_img && native.main_img.url,
-      icon: native.icon && native.icon.url,
-      clickUrl: native.link.url,
-      impressionTrackers: native.impression_trackers
+  } else if (rtbBid.rtb['native']) {
+    var nativeAd = rtbBid.rtb['native'];
+    bid['native'] = {
+      title: nativeAd.title,
+      body: nativeAd.desc,
+      cta: nativeAd.ctatext,
+      sponsoredBy: nativeAd.sponsored,
+      image: nativeAd.main_img && nativeAd.main_img.url,
+      icon: nativeAd.icon && nativeAd.icon.url,
+      clickUrl: nativeAd.link.url,
+      clickTrackers: nativeAd.link.click_trackers,
+      impressionTrackers: nativeAd.impression_trackers
     };
   } else {
     _extends(bid, {
@@ -6767,27 +6674,12 @@ function bidToTag(bid) {
     tag.keywords = getKeywords(bid.params.keywords);
   }
 
-  if (bid.mediaType === 'native') {
+  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
     tag.ad_types = ['native'];
 
     if (bid.nativeParams) {
-      var nativeRequest = {};
-
-      // map standard prebid native asset identifier to /ut parameters
-      // e.g., tag specifies `body` but /ut only knows `description`
-      // mapping may be in form {tag: '<server name>'} or
-      // {tag: {serverName: '<server name>', serverParams: {...}}}
-      Object.keys(bid.nativeParams).forEach((function (key) {
-        // check if one of the <server name> forms is used, otherwise
-        // a mapping wasn't specified so pass the key straight through
-        var requestKey = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName || NATIVE_MAPPING[key] || key;
-
-        // if the mapping for this identifier specifies required server
-        // params via the `serverParams` object, merge that in
-        nativeRequest[requestKey] = _extends({}, NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams, bid.nativeParams[key]);
-      }));
-
-      tag.native = { layouts: [nativeRequest] };
+      var nativeRequest = buildNativeRequest(bid.nativeParams);
+      tag['native'] = { layouts: [nativeRequest] };
     }
   }
 
@@ -6847,6 +6739,43 @@ function getRtbBid(tag) {
   }));
 }
 
+function buildNativeRequest(params) {
+  var request = {};
+
+  // map standard prebid native asset identifier to /ut parameters
+  // e.g., tag specifies `body` but /ut only knows `description`.
+  // mapping may be in form {tag: '<server name>'} or
+  // {tag: {serverName: '<server name>', requiredParams: {...}}}
+  Object.keys(params).forEach((function (key) {
+    // check if one of the <server name> forms is used, otherwise
+    // a mapping wasn't specified so pass the key straight through
+    var requestKey = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName || NATIVE_MAPPING[key] || key;
+
+    // required params are always passed on request
+    var requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
+    request[requestKey] = _extends({}, requiredParams, params[key]);
+
+    // minimum params are passed if no non-required params given on adunit
+    var minimumParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].minimumParams;
+
+    if (requiredParams && minimumParams) {
+      // subtract required keys from adunit keys
+      var adunitKeys = Object.keys(params[key]);
+      var requiredKeys = Object.keys(requiredParams);
+      var remaining = adunitKeys.filter((function (key) {
+        return !requiredKeys.includes(key);
+      }));
+
+      // if none are left over, the minimum params needs to be sent
+      if (remaining.length === 0) {
+        request[requestKey] = _extends({}, request[requestKey], minimumParams);
+      }
+    }
+  }));
+
+  return request;
+}
+
 function outstreamRender(bid) {
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push((function () {
@@ -6880,343 +6809,7 @@ function parseMediaType(rtbBid) {
 
 /***/ }),
 
-/***/ 77:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-exports.registerBidder = registerBidder;
-exports.newBidder = newBidder;
-
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-var _config = __webpack_require__(8);
-
-var _ajax = __webpack_require__(6);
-
-var _bidmanager = __webpack_require__(2);
-
-var _bidmanager2 = _interopRequireDefault(_bidmanager);
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidfactory2 = _interopRequireDefault(_bidfactory);
-
-var _constants = __webpack_require__(4);
-
-var _userSync = __webpack_require__(15);
-
-var _utils = __webpack_require__(0);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-/**
- * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
- *
- * Prebid 1.x and Prebid 0.x will be in separate branches--perhaps for a long time.
- * This function defines an API for adapter construction which is compatible with both versions.
- * Adapters which use it can maintain their code in master, and only this file will need to change
- * in the 1.x branch.
- *
- * Typical usage looks something like:
- *
- * const adapter = registerBidder({
- *   code: 'myBidderCode',
- *   aliases: ['alias1', 'alias2'],
- *   supportedMediaTypes: ['video', 'native'],
- *   isBidRequestValid: function(paramsObject) { return true/false },
- *   buildRequests: function(bidRequests) { return some ServerRequest(s) },
- *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
- * });
- *
- * @see BidderSpec for the full API and more thorough descriptions.
- */
-
-/**
- * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
- * make a Bidder.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
- * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
- * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
- *   needed to make a valid request.
- * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
- *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   passed the isBidRequestValid() test.
- * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
- *   interpret it and return the Bid objects. This function will be run inside a try/catch.
- *   If it throws any errors, your bids will be discarded.
- * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
- *   from the server, determine which user syncs should occur. The argument array will contain every element
- *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
- *   important ones should come first, since publishers may limit how many are dropped on their page.
- */
-
-/**
- * @typedef {object} BidRequest
- *
- * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- */
-
-/**
- * @typedef {object} ServerRequest
- *
- * @property {('GET'|'POST')} method The type of request which this is.
- * @property {string} url The endpoint for the request. For example, "//bids.example.com".
- * @property {string|object} data Data to be sent in the request.
- *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
- *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
- *   JSON-serialized into the Request body.
- */
-
-/**
- * @typedef {object} Bid
- *
- * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should correspond to one of the
- * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @property {string} currency The currency code for the cpm value
- * @property {number} cpm The bid price, in US cents per thousand impressions.
- * @property {number} height The height of the ad, in pixels.
- * @property {number} width The width of the ad, in pixels.
- *
- * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
- *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
- */
-
-/**
- * @typedef {Object} SyncOptions
- *
- * An object containing information about usersyncs which the adapter should obey.
- *
- * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
- * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
- */
-
-/**
- * TODO: Move this to the UserSync module after that PR is merged.
- *
- * @typedef {object} UserSync
- *
- * @property {('image'|'iframe')} type The type of user sync to be done.
- * @property {string} url The URL which makes the sync happen.
- */
-
-/**
- * Register a bidder with prebid, using the given spec.
- *
- * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
- *
- * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
- */
-function registerBidder(spec) {
-  var mediaTypes = Array.isArray(spec.supportedMediaTypes) ? { supportedMediaTypes: spec.supportedMediaTypes } : undefined;
-  function putBidder(spec) {
-    var bidder = newBidder(spec);
-    _adaptermanager2['default'].registerBidAdapter(bidder, spec.code, mediaTypes);
-  }
-
-  putBidder(spec);
-  if (Array.isArray(spec.aliases)) {
-    spec.aliases.forEach((function (alias) {
-      putBidder(_extends({}, spec, { code: alias }));
-    }));
-  }
-}
-
-/**
- * Make a new bidder from the given spec. This is exported mainly for testing.
- * Adapters will probably find it more convenient to use registerBidder instead.
- *
- * @param {BidderSpec} spec
- */
-function newBidder(spec) {
-  return _extends(new _adapter2['default'](spec.code), {
-    callBids: function callBids(bidderRequest) {
-      if (!Array.isArray(bidderRequest.bids)) {
-        return;
-      }
-
-      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
-      // end properly. This map stores placement codes which we've made _real_ bids on.
-      //
-      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
-      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
-      // will end the auction.
-      //
-      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
-      var adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
-        adUnitCodesHandled[adUnitCode] = true;
-        _bidmanager2['default'].addBidResponse(adUnitCode, bid);
-      }
-      function fillNoBids() {
-        bidderRequest.bids.map((function (bidRequest) {
-          return bidRequest.placementCode;
-        })).forEach((function (adUnitCode) {
-          if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-            _bidmanager2['default'].addBidResponse(adUnitCode, newEmptyBid());
-          }
-        }));
-      }
-
-      // After all the responses have come back, fill up the "no bid" bids and
-      // register any required usersync pixels.
-      var responses = [];
-      function afterAllResponses() {
-        fillNoBids();
-        if (spec.getUserSyncs) {
-          var syncs = spec.getUserSyncs({
-            iframeEnabled: _config.config.getConfig('userSync.iframeEnabled'),
-            pixelEnabled: _config.config.getConfig('userSync.pixelEnabled')
-          }, responses);
-          if (syncs) {
-            if (!Array.isArray(syncs)) {
-              syncs = [syncs];
-            }
-            syncs.forEach((function (sync) {
-              _userSync.userSync.registerSync(sync.type, spec.code, sync.url);
-            }));
-          }
-        }
-      }
-
-      var bidRequests = bidderRequest.bids.filter(filterAndWarn);
-      if (bidRequests.length === 0) {
-        afterAllResponses();
-        return;
-      }
-      var bidRequestMap = {};
-      bidRequests.forEach((function (bid) {
-        bidRequestMap[bid.bidId] = bid;
-      }));
-
-      var requests = spec.buildRequests(bidRequests, bidderRequest);
-      if (!requests || requests.length === 0) {
-        afterAllResponses();
-        return;
-      }
-      if (!Array.isArray(requests)) {
-        requests = [requests];
-      }
-
-      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
-      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
-      // we need to rig up a function which only executes after all the requests have been responded.
-      var onResponse = (0, _utils.delayExecution)(afterAllResponses, requests.length);
-      requests.forEach(processRequest);
-
-      function processRequest(request) {
-        switch (request.method) {
-          case 'GET':
-            (0, _ajax.ajax)(request.url + '?' + (_typeof(request.data) === 'object' ? (0, _utils.parseQueryStringParameters)(request.data) : request.data), {
-              success: onSuccess,
-              error: onFailure
-            }, undefined, {
-              method: 'GET',
-              withCredentials: true
-            });
-            break;
-          case 'POST':
-            (0, _ajax.ajax)(request.url, {
-              success: onSuccess,
-              error: onFailure
-            }, typeof request.data === 'string' ? request.data : JSON.stringify(request.data), {
-              method: 'POST',
-              contentType: 'text/plain',
-              withCredentials: true
-            });
-            break;
-          default:
-            (0, _utils.logWarn)('Skipping invalid request from ' + spec.code + '. Request type ' + request.type + ' must be GET or POST');
-            onResponse();
-        }
-
-        // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
-        function onSuccess(response) {
-          try {
-            response = JSON.parse(response);
-          } catch (e) {/* response might not be JSON... that's ok. */}
-          responses.push(response);
-
-          var bids = void 0;
-          try {
-            bids = spec.interpretResponse(response, request);
-          } catch (err) {
-            (0, _utils.logError)('Bidder ' + spec.code + ' failed to interpret the server\'s response. Continuing without bids', null, err);
-            onResponse();
-            return;
-          }
-
-          if (bids) {
-            if (bids.forEach) {
-              bids.forEach(addBidUsingRequestMap);
-            } else {
-              addBidUsingRequestMap(bids);
-            }
-          }
-          onResponse();
-
-          function addBidUsingRequestMap(bid) {
-            var bidRequest = bidRequestMap[bid.requestId];
-            if (bidRequest) {
-              var prebidBid = _extends(_bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.placementCode, prebidBid);
-            } else {
-              (0, _utils.logWarn)('Bidder ' + spec.code + ' made bid for unknown request ID: ' + bid.requestId + '. Ignoring.');
-            }
-          }
-        }
-
-        // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling fillNoBids().
-        function onFailure(err) {
-          (0, _utils.logError)('Server call for ' + spec.code + ' failed: ' + err + '. Continuing without bids.');
-          onResponse();
-        }
-      }
-    }
-  });
-
-  function filterAndWarn(bid) {
-    if (!spec.isBidRequestValid(bid)) {
-      (0, _utils.logWarn)('Invalid bid sent to bidder ' + spec.code + ': ' + JSON.stringify(bid));
-      return false;
-    }
-    return true;
-  }
-
-  function newEmptyBid() {
-    var bid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID);
-    bid.code = spec.code;
-    bid.bidderCode = spec.code;
-    return bid;
-  }
-}
-
-/***/ }),
-
-/***/ 78:
+/***/ 81:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7243,587 +6836,27 @@ var VIDEO = exports.VIDEO = 'video';
 /** @type MediaType */
 var BANNER = exports.BANNER = 'banner';
 
+/***/ }),
+
+/***/ 82:
+/***/ (function(module, exports) {
+
+
+
 /***/ })
 
-},[75]);
-pbjsChunk([87],{
+},[79]);
+pbjsChunk([66],{
 
-/***/ 83:
+/***/ 138:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(84);
+module.exports = __webpack_require__(139);
 
 
 /***/ }),
 
-/***/ 84:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /**
-                                                                                                                                                                                                                                                                               * @file AudienceNetwork adapter.
-                                                                                                                                                                                                                                                                               */
-
-
-var _ajax = __webpack_require__(6);
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidmanager = __webpack_require__(2);
-
-var _constants = __webpack_require__(4);
-
-var _url = __webpack_require__(11);
-
-var _utils = __webpack_require__(0);
-
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _ref = new _adapter2['default']('audienceNetwork'),
-    setBidderCode = _ref.setBidderCode,
-    getBidderCode = _ref.getBidderCode;
-
-/**
- * Does this bid request contain valid parameters?
- * @param {Object} bid
- * @returns {Boolean}
- */
-
-
-var validateBidRequest = function validateBidRequest(bid) {
-  return _typeof(bid.params) === 'object' && typeof bid.params.placementId === 'string' && bid.params.placementId.length > 0 && Array.isArray(bid.sizes) && bid.sizes.length > 0 && (isVideo(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
-};
-
-/**
- * Flattens a 2-element [W, H] array as a 'WxH' string,
- * otherwise passes value through.
- * @param {Array|String} size
- * @returns {String}
- */
-var flattenSize = function flattenSize(size) {
-  return Array.isArray(size) && size.length === 2 ? size[0] + 'x' + size[1] : size;
-};
-
-/**
- * Expands a 'WxH' string as a 2-element [W, H] array
- * @param {String} size
- * @returns {Array}
- */
-var expandSize = function expandSize(size) {
-  return size.split('x').map(Number);
-};
-
-/**
- * Is this a valid slot size?
- * @param {String} size
- * @returns {Boolean}
- */
-var isValidSize = function isValidSize(size) {
-  return ['300x250', '320x50'].includes(size);
-};
-
-/**
- * Is this a video format?
- * @param {String} format
- * @returns {Boolean}
- */
-var isVideo = function isVideo(format) {
-  return format === 'video';
-};
-
-/**
- * Which SDK version should be used for this format?
- * @param {String} format
- * @returns {String}
- */
-var sdkVersion = function sdkVersion(format) {
-  return isVideo(format) ? '' : '5.5.web';
-};
-
-/**
- * Does the search part of the URL contain "anhb_testmode"
- * and therefore indicate testmode should be used?
- * @returns {String} "true" or "false"
- */
-var isTestmode = function isTestmode() {
-  return Boolean(window && window.location && typeof window.location.search === 'string' && window.location.search.indexOf('anhb_testmode') !== -1).toString();
-};
-
-/**
- * Parse JSON-as-string into an Object, default to empty.
- * @param {String} JSON-as-string
- * @returns {Object}
- */
-var parseJson = function parseJson(jsonAsString) {
-  var data = {};
-  try {
-    data = JSON.parse(jsonAsString);
-  } catch (err) {}
-  return data;
-};
-
-/**
- * Generate ad HTML for injection into an iframe
- * @param {String} placementId
- * @param {String} format
- * @param {String} bidId
- * @returns {String} HTML
- */
-var createAdHtml = function createAdHtml(placementId, format, bidId) {
-  var nativeStyle = format === 'native' ? '<script>window.onload=function(){if(parent){var o=document.getElementsByTagName("head")[0];var s=parent.document.getElementsByTagName("style");for(var i=0;i<s.length;i++)o.appendChild(s[i].cloneNode(true));}}</script>' : '';
-  var nativeContainer = format === 'native' ? '<div class="thirdPartyRoot"><a class="fbAdLink"><div class="fbAdMedia thirdPartyMediaClass"></div><div class="fbAdSubtitle thirdPartySubtitleClass"></div><div class="fbDefaultNativeAdWrapper"><div class="fbAdCallToAction thirdPartyCallToActionClass"></div><div class="fbAdTitle thirdPartyTitleClass"></div></div></a></div>' : '';
-  return '<html><head>' + nativeStyle + '</head><body><div style="display:none;position:relative;">\n<script type=\'text/javascript\'>var data = {placementid:\'' + placementId + '\',format:\'' + format + '\',bidid:\'' + bidId + '\',onAdLoaded:function(e){console.log(\'Audience Network [' + placementId + '] ad loaded\');e.style.display = \'block\';},onAdError:function(c,m){console.log(\'Audience Network [' + placementId + '] error (\' + c + \') \' + m);}};\n(function(a,b,c){var d=\'https://www.facebook.com\',e=\'https://connect.facebook.net/en_US/fbadnw55.js\',f={iframeLoaded:true,xhrLoaded:true},g=a.data,h=function(){if(Date.now){return Date.now();}else return +new Date();},i=function(aa){var ba=d+\'/audience_network/client_event\',ca={cb:h(),event_name:\'ADNW_ADERROR\',ad_pivot_type:\'audience_network_mobile_web\',sdk_version:\'5.5.web\',app_id:g.placementid.split(\'_\')[0],publisher_id:g.placementid.split(\'_\')[1],error_message:aa},da=[];for(var ea in ca)da.push(encodeURIComponent(ea)+\'=\'+encodeURIComponent(ca[ea]));var fa=ba+\'?\'+da.join(\'&\'),ga=new XMLHttpRequest();ga.open(\'GET\',fa,true);ga.send();if(g.onAdError)g.onAdError(\'1000\',\'Internal error.\');},j=function(){if(b.currentScript){return b.currentScript;}else{var aa=b.getElementsByTagName(\'script\');return aa[aa.length-1];}},k=function(aa){try{return aa.document.referrer;}catch(ba){}return \'\';},l=function(){var aa=a,ba=[aa];try{while(aa!==aa.parent&&aa.parent.document)ba.push(aa=aa.parent);}catch(ca){}return ba.reverse();},m=function(){var aa=l();for(var ba=0;ba<aa.length;ba++){var ca=aa[ba],da=ca.ADNW||{};ca.ADNW=da;if(!ca.ADNW)continue;return da.v55=da.v55||{ads:[],window:ca};}throw new Error(\'no_writable_global\');},n=function(aa){var ba=aa.indexOf(\'/\',aa.indexOf(\'://\')+3);if(ba===-1)return aa;return aa.substring(0,ba);},o=function(aa){return aa.location.href||k(aa);},p=function(aa){if(aa.sdkLoaded)return;var ba=aa.window.document,ca=ba.createElement(\'iframe\');ca.name=\'fbadnw\';ca.style.display=\'none\';ba.body.appendChild(ca);var da=ca.contentDocument.createElement(\'script\');da.src=e;da.async=true;ca.contentDocument.body.appendChild(da);aa.sdkLoaded=true;},q=function(aa){var ba=/^https?:\\/\\/www\\.google(\\.com?)?\\.\\w{2,3}$/;return !!aa.match(ba);},r=function(aa){return !!aa.match(/cdn\\.ampproject\\.org$/);},s=function(){var aa=c.ancestorOrigins||[],ba=aa[aa.length-1]||c.origin,ca=aa[aa.length-2]||c.origin;if(q(ba)&&r(ca)){return n(ca);}else return n(ba);},t=function(aa){try{return JSON.parse(aa);}catch(ba){i(ba.message);throw ba;}},u=function(aa,ba,ca){if(!aa.iframe){var da=ca.createElement(\'iframe\');da.src=d+\'/audiencenetwork/iframe/\';da.style.display=\'none\';ca.body.appendChild(da);aa.iframe=da;aa.iframeAppendedTime=h();aa.iframeData={};}ba.iframe=aa.iframe;ba.iframeData=aa.iframeData;ba.tagJsIframeAppendedTime=aa.iframeAppendedTime||0;},v=function(aa){var ba=d+\'/audiencenetwork/xhr/?sdk=5.5.web\';for(var ca in aa)if(typeof aa[ca]!==\'function\')ba+=\'&\'+ca+\'=\'+encodeURIComponent(aa[ca]);var da=new XMLHttpRequest();da.open(\'GET\',ba,true);da.withCredentials=true;da.onreadystatechange=function(){if(da.readyState===4){var ea=t(da.response);aa.events.push({name:\'xhrLoaded\',source:aa.iframe.contentWindow,data:ea,postMessageTimestamp:h(),receivedTimestamp:h()});}};da.send();},w=function(aa,ba){var ca=d+\'/audiencenetwork/xhriframe/?sdk=5.5.web\';for(var da in ba)if(typeof ba[da]!==\'function\')ca+=\'&\'+da+\'=\'+encodeURIComponent(ba[da]);var ea=b.createElement(\'iframe\');ea.src=ca;ea.style.display=\'none\';b.body.appendChild(ea);ba.iframe=ea;ba.iframeData={};ba.tagJsIframeAppendedTime=h();},x=function(aa){var ba=function(event){try{var da=event.data;if(da.name in f)aa.events.push({name:da.name,source:event.source,data:da.data});}catch(ea){}},ca=aa.iframe.contentWindow.parent;ca.addEventListener(\'message\',ba,false);},y=function(aa){if(aa.context&&aa.context.sourceUrl)return true;try{return !!JSON.parse(decodeURI(aa.name)).ampcontextVersion;}catch(ba){return false;}},z=function(aa){var ba=h(),ca=l()[0],da=j().parentElement,ea=ca!=a.top,fa=ca.$sf&&ca.$sf.ext,ga=o(ca),ha=m();p(ha);var ia={amp:y(ca),events:[],tagJsInitTime:ba,rootElement:da,iframe:null,tagJsIframeAppendedTime:ha.iframeAppendedTime||0,url:ga,domain:s(),channel:n(o(ca)),width:screen.width,height:screen.height,pixelratio:a.devicePixelRatio,placementindex:ha.ads.length,crossdomain:ea,safeframe:!!fa,placementid:g.placementid,format:g.format||\'300x250\',testmode:!!g.testmode,onAdLoaded:g.onAdLoaded,onAdError:g.onAdError};if(g.bidid)ia.bidid=g.bidid;if(ea){w(ha,ia);}else{u(ha,ia,ca.document);v(ia);}; x(ia);ia.rootElement.dataset.placementid=ia.placementid;ha.ads.push(ia);};try{z();}catch(aa){i(aa.message||aa);throw aa;}})(window,document,location);\n</script>\n' + nativeContainer + '</div></body></html>';
-};
-
-/**
- * Creates a "good" Bid object with the given bid ID and CPM.
- * @param {String} placementId
- * @param {String} size
- * @param {String} format
- * @param {String} bidId
- * @param {Number} cpmCents
- * @param {String} pageurl
- * @returns {Object} Bid
- */
-var createSuccessBidResponse = function createSuccessBidResponse(placementId, size, format, bidId, cpmCents, pageurl) {
-  var bid = (0, _bidfactory.createBid)(_constants.STATUS.GOOD, { bidId: bidId });
-  // Prebid attributes
-  bid.bidderCode = getBidderCode();
-  bid.cpm = cpmCents / 100;
-  bid.ad = createAdHtml(placementId, format, bidId);
-
-  // Audience Network attributes
-  var _expandSize = expandSize(size);
-
-  var _expandSize2 = _slicedToArray(_expandSize, 2);
-
-  bid.width = _expandSize2[0];
-  bid.height = _expandSize2[1];
-  bid.hb_bidder = 'fan';
-  bid.fb_bidid = bidId;
-  bid.fb_format = format;
-  bid.fb_placementid = placementId;
-  // Video attributes
-  if (isVideo(format)) {
-    var vast = 'https://an.facebook.com/v1/instream/vast.xml?placementid=' + placementId + '&pageurl=' + pageurl + '&playerwidth=' + bid.width + '&playerheight=' + bid.height + '&bidid=' + bidId;
-    bid.mediaType = 'video';
-    bid.vastUrl = vast;
-    bid.descriptionUrl = vast;
-  }
-  return bid;
-};
-
-/**
- * Creates a "no bid" Bid object.
- * @returns {Object} Bid
- */
-var createFailureBidResponse = function createFailureBidResponse() {
-  var bid = (0, _bidfactory.createBid)(_constants.STATUS.NO_BID);
-  bid.bidderCode = getBidderCode();
-  return bid;
-};
-
-/**
- * Fetch bids for given parameters.
- * @param {Object} bidRequest
- * @param {Array} params.bids - list of bids
- * @param {String} params.bids[].placementCode - Prebid placement identifier
- * @param {Object} params.bids[].params
- * @param {String} params.bids[].params.placementId - Audience Network placement identifier
- * @param {String} params.bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
- * @param {Array} params.bids[].sizes - list of desired advert sizes
- * @param {Array} params.bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
- * @returns {void}
- */
-var callBids = function callBids(bidRequest) {
-  // Build lists of adUnitCodes, placementids, adformats and sizes
-  var adUnitCodes = [];
-  var placementids = [];
-  var adformats = [];
-  var sizes = [];
-  var sdk = [];
-
-  bidRequest.bids.filter(validateBidRequest).forEach((function (bid) {
-    return bid.sizes.map(flattenSize).filter((function (size) {
-      return isValidSize(size) || isVideo(bid.params.format);
-    })).slice(0, 1).forEach((function (size) {
-      adUnitCodes.push(bid.placementCode);
-      placementids.push(bid.params.placementId);
-      adformats.push(bid.params.format || size);
-      sizes.push(size);
-      sdk.push(sdkVersion(bid.params.format));
-    }));
-  }));
-
-  if (placementids.length) {
-    // Build URL
-    var testmode = isTestmode();
-    var pageurl = encodeURIComponent(location.href);
-    var search = {
-      placementids: placementids,
-      adformats: adformats,
-      testmode: testmode,
-      pageurl: pageurl,
-      sdk: sdk
-    };
-    var video = adformats.findIndex(isVideo);
-    if (video !== -1) {
-      var _expandSize3 = expandSize(sizes[video]);
-
-      var _expandSize4 = _slicedToArray(_expandSize3, 2);
-
-      search.playerwidth = _expandSize4[0];
-      search.playerheight = _expandSize4[1];
-    }
-    var url = (0, _url.format)({
-      protocol: 'https',
-      host: 'an.facebook.com',
-      pathname: '/v2/placementbid.json',
-      search: search
-    });
-    // Request
-    (0, _ajax.ajax)(url, (function (res) {
-      // Handle response
-      var data = parseJson(res);
-      if (data.errors && data.errors.length) {
-        var noBid = createFailureBidResponse();
-        adUnitCodes.forEach((function (adUnitCode) {
-          return (0, _bidmanager.addBidResponse)(adUnitCode, noBid);
-        }));
-        data.errors.forEach(_utils.logError);
-      } else {
-        // For each placementId in bids Object
-        Object.keys(data.bids)
-        // extract Array of bid responses
-        .map((function (placementId) {
-          return data.bids[placementId];
-        }))
-        // flatten
-        .reduce((function (a, b) {
-          return a.concat(b);
-        }), [])
-        // call addBidResponse
-        .forEach((function (bid, i) {
-          return (0, _bidmanager.addBidResponse)(adUnitCodes[i], createSuccessBidResponse(bid.placement_id, sizes[i], adformats[i], bid.bid_id, bid.bid_price_cents, pageurl));
-        }));
-      }
-    }), null, { withCredentials: true });
-  } else {
-    // No valid bids
-    (0, _utils.logError)('No valid bids requested');
-  }
-};
-
-/**
- * @class AudienceNetwork
- * @type {Object}
- * @property {Function} callBids - fetch bids for given parameters
- * @property {Function} setBidderCode - used for bidder aliasing
- * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
- */
-function AudienceNetwork() {
-  return _extends(this, {
-    callBids: callBids,
-    setBidderCode: setBidderCode,
-    getBidderCode: getBidderCode
-  });
-}
-
-_adaptermanager2['default'].registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
-  supportedMediaTypes: ['video']
-});
-
-module.exports = AudienceNetwork;
-
-/***/ })
-
-},[83]);
-pbjsChunk([78],{
-
-/***/ 101:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(102);
-
-
-/***/ }),
-
-/***/ 102:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
-var adaptermanager = __webpack_require__(1);
-var utils = __webpack_require__(0);
-
-var CriteoAdapter = function CriteoAdapter() {
-  var sProt = window.location.protocol === 'http:' ? 'http:' : 'https:';
-  var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
-  var _bidderCode = 'criteo';
-  var _profileId = 125;
-  var _adapterVersion = 1;
-
-  function _callBids(params) {
-    if (!window.criteo_pubtag || window.criteo_pubtag instanceof Array) {
-      // publisherTag not loaded yet
-
-      _pushBidRequestEvent(params);
-      adloader.loadScript(_publisherTagUrl, (function () {}), true);
-    } else {
-      // publisherTag already loaded
-      _pushBidRequestEvent(params);
-    }
-  }
-
-  // send bid request to criteo direct bidder handler
-  function _pushBidRequestEvent(params) {
-    // if we want to be fully asynchronous, we must first check window.criteo_pubtag in case publishertag.js is not loaded yet.
-    window.Criteo = window.Criteo || {};
-    window.Criteo.events = window.Criteo.events || [];
-
-    // generate the bidding event
-    var biddingEventFunc = function biddingEventFunc() {
-      var bids = params.bids || [];
-      var slots = [];
-      var isAudit = false;
-      var networkid;
-      var integrationMode;
-
-      // build slots before sending one multi-slots bid request
-      for (var i = 0; i < bids.length; i++) {
-        var bid = bids[i];
-        var sizes = utils.parseSizesInput(bid.sizes);
-        slots.push(new Criteo.PubTag.DirectBidding.DirectBiddingSlot(bid.placementCode, bid.params.zoneId, bid.params.nativeCallback ? bid.params.nativeCallback : undefined, bid.transactionId, sizes.map((function (sizeString) {
-          var xIndex = sizeString.indexOf('x');
-          var w = parseInt(sizeString.substring(0, xIndex));
-          var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length));
-          return new Criteo.PubTag.DirectBidding.Size(w, h);
-        }))));
-
-        networkid = bid.params.networkId || networkid;
-        if (bid.params.integrationMode !== undefined) {
-          integrationMode = bid.params.integrationMode.toLowerCase() == 'amp' ? 1 : 0;
-        }
-
-        isAudit |= bid.params.audit !== undefined;
-      }
-
-      var biddingEvent = new Criteo.PubTag.DirectBidding.DirectBiddingEvent(_profileId, new Criteo.PubTag.DirectBidding.DirectBiddingUrlBuilder(isAudit), slots, _callbackSuccess(slots), _callbackError(slots), _callbackError(slots), // timeout handled as error
-      undefined, networkid, integrationMode, _adapterVersion);
-
-      // process the event as soon as possible
-      window.criteo_pubtag.push(biddingEvent);
-    };
-
-    window.Criteo.events.push(biddingEventFunc);
-  }
-
-  function parseBidResponse(bidsResponse) {
-    try {
-      return JSON.parse(bidsResponse);
-    } catch (error) {
-      return {};
-    }
-  }
-
-  function isNoBidResponse(jsonbidsResponse) {
-    return jsonbidsResponse.slots === undefined;
-  }
-
-  function _callbackSuccess(slots) {
-    return function (bidsResponse) {
-      var jsonbidsResponse = parseBidResponse(bidsResponse);
-
-      if (isNoBidResponse(jsonbidsResponse)) {
-        return _callbackError(slots)();
-      }
-
-      for (var i = 0; i < slots.length; i++) {
-        var bidResponse = null;
-
-        // look for the matching bid response
-        for (var j = 0; j < jsonbidsResponse.slots.length; j++) {
-          if (jsonbidsResponse.slots[j] && jsonbidsResponse.slots[j].impid === slots[i].impId) {
-            bidResponse = jsonbidsResponse.slots.splice(j, 1)[0];
-            break;
-          }
-        }
-
-        // register the bid response
-        var bidObject = _buildBidObject(bidResponse, slots[i]);
-        bidmanager.addBidResponse(slots[i].impId, bidObject);
-      }
-    };
-  }
-
-  function _callbackError(slots) {
-    return function () {
-      for (var i = 0; i < slots.length; i++) {
-        bidmanager.addBidResponse(slots[i].impId, _invalidBidResponse());
-      }
-    };
-  }
-
-  function _invalidBidResponse() {
-    var bidObject = bidfactory.createBid(2);
-    bidObject.bidderCode = _bidderCode;
-    return bidObject;
-  }
-
-  function _buildBidObject(bidResponse, slot) {
-    var bidObject = void 0;
-    if (bidResponse) {
-      // map the common fields
-      bidObject = bidfactory.createBid(1);
-      bidObject.bidderCode = _bidderCode;
-      bidObject.cpm = bidResponse.cpm;
-
-      // in case of native
-      if (slot.nativeCallback && bidResponse.native) {
-        if (typeof slot.nativeCallback !== 'function') {
-          utils.logError('Criteo bid: nativeCallback parameter is not a function');
-        } else {
-          // store the callbacks in a global object
-          window.criteo_pubtag.native_slots = window.criteo_pubtag.native_slots || {};
-          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse.native };
-
-          // this code is executed in an iframe, we need to get a reference to the
-          // publishertag in the main window to retrieve native responses and callbacks.
-          // it doesn't work with safeframes
-          bidObject.ad = '<script type="text/javascript">\n  let win = window;\n  for (const i=0; i<10; ++i) {\n    win = win.parent;\n    if (win.criteo_pubtag && win.criteo_pubtag.native_slots) {\n      let responseSlot = win.criteo_pubtag.native_slots["' + bidObject.adId + '"];\n      responseSlot.callback(responseSlot.nativeResponse);\n      break;\n    }\n  }\n</script>';
-        }
-      } else {
-        // width and height are only relevant with non-native requests.
-        // native requests will always return a 2x2 zone size.
-        bidObject.width = bidResponse.width;
-        bidObject.height = bidResponse.height;
-        bidObject.ad = bidResponse.creative;
-      }
-    } else {
-      bidObject = _invalidBidResponse();
-    }
-    return bidObject;
-  }
-
-  return {
-    callBids: _callBids
-  };
-};
-
-adaptermanager.registerBidAdapter(new CriteoAdapter(), 'criteo');
-
-module.exports = CriteoAdapter;
-
-/***/ })
-
-},[101]);
-pbjsChunk([76],{
-
-/***/ 108:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(109);
-
-
-/***/ }),
-
-/***/ 109:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adLoader = __webpack_require__(5);
-var adaptermanager = __webpack_require__(1);
-
-var DistrictmAdaptor = function districtmAdaptor() {
-  var _this = this;
-
-  var districtmUrl = window.location.protocol + '//prebid.districtm.ca/lib.js';
-  this.callBids = function (params) {
-    if (!window.hb_dmx_res) {
-      adLoader.loadScript(districtmUrl, (function () {
-        _this.sendBids(params);
-      }));
-    } else {
-      _this.sendBids(params);
-    }
-    return params;
-  };
-
-  this.handlerRes = function (response, bidObject) {
-    var bid = void 0;
-    if (parseFloat(response.result.cpm) > 0) {
-      bid = bidfactory.createBid(1, bidObject);
-      bid.bidderCode = bidObject.bidder;
-      bid.cpm = response.result.cpm;
-      bid.width = response.result.width;
-      bid.height = response.result.height;
-      bid.ad = response.result.banner;
-      bidmanager.addBidResponse(bidObject.placementCode, bid);
-    } else {
-      bid = bidfactory.createBid(2, bidObject);
-      bid.bidderCode = bidObject.bidder;
-      bidmanager.addBidResponse(bidObject.placementCode, bid);
-    }
-
-    return bid;
-  };
-
-  this.sendBids = function (params) {
-    var bids = params.bids;
-    for (var i = 0; i < bids.length; i++) {
-      bids[i].params.sizes = window.hb_dmx_res.auction.fixSize(bids[i].sizes);
-    }
-    window.hb_dmx_res.auction.run(window.hb_dmx_res.ssp, bids, this.handlerRes);
-    return bids;
-  };
-
-  return {
-    callBids: this.callBids,
-    sendBids: this.sendBids,
-    handlerRes: this.handlerRes
-  };
-};
-
-adaptermanager.registerBidAdapter(new DistrictmAdaptor(), 'districtmDMX');
-
-module.exports = DistrictmAdaptor;
-
-/***/ })
-
-},[108]);
-pbjsChunk([63],{
-
-/***/ 134:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(135);
-
-
-/***/ }),
-
-/***/ 135:
+/***/ 139:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8280,7 +7313,7 @@ var cygnus_index_start = function cygnus_index_start() {
     } else {
       scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
     }
-    var prebidVersion = encodeURIComponent('0.29.0');
+    var prebidVersion = encodeURIComponent('0.31.0');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -8988,60 +8021,42 @@ module.exports = IndexExchangeAdapter;
 
 /***/ })
 
-},[134]);
-pbjsChunk([36],{
+},[138]);
+pbjsChunk([40],{
 
-/***/ 199:
+/***/ 204:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(200);
+module.exports = __webpack_require__(205);
 
 
 /***/ }),
 
-/***/ 200:
+/***/ 205:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidfactory2 = _interopRequireDefault(_bidfactory);
-
-var _bidmanager = __webpack_require__(2);
-
-var _bidmanager2 = _interopRequireDefault(_bidmanager);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+exports.masSizeOrdering = masSizeOrdering;
+exports.resetUserSync = resetUserSync;
 
 var _utils = __webpack_require__(0);
 
 var utils = _interopRequireWildcard(_utils);
 
-var _ajax = __webpack_require__(6);
-
-var _constants = __webpack_require__(4);
-
-var _userSync = __webpack_require__(15);
+var _bidderFactory = __webpack_require__(15);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var RUBICON_BIDDER_CODE = 'rubicon';
 
 // use deferred function call since version isn't defined yet at this point
 function getIntegration() {
@@ -9055,6 +8070,7 @@ function isSecure() {
 // use protocol relative urls for http or https
 var FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 var VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
+var SYNC_ENDPOINT = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
 var TIMEOUT_BUFFER = 500;
 
@@ -9109,243 +8125,189 @@ utils._each(sizeMap, (function (item, key) {
   return sizeMap[item] = key;
 }));
 
-function RubiconAdapter() {
-  var baseAdapter = new _adapter2['default'](RUBICON_BIDDER_CODE);
-  var hasUserSyncFired = false;
-
-  function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
-
-    bids.forEach((function (bid) {
-      try {
-        // Video endpoint only accepts POST calls
-        if (bid.mediaType === 'video') {
-          (0, _ajax.ajax)(VIDEO_ENDPOINT, {
-            success: bidCallback,
-            error: bidError
-          }, buildVideoRequestPayload(bid, bidderRequest), {
-            withCredentials: true
-          });
-        } else {
-          (0, _ajax.ajax)(buildOptimizedCall(bid), {
-            success: bidCallback,
-            error: bidError
-          }, undefined, {
-            withCredentials: true
-          });
-        }
-      } catch (err) {
-        utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
-        addErrorBid();
-      }
-
-      function bidCallback(responseText) {
-        try {
-          utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
-          handleRpCB(responseText, bid);
-        } catch (err) {
-          if (typeof err === 'string') {
-            utils.logWarn(err + ' when processing rubicon response for placement code ' + bid.placementCode);
-          } else {
-            utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
-          }
-          addErrorBid();
-        }
-      }
-
-      function bidError(err, xhr) {
-        utils.logError('Request for rubicon responded with:', xhr.status, err);
-        addErrorBid();
-      }
-
-      function addErrorBid() {
-        var badBid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID, bid);
-        badBid.bidderCode = baseAdapter.getBidderCode();
-        _bidmanager2['default'].addBidResponse(bid.placementCode, badBid);
-      }
-    }));
-  }
-
-  function _getScreenResolution() {
-    return [window.screen.width, window.screen.height].join('x');
-  }
-
-  function _getDigiTrustQueryParams() {
-    function getDigiTrustId() {
-      var digiTrustUser = window.DigiTrust && (pbjs.getConfig('digiTrustId') || window.DigiTrust.getUser({ member: 'T9QSFKPDN9' }));
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+var spec = exports.spec = {
+  code: 'rubicon',
+  aliases: ['rubiconLite'],
+  supportedMediaTypes: ['video'],
+  /**
+   * @param {object} bid
+   * @return boolean
+   */
+  isBidRequestValid: function isBidRequestValid(bid) {
+    if (_typeof(bid.params) !== 'object') {
+      return false;
     }
-    var digiTrustId = getDigiTrustId();
-    // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
-      return [];
-    }
-    return ['dt.id', digiTrustId.id, 'dt.keyv', digiTrustId.keyv, 'dt.pref', 0];
-  }
-
-  function buildVideoRequestPayload(bid, bidderRequest) {
-    bid.startTime = new Date().getTime();
-
     var params = bid.params;
 
-    if (!params || _typeof(params.video) !== 'object') {
-      throw 'Invalid Video Bid';
+    if (!/^\d+$/.test(params.accountId)) {
+      return false;
     }
 
-    var size = void 0;
-    if (params.video.playerWidth && params.video.playerHeight) {
-      size = [params.video.playerWidth, params.video.playerHeight];
-    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
-      size = bid.sizes[0];
-    } else {
-      throw 'Invalid Video Bid - No size provided';
-    }
-
-    var postData = {
-      page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
-      resolution: _getScreenResolution(),
-      account_id: params.accountId,
-      integration: getIntegration(),
-      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-      stash_creatives: true,
-      ae_pass_through_parameters: params.video.aeParams,
-      slots: []
-    };
-
-    // Define the slot object
-    var slotData = {
-      site_id: params.siteId,
-      zone_id: params.zoneId,
-      position: params.position || 'btf',
-      floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-      element_id: bid.placementCode,
-      name: bid.placementCode,
-      language: params.video.language,
-      width: size[0],
-      height: size[1]
-    };
-
-    // check and add inventory, keywords, visitor and size_id data
-    if (params.video.size_id) {
-      slotData.size_id = params.video.size_id;
-    } else {
-      throw 'Invalid Video Bid - Invalid Ad Type!';
-    }
-
-    if (params.inventory && _typeof(params.inventory) === 'object') {
-      slotData.inventory = params.inventory;
-    }
-
-    if (params.keywords && Array.isArray(params.keywords)) {
-      slotData.keywords = params.keywords;
-    }
-
-    if (params.visitor && _typeof(params.visitor) === 'object') {
-      slotData.visitor = params.visitor;
-    }
-
-    postData.slots.push(slotData);
-
-    return JSON.stringify(postData);
-  }
-
-  function buildOptimizedCall(bid) {
-    bid.startTime = new Date().getTime();
-
-    var _bid$params = bid.params,
-        accountId = _bid$params.accountId,
-        siteId = _bid$params.siteId,
-        zoneId = _bid$params.zoneId,
-        position = _bid$params.position,
-        floor = _bid$params.floor,
-        keywords = _bid$params.keywords,
-        visitor = _bid$params.visitor,
-        inventory = _bid$params.inventory,
-        userId = _bid$params.userId,
-        pageUrl = _bid$params.referrer;
-
-    // defaults
-
-    floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
-    position = position || 'btf';
-
-    // use rubicon sizes if provided, otherwise adUnit.sizes
-    var parsedSizes = RubiconAdapter.masSizeOrdering(Array.isArray(bid.params.sizes) ? bid.params.sizes.map((function (size) {
-      return (sizeMap[size] || '').split('x');
-    })) : bid.sizes);
-
+    var parsedSizes = parseSizes(bid);
     if (parsedSizes.length < 1) {
-      throw 'no valid sizes';
+      return false;
     }
 
-    if (!/^\d+$/.test(accountId)) {
-      throw 'invalid accountId provided';
+    if (bid.mediaType === 'video') {
+      if (_typeof(params.video) !== 'object' || !params.video.size_id) {
+        return false;
+      }
     }
+    return true;
+  },
+  /**
+   * @param {BidRequest[]} bidRequests
+   * @param bidderRequest
+   * @return ServerRequest[]
+   */
+  buildRequests: function buildRequests(bidRequests, bidderRequest) {
+    return bidRequests.map((function (bidRequest) {
+      bidRequest.startTime = new Date().getTime();
 
-    // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
-    var queryString = ['account_id', accountId, 'site_id', siteId, 'zone_id', zoneId, 'size_id', parsedSizes[0], 'alt_size_ids', parsedSizes.slice(1).join(',') || undefined, 'p_pos', position, 'rp_floor', floor, 'rp_secure', isSecure() ? '1' : '0', 'tk_flint', getIntegration(), 'p_screen_res', _getScreenResolution(), 'kw', keywords, 'tk_user_key', userId];
+      if (bidRequest.mediaType === 'video') {
+        var params = bidRequest.params;
+        var size = parseSizes(bidRequest);
 
-    if (visitor !== null && (typeof visitor === 'undefined' ? 'undefined' : _typeof(visitor)) === 'object') {
-      utils._each(visitor, (function (item, key) {
-        return queryString.push('tg_v.' + key, item);
-      }));
-    }
+        var _data = {
+          page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+          resolution: _getScreenResolution(),
+          account_id: params.accountId,
+          integration: getIntegration(),
+          timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
+          stash_creatives: true,
+          ae_pass_through_parameters: params.video.aeParams,
+          slots: []
+        };
 
-    if (inventory !== null && (typeof inventory === 'undefined' ? 'undefined' : _typeof(inventory)) === 'object') {
-      utils._each(inventory, (function (item, key) {
-        return queryString.push('tg_i.' + key, item);
-      }));
-    }
+        // Define the slot object
+        var slotData = {
+          site_id: params.siteId,
+          zone_id: params.zoneId,
+          position: params.position || 'btf',
+          floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
+          element_id: bidRequest.placementCode,
+          name: bidRequest.placementCode,
+          language: params.video.language,
+          width: size[0],
+          height: size[1],
+          size_id: params.video.size_id
+        };
 
-    queryString.push('rand', Math.random(), 'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl);
+        if (params.inventory && _typeof(params.inventory) === 'object') {
+          slotData.inventory = params.inventory;
+        }
 
-    queryString = queryString.concat(_getDigiTrustQueryParams());
+        if (params.keywords && Array.isArray(params.keywords)) {
+          slotData.keywords = params.keywords;
+        }
 
-    return queryString.reduce((function (memo, curr, index) {
-      return index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo;
-    }), FASTLANE_ENDPOINT + '?').slice(0, -1); // remove trailing &
-  }
+        if (params.visitor && _typeof(params.visitor) === 'object') {
+          slotData.visitor = params.visitor;
+        }
 
-  var _renderCreative = function _renderCreative(script, impId) {
-    return '<html>\n<head><script type=\'text/javascript\'>inDapIF=true;</script></head>\n<body style=\'margin : 0; padding: 0;\'>\n<!-- Rubicon Project Ad Tag -->\n<div data-rp-impression-id=\'' + impId + '\'>\n<script type=\'text/javascript\'>' + script + '</script>\n</div>\n</body>\n</html>';
-  };
+        _data.slots.push(slotData);
 
-  function handleRpCB(responseText, bidRequest) {
-    var responseObj = JSON.parse(responseText); // can throw
+        return {
+          method: 'POST',
+          url: VIDEO_ENDPOINT,
+          data: _data,
+          bidRequest: bidRequest
+        };
+      }
+
+      // non-video request builder
+      var _bidRequest$params = bidRequest.params,
+          accountId = _bidRequest$params.accountId,
+          siteId = _bidRequest$params.siteId,
+          zoneId = _bidRequest$params.zoneId,
+          position = _bidRequest$params.position,
+          floor = _bidRequest$params.floor,
+          keywords = _bidRequest$params.keywords,
+          visitor = _bidRequest$params.visitor,
+          inventory = _bidRequest$params.inventory,
+          userId = _bidRequest$params.userId,
+          pageUrl = _bidRequest$params.referrer;
+
+      // defaults
+
+      floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
+      position = position || 'btf';
+
+      // use rubicon sizes if provided, otherwise adUnit.sizes
+      var parsedSizes = parseSizes(bidRequest);
+
+      // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
+      var data = ['account_id', accountId, 'site_id', siteId, 'zone_id', zoneId, 'size_id', parsedSizes[0], 'alt_size_ids', parsedSizes.slice(1).join(',') || undefined, 'p_pos', position, 'rp_floor', floor, 'rp_secure', isSecure() ? '1' : '0', 'tk_flint', getIntegration(), 'tid', bidRequest.transactionId, 'p_screen_res', _getScreenResolution(), 'kw', keywords, 'tk_user_key', userId];
+
+      if (visitor !== null && (typeof visitor === 'undefined' ? 'undefined' : _typeof(visitor)) === 'object') {
+        utils._each(visitor, (function (item, key) {
+          return data.push('tg_v.' + key, item);
+        }));
+      }
+
+      if (inventory !== null && (typeof inventory === 'undefined' ? 'undefined' : _typeof(inventory)) === 'object') {
+        utils._each(inventory, (function (item, key) {
+          return data.push('tg_i.' + key, item);
+        }));
+      }
+
+      data.push('rand', Math.random(), 'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl);
+
+      data = data.concat(_getDigiTrustQueryParams());
+
+      data = data.reduce((function (memo, curr, index) {
+        return index % 2 === 0 && data[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(data[index + 1]) + '&' : memo;
+      }), '').slice(0, -1); // remove trailing &
+
+      return {
+        method: 'GET',
+        url: FASTLANE_ENDPOINT,
+        data: data,
+        bidRequest: bidRequest
+      };
+    }));
+  },
+  /**
+   * @param {*} responseObj
+   * @param {BidRequest} bidRequest
+   * @return {Bid[]} An array of bids which
+   */
+  interpretResponse: function interpretResponse(responseObj, _ref) {
+    var bidRequest = _ref.bidRequest;
+
     var ads = responseObj.ads;
-    var adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if ((typeof responseObj === 'undefined' ? 'undefined' : _typeof(responseObj)) !== 'object' || responseObj.status !== 'ok') {
-      throw 'bad response';
+      return [];
     }
 
     // video ads array is wrapped in an object
-    if (bidRequest.mediaType === 'video' && (typeof ads === 'undefined' ? 'undefined' : _typeof(ads)) === 'object') {
-      ads = ads[adResponseKey];
+    if ((typeof bidRequest === 'undefined' ? 'undefined' : _typeof(bidRequest)) === 'object' && bidRequest.mediaType === 'video' && (typeof ads === 'undefined' ? 'undefined' : _typeof(ads)) === 'object') {
+      ads = ads[bidRequest.placementCode];
     }
 
     // check the ad response
     if (!Array.isArray(ads) || ads.length < 1) {
-      throw 'invalid ad response';
+      return [];
     }
 
     // if there are multiple ads, sort by CPM
     ads = ads.sort(_adCpmSort);
 
-    ads.forEach((function (ad) {
+    return ads.reduce((function (bids, ad) {
       if (ad.status !== 'ok') {
-        throw 'bad ad status';
+        return [];
       }
 
-      // store bid response
-      // bid status is good (indicating 1)
-      var bid = _bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest);
-      bid.currency = 'USD';
-      bid.creative_id = ad.creative_id;
-      bid.bidderCode = baseAdapter.getBidderCode();
-      bid.cpm = ad.cpm || 0;
-      bid.dealId = ad.deal;
+      var bid = {
+        requestId: bidRequest.bidId,
+        currency: 'USD',
+        creative_id: ad.creative_id,
+        bidderCode: spec.code,
+        cpm: ad.cpm || 0,
+        dealId: ad.deal
+      };
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
@@ -9371,26 +8333,64 @@ function RubiconAdapter() {
         return memo;
       }), { 'rpfl_elemid': bidRequest.placementCode });
 
-      try {
-        _bidmanager2['default'].addBidResponse(bidRequest.placementCode, bid);
-      } catch (err) {
-        utils.logError('Error from addBidResponse', null, err);
-      }
-    }));
-    // Run the Emily user sync
-    hasUserSyncFired = syncEmily(hasUserSyncFired);
-  }
+      bids.push(bid);
 
-  function _adCpmSort(adA, adB) {
-    return (adB.cpm || 0.0) - (adA.cpm || 0.0);
+      return bids;
+    }), []);
+  },
+  getUserSyncs: function getUserSyncs() {
+    if (!hasSynced) {
+      hasSynced = true;
+      return {
+        type: 'iframe',
+        url: SYNC_ENDPOINT
+      };
+    }
   }
+};
 
-  return _extends(this, baseAdapter, {
-    callBids: _callBids
-  });
+function _adCpmSort(adA, adB) {
+  return (adB.cpm || 0.0) - (adA.cpm || 0.0);
 }
 
-RubiconAdapter.masSizeOrdering = function (sizes) {
+function _getScreenResolution() {
+  return [window.screen.width, window.screen.height].join('x');
+}
+
+function _getDigiTrustQueryParams() {
+  function getDigiTrustId() {
+    var digiTrustUser = window.DigiTrust && (pbjs.getConfig('digiTrustId') || window.DigiTrust.getUser({ member: 'T9QSFKPDN9' }));
+    return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+  }
+  var digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    return [];
+  }
+  return ['dt.id', digiTrustId.id, 'dt.keyv', digiTrustId.keyv, 'dt.pref', 0];
+}
+
+function _renderCreative(script, impId) {
+  return '<html>\n<head><script type=\'text/javascript\'>inDapIF=true;</script></head>\n<body style=\'margin : 0; padding: 0;\'>\n<!-- Rubicon Project Ad Tag -->\n<div data-rp-impression-id=\'' + impId + '\'>\n<script type=\'text/javascript\'>' + script + '</script>\n</div>\n</body>\n</html>';
+}
+
+function parseSizes(bid) {
+  var params = bid.params;
+  if (bid.mediaType === 'video') {
+    var size = [];
+    if (params.video.playerWidth && params.video.playerHeight) {
+      size = [params.video.playerWidth, params.video.playerHeight];
+    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
+      size = bid.sizes[0];
+    }
+    return size;
+  }
+  return masSizeOrdering(Array.isArray(params.sizes) ? params.sizes.map((function (size) {
+    return (sizeMap[size] || '').split('x');
+  })) : bid.sizes);
+}
+
+function masSizeOrdering(sizes) {
   var MAS_SIZE_PRIORITY = [15, 2, 9];
 
   return utils.parseSizesInput(sizes)
@@ -9419,219 +8419,16 @@ RubiconAdapter.masSizeOrdering = function (sizes) {
     // and finally ascending order
     return first - second;
   }));
-};
-
-/**
- * syncEmily
- * @summary A user sync dependency for the Rubicon Project adapter
- * Registers an Emily iframe user sync to be called/created later by Prebid
- * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs which are off by default
-@example
- *  // Config example for iframe user sync
- *  pbjs.setConfig({ userSync: {
- *    syncEnabled: true,
- *    pixelEnabled: true,
- *    syncsPerBidder: 5,
- *    syncDelay: 3000,
- *    iframeEnabled: true
- *  }});
- * @return {boolean} Whether or not Emily synced
- */
-function syncEmily(hasSynced) {
-  // Check that it has not already been triggered - only meant to fire once
-  if (hasSynced) {
-    return true;
-  }
-
-  var iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
-
-  // register the sync with the Prebid (to be called later)
-  _userSync.userSync.registerSync('iframe', 'rubicon', iframeUrl);
-
-  return true;
 }
 
-_adaptermanager2['default'].registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
-  supportedMediaTypes: ['video']
-});
-_adaptermanager2['default'].aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
+var hasSynced = false;
+function resetUserSync() {
+  hasSynced = false;
+}
 
-module.exports = RubiconAdapter;
-
-/***/ })
-
-},[199]);
-pbjsChunk([21],{
-
-/***/ 231:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(232);
-
-
-/***/ }),
-
-/***/ 232:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var utils = __webpack_require__(0);
-var adloader = __webpack_require__(5);
-var bidmanager = __webpack_require__(2);
-var bidfactory = __webpack_require__(3);
-var adaptermanager = __webpack_require__(1);
-
-/* TripleLift bidder factory function
-*  Use to create a TripleLiftAdapter object
-*/
-
-var TripleLiftAdapter = function TripleLiftAdapter() {
-  var usersync = false;
-
-  function _callBids(params) {
-    var tlReq = params.bids;
-    var bidsCount = tlReq.length;
-
-    // set expected bids count for callback execution
-    // bidmanager.setExpectedBidsCount('triplelift',bidsCount);
-
-    for (var i = 0; i < bidsCount; i++) {
-      var bidRequest = tlReq[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildTLCall(bidRequest, callbackId));
-      // store a reference to the bidRequest from the callback id
-      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
-    }
-  }
-
-  function buildTLCall(bid, callbackId) {
-    // determine tag params
-    var inventoryCode = utils.getBidIdParameter('inventoryCode', bid.params);
-    var floor = utils.getBidIdParameter('floor', bid.params);
-
-    // build our base tag, based on if we are http or https
-    var tlURI = '//tlx.3lift.com/header/auction?';
-    var tlCall = document.location.protocol + tlURI;
-
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.29.0');
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
-    tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
-    tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
-
-    // indicate whether flash support exists
-    tlCall = utils.tryAppendQueryString(tlCall, 'fe', isFlashEnabled());
-
-    // sizes takes a bit more logic
-    var sizeQueryString = utils.parseSizesInput(bid.sizes);
-    if (sizeQueryString) {
-      tlCall += 'size=' + sizeQueryString + '&';
-    }
-
-    // append referrer
-    var referrer = utils.getTopWindowUrl();
-    tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
-
-    // remove the trailing "&"
-    if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
-      tlCall = tlCall.substring(0, tlCall.length - 1);
-    }
-
-    // @if NODE_ENV='debug'
-    utils.logMessage('tlCall request built: ' + tlCall);
-    // @endif
-
-    // append a timer here to track latency
-    bid.startTime = new Date().getTime();
-
-    return tlCall;
-  }
-
-  function isFlashEnabled() {
-    var hasFlash = 0;
-    try {
-      // check for Flash support in IE
-      var fo = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash');
-      if (fo) {
-        hasFlash = 1;
-      }
-    } catch (e) {
-      if (navigator.mimeTypes && navigator.mimeTypes['application/x-shockwave-flash'] !== undefined && navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
-        hasFlash = 1;
-      }
-    }
-    return hasFlash;
-  }
-
-  // expose the callback to the global object:
-  pbjs.TLCB = function (tlResponseObj) {
-    if (tlResponseObj && tlResponseObj.callback_id) {
-      var bidObj = utils.getBidRequest(tlResponseObj.callback_id);
-      var placementCode = bidObj && bidObj.placementCode;
-
-      // @if NODE_ENV='debug'
-      if (bidObj) {
-        utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);
-      }
-      // @endif
-
-      var bid = [];
-      if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
-        bid = bidfactory.createBid(1, bidObj);
-        bid.bidderCode = 'triplelift';
-        bid.cpm = tlResponseObj.cpm;
-        bid.ad = tlResponseObj.ad;
-        bid.width = tlResponseObj.width;
-        bid.height = tlResponseObj.height;
-        bid.dealId = tlResponseObj.deal_id;
-        bidmanager.addBidResponse(placementCode, bid);
-      } else {
-        // no response data
-        // @if NODE_ENV='debug'
-        if (bidObj) {
-          utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);
-        }
-        // @endif
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = 'triplelift';
-        bidmanager.addBidResponse(placementCode, bid);
-      }
-
-      // run usersyncs
-      if (!usersync) {
-        var iframe = utils.createInvisibleIframe();
-        iframe.src = '//ib.3lift.com/sync';
-        try {
-          document.body.appendChild(iframe);
-        } catch (error) {
-          utils.logError(error);
-        }
-        usersync = true;
-        // suppress TL ad tag from running additional usersyncs
-        window._tlSyncDone = true;
-      }
-    } else {
-      // no response data
-      // @if NODE_ENV='debug'
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-      // @endif
-    }
-  };
-
-  return {
-    callBids: _callBids
-
-  };
-};
-
-adaptermanager.registerBidAdapter(new TripleLiftAdapter(), 'triplelift');
-
-module.exports = TripleLiftAdapter;
+(0, _bidderFactory.registerBidder)(spec);
 
 /***/ })
 
-},[231]);
+},[204]);
 pbjs.processQueue();

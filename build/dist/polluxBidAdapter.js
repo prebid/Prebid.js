@@ -1,14 +1,14 @@
-pbjsChunk([44],{
+pbjsChunk([47],{
 
-/***/ 174:
+/***/ 178:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(175);
+module.exports = __webpack_require__(179);
 
 
 /***/ }),
 
-/***/ 175:
+/***/ 179:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -133,4 +133,4 @@ module.exports = PolluxBidAdapter;
 
 /***/ })
 
-},[174]);
+},[178]);

@@ -1,14 +1,6 @@
-pbjsChunk([81],{
+pbjsChunk([84],{
 
-/***/ 95:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(96);
-
-
-/***/ }),
-
-/***/ 96:
+/***/ 100:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -135,6 +127,14 @@ adaptermanager.registerBidAdapter(new CentroAdapter(), 'centro');
 
 module.exports = CentroAdapter;
 
+/***/ }),
+
+/***/ 99:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(100);
+
+
 /***/ })
 
-},[95]);
+},[99]);

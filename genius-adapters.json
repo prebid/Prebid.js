@@ -1,8 +1,5 @@
 [
   "appnexusAstBidAdapter",
-  "criteoBidAdapter",
-  "districtmDMXBidAdapter",
   "indexExchangeBidAdapter",
-  "rubiconBidAdapter",
-  "tripleliftBidAdapter"
+  "rubiconBidAdapter"
 ]

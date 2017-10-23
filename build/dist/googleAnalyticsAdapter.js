@@ -1,14 +1,14 @@
-pbjsChunk([69],{
+pbjsChunk([71],{
 
-/***/ 122:
+/***/ 128:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(123);
+module.exports = __webpack_require__(129);
 
 
 /***/ }),
 
-/***/ 123:
+/***/ 129:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20,7 +20,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  * ga.js - analytics adapter for google analytics
  */
 
-var events = __webpack_require__(9);
+var events = __webpack_require__(10);
 var utils = __webpack_require__(0);
 var CONSTANTS = __webpack_require__(4);
 var adaptermanager = __webpack_require__(1);
@@ -279,4 +279,4 @@ adaptermanager.registerAnalyticsAdapter({
 
 /***/ })
 
-},[122]);
+},[128]);

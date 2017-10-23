@@ -1,14 +1,14 @@
-pbjsChunk([5],{
+pbjsChunk([10],{
 
-/***/ 187:
+/***/ 67:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(188);
+module.exports = __webpack_require__(68);
 
 
 /***/ }),
 
-/***/ 188:
+/***/ 68:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -30,138 +30,108 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-var _constants = __webpack_require__(4);
+var _url = __webpack_require__(11);
 
-var _constants2 = _interopRequireDefault(_constants);
+var url = _interopRequireWildcard(_url);
+
+var _utils = __webpack_require__(0);
+
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var utils = __webpack_require__(0);
-
-/****
- * PubWise.io Analytics
- * Contact: support@pubwise.io
- * Developer: Stephen Johnston
- *
- * For testing:
- *
- pbjs.enableAnalytics({
-  provider: 'pubwise',
-  options: {
-    site: 'test-test-test-test',
-    endpoint: 'https://api.pubwise.io/api/v4/event/add/',
-  }
- });
- */
-
+var emptyUrl = '';
 var analyticsType = 'endpoint';
-var analyticsName = 'PubWise Analytics: ';
-var defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
-var pubwiseVersion = '2.2';
-var configOptions = { site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: '' };
-var pwAnalyticsEnabled = false;
-var utmKeys = { utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: '' };
+var adxcgAnalyticsVersion = 'v1.04';
 
-function markEnabled() {
-  utils.logInfo(analyticsName + 'Enabled', configOptions);
-  pwAnalyticsEnabled = true;
-}
+var initOptions = void 0;
+var auctionTimestamp = void 0;
+var events = {
+  bidRequests: [],
+  bidResponses: []
+};
 
-function enrichWithMetrics(dataBag) {
-  try {
-    dataBag['pw_version'] = pubwiseVersion;
-    dataBag['pbjs_version'] = pbjs.version;
-    dataBag['debug'] = configOptions.debug;
-  } catch (e) {
-    dataBag['error_metric'] = 1;
-  }
-
-  return dataBag;
-}
-
-function enrichWithUTM(dataBag) {
-  var newUtm = false;
-  try {
-    for (var prop in utmKeys) {
-      var urlValue = utils.getParameterByName(prop);
-      utmKeys[prop] = urlValue;
-      if (utmKeys[prop] != '') {
-        newUtm = true;
-        dataBag[prop] = utmKeys[prop];
-      }
-    }
-
-    if (newUtm === false) {
-      for (var _prop in utmKeys) {
-        var itemValue = localStorage.getItem('pw-' + _prop);
-        if (itemValue.length !== 0) {
-          dataBag[_prop] = itemValue;
-        }
-      }
-    } else {
-      for (var _prop2 in utmKeys) {
-        localStorage.setItem('pw-' + _prop2, utmKeys[_prop2]);
-      }
-    }
-  } catch (e) {
-    utils.logInfo(analyticsName + 'Error', e);
-    dataBag['error_utm'] = 1;
-  }
-  return dataBag;
-}
-
-function sendEvent(eventType, data) {
-  utils.logInfo(analyticsName + 'Event ' + eventType + ' ' + pwAnalyticsEnabled, data);
-
-  // put the typical items in the data bag
-  var dataBag = {
-    eventType: eventType,
-    args: data,
-    target_site: configOptions.site,
-    debug: configOptions.debug ? 1 : 0
-  };
-
-  // for certain events, track additional info
-  if (eventType == _constants2['default'].EVENTS.AUCTION_INIT) {
-    dataBag = enrichWithMetrics(dataBag);
-    dataBag = enrichWithUTM(dataBag);
-  }
-
-  (0, _ajax.ajax)(configOptions.endpoint, (function (result) {
-    return utils.logInfo(analyticsName + 'Result', result);
-  }), JSON.stringify(dataBag));
-}
-
-var pubwiseAnalytics = _extends((0, _AnalyticsAdapter2['default'])({
-  defaultUrl: defaultUrl,
+var adxcgAnalyticsAdapter = _extends((0, _AnalyticsAdapter2['default'])({
+  emptyUrl: emptyUrl,
   analyticsType: analyticsType
 }), {
-  // Override AnalyticsAdapter functions by supplying custom methods
   track: function track(_ref) {
     var eventType = _ref.eventType,
         args = _ref.args;
 
-    sendEvent(eventType, args);
+    if (typeof args !== 'undefined') {
+      if (eventType === 'bidTimeout') {
+        events.bidTimeout = args;
+      } else if (eventType === 'auctionInit') {
+        events.auctionInit = args;
+        auctionTimestamp = args.timestamp;
+      } else if (eventType === 'bidRequested') {
+        events.bidRequests.push(args);
+      } else if (eventType === 'bidResponse') {
+        events.bidResponses.push(mapBidResponse(args));
+      } else if (eventType === 'bidWon') {
+        send({
+          bidWon: mapBidResponse(args)
+        });
+      }
+    }
+
+    if (eventType === 'auctionEnd') {
+      send(events);
+    }
   }
 });
 
-pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
+function mapBidResponse(bidResponse) {
+  return {
+    adUnitCode: bidResponse.adUnitCode,
+    statusMessage: bidResponse.statusMessage,
+    bidderCode: bidResponse.bidderCode,
+    adId: bidResponse.adId,
+    mediaType: bidResponse.mediaType,
+    creative_id: bidResponse.creative_id,
+    width: bidResponse.width,
+    height: bidResponse.height,
+    cpm: bidResponse.cpm,
+    timeToRespond: bidResponse.timeToRespond
+  };
+}
 
-pubwiseAnalytics.enableAnalytics = function (config) {
-  if (config.options.debug === undefined) {
-    config.options.debug = utils.debugTurnedOn();
-  }
-  configOptions = config.options;
-  markEnabled();
-  pubwiseAnalytics.adapterEnableAnalytics(config);
+function send(data) {
+  data.initOptions = initOptions;
+  data.auctionTimestamp = auctionTimestamp;
+
+  var location = utils.getTopWindowLocation();
+  var secure = location.protocol == 'https:';
+
+  var adxcgAnalyticsRequestUrl = url.format({
+    protocol: secure ? 'https' : 'http',
+    hostname: secure ? 'hbarxs.adxcg.net' : 'hbarx.adxcg.net',
+    pathname: '/pbrx',
+    search: {
+      auctionTimestamp: auctionTimestamp,
+      adxcgAnalyticsVersion: adxcgAnalyticsVersion,
+      prebidVersion: pbjs.version
+    }
+  });
+
+  (0, _ajax.ajax)(adxcgAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST' });
+}
+
+adxcgAnalyticsAdapter.originEnableAnalytics = adxcgAnalyticsAdapter.enableAnalytics;
+adxcgAnalyticsAdapter.enableAnalytics = function (config) {
+  initOptions = config.options;
+  adxcgAnalyticsAdapter.originEnableAnalytics(config);
 };
 
 _adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: pubwiseAnalytics,
-  code: 'pubwise'
+  adapter: adxcgAnalyticsAdapter,
+  code: 'adxcg'
 });
 
-exports['default'] = pubwiseAnalytics;
+exports['default'] = adxcgAnalyticsAdapter;
 
 /***/ }),
 
@@ -373,4 +343,4 @@ function AnalyticsAdapter(_ref) {
 
 /***/ })
 
-},[187]);
+},[67]);
