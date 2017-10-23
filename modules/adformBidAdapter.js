@@ -1,14 +1,15 @@
-var utils = require('src/utils.js');
-var adloader = require('src/adloader.js');
-var bidmanager = require('src/bidmanager.js');
-var bidfactory = require('src/bidfactory.js');
+var utils = require('src/utils');
+var adloader = require('src/adloader');
+var bidmanager = require('src/bidmanager');
+var bidfactory = require('src/bidfactory');
 var STATUSCODES = require('src/constants.json').STATUS;
 var adaptermanager = require('src/adaptermanager');
+var Adapter = require('src/adapter').default;
+
+const ADFORM_BIDDER_CODE = 'adform';
 
 function AdformAdapter() {
-  return {
-    callBids: _callBids
-  };
+  let baseAdapter = new Adapter(ADFORM_BIDDER_CODE);
 
   function _callBids(params) {
     var bid, _value, _key, i, j, k, l, reqParams;
@@ -47,7 +48,7 @@ function AdformAdapter() {
     $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
 
     adloader.loadScript(request.join('&'));
-  }
+  };
 
   function formRequestUrl(reqData) {
     var key;
@@ -63,7 +64,7 @@ function AdformAdapter() {
   function handleCallback(bids) {
     return function handleResponse(adItems) {
       var bidObject;
-      var bidder = 'adform';
+      var bidder = baseAdapter.getBidderCode();
       var adItem;
       var bid;
       for (var i = 0, l = adItems.length; i < l; i++) {
@@ -160,8 +161,11 @@ function AdformAdapter() {
 
     return utftext;
   }
+
+  return Object.assign(this, baseAdapter, {
+    callBids: _callBids
+  });
 }
 
-adaptermanager.registerBidAdapter(new AdformAdapter(), 'adform');
-
+adaptermanager.registerBidAdapter(new AdformAdapter(), ADFORM_BIDDER_CODE);
 module.exports = AdformAdapter;

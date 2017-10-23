@@ -73,7 +73,7 @@ describe('smartadserver adapter tests', function () {
     expect(parsedBidUrl.hostname).to.equal('www.smartadserver.com');
     expect(parsedBidUrl.pathname).to.equal('/prebid');
 
-    expect(parsedBidUrlQueryString).to.have.property('pbjscbk').and.to.equal('pbjs.' + smartCallback);
+    expect(parsedBidUrlQueryString).to.have.property('pbjscbk').and.to.equal('$$PREBID_GLOBAL$$.' + smartCallback);
     expect(parsedBidUrlQueryString).to.have.property('siteid').and.to.equal('1234');
     expect(parsedBidUrlQueryString).to.have.property('pgid').and.to.equal('5678');
     expect(parsedBidUrlQueryString).to.have.property('fmtid').and.to.equal('90');
@@ -108,7 +108,7 @@ describe('smartadserver adapter tests', function () {
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
 
-      pbjs[parsedBidUrlQueryString.pbjscbk.split('.')[1]](null);
+      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](null);
     });
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
@@ -131,7 +131,7 @@ describe('smartadserver adapter tests', function () {
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
 
-      pbjs[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE);
+      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE);
     });
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 

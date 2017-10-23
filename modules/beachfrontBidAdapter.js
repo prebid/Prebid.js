@@ -1,135 +1,88 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
+export const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
-function BeachfrontAdapter() {
-  var baseAdapter = new Adapter('beachfront');
+export const spec = {
+  code: 'beachfront',
+  supportedMediaTypes: ['video'],
 
-  baseAdapter.callBids = function (bidRequests) {
-    const bids = bidRequests.bids || [];
-    bids.forEach(function(bid) {
-      var bidRequest = getBidRequest(bid);
-      var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
-      if (!RTBDataParams) {
-        var error = 'No bid params';
-        utils.logError(error);
-        if (bid && bid.placementCode) {
-          bidmanager.addBidResponse(bid.placementCode, createBid(bid, STATUS.NO_BID));
-        }
-        return;
-      }
-      var BID_URL = ENDPOINT + RTBDataParams.appId;
-      ajax(BID_URL, handleResponse(bidRequest), JSON.stringify(RTBDataParams), {
-        contentType: 'text/plain',
-        withCredentials: true
-      });
+  isBidRequestValid(bid) {
+    return !!(bid && bid.params && bid.params.appId && bid.params.bidfloor);
+  },
+
+  buildRequests(bids) {
+    return bids.map(bid => {
+      return {
+        method: 'POST',
+        url: ENDPOINT + bid.params.appId,
+        data: createRequestParams(bid),
+        bidRequest: bid
+      };
     });
+  },
+
+  interpretResponse(response, { bidRequest }) {
+    if (!response || !response.url || !response.bidPrice) {
+      utils.logWarn(`No valid bids from ${spec.code} bidder`);
+      return [];
+    }
+    let size = getSize(bidRequest.sizes);
+    return {
+      requestId: bidRequest.bidId,
+      bidderCode: spec.code,
+      cpm: response.bidPrice,
+      creativeId: response.cmpId,
+      vastUrl: response.url,
+      width: size.width,
+      height: size.height,
+      mediaType: 'video',
+      currency: 'USD',
+      ttl: 300,
+      netRevenue: true
+    };
+  }
+};
+
+function getSize(sizes) {
+  let parsedSizes = utils.parseSizesInput(sizes);
+  let [ width, height ] = parsedSizes.length ? parsedSizes[0].split('x') : [];
+  return {
+    width: parseInt(width, 10) || undefined,
+    height: parseInt(height, 10) || undefined
   };
-
-  function getBidRequest(bid) {
-    if (!bid || !bid.params || !bid.params.appId) {
-      return;
-    }
-
-    var bidRequest = bid;
-    bidRequest.width = parseInt(bid.sizes[0], 10) || undefined;
-    bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
-    return bidRequest;
-  }
-
-  function prepareAndSaveRTBRequestParams(bid) {
-    if (!bid || !bid.params || !bid.params.appId || !bid.params.bidfloor) {
-      return;
-    }
-
-    function fetchDeviceType() {
-      return ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 1 : 2));
-    }
-
-    var bidRequestObject = {
-      isPrebid: true,
-      appId: bid.params.appId,
-      domain: document.location.hostname,
-      imp: [{
-        video: {
-          w: bid.width,
-          h: bid.height
-        },
-        bidfloor: bid.params.bidfloor
-      }],
-      site: {
-        page: utils.getTopWindowLocation().host
-      },
-      device: {
-        ua: navigator.userAgent,
-        devicetype: fetchDeviceType()
-      },
-      cur: ['USD']
-    };
-    return bidRequestObject;
-  }
-
-  /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(bidRequest) {
-    return function(response) {
-      var parsed;
-      if (response) {
-        try {
-          parsed = JSON.parse(response);
-        } catch (error) {
-          utils.logError(error);
-        }
-      } else {
-        utils.logWarn('No bid response');
-      }
-
-      if (!parsed || parsed.error || !parsed.url || !parsed.bidPrice) {
-        utils.logWarn('No Valid Bid');
-        bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID));
-        return;
-      }
-
-      var newBid = {};
-      newBid.price = parsed.bidPrice;
-      newBid.url = parsed.url;
-      newBid.bidId = bidRequest.bidId;
-      bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.GOOD, newBid));
-    };
-  }
-
-  function createBid(bidRequest, status, tag) {
-    var bid = bidfactory.createBid(status, tag);
-    bid.code = baseAdapter.getBidderCode();
-    bid.bidderCode = bidRequest.bidder;
-    if (!tag || status !== STATUS.GOOD) {
-      return bid;
-    }
-
-    bid.cpm = tag.price;
-    bid.creative_id = tag.cmpId;
-    bid.width = bidRequest.width;
-    bid.height = bidRequest.height;
-    bid.descriptionUrl = tag.url;
-    bid.vastUrl = tag.url;
-    bid.mediaType = 'video';
-
-    return bid;
-  }
-
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
-  });
 }
 
-adaptermanager.registerBidAdapter(new BeachfrontAdapter(), 'beachfront', {
-  supportedMediaTypes: ['video']
-});
+function isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent);
+}
 
-module.exports = BeachfrontAdapter;
+function isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+}
+
+function createRequestParams(bid) {
+  let size = getSize(bid.sizes);
+  return {
+    isPrebid: true,
+    appId: bid.params.appId,
+    domain: document.location.hostname,
+    imp: [{
+      video: {
+        w: size.width,
+        h: size.height
+      },
+      bidfloor: bid.params.bidfloor
+    }],
+    site: {
+      page: utils.getTopWindowLocation().host
+    },
+    device: {
+      ua: global.navigator.userAgent,
+      devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2
+    },
+    cur: ['USD']
+  };
+}
+
+registerBidder(spec);

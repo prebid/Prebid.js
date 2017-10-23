@@ -47,8 +47,7 @@ function PubGearsAdapter() {
   function callBids(params) {
     var bids = params[consts.JSON_MAPPING.PL_BIDS];
     var slots = bids.map(getSlotFromBidParam);
-    if (slots.length <= 0)
-    { return; }
+    if (slots.length <= 0) { return; }
     publisher = bids[0][PARAMS][PUBLISHER_PARAM];
 
     bids.forEach(function(bid) {
@@ -57,8 +56,7 @@ function PubGearsAdapter() {
     });
 
     proxy = proxy || getScript(SCRIPT_ID) || makeScript(slots, publisher, SCRIPT_ID, TAG_URL);
-    if (!initialized)
-    { registerEventListeners(proxy); }
+    if (!initialized) { registerEventListeners(proxy); }
     initialized = true;
   }
   function loadScript(script) {
@@ -125,8 +123,7 @@ function PubGearsAdapter() {
     var response = bidfactory.createBid(status, bidRequest);
     response[BIDDER_CODE_RESPONSE_KEY] = BIDDER_CODE;
 
-    if (status !== 1)
-    { return response; }
+    if (status !== 1) { return response; }
 
     response[AD] = getCreative(resource);
 

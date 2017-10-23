@@ -23,6 +23,7 @@ function Bid(statusCode, bidRequest) {
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = _bidId;
+  this.mediaType = 'banner';
 
   function _getStatus() {
     switch (_statusCode) {
@@ -48,6 +49,6 @@ function Bid(statusCode, bidRequest) {
 }
 
 // Bid factory function.
-exports.createBid = function () {
-  return new Bid(...arguments);
+exports.createBid = function (statusCode, bidRequest) {
+  return new Bid(statusCode, bidRequest);
 };

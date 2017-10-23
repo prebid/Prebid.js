@@ -6,7 +6,7 @@ import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
-var BIDDER_CODE = 'huddledmasses';
+var BIDDER_CODE = 'colossusssp';
 
 var sizeObj = {
   1: '468x60',
@@ -39,7 +39,7 @@ var sizeObj = {
 
 utils._each(sizeObj, (item, key) => sizeObj[item] = key);
 
-function HuddledMassesAdapter() {
+function ColossusSspAdapter() {
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -50,9 +50,9 @@ function HuddledMassesAdapter() {
           handleRpCB(responseText, bid);
         } catch (err) {
           if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing huddledmasses response for placement code ${bid.placementCode}`);
+            utils.logWarn(`${err} when processing colossus response for placement code ${bid.placementCode}`);
           } else {
-            utils.logError('Error processing huddledmasses response for placement code ' + bid.placementCode, null, err);
+            utils.logError('Error processing colossus response for placement code ' + bid.placementCode, null, err);
           }
           var badBid = bidfactory.createBid(STATUS.NO_BID, bid);
           badBid.bidderCode = bid.bidder;
@@ -64,7 +64,7 @@ function HuddledMassesAdapter() {
       try {
         ajax(buildOptimizedCall(bid), bidCallback, undefined, { withCredentials: true });
       } catch (err) {
-        utils.logError('Error sending huddledmasses request for placement code ' + bid.placementCode, null, err);
+        utils.logError('Error sending colossus request for placement code ' + bid.placementCode, null, err);
       }
     });
   }
@@ -72,7 +72,7 @@ function HuddledMassesAdapter() {
   function buildOptimizedCall(bid) {
     bid.startTime = (new Date()).getTime();
 
-    var parsedSizes = HuddledMassesAdapter.masSizeOrdering(
+    var parsedSizes = ColossusSspAdapter.masSizeOrdering(
       Array.isArray(bid.params.sizes) ? bid.params.sizes.map(size => (sizeObj[size] || '').split('x')) : bid.sizes
     );
 
@@ -81,15 +81,22 @@ function HuddledMassesAdapter() {
     }
 
     var secure = 0;
-    if (window.location.protocol !== 'http:') {
+    var win;
+    try {
+      win = window.top;
+    } catch (e) {
+      win = window;
+    }
+
+    if (win.location.protocol !== 'http:') {
       secure = 1;
     }
 
-    var host = window.location.host;
-    var page = window.location.pathname;
+    var host = win.location.host;
+    var page = win.location.pathname;
     var language = navigator.language;
-    var deviceWidth = window.screen.width;
-    var deviceHeight = window.screen.height;
+    var deviceWidth = win.screen.width;
+    var deviceHeight = win.screen.height;
 
     var queryString = [
       'banner_id', bid.params.placement_id,
@@ -110,7 +117,7 @@ function HuddledMassesAdapter() {
         index % 2 === 0 && queryString[index + 1] !== undefined
           ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
           : memo,
-      '//huddledmassessupply.com/?'
+      '//colossusssp.com/?'
     ).slice(0, -1);
   }
 
@@ -129,12 +136,12 @@ function HuddledMassesAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE huddledmasses
+  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE colossusssp
     callBids: _callBids
   });
 }
 
-HuddledMassesAdapter.masSizeOrdering = function (sizes) {
+ColossusSspAdapter.masSizeOrdering = function (sizes) {
   var MAS_SIZE_PRIORITY = [15, 2, 9];
   return utils.parseSizesInput(sizes)
     .reduce((result, size) => {
@@ -162,6 +169,6 @@ HuddledMassesAdapter.masSizeOrdering = function (sizes) {
     });
 };
 
-adaptermanager.registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');
+adaptermanager.registerBidAdapter(new ColossusSspAdapter(), BIDDER_CODE);
 
-module.exports = HuddledMassesAdapter;
+module.exports = ColossusSspAdapter;

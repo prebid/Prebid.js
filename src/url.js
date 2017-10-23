@@ -24,9 +24,13 @@ export function formatQS(query) {
     .join('&');
 }
 
-export function parse(url) {
+export function parse(url, options) {
   let parsed = document.createElement('a');
-  parsed.href = decodeURIComponent(url);
+  if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
+    parsed.href = url;
+  } else {
+    parsed.href = decodeURIComponent(url);
+  }
   return {
     protocol: (parsed.protocol || '').replace(/:$/, ''),
     hostname: parsed.hostname,
@@ -34,7 +38,7 @@ export function parse(url) {
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host
+    host: parsed.host || window.location.host
   };
 }
 
