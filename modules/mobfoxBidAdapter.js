@@ -1,34 +1,24 @@
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const ajax = require('src/ajax.js');
-const CONSTANTS = require('src/constants.json');
+import {registerBidder} from 'src/adapters/bidderFactory';
+
 const utils = require('src/utils.js');
-const adaptermanager = require('src/adaptermanager');
+const BIDDER_CODE = 'mobfox';
+const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 
-function MobfoxAdapter() {
-  const BIDDER_CODE = 'mobfox';
-  const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
-
-  // request
-  function buildQueryStringFromParams(params) {
-    for (let key in params) {
-      if (params.hasOwnProperty(key)) {
-        if (params[key] === undefined) {
-          delete params[key];
-        } else {
-          params[key] = encodeURIComponent(params[key]);
-        }
-      }
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['mf'], // short code
+  isBidRequestValid: function (bid) {
+    return bid.params.s !== null || bid.params.s !== 'undefined';
+  },
+  buildRequests: function (validBidRequests) {
+    if (validBidRequests.length > 1) {
+      throw ('invalid number of valid bid requests, expected 1 element')
     }
 
-    return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
-      .join('&');
-  }
+    let bidParams = validBidRequests[0].params;
+    let bid = validBidRequests[0];
 
-  function buildBidRequest(bid) {
-    let bidParams = bid.params;
-
-    let requestParams = {
+    let params = {
       // -------------------- Mandatory Parameters ------------------
       rt: bidParams.rt || 'api-fetchip',
       r_type: bidParams.r_type || 'banner',
@@ -80,103 +70,52 @@ function MobfoxAdapter() {
       n_rating_req: bidParams.n_rating_req || undefined
     };
 
-    return requestParams;
-  }
-
-  function sendBidRequest(bid) {
-    let requestParams = buildBidRequest(bid);
-    let queryString = buildQueryStringFromParams(requestParams);
-
-    ajax.ajax(`${BID_REQUEST_BASE_URL}?${queryString}`, {
-      success(resp, xhr) {
-        if (xhr.getResponseHeader('Content-Type') == 'application/json') {
-          try {
-            resp = JSON.parse(resp)
-          } catch (e) {
-            resp = {error: resp}
-          }
+    for (let key in params) {
+      if (params.hasOwnProperty(key)) {
+        if (params[key] === undefined) {
+          delete params[key];
+        } else {
+          params[key] = encodeURIComponent(params[key]);
         }
-        onBidResponse({
-          data: resp,
-          xhr: xhr
-        }, bid);
-      },
-      error(err) {
-        if (xhr.getResponseHeader('Content-Type') == 'application/json') {
-          try {
-            err = JSON.parse(err);
-          } catch (e) {
-          }
-          ;
-        }
-        onBidResponseError(bid, [err]);
       }
-    });
-  }
+    }
 
-  // response
-  function onBidResponseError(bid, err) {
-    utils.logError('Bid Response Error', bid, ...err);
-    let bidResponse = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
+    let payloadString = utils._map(Object.keys(params), key => `${key}=${params[key]}`)
+      .join('&');
+
+    return {
+      method: 'GET',
+      url: BID_REQUEST_BASE_URL,
+      data: payloadString,
+    };
+  },
+  interpretResponse: function (serverResponse, bidRequest) {
+    const bidResponses = [];
+    let bidResponse = serverResponse.request;
+
+    bidResponse.requestId = bidRequest.params.requestId;
     bidResponse.bidderCode = BIDDER_CODE;
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  function onBidResponse(bidderResponse, bid) {
-    // transform the response to a valid prebid response
-    try {
-      let bidResponse = transformResponse(bidderResponse, bid);
-      bidmanager.addBidResponse(bid.placementCode, bidResponse);
-    } catch (e) {
-      onBidResponseError(bid, [e]);
-    }
-  }
-
-  function transformResponse(bidderResponse, bid) {
-    let responseBody = bidderResponse.data;
-
-    // Validate Request
-    let err = responseBody.error;
-    if (err) {
-      throw err;
-    }
-
-    let htmlString = responseBody.request && responseBody.request.htmlString;
-    if (!htmlString) {
-      throw [`htmlString is missing`, responseBody];
-    }
-
-    let cpm;
-    const cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
-    try {
-      cpm = Number(cpmHeader);
-    } catch (e) {
-      throw ['Invalid CPM value:', cpmHeader];
-    }
-
-    // Validations passed - Got bid
-    let bidResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
-
-    bidResponse.ad = htmlString;
     bidResponse.cpm = cpm;
+    bidResponse.width = bidRequest.sizes[0][0];
+    bidResponse.height = bidRequest.sizes[0][1];
+    bidResponse.creativeId = bidRequest.creativeId;
+    bidResponse.currency = 'USD';
+    bidResponse.ttl = 360;
+    bidResponse.referrer = bidRequest.payload;
+    bidResponse.ad = htmlString;
 
-    bidResponse.width = bid.sizes[0][0];
-    bidResponse.height = bid.sizes[0][1];
+    bidResponses.push(bidResponse);
 
-    return bidResponse;
+    return bidResponses;
+  },
+  getUserSyncs: function (syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: 'ADAPTER_SYNC_URL'
+      }];
+    }
   }
-
-  // prebid api
-  function callBids(params) {
-    let bids = params.bids || [];
-    bids.forEach(sendBidRequest);
-  }
-
-  return {
-    callBids: callBids
-  };
 }
 
-adaptermanager.registerBidAdapter(new MobfoxAdapter(), 'mobfox');
-module.exports = MobfoxAdapter;
+registerBidder(spec);
