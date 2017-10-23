@@ -44,7 +44,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
  *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
  *   passed the isBidRequestValid() test.
- * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
+ * @property {function(ServerResponse, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
  *   interpret it and return the Bid objects. This function will be run inside a try/catch.
  *   If it throws any errors, your bids will be discarded.
  * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
@@ -70,6 +70,15 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
  *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
  *   JSON-serialized into the Request body.
+ */
+
+/**
+ * @typedef {object} ServerResponse
+ *
+ * @property {*} body The response body. If this is legal JSON, then it will be parsed. Otherwise it'll be a
+ *   string with the body's content.
+ * @property {{get: function(string): string} headers The response headers.
+ *   Call this like `ServerResponse.headers.get("Content-Type")`
  */
 
 /**
@@ -263,10 +272,16 @@ export function newBidder(spec) {
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
         // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
-        function onSuccess(response) {
+        function onSuccess(response, responseObj) {
           try {
             response = JSON.parse(response);
           } catch (e) { /* response might not be JSON... that's ok. */ }
+
+          // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
+          response = {
+            body: response,
+            headers: headerParser(responseObj)
+          };
           responses.push(response);
 
           let bids;
@@ -295,6 +310,12 @@ export function newBidder(spec) {
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
+          }
+
+          function headerParser(xmlHttpResponse) {
+            return {
+              get: responseObj.getResponseHeader.bind(responseObj)
+            };
           }
         }
 
