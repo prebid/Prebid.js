@@ -328,7 +328,6 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
 
       const bid = {
-        id: 'id',
         creativeId: 'creative-id',
         bidderCode: 'code',
         requestId: 'some-id',

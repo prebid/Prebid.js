@@ -107,7 +107,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} url The URL which makes the sync happen.
  */
 
-const BID_RESPONSE_KEYS = ['id', 'bidderCode', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const BID_RESPONSE_KEYS = ['requestId', 'bidderCode', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
 /**
  * Register a bidder with prebid, using the given spec.
