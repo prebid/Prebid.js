@@ -88,7 +88,7 @@ export const spec = {
           {
             banner: {
               battr: bid.params.battr,
-              size: bidSizes
+              sizes: bidSizes
             },
             placementCode: bid.placementCode,
             bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
