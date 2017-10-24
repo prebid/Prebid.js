@@ -15,7 +15,7 @@ const validBidReq = {
   auctionId: '1d1a030790a475'
 };
 
-const unvalidBidReq = {
+const invalidBidReq = {
   bidder: BIDDER_CODE,
   params: {
     placementId: '123456789'
@@ -39,13 +39,25 @@ const bidReq = [
   }
 ];
 
+const bidResponse = [{
+  ad: '<div>Hello</div>',
+  bidRequestId: '263be71e91dd9d',
+  cpm: 100,
+  creativeId: '123abc',
+  currency: 'USD',
+  netRevenue: true,
+  width: 300,
+  height: 250,
+  ttl: 360
+}];
+
 describe('Undertone Adapter', () => {
   describe('request', () => {
     it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
     it('should not validate incorrect bid request', () => {
-      expect(spec.isBidRequestValid(unvalidBidReq)).to.equal(undefined);
+      expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
   describe('build request', () => {
@@ -63,6 +75,28 @@ describe('Undertone Adapter', () => {
       expect(bid.placementId).to.equal(123456789);
       expect(bid.publisherId).to.equal('123');
       expect(bid.params).to.be.an('object');
+    });
+  });
+
+  describe('interpretResponse', () => {
+    it('should get correct bid response', () => {
+      let result = spec.interpretResponse(bidResponse);
+      expect(result.length).to.equal(1);
+    });
+
+    it('should have all relevant fields', () => {
+      const result = spec.interpretResponse(bidResponse);
+      const bid = result[0];
+
+      expect(bid.requestId).to.equal('263be71e91dd9d');
+      expect(bid.bidderCode).to.equal(BIDDER_CODE);
+      expect(bid.cpm).to.equal(100);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('123abc');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.be.true;
+      expect(bid.ttl).to.equal(360);
     });
   });
 });
