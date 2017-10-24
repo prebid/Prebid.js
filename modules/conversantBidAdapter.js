@@ -69,7 +69,7 @@ export const spec = {
         secure: secure,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
-        displaymanaerver: VERSION
+        displaymanagerver: VERSION
       };
 
       copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
