@@ -72,7 +72,6 @@ export const spec = {
       }
       bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
       bid.adId = bidObject.id;
-      bid.bidderCode = spec.code;
       bid.cpm = parseFloat(bidObject.price);
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
       if (utils.isNumber(bidObject.lid)) {
