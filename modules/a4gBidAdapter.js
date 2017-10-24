@@ -18,7 +18,7 @@ const SIZE_SEPARATOR = 'x';
 export const spec = {
   code: A4G_BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    return !!bid.params.zoneId;
+    return bid.params && !!bid.params.zoneId;
   },
 
   buildRequests: function(validBidRequests) {
