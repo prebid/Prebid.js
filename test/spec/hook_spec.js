@@ -123,5 +123,29 @@ describe('the hook module', () => {
         testFn
       ]);
     });
+
+    it('should allow context to be passed to hooks, but keep bound contexts', () => {
+      let context;
+      let fn = function() {
+        context = this;
+      };
+
+      let boundContext1 = {};
+      let calledBoundContext1;
+      let hook1 = function(next) {
+        calledBoundContext1 = this;
+        next()
+      }.bind(boundContext1);
+
+      let hookFn = createHook('asyncSeries', fn);
+      hookFn.addHook(hook1);
+
+      let newContext = {};
+      hookFn = hookFn.bind(newContext);
+      hookFn();
+
+      expect(context).to.equal(newContext);
+      expect(calledBoundContext1).to.equal(boundContext1);
+    });
   });
 });
