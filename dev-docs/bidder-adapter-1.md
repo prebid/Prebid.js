@@ -231,8 +231,12 @@ The `interpretResponse` function will be called when the browser has received th
 {% highlight js %}
 
     // if the bid response was empty or an error, return []
-    // otherwise parse the response and return a bidReponses array
+    // otherwise parse the response and return a bidResponses array
 
+    // The response body and headers can be retrieved like this:
+    //
+    // const serverBody = serverResponse.body;
+    // const headerValue = serverResponse.headers.get('some-response-header')
     const bidResponses = [];
     const bidResponse = {
         requestId: bidRequest.bidId,
@@ -437,12 +441,13 @@ export const spec = {
         /**
          * Unpack the response from the server into a list of bids.
          *
-         * @param {*} serverResponse A successful response from the server.
+         * @param {ServerResponse} serverResponse A successful response from the server.
          * @return {Bid[]} An array of bids which were nested inside the server.
          */
         interpretResponse: function(serverResponse, bidRequest) {
+            // const serverBody = serverResponse.body;
+            // const headerValue = serverResponse.headers.get('some-response-header')
             const bidResponses = [];
-            // loop through serverResponses {
             const bidResponse = {
                 requestId: bidRequest.bidId,
                 cpm: CPM,
