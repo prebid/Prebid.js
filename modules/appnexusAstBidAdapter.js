@@ -211,6 +211,7 @@ function newBid(serverBid, rtbBid) {
       image: nativeAd.main_img && nativeAd.main_img.url,
       icon: nativeAd.icon && nativeAd.icon.url,
       clickUrl: nativeAd.link.url,
+      clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
     };
   } else {
