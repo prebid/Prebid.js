@@ -88,8 +88,7 @@ export const spec = {
       bid.requestId = serverResponseOneItem.bidId;
       bid.cpm = serverResponseOneItem.cpm;
       bid.creativeId = parseInt(serverResponseOneItem.creativeId);
-      bid.currency = 'USD'; // temp fix to support multicurrency per 1.0
-      // bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency.toUpperCase() : 'USD';
+      bid.currency = 'USD';
       bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
       bid.ttl = 300;
 
@@ -108,7 +107,6 @@ export const spec = {
 
         let nativeResponse = serverResponseOneItem.nativeResponse;
 
-        // noinspection JSDeprecatedSymbols
         bid['native'] = {
           clickUrl: escape(nativeResponse.link.url), // encodeURIComponent
           impressionTrackers: nativeResponse.imptrackers

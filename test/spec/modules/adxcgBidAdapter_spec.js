@@ -166,7 +166,6 @@ describe('AdxcgAdapter', () => {
       expect(result).to.have.lengthOf(1);
 
       expect(result[0]).to.exist;
-      expect(result[0].bidderCode).to.equal('adxcg');
       expect(result[0].width).to.equal(300);
       expect(result[0].height).to.equal(250);
       expect(result[0].creativeId).to.equal(42);
@@ -183,7 +182,6 @@ describe('AdxcgAdapter', () => {
 
       expect(result).to.have.lengthOf(1);
 
-      expect(result[0].bidderCode).to.equal('adxcg');
       expect(result[0].width).to.equal(300);
       expect(result[0].height).to.equal(250);
       expect(result[0].creativeId).to.equal(42);
@@ -202,7 +200,6 @@ describe('AdxcgAdapter', () => {
       expect(result[0].height).to.equal(360);
       expect(result[0].mediaType).to.equal('video');
       expect(result[0].creativeId).to.equal(42);
-      expect(result[0].bidderCode).to.equal('adxcg');
       expect(result[0].cpm).to.equal(0.45);
       expect(result[0].vastUrl).to.equal('vastContentUrl');
       expect(result[0].descriptionUrl).to.equal('vastContentUrl');
@@ -214,7 +211,6 @@ describe('AdxcgAdapter', () => {
     it('handles native responses', () => {
       let result = spec.interpretResponse(NATIVE_RESPONSE, BIDDER_REQUEST);
 
-      expect(result[0].bidderCode).to.equal('adxcg');
       expect(result[0].width).to.equal(0);
       expect(result[0].height).to.equal(0);
       expect(result[0].mediaType).to.equal('native');
