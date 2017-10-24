@@ -236,7 +236,6 @@ The `interpretResponse` function will be called when the browser has received th
     const bidResponses = [];
     const bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: spec.code,
         cpm: CPM,
         width: WIDTH,
         height: HEIGHT,
@@ -261,8 +260,7 @@ The parameters of the `bidObject` are:
 {: .table .table-bordered .table-striped }
 | Key          | Scope                                       | Description                                                                                                                                     | Example                              |
 |--------------+---------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------|
-| `id`         | Required                                    | The bid ID. Used to tie this bid back to the request.                                                                                           | 12345                                |
-| `bidderCode` | Required                                    | The bidder code.                                                                                                                                | `"example"`                          |
+| `requestId`         | Required                                    | The bid ID. Used to tie this bid back to the request.                                                                                           | 12345                                |
 | `cpm`        | Required                                    | The bid price. We recommend the most granular price a bidder can provide                                                                        | 3.5764                               |
 | `width`      | Required                                    | The width of the returned creative. For video, this is the player width.                                                                        | 300                                  |
 | `height`     | Required                                    | The height of the returned creative. For video, this is the player height.                                                                      | 250                                  |
@@ -447,7 +445,6 @@ export const spec = {
             // loop through serverResponses {
             const bidResponse = {
                 requestId: bidRequest.bidId,
-                bidderCode: spec.code,
                 cpm: CPM,
                 width: WIDTH,
                 height: HEIGHT,
