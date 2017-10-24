@@ -76,7 +76,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @typedef {object} Bid
  *
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should correspond to one of the
+ *   This should match the BidRequest.bidId which this Bid targets.
  * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
  * @property {string} currency The currency code for the cpm value
  * @property {number} cpm The bid price, in US cents per thousand impressions.
