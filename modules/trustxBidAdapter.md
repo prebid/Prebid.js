@@ -10,7 +10,6 @@ Module that connects to TrustX demand source to fetch bids.
 
 # Test Parameters
 ```
-    window.globalPrebidTrustxPriceType = 'gross'; // by default is 'net'
     var adUnits = [
            {
                code: 'test-div',
@@ -19,7 +18,8 @@ Module that connects to TrustX demand source to fetch bids.
                    {
                        bidder: "trustx",
                        params: {
-                           uid: '44'
+                           uid: '44',
+                           priceType: 'gross' // by default is 'net'
                        }
                    }
                ]
@@ -30,7 +30,8 @@ Module that connects to TrustX demand source to fetch bids.
                    {
                        bidder: "trustx",
                        params: {
-                           uid: 45
+                           uid: 45,
+                           priceType: 'gross'
                        }
                    }
                ]
