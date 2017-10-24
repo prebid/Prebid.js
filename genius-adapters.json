@@ -1,5 +1,6 @@
 [
   "appnexusAstBidAdapter",
   "indexExchangeBidAdapter",
+  "prebidServerBidAdapter",
   "rubiconBidAdapter"
 ]
