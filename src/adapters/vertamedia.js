@@ -100,7 +100,7 @@ function VertamediaAdapter() {
     bid.width = bidRequest.width;
     bid.height = bidRequest.height;
     bid.descriptionUrl = tag.url;
-    bid.vastUrl = tag.url;
+    bid.vastUrl = tag.vastUrl;
 
     return bid;
   }
