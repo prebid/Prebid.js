@@ -18,18 +18,19 @@ export const spec = {
   },
   buildRequests: function(validBidRequests) {
     const payload = [];
+    const host = utils.getTopWindowLocation().host;
+    const domain =  /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
-        domain: utils.getTopWindowLocation() || '',
-        placementId: bidReq.params.placementId || 0,
+        domain: domain,
+        placementId: bidReq.params.placementId,
         publisherId: bidReq.params.publisherId,
         sizes: bidReq.sizes,
         params: bidReq.params
       };
       payload.push(bid);
     });
-    console.log(payload);
     return {
       method: 'POST',
       url: URL,
@@ -61,7 +62,6 @@ export const spec = {
       bids.push(bid);
     });
     return bids;
-  },
-  getUserSyncs: function(syncOptions) {}
+  }
 };
 registerBidder(spec);
