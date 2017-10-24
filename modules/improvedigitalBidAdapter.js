@@ -1,4 +1,4 @@
-const LIB_VERSION_GLOBAL = '3.0.5';
+const LIB_VERSION_GLOBAL = '3.0.10';
 
 const CONSTANTS = require('src/constants');
 const utils = require('src/utils');
@@ -13,6 +13,7 @@ const IMPROVE_DIGITAL_BIDDER_CODE = 'improvedigital';
 const ImproveDigitalAdapter = function () {
   let baseAdapter = new Adapter(IMPROVE_DIGITAL_BIDDER_CODE);
   baseAdapter.idClient = new ImproveDigitalAdServerJSClient('hb');
+  let usersync = false;
 
   const LIB_VERSION = LIB_VERSION_GLOBAL;
 
@@ -70,6 +71,7 @@ const ImproveDigitalAdapter = function () {
 
   $$PREBID_GLOBAL$$.improveDigitalResponse = function(response) {
     let bidRequests = utils.getBidderRequestAllAdUnits(IMPROVE_DIGITAL_BIDDER_CODE);
+    let syncArray = [];
     if (bidRequests && bidRequests.bids && bidRequests.bids.length > 0) {
       utils._each(bidRequests.bids, function (bidRequest) {
         let bidObjects = response.bid || [];
@@ -88,31 +90,59 @@ const ImproveDigitalAdapter = function () {
               return;
             }
 
+            if (utils.isArray(bidObject.sync)) {
+              utils._each(bidObject.sync, function (syncElement) {
+                if (syncArray.indexOf(syncElement) === -1) {
+                  syncArray.push(syncElement);
+                }
+              });
+            }
+
             let bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
-
-            let syncString = '';
-            let syncArray = (bidObject.sync && bidObject.sync.length > 0) ? bidObject.sync : [];
-
-            utils._each(syncArray, function (syncElement) {
-              let syncInd = syncElement.replace(/\//g, '\\\/');
-              syncString = `${syncString}${(syncString === '') ? 'document.writeln(\"' : ''}<img src=\\\"${syncInd}\\\" style=\\\"display:none\\\"\/>`;
-            });
-            syncString = `${syncString}${(syncString === '') ? '' : '\")'}`;
 
             let nurl = '';
             if (bidObject.nurl && bidObject.nurl.length > 0) {
-              nurl = `<img src=\"${bidObject.nurl}\" width=\"0\" height=\"0\" style=\"display:none\">`;
+              nurl = `<img src="${bidObject.nurl}" width="0" height="0" style="display:none">`;
             }
-            bid.ad = `${nurl}<script>${bidObject.adm}${syncString}</script>`;
+            bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
             bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
             bid.cpm = parseFloat(bidObject.price);
             bid.width = bidObject.w;
             bid.height = bidObject.h;
+            if (utils.isNumber(bidObject.lid)) {
+              bid.dealId = bidObject.lid;
+            } else if (bidObject.lid['1']) {
+              bid.dealId = bidObject.lid['1'];
+            }
 
             bidmanager.addBidResponse(bidRequest.placementCode, bid);
           }
         });
       });
+    }
+
+    if (!usersync && syncArray.length > 0) {
+      var iframe = utils.createInvisibleIframe();
+      try {
+        let iframeDoc;
+        document.body.appendChild(iframe);
+        if (iframe.contentDocument) {
+          iframeDoc = iframe.contentDocument;
+        } else if (iframe.contentWindow) {
+          iframeDoc = iframe.contentWindow.document;
+        }
+        if (iframeDoc) {
+          utils._each(syncArray, function (syncElement) {
+            let img = iframeDoc.createElement('img');
+            img.src = syncElement;
+            img.style.display = 'none';
+            iframeDoc.body.appendChild(img);
+          });
+        }
+      } catch (error) {
+        utils.logError(error);
+      }
+      usersync = true;
     }
   };
 
