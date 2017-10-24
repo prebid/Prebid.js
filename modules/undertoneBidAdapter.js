@@ -12,14 +12,14 @@ const URL = '//localhost:9090/hb';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    if (bid && bid.params && bid.params.publisherId) {
+    if (bid && bid.params && bid.params.publisherId && bid.params.placementId) {
       return true;
     }
   },
   buildRequests: function(validBidRequests) {
     const payload = [];
     const host = utils.getTopWindowLocation().host;
-    const domain =  /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
+    const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -39,28 +39,27 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      if (serverResponse.error) {
-        utils.logError('undertone: ', serverResponse.error);
-      }
-      return bids;
-    }
 
-    serverResponse.forEach((bidRes) => {
-      const bid = {
-        requestId: bidRes.bidRequestId,
-        bidderCode: BIDDER_CODE,
-        cpm: bidRes.cpm,
-        width: bidRes.width,
-        height: bidRes.height,
-        creativeId: bidRes.creativeId,
-        currency: bidRes.currency,
-        netRevenue: bidRes.netRevenue,
-        ttl: bidRes.ttl,
-        ad: bidRes.ad
-      };
-      bids.push(bid);
-    });
+    if (serverResponse && Array.isArray(serverResponse) && serverResponse.length > 0) {
+      serverResponse.forEach((bidRes) => {
+        if (bidRes.ad && bidRes.cpm !== 0) {
+          const bid = {
+            requestId: bidRes.bidRequestId,
+            bidderCode: BIDDER_CODE,
+            cpm: bidRes.cpm,
+            width: bidRes.width,
+            height: bidRes.height,
+            creativeId: bidRes.creativeId,
+            currency: bidRes.currency,
+            netRevenue: bidRes.netRevenue,
+            ttl: bidRes.ttl,
+            ad: bidRes.ad
+          };
+          bids.push(bid);
+        }
+      });
+    }
+    console.log(bids);
     return bids;
   }
 };
