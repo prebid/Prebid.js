@@ -1,112 +1,130 @@
-import { expect } from 'chai';
-import a4gBidFactory from 'modules/a4gBidAdapter';
-import bidmanager from 'src/bidmanager';
-import adloader from 'src/adloader';
-import { STATUS } from 'src/constants';
+import { expect} from 'chai';
+import { spec } from 'modules/a4gBidAdapter';
 
-describe('a4g adapter tests', function () {
-  function readJsonpCallbackName(url) {
-    return /&jsonp=([_a-zA-Z0-9]+)/.exec(url)[1];
-  }
-
-  let spyLoadScript,
-    spyAddBidResponse,
-    a4gAdapter;
-
-  before(() => {
-    spyLoadScript = sinon.spy(adloader, 'loadScript');
-    spyAddBidResponse = sinon.spy(bidmanager, 'addBidResponse');
-  });
-
-  after(() => {
-    adloader.loadScript.restore();
-    bidmanager.addBidResponse.restore();
-  });
-
-  beforeEach(() => {
-    a4gAdapter = a4gBidFactory();
-  });
-
-  it('should send proper jsonp request to default deliveryUrl', () => {
-    a4gAdapter.callBids({ bids: [{
-      placementCode: 'pc1',
-      sizes: [[1, 2], [3, 4]],
-      params: {
-        zoneId: 1
-      }
-    }, {
-      placementCode: 'pc2',
-      sizes: [[5, 6]],
-      params: {
-        zoneId: 2
-      }
-    }]});
-
-    let targetUrl = spyLoadScript.lastCall.args[0];
-    expect(targetUrl).to.contain('ads.ad4game.com/v1/bid');
-    expect(targetUrl).to.contain('jsonp=');
-    expect(targetUrl).to.contain('id=pc1%3Bpc2');
-    expect(targetUrl).to.contain('size=1x2%2C3x4%3B5x6');
-    expect(targetUrl).to.contain('zoneId=1%3B2');
-  });
-
-  it('should send proper jsonp request to deliveryUrl from 1st bid', () => {
-    a4gAdapter.callBids({ bids: [{
-      placementCode: 'pc1',
-      sizes: [[1, 2], [3, 4]],
-      params: {
-        zoneId: 1,
-        deliveryUrl: 'new.test.delivery.com:8080/v105/new_bid'
-      }
-    }, {
-      placementCode: 'pc2',
-      sizes: [[5, 6]],
-      params: {
-        zoneId: 2,
-        deliveryUrl: 'nonused.test.delivery.com:8080/v105/new_bid'
-      }
-    }]});
-
-    let targetUrl = spyLoadScript.lastCall.args[0];
-    expect(targetUrl).to.contain('new.test.delivery.com:8080/v105/new_bid');
-  });
-
-  describe('on jsonp callback', () => {
-    let jsonpCallbackName;
-
-    beforeEach(() => {
-      a4gAdapter.callBids({ bids: [{
-        placementCode: 'pc1',
-        sizes: [[1, 2], [3, 4]],
+describe('a4gAdapterTests', () => {
+  describe('bidRequestValidity', () => {
+    it('bidRequest with zoneId and deliveryUrl params', () => {
+      assert(spec.isBidRequestValid({
+        bidder: 'a4g',
         params: {
-          zoneId: 1
+          zoneId: 59304,
+          deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
         }
-      }]});
-      jsonpCallbackName = readJsonpCallbackName(spyLoadScript.lastCall.args[0]);
+      }) === true);
     });
 
-    it('should unregister', () => {
-      window[jsonpCallbackName]({status: 200, response: [{id: 'pc1', width: 1, height: 2, cpm: 1.0, ad: '' }]});
-      expect(window[jsonpCallbackName]).to.not.be.a('function');
+    it('bidRequest with only zoneId', () => {
+      assert(spec.isBidRequestValid({
+        bidder: 'a4g',
+        params: {
+          zoneId: 59304
+        }
+      }) === true);
     });
 
-    it('should set all responses as bad if error received', () => {
-      window[jsonpCallbackName]({status: 400, response: []});
-      let [placementCode, bid] = spyAddBidResponse.lastCall.args;
-      expect(placementCode).to.equal('pc1');
-      expect(bid.getStatusCode()).to.equal(STATUS.NO_BID);
+    it('bidRequest with only deliveryUrl', () => {
+      assert(spec.isBidRequestValid({
+        bidder: 'a4g',
+        params: {
+          deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
+        }
+      }) === false);
     });
 
-    it('should set all responses as good with appropriate values if ok', () => {
-      window[jsonpCallbackName]({status: 200, response: [{id: 'pc1', width: 1, height: 2, cpm: 1.0, ad: 'test' }]});
-      let [placementCode, bid] = spyAddBidResponse.lastCall.args;
-      expect(placementCode).to.equal('pc1');
-
-      expect(bid.getStatusCode()).to.equal(STATUS.GOOD);
-      expect(bid.cpm).to.equal(1);
-      expect(bid.ad).to.equal('test');
-      expect(bid.width).to.equal(1);
-      expect(bid.height).to.equal(2);
+    it('bidRequest with empty params', () => {
+      assert(spec.isBidRequestValid({bidder: 'a4g'}) === false);
     });
+  });
+
+  describe('bidRequest', () => {
+    const bidRequests = [{
+      'bidder': 'a4g',
+      'bidId': '51ef8751f9aead',
+      'params': {
+        'zoneId': 59304,
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'bidderRequestId': '418b37f85e772c',
+      'auctionId': '18fd8b8b0bd757'
+    }, {
+      'bidder': 'a4g',
+      'bidId': '51ef8751f9aead',
+      'params': {
+        'zoneId': 59354,
+        'deliveryUrl': '//dev01.ad4game.com/v1/bid'
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'bidderRequestId': '418b37f85e772c',
+      'auctionId': '18fd8b8b0bd757'
+    }];
+
+    it('bidRequest method', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('bidRequest url', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.url).to.match(new RegExp(`${bidRequests[1].params.deliveryUrl}`));
+    });
+
+    it('bidRequest data', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.data).to.exists;
+    });
+
+    it('bidRequest zoneIds', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.data.zoneId).to.equal('59304;59354');
+    });
+  });
+
+  describe('interpretResponse', () => {
+    const bidRequest = [{
+      'bidder': 'a4g',
+      'bidId': '51ef8751f9aead',
+      'params': {
+        'zoneId': 59304,
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'bidderRequestId': '418b37f85e772c',
+      'auctionId': '18fd8b8b0bd757'
+    }];
+
+    const bidResponse = [{
+      'id': 'div-gpt-ad-1460505748561-0',
+      'ad': 'test ad',
+      'width': 320,
+      'height': 250,
+      'cpm': 5.2
+    }];
+
+    it('required keys', () => {
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+
+      let requiredKeys = [
+        'id',
+        'bidderCode',
+        'cpm',
+        'width',
+        'height',
+        'ad',
+        'ttl',
+        'creativeId',
+        'netRevenue',
+        'currency'
+      ];
+
+      let resultKeys = Object.keys(result[0]);
+      resultKeys.forEach(function(key) {
+        expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
+      });
+    })
   });
 });
