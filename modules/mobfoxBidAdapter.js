@@ -8,7 +8,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['mf'], // short code
   isBidRequestValid: function (bid) {
-    return bid.params.s !== null || bid.params.s !== 'undefined';
+    return bid.params.s !== null && bid.params.s !== undefined && bid.requestId !== null && bid.requestId !== undefined;
   },
   buildRequests: function (validBidRequests) {
     if (validBidRequests.length > 1) {
@@ -24,6 +24,7 @@ export const spec = {
       r_type: bidParams.r_type || 'banner',
       r_resp: bidParams.r_resp || 'json', // string | vast20
       //  i: bidParams.i || undefined , // string | 69.197.148.18
+      requestId: bid.requestId,
       s: bidParams.s, // string | 80187188f458cfde788d961b6882fd53
       u: bidParams.u || window.navigator.userAgent, // string
 
@@ -70,52 +71,60 @@ export const spec = {
       n_rating_req: bidParams.n_rating_req || undefined
     };
 
-    for (let key in params) {
-      if (params.hasOwnProperty(key)) {
-        if (params[key] === undefined) {
-          delete params[key];
-        } else {
-          params[key] = encodeURIComponent(params[key]);
-        }
-      }
-    }
-
-    let payloadString = utils._map(Object.keys(params), key => `${key}=${params[key]}`)
-      .join('&');
+    let payloadString = buildPayloadString(params);
 
     return {
       method: 'GET',
       url: BID_REQUEST_BASE_URL,
-      data: payloadString,
+      data: payloadString
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    let bidResponse = serverResponse.request;
 
-    bidResponse.requestId = bidRequest.params.requestId;
-    bidResponse.bidderCode = BIDDER_CODE;
-    bidResponse.cpm = cpm;
-    bidResponse.width = bidRequest.sizes[0][0];
-    bidResponse.height = bidRequest.sizes[0][1];
-    bidResponse.creativeId = bidRequest.creativeId;
-    bidResponse.currency = 'USD';
-    bidResponse.ttl = 360;
-    bidResponse.referrer = bidRequest.payload;
-    bidResponse.ad = htmlString;
+    if (!serverResponse || serverResponse.error) {
+      let errorMessage = `in response for ${bidRequest.bidderCode} adapter`;
+      if (serverResponse && serverResponse.error) {
+        errorMessage += `: ${serverResponse.error}`;
+      }
+      utils.logError(errorMessage);
+      return bidResponses;
+    }
 
+    let bidRequestData = bidRequest.data.split('&');
+    const bidResponse = {
+      requestId: bidRequestData[3].split('=')[1],
+      bidderCode: BIDDER_CODE,
+      cpm: serverResponse.request.cpmPrice,
+      width: bidRequestData[6].split('=')[1],
+      height: bidRequestData[7].split('=')[1],
+      creativeId: bidRequestData[4].split('=')[1],
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 360,
+      referrer: serverResponse.request.clickurl,
+      ad: serverResponse.request.htmlString
+    };
     bidResponses.push(bidResponse);
-
     return bidResponses;
   },
   getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
+  }
+};
+
+function buildPayloadString(params) {
+  for (let key in params) {
+    if (params.hasOwnProperty(key)) {
+      if (params[key] === undefined) {
+        delete params[key];
+      } else {
+        params[key] = encodeURIComponent(params[key]);
+      }
     }
   }
+
+  return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
+    .join('&')
 }
 
 registerBidder(spec);
