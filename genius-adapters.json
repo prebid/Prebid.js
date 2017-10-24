@@ -1,4 +1,5 @@
 [
+  "appnexusBidAdapter",
   "appnexusAstBidAdapter",
   "indexExchangeBidAdapter",
   "prebidServerBidAdapter",
