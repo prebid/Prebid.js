@@ -38,7 +38,7 @@ var port = 9999;
 // Tasks
 gulp.task('default', ['webpack']);
 
-gulp.task('serve', ['build-bundle-dev', 'watch']);
+gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
