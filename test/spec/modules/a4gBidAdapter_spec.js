@@ -4,35 +4,35 @@ import { spec } from 'modules/a4gBidAdapter';
 describe('a4gAdapterTests', () => {
   describe('bidRequestValidity', () => {
     it('bidRequest with zoneId and deliveryUrl params', () => {
-      assert(spec.isBidRequestValid({
+      expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
           zoneId: 59304,
           deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
         }
-      }) === true);
+      })).to.equal(true);
     });
 
     it('bidRequest with only zoneId', () => {
-      assert(spec.isBidRequestValid({
+      expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
           zoneId: 59304
         }
-      }) === true);
+      })).to.equal(true);
     });
 
     it('bidRequest with only deliveryUrl', () => {
-      assert(spec.isBidRequestValid({
+      expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
           deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
         }
-      }) === false);
+      })).to.equal(false);
     });
 
     it('bidRequest with empty params', () => {
-      assert(spec.isBidRequestValid({bidder: 'a4g'}) === false);
+      expect(spec.isBidRequestValid({bidder: 'a4g'})).to.equal(false);
     });
   });
 
@@ -123,6 +123,7 @@ describe('a4gAdapterTests', () => {
 
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
+        console.log(key + " " + requiredKeys.indexOf(key) !== -1);
         expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
       });
     })
