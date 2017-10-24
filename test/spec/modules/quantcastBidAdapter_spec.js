@@ -122,7 +122,7 @@ describe('Quantcast adapter', () => {
           {
             banner: {
               battr: [1, 2],
-              size: [{ width: 300, height: 250 }]
+              sizes: [{ width: 300, height: 250 }]
             },
             placementCode: 'div-gpt-ad-1438287399331-0',
             bidFloor: 1e-10
