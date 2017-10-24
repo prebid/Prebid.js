@@ -117,8 +117,8 @@ describe('FidelityAdapter', () => {
     it('should get correct bid response', () => {
       let expectedResponse = [
         {
-          bidderCode: 'fidelity',
           requestId: 'bidId-123456-1',
+          creativeId: 'bidId-123456-1',
           cpm: 0.09,
           width: 728,
           height: 90,
