@@ -21,13 +21,15 @@ export const spec = {
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
-        domain: utils.getTopWindowLocation().origin || '',
+        domain: utils.getTopWindowLocation() || '',
         placementId: bidReq.params.placementId || 0,
         publisherId: bidReq.params.publisherId,
-        sizes: bidReq.sizes
+        sizes: bidReq.sizes,
+        params: bidReq.params
       };
       payload.push(bid);
     });
+    console.log(payload);
     return {
       method: 'POST',
       url: URL,
@@ -51,11 +53,9 @@ export const spec = {
         width: bidRes.width,
         height: bidRes.height,
         creativeId: bidRes.creativeId,
-        // dealId: DEAL_ID,
         currency: bidRes.currency,
         netRevenue: bidRes.netRevenue,
         ttl: bidRes.ttl,
-        // referrer: REFERER,
         ad: bidRes.ad
       };
       bids.push(bid);
