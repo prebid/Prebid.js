@@ -98,7 +98,7 @@ function PrebidServer() {
             }
           }
         });
-        // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to injest properly
+        // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to ingest properly
         // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myVar","value":["myValue","124578"]}]
         let kw_array = [];
         Object.keys(bid.params).forEach(key => {
