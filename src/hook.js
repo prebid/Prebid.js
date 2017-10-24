@@ -32,14 +32,14 @@ export function createHook(type, fn, hookName) {
     asyncSeries: function(...args) {
       let curr = 0;
 
-      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
-
-      function asyncSeriesNext(...args) {
+      const asyncSeriesNext = (...args) => {
         let hook = _hooks[++curr];
         if (typeof hook === 'object' && typeof hook.fn === 'function') {
           return hook.fn.apply(this, args.concat(asyncSeriesNext))
         }
-      }
+      };
+
+      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
     }
   };
 
