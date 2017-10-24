@@ -34,7 +34,6 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     utils.logMessage(`buildRequests: ${JSON.stringify(validBidRequests)}`);
 
-    // if (validBidRequests && validBidRequests.length > 0) {
     let adZoneIds = [];
     let prebidBidIds = [];
     let sizes = [];
@@ -52,7 +51,6 @@ export const spec = {
     requestUrl.search = null;
     requestUrl.hash = null;
 
-    // noinspection JSDeprecatedSymbols
     let adxcgRequestUrl = url.format({
       protocol: secure ? 'https' : 'http',
       hostname: secure ? 'hbps.adxcg.net' : 'hbp.adxcg.net',
@@ -82,15 +80,12 @@ export const spec = {
    * @return {bidRequests[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequests) {
-    // utils.logMessage(`interpretResponse serverResponse: ${JSON.stringify(response)}`); // remove for PRODUCTION
-    // utils.logMessage(`interpretResponse bidRequest ${JSON.stringify(bidRequests)}`); // remove for PRODUCTION
     let bids = [];
 
     serverResponse.forEach(serverResponseOneItem => {
       let bid = {};
 
       bid.requestId = serverResponseOneItem.bidId;
-      bid.bidderCode = spec.code;
       bid.cpm = serverResponseOneItem.cpm;
       bid.creativeId = parseInt(serverResponseOneItem.creativeId);
       bid.currency = 'USD'; // temp fix to support multicurrency per 1.0
