@@ -192,10 +192,26 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   </div>
 </div>
 
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="adomik" class="analytics-check-box"> Adomik Analytics
+    </label>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="adxcg" class="analytics-check-box"> Adxcg Analytics
+    </label>
+  </div>
+</div>
+
 </div>
 <br/>
 <p>
-(Version 0.29.0)
+(Version 0.31.0)
 </p>
 
 <div class="form-group">
