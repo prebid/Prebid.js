@@ -109,7 +109,7 @@ describe('a4gAdapterTests', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
       let requiredKeys = [
-        'id',
+        'requestId',
         'bidderCode',
         'cpm',
         'width',
@@ -121,12 +121,8 @@ describe('a4gAdapterTests', () => {
         'currency'
       ];
 
-      console.log("Just for test: ");
-      console.log(Object.keys(result[0]));
-
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
-        console.log(key + " " + requiredKeys.indexOf(key) !== -1);
         expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
       });
     })
