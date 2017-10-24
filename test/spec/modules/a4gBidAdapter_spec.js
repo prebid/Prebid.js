@@ -30,10 +30,6 @@ describe('a4gAdapterTests', () => {
         }
       })).to.equal(false);
     });
-
-    it('bidRequest with empty params', () => {
-      expect(spec.isBidRequestValid({bidder: 'a4g'})).to.equal(false);
-    });
   });
 
   describe('bidRequest', () => {
