@@ -173,10 +173,11 @@ gulp.task('webpack', ['clean'], function () {
 // By default, this runs in headless chrome.
 //
 // If --watch is given, the task will re-run unit tests whenever the source code changes
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 gulp.task('test', ['clean'], function (done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch);
+  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
   var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
   if (browserOverride.length > 0) {
@@ -186,8 +187,9 @@ gulp.task('test', ['clean'], function (done) {
   new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 });
 
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
+  new KarmaServer(karmaConfMaker(true, false, argv.file), newKarmaCallback(done)).start();
 });
 
 // View the code coverage report in the browser.
