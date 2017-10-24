@@ -181,6 +181,10 @@ A native `image` ad unit can be set up in the manner below:
 </div>
 {% endhighlight %}
 
+## Working Examples
+
++ [Prebid Native with two slots]({{site.github.url}}/examples/native/native-demo.html)
+
 ## Related Topics
 
 + [Setting up Prebid Native in DFP]({{site.github.url}}/adops/setting-up-prebid-native-in-dfp.html) (Ad Ops Setup Instructions)
