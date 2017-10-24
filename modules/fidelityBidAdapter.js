@@ -42,8 +42,8 @@ export const spec = {
     if (serverResponse && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
         const bidResponse = {
-          bidderCode: spec.code,
           requestId: bid.impid,
+          creativeId: bid.impid,
           cpm: bid.price,
           width: bid.width,
           height: bid.height,
