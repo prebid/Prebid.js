@@ -45,7 +45,7 @@ DigiTrust.initialize({
     },
     function (digiTrustResult) {
       if (typeof digiTrustResult === 'object' && digiTrustResult.success) {
-         pbjs.setConfig({digiTrustId: digiTrustResult.identity});
+         pbjs.setConfig({digiTrustId: digiTrustResult});
       }
     }
 );
