@@ -1,170 +1,77 @@
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import { STATUS } from 'src/constants';
-import adloader from 'src/adloader';
+import {registerBidder} from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 const A4G_BIDDER_CODE = 'a4g';
+const A4G_CURRENCY = 'USD';
 const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
+const A4G_TTL = 120;
 
-const IFRAME_NESTING_PARAM_NAME = 'if';
 const LOCATION_PARAM_NAME = 'siteurl';
 const ID_PARAM_NAME = 'id';
 const ZONE_ID_PARAM_NAME = 'zoneId';
 const SIZE_PARAM_NAME = 'size';
 
-const A4G_SUPPORTED_PARAMS = [
-  IFRAME_NESTING_PARAM_NAME,
-  LOCATION_PARAM_NAME,
-  ID_PARAM_NAME,
-  ZONE_ID_PARAM_NAME,
-  SIZE_PARAM_NAME
-];
-
 const ARRAY_PARAM_SEPARATOR = ';';
 const ARRAY_SIZE_SEPARATOR = ',';
 const SIZE_SEPARATOR = 'x';
 
-const JSONP_PARAM_NAME = 'jsonp';
+export const spec = {
+  code: A4G_BIDDER_CODE,
+  isBidRequestValid: function(bid) {
+    return !!bid.params.zoneId;
+  },
 
-function appendUrlParam(url, paramName, paramValue) {
-  const isQueryParams = url.indexOf('?') !== -1;
-  const separator = isQueryParams ? '&' : '?';
-  return url + separator + encodeURIComponent(paramName) + '=' + encodeURIComponent(paramValue);
-}
+  buildRequests: function(validBidRequests) {
+    let deliveryUrl = '';
+    const idParams = [];
+    const sizeParams = [];
+    const zoneIds = [];
 
-function isInIframe(windowObj) {
-  return windowObj !== windowObj.parent;
-}
-
-function getIframeInfo(window) {
-  let currentWindow = window;
-  let iframeNestingLevel = 0;
-  let hasExternalMeet = false;
-  let hostHref = window.location.href;
-
-  while (isInIframe(currentWindow)) {
-    currentWindow = currentWindow.parent;
-
-    try {
-      if (hasExternalMeet) {
-        iframeNestingLevel = 1;
-      } else {
-        iframeNestingLevel++;
+    utils._each(validBidRequests, function(bid) {
+      if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
+        deliveryUrl = bid.params.deliveryUrl;
       }
+      idParams.push(bid.adUnitCode);
+      sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
+      zoneIds.push(bid.params.zoneId);
+    });
 
-      hostHref = currentWindow.document.referrer || currentWindow.location.href;
-    } catch (e) {
-      hasExternalMeet = true;
+    if (!deliveryUrl) {
+      deliveryUrl = A4G_DEFAULT_BID_URL;
     }
-  }
 
-  return {
-    nestingLevel: iframeNestingLevel,
-    hostHref: hostHref
-  };
-}
-
-function isValidStatus(status) {
-  return status === 200;
-}
-
-function bidParamsToQuery(params) {
-  return A4G_SUPPORTED_PARAMS
-    .reduce((url, paramName) => paramName in params
-      ? appendUrlParam(url, paramName, params[paramName])
-      : url,
-    '');
-}
-
-function buildBidRequestUrl(bidDeliveryUrl, params) {
-  return bidDeliveryUrl + bidParamsToQuery(params);
-}
-
-function createBidRequest(bidRequest) {
-  return (status) => bidfactory.createBid(status, bidRequest);
-}
-
-function mapBidToPrebidFormat(bidRequest, bid) {
-  const bidResponse = bidRequest(STATUS.GOOD);
-
-  bidResponse.bidderCode = A4G_BIDDER_CODE;
-  bidResponse.cpm = bid.cpm;
-  bidResponse.ad = bid.ad;
-  bidResponse.width = bid.width;
-  bidResponse.height = bid.height;
-
-  return bidResponse;
-}
-
-function mapBidErrorToPrebid(bidRequest) {
-  return bidRequest(STATUS.NO_BID);
-}
-
-function extractBidParams(bids) {
-  const idParams = [];
-  const sizeParams = [];
-  const zoneIds = [];
-
-  let deliveryUrl = '';
-
-  for (let i = 0; i < bids.length; i++) {
-    const bid = bids[i];
-    if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
-      deliveryUrl = bid.params.deliveryUrl;
-    }
-    idParams.push(bid.placementCode);
-    sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
-    zoneIds.push(bid.params.zoneId);
-  }
-
-  return [deliveryUrl, {
-    [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
-    [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR),
-    [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR)
-  }];
-}
-
-function a4gBidFactory() {
-  function generateJsonpCallbackName() {
-    return '__A4G' + Date.now();
-  }
-
-  function jsonp(url, callback) {
-    const callbackName = generateJsonpCallbackName();
-    const jsnopUrl = appendUrlParam(url, JSONP_PARAM_NAME, callbackName);
-
-    window[callbackName] = ({ status, response }) => {
-      !isValidStatus(status)
-        ? callback(new Error(`Failed fetching ad with status ${status}`), response)
-        : callback(null, response);
-      delete window[callbackName];
+    return {
+      method: 'GET',
+      url: deliveryUrl,
+      data: {
+        [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
+        [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
+        [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
+        [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR)
+      }
     };
+  },
 
-    adloader.loadScript(jsnopUrl);
+  interpretResponse: function(serverResponses, request) {
+    const bidResponses = [];
+    utils._each(serverResponses, function(response) {
+      const bidResponse = {
+        requestId: request.bidId,
+        bidderCode: spec.code,
+        cpm: response.cpm,
+        width: response.width,
+        height: response.height,
+        creativeId: response.zoneid,
+        currency: A4G_CURRENCY,
+        netRevenue: true,
+        ttl: A4G_TTL,
+        ad: response.ad
+      };
+      bidResponses.push(bidResponse);
+    });
+
+    return bidResponses;
   }
+};
 
-  return {
-    callBids({ bids }) {
-      const bidRequests = bids.map(bid => createBidRequest(utils.getBidRequest(bid.bidId)));
-      const [ deliveryUrl, bidParams ] = extractBidParams(bids);
-      const { nestingLevel, hostHref } = getIframeInfo(window);
-      const envParams = { [IFRAME_NESTING_PARAM_NAME]: nestingLevel, [LOCATION_PARAM_NAME]: hostHref };
-      const bidsRequestUrl = buildBidRequestUrl(deliveryUrl || A4G_DEFAULT_BID_URL, Object.assign({}, bidParams, envParams));
-
-      jsonp(bidsRequestUrl, (error, bidsResponse) => {
-        for (let i = 0; i < bidRequests.length; i++) {
-          const bidRequest = bidRequests[i];
-          const placementCode = bids[i].placementCode;
-
-          bidmanager.addBidResponse(placementCode,
-            error
-              ? mapBidErrorToPrebid(bidRequest)
-              : mapBidToPrebidFormat(bidRequest, bidsResponse[i]));
-        }
-      });
-    }
-  };
-}
-
-module.exports = a4gBidFactory;
+registerBidder(spec);
