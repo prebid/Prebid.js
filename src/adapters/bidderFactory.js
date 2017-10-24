@@ -107,7 +107,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} url The URL which makes the sync happen.
  */
 
-const BID_RESPONSE_KEYS = ['requestId', 'bidderCode', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+// common params for all mediaTypes
+const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -325,7 +326,7 @@ export function newBidder(spec) {
 
   function hasValidKeys(bid) {
     let bidKeys = Object.keys(bid);
-    return BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
   }
 
   function newEmptyBid() {

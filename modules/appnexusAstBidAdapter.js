@@ -181,7 +181,7 @@ function newBid(serverBid, rtbBid) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    creative_id: rtbBid.creative_id,
+    creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
