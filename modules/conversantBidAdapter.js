@@ -9,12 +9,12 @@ const VERSION = '2.2.0';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['conversant'], // short code
+  aliases: ['cnvr'], // short code
   supportedMediaTypes: [VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
-   * 
+   *
    * @param {BidRequest} bid - The bid params to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
@@ -24,7 +24,7 @@ export const spec = {
       return false;
     }
 
-    if (!bid.params.site_id || !utils.isStr(bid.params.site_id)) {
+    if (!utils.isStr(bid.params.site_id)) {
       utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string')
       return false;
     }
@@ -44,7 +44,7 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   * 
+   *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {ServerRequest} Info describing the request to the server.
    */
@@ -55,7 +55,7 @@ export const spec = {
     let siteId = '';
     let requestId = '';
 
-    const conversantImps = utils._map(validBidRequests, function(bid) {
+    const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
@@ -115,14 +115,14 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   * 
+   *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const requestMap = {};
-    const currency = serverResponse.cur || 'USD';
+    serverResponse = serverResponse.body;
 
     if (bidRequest && bidRequest.data && bidRequest.data.imp) {
       utils._each(bidRequest.data.imp, imp => requestMap[imp.id] = imp);
@@ -139,8 +139,7 @@ export const spec = {
 
             const bid = {
               requestId: conversantBid.impid,
-              bidderCode: BIDDER_CODE,
-              currency: currency,
+              currency: serverResponse.cur || 'USD',
               cpm: responseCPM,
               creativeId: conversantBid.crid || ''
             };
@@ -170,7 +169,7 @@ export const spec = {
 
   /**
    * Return use sync info
-   * 
+   *
    * @param {SyncOptions} syncOptions - Info about usersyncs that the adapter should obey
    * @return {UserSync} Adapter sync type and url
    */
@@ -186,7 +185,7 @@ export const spec = {
 
 /**
  * Determine do-not-track state
- * 
+ *
  * @returns {boolean}
  */
 function getDNT() {
@@ -195,7 +194,7 @@ function getDNT() {
 
 /**
  * Return openrtb device object that includes ua, width, and height.
- * 
+ *
  * @returns {Device} Openrtb device object
  */
 function getDevice() {
@@ -212,9 +211,9 @@ function getDevice() {
 
 /**
  * Convert arrays of widths and heights to an array of objects with w and h properties.
- * 
+ *
  * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
- * 
+ *
  * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
  * @returns {object[]} Array of objects with w and h
  */
@@ -232,7 +231,7 @@ function convertSizes(bidSizes) {
 
 /**
  * Check if it's a video bid request
- * 
+ *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
@@ -242,7 +241,7 @@ function isVideoRequest(bid) {
 
 /**
  * Copy property if exists from src to dst
- * 
+ *
  * @param {object} src
  * @param {string} srcName
  * @param {object} dst

@@ -73,48 +73,50 @@ describe('Conversant adapter tests', function() {
     }];
 
   const bidResponses = {
-    id: 'req000',
-    seatbid: [{
-      bid: [{
-        nurl: 'notify000',
-        adm: 'markup000',
-        crid: '1000',
-        impid: 'bid000',
-        price: 0.99,
-        w: 300,
-        h: 250,
-        adomain: ['https://example.com'],
-        id: 'bid000'
-      }, {
-        impid: 'bid001',
-        price: 0.00000,
-        id: 'bid001'
-      }, {
-        nurl: 'notify002',
-        adm: 'markup002',
-        crid: '1002',
-        impid: 'bid002',
-        price: 2.99,
-        w: 300,
-        h: 600,
-        adomain: ['https://example.com'],
-        id: 'bid002'
-      }, {
-        nurl: 'notify003',
-        adm: 'markup003',
-        crid: '1003',
-        impid: 'bid003',
-        price: 3.99,
-        adomain: ['https://example.com'],
-        id: 'bid003'
+    body: {
+      id: 'req000',
+      seatbid: [{
+        bid: [{
+          nurl: 'notify000',
+          adm: 'markup000',
+          crid: '1000',
+          impid: 'bid000',
+          price: 0.99,
+          w: 300,
+          h: 250,
+          adomain: ['https://example.com'],
+          id: 'bid000'
+        }, {
+          impid: 'bid001',
+          price: 0.00000,
+          id: 'bid001'
+        }, {
+          nurl: 'notify002',
+          adm: 'markup002',
+          crid: '1002',
+          impid: 'bid002',
+          price: 2.99,
+          w: 300,
+          h: 600,
+          adomain: ['https://example.com'],
+          id: 'bid002'
+        }, {
+          nurl: 'notify003',
+          adm: 'markup003',
+          crid: '1003',
+          impid: 'bid003',
+          price: 3.99,
+          adomain: ['https://example.com'],
+          id: 'bid003'
+        }]
       }]
-    }]
-  };
+    },
+    headers: {}};
 
   it('Verify basic properties', function() {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('conversant');
+    expect(spec.aliases[0]).to.equal('cnvr');
     expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(1);
     expect(spec.supportedMediaTypes[0]).to.equal('video');
   });
@@ -133,7 +135,6 @@ describe('Conversant adapter tests', function() {
   it('Verify isBidRequestValid', function() {
     expect(spec.isBidRequestValid({})).to.be.false;
     expect(spec.isBidRequestValid({params: {}})).to.be.false;
-    expect(spec.isBidRequestValid({params: {site_id: ''}})).to.be.false;
     expect(spec.isBidRequestValid({params: {site_id: '123'}})).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
@@ -236,7 +237,6 @@ describe('Conversant adapter tests', function() {
 
     let bid = response[0];
     expect(bid).to.have.property('requestId', 'bid000');
-    expect(bid).to.have.property('bidderCode', 'conversant');
     expect(bid).to.have.property('currency', 'USD');
     expect(bid).to.have.property('cpm', 0.99);
     expect(bid).to.have.property('creativeId', '1000');
@@ -248,7 +248,6 @@ describe('Conversant adapter tests', function() {
 
     bid = response[1];
     expect(bid).to.have.property('requestId', 'bid002');
-    expect(bid).to.have.property('bidderCode', 'conversant');
     expect(bid).to.have.property('currency', 'USD');
     expect(bid).to.have.property('cpm', 2.99);
     expect(bid).to.have.property('creativeId', '1002');
@@ -258,7 +257,6 @@ describe('Conversant adapter tests', function() {
 
     bid = response[2];
     expect(bid).to.have.property('requestId', 'bid003');
-    expect(bid).to.have.property('bidderCode', 'conversant');
     expect(bid).to.have.property('currency', 'USD');
     expect(bid).to.have.property('cpm', 3.99);
     expect(bid).to.have.property('creativeId', '1003');
