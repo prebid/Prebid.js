@@ -265,7 +265,9 @@ describe('bidders created by newBidder', () => {
 
     beforeEach(() => {
       ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
-        callbacks.success('response body');
+        const fakeResponse = sinon.stub();
+        fakeResponse.returns('headerContent');
+        callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
       userSyncStub = sinon.stub(userSync, 'registerSync')
     });
@@ -275,7 +277,7 @@ describe('bidders created by newBidder', () => {
       userSyncStub.restore();
     });
 
-    it('should call spec.interpretResponse() with the response body content', () => {
+    it('should call spec.interpretResponse() with the response content', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -289,7 +291,9 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(spec.interpretResponse.calledOnce).to.equal(true);
-      expect(spec.interpretResponse.firstCall.args[0]).to.equal('response body');
+      const response = spec.interpretResponse.firstCall.args[0]
+      expect(response.body).to.equal('response body')
+      expect(response.headers.get('some-header')).to.equal('headerContent');
       expect(spec.interpretResponse.firstCall.args[1]).to.deep.equal({
         method: 'POST',
         url: 'test.url.com',
@@ -364,7 +368,10 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
-      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal(['response body']);
+      expect(spec.getUserSyncs.firstCall.args[1].length).to.equal(1);
+      expect(spec.getUserSyncs.firstCall.args[1][0].body).to.equal('response body');
+      expect(spec.getUserSyncs.firstCall.args[1][0].headers).to.have.property('get');
+      expect(spec.getUserSyncs.firstCall.args[1][0].headers.get).to.be.a('function');
     });
 
     it('should register usersync pixels', () => {

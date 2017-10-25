@@ -230,6 +230,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
+    responseObj = responseObj.body
     let ads = responseObj.ads;
 
     // check overall response
