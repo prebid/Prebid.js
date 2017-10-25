@@ -604,7 +604,7 @@ describe('the rubicon adapter', () => {
             ]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -654,7 +654,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -677,7 +677,7 @@ describe('the rubicon adapter', () => {
             'ads': []
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -701,7 +701,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -711,7 +711,7 @@ describe('the rubicon adapter', () => {
         it('should handle an error because of malformed json response', () => {
           let response = '{test{';
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -752,7 +752,7 @@ describe('the rubicon adapter', () => {
             'account_id': 7780
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 

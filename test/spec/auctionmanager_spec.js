@@ -452,7 +452,9 @@ describe('auctionmanager.js', function () {
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
         return function(url, callback) {
-          callback.success('response body');
+          const fakeResponse = sinon.stub();
+          fakeResponse.returns('headerContent');
+          callback.success('response body', { getResponseHeader: fakeResponse });
         }
       });
     });
@@ -816,7 +818,9 @@ describe('auctionmanager.js', function () {
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
         return function(url, callback) {
-          callback.success('response body');
+          const fakeResponse = sinon.stub();
+          fakeResponse.returns('headerContent');
+          callback.success('response body', { getResponseHeader: fakeResponse });
         }
       });
     });

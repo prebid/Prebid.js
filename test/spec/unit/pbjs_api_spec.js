@@ -461,7 +461,9 @@ describe('Unit: Prebid Module', function () {
       auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
         return function(url, callback) {
-          callback.success(JSON.stringify(RESPONSE));
+          const fakeResponse = sinon.stub();
+          fakeResponse.returns('headerContent');
+          callback.success(JSON.stringify(RESPONSE), { getResponseHeader: fakeResponse });
         }
       });
     });

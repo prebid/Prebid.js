@@ -92,12 +92,12 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode) {
+module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
   var files = [
     'test/helpers/prebidGlobal.js',
-    'test/**/*_spec.js'
+    file ? file : 'test/**/*_spec.js'
   ];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
