@@ -123,7 +123,7 @@ export const spec = {
    *
    */
   interpretResponse(serverResponse) {
-    const response = serverResponse;
+    const response = serverResponse['body'];
 
     if (
       response === undefined ||

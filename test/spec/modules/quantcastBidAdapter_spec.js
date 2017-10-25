@@ -136,7 +136,7 @@ describe('Quantcast adapter', () => {
 
   describe('`interpretResponse`', () => {
     // The sample response is from https://wiki.corp.qc/display/adinf/QCX
-    const response = {
+    const body = {
       bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
       requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames
       bids: [
@@ -150,6 +150,11 @@ describe('Quantcast adapter', () => {
           height: 250
         }
       ]
+    };
+
+    const response = {
+      body,
+      headers: {}
     };
 
     it('should return an empty array if `serverResponse` is `undefined`', () => {
@@ -185,10 +190,14 @@ describe('Quantcast adapter', () => {
     });
 
     it('handles no bid response', () => {
-      const response = {
+      const body = {
         bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames
         bids: []
+      };
+      const response = {
+        body,
+        headers: {}
       };
       const expectedResponse = [];
       const interpretedResponse = qcSpec.interpretResponse(response);
