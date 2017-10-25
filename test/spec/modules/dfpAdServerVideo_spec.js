@@ -62,15 +62,16 @@ describe('The DFP video support module', () => {
     expect(url).to.be.undefined;
   });
 
-  it('rejects calls that contain both a params object and url input', () => {
-    const url = buildDfpVideoUrl({
+  it('overwrites url params when both url and params object are given', () => {
+    const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
-      params: { 'iu': 'my/adUnit' },
-      url: 'https://video.adserver.example/',
-    });
+      url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
+      params: { iu: 'my/adUnit' }
+    }));
 
-    expect(url).to.be.undefined;
+    const queryObject = parseQS(url.query);
+    expect(queryObject.iu).to.equal('my/adUnit');
   });
 
   it('should override param defaults with user-provided ones', () => {

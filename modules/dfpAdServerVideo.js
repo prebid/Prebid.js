@@ -5,7 +5,7 @@
 import { registerVideoSupport } from '../src/adServerManager';
 import { getWinningBids } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
-import { deepAccess, logError, parseSizesInput } from '../src/utils';
+import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
 
 /**
@@ -61,16 +61,19 @@ export default function buildDfpVideoUrl(options) {
     return;
   }
 
-  if (options.params && options.url) {
-    logError(`Passing both a params object and a url to pbjs.adServers.dfp.buildVideoUrl is invalid.`);
-    return;
-  }
-
   const adUnit = options.adUnit;
   const bid = options.bid || getWinningBids(adUnit.code)[0];
 
+  let urlComponents = {};
+
   if (options.url) {
-    return buildUrlFromAdserverUrl(options.url, bid);
+    // when both `url` and `params` are given, parsed url will be overwriten
+    // with any matching param components
+    urlComponents = parse(options.url);
+
+    if (isEmpty(options.params)) {
+      return buildUrlFromAdserverUrlComponents(urlComponents, bid);
+    }
   }
 
   const derivedParams = {
@@ -88,6 +91,7 @@ export default function buildDfpVideoUrl(options) {
 
   const queryParams = Object.assign({},
     defaultParamConstants,
+    urlComponents.search,
     derivedParams,
     options.params,
     { cust_params: encodeURIComponent(formatQS(customParams)) }
@@ -112,13 +116,11 @@ export default function buildDfpVideoUrl(options) {
 /**
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
- * @param {string} url base video adserver url
+ * @param {Object} components base video adserver url parsed into components object
  * @param {Object} bid winning bid object to append parameters from
  * @return {string} video url
  */
-function buildUrlFromAdserverUrl(url, bid) {
-  const components = parse(url);
-
+function buildUrlFromAdserverUrlComponents(components, bid) {
   if (!config.getConfig('usePrebidCache')) {
     if (!deepAccess(components, 'search.description_url')) {
       components.search.description_url = encodeURIComponent(bid.vastUrl);
