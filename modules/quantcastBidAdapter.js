@@ -3,9 +3,12 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
+
 export const QUANTCAST_CALLBACK_URL = 'global.qc.rtb.quantserve.com';
 export const QUANTCAST_CALLBACK_URL_TEST = 's2s-canary.quantserve.com';
+export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
+export const QUANTCAST_TTL = 4;
 
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
@@ -140,14 +143,18 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height } = bid;
+      const { ad, cpm, width, height, creativeId, currency } = bid;
 
       return {
         requestId: response.requestId,
         cpm,
         width,
         height,
-        ad
+        ad,
+        ttl: QUANTCAST_TTL,
+        creativeId,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency
       };
     });
 

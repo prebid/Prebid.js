@@ -1,9 +1,11 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
 import {
-  spec as qcSpec,
+  QUANTCAST_CALLBACK_URL_TEST,
   QUANTCAST_CALLBACK_URL,
-  QUANTCAST_CALLBACK_URL_TEST
+  QUANTCAST_NET_REVENUE,
+  QUANTCAST_TTL,
+  spec as qcSpec
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
 
@@ -144,8 +146,10 @@ describe('Quantcast adapter', () => {
           statusCode: 1,
           placementCode: 'imp1', // Changing this to placementCode to be reflective
           cpm: 4.5,
+          currency: 'USD',
           ad:
             '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+          creativeId: 1001,
           width: 300,
           height: 250
         }
@@ -177,12 +181,16 @@ describe('Quantcast adapter', () => {
 
     it('should get correct bid response', () => {
       const expectedResponse = {
-        ad:
-          '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
         cpm: 4.5,
         width: 300,
         height: 250,
-        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458'
+        ad:
+          '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+        ttl: QUANTCAST_TTL,
+        creativeId: 1001,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency: 'USD'
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 
