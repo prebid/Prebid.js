@@ -94,7 +94,7 @@ describe('jcmAdapter', () => {
         }
       ];
 
-      let result = spec.interpretResponse(serverResponse);
+      let result = spec.interpretResponse({ body: serverResponse });
       expect(Object.keys(result[0]).length).to.equal(Object.keys(expectedResponse[0]).length);
       expect(Object.keys(result[0]).requestId).to.equal(Object.keys(expectedResponse[0]).requestId);
       expect(Object.keys(result[0]).bidderCode).to.equal(Object.keys(expectedResponse[0]).bidderCode);
@@ -112,7 +112,7 @@ describe('jcmAdapter', () => {
     it('handles nobid responses', () => {
       let serverResponse = {'bids': []};
 
-      let result = spec.interpretResponse(serverResponse);
+      let result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(0);
     });
   });
