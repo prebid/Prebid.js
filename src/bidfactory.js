@@ -15,14 +15,15 @@ var utils = require('./utils.js');
  priceKeyString;
  */
 function Bid(statusCode, bidRequest) {
-  var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
+  var _bidId = (bidRequest && bidRequest.bidId) || utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;
 
-  this.bidderCode = '';
+  this.bidderCode = (bidRequest && bidRequest.bidder) || '';
   this.width = 0;
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = _bidId;
+  this.mediaType = 'banner';
 
   function _getStatus() {
     switch (_statusCode) {
@@ -41,14 +42,13 @@ function Bid(statusCode, bidRequest) {
     return _statusCode;
   };
 
-  //returns the size of the bid creative. Concatenation of width and height by ‘x’.
+  // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
-
 }
 
 // Bid factory function.
-exports.createBid = function () {
-  return new Bid(...arguments);
+exports.createBid = function (statusCode, bidRequest) {
+  return new Bid(statusCode, bidRequest);
 };

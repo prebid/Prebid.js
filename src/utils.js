@@ -1,8 +1,5 @@
-var CONSTANTS = require('./constants.json');
-
-var objectType_object = 'object';
-var objectType_string = 'string';
-var objectType_number = 'number';
+import { config } from './config';
+var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
@@ -14,8 +11,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
+} catch (e) {
 }
 
 /*
@@ -53,7 +49,7 @@ function _getUniqueIdentifierStr() {
   return getIncrementalInteger() + Math.random().toString(16).substr(2);
 }
 
-//generate a random string (to be used as a dynamic JSONP callback)
+// generate a random string (to be used as a dynamic JSONP callback)
 exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
 
 /**
@@ -63,10 +59,9 @@ exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
  * https://gist.github.com/jed/982883 via node-uuid
  */
 exports.generateUUID = function generateUUID(placeholder) {
-  return placeholder ?
-    (placeholder ^ Math.random() * 16 >> placeholder/4).toString(16)
-    :
-    ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
+  return placeholder
+    ? (placeholder ^ Math.random() * 16 >> placeholder / 4).toString(16)
+    : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
 exports.getBidIdParameter = function (key, paramsObj) {
@@ -85,23 +80,21 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
   return existingUrl;
 };
 
-//parse a query string object passed in bid params
-//bid params should be an object such as {key: "value", key1 : "value1"}
+// parse a query string object passed in bid params
+// bid params should be an object such as {key: "value", key1 : "value1"}
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
-    if (queryObj.hasOwnProperty(k))
-      result += k + '=' + encodeURIComponent(queryObj[k]) + '&';
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
 };
 
-//transform an AdServer targeting bids into a query string to send to the adserver
+// transform an AdServer targeting bids into a query string to send to the adserver
 exports.transformAdServerTargetingObj = function (targeting) {
   // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
-
     return getKeys(targeting)
       .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
   } else {
@@ -114,16 +107,16 @@ exports.transformAdServerTargetingObj = function (targeting) {
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
-exports.parseSizesInput = function (sizeObj) {
+export function parseSizesInput(sizeObj) {
   var parsedSizes = [];
 
-  //if a string for now we can assume it is a single size, like "300x250"
-  if (typeof sizeObj === objectType_string) {
-    //multiple sizes will be comma-separated
+  // if a string for now we can assume it is a single size, like "300x250"
+  if (typeof sizeObj === 'string') {
+    // multiple sizes will be comma-separated
     var sizes = sizeObj.split(',');
 
-    //regular expression to match strigns like 300x250
-    //start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
+    // regular expression to match strigns like 300x250
+    // start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
     var sizeRegex = /^(\d)+x(\d)+$/i;
     if (sizes) {
       for (var curSizePos in sizes) {
@@ -132,33 +125,31 @@ exports.parseSizesInput = function (sizeObj) {
         }
       }
     }
-  } else if (typeof sizeObj === objectType_object) {
+  } else if (typeof sizeObj === 'object') {
     var sizeArrayLength = sizeObj.length;
 
-    //don't process empty array
+    // don't process empty array
     if (sizeArrayLength > 0) {
-      //if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
-        parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
+      // if we are a 2 item array of 2 numbers, we must be a SingleSize array
+      if (sizeArrayLength === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
+        parsedSizes.push(parseGPTSingleSizeArray(sizeObj));
       } else {
-        //otherwise, we must be a MultiSize array
+        // otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
-          parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
+          parsedSizes.push(parseGPTSingleSizeArray(sizeObj[i]));
         }
-
       }
     }
   }
 
   return parsedSizes;
-
 };
 
-//parse a GPT style sigle size array, (i.e [300,250])
-//into an AppNexus style string, (i.e. 300x250)
-exports.parseGPTSingleSizeArray = function (singleSize) {
-  //if we aren't exactly 2 items in this array, it is invalid
-  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+// parse a GPT style sigle size array, (i.e [300,250])
+// into an AppNexus style string, (i.e. 300x250)
+export function parseGPTSingleSizeArray(singleSize) {
+  // if we aren't exactly 2 items in this array, it is invalid
+  if (exports.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
 };
@@ -166,6 +157,8 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 exports.getTopWindowLocation = function () {
   let location;
   try {
+    // force an exception in x-domain enviornments. #1509
+    window.top.location.toString();
     location = window.top.location;
   } catch (e) {
     location = window.location;
@@ -221,12 +214,13 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
-    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if (config.getConfig('debug') === false && _loggingChecked === false) {
+    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    config.setConfig({ debug });
     _loggingChecked = true;
   }
 
-  return !!$$PREBID_GLOBAL$$.logging;
+  return !!config.getConfig('debug');
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -270,6 +264,8 @@ var getParameterByName = function (name) {
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
+
+exports.getParameterByName = getParameterByName;
 
 /**
  * This function validates paramaters.
@@ -344,7 +340,7 @@ exports.isNumber = function(object) {
 exports.isEmpty = function (object) {
   if (!object) return true;
   if (this.isArray(object) || this.isStr(object)) {
-    return !(object.length > 0); // jshint ignore:line
+    return !(object.length > 0);
   }
 
   for (var k in object) {
@@ -360,7 +356,7 @@ exports.isEmpty = function (object) {
  * @returns {boolean} if string is empty
  */
 exports.isEmptyStr = function(str) {
-  return this.isStr(str) && (!str || 0 === str.length);
+  return this.isStr(str) && (!str || str.length === 0);
 };
 
 /**
@@ -410,7 +406,7 @@ exports.indexOf = (function () {
   }
 
   // ie8 no longer supported
-  //return polyfills.indexOf;
+  // return polyfills.indexOf;
 }());
 
 /**
@@ -438,6 +434,42 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+
+exports.insertElement = function(elm, doc, target) {
+  doc = doc || document;
+  let elToAppend;
+  if (target) {
+    elToAppend = doc.getElementsByTagName(target);
+  } else {
+    elToAppend = doc.getElementsByTagName('head');
+  }
+  try {
+    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(elm, elToAppend.firstChild);
+    }
+  } catch (e) {}
+};
+
+exports.triggerPixel = function (url) {
+  const img = new Image();
+  img.src = url;
+};
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ */
+exports.insertUserSyncIframe = function(url) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe = div.firstChild;
+  exports.insertElement(iframe);
+};
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -457,14 +489,30 @@ exports.createTrackPixelHtml = function (url) {
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = '') {
   if (!url) {
     return '';
   }
+  if (encodeUri) {
+    url = encodeURI(url);
+  }
+  if (sandbox) {
+    sandbox = `sandbox="${sandbox}"`;
+  }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${encodeURI(url)}"></iframe>`;
+  return `<iframe ${sandbox} id="${exports.getUniqueIdentifierStr()}"
+      frameborder="0"
+      allowtransparency="true"
+      marginheight="0" marginwidth="0"
+      width="0" hspace="0" vspace="0" height="0"
+      style="height:0p;width:0p;display:none;"
+      scrolling="no"
+      src="${url}">
+    </iframe>`;
 };
 
 /**
@@ -486,8 +534,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 
@@ -498,7 +545,7 @@ exports.getValueString = function(param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
-  if (this.isStr(val) ) {
+  if (this.isStr(val)) {
     return val;
   }
   if (this.isNumber(val)) {
@@ -574,7 +621,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
 }
 
 /**
@@ -582,10 +629,145 @@ export function adUnitsFilter(filter, bid) {
  * @param {HTMLDocument} doc document to check support of 'srcdoc'
  */
 export function isSrcdocSupported(doc) {
-  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+  // Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
+  return doc.defaultView && doc.defaultView.frameElement &&
+    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
 export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
+export function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  if (!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+}
+
+export function getBidderRequestAllAdUnits(bidder) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => request.bidderCode === bidder);
+}
+
+export function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+      .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
+}
+
+export function cookiesAreEnabled() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+  window.document.cookie = 'prebid.cookieTest';
+  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+}
+
+/**
+ * Given a function, return a function which only executes the original after
+ * it's been called numRequiredCalls times.
+ *
+ * Note that the arguments from the previous calls will *not* be forwarded to the original function.
+ * Only the final call's arguments matter.
+ *
+ * @param {function} func The function which should be executed, once the returned function has been executed
+ *   numRequiredCalls times.
+ * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ *   func is.
+ */
+export function delayExecution(func, numRequiredCalls) {
+  if (numRequiredCalls < 1) {
+    throw new Error(`numRequiredCalls must be a positive number. Got ${numRequiredCalls}`);
+  }
+  let numCalls = 0;
+  return function () {
+    numCalls++;
+    if (numCalls === numRequiredCalls) {
+      func.apply(null, arguments);
+    }
+  }
+}
+
+/**
+ * https://stackoverflow.com/a/34890276/428704
+ * @export
+ * @param {array} xs
+ * @param {string} key
+ * @returns {${key_value}: ${groupByArray}, key_value: {groupByArray}}
+ */
+export function groupBy(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+}
+
+/**
+ * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+ * @param {object} obj The object containing the values you would like to access.
+ * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+ * @returns {*} The value found at the specified object path, or undefined if path is not found.
+ */
+export function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (let i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
+}
+
+/**
+ * Build an object consisting of only defined parameters to avoid creating an
+ * object with defined keys and undefined values.
+ * @param {object} object The object to pick defined params out of
+ * @param {string[]} params An array of strings representing properties to look for in the object
+ * @returns {object} An object containing all the specified values that are defined
+ */
+export function getDefinedParams(object, params) {
+  return params
+    .filter(param => object[param])
+    .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
+}
+
+/**
+ * @typedef {Object} MediaTypes
+ * @property {Object} banner banner configuration
+ * @property {Object} native native configuration
+ * @property {Object} video video configuration
+ */
+
+/**
+ * Validates an adunit's `mediaTypes` parameter
+ * @param {MediaTypes} mediaTypes mediaTypes parameter to validate
+ * @return {boolean} If object is valid
+ */
+export function isValidMediaTypes(mediaTypes) {
+  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
+
+  const types = Object.keys(mediaTypes);
+
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
+    return false;
+  }
+
+  if (mediaTypes.video && mediaTypes.video.context) {
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
+  }
+
+  return true;
 }

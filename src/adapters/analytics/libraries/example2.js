@@ -6,9 +6,9 @@ window.ExampleAnalyticsGlobalObject2 = function(hander, type, data) {
 
 window[window.ExampleAnalyticsGlobalObject2] = function() {};
 
-//var utils = require('utils');
-//var events = require('events');
-//var pbjsHandlers = require('prebid-event-handlers');
+// var utils = require('utils');
+// var events = require('events');
+// var pbjsHandlers = require('prebid-event-handlers');
 var utils = { errorless: function(fn) { return fn; } };
 
 var events = { init: function() { return arguments; } };

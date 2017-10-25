@@ -6,7 +6,7 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
 <!-- Remove items that don't apply and/or select an item by changing [ ] to [x] -->
 - [ ] Bugfix
 - [ ] Feature
-- [ ] New bidder adapter
+- [ ] New bidder adapter  <!--  IMPORTANT: if checking here, also submit your bidder params documentation here https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders --> 
 - [ ] Code style update (formatting, local variables)
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes
@@ -26,6 +26,9 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
   }
 }
 ```
+
+Be sure to test the integration with your adserver using the [Hello World](/integrationExamples/gpt/hello_world.html) sample page.
+
 - contact email of the adapter’s maintainer
 - [ ] official adapter submission
 
