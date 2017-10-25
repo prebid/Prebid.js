@@ -39,7 +39,7 @@ const bidReq = [
   }
 ];
 
-const bidResponse = [{
+const validBidRes = {
   ad: '<div>Hello</div>',
   bidRequestId: '263be71e91dd9d',
   cpm: 100,
@@ -49,7 +49,46 @@ const bidResponse = [{
   width: 300,
   height: 250,
   ttl: 360
-}];
+};
+
+const bidResponse = [validBidRes];
+
+const bidResArray = [
+  validBidRes,
+  {
+    ad: '',
+    bidRequestId: '263be71e91dd9d',
+    cpm: 100,
+    creativeId: '123abc',
+    currency: 'USD',
+    netRevenue: true,
+    width: 300,
+    height: 250,
+    ttl: 360
+  },
+  {
+    ad: '<div>Hello</div>',
+    bidRequestId: '',
+    cpm: 100,
+    creativeId: '123abc',
+    currency: 'USD',
+    netRevenue: true,
+    width: 300,
+    height: 250,
+    ttl: 360
+  },
+  {
+    ad: '<div>Hello</div>',
+    bidRequestId: '',
+    cpm: 0,
+    creativeId: '123abc',
+    currency: 'USD',
+    netRevenue: true,
+    width: 300,
+    height: 250,
+    ttl: 360
+  }
+];
 
 describe('Undertone Adapter', () => {
   describe('request', () => {
@@ -79,7 +118,7 @@ describe('Undertone Adapter', () => {
   });
 
   describe('interpretResponse', () => {
-    it('should get correct bid response', () => {
+    it('should build bid array', () => {
       let result = spec.interpretResponse(bidResponse);
       expect(result.length).to.equal(1);
     });
@@ -95,8 +134,17 @@ describe('Undertone Adapter', () => {
       expect(bid.height).to.equal(250);
       expect(bid.creativeId).to.equal('123abc');
       expect(bid.currency).to.equal('USD');
-      expect(bid.netRevenue).to.be.true;
+      expect(bid.netRevenue).to.equal(true);
       expect(bid.ttl).to.equal(360);
+    });
+
+    it('should return empty array when response is incorrect', () => {
+      expect(spec.interpretResponse({}).length).to.equal(0);
+      expect(spec.interpretResponse([]).length).to.equal(0);
+    });
+
+    it('should only use valid bid responses', () => {
+      expect(spec.interpretResponse(bidResArray).length).to.equal(1);
     });
   });
 });

@@ -59,7 +59,6 @@ export const spec = {
         }
       });
     }
-    console.log(bids);
     return bids;
   }
 };
