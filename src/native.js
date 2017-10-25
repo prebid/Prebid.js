@@ -68,15 +68,16 @@ export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
-/*
+/**
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
+ * @param {Bid} bid Native bid to validate
+ * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) {
-    return false;
-  }
+export function nativeBidIsValid(bid, bidRequests) {
+  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  if (!bidRequest) { return false; }
 
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
