@@ -123,6 +123,11 @@ export const spec = {
    *
    */
   interpretResponse(serverResponse) {
+    if (serverResponse === undefined) {
+      utils.logError('Server Response is undefined');
+      return [];
+    }
+
     const response = serverResponse['body'];
 
     if (
