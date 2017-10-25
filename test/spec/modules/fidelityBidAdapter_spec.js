@@ -129,7 +129,7 @@ describe('FidelityAdapter', () => {
         }
       ];
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse({ body: response });
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
@@ -139,7 +139,7 @@ describe('FidelityAdapter', () => {
         'seatbid': [ ]
       };
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse({ body: response });
       expect(result.length).to.equal(0);
     });
   });
