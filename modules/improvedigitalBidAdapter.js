@@ -58,7 +58,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, request) {
     const bids = [];
-    utils._each(serverResponse.bid, function (bidObject) {
+    utils._each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.price || bidObject.price === null ||
         bidObject.hasOwnProperty('errorCode') ||
         typeof bidObject.adm !== 'string') {
@@ -73,6 +73,7 @@ export const spec = {
       bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
       bid.adId = bidObject.id;
       bid.cpm = parseFloat(bidObject.price);
+      bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
       if (utils.isNumber(bidObject.lid)) {
         bid.dealId = bidObject.lid;
