@@ -34,6 +34,30 @@ var appnexusAdapterMock = {
 };
 
 describe('adapterManager tests', () => {
+  describe('callBids', () => {
+    beforeEach(() => {
+      sinon.stub(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log an error if a bidder is used that does not exist', () => {
+      const adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      AdapterManager.callBids({adUnits});
+
+      sinon.assert.called(utils.logError);
+    });
+  });
+
   describe('S2S tests', () => {
     beforeEach(() => {
       AdapterManager.setS2SConfig(CONFIG);
