@@ -9,18 +9,30 @@ const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
 // var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
+export function isBidRequestValid(bid) {
+  return !!(bid.params.partner_id || bid_params.unit_id);
+}
+
 var RealVuKitAdapter = function RealVuKitAdapter() {
   var baseAdapter = new Adapter('realvukit');
 
   baseAdapter.callBids = function (params) {
-    // utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
+    //  utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
+    utils.logInfo('realvuBidAdapter params: ' + JSON.stringify(params));
+
+    //  omh - return if invalid params
+    if (!params || !params.bids) {
+      utils.logError(('realvuBidAdapter params are invalid...exiting: ' + params));
+      return;
+    }
+
     var pbids = params.bids;
-    // utils.logMessage('RealVu params: '+JSON.stringify(params)); 
+    //  utils.logMessage('RealVu params: '+JSON.stringify(params));
 
     for (var i = 0; i < pbids.length; i++) {
       var bid_rq = pbids[i];
       var bidId = bid_rq.bidId;
-      adloader.loadScript(buildRvCall(bid_rq, bidId));
+      adloader.loadScript(buildRvCall(bid_rq, bidId),/*omh*/ $$PREBID_GLOBAL$$.rvkit_handler);
     }
   };
 
@@ -35,13 +47,13 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
     // was rv_call +='?uid='+bid.placementCode+'&callback=$$PREBID_GLOBAL$$.rvkit_handler&bid_id='+bidId;
     rv_call += '?callback=$$PREBID_GLOBAL$$.rvkit_handler&uid=' + encodeURIComponent(bid.placementCode);
     kitMap.push({p: p, uid: bid.placementCode, bid_id: bidId});
-    // utils.logMessage('realvu request built: ' + rv_call);
+    utils.logMessage('realvu request built: ' + rv_call);
     bid.startTime = new Date().getTime();
     return rv_call;
   }
 
   $$PREBID_GLOBAL$$.rvkit_handler = function(rv_response) {
-    // utils.logMessage('realvu rv_response: ' + JSON.stringify(rv_response) );
+    utils.logMessage('realvu rv_response: '+JSON.stringify(rv_response));
     for (var i = 0; i < rv_response.length; i++) {
       var ri = rv_response[i];
       // restore bid_id from kitMap with p
