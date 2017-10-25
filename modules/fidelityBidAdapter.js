@@ -38,6 +38,7 @@ export const spec = {
     });
   },
   interpretResponse: function(serverResponse) {
+    serverResponse = serverResponse.body;
     const bidResponses = [];
     if (serverResponse && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
