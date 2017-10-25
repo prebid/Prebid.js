@@ -44,7 +44,7 @@ describe('nanointeractive adapter tests', function () {
     [NQ]: [SEARCH_QUERY, null],
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
-    cors: null
+    cors: 'http://localhost:9876'
   };
 
   function getSingleBidResponse(isValid) {
