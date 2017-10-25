@@ -16,6 +16,7 @@ const options = {
     analyticHost: customHost || '//pa.rxthdr.com/api/v2/',
     // TODO extract only host without www
     currentHost: host,
+    adUnits: [],
     iUrl: '/i',
     aUrl: '/a',
     bUrl: '/b',
@@ -44,8 +45,30 @@ export default roxotAdapter;
 // FUNCTIONS ========================
 
 function RoxotAnalyticAdapter() {
+
     return {
-        units: {},
+        utm: extractUtmData(),
+        sessionId: extractSessionId(),
+        send: function (originData) {
+            let data = Object.assign({}, originData);
+            Object.keys(data).map(function (objectKey) {
+                let event = data[objectKey];
+
+                event.data = event.data || {};
+                event.data.utmTagData = extractUtmData();
+                event.data.sessionId = extractSessionId();
+
+            });
+
+            return this.transport.send(data);
+        },
+        transport: {
+            send: function (data) {
+                //TODO why content type text/plain, is it important?
+                let fullUrl = options.analyticHost + '?publisherId[]=' + options.publisherId + '&analyticHost=' + options.currentHost;
+                ajax(fullUrl, null, JSON.stringify(data), {withCredentials: true});
+            }
+        },
         auction: {},
         eventStack: {
 
@@ -59,7 +82,14 @@ function RoxotAnalyticAdapter() {
 
             findRequest: function (requestId) {
                 return this.stack[requestId];
+            },
+            clear: function () {
+                this.stack = {};
             }
+        },
+        clear: function () {
+            this.eventStack.clear();
+            this.current = null;
         },
         current: null,
         track({eventType, args}) {
@@ -67,107 +97,110 @@ function RoxotAnalyticAdapter() {
 
             if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
                 options.publisherId = args['config']['publisherIds'][0];
-            }
 
-            let requestId = args['requestId'];
-            if (requestId) {
-
-                if (this.current && this.current !== requestId) {
-                    throw 'Try to rewrite current auction';
+                if (args['config']['host'] !== undefined) {
+                    options.currentHost = args['config']['host'];
                 }
 
-                this.current = requestId;
+                if (args['config']['adUnits'] !== undefined) {
+                    options.adUnits = args['config']['adUnits'];
+                }
             }
+
+            let requestId = args['requestId'] || this.current;
+
+            if (this.current && this.current !== requestId) {
+                throw 'Try to rewrite current auction';
+            }
+
+            this.current = requestId;
             this.eventStack.ensureRequestPresented(requestId);
             let request = this.eventStack.findRequest(requestId);
 
+            let isImpression = eventType === CONSTANTS.EVENTS.BID_WON;
+            let isBid = eventType === CONSTANTS.EVENTS.BID_ADJUSTMENT;
+            let isBidAfterTimeout = (request.isFinished() && isBid);
+            let isBidRequested = eventType === CONSTANTS.EVENTS.BID_REQUESTED;
+            let isAuctionEnd = eventType === CONSTANTS.EVENTS.AUCTION_END;
 
-            if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
+            if (isBidRequested) {
                 let placementCodes = args.bids.map((bid) => bid.placementCode);
                 let timeout = args['timeout'];
 
                 let auctions = placementCodes.map((placementCode) => request.ensureAdUnitPresented(placementCode, options.host, timeout));
                 //todo check source
                 let bidder = new Bidder(args['bidderCode'], args['source'] || '');
-                auctions.forEach((auction) => auction.bidderRequested(bidder));
+                return auctions.forEach((auction) => auction.bidderRequested(bidder));
             }
 
-            if (eventType === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
-                if (request.isFinished()) {
-                    send((new BidAfterTimeout).build(args))
-                }
+            if (isImpression || isBidAfterTimeout) {
+                let originData = {
+                    eventType: isBidAfterTimeout ? 'BidAfterTimeoutEvent' : 'AdUnitImpressionEvent',
+                    auctionInfo: request.findAuction(args['adUnitCode']).auctionInfo,
+                    data: {
+                        size: args['width'] + 'x' + args['height'],
+                        adUnitCode: args['adUnitCode'],
+                        bidder: args['bidderCode'],
+                        timeToRespond: args["timeToRespond"],
+                        cpm: args['cpm']
+                    }
+                };
 
+                let newEvent = {};
+                newEvent[args['adUnitCode']] = originData;
+                return this.send(newEvent);
+            }
+
+            if (isBid) {
                 let auction = request.findAuction(args['adUnitCode']);
                 // todo check timeToRespond,size,cpm
                 let size = args['width'] + 'x' + args['height'];
-                auction.bidReceived(args['bidderCode'], args["timeToRespond"], size, args['cpm']);
-
+                return auction.bidReceived(args['bidderCode'], args["timeToRespond"], size, args['cpm']);
             }
 
-            if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+            if (isAuctionEnd) {
                 this.current = null;
                 request.finish();
-                return send(request.buildData());
-            }
-
-            if (isImpression(eventType)) {
-                return send((new Impression).build(args));
-            }
-
-            return utils.logInfo();
-
-
-            function send(data) {
-                let fullUrl = options.analyticHost + '?publisherId[]=' + options.publisherId + '&analyticHost=' + options.currentHost;
-                data = data || {};
-                data.options = data.options || {};
-                data.options.utmTagData = extractUtmData();
-                data.options.sessionId = extractSessionId();
-
-                //TODO why content type text/plain, is it important?
-                ajax(fullUrl, null, JSON.stringify(data), {withCredentials: true});
-            }
-
-            function extractSessionId() {
-                let currentSessionId = (new SessionId).load();
-
-                if (currentSessionId.isLive()) {
-                    currentSessionId.persist();
-                    return currentSessionId.id();
-                }
-
-                let newSessionId = (new SessionId).generate();
-                newSessionId.persist();
-
-                return newSessionId.id();
-
-            }
-
-            function extractUtmData() {
-                let previousUtm = (new Utm).fromLocalStorage();
-                let currentUtm = (new Utm).fromUrl(window.location);
-
-                if (currentUtm.isDetected()) {
-                    currentUtm.persist();
-                    return currentUtm.data;
-                }
-
-                if (previousUtm.isLive()) {
-                    previousUtm.persist();
-                    return previousUtm.data;
-                }
-
-                return {};
+                return this.send(request.buildData());
             }
         }
-        ,
+    };
 
+    function extractSessionId() {
+        let currentSessionId = (new SessionId).load();
+
+        if (currentSessionId.isLive()) {
+            currentSessionId.persist();
+            return currentSessionId.id();
+        }
+
+        let newSessionId = (new SessionId).generate();
+        newSessionId.persist();
+
+        return newSessionId.id();
+
+    }
+
+    function extractUtmData() {
+        let previousUtm = (new Utm).fromLocalStorage();
+        let currentUtm = (new Utm).fromUrl(window.location);
+
+        if (currentUtm.isDetected()) {
+            currentUtm.persist();
+            return currentUtm.data;
+        }
+
+        if (previousUtm.isLive()) {
+            previousUtm.persist();
+            return previousUtm.data;
+        }
+
+        return {};
     }
 }
 
 function Request(requestId, startedAt, publisherId) {
     this.requestId = requestId;
-    this.startedAt = startedAt;
     this.publisherId = publisherId;
     this.auctions = {};
     this.isEnd = false;
@@ -187,25 +220,32 @@ function Request(requestId, startedAt, publisherId) {
 
     return this;
 
-    function AuctionInfo(requestId, adUnitCode, timeout) {
+    function AuctionInfo(requestId, adUnitCode) {
 
         return {
             eventType: "AdUnitAuctionEvent",
             auctionInfo: {
                 "requestId": requestId,
                 "publisherId": publisherId,
-                "placementCode": adUnitCode,
-                "host": host,
-                "timeout": timeout,
+                "adUnitCode": adUnitCode,
+                "host": options.currentHost,
                 "requestedBids": {},
-                "bids": []
+                "bids": [],
+                "bidsAfterTimeout": []
             },
+            isFinished: false,
+            finish: () => this.isFinished = true,
             bidderRequested: function (bidder) {
                 this.auctionInfo.requestedBids[bidder.bidderCode] = bidder;
             },
             bidReceived: function (bidderCode, timeToRespond, size, cpm) {
                 let bidder = this.auctionInfo.requestedBids[bidderCode];
-                this.auctionInfo.bids.push(new Bid(bidder, timeToRespond, size, cpm));
+                if (this.isFinished) {
+                    this.auctionInfo.bidsAfterTimeout.push(new Bid(bidder, timeToRespond, size, cpm));
+                }
+                else {
+                    this.auctionInfo.bids.push(new Bid(bidder, timeToRespond, size, cpm));
+                }
             }
 
         };
@@ -223,26 +263,6 @@ function Request(requestId, startedAt, publisherId) {
 function Bidder(bidderCode, source) {
     this.bidderCode = bidderCode;
     this.source = source;
-}
-
-function isImpression(eventType) {
-    return eventType === 'bidWon';
-}
-
-function Impression() {
-    this.build = function (args) {
-        return {
-            auctionInfo: this.eventStack.findByPlacementCode(args['placement_code']),
-            size: args['size'],
-            adUnitCode: args['placement_code'],
-            bidder: args['bidder'],
-            cpm: args['cpm']
-        };
-    }
-}
-
-function BidAfterTimeout() {
-
 }
 
 function SessionId(realId) {
