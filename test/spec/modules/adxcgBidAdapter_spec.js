@@ -77,88 +77,104 @@ describe('AdxcgAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    let BANNER_RESPONSE = [{
-      'bidId': '84ab500420319d',
-      'bidderCode': 'adxcg',
-      'width': 300,
-      'height': 250,
-      'creativeId': '42',
-      'cpm': 0.45,
-      'currency': 'USD',
-      'netRevenue': true,
-      'ad': '<!-- adContent -->'
-    }]
+    let BANNER_RESPONSE =
+      {
+        body: [{
+          'bidId': '84ab500420319d',
+          'bidderCode': 'adxcg',
+          'width': 300,
+          'height': 250,
+          'creativeId': '42',
+          'cpm': 0.45,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ad': '<!-- adContent -->'
+        }],
+        header: {'someheader': 'fakedata'}
+      }
 
-    let BANNER_RESPONSE_WITHDEALID = [{
-      'bidId': '84ab500420319d',
-      'bidderCode': 'adxcg',
-      'width': 300,
-      'height': 250,
-      'deal_id': '7722',
-      'creativeId': '42',
-      'cpm': 0.45,
-      'currency': 'USD',
-      'netRevenue': true,
-      'ad': '<!-- adContent -->'
-    }]
+    let BANNER_RESPONSE_WITHDEALID =
+      {
+        body: [{
+          'bidId': '84ab500420319d',
+          'bidderCode': 'adxcg',
+          'width': 300,
+          'height': 250,
+          'deal_id': '7722',
+          'creativeId': '42',
+          'cpm': 0.45,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ad': '<!-- adContent -->'
+        }],
+        header: {'someheader': 'fakedata'}
+      }
 
-    let VIDEO_RESPONSE = [{
-      'bidId': '84ab500420319d',
-      'bidderCode': 'adxcg',
-      'width': 640,
-      'height': 360,
-      'creativeId': '42',
-      'cpm': 0.45,
-      'currency': 'USD',
-      'netRevenue': true,
-      'vastUrl': 'vastContentUrl'
-    }]
+    let VIDEO_RESPONSE =
+      {
+        body: [{
+          'bidId': '84ab500420319d',
+          'bidderCode': 'adxcg',
+          'width': 640,
+          'height': 360,
+          'creativeId': '42',
+          'cpm': 0.45,
+          'currency': 'USD',
+          'netRevenue': true,
+          'vastUrl': 'vastContentUrl'
+        }],
+        header: {'someheader': 'fakedata'}
+      }
 
-    let NATIVE_RESPONSE = [{
-      'bidId': '84ab500420319d',
-      'bidderCode': 'adxcg',
-      'width': 0,
-      'height': 0,
-      'creativeId': '42',
-      'cpm': 0.45,
-      'currency': 'USD',
-      'netRevenue': true,
-      'nativeResponse': {
-        'assets': [{
-          'id': 1,
-          'required': 0,
-          'title': {
-            'text': 'titleContent'
-          }
-        }, {
-          'id': 2,
-          'required': 0,
-          'img': {
-            'url': 'imageContent',
-            'w': 600,
-            'h': 600
-          }
-        }, {
-          'id': 3,
-          'required': 0,
-          'data': {
-            'label': 'DESC',
-            'value': 'descriptionContent'
-          }
-        }, {
-          'id': 0,
-          'required': 0,
-          'data': {
-            'label': 'SPONSORED',
-            'value': 'sponsoredByContent'
+    let NATIVE_RESPONSE =
+      {
+        body: [{
+          'bidId': '84ab500420319d',
+          'bidderCode': 'adxcg',
+          'width': 0,
+          'height': 0,
+          'creativeId': '42',
+          'cpm': 0.45,
+          'currency': 'USD',
+          'netRevenue': true,
+          'nativeResponse': {
+            'assets': [{
+              'id': 1,
+              'required': 0,
+              'title': {
+                'text': 'titleContent'
+              }
+            }, {
+              'id': 2,
+              'required': 0,
+              'img': {
+                'url': 'imageContent',
+                'w': 600,
+                'h': 600
+              }
+            }, {
+              'id': 3,
+              'required': 0,
+              'data': {
+                'label': 'DESC',
+                'value': 'descriptionContent'
+              }
+            }, {
+              'id': 0,
+              'required': 0,
+              'data': {
+                'label': 'SPONSORED',
+                'value': 'sponsoredByContent'
+              }
+            }],
+            'link': {
+              'url': 'linkContent'
+            },
+            'imptrackers': ['impressionTracker1', 'impressionTracker2']
           }
         }],
-        'link': {
-          'url': 'linkContent'
-        },
-        'imptrackers': ['impressionTracker1', 'impressionTracker2']
+        header: {'someheader': 'fakedata'}
       }
-    }]
 
     it('handles regular responses', () => {
       let result = spec.interpretResponse(BANNER_RESPONSE, BIDDER_REQUEST);

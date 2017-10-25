@@ -61,7 +61,7 @@ export const spec = {
         adzoneid: adZoneIds.join(','),
         format: sizes.join(','),
         prebidBidIds: prebidBidIds.join(','),
-        url: escape(url.format(requestUrl)), // encodeURIComponent or encodeURI
+        url: encodeURIComponent(url.format(requestUrl)),
         secure: secure ? '1' : '0',
         source: SOURCE,
         pbjs: '$prebid.version$'
@@ -82,60 +82,65 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequests) {
     let bids = [];
 
-    serverResponse.forEach(serverResponseOneItem => {
-      let bid = {};
+    serverResponse = serverResponse.body;
+    if (serverResponse) {
+      serverResponse.forEach(serverResponseOneItem => {
+        let bid = {};
 
-      bid.requestId = serverResponseOneItem.bidId;
-      bid.cpm = serverResponseOneItem.cpm;
-      bid.creativeId = parseInt(serverResponseOneItem.creativeId);
-      bid.currency = 'USD';
-      bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
-      bid.ttl = 300;
+        bid.requestId = serverResponseOneItem.bidId;
+        bid.cpm = serverResponseOneItem.cpm;
+        bid.creativeId = parseInt(serverResponseOneItem.creativeId);
+        bid.currency = 'USD';
+        bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
+        bid.ttl = 300;
 
-      if (serverResponseOneItem.deal_id != null && serverResponseOneItem.deal_id.trim().length > 0) {
-        bid.dealId = serverResponseOneItem.deal_id;
-      }
+        if (serverResponseOneItem.deal_id != null && serverResponseOneItem.deal_id.trim().length > 0) {
+          bid.dealId = serverResponseOneItem.deal_id;
+        }
 
-      if (serverResponseOneItem.ad) {
-        bid.ad = serverResponseOneItem.ad;
-      } else if (serverResponseOneItem.vastUrl) {
-        bid.vastUrl = serverResponseOneItem.vastUrl;
-        bid.descriptionUrl = serverResponseOneItem.vastUrl;
-        bid.mediaType = 'video';
-      } else if (serverResponseOneItem.nativeResponse) {
-        bid.mediaType = 'native';
+        if (serverResponseOneItem.ad) {
+          bid.ad = serverResponseOneItem.ad;
+        } else if (serverResponseOneItem.vastUrl) {
+          bid.vastUrl = serverResponseOneItem.vastUrl;
+          bid.descriptionUrl = serverResponseOneItem.vastUrl;
+          bid.mediaType = 'video';
+        } else if (serverResponseOneItem.nativeResponse) {
+          bid.mediaType = 'native';
 
-        let nativeResponse = serverResponseOneItem.nativeResponse;
+          let nativeResponse = serverResponseOneItem.nativeResponse;
 
-        bid['native'] = {
-          clickUrl: escape(nativeResponse.link.url), // encodeURIComponent
-          impressionTrackers: nativeResponse.imptrackers
-        };
+          bid['native'] = {
+            clickUrl: encodeURIComponent(nativeResponse.link.url),
+            impressionTrackers: nativeResponse.imptrackers
+          };
 
-        nativeResponse.assets.forEach(asset => {
-          if (asset.title && asset.title.text) {
-            bid['native'].title = asset.title.text;
-          }
+          nativeResponse.assets.forEach(asset => {
+            if (asset.title && asset.title.text) {
+              bid['native'].title = asset.title.text;
+            }
 
-          if (asset.img && asset.img.url) {
-            bid['native'].image = asset.img.url;
-          }
+            if (asset.img && asset.img.url) {
+              bid['native'].image = asset.img.url;
+            }
 
-          if (asset.data && asset.data.label === 'DESC' && asset.data.value) {
-            bid['native'].body = asset.data.value;
-          }
+            if (asset.data && asset.data.label === 'DESC' && asset.data.value) {
+              bid['native'].body = asset.data.value;
+            }
 
-          if (asset.data && asset.data.label === 'SPONSORED' && asset.data.value) {
-            bid['native'].sponsoredBy = asset.data.value;
-          }
-        });
-      }
+            if (asset.data && asset.data.label === 'SPONSORED' && asset.data.value) {
+              bid['native'].sponsoredBy = asset.data.value;
+            }
+          });
+        }
 
-      bid.width = serverResponseOneItem.width;
-      bid.height = serverResponseOneItem.height;
-      utils.logMessage(`submitting bid[${serverResponseOneItem.bidId}]: ${JSON.stringify(bid)}`);
-      bids.push(bid);
-    });
+        bid.width = serverResponseOneItem.width;
+        bid.height = serverResponseOneItem.height;
+        utils.logMessage(`submitting bid[${serverResponseOneItem.bidId}]: ${JSON.stringify(bid)}`);
+        bids.push(bid);
+      });
+    } else {
+      utils.logMessage(`empty bid response`);
+    }
     return bids;
   },
   getUserSyncs: function (syncOptions) {
