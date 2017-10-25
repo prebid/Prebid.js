@@ -21,7 +21,7 @@ describe('nanointeractive adapter tests', function () {
           [SECURITY]: isValid === true ? 'sec1' : null,
           [DATA_PARTNER_ID]: 'dpid1',
           [DATA_PARTNER_PIXEL_ID]: 'pid1',
-          [ALG]: 'ih',
+          [ALG]: 'ihr',
           [NQ]: SEARCH_QUERY,
           [NQ_NAME]: null,
           [CATEGORY]: null,
@@ -40,7 +40,7 @@ describe('nanointeractive adapter tests', function () {
     [SECURITY]: 'sec1',
     [DATA_PARTNER_ID]: 'dpid1',
     [DATA_PARTNER_PIXEL_ID]: 'pid1',
-    [ALG]: 'ih',
+    [ALG]: 'ihr',
     [NQ]: [SEARCH_QUERY, null],
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
@@ -50,7 +50,6 @@ describe('nanointeractive adapter tests', function () {
   function getSingleBidResponse(isValid) {
     return {
       id: '24a1c9ec270973',
-      bidderCode: spec.code,
       cpm: isValid === true ? CPM : null,
       width: WIDTH,
       height: HEIGHT,
@@ -64,7 +63,6 @@ describe('nanointeractive adapter tests', function () {
 
   const VALID_BID = {
     requestId: '24a1c9ec270973',
-    bidderCode: spec.code,
     cpm: CPM,
     width: WIDTH,
     height: HEIGHT,
@@ -98,7 +96,6 @@ describe('nanointeractive adapter tests', function () {
       it('Test interpretResponse() bids', function () {
         let bid = nanoBidAdapter.interpretResponse([getSingleBidResponse(true), getSingleBidResponse(false)])[0];
         expect(bid.requestId).to.equal(VALID_BID.requestId);
-        expect(bid.bidderCode).to.equal(VALID_BID.bidderCode);
         expect(bid.cpm).to.equal(VALID_BID.cpm);
         expect(bid.width).to.equal(VALID_BID.width);
         expect(bid.height).to.equal(VALID_BID.height);

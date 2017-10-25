@@ -13,7 +13,7 @@ export const NQ = 'nq';
 export const NQ_NAME = 'name';
 export const CATEGORY = 'category';
 
-const DEFAULT_ALG = 'ih';
+const DEFAULT_ALG = 'ihr';
 
 export const spec = {
 
@@ -55,14 +55,13 @@ function createSingleBidRequest(bid) {
     [NQ]: [createNqParam(bid), createCategoryParam(bid)],
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
-    cors: document.domain.includes('localhost') ? null : document.domain
+    cors: document.domain.includes('localhost') ? null : location.origin
   };
 }
 
 function createSingleBidResponse(serverBid) {
   return {
     requestId: serverBid.id,
-    bidderCode: serverBid.bidderCode,
     cpm: serverBid.cpm,
     width: serverBid.width,
     height: serverBid.height,
@@ -75,23 +74,11 @@ function createSingleBidResponse(serverBid) {
 }
 
 function createNqParam(bid) {
-  return bid.params[NQ_NAME] ? getQueryParam(bid.params[NQ_NAME]) : bid.params[NQ] || null;
+  return bid.params[NQ_NAME] ? utils.getParameterByName(bid.params[NQ_NAME]) : bid.params[NQ] || null;
 }
 
 function createCategoryParam(bid) {
   return bid.params[CATEGORY] || null;
-}
-
-function getQueryParam(nq) {
-  const queryString = utils.getTopWindowLocation().href.split('?');
-  const queryParams = queryString.length > 1 ? queryString[1].split('&') : [];
-  for (let i = 0; i < queryParams.length; i++) {
-    const pair = queryParams[i].split('=');
-    if (pair[0] === nq) {
-      return decodeURIComponent(pair[1]) || null;
-    }
-  }
-  return null;
 }
 
 function isEngineResponseValid(response) {
