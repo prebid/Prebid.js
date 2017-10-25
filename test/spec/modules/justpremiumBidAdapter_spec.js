@@ -106,7 +106,7 @@ describe('justpremium adapter', () => {
           '28313': []
         },
         'pass': {
-          '28313': false
+          '28313': true
         }
       };
 
