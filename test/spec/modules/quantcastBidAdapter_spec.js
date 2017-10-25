@@ -103,12 +103,6 @@ describe('Quantcast adapter', () => {
       expect(requests[0].method).to.equal('POST');
     });
 
-    it('sends bid requests with `withCredentials` enabled', () => {
-      const requests = qcSpec.buildRequests([bidRequest]);
-
-      expect(requests[0].withCredentials).to.equal(true);
-    });
-
     it('sends bid requests contains all the required parameters', () => {
       const referrer = utils.getTopWindowUrl();
       const loc = utils.getTopWindowLocation();
@@ -183,8 +177,7 @@ describe('Quantcast adapter', () => {
         cpm: 4.5,
         width: 300,
         height: 250,
-        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
-        bidderCode: 'qcx'
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458'
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 
