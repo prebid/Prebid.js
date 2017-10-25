@@ -1,4 +1,4 @@
-import { expect, use } from 'chai';
+import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
@@ -77,19 +77,26 @@ describe('AdoceanAdapter', () => {
   })
 
   describe('interpretResponse', () => {
-    const response = [
-      {
-        'id': 'adoceanmyaozpniqismex',
-        'price': '0.019000',
-        'winurl': '',
-        'statsUrl': '',
-        'code': '%3C!--%20Creative%20--%3E',
-        'currency': 'EUR',
-        'minFloorPrice': '0.01',
-        'width': '300',
-        'height': '250'
+    const response = {
+      'body': [
+        {
+          'id': 'adoceanmyaozpniqismex',
+          'price': '0.019000',
+          'winurl': '',
+          'statsUrl': '',
+          'code': '%3C!--%20Creative%20--%3E',
+          'currency': 'EUR',
+          'minFloorPrice': '0.01',
+          'width': '300',
+          'height': '250',
+          'crid': '0af345b42983cc4bc0',
+          'ttl': '300'
+        }
+      ],
+      'headers': {
+        'get': function() {}
       }
-    ];
+    };
 
     const bidRequest = {
       'bidder': 'adocean',
@@ -111,13 +118,15 @@ describe('AdoceanAdapter', () => {
     it('should get correct bid response', () => {
       const expectedResponse = [
         {
-          'bidderCode': 'adocean',
           'requestId': '30b31c1838de1e',
           'cpm': 0.019000,
           'currency': 'EUR',
           'width': 300,
           'height': 250,
-          'ad': '<!-- Creative -->'
+          'ad': '<!-- Creative -->',
+          'creativeId': '0af345b42983cc4bc0',
+          'ttl': 300,
+          'netRevenue': false
         }
       ];
 
@@ -135,10 +144,12 @@ describe('AdoceanAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      const response = {
-        'id': 'adoceanmyaolafpjwftbz',
-        'error': 'true'
-      };
+      response.body = [
+        {
+          'id': 'adoceanmyaolafpjwftbz',
+          'error': 'true'
+        }
+      ];
 
       const result = spec.interpretResponse(response, bidRequest);
       expect(result).to.have.lengthOf(0);

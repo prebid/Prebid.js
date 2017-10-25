@@ -51,12 +51,14 @@ function interpretResponse(placementResponse, bidRequest, bids) {
 
     const bid = {
       ad: adCode,
-      bidderCode: BIDDER_CODE,
       cpm: parseFloat(placementResponse.price),
       currency: placementResponse.currency,
       height: parseInt(placementResponse.height, 10),
       requestId: bidRequest.bidIdMap[placementResponse.id],
       width: parseInt(placementResponse.width, 10),
+      netRevenue: false,
+      ttl: parseInt(placementResponse.ttl),
+      creativeId: placementResponse.crid
     };
 
     bids.push(bid);
@@ -87,17 +89,13 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     let bids = [];
 
-    if (utils.isArray(serverResponse)) {
-      utils._each(serverResponse, function(placementResponse) {
+    if (utils.isArray(serverResponse.body)) {
+      utils._each(serverResponse.body, function(placementResponse) {
         interpretResponse(placementResponse, bidRequest, bids);
       });
     }
 
     return bids;
-  },
-
-  getUserSyncs: function(syncOptions) {
-    // empty
   }
 };
 registerBidder(spec);
