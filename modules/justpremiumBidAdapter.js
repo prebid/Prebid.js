@@ -80,7 +80,7 @@ function findBid(params, bids) {
   }
 
   return false;
-};
+}
 
 function passCond(params, bid) {
   const format = bid.format;
@@ -94,7 +94,7 @@ function passCond(params, bid) {
   }
 
   return true;
-};
+}
 
 function preparePubCond(bids) {
   const cond = {};
