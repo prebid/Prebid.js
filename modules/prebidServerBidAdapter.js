@@ -198,12 +198,22 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
+            // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
             if (bidObj.media_type === 'video') {
-              bidObject.vastUrl = bidObj.nurl;
-            } else {
-              bidObject.ad = bidObj.adm;
+              if (bidObj.adm) {
+                bidObject.vastXml = bidObj.adm;
+              }
               if (bidObj.nurl) {
+                bidObject.vastUrl = bidObj.nurl;
+              }
+            } else {
+              if (bidObj.adm && bidObj.nurl) {
+                bidObject.ad = bidObj.adm;
                 bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+              } else if (bidObj.adm) {
+                bidObject.ad = bidObj.adm;
+              } else if (bidObj.nurl) {
+                bidObject.adUrl = bidObj.nurl
               }
             }
 
