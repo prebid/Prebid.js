@@ -296,9 +296,10 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {number} requestOptions.timeout
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
+ * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
+$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit('requestBids');
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -346,7 +347,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout});
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
 };
 

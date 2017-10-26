@@ -1,7 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
-import { mapSizes } from './sizeMapping';
+import { resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
@@ -19,53 +19,61 @@ let _s2sConfig = config.getConfig('s2sConfig');
 
 var _analyticsRegistry = {};
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits}) {
-  return adUnits.map(adUnit => {
-    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => {
-        let sizes = adUnit.sizes;
-        if (adUnit.sizeMapping) {
-          let sizeMapping = mapSizes(adUnit);
-          if (sizeMapping === '') {
-            return '';
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
+  function getLabels(obj, requestLabels) {
+    if (obj.labelAll) {
+      return {labelAll: true, labels: obj.labelAll, requestLabels};
+    }
+    return {labelAll: false, labels: obj.labelAny, requestLabels};
+  }
+
+  return adUnits.reduce((result, adUnit) => {
+    let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
+
+    if (active) {
+      result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
+        .reduce((bids, bid) => {
+          if (adUnit.mediaTypes) {
+            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
+              bid = Object.assign({}, bid, {mediaTypes: adUnit.mediaTypes});
+            } else {
+              utils.logError(
+                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+              );
+            }
           }
-          sizes = sizeMapping;
-        }
 
-        if (adUnit.mediaTypes) {
-          if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-            bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
-          } else {
-            utils.logError(
-              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-            );
+          const nativeParams =
+            adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+          if (nativeParams) {
+            bid = Object.assign({}, bid, {
+              nativeParams: processNativeAdUnitParams(nativeParams),
+            });
           }
-        }
 
-        const nativeParams =
-          adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
-        if (nativeParams) {
-          bid = Object.assign({}, bid, {
-            nativeParams: processNativeAdUnitParams(nativeParams),
-          });
-        }
+          bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'mediaType',
+            'renderer'
+          ]));
 
-        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-          'mediaType',
-          'renderer'
-        ]));
+          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
 
-        return Object.assign({}, bid, {
-          adUnitCode: adUnit.code,
-          transactionId: adUnit.transactionId,
-          sizes: sizes,
-          bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
-          bidderRequestId,
-          auctionId
-        });
-      }
+          if (active) {
+            bids.push(Object.assign({}, bid, {
+              adUnitCode: adUnit.code,
+              transactionId: adUnit.transactionId,
+              sizes: sizes,
+              bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
+              bidderRequestId,
+              auctionId
+            }));
+          }
+          return bids;
+        }, [])
       );
-  }).reduce(flatten, []).filter(val => val !== '');
+    }
+    return result;
+  }, []).reduce(flatten, []).filter(val => val !== '');
 }
 
 function getAdUnitCopyForPrebidServer(adUnits) {
@@ -94,7 +102,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   return adUnitsCopy;
 }
 
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) {
+exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -134,7 +142,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy}),
+        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC
@@ -165,7 +173,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, adUnits}),
+      bids: getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}),
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
@@ -174,7 +182,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
     }
   });
   return bidRequests;
-}
+};
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   let serverBidRequests = bidRequests.filter(bidRequest => {
@@ -194,22 +202,26 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       }
     }
   }
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
-  bidRequests.forEach(bidRequest => {
-    bidRequest.start = new Date().getTime();
-    // TODO : Do we check for bid in pool from here and skip calling adapter again ?
-    const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-      bidRequest.doneCbCallCount = 0;
-      let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, done, ajax);
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-    }
-  });
-}
+  if (bidRequests.length) {
+    let ajax = ajaxBuilder(bidRequests[0].timeout);
+    bidRequests.forEach(bidRequest => {
+      bidRequest.start = new Date().getTime();
+      // TODO : Do we check for bid in pool from here and skip calling adapter again ?
+      const adapter = _bidderRegistry[bidRequest.bidderCode];
+      if (adapter) {
+        utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+        bidRequest.doneCbCallCount = 0;
+        let done = doneCb(bidRequest.bidderRequestId);
+        adapter.callBids(bidRequest, addBidResponse, done, ajax);
+      } else {
+        utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+      }
+    });
+  } else {
+    utils.logWarn('callBids executed with no bidRequests');
+  }
+};
 
 function transformHeightWidth(adUnit) {
   let sizesObj = [];

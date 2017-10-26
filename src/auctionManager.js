@@ -60,8 +60,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  _public.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout })
+  _public.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels }) {
+    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels });
     _addAuction(auction);
     return auction;
   };

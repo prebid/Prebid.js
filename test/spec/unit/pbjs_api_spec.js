@@ -898,6 +898,7 @@ describe('Unit: Prebid Module', function () {
         adUnits = [{
           code: 'adUnit-code',
           mediaType: 'video',
+          sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}},
             {bidder: 'appnexusAst', params: {placementId: 'id'}}
@@ -933,6 +934,7 @@ describe('Unit: Prebid Module', function () {
         adUnits = [{
           code: 'adUnit-code',
           mediaType: 'video',
+          sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexusAst', params: {placementId: 'id'}}
           ]
@@ -967,6 +969,7 @@ describe('Unit: Prebid Module', function () {
         adUnits = [{
           code: 'adUnit-code',
           mediaType: 'native',
+          sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}},
             {bidder: 'appnexusAst', params: {placementId: 'id'}}
@@ -1017,6 +1020,7 @@ describe('Unit: Prebid Module', function () {
         adUnits = [{
           code: 'adUnit-code',
           nativeParams: {type: 'image'},
+          sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexusAst', params: {placementId: 'id'}}
           ]
@@ -1063,6 +1067,7 @@ describe('Unit: Prebid Module', function () {
         let adUnits = [{
           code: 'adUnit-code',
           nativeParams: {type: 'image'},
+          sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexusAst', params: {placementId: 'id'}}
           ]
