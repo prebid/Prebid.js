@@ -1,33 +1,36 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import Adapter from "src/adapter";
+import bidfactory from "src/bidfactory";
+import bidmanager from "src/bidmanager";
+import * as utils from "src/utils";
+import {ajax} from "src/ajax";
+import {STATUS} from "src/constants";
+import adaptermanager from "src/adaptermanager";
 
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
   const baseAdapter = new Adapter('vertamedia');
-  let bidRequest;
 
   baseAdapter.callBids = function (bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
       return;
     }
 
-    var RTBDataParams = prepareAndSaveRTBRequestParams(bidRequests.bids[0]);
+    for (var i = 0; i < bidRequests.bids.length; i++) {
+      var prepData = prepareAndSaveRTBRequestParams(bidRequests.bids[i])
+      var bidRequest = prepData[0];
+      var RTBDataParams = prepData[1];
 
-    if (!RTBDataParams) {
-      return;
+      if (!RTBDataParams) {
+        return;
+      }
+
+      ajax(ENDPOINT, handleResponse.bind(null, bidRequest), RTBDataParams, {
+        contentType: 'text/plain',
+        withCredentials: true,
+        method: 'GET'
+      });
     }
-
-    ajax(ENDPOINT, handleResponse, RTBDataParams, {
-      contentType: 'text/plain',
-      withCredentials: true,
-      method: 'GET'
-    });
   };
 
   function prepareAndSaveRTBRequestParams(bid) {
@@ -35,19 +38,19 @@ function VertamediaAdapter() {
       return;
     }
 
-    bidRequest = bid;
+    let bidRequest = bid;
 
     let size = getSize(bid.sizes);
 
     bidRequest.width = size.width;
     bidRequest.height = size.height;
 
-    return {
+    return [bidRequest, {
       aid: bid.params.aid,
       w: size.width,
       h: size.height,
       domain: document.location.hostname
-    };
+    }];
   }
 
   function getSize(requestSizes) {
@@ -67,7 +70,7 @@ function VertamediaAdapter() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
+  function handleResponse(bidRequest, response) {
     var parsed;
 
     try {
@@ -77,15 +80,15 @@ function VertamediaAdapter() {
     }
 
     if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
-      bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
+      bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID));
 
       return;
     }
 
-    bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, parsed.bids[0]));
+    bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.GOOD, parsed.bids[0]));
   }
 
-  function createBid(status, tag) {
+  function createBid(bidRequest, status, tag) {
     var bid = bidfactory.createBid(status, tag);
 
     bid.code = baseAdapter.getBidderCode();
@@ -101,7 +104,7 @@ function VertamediaAdapter() {
     bid.width = bidRequest.width;
     bid.height = bidRequest.height;
     bid.descriptionUrl = tag.url;
-    bid.vastUrl = tag.url;
+    bid.vastUrl = tag.vastUrl;
 
     return bid;
   }
