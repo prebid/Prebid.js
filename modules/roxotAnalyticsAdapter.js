@@ -6,23 +6,6 @@ import {ajax} from "../src/ajax"
 
 const utils = require('src/utils');
 
-let parser = parse(window.location);
-
-let customHost = parser.search['pa_host'];
-let host = parser.host;
-
-const options = {
-// TODO analyticHost must be changeable.
-    analyticHost: customHost || '//pa.rxthdr.com/api/v2/',
-    // TODO extract only host without www
-    currentHost: host,
-    adUnits: [],
-    iUrl: '/i',
-    aUrl: '/a',
-    bUrl: '/b',
-    prefix: 'roxot_analytics_',
-    publisherId: null
-};
 
 /**
  * 1. UTM
@@ -32,185 +15,221 @@ const options = {
  * 5. Content-type
  */
 
+const options = new Config;
 
 let roxotAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), new RoxotAnalyticAdapter);
 
 adaptermanager.registerAnalyticsAdapter({
-    adapter: roxotAdapter,
-    code: 'roxot'
+  adapter: roxotAdapter,
+  code: 'roxot'
 });
 
 export default roxotAdapter;
 
-// FUNCTIONS ========================
 
 function RoxotAnalyticAdapter() {
 
-    return {
-        utm: extractUtmData(),
-        sessionId: extractSessionId(),
-        send: function (originData) {
-            let data = Object.assign({}, originData);
-            Object.keys(data).map(function (objectKey) {
-                let event = data[objectKey];
+  return {
+    transport: new AjaxTransport,
+    requestStack: new RequestStack,
+    track({eventType, args}) {
+      args = args || {};
 
-                event.data = event.data || {};
-                event.data.utmTagData = extractUtmData();
-                event.data.sessionId = extractSessionId();
+      let requestId = this.requestStack.presentRequestId(args['requestId']);
+      let request = this.requestStack.ensureRequestPresented(requestId);
 
-            });
+      let isImpression = eventType === CONSTANTS.EVENTS.BID_WON;
+      let isBid = eventType === CONSTANTS.EVENTS.BID_ADJUSTMENT;
+      let isBidAfterTimeout = (request.isFinished() && isBid);
+      let isBidRequested = eventType === CONSTANTS.EVENTS.BID_REQUESTED;
+      let isAuctionEnd = eventType === CONSTANTS.EVENTS.AUCTION_END;
+      let isAuctionStart = eventType === CONSTANTS.EVENTS.AUCTION_INIT;
 
-            return this.transport.send(data);
-        },
-        transport: {
-            send: function (data) {
-                //TODO why content type text/plain, is it important?
-                let fullUrl = options.analyticHost + '?publisherId[]=' + options.publisherId + '&analyticHost=' + options.currentHost;
-                ajax(fullUrl, null, JSON.stringify(data), {withCredentials: true});
-            }
-        },
-        auction: {},
-        eventStack: {
+      if (isAuctionStart) {
+        options.fill(args['config']);
+      }
 
-            stack: {},
+      if (isBidRequested) {
+        let adUnitCodes = args.bids.map((bid) => bid.placementCode);
+        let auctions = adUnitCodes.map((code) => request.ensureAdUnitPresented(code));
+        //todo check source
+        let bidder = new Bidder(args);
+        return auctions.forEach((auction) => auction.bidderRequested(bidder));
+      }
 
-            ensureRequestPresented: function (requestId) {
-                if (!this.stack[requestId]) {
-                    this.stack[requestId] = new Request(requestId, new Date(), options.publisherId);
-                }
-            },
+      if (isImpression || isBidAfterTimeout) {
+        let newEvent = {};
 
-            findRequest: function (requestId) {
-                return this.stack[requestId];
-            },
-            clear: function () {
-                this.stack = {};
-            }
-        },
-        clear: function () {
-            this.eventStack.clear();
-            this.current = null;
-        },
-        current: null,
-        track({eventType, args}) {
-            args = args || {};
+        newEvent[args['adUnitCode']] = {
+          eventType: isBidAfterTimeout ? 'BidAfterTimeoutEvent' : 'AdUnitImpressionEvent',
+          auctionInfo: request.findAuction(args['adUnitCode']).auctionInfo,
+          data: (new Bid(args))
+        };
 
-            if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-                options.publisherId = args['config']['publisherIds'][0];
+        this.transport.send(newEvent);
+      }
 
-                if (args['config']['host'] !== undefined) {
-                    options.currentHost = args['config']['host'];
-                }
+      if (isBid) {
+        let auction = request.findAuction(args['adUnitCode']);
+        auction.bidReceived(new Bid(args));
+      }
 
-                if (args['config']['adUnits'] !== undefined) {
-                    options.adUnits = args['config']['adUnits'];
-                }
-            }
-
-            let requestId = args['requestId'] || this.current;
-
-            if (this.current && this.current !== requestId) {
-                throw 'Try to rewrite current auction';
-            }
-
-            this.current = requestId;
-            this.eventStack.ensureRequestPresented(requestId);
-            let request = this.eventStack.findRequest(requestId);
-
-            let isImpression = eventType === CONSTANTS.EVENTS.BID_WON;
-            let isBid = eventType === CONSTANTS.EVENTS.BID_ADJUSTMENT;
-            let isBidAfterTimeout = (request.isFinished() && isBid);
-            let isBidRequested = eventType === CONSTANTS.EVENTS.BID_REQUESTED;
-            let isAuctionEnd = eventType === CONSTANTS.EVENTS.AUCTION_END;
-
-            if (isBidRequested) {
-                let placementCodes = args.bids.map((bid) => bid.placementCode);
-                let timeout = args['timeout'];
-
-                let auctions = placementCodes.map((placementCode) => request.ensureAdUnitPresented(placementCode, options.host, timeout));
-                //todo check source
-                let bidder = new Bidder(args['bidderCode'], args['source'] || '');
-                return auctions.forEach((auction) => auction.bidderRequested(bidder));
-            }
-
-            if (isImpression || isBidAfterTimeout) {
-                let originData = {
-                    eventType: isBidAfterTimeout ? 'BidAfterTimeoutEvent' : 'AdUnitImpressionEvent',
-                    auctionInfo: request.findAuction(args['adUnitCode']).auctionInfo,
-                    data: {
-                        size: args['width'] + 'x' + args['height'],
-                        adUnitCode: args['adUnitCode'],
-                        bidder: args['bidderCode'],
-                        timeToRespond: args["timeToRespond"],
-                        cpm: args['cpm']
-                    }
-                };
-
-                let newEvent = {};
-                newEvent[args['adUnitCode']] = originData;
-                return this.send(newEvent);
-            }
-
-            if (isBid) {
-                let auction = request.findAuction(args['adUnitCode']);
-                // todo check timeToRespond,size,cpm
-                let size = args['width'] + 'x' + args['height'];
-                return auction.bidReceived(args['bidderCode'], args["timeToRespond"], size, args['cpm']);
-            }
-
-            if (isAuctionEnd) {
-                this.current = null;
-                request.finish();
-                return this.send(request.buildData());
-            }
-        }
-    };
-
-    function extractSessionId() {
-        let currentSessionId = (new SessionId).load();
-
-        if (currentSessionId.isLive()) {
-            currentSessionId.persist();
-            return currentSessionId.id();
-        }
-
-        let newSessionId = (new SessionId).generate();
-        newSessionId.persist();
-
-        return newSessionId.id();
-
+      if (isAuctionEnd) {
+        this.requestStack.finish(request.requestId);
+        return this.transport.send(request.buildData());
+      }
     }
-
-    function extractUtmData() {
-        let previousUtm = (new Utm).fromLocalStorage();
-        let currentUtm = (new Utm).fromUrl(window.location);
-
-        if (currentUtm.isDetected()) {
-            currentUtm.persist();
-            return currentUtm.data;
-        }
-
-        if (previousUtm.isLive()) {
-            previousUtm.persist();
-            return previousUtm.data;
-        }
-
-        return {};
-    }
+  };
 }
 
-function Request(requestId, startedAt, publisherId) {
+function Config() {
+  let parser = parse(window.location);
+
+  let customHost = parser.search['pa_host'];
+  let host = parser.host;
+
+  return {
+    analyticHost: customHost || '//pa.rxthdr.com/api/v2/',
+    // TODO extract only host without www
+    currentHost: host,
+    adUnits: [],
+    iUrl: '/i',
+    aUrl: '/a',
+    bUrl: '/b',
+    prefix: 'roxot_analytics_',
+    publisherId: null,
+
+    fill: function (config) {
+      options.publisherId = extractPublisherId(config);
+      options.currentHost = extractHost(config);
+      options.adUnits = extractAdUnits();
+      options.utm = extractUtmData();
+      options.sessionId = extractSessionId();
+    }
+  };
+
+  function extractAdUnits() {
+    return config['adUnits'] !== undefined ? config['adUnits'] : [];
+  }
+
+  function extractHost(config, currentHost) {
+    return config['host'] !== undefined ? config['host'] : currentHost;
+  }
+
+  function extractPublisherId(config) {
+    return config['publisherIds'][0];
+  }
+
+  function extractSessionId() {
+    let currentSessionId = (new SessionId).load();
+
+    if (currentSessionId.isLive()) {
+      currentSessionId.persist();
+      return currentSessionId.id();
+    }
+
+    let newSessionId = (new SessionId).generate();
+    newSessionId.persist();
+
+    return newSessionId.id();
+
+  }
+
+  function extractUtmData() {
+    let previousUtm = (new Utm).fromLocalStorage();
+    let currentUtm = (new Utm).fromUrl(window.location);
+
+    if (currentUtm.isDetected()) {
+      currentUtm.persist();
+      return currentUtm.data;
+    }
+
+    if (previousUtm.isLive()) {
+      previousUtm.persist();
+      return previousUtm.data;
+    }
+
+    return {};
+  }
+}
+
+function AjaxTransport() {
+  return {
+    send(data) {
+      let preparedData = this.prepareData(data);
+      let fullUrl = options.analyticHost + '?publisherId[]=' + options.publisherId + '&analyticHost=' + options.currentHost;
+
+      ajax(fullUrl, null, JSON.stringify(preparedData), {withCredentials: true});
+    },
+    // TODO не верное место для этого метода
+    prepareData(originData) {
+      let data = Object.assign({}, originData);
+      Object.keys(data).map(function (objectKey) {
+        let event = data[objectKey];
+
+        event.data = event.data || {};
+        event.data.utmTagData = options.utm;
+        event.data.sessionId = options.sessionId;
+      });
+
+      return data;
+    }
+  }
+}
+
+function RequestStack() {
+  return {
+    stack: {},
+
+    current: null,
+
+    ensureRequestPresented(requestId) {
+      if (!this.stack[requestId]) {
+        this.stack[requestId] = new Request(requestId, new Date(), options.publisherId);
+      }
+
+      return this.stack[requestId];
+    },
+
+    findRequest(requestId) {
+      return this.stack[requestId];
+    },
+    finish(requestId) {
+      this.current = null;
+      this.findRequest(requestId).finish();
+    },
+
+    clear() {
+      this.stack = {};
+      this.current = null;
+    },
+
+    presentRequestId(requestId) {
+
+      let requestId = requestId || this.current;
+
+      if (this.current && this.current !== requestId) {
+        throw 'Try to rewrite current auction';
+      }
+
+      this.current = requestId;
+
+      return this.current;
+    },
+  };
+
+  function Request(requestId, publisherId) {
     this.requestId = requestId;
     this.publisherId = publisherId;
     this.auctions = {};
     this.isEnd = false;
 
     this.ensureAdUnitPresented = function (adUnitCode) {
-        if (!this.auctions[adUnitCode]) {
-            this.auctions[adUnitCode] = AuctionInfo(this.requestId, adUnitCode)
-        }
+      if (!this.auctions[adUnitCode]) {
+        this.auctions[adUnitCode] = AuctionInfo(this.requestId, adUnitCode)
+      }
 
-        return this.auctions[adUnitCode];
+      return this.auctions[adUnitCode];
     };
 
     this.findAuction = (adUnitCode) => this.auctions[adUnitCode];
@@ -222,167 +241,168 @@ function Request(requestId, startedAt, publisherId) {
 
     function AuctionInfo(requestId, adUnitCode) {
 
-        return {
-            eventType: "AdUnitAuctionEvent",
-            auctionInfo: {
-                "requestId": requestId,
-                "publisherId": publisherId,
-                "adUnitCode": adUnitCode,
-                "host": options.currentHost,
-                "requestedBids": {},
-                "bids": [],
-                "bidsAfterTimeout": []
-            },
-            isFinished: false,
-            finish: () => this.isFinished = true,
-            bidderRequested: function (bidder) {
-                this.auctionInfo.requestedBids[bidder.bidderCode] = bidder;
-            },
-            bidReceived: function (bidderCode, timeToRespond, size, cpm) {
-                let bidder = this.auctionInfo.requestedBids[bidderCode];
-                if (this.isFinished) {
-                    this.auctionInfo.bidsAfterTimeout.push(new Bid(bidder, timeToRespond, size, cpm));
-                }
-                else {
-                    this.auctionInfo.bids.push(new Bid(bidder, timeToRespond, size, cpm));
-                }
-            }
+      return {
+        eventType: "AdUnitAuctionEvent",
+        auctionInfo: {
+          requestId: requestId,
+          publisherId: publisherId,
+          adUnitCode: adUnitCode,
+          host: options.currentHost,
+          requestedBids: {},
+          bids: [],
+          bidsAfterTimeout: []
+        },
+        isFinish: false,
+        finish: () => this.isFinish = true,
+        bidderRequested(bidder) {
+          this.auctionInfo.requestedBids[bidder.bidderCode] = bidder;
+        },
+        bidReceived(bid) {
+          if (this.isFinish) {
+            return this.auctionInfo.bidsAfterTimeout.push(bid);
+          }
 
-        };
+          return this.auctionInfo.bids.push(bid);
+        }
+
+      };
     }
+  }
 
-
-    function Bid(bidder, timeToRespond, size, cpm) {
-        this.bidder = bidder;
-        this.timeToRespond = timeToRespond;
-        this.size = size;
-        this.cpm = cpm;
-    }
 }
 
-function Bidder(bidderCode, source) {
-    this.bidderCode = bidderCode;
-    this.source = source;
+function Bid({width, height, adUnitCode, bidderCode, source, timeToRespond, cpm}) {
+  // todo check timeToRespond,size,cpm
+  this.size = width + 'x' + height;
+  this.adUnitCode = adUnitCode;
+  this.bidder = new Bidder({bidderCode, source});
+  this.timeToRespond = timeToRespond;
+  this.cpm = cpm;
+}
+
+function Bidder({bidderCode, source}) {
+  this.bidderCode = bidderCode;
+  this.source = source;
 }
 
 function SessionId(realId) {
-    let key = options.prefix.concat('session_id');
-    let timeout = {
-        key: options.prefix.concat('session_timeout'),
-        ms: 60 * 60 * 1000
-    };
-    let id = realId || null;
-    let live = false;
+  let key = options.prefix.concat('session_id');
+  let timeout = {
+    key: options.prefix.concat('session_timeout'),
+    ms: 60 * 60 * 1000
+  };
+  let id = realId || null;
+  let live = false;
 
-    this.id = () => id;
+  this.id = () => id;
 
-    this.generate = function () {
-        return new SessionId(uuid());
-    };
+  this.generate = function () {
+    return new SessionId(uuid());
+  };
 
-    this.persist = function () {
-        if (!live) {
-            return utils.logError("Cann't persist rotten id");
-        }
-
-        localStorage.setItem(key, id);
-        localStorage.setItem(timeout.key, Date.now());
-    };
-
-    this.isLive = function () {
-        return isFresh();
-    };
-    this.load = function () {
-        id = localStorage.getItem(key) || null;
-
-        if (id && isFresh()) {
-            live = true;
-        }
-
-        return this;
-
-    };
-
-    function isFresh() {
-        let ts = localStorage.getItem(timeout.key);
-
-        if (!ts) {
-            return true;
-        }
-
-        return Date.now() - ts <= timeout.ms;
+  this.persist = function () {
+    if (!live) {
+      return utils.logError("Cann't persist rotten id");
     }
+
+    localStorage.setItem(key, id);
+    localStorage.setItem(timeout.key, Date.now());
+  };
+
+  this.isLive = function () {
+    return isFresh();
+  };
+  this.load = function () {
+    id = localStorage.getItem(key) || null;
+
+    if (id && isFresh()) {
+      live = true;
+    }
+
+    return this;
+
+  };
+
+  function isFresh() {
+    let ts = localStorage.getItem(timeout.key);
+
+    if (!ts) {
+      return true;
+    }
+
+    return Date.now() - ts <= timeout.ms;
+  }
 }
 
 function Utm() {
-    let tags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-    let prefix = options.prefix.concat('utm');
-    let timeout = {
-        key: 'utm_timeout',
-        ms: 60 * 60 * 1000
-    };
+  let tags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  let prefix = options.prefix.concat('utm');
+  let timeout = {
+    key: 'utm_timeout',
+    ms: 60 * 60 * 1000
+  };
 
-    let detected = false;
-    this.data = {};
+  let detected = false;
+  this.data = {};
 
-    this.isDetected = function () {
-        return detected;
-    };
+  this.isDetected = function () {
+    return detected;
+  };
 
-    this.isLive = function () {
-        return detected && isFresh(localStorage.getItem(timeout.key) || 0);
-    };
+  this.isLive = function () {
+    return detected && isFresh(localStorage.getItem(timeout.key) || 0);
+  };
 
-    this.fromUrl = function (url) {
-        let $this = this;
-        tags.forEach(function (tag) {
-            let utmTagValue = parse(url).search[tag];
+  this.fromUrl = function (url) {
+    let $this = this;
+    tags.forEach(function (tag) {
+      let utmTagValue = parse(url).search[tag];
 
-            if (utmTagValue !== '') {
-                detected = true;
-            }
+      if (utmTagValue !== '') {
+        detected = true;
+      }
 
-            $this.data[tag] = utmTagValue;
-        });
+      $this.data[tag] = utmTagValue;
+    });
 
-        return this;
-    };
+    return this;
+  };
 
-    this.fromLocalStorage = function () {
-        let $this = this;
-        tags.forEach(function (utmTagKey) {
-            $this.data[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
-        });
+  this.fromLocalStorage = function () {
+    let $this = this;
+    tags.forEach(function (utmTagKey) {
+      $this.data[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+    });
 
-        return this;
-    };
+    return this;
+  };
 
-    this.persist = function () {
-        let $this = this;
-        Object.keys(this.data).map(function (tagKey, index) {
-            localStorage.setItem(buildUtmLocalStorageKey(tagKey), $this.data[tagKey]);
-        });
+  this.persist = function () {
+    let $this = this;
+    Object.keys(this.data).map(function (tagKey) {
+      localStorage.setItem(buildUtmLocalStorageKey(tagKey), $this.data[tagKey]);
+    });
 
-        localStorage.setItem(timeout.key, Date.now());
-    };
+    localStorage.setItem(timeout.key, Date.now());
+  };
 
-    function buildUtmLocalStorageKey(key) {
-        return prefix.concat(key);
-    }
+  function buildUtmLocalStorageKey(key) {
+    return prefix.concat(key);
+  }
 
-    function isFresh(utmTimestamp) {
-        return (Date.now() - utmTimestamp) > timeout.ms;
-    }
+  function isFresh(utmTimestamp) {
+    return (Date.now() - utmTimestamp) > timeout.ms;
+  }
 
 }
 
 function uuid() {
-    function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-            .toString(16)
-            .substring(1);
-    }
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
 
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-        s4() + '-' + s4() + s4() + s4();
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
 }
