@@ -38,7 +38,7 @@ describe('justpremium adapter', () => {
     it('Verify build request and parameters', () => {
       const request = spec.buildRequests(adUnits);
       expect(request.method).to.equal('POST');
-      expect(request.url).to.match(/^http:\/\/pre.ads.justpremium.com\/v\/2.0\/t\/ixhr/);
+      expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/);
 
       const jpxRequest = JSON.parse(request.data);
       expect(jpxRequest).to.not.equal(null);
