@@ -116,6 +116,9 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} url The URL which makes the sync happen.
  */
 
+// common params for all mediaTypes
+const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+
 /**
  * Register a bidder with prebid, using the given spec.
  *
@@ -303,12 +306,17 @@ export function newBidder(spec) {
           onResponse();
 
           function addBidUsingRequestMap(bid) {
-            const bidRequest = bidRequestMap[bid.requestId];
-            if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.placementCode, prebidBid);
+            // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
+            if (hasValidKeys(bid)) {
+              const bidRequest = bidRequestMap[bid.requestId];
+              if (bidRequest) {
+                const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+                addBidWithCode(bidRequest.placementCode, prebidBid);
+              } else {
+                logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+              }
             } else {
-              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+              logError(`Bidder ${spec.code} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`);
             }
           }
 
@@ -335,6 +343,11 @@ export function newBidder(spec) {
       return false;
     }
     return true;
+  }
+
+  function hasValidKeys(bid) {
+    let bidKeys = Object.keys(bid);
+    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
   }
 
   function newEmptyBid() {
