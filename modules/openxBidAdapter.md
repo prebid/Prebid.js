@@ -15,12 +15,12 @@ Module that connects to OpenX's demand sources
     var adUnits = [
         {
             code: 'test-div',
-            sizes: [[300, 250]],  // a display size
+            sizes: [[728, 90]],  // a display size
             bids: [
                 {
                     bidder: "openx",
                     params: {
-                        unit: "538958007",
+                        unit: "538959756",
                         delDomain: "se-demo-d.openx.net"
                     }
                 }
