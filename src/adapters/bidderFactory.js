@@ -47,7 +47,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {function(ServerResponse, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
  *   interpret it and return the Bid objects. This function will be run inside a try/catch.
  *   If it throws any errors, your bids will be discarded.
- * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
+ * @property {function(SyncOptions, ServerResponse[]): UserSync[]} [getUserSyncs] Given an array of all the responses
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
  *   important ones should come first, since publishers may limit how many are dropped on their page.
