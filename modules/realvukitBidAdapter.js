@@ -9,10 +9,6 @@ const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
 // var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
-export function isBidRequestValid(bid) {
-  return !!(bid.params.partner_id || bid_params.unit_id);
-}
-
 var RealVuKitAdapter = function RealVuKitAdapter() {
   var baseAdapter = new Adapter('realvukit');
 
@@ -93,11 +89,15 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
           bidmanager.addBidResponse(placementCode, bid);
         } else {
           // respond no bid
-          bid = bidfactory.createBid(2, bidObj);
+          bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidObj);
           bid.bidderCode = bidCode;
           bidmanager.addBidResponse(placementCode, bid);
         }
       } else {
+        // omh  invalid bid response  (TESTING)
+        var omhbid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, { 'InvalidBidResponse': { bids: { }} });
+        bidmanager.addBidResponse('ad_unit_1', omhbid);
+
         utils.logMessage(' realvu: No prebid response for placement %%PLACEMENT%%');
       }
     }
