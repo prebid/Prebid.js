@@ -158,7 +158,7 @@ describe('TrustXAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'seatbid': [responses[0]]}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': [responses[0]]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -241,7 +241,7 @@ describe('TrustXAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'seatbid': [responses[0], responses[1]]}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': [responses[0], responses[1]]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -282,7 +282,7 @@ describe('TrustXAdapter', function () {
         }
       ];
       const request = spec.buildRequests(bidRequests);
-      const result = spec.interpretResponse({'seatbid': responses.slice(2)}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(2)}}, request);
       expect(result.length).to.equal(0);
     });
   });

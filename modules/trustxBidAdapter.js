@@ -71,6 +71,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
+    serverResponse = serverResponse && serverResponse.body
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;
