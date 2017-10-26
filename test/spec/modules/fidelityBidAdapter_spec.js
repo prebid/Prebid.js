@@ -1,195 +1,160 @@
-describe('fidelity adapter tests', function() {
-  const expect = require('chai').expect;
-  const adapter = require('modules/fidelityBidAdapter');
-  const adLoader = require('src/adloader');
-  const bidmanager = require('src/bidmanager');
-  const STATUS = require('src/constants').STATUS;
-  var urlParse = require('url-parse');
-  var querystringify = require('querystringify');
+import { expect } from 'chai';
+import { spec } from 'modules/fidelityBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-  describe('creation of bid url', function () {
-    it('should be called', function () {
-      var stubLoadScript;
-      stubLoadScript = sinon.stub(adLoader, 'loadScript');
+describe('FidelityAdapter', () => {
+  const adapter = newBidder(spec);
 
-      var bidderRequest = {
-        bidderCode: 'fidelity',
-        bids: [
-          {
-            bidId: 'bidId-123456-1',
-            bidder: 'fidelity',
-            params: {
-              zoneid: '37'
-            },
-            placementCode: 'div-gpt-ad-123456-1'
-          },
-        ]
-      };
-
-      adapter().callBids(bidderRequest);
-      sinon.assert.called(stubLoadScript);
-
-      stubLoadScript.restore();
-    });
-
-    it('should populate required parameters', function () {
-      var stubLoadScript;
-      stubLoadScript = sinon.stub(adLoader, 'loadScript');
-
-      var bidderRequest = {
-        bidderCode: 'fidelity',
-        bids: [
-          {
-            bidId: 'bidId-123456-1',
-            bidder: 'fidelity',
-            params: {
-              zoneid: '37',
-            },
-            placementCode: 'div-gpt-ad-123456-1'
-          },
-        ]
-      };
-
-      adapter().callBids(bidderRequest);
-
-      stubLoadScript.restore();
-    });
-
-    it('should populate required and optional parameters', function () {
-      var stubLoadScript;
-      stubLoadScript = sinon.stub(adLoader, 'loadScript');
-
-      var bidderRequest = {
-        bidderCode: 'fidelity',
-        bids: [
-          {
-            bidId: 'bidId-123456-1',
-            bidder: 'fidelity',
-            params: {
-              zoneid: '37',
-              server: 't.fidelity-media.com',
-              loc: 'http://locurl',
-              click: 'http://clickurl',
-              subid: '000'
-            },
-            placementCode: 'div-gpt-ad-123456-1'
-          },
-        ]
-      };
-
-      adapter().callBids(bidderRequest);
-
-      var requestURI = stubLoadScript.getCall(0).args[0];
-      var parsedBidUrl = urlParse(requestURI);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-      expect(parsedBidUrl.hostname).to.equal('t.fidelity-media.com');
-
-      expect(parsedBidUrlQueryString).to.have.property('zoneid').and.to.equal('37');
-      expect(parsedBidUrlQueryString).to.have.property('impid').and.to.equal('bidId-123456-1');
-      expect(parsedBidUrlQueryString).to.have.property('callback').and.to.equal('window.$$PREBID_GLOBAL$$.fidelityResponse');
-      expect(parsedBidUrlQueryString).to.have.property('loc').and.to.equal('http://locurl');
-      expect(parsedBidUrlQueryString).to.have.property('ct0').and.to.equal('http://clickurl');
-      expect(parsedBidUrlQueryString).to.have.property('subid').and.to.equal('000');
-
-      stubLoadScript.restore();
+  describe('inherited functions', () => {
+    it('exists and is a function', () => {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('fidelityResponse', function () {
-    it('should exist and be a function', function () {
-      expect($$PREBID_GLOBAL$$.fidelityResponse).to.exist.and.to.be.a('function');
+  describe('isBidRequestValid', () => {
+    let bid = {
+      'bidder': 'fidelity',
+      'params': {
+        'zoneid': '37',
+        'floor': '0.05',
+        'server': 't.fidelity-media.com',
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };
+
+    it('should return true when required params found', () => {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should add empty bid response if no bids returned', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var bidderRequest = {
-        bidderCode: 'fidelity',
-        bids: [
-          {
-            bidId: 'bidId-123456-1',
-            bidder: 'fidelity',
-            params: {
-              zoneid: '37'
-            },
-            placementCode: 'div-gpt-ad-123456-1'
-          },
-        ]
+    it('should return true when required params found', () => {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'zoneid': '37',
       };
-
-      // no bids returned in the response.
-      var response = {
-        'id': '543210',
-        'seatbid': []
-      };
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      // adapter needs to be called, in order for the stub to register.
-      adapter()
-
-      $$PREBID_GLOBAL$$.fidelityResponse(response);
-
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('div-gpt-ad-123456-1');
-      expect(bidObject1.getStatusCode()).to.equal(2);
-      expect(bidObject1.bidderCode).to.equal('fidelity');
-
-      stubAddBidResponse.restore();
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should add a bid response for bid returned', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var bidderRequest = {
-        bidderCode: 'fidelity',
-        bids: [
-          {
-            bidId: 'bidId-123456-1',
-            bidder: 'fidelity',
-            params: {
-              zoneid: '37'
-            },
-            placementCode: 'div-gpt-ad-123456-1'
-          },
-        ]
+    it('should return false when required params are not passed', () => {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'zoneid': 0,
       };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
-      // Returning a single bid in the response.
-      var response = {
-        'id': '543210',
-        'seatbid': [ {
-          'bid': [ {
-            'id': '1111111',
-            'impid': 'bidId-123456-1',
-            'price': 0.09,
-            'adm': '<<creative>>',
-            'height': 90,
-            'width': 728
-          } ]
+  describe('buildRequests', () => {
+    let bidderRequest = {
+      bidderCode: 'fidelity',
+      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      bidderRequestId: '178e34bad3658f',
+      bids: [
+        {
+          bidder: 'fidelity',
+          params: {
+            zoneid: '37',
+            floor: '0.05',
+            server: 't.fidelity-media.com',
+          },
+          placementCode: '/19968336/header-bid-tag-0',
+          sizes: [[300, 250], [320, 50]],
+          bidId: '2ffb201a808da7',
+          bidderRequestId: '178e34bad3658f',
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        }
+      ],
+      start: 1472239426002,
+      auctionStart: 1472239426000,
+      timeout: 5000
+    };
+
+    it('should add source and verison to the tag', () => {
+      const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const payload = request.data;
+      expect(payload.from).to.exist;
+      expect(payload.v).to.exist;
+      expect(payload.requestid).to.exist;
+      expect(payload.impid).to.exist;
+      expect(payload.zoneid).to.exist;
+      expect(payload.floor).to.exist;
+      expect(payload.charset).to.exist;
+      expect(payload.defloc).to.exist;
+      expect(payload.altloc).to.exist;
+      expect(payload.subid).to.exist;
+      expect(payload.flashver).to.exist;
+      expect(payload.tmax).to.exist;
+    });
+
+    it('sends bid request to ENDPOINT via GET', () => {
+      const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(request.url).to.equal('//t.fidelity-media.com/delivery/hb.php');
+      expect(request.method).to.equal('GET');
+    });
+  })
+
+  describe('interpretResponse', () => {
+    let response = {
+      'id': '543210',
+      'seatbid': [ {
+        'bid': [ {
+          'id': '1111111',
+          'impid': 'bidId-123456-1',
+          'price': 0.09,
+          'adm': '<!-- Creative -->',
+          'width': 728,
+          'height': 90,
         } ]
+      } ]
+    };
+
+    it('should get correct bid response', () => {
+      let expectedResponse = [
+        {
+          requestId: 'bidId-123456-1',
+          creativeId: 'bidId-123456-1',
+          cpm: 0.09,
+          width: 728,
+          height: 90,
+          ad: '<!-- Creative -->',
+          netRevenue: true,
+          currency: 'USD',
+          ttl: 360,
+        }
+      ];
+
+      let result = spec.interpretResponse({ body: response });
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
+
+    it('handles nobid responses', () => {
+      let response = {
+        'id': '543210',
+        'seatbid': [ ]
       };
 
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      // adapter needs to be called, in order for the stub to register.
-      adapter()
+      let result = spec.interpretResponse({ body: response });
+      expect(result.length).to.equal(0);
+    });
+  });
 
-      $$PREBID_GLOBAL$$.fidelityResponse(response);
+  describe('user sync', () => {
+    const syncUrl = '//x.fidelity-media.com/delivery/matches.php?type=iframe';
 
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('div-gpt-ad-123456-1');
-      expect(bidObject1.getStatusCode()).to.equal(1);
-      expect(bidObject1.bidderCode).to.equal('fidelity');
-      expect(bidObject1.cpm).to.equal(0.09);
-      expect(bidObject1.height).to.equal(90);
-      expect(bidObject1.width).to.equal(728);
-      expect(bidObject1.ad).to.equal('<<creative>>');
-
-      stubAddBidResponse.restore();
+    it('should register the sync iframe', () => {
+      expect(spec.getUserSyncs({})).to.be.undefined;
+      expect(spec.getUserSyncs({iframeEnabled: false})).to.be.undefined;
+      const options = spec.getUserSyncs({iframeEnabled: true});
+      expect(options).to.not.be.undefined;
+      expect(options).to.have.lengthOf(1);
+      expect(options[0].type).to.equal('iframe');
+      expect(options[0].url).to.equal(syncUrl);
     });
   });
 });
