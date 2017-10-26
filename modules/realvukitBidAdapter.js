@@ -7,15 +7,16 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
-// var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
 var RealVuKitAdapter = function RealVuKitAdapter() {
   var baseAdapter = new Adapter('realvukit');
 
   baseAdapter.callBids = function (params) {
     //  utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
+    // @if NODE_ENV='debug'
     utils.logInfo('realvuBidAdapter params: ' + JSON.stringify(params));
 
+    // @endif
     //  omh - return if invalid params
     if (!params || !params.bids) {
       utils.logError(('realvuBidAdapter params are invalid...exiting: ' + params));
@@ -23,12 +24,15 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
     }
 
     var pbids = params.bids;
-    //  utils.logMessage('RealVu params: '+JSON.stringify(params));
 
+    // @if NODE_ENV='debug'
+    utils.logMessage('RealVu params: ' + JSON.stringify(params));
+
+    // @endif
     for (var i = 0; i < pbids.length; i++) {
       var bid_rq = pbids[i];
       var bidId = bid_rq.bidId;
-      adloader.loadScript(buildRvCall(bid_rq, bidId),/*omh*/ $$PREBID_GLOBAL$$.rvkit_handler);
+      adloader.loadScript(buildRvCall(bid_rq, bidId));
     }
   };
 
@@ -40,16 +44,21 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
     var c = utils.getBidIdParameter('partner_id', bid.params);
     var sz = bid.sizes[0][0] + 'x' + bid.sizes[0][1];
     var rv_call = '//pr.realvu.net/flip/2/p=' + p + '_f=unit_s=' + sz + '_js=1_c=' + c;
-    // was rv_call +='?uid='+bid.placementCode+'&callback=$$PREBID_GLOBAL$$.rvkit_handler&bid_id='+bidId;
     rv_call += '?callback=$$PREBID_GLOBAL$$.rvkit_handler&uid=' + encodeURIComponent(bid.placementCode);
     kitMap.push({p: p, uid: bid.placementCode, bid_id: bidId});
+    // @if NODE_ENV='debug'
     utils.logMessage('realvu request built: ' + rv_call);
+
+    // @endif
     bid.startTime = new Date().getTime();
     return rv_call;
   }
 
   $$PREBID_GLOBAL$$.rvkit_handler = function(rv_response) {
-    utils.logMessage('realvu rv_response: '+JSON.stringify(rv_response));
+    // @if NODE_ENV='debug'
+    utils.logMessage('realvu rv_response: ' + JSON.stringify(rv_response));
+
+    // @endif
     for (var i = 0; i < rv_response.length; i++) {
       var ri = rv_response[i];
       // restore bid_id from kitMap with p
@@ -95,7 +104,7 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
         }
       } else {
         // omh  invalid bid response  (TESTING)
-        var omhbid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, { 'InvalidBidResponse': { bids: { }} });
+        var omhbid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, { 'InvalidBidResponse': { bids: { } } });
         bidmanager.addBidResponse('ad_unit_1', omhbid);
 
         utils.logMessage(' realvu: No prebid response for placement %%PLACEMENT%%');

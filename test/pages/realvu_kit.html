@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>realvuBidAdapter Test</title>
+    <!--script type="text/javascript" src="//ac.realvu.net/prebid/prebid.js" async></script-->
+    <script type="text/javascript" src="../../build/dev/prebid.js" async=true ></script>
+    <script type="text/javascript" >
+        /*Begin*/
+        var start_time;
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        var bhandler = function (bidResponses) {
+            document.getElementById('msg').innerHTML += "<h2>dT=" + ((new Date()) - start_time) / 1000 + "sec.</h2>";
+            var targetingParams = pbjs.getAdserverTargeting();
+            document.getElementById('msg').innerHTML += "A. targetingParams: " + JSON.stringify(targetingParams) + "<br>";
+            for (var key in targetingParams) {
+                var tp = targetingParams[key];
+                var hb_adid = tp.hb_adid;
+                if (typeof (hb_adid) != 'undefined') {
+                    var doc = docf(document.getElementById(key));
+                    pbjs.renderAd(doc, hb_adid);
+                }
+                document.getElementById('msg').innerHTML += "hb_adid=" + hb_adid + ". ";
+                var bids = bidResponses[key].bids;
+                document.getElementById('msg').innerHTML += "<br>"+key+"  bids.length=" + bids.length + "<br>" 
+                  + JSON.stringify(bids).replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/},/g, ',<br><br>').replace(/,/g, ', ') + "<br>";
+            }
+        };
+
+        docf = function (f) {
+            return f.contentDocument ? f.contentDocument : (f.contentWindow ? f.contentWindow.document : null);
+        };
+
+        pbjs.que.push(function () {
+           pbjs.logging = true;
+           var adUnits = [{
+                code: 'ad_container_1',
+                sizes: [[300, 250]],
+                bids: [{
+                    bidder: 'realvukit', params: {
+                        partner_id: 'E2VF',
+                        unit_id: '8361'
+                    }}
+                ]
+            },
+            {
+                code: 'ad_container_2',
+                sizes: [[300, 250]],
+                bids: [{
+                     bidder: 'realvukit', params: {
+                        partner_id: 'E2VF',
+                        unit_id: '8361'
+                    }}
+                ]
+            }
+            ];
+            pbjs.addAdUnits(adUnits);
+            start_time = new Date();
+            pbjs.requestBids({
+                // This callback gets triggered when all bids for this ad unit come back. 
+                bidsBackHandler: bhandler
+            });
+        });
+        /*End*/
+</script>
+</head>
+<body>
+    
+<div id='navbar' class='navbar'>
+</div>
+<script>
+    var bar = [];
+
+    var str1 = "";
+    for (var i = 0; i < bar.length; i++) {
+        if (location.pathname.indexOf(bar[i].href) < 0) {
+            str1 += "<a href='" + bar[i].href + location.search + "'> &middot;" + bar[i].name + "</a>";
+        }
+        else {
+            str1 += "<a class='navbar_here' href='" + bar[i].href + location.search + "'> &middot;" + bar[i].name + "</a>";
+        }
+    }
+    function onoff_log(box) {
+        if (box.checked) window.location += "?realvu_log";
+        else window.location = location.pathname;
+    }
+    var chk = (location.search == "") ? '' : 'checked';
+    str1 += "<input style='margin-left:20px;' type='checkbox' " + chk + " onchange='onoff_log(this)' >Show Log";
+
+    document.getElementById('navbar').innerHTML = str1;
+</script>
+
+    <div class='content'>
+        <div style='margin-left: 10px;'>
+            <h2 style='font-family:Impact;'>realvukit.js demo</h2>
+<table border=1>
+<tr valign='top'><td style="height:280px;">
+            <iframe id="ad_container_1" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
+    width="300" height="250" scrolling="no" style='border:silver 1px dotted;'></iframe>    
+</td><td rowspan="2">
+            <div id="msg" style='margin-left:12px;padding:12px;min-height:40px;background-color:Chocolate;'></div>
+</td></tr>
+<tr valign='top'><td>
+            <iframe id="ad_container_2" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
+    width="300" height="250" scrolling="no" style='border:silver 1px dotted;'></iframe>    
+</td></tr>
+
+
+</table>
+            <p>
+            <div id="tutor_div" style='width:1000px;background-color:White'></div>
+            </p>
+            <!--script src='footer.js'></script-->
+</body>
+</html>
+    

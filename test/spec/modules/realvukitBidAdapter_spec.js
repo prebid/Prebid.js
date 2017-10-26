@@ -55,7 +55,6 @@ describe('RealVu_Kit Adapter Test', () => {
 
   afterEach(() => {
     sandbox.restore();
-
   });
 
   describe('callBids', () => {
@@ -86,18 +85,16 @@ describe('RealVu_Kit Adapter Test', () => {
     beforeEach(() => {
       sandbox.stub(bidmanager, 'addBidResponse');
 
-      //$$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
-      //adapter.callBids(REQUEST);
+      // $$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
+      // adapter.callBids(REQUEST);
 
       $$PREBID_GLOBAL$$.rvkit_handler([ RESPONSE_NOBID ]);
-
     });
 
     it('should add a bid object for each bid', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
     });
   });
-
 
   describe('Test Bid Request', () => {
     let xhr;
