@@ -6,8 +6,7 @@
 
 # Description
 
-To get more information or get source to fetch bids
-please contact to Justpremium.
+To get more information or your unique zone id please contact Justpremium.
 
 # Test Parameters
 ```
@@ -19,8 +18,8 @@ please contact to Justpremium.
                {
                    bidder: 'justpremium', 
                    params: {
-                       zone: 28313,
-                       exclude : ['as']
+                       zone: 34364,
+                       allow : ['wp']
                    }
                },
            ]
@@ -32,8 +31,8 @@ please contact to Justpremium.
                {
                    bidder: 'justpremium',
                    params: {
-                       zone: 28313,
-                       allow : ['sa']
+                       zone: 34364,
+                       exclude : ['wp']
                    }
                }
            ]
