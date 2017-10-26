@@ -99,7 +99,8 @@ export default function buildDfpVideoUrl(options) {
 
   if (!config.getConfig('usePrebidCache')) {
     if (!deepAccess(options, 'params.description_url')) {
-      queryParams.description_url = encodeURIComponent(bid.vastUrl);
+      const vastUrl = bid && bid.vastUrl;
+      queryParams.description_url = encodeURIComponent(vastUrl);
     } else {
       logError(`input object cannot contain description_url`);
     }
@@ -123,14 +124,16 @@ export default function buildDfpVideoUrl(options) {
 function buildUrlFromAdserverUrlComponents(components, bid) {
   if (!config.getConfig('usePrebidCache')) {
     if (!deepAccess(components, 'search.description_url')) {
-      components.search.description_url = encodeURIComponent(bid.vastUrl);
+      const vastUrl = bid && bid.vastUrl;
+      components.search.description_url = encodeURIComponent(vastUrl);
     } else {
       logError(`input url cannnot contain description_url`);
     }
   }
 
+  const adserverTargeting = (bid && bid.adserverTargeting) || {};
   const customParams = Object.assign({},
-    bid.adserverTargeting,
+    adserverTargeting,
   );
   components.search.cust_params = encodeURIComponent(formatQS(customParams));
 
