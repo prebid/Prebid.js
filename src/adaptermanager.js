@@ -197,20 +197,18 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         _bidderRequests.push(bidderRequest);
       }
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
   });
 
   _bidderRequests.forEach(bidRequest => {
     bidRequest.start = new Date().getTime();
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      if (bidRequest.bids && bidRequest.bids.length !== 0) {
-        utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-        adapter.callBids(bidRequest);
-      }
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+    if (bidRequest.bids && bidRequest.bids.length !== 0) {
+      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      adapter.callBids(bidRequest);
     }
   })
 };
