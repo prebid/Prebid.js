@@ -7,6 +7,7 @@ import { STATUS, S2S } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { VIDEO } from 'src/mediaTypes';
 
 const getConfig = config.getConfig;
 
@@ -199,7 +200,8 @@ function PrebidServer() {
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
             // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
-            if (bidObj.media_type === 'video') {
+            if (bidObj.media_type === VIDEO) {
+              bidObject.mediaType = VIDEO;
               if (bidObj.adm) {
                 bidObject.vastXml = bidObj.adm;
               }
