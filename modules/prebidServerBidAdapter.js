@@ -114,7 +114,7 @@ function PrebidServer() {
         adUnit.video = Object.assign({}, videoMediaType);
         delete adUnit.mediaTypes;
         // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
-        adUnit.media_types = ['video'];
+        adUnit.media_types = [VIDEO];
       }
     })
     convertTypes(adUnits);
