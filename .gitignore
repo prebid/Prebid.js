@@ -5,7 +5,6 @@ build
 # Test Files
 test/app
 gpt.html
-gpt-mlane.html
 gpt-each-bidder3.html
 
 # Selenium files
@@ -13,8 +12,8 @@ bin
 selenium*.log
 
 # Dev File
-
 integrationExamples/gpt/gpt.html
+integrationExamples/gpt/*-test.html
 integrationExamples/implementations/
 src/adapters/analytics/libraries
 

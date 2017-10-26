@@ -3,8 +3,7 @@ var mkpath = require('mkpath');
 var path = require('path');
 var ejs = require('ejs');
 
-module.exports = new (function() {
-
+module.exports = new function() {
   var tmpl = __dirname + '/junit.xml.ejs';
   var tmplData;
   var globalResults;
@@ -50,10 +49,10 @@ module.exports = new (function() {
     adaptAssertions(module);
 
     var rendered = ejs.render(data, {
-        module     : module,
-        moduleName : moduleName,
-        systemerr  : globalResults.errmessages.join('\n'),
-      });
+      module: module,
+      moduleName: moduleName,
+      systemerr: globalResults.errmessages.join('\n'),
+    });
 
     if (pathParts.length) {
       output_folder = path.join(output_folder, pathParts.join(path.sep));
@@ -70,9 +69,9 @@ module.exports = new (function() {
   function stackTraceFilter(parts) {
     var stack = parts.reduce(function(list, line) {
       if (contains(line, [
-          'node_modules',
-          '(node.js:',
-          '(events.js:'
+        'node_modules',
+        '(node.js:',
+        '(events.js:'
       ])) {
         return list;
       }
@@ -85,7 +84,7 @@ module.exports = new (function() {
   }
 
   function contains(str, text) {
-    if( Object.prototype.toString.call( text ) === '[object Array]' ) {
+    if (Object.prototype.toString.call(text) === '[object Array]') {
       for (var i = 0; i < text.length; i++) {
         if (contains(str, text[i])) {
           return true;
@@ -96,7 +95,7 @@ module.exports = new (function() {
   }
 
   this.write = function(results, options, callback) {
-    options.filename_prefix = process.env.__NIGHTWATCH_ENV+'_';
+    options.filename_prefix = process.env.__NIGHTWATCH_ENV + '_';
     globalResults = results;
     var keys = Object.keys(results.modules);
 
@@ -112,5 +111,4 @@ module.exports = new (function() {
       });
     });
   };
-
-})();
+}();
