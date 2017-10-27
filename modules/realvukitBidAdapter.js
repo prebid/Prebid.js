@@ -17,7 +17,7 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
     utils.logInfo('realvuBidAdapter params: ' + JSON.stringify(params));
 
     // @endif
-    //  omh - return if invalid params
+    // return if invalid params
     if (!params || !params.bids) {
       utils.logError(('realvuBidAdapter params are invalid...exiting: ' + params));
       return;
@@ -103,10 +103,6 @@ var RealVuKitAdapter = function RealVuKitAdapter() {
           bidmanager.addBidResponse(placementCode, bid);
         }
       } else {
-        // omh  invalid bid response  (TESTING)
-        var omhbid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, { 'InvalidBidResponse': { bids: { } } });
-        bidmanager.addBidResponse('ad_unit_1', omhbid);
-
         utils.logMessage(' realvu: No prebid response for placement %%PLACEMENT%%');
       }
     }

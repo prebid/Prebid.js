@@ -6,7 +6,8 @@ import constants from '../../../src/constants.json';
 
 describe('RealVu_Kit Adapter Test', () => {
   let adapter = new Adapter();
-  let sandbox;
+  let sandbox = sinon.sandbox.create();
+  let bidmanagerStub;
 
   const REQUEST = {
     bidderCode: 'realvukit',
@@ -39,18 +40,48 @@ describe('RealVu_Kit Adapter Test', () => {
       {
         bids: {
           bidderCode: 'realvukit',
-          statusMessage: 'no bid returned or error',
+          statusMessage: 'Bid returned empty or error response',
+          width: 300,
+          height: 250,
           adId: '25b3f8e4e2f12b',
-          bidId: '1b5e314fe79b1d'
+          bidId: '1b5e314fe79b1d',
+          status: constants.STATUS.NO_BID
         }
-      }
+      },
+    p: '9339508',
+    uid: 'ad_unit_1',
+    bid_id: '1b5e314fe79b1d',
+  };
+
+  const RESPONSE_BID = {
+    'ad_unit_1':
+      {
+        bids: {
+          bidderCode: 'realvukit',
+          statusMessage: 'Bid available',
+          width: 300,
+          height: 250,
+          adId: '25b3f8e4e2f12b',
+          bidId: '1b5e314fe79b1d',
+          cpm: 0.02,
+          ad: '<div></div>',
+          adUrl: 'http:localhost/',
+          dealId: 'N/A',
+          status: constants.STATUS.GOOD
+        }
+      },
+    p: '9339508',
+    uid: 'ad_unit_1',
+    bid_id: '1b5e314fe79b1d',
   };
 
   beforeEach(() => {
     adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
+    sandbox.stub(bidmanager, 'addBidResponse');
     $$PREBID_GLOBAL$$._bidsRequested = [];
     $$PREBID_GLOBAL$$._bidsReceived = [];
+    adapter.callBids(REQUEST);
+    $$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
   });
 
   afterEach(() => {
@@ -63,58 +94,52 @@ describe('RealVu_Kit Adapter Test', () => {
       adapter.callBids(REQUEST);
     });
 
-    afterEach(() => {
-      sandbox.restore();
-    })
-
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
       expect(adloader.loadScript.firstCall.args[0]).to.contain('p=9339508');
     });
-  });
+  }); // end of describe callBids
 
-  describe('realvukitResponse', () => {
+  describe('realvukit handler verification', () => {
     it('should exist and be a function', () => {
       expect($$PREBID_GLOBAL$$.rvkit_handler).to.exist.and.to.be.a('function');
     });
-  });
+  }); // end of describe realvukit handler verification
+
+  describe('Bid available response', () => {
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.rvkit_handler([ RESPONSE_BID ]);
+    });
+
+    it('should add a bid object for each bid', () => {
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+    });
+
+    it('should have proper placement', () => {
+      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad_unit_1');
+    });
+
+    it('should have defined bid object', () => {
+      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'realvukit');
+    });
+  }); //  end of describe Bid available response
 
   describe('No bid response', () => {
-    let firstBid;
-
     beforeEach(() => {
-      sandbox.stub(bidmanager, 'addBidResponse');
-
-      // $$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
-      // adapter.callBids(REQUEST);
-
       $$PREBID_GLOBAL$$.rvkit_handler([ RESPONSE_NOBID ]);
     });
 
     it('should add a bid object for each bid', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
     });
-  });
 
-  describe('Test Bid Request', () => {
-    let xhr;
-    let requests;
-
-    beforeEach(() => {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
+    it('should have proper placement', () => {
+      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad_unit_1');
     });
 
-    afterEach(() => xhr.restore());
-
-    it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    it('should have defined bid object', () => {
+      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('statusMessage', 'Bid returned empty or error response');
+      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'realvukit');
     });
-
-    it('requires parameters to make request', () => {
-      adapter.callBids({});
-      expect(requests).to.be.empty;
-    });
-  }); // endof Describe test bid request
+  }); // end of describe no bid response
 });
