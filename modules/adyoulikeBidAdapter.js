@@ -8,9 +8,9 @@ import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
-  const _VERSION = '0.1';
+  const _VERSION = '0.2';
 
-  const baseAdapter = Adapter.createNew('adyoulike');
+  const baseAdapter = new Adapter('adyoulike');
 
   baseAdapter.callBids = function (bidRequest) {
     const bidRequests = {};
@@ -21,7 +21,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
     const placements = validBids.map(bid => bid.params.placement);
     if (!utils.isEmpty(placements)) {
-      const body = createBody(placements);
+      const body = createBody(bidRequests, placements);
       const endpoint = createEndpoint();
       ajax(endpoint,
         (response) => {
@@ -61,10 +61,11 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   }
 
   /* Create request body */
-  function createBody(placements) {
+  function createBody(bidRequests, placements) {
     const body = {
       Version: _VERSION,
       Placements: placements,
+      TransactionIds: {}
     };
 
     // performance isn't supported by mobile safari iOS7. window.performance works, but
@@ -79,6 +80,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     } catch (e) {
       body.PageRefreshed = false;
     }
+
+    placements.forEach(placement => { body.TransactionIds[placement] = bidRequests[placement].transactionId; });
 
     return JSON.stringify(body);
   }
@@ -141,8 +144,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
   /* Get parsed size from request size */
   function getSize(requestSizes) {
-    const parsed = {},
-      size = utils.parseSizesInput(requestSizes)[0];
+    const parsed = {};
+    const size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -188,17 +191,12 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     bidmanager.addBidResponse(placement, bid);
   }
 
-  return {
-    createNew: AdyoulikeAdapter.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  };
+  });
 };
 
-AdyoulikeAdapter.createNew = function () {
-  return new AdyoulikeAdapter();
-};
-
-adaptermanager.registerBidAdapter(new AdyoulikeAdapter, 'adyoulike');
+adaptermanager.registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');
 
 module.exports = AdyoulikeAdapter;

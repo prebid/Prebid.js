@@ -1,11 +1,15 @@
-import Adapter from '../../../modules/indexExchangeBidAdapter';
-import adLoader from '../../../src/adloader';
+import Adapter from 'modules/indexExchangeBidAdapter';
+import bidManager from 'src/bidmanager';
+import adLoader from 'src/adloader';
+import * as url from 'src/url';
 
 var assert = require('chai').assert;
 var IndexUtils = require('../../helpers/index_adapter_utils.js');
 var HeaderTagRequest = '/cygnus';
 var SlotThreshold = 20;
 var ADAPTER_CODE = 'indexExchange';
+
+window.pbjs = window.pbjs || {};
 
 describe('indexExchange adapter - Request', function () {
   let adapter;
@@ -21,6 +25,7 @@ describe('indexExchange adapter - Request', function () {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
+    sandbox.stub(bidManager, 'addBidResponse');
   });
 
   afterEach(function() {
@@ -95,7 +100,22 @@ describe('indexExchange adapter - Request', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
+
+    var adapterResponse = {};
+    for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+      var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+      var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+      if (typeof adapterResponse[adUnitCode] === 'undefined') {
+        adapterResponse[adUnitCode] = [];
+      };
+      adapterResponse[adUnitCode].push(bid);
+    };
+    assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, "bidder code match with adapter's name");
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
   });
 
   it('test_prebid_indexAdapter_request_2_1: single slot with all supported multiple sizes -> multiple request objects for the slot', function () {
@@ -132,7 +152,7 @@ describe('indexExchange adapter - Request', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
   });
 
   it('test_prebid_indexAdapter_request_2_3: single slot with supported, unsupportrd, supported sizes -> only the supported size request objects for the slot', function () {
@@ -282,7 +302,7 @@ describe('indexExchange adapter - Request', function () {
     var unsupportedSizeCount = 1;
     var requestSlotNumber = SlotThreshold;
     var configuredBids = IndexUtils.createBidSlots(requestSlotNumber);
-		// add additional unsupported sized slot
+    // add additional unsupported sized slot
     var invalidSlotPlacement = IndexUtils.DefaultPlacementCodePrefix + 'invalid';
     var invalidSlotID = 'slot-invalid';
     configuredBids.push(IndexUtils.createBidSlot(invalidSlotPlacement, invalidSlotID, [ IndexUtils.unsupportedSizes[0] ]));
@@ -439,7 +459,7 @@ describe('indexExchange adapter - Request', function () {
 
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
   });
 
   it('test_prebid_indexAdapter_request_sizeID_5: multiple prebid size slot, 1 index slot but size not defined in slot -> no AS requset', function () {
@@ -452,6 +472,57 @@ describe('indexExchange adapter - Request', function () {
 
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
+  });
+
+  it('test_prebid_indexAdapter_request_different_type_adUnits: both display and video slots -> 2 Ad Server requests, 1 for display and 1 for video', function() {
+    var videoConfig = {
+      'siteID': 6,
+      'playerType': 'HTML5',
+      'protocols': ['VAST2', 'VAST3'],
+      'maxduration': 15
+    }
+    var videoWidth = 640;
+    var videoHeight = 480;
+    var configuredBids = IndexUtils.createBidSlots(2);
+    configuredBids[1].params.video = Object.assign({}, videoConfig);
+    configuredBids[1].mediaType = 'video';
+    configuredBids[1].sizes[0] = videoWidth;
+    configuredBids[1].sizes[1] = videoHeight;
+
+    adapter.callBids({ bids: configuredBids });
+
+    sinon.assert.calledTwice(adLoader.loadScript);
+
+    // Check request for display ads
+    assert.include(adLoader.loadScript.secondCall.args[0], HeaderTagRequest, 'request is headertag request');
+
+    var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.secondCall.args[0]);
+    assert.isNotNull(requestJSON.r.imp, 'headertag request include impression object');
+
+    var impressionObj = requestJSON.r.imp;
+
+    var expandedBids = [IndexUtils.expandSizes(configuredBids[0])];
+    var sidMatched = IndexUtils.matchBidsOnSID(expandedBids, impressionObj);
+    for (var i = 0; i < sidMatched.matched.length; i++) {
+      var pair = sidMatched.matched[i];
+
+      assert.equal(pair.sent.banner.w, pair.configured.size[0], 'request ' + pair.name + ' width is set to ' + pair.configured.size[0]);
+      assert.equal(pair.sent.banner.h, pair.configured.size[1], 'request ' + pair.name + ' width is set to ' + pair.configured.size[1]);
+      assert.equal(pair.sent.ext.siteID, pair.configured.params.siteID, 'request ' + pair.name + ' siteID is set to ' + pair.configured.params.siteID);
+    }
+
+    assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
+    assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+    assert.isString(requestJSON.r.id, 'ID is string');
+
+    // Check request for video ads
+    let cygnusRequestUrl = url.parse(encodeURIComponent(adLoader.loadScript.firstCall.args[0]));
+    cygnusRequestUrl.search.r = JSON.parse(decodeURIComponent(cygnusRequestUrl.search.r));
+
+    expect(cygnusRequestUrl.search.r.imp[0].ext.siteID).to.equal(videoConfig.siteID);
+    expect(cygnusRequestUrl.search.r.imp[0].video.maxduration).to.equal(videoConfig.maxduration);
+    expect(cygnusRequestUrl.search.r.imp[0].video.w).to.equal(videoWidth);
+    expect(cygnusRequestUrl.search.r.imp[0].video.h).to.equal(videoHeight);
   });
 });

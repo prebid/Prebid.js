@@ -5,8 +5,8 @@ import bidmanager from 'src/bidmanager'
 describe('PubGearsAdapter', () => {
   var adapter, mockScript,
 		 params = {
-   bids: []
- }
+      bids: []
+    }
 
   beforeEach(() => {
     adapter = new Adapter()

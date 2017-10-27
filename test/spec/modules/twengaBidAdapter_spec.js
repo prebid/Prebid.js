@@ -1,7 +1,7 @@
 describe('twenga adapter tests', function () {
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('modules/twengaBidAdapter');
+  var Adapter = require('modules/twengaBidAdapter');
   var adLoader = require('src/adloader');
   var expect = require('chai').expect;
   var bidmanager = require('src/bidmanager');
@@ -40,7 +40,7 @@ describe('twenga adapter tests', function () {
   it('sets url parameters', function () {
     var stubLoadScript = sinon.stub(adLoader, 'loadScript');
 
-    adapter().callBids(DEFAULT_PARAMS);
+    (new Adapter()).callBids(DEFAULT_PARAMS);
 
     var bidUrl = stubLoadScript.getCall(0).args[0];
     var parsedBidUrl = urlParse(bidUrl);
@@ -79,7 +79,7 @@ describe('twenga adapter tests', function () {
     });
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
-    adapter.createNew().callBids(DEFAULT_PARAMS);
+    (new Adapter()).callBids(DEFAULT_PARAMS);
 
     expect(stubAddBidResponse.getCall(0)).to.be.null;
 
@@ -94,9 +94,9 @@ describe('twenga adapter tests', function () {
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
 
       $$PREBID_GLOBAL$$._bidsRequested
-                .push({ bidderCode: DEFAULT_PARAMS.bidderCode,
-                  bids: [{ bidId: parsedBidUrlQueryString.callback_uid,
-                    placementCode: DEFAULT_PARAMS.bids[0].placementCode }]});
+        .push({ bidderCode: DEFAULT_PARAMS.bidderCode,
+          bids: [{ bidId: parsedBidUrlQueryString.callback_uid,
+            placementCode: DEFAULT_PARAMS.bids[0].placementCode }]});
 
       var callback = stringToFunction(parsedBidUrlQueryString.callback);
       expect(callback).to.exist.and.to.be.a('function');
@@ -104,7 +104,7 @@ describe('twenga adapter tests', function () {
     });
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
-    adapter.createNew().callBids(DEFAULT_PARAMS);
+    (new Adapter()).callBids(DEFAULT_PARAMS);
 
     var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
 

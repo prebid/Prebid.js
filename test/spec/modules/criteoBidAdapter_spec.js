@@ -1,7 +1,7 @@
 import Adapter from '../../../modules/criteoBidAdapter';
 import bidManager from '../../../src/bidmanager';
-import {ajax} from '../../../src/ajax'
-import {expect} from 'chai';
+import { ajax } from '../../../src/ajax'
+import { expect } from 'chai';
 
 var CONSTANTS = require('../../../src/constants');
 
@@ -12,7 +12,8 @@ before(() => {
       DirectBidding: {
         DirectBiddingSlot: function DirectBiddingSlot(placementCode, zoneid, nativeCallback, transactionId, sizes) {
           return {
-            impId: placementCode
+            impId: placementCode,
+            nativeCallback: nativeCallback
           };
         },
 
@@ -29,7 +30,9 @@ before(() => {
               ajax('//bidder.criteo.com/cdb', callbacks)
             }
           }
-        }
+        },
+
+        Size: function Size(width, height) { return {width: width, height: height} }
       }
     }
   };
@@ -68,7 +71,7 @@ describe('criteo adapter test', () => {
     ]
   };
 
-  let validResponse = {slots: [{impid: 'foo', cpm: 1.12, creative: "<iframe src=\"fakeIframeSrc\" height=\"250\" width='350'></iframe>"}]};
+  let validResponse = { slots: [{ impid: 'foo', cpm: 1.12, creative: "<iframe src=\"fakeIframeSrc\" height=\"250\" width='350'></iframe>" }] };
   let invalidResponse = { slots: [{ 'impid': 'unknownSlot' }] }
 
   let validMultiBid = {
@@ -95,6 +98,23 @@ describe('criteo adapter test', () => {
     ]
   };
 
+  let validNativeResponse = { slots: [{ impid: 'foo', cpm: 1.12, native: { productName: 'product0' } }] };
+  let validNativeBid = {
+    bidderCode: 'criteo',
+    bids: [
+      {
+        bidder: 'criteo',
+        placementCode: 'foo',
+        sizes: [[250, 350]],
+        params: {
+          zoneId: 32934,
+          audit: 'true',
+          nativeCallback: function (nativeJson) { console.log('Product name: ' + nativeJson.productName) }
+        }
+      }
+    ]
+  }
+
   beforeEach(() => {
     adapter = new Adapter();
   });
@@ -107,8 +127,12 @@ describe('criteo adapter test', () => {
     let server;
 
     beforeEach(() => {
-      server = sinon.fakeServer.create({autoRespond: true, respondImmediately: true});
+      server = sinon.fakeServer.create({ autoRespond: true, respondImmediately: true });
       server.respondWith(JSON.stringify(validResponse));
+    });
+
+    afterEach(() => {
+      server.restore();
     });
 
     it('adds bid for valid request', (done) => {
@@ -157,11 +181,50 @@ describe('criteo adapter test', () => {
     });
   });
 
+  describe('adding bids to the manager with native bids', () => {
+    let server;
+
+    beforeEach(() => {
+      server = sinon.fakeServer.create({ autoRespond: true, respondImmediately: true });
+      server.respondWith(JSON.stringify(validNativeResponse));
+    });
+
+    afterEach(() => {
+      server.restore();
+    });
+
+    it('adds creative to the response of a native valid request', (done) => {
+      stubAddBidResponse = sinon.stub(
+        bidManager, 'addBidResponse',
+        function (adUnitCode, bid) {
+          let expectedAdProperty = `<script type=\"text/javascript\">
+  let win = window;
+  for (const i=0; i<10; ++i) {
+    win = win.parent;
+    if (win.criteo_pubtag && win.criteo_pubtag.native_slots) {
+      let responseSlot = win.criteo_pubtag.native_slots["${bid.adId}"];
+      responseSlot.callback(responseSlot.nativeResponse);
+      break;
+    }
+  }
+</script>`;
+
+          expect(bid).to.have.property('ad', expectedAdProperty);
+          done();
+        });
+      adapter.callBids(validNativeBid);
+    });
+  });
+
   describe('dealing with unexpected situations', () => {
     let server;
 
     beforeEach(() => {
-      server = sinon.fakeServer.create({autoRespond: true, respondImmediately: true});
+      server = sinon.fakeServer.create({ autoRespond: true, respondImmediately: true });
+    });
+
+    afterEach(() => {
+      server.restore();
     });
 
     it('no bid if cdb handler responds with no bid empty string response', (done) => {

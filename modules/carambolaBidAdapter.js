@@ -89,7 +89,7 @@ function CarambolaAdapter() {
         }
       }
 
-      let server = bid.params.server || 'route.carambo.la';
+      let server = bid.params.server || 'hb.carambo.la';
       let cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
       //  the responses of the bid requests
@@ -102,8 +102,7 @@ function CarambolaAdapter() {
         }
         try {
           response = JSON.parse(response);
-          if (response && response.cpm <= 0)
-          {
+          if (response && response.cpm <= 0) {
             utils.logError('Bid response returned 0', BIDDER_CODE, bid);
             _addErrorBidResponse(bid, response, 'Bid response returned 0');
             return;
@@ -120,14 +119,13 @@ function CarambolaAdapter() {
 
   //  build the genral request to the server
   function _callBids(params) {
-    let isIfr,
-      bids = params.bids || [],
-      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+    let isIfr;
+    const bids = params.bids || [];
+    let currentURL = (window.parent !== window) ? document.referrer : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
-    }
-    catch (e) {
+    } catch (e) {
       isIfr = false;
     }
     if (bids.length === 0) {
@@ -149,19 +147,18 @@ function CarambolaAdapter() {
   }
 
   function _getViewportDimensions(isIfr) {
-    let width,
-      height,
-      tWin = window,
-      tDoc = document,
-      docEl = tDoc.documentElement,
-      body;
+    let width;
+    let height;
+    let tWin = window;
+    let tDoc = document;
+    let docEl = tDoc.documentElement;
+    let body;
 
     if (isIfr) {
       try {
         tWin = window.top;
         tDoc = window.top.document;
-      }
-      catch (e) {
+      } catch (e) {
         return;
       }
       docEl = tDoc.documentElement;
@@ -191,6 +188,6 @@ function CarambolaAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new CarambolaAdapter, 'carambola');
+adaptermanager.registerBidAdapter(new CarambolaAdapter(), 'carambola');
 
 module.exports = CarambolaAdapter;

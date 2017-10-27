@@ -1,11 +1,15 @@
-const CONSTANTS = require('src/constants.json');
-const utils = require('src/utils.js');
-const adloader = require('src/adloader.js');
-const bidmanager = require('src/bidmanager.js');
-const bidfactory = require('src/bidfactory.js');
-const adaptermanager = require('src/adaptermanager');
+import Adapter from 'src/adapter';
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
+import * as utils from 'src/utils';
+import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
+import { loadScript } from 'src/adloader';
 
-function XhbAdapter() {
+const XhbAdapter = function XhbAdapter() {
+  const baseAdapter = new Adapter('xhb');
+  let usersync = false;
+
   const _defaultBidderSettings = {
     alwaysUseBid: true,
     adserverTargeting: [
@@ -20,25 +24,44 @@ function XhbAdapter() {
         val: function (bidResponse) {
           return bidResponse.adId;
         }
+      },
+      {
+        key: 'hb_xhb_size',
+        val: function (bidResponse) {
+          return bidResponse.width + 'x' + bidResponse.height;
+        }
       }
     ]
   };
   bidmanager.registerDefaultBidderSetting('xhb', _defaultBidderSettings);
 
+  baseAdapter.callBids = function (params) {
+    const anArr = params.bids;
+    for (let i = 0; i < anArr.length; i++) {
+      let bidRequest = anArr[i];
+      let callbackId = bidRequest.bidId;
+      loadScript(buildJPTCall(bidRequest, callbackId));
+    }
+  };
+
   function buildJPTCall(bid, callbackId) {
     // determine tag params
     const placementId = utils.getBidIdParameter('placementId', bid.params);
+    const member = utils.getBidIdParameter('member', bid.params);
     const inventoryCode = utils.getBidIdParameter('invCode', bid.params);
     let referrer = utils.getBidIdParameter('referrer', bid.params);
     const altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
 
-    // Always use https
+    // Build tag, always use https
     let jptCall = 'https://ib.adnxs.com/jpt?';
 
     jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleXhbCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
+    jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
+    jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
+    jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', (utils.getBidIdParameter('trafficSourceCode', bid.params)));
 
     // sizes takes a bit more logic
     let sizeQueryString = '';
@@ -66,24 +89,6 @@ function XhbAdapter() {
       jptCall += sizeQueryString + '&';
     }
 
-    // append custom attributes:
-    let paramsCopy = Object.assign({}, bid.params);
-
-    // delete attributes already used
-    delete paramsCopy.placementId;
-    delete paramsCopy.invCode;
-    delete paramsCopy.query;
-    delete paramsCopy.referrer;
-    delete paramsCopy.alt_referrer;
-
-    // get the reminder
-    let queryParams = utils.parseQueryStringParameters(paramsCopy);
-
-    // append
-    if (queryParams) {
-      jptCall += queryParams;
-    }
-
     // append referrer
     if (referrer === '') {
       referrer = utils.getTopWindowUrl();
@@ -106,24 +111,25 @@ function XhbAdapter() {
 
     if (jptResponseObj && jptResponseObj.callback_uid) {
       let responseCPM;
-      let id = jptResponseObj.callback_uid;
+      const id = jptResponseObj.callback_uid;
       let placementCode = '';
-      let bidObj = utils.getBidRequest(id);
+      const bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
-          // set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
+
+        // set the status
+        bidObj.status = STATUS.GOOD;
       }
 
       let bid = [];
       if (jptResponseObj.result && jptResponseObj.result.ad && jptResponseObj.result.ad !== '') {
         responseCPM = 0.00;
 
-          // store bid response
-          // bid status is good (indicating 1)
+        // store bid response
+        // bid status is good (indicating 1)
         let adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
+        bid = bidfactory.createBid(STATUS.GOOD, bidObj);
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
@@ -134,31 +140,33 @@ function XhbAdapter() {
 
         bidmanager.addBidResponse(placementCode, bid);
       } else {
-          // no response data
-          // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2);
+        // no response data
+        // indicate that there is no bid for this placement
+        bid = bidfactory.createBid(STATUS.NO_BID, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
+      }
+
+      if (!usersync) {
+        let iframe = utils.createInvisibleIframe();
+        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
       }
     }
   };
 
-  function _callBids(params) {
-    let bids = params.bids || [];
-    for (let i = 0; i < bids.length; i++) {
-      let bid = bids[i];
-      let callbackId = bid.bidId;
-      adloader.loadScript(buildJPTCall(bid, callbackId));
-    }
-  }
+  return Object.assign(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
+    buildJPTCall: buildJPTCall
+  });
+};
 
-  // Export the callBids function, so that prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return {
-    callBids: _callBids
-  };
-}
-
-adaptermanager.registerBidAdapter(new XhbAdapter, 'xhb');
+adaptermanager.registerBidAdapter(new XhbAdapter(), 'xhb');
 
 module.exports = XhbAdapter;

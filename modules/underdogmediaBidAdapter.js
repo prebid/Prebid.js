@@ -1,3 +1,4 @@
+import { config } from 'src/config';
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
@@ -76,7 +77,7 @@ function UnderdogMediaAdapter() {
     url += UDM_ADAPTER_VERSION;
     url += ';cb=' + Math.random();
     url += ';qqq=' + (1 / bid.cpm);
-    url += ';hbt=' + $$PREBID_GLOBAL$$.bidderTimeout;
+    url += ';hbt=' + config.getConfig('bidderTimeout');
     url += ';style=adapter';
     url += ';vis=' + encodeURIComponent(document.visibilityState);
 
@@ -101,12 +102,11 @@ function UnderdogMediaAdapter() {
     return vars;
   }
 
-
   return {
     callBids: _callBids
   };
 }
 
-adaptermanager.registerBidAdapter(new UnderdogMediaAdapter, 'underdogmedia');
+adaptermanager.registerBidAdapter(new UnderdogMediaAdapter(), 'underdogmedia');
 
 module.exports = UnderdogMediaAdapter;

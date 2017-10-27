@@ -56,21 +56,21 @@ describe('adbund adapter tests', function () {
       bidderRequest = adapter.callBids.getCall(0).args[0];
 
       expect(bidderRequest).to.have.property('bids')
-                .that.is.an('array')
-                .with.lengthOf(1);
+        .that.is.an('array')
+        .with.lengthOf(1);
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .to.have.property('bidder', 'adbund');
+        .to.have.property('bidder', 'adbund');
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('sizes')
-                .that.is.an('array')
-                .with.lengthOf(1)
-                .that.deep.equals(request.bids[0].sizes);
+        .with.property('sizes')
+        .that.is.an('array')
+        .with.lengthOf(1)
+        .that.deep.equals(request.bids[0].sizes);
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('params')
-                .to.have.property('bidfloor', 0.036);
+        .with.property('params')
+        .to.have.property('bidfloor', 0.036);
     });
 
     it('Valid bid-response', () => {
@@ -79,7 +79,7 @@ describe('adbund adapter tests', function () {
       sandbox.stub(bidManager, 'addBidResponse');
       adapter.callBids(request);
       bidderResponse = bidManager.addBidResponse.getCall(0) ||
-				bidManager.addBidResponse.getCall(1);
+    bidManager.addBidResponse.getCall(1);
 
       if (bidderResponse && bidderResponse.args && bidderResponse.args[1]) {
         bidderResponse = bidderResponse.args[1];

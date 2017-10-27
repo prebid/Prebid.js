@@ -4,6 +4,13 @@ const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
 const constants = require('src/constants.json');
 const adaptermanager = require('src/adaptermanager');
+const BaseAdapter = require('src/adapter').default;
+
+const AOL_BIDDERS_CODES = {
+  aol: 'aol',
+  onemobile: 'onemobile',
+  onedisplay: 'onedisplay'
+};
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -14,7 +21,6 @@ const AolAdapter = function AolAdapter() {
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const nexageBaseApiTemplate = template`${'protocol'}://${'host'}/bidRequest?`;
   const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
-  const BIDDER_CODE = 'aol';
   const MP_SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
     eu: 'adserver-eu.adtech.advertising.com',
@@ -159,12 +165,17 @@ const AolAdapter = function AolAdapter() {
 
   function _buildNexageApiUrl(bid) {
     let {dcn, pos} = bid.params;
+    let isSecure = (document.location.protocol === 'https:');
     let nexageApi = nexageBaseApiTemplate({
-      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      protocol: isSecure ? 'https' : 'http',
       host: bid.params.host || NEXAGE_SERVER
     });
     if (dcn && pos) {
       let ext = '';
+      if (isSecure) {
+        bid.params.ext = bid.params.ext || {};
+        bid.params.ext.secure = 1;
+      }
       utils._each(bid.params.ext, (value, key) => {
         ext += `&${key}=${encodeURIComponent(value)}`;
       });
@@ -175,7 +186,7 @@ const AolAdapter = function AolAdapter() {
 
   function _addErrorBidResponse(bid, response = {}) {
     const bidResponse = bidfactory.createBid(2, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
+    bidResponse.bidderCode = bid.bidder;
     bidResponse.reason = response.nbr;
     bidResponse.raw = response;
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
@@ -199,7 +210,7 @@ const AolAdapter = function AolAdapter() {
       cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
-        utils.logError('Invalid price in bid response', BIDDER_CODE, bid);
+        utils.logError('Invalid price in bid response', AOL_BIDDERS_CODES.aol, bid);
         _addErrorBidResponse(bid, response);
         return;
       }
@@ -219,7 +230,7 @@ const AolAdapter = function AolAdapter() {
     }
 
     const bidResponse = bidfactory.createBid(1, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
+    bidResponse.bidderCode = bid.bidder;
     bidResponse.ad = ad;
     bidResponse.cpm = cpm;
     bidResponse.width = bidData.w;
@@ -234,13 +245,29 @@ const AolAdapter = function AolAdapter() {
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
 
+  function _isMarketplaceBidder(bidder) {
+    return bidder === AOL_BIDDERS_CODES.aol || bidder === AOL_BIDDERS_CODES.onedisplay;
+  }
+
+  function _isNexageBidder(bidder) {
+    return bidder === AOL_BIDDERS_CODES.aol || bidder === AOL_BIDDERS_CODES.onemobile;
+  }
+
   function _isNexageRequestPost(bid) {
-    if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
+    if (_isNexageBidder(bid.bidder) && bid.params.id && bid.params.imp && bid.params.imp[0]) {
       let imp = bid.params.imp[0];
       return imp.id && imp.tagid &&
         ((imp.banner && imp.banner.w && imp.banner.h) ||
         (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
     }
+  }
+
+  function _isNexageRequestGet(bid) {
+    return _isNexageBidder(bid.bidder) && bid.params.dcn && bid.params.pos;
+  }
+
+  function _isMarketplaceRequest(bid) {
+    return _isMarketplaceBidder(bid.bidder) && bid.params.placement && bid.params.network;
   }
 
   function _callBids(params) {
@@ -251,9 +278,10 @@ const AolAdapter = function AolAdapter() {
         withCredentials: true
       };
       let isNexageRequestPost = _isNexageRequestPost(bid);
-      if (bid.params.placement && bid.params.network) {
-        apiUrl = _buildMarketplaceUrl(bid);
-      } else if (bid.params.dcn && bid.params.pos || isNexageRequestPost) {
+      let isNexageRequestGet = _isNexageRequestGet(bid);
+      let isMarketplaceRequest = _isMarketplaceRequest(bid);
+
+      if (isNexageRequestGet || isNexageRequestPost) {
         apiUrl = _buildNexageApiUrl(bid);
         if (isNexageRequestPost) {
           data = bid.params;
@@ -263,7 +291,10 @@ const AolAdapter = function AolAdapter() {
           options.method = 'POST';
           options.contentType = 'application/json';
         }
+      } else if (isMarketplaceRequest) {
+        apiUrl = _buildMarketplaceUrl(bid);
       }
+
       if (apiUrl) {
         ajax(apiUrl, response => {
           // Needs to be here in case bidderSettings are defined after requestBids() is called
@@ -279,7 +310,7 @@ const AolAdapter = function AolAdapter() {
           showCpmAdjustmentWarning = false; // warning is shown at most once
 
           if (!response && response.length <= 0) {
-            utils.logError('Empty bid response', BIDDER_CODE, bid);
+            utils.logError('Empty bid response', AOL_BIDDERS_CODES.aol, bid);
             _addErrorBidResponse(bid, response);
             return;
           }
@@ -287,7 +318,7 @@ const AolAdapter = function AolAdapter() {
           try {
             response = JSON.parse(response);
           } catch (e) {
-            utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
+            utils.logError('Invalid JSON in bid response', AOL_BIDDERS_CODES.aol, bid);
             _addErrorBidResponse(bid, response);
             return;
           }
@@ -298,11 +329,13 @@ const AolAdapter = function AolAdapter() {
     });
   }
 
-  return {
+  return Object.assign(this, new BaseAdapter(AOL_BIDDERS_CODES.aol), {
     callBids: _callBids
-  };
+  });
 };
 
-adaptermanager.registerBidAdapter(new AolAdapter, 'aol');
+adaptermanager.registerBidAdapter(new AolAdapter(), AOL_BIDDERS_CODES.aol);
+adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onedisplay);
+adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onemobile);
 
 module.exports = AolAdapter;

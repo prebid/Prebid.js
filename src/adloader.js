@@ -37,16 +37,13 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
           for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {
             _requestCache[tagSrc].callbacks[i]();
           }
-        }
-        catch (e) {
+        } catch (e) {
           utils.logError('Error executing callback', 'adloader.js:loadScript', e);
         }
       });
     }
-  }
-
-  // trigger one time request
-  else {
+  } else {
+    // trigger one time request
     requestResource(tagSrc, callback);
   }
 };

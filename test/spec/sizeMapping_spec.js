@@ -27,7 +27,7 @@ var invalidAdUnit = {
 var invalidAdUnit2 = {
   'sizes': [300, 250],
   'sizeMapping': [{
-    foo: 'bar'  // bad
+    foo: 'bar' // bad
   }]
 };
 
@@ -49,6 +49,13 @@ function resetMockWindow() {
 
 describe('sizeMapping', function() {
   beforeEach(resetMockWindow);
+
+  it('minWidth should be inclusive', function() {
+    mockWindow.innerWidth = 1024;
+    sizeMapping.setWindow(mockWindow);
+    let sizes = sizeMapping.mapSizes(validAdUnit);
+    expect(sizes).to.deep.equal([[300, 250], [728, 90]]);
+  });
 
   it('mapSizes 1029 width', function() {
     mockWindow.innerWidth = 1029;

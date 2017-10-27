@@ -1,7 +1,7 @@
-{
+module.exports = {
   "env": {
     "browser": true,
-    "commonjs": true
+    "mocha": true
   },
   "extends": "standard",
   "globals": {
@@ -19,24 +19,31 @@
     // Violations of these styles should be fixed, and the exceptions removed over time.
     //
     // See Issue #1111.
-    "brace-style": "off",
     "camelcase": "off",
     "eqeqeq": "off",
-    "import/first": "off",
-    "no-control-regex": "off",
-    "no-mixed-operators": "off",
-    "no-multiple-empty-lines": "off",
+    "no-mixed-spaces-and-tabs": "off",
+    "no-tabs": "off",
+    "no-unused-expressions": "off",
+    "import/no-duplicates": "off",
+    "no-template-curly-in-string": "off",
+    "no-global-assign": "off",
+    "no-path-concat": "off",
     "no-redeclare": "off",
+    "no-new-object": "off",
+    "no-array-constructor": "off",
+    "node/no-deprecated-api": "off",
+    "no-cond-assign": "off",
+    "no-sequences": "off",
+    "no-eval": "off",
+    "no-new": "off",
     "no-return-assign": "off",
-    "no-throw-literal": "off",
     "no-undef": "off",
     "no-unused-vars": "off",
     "no-use-before-define": "off",
-    "no-useless-call": "off",
     "no-useless-escape": "off",
     "one-var": "off",
+    "standard/array-bracket-even-spacing": "off",
     "standard/no-callback-literal": "off",
-    "standard/object-curly-even-spacing": "off",
-    "valid-typeof": "off"
+    "standard/object-curly-even-spacing": "off"
   }
-}
+};

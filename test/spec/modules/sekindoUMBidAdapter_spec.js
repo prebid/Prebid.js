@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import sekindoUMAdapter from '../../../modules/sekindoUMBidAdapter';
+import SekindoUMAdapter from '../../../modules/sekindoUMBidAdapter';
 var bidManager = require('src/bidmanager');
 
 describe('sekindoUM Adapter Tests', () => {
@@ -21,7 +21,7 @@ describe('sekindoUM Adapter Tests', () => {
   };
 
   beforeEach(() => {
-    _sekindoUMAdapter = new sekindoUMAdapter();
+    _sekindoUMAdapter = new SekindoUMAdapter();
   });
 
   describe('sekindoUM callBids', () => {
@@ -46,7 +46,7 @@ describe('sekindoUM Adapter Tests', () => {
     beforeEach(function () {
       addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
       $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      _sekindoUMAdapter = new sekindoUMAdapter();
+      _sekindoUMAdapter = new SekindoUMAdapter();
     });
 
     afterEach(function () {

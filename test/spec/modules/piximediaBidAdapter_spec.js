@@ -2,9 +2,9 @@ describe('Piximedia adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
 
-    // var querystringify = require('querystringify');
+  // var querystringify = require('querystringify');
 
-  var adapter = require('modules/piximediaBidAdapter');
+  var Adapter = require('modules/piximediaBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
   var utils = require('src/utils');
@@ -47,7 +47,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       sinon.assert.calledOnce(stubLoadScript);
     });
 
@@ -67,7 +67,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       sinon.assert.notCalled(stubLoadScript);
     });
 
@@ -87,7 +87,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -96,7 +96,7 @@ describe('Piximedia adapter tests', function () {
 
       expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
       expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=pbjs.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
+      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
     });
 
     it('should call the correct Prebid URL when using the default URL with a deal and custom data', function () {
@@ -115,7 +115,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -143,7 +143,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -171,7 +171,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -228,7 +228,7 @@ describe('Piximedia adapter tests', function () {
         html: '<div>ad</div>'
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -268,7 +268,7 @@ describe('Piximedia adapter tests', function () {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
 
-            // this time, we do not provide dealId
+      // this time, we do not provide dealId
       var response = {
         foundbypm: true,
         cpm: 1.23,
@@ -278,7 +278,7 @@ describe('Piximedia adapter tests', function () {
         html: '<div>ad</div>'
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -321,7 +321,7 @@ describe('Piximedia adapter tests', function () {
         foundbypm: false
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -360,7 +360,7 @@ describe('Piximedia adapter tests', function () {
         foundbypm: false
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -390,7 +390,7 @@ describe('Piximedia adapter tests', function () {
 
       var response = null; // this is bogus: we expect an object
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};

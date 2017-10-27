@@ -5,14 +5,14 @@ var utils = require('src/utils');
 var adaptermanager = require('src/adaptermanager');
 
 var SonobiAdapter = function SonobiAdapter() {
-  var keymakerAssoc = {};   //  Remember placement codes for callback mapping
-  var bidReqAssoc = {};     //  Remember bids for bid complete reporting
+  var keymakerAssoc = {}; //  Remember placement codes for callback mapping
+  var bidReqAssoc = {}; //  Remember bids for bid complete reporting
 
   function _phone_in(request) {
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    var ref = (window.frameElement) ? '&ref=' + encodeURI(top.location.host || document.referrer) : '';
+    var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
     adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
   }
 
@@ -113,6 +113,6 @@ var SonobiAdapter = function SonobiAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SonobiAdapter, 'sonobi');
+adaptermanager.registerBidAdapter(new SonobiAdapter(), 'sonobi');
 
 module.exports = SonobiAdapter;

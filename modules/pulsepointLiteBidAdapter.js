@@ -1,91 +1,314 @@
-import {createBid} from 'src/bidfactory';
-import {addBidResponse} from 'src/bidmanager';
+/* eslint dot-notation:0, quote-props:0 */
 import {logError, getTopWindowLocation} from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
-function PulsePointLiteAdapter() {
-  const bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
-  const ajaxOptions = {
-    method: 'GET',
-    withCredentials: true,
-    contentType: 'text/plain'
-  };
+const NATIVE_DEFAULTS = {
+  TITLE_LEN: 100,
+  DESCR_LEN: 200,
+  SPONSORED_BY_LEN: 50,
+  IMG_MIN: 150,
+  ICON_MIN: 50,
+};
 
-  function _callBids(bidderRequest) {
-    bidderRequest.bids.forEach(bidRequest => {
-      try {
-        var params = Object.assign({}, environment(), bidRequest.params);
-        var url = bidUrl + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
-        ajax(url, (bidResponse) => {
-          bidResponseAvailable(bidRequest, bidResponse);
-        }, null, ajaxOptions);
-      } catch (e) {
-        // register passback on any exceptions while attempting to fetch response.
-        logError('pulsepoint.requestBid', 'ERROR', e);
-        bidResponseAvailable(bidRequest);
-      }
-    });
-  }
+/**
+ * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
+ * alternative/original PulsePointAdapter because it has no external
+ * dependencies and relies on a single OpenRTB request to the PulsePoint
+ * bidder instead of separate requests per slot.
+ */
+export const spec = {
 
-  function environment() {
-    return {
-      cn: 1,
-      ca: 'BID',
-      tl: 1,
-      'if': 0,
-      cwu: getTopWindowLocation().href,
-      cwr: referrer(),
-      dw: document.documentElement.clientWidth,
-      cxy: document.documentElement.clientWidth + ',' + document.documentElement.clientHeight,
-      tz: new Date().getTimezoneOffset(),
-      ln: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)
+  code: 'pulseLite',
+
+  aliases: ['pulsepointLite'],
+
+  supportedMediaTypes: ['native'],
+
+  isBidRequestValid: bid => (
+    !!(bid && bid.params && bid.params.cp && bid.params.ct)
+  ),
+
+  buildRequests: bidRequests => {
+    const request = {
+      id: bidRequests[0].bidderRequestId,
+      imp: bidRequests.map(slot => impression(slot)),
+      site: site(bidRequests),
+      app: app(bidRequests),
+      device: device(),
     };
-  }
+    return {
+      method: 'POST',
+      url: '//bid.contextweb.com/header/ortb',
+      data: JSON.stringify(request),
+    };
+  },
 
-  function referrer() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) {
-      return document.referrer;
+  interpretResponse: (response, request) => (
+    bidResponseAvailable(request, response)
+  ),
+
+  getUserSyncs: syncOptions => {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//bh.contextweb.com/visitormatch'
+      }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//bh.contextweb.com/visitormatch/prebid'
+      }];
     }
   }
 
-  function bidResponseAvailable(bidRequest, rawResponse) {
-    if (rawResponse) {
-      var bidResponse = parse(rawResponse);
-      if (bidResponse) {
-        var adSize = bidRequest.params.cf.toUpperCase().split('X');
-        var bid = createBid(STATUS.GOOD, bidRequest);
-        bid.bidderCode = bidRequest.bidder;
-        bid.cpm = bidResponse.bidCpm;
-        bid.ad = bidResponse.html;
-        bid.width = adSize[0];
-        bid.height = adSize[1];
-        addBidResponse(bidRequest.placementCode, bid);
-        return;
+};
+
+/**
+ * Callback for bids, after the call to PulsePoint completes.
+ */
+function bidResponseAvailable(bidRequest, bidResponse) {
+  const idToImpMap = {};
+  const idToBidMap = {};
+  bidResponse = bidResponse.body
+  // extract the request bids and the response bids, keyed by impr-id
+  const ortbRequest = parse(bidRequest.data);
+  ortbRequest.imp.forEach(imp => {
+    idToImpMap[imp.id] = imp;
+  });
+  if (bidResponse) {
+    bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
+      idToBidMap[bid.impid] = bid;
+    }));
+  }
+  const bids = [];
+  Object.keys(idToImpMap).forEach(id => {
+    if (idToBidMap[id]) {
+      const bid = {
+        requestId: id,
+        cpm: idToBidMap[id].price,
+        creative_id: id,
+        creativeId: id,
+        adId: id,
+      };
+      if (idToImpMap[id]['native']) {
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.mediaType = 'native';
+      } else {
+        bid.ad = idToBidMap[id].adm;
+        bid.width = idToImpMap[id].banner.w;
+        bid.height = idToImpMap[id].banner.h;
       }
+      bids.push(bid);
     }
-    var passback = createBid(STATUS.NO_BID, bidRequest);
-    passback.bidderCode = bidRequest.bidder;
-    addBidResponse(bidRequest.placementCode, passback);
-  }
+  });
+  return bids;
+}
 
-  function parse(rawResponse) {
-    try {
-      return JSON.parse(rawResponse);
-    } catch (ex) {
-      logError('pulsepoint.safeParse', 'ERROR', ex);
-      return null;
-    }
-  }
-
+/**
+ * Produces an OpenRTBImpression from a slot config.
+ */
+function impression(slot) {
   return {
-    callBids: _callBids
+    id: slot.bidId,
+    banner: banner(slot),
+    'native': nativeImpression(slot),
+    tagid: slot.params.ct.toString(),
   };
 }
 
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');
+/**
+ * Produces an OpenRTB Banner object for the slot given.
+ */
+function banner(slot) {
+  const size = adSize(slot);
+  return slot.nativeParams ? null : {
+    w: size[0],
+    h: size[1],
+  };
+}
 
-module.exports = PulsePointLiteAdapter;
+/**
+ * Produces an OpenRTB Native object for the slot given.
+ */
+function nativeImpression(slot) {
+  if (slot.nativeParams) {
+    const assets = [];
+    addAsset(assets, titleAsset(assets.length + 1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
+    addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
+    addAsset(assets, dataAsset(assets.length + 1, slot.nativeParams.sponsoredBy, 1, NATIVE_DEFAULTS.SPONSORED_BY_LEN));
+    addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.icon, 1, NATIVE_DEFAULTS.ICON_MIN, NATIVE_DEFAULTS.ICON_MIN));
+    addAsset(assets, imageAsset(assets.length + 1, slot.nativeParams.image, 3, NATIVE_DEFAULTS.IMG_MIN, NATIVE_DEFAULTS.IMG_MIN));
+    return {
+      request: JSON.stringify({ assets }),
+      ver: '1.1',
+    };
+  }
+  return null;
+}
+
+/**
+ * Helper method to add an asset to the assets list.
+ */
+function addAsset(assets, asset) {
+  if (asset) {
+    assets.push(asset);
+  }
+}
+
+/**
+ * Produces a Native Title asset for the configuration given.
+ */
+function titleAsset(id, params, defaultLen) {
+  if (params) {
+    return {
+      id,
+      required: params.required ? 1 : 0,
+      title: {
+        len: params.len || defaultLen,
+      },
+    };
+  }
+  return null;
+}
+
+/**
+ * Produces a Native Image asset for the configuration given.
+ */
+function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
+  return params ? {
+    id,
+    required: params.required ? 1 : 0,
+    img: {
+      type,
+      wmin: params.wmin || defaultMinWidth,
+      hmin: params.hmin || defaultMinHeight,
+    }
+  } : null;
+}
+
+/**
+ * Produces a Native Data asset for the configuration given.
+ */
+function dataAsset(id, params, type, defaultLen) {
+  return params ? {
+    id,
+    required: params.required ? 1 : 0,
+    data: {
+      type,
+      len: params.len || defaultLen,
+    }
+  } : null;
+}
+
+/**
+ * Produces an OpenRTB site object.
+ */
+function site(bidderRequest) {
+  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
+  const appParams = bidderRequest[0].params.app;
+  if (!appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      ref: referrer(),
+      page: getTopWindowLocation().href,
+    }
+  }
+  return null;
+}
+
+/**
+ * Produces an OpenRTB App object.
+ */
+function app(bidderRequest) {
+  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
+  const appParams = bidderRequest[0].params.app;
+  if (appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      bundle: appParams.bundle,
+      storeurl: appParams.storeUrl,
+      domain: appParams.domain,
+    }
+  }
+  return null;
+}
+
+/**
+ * Attempts to capture the referrer url.
+ */
+function referrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+}
+
+/**
+ * Produces an OpenRTB Device object.
+ */
+function device() {
+  return {
+    ua: navigator.userAgent,
+    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+  };
+}
+
+/**
+ * Safely parses the input given. Returns null on
+ * parsing failure.
+ */
+function parse(rawResponse) {
+  try {
+    if (rawResponse) {
+      return JSON.parse(rawResponse);
+    }
+  } catch (ex) {
+    logError('pulsepointLite.safeParse', 'ERROR', ex);
+  }
+  return null;
+}
+
+/**
+ * Determines the AdSize for the slot.
+ */
+function adSize(slot) {
+  if (slot.params.cf) {
+    const size = slot.params.cf.toUpperCase().split('X');
+    const width = parseInt(slot.params.cw || size[0], 10);
+    const height = parseInt(slot.params.ch || size[1], 10);
+    return [width, height];
+  }
+  return [1, 1];
+}
+
+/**
+ * Parses the native response from the Bid given.
+ */
+function nativeResponse(imp, bid) {
+  if (imp['native']) {
+    const nativeAd = parse(bid.adm);
+    const keys = {};
+    if (nativeAd && nativeAd['native'] && nativeAd['native'].assets) {
+      nativeAd['native'].assets.forEach(asset => {
+        keys.title = asset.title ? asset.title.text : keys.title;
+        keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
+        keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
+        keys.image = asset.img && asset.img.type === 3 ? asset.img.url : keys.image;
+        keys.icon = asset.img && asset.img.type === 1 ? asset.img.url : keys.icon;
+      });
+      if (nativeAd['native'].link) {
+        keys.clickUrl = encodeURIComponent(nativeAd['native'].link.url);
+      }
+      keys.impressionTrackers = nativeAd['native'].imptrackers;
+      return keys;
+    }
+  }
+  return null;
+}
+
+registerBidder(spec);
