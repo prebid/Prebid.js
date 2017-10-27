@@ -296,18 +296,20 @@ describe('AppNexusAdapter', () => {
         {
           'requestId': '3db3773286ee59',
           'cpm': 0.5,
-          'creative_id': 29681110,
+          'creativeId': 29681110,
           'dealId': undefined,
           'width': 300,
           'height': 250,
           'ad': '<!-- Creative -->',
-          'mediaType': 'banner'
+          'mediaType': 'banner',
+          'currency': 'USD',
+          'ttl': 300,
+          'netRevenue': true
         }
       ];
       let bidderRequest;
-
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', () => {

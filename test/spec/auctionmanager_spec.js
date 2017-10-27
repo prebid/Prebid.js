@@ -422,7 +422,11 @@ describe('auctionmanager.js', function () {
       'width': 300,
       'height': 250,
       'bidderCode': BIDDER_CODE,
-      'requestId': '4d0a6829338a07'
+      'requestId': '4d0a6829338a07',
+      'creativeId': 'id',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 360
     }];
 
     let bidRequests = [{
@@ -760,7 +764,11 @@ describe('auctionmanager.js', function () {
       'width': 300,
       'height': 250,
       'bidderCode': BIDDER_CODE,
-      'requestId': '4d0a6829338a07'
+      'requestId': '4d0a6829338a07',
+      'creativeId': 'id',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 360
     }];
 
     let bids1 = [{
@@ -769,7 +777,11 @@ describe('auctionmanager.js', function () {
       'width': 300,
       'height': 250,
       'bidderCode': BIDDER_CODE1,
-      'requestId': '5d0a6829338a07'
+      'requestId': '5d0a6829338a07',
+      'creativeId': 'id',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 360
     }];
 
     let bidRequests = [{

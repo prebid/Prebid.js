@@ -189,7 +189,7 @@ gulp.task('test', ['clean'], function (done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false, argv.file), newKarmaCallback(done)).start();
+  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 });
 
 // View the code coverage report in the browser.
