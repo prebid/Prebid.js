@@ -25,8 +25,8 @@ Banner and Video formats are supported.
                    {
                        bidder: "getintent",
                        params: {
-                           pid: "12345",
-                           tid: "9876"
+                           pid: "7",
+                           tid: "test01"
                        }
                    }
                ]
@@ -37,8 +37,8 @@ Banner and Video formats are supported.
                    {
                        bidder: "getintent",
                        params: {
-                           pid: "12345",
-                           tid: "9876"
+                           pid: "7",
+                           tid: "test01"
                        },
                        mediaType: "video"
                    }

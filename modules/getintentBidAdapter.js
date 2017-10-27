@@ -1,9 +1,11 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'getintent';
+const IS_NET_REVENUE = true;
 const BID_HOST = 'px.adhigh.net';
 const BID_BANNER_PATH = '/rtb/direct_banner';
 const BID_VIDEO_PATH = '/rtb/direct_vast';
+const BID_RESPONSE_TTL_SEC = 360;
 const VIDEO_PROPERTIES = [
   'protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'
 ];
@@ -52,23 +54,25 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
+    let responseBody = serverResponse.body;
     const bids = [];
-    if (serverResponse && serverResponse.no_bid !== 1) {
-      let size = parseSize(serverResponse.size);
+    if (responseBody && responseBody.no_bid !== 1) {
+      let size = parseSize(responseBody.size);
       let bid = {
         requestId: bidRequest.bidId,
-        bidderCode: spec.code,
-        cpm: serverResponse.cpm,
+        ttl: BID_RESPONSE_TTL_SEC,
+        netRevenue: IS_NET_REVENUE,
+        currency: responseBody.currency,
+        cpm: responseBody.cpm,
         width: size[0],
         height: size[1],
         mediaType: bidRequest.mediaType || 'banner'
       };
       if (bidRequest.creative_id) bid.creativeId = bidRequest.creative_id;
-      if (bidRequest.mediaType === 'video') {
-        bid.vastUrl = serverResponse.vast_url;
-        bid.descriptionUrl = serverResponse.vast_url;
+      if (bid.mediaType === 'video') {
+        bid.vastUrl = responseBody.vast_url;
       } else {
-        bid.ad = serverResponse.ad;
+        bid.ad = responseBody.ad;
       }
       bids.push(bid);
     }
@@ -96,8 +100,7 @@ function buildGiBidRequest(bidRequest) {
     resp_type: 'JSON'
   };
   if (bidRequest.sizes) {
-    // TODO: add support for multiple sizes
-    giBidRequest.size = bidRequest.sizes[0].join('x');
+    giBidRequest.size = produceSize(bidRequest.sizes);
   }
   addVideo(bidRequest.params.video, giBidRequest);
   addOptional(bidRequest.params, giBidRequest, OPTIONAL_PROPERTIES);
@@ -125,6 +128,15 @@ function addOptional(params, request, props) {
 
 function parseSize(s) {
   return s.split('x').map(Number);
+}
+
+function produceSize(sizes) {
+  // TODO: add support for multiple sizes
+  if (Array.isArray(sizes[0])) {
+    return sizes[0].join('x');
+  } else {
+    return sizes.join('x');
+  }
 }
 
 registerBidder(spec);

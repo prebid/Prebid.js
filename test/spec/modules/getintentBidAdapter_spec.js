@@ -22,7 +22,7 @@ describe('GetIntent Adapter Tests:', () => {
         skippable: true
       }
     },
-    sizes: [[300, 250]],
+    sizes: [300, 250],
     mediaType: 'video'
   };
 
@@ -55,14 +55,20 @@ describe('GetIntent Adapter Tests:', () => {
   it('Verify parse response', () => {
     const bidRequest = bidRequests[0];
     const serverResponse = {
-      cpm: 2.25,
-      size: '300x250',
-      ad: 'Ad markup'
+      body: {
+        cpm: 2.25,
+        currency: 'USD',
+        size: '300x250',
+        ad: 'Ad markup'
+      },
+      headers: {
+      }
     };
     const bids = spec.interpretResponse(serverResponse, bidRequest);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(2.25);
+    expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.requestId).to.equal('bid12345');
@@ -73,14 +79,20 @@ describe('GetIntent Adapter Tests:', () => {
   it('Verify parse video response', () => {
     const bidRequest = videoBidRequest;
     const serverResponse = {
-      cpm: 3.25,
-      size: '300x250',
-      vast_url: '//vast.xml/url'
+      body: {
+        cpm: 3.25,
+        currency: 'USD',
+        size: '300x250',
+        vast_url: '//vast.xml/url'
+      },
+      headers: {
+      }
     };
     const bids = spec.interpretResponse(serverResponse, bidRequest);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(3.25);
+    expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.requestId).to.equal('bid789');
