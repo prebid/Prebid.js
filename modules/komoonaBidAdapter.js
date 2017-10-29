@@ -8,8 +8,6 @@ const USYNCURL = '//s.komoona.com/sync/usync.html';
 export const spec = {
   code: BIDDER_CODE,
 
-  aliases: ['komoona'],
-
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
