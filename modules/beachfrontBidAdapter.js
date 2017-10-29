@@ -23,6 +23,7 @@ export const spec = {
   },
 
   interpretResponse(response, { bidRequest }) {
+    response = response.body;
     if (!response || !response.url || !response.bidPrice) {
       utils.logWarn(`No valid bids from ${spec.code} bidder`);
       return [];

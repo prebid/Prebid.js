@@ -7,6 +7,7 @@ import { STATUS, S2S } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { VIDEO } from 'src/mediaTypes';
 
 const getConfig = config.getConfig;
 
@@ -111,7 +112,9 @@ function PrebidServer() {
       if (videoMediaType) {
         // pbs expects a ad_unit.video attribute if the imp is video
         adUnit.video = Object.assign({}, videoMediaType);
-        delete adUnit.mediaTypes.video;
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
+        adUnit.media_types = [VIDEO];
       }
     })
     convertTypes(adUnits);
@@ -196,10 +199,26 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
-            bidObject.ad = bidObj.adm;
-            if (bidObj.nurl) {
-              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
+            if (bidObj.media_type === VIDEO) {
+              bidObject.mediaType = VIDEO;
+              if (bidObj.adm) {
+                bidObject.vastXml = bidObj.adm;
+              }
+              if (bidObj.nurl) {
+                bidObject.vastUrl = bidObj.nurl;
+              }
+            } else {
+              if (bidObj.adm && bidObj.nurl) {
+                bidObject.ad = bidObj.adm;
+                bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+              } else if (bidObj.adm) {
+                bidObject.ad = bidObj.adm;
+              } else if (bidObj.nurl) {
+                bidObject.adUrl = bidObj.nurl
+              }
             }
+
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
@@ -223,7 +242,6 @@ function PrebidServer() {
               bidObject.source = TYPE;
               bidObject.adUnitCode = bidRequest.placementCode;
               bidObject.bidderCode = bidRequest.bidder;
-
               bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             });
         });
