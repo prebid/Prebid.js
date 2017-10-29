@@ -18,11 +18,12 @@ Connects to Komoona demand source to fetch bids.
         bids: [{
           bidder: 'komoona',
           params: {
-            placementId: '1fee3606cd9b74644d9754b9dc9f6da5',
-			hbid: '2ac5aea5692a4cfabaf77141c7d87676',
+            placementId: 'e69148e0ba6c4c07977dc2daae5e1577',
+			hbid: '1f5b2c10e66e419580bd943b9af692ab',
 			floorPrice: 0.5
           }
         }]
     }];
 ```
+
 
