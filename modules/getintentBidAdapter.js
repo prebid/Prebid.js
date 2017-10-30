@@ -50,28 +50,28 @@ export const spec = {
    * Parse the response from the server into a list of bids.
    *
    * @param {object} serverResponse A response from the server.
-   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse) {
     let responseBody = serverResponse.body;
     const bids = [];
     if (responseBody && responseBody.no_bid !== 1) {
       let size = parseSize(responseBody.size);
       let bid = {
-        requestId: bidRequest.bidId,
+        requestId: responseBody.bid_id,
         ttl: BID_RESPONSE_TTL_SEC,
         netRevenue: IS_NET_REVENUE,
         currency: responseBody.currency,
+        creativeId: responseBody.creative_id,
         cpm: responseBody.cpm,
         width: size[0],
-        height: size[1],
-        mediaType: bidRequest.mediaType || 'banner'
+        height: size[1]
       };
-      if (bidRequest.creative_id) bid.creativeId = bidRequest.creative_id;
-      if (bid.mediaType === 'video') {
+      if (responseBody.vast_url) {
+        bid.mediaType = 'video';
         bid.vastUrl = responseBody.vast_url;
       } else {
+        bid.mediaType = 'banner';
         bid.ad = responseBody.ad;
       }
       bids.push(bid);
@@ -93,6 +93,7 @@ function buildUrl(bid) {
  * */
 function buildGiBidRequest(bidRequest) {
   let giBidRequest = {
+    bid_id: bidRequest.bidId,
     pid: bidRequest.params.pid, // required
     tid: bidRequest.params.tid, // required
     known: bidRequest.params.known || 1,
