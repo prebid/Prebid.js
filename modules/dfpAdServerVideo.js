@@ -32,8 +32,9 @@ import { config } from '../src/config';
  * @param [Object] bid The bid which should be considered alongside the rest of the adserver's demand.
  *   If this isn't defined, then we'll use the winning bid for the adUnit.
  *
- * @param {DfpVideoParams} params Query params which should be set on the DFP request.
+ * @param {DfpVideoParams} [params] Query params which should be set on the DFP request.
  *   These will override this module's defaults whenever they conflict.
+ * @param {string} [url] video adserver url
  */
 
 /** Safe defaults which work on pretty much all video calls. */
@@ -97,14 +98,8 @@ export default function buildDfpVideoUrl(options) {
     { cust_params: encodeURIComponent(formatQS(customParams)) }
   );
 
-  if (!config.getConfig('usePrebidCache')) {
-    if (!deepAccess(options, 'params.description_url')) {
-      const vastUrl = bid && bid.vastUrl;
-      queryParams.description_url = encodeURIComponent(vastUrl);
-    } else {
-      logError(`input object cannot contain description_url`);
-    }
-  }
+  const descriptionUrl = getDescriptionUrl(bid, options, 'params');
+  if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
 
   return buildUrl({
     protocol: 'https',
@@ -118,18 +113,12 @@ export default function buildDfpVideoUrl(options) {
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
  * @param {Object} components base video adserver url parsed into components object
- * @param {Object} bid winning bid object to append parameters from
+ * @param {AdapterBidResponse} bid winning bid object to append parameters from
  * @return {string} video url
  */
 function buildUrlFromAdserverUrlComponents(components, bid) {
-  if (!config.getConfig('usePrebidCache')) {
-    if (!deepAccess(components, 'search.description_url')) {
-      const vastUrl = bid && bid.vastUrl;
-      components.search.description_url = encodeURIComponent(vastUrl);
-    } else {
-      logError(`input url cannnot contain description_url`);
-    }
-  }
+  const descriptionUrl = getDescriptionUrl(bid, components, 'search');
+  if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
   const customParams = Object.assign({},
@@ -138,6 +127,25 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
   components.search.cust_params = encodeURIComponent(formatQS(customParams));
 
   return buildUrl(components);
+}
+
+/**
+ * Returns the encoded vast url if it exists on a bid object, only if prebid-cache
+ * is disabled, and description_url is not already set on a given input
+ * @param {AdapterBidResponse} bid object to check for vast url
+ * @param {Object} components the object to check that description_url is NOT set on
+ * @param {string} prop the property of components that would contain description_url
+ * @return {string | undefined} The encoded vast url if it exists, or undefined
+ */
+function getDescriptionUrl(bid, components, prop) {
+  if (config.getConfig('usePrebidCache')) { return; }
+
+  if (!deepAccess(components, `${prop}.description_url`)) {
+    const vastUrl = bid && bid.vastUrl;
+    if (vastUrl) { return encodeURIComponent(vastUrl); }
+  } else {
+    logError(`input cannnot contain description_url`);
+  }
 }
 
 registerVideoSupport('dfp', {
