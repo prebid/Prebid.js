@@ -52,11 +52,6 @@ describe('Komoona.com Adapter Tests', () => {
     expect(spec.code).to.equal('komoona');
   });
 
-  it('Verifies komoonaAdapter bidder aliases', () => {
-    expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('komoona');
-  });
-
   it('Verifies komoonaAdapter bid request validation', () => {
     expect(spec.isBidRequestValid(bidsRequest[0])).to.equal(true);
     expect(spec.isBidRequestValid(bidsRequest[1])).to.equal(true);
