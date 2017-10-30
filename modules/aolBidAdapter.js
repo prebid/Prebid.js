@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 import constants from 'src/constants.json';
 
 const AOL_BIDDERS_CODES = {
@@ -195,7 +196,7 @@ function _parseBid(response, bid) {
 
   let ad = bidData.adm;
   if (response.ext && response.ext.pixels) {
-    if (bid.userSyncOn !== constants.EVENTS.BID_RESPONSE) {
+    if (config.getConfig('aol.userSyncOn') !== constants.EVENTS.BID_RESPONSE) {
       let formattedPixels = response.ext.pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
 
       ad += '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
@@ -325,10 +326,10 @@ export const spec = {
     });
   },
   interpretResponse: interpretResponse,
-  getUserSyncs: function(options, bidResponses, bidRequest) {
+  getUserSyncs: function(options, bidResponses) {
     let bidResponse = bidResponses[0];
 
-    if (bidResponse && bidRequest && bidRequest.userSyncOn === constants.EVENTS.BID_RESPONSE) {
+    if (config.getConfig('aol.userSyncOn') === constants.EVENTS.BID_RESPONSE) {
       if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped && bidResponse.ext && bidResponse.ext.pixels) {
         $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
 

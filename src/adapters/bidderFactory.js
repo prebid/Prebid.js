@@ -194,9 +194,9 @@ export function newBidder(spec) {
       // After all the responses have come back, fill up the "no bid" bids and
       // register any required usersync pixels.
       const responses = [];
-      function afterAllResponses(request) {
+      function afterAllResponses() {
         fillNoBids();
-        registerSyncs(responses, request);
+        registerSyncs(responses);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -303,7 +303,7 @@ export function newBidder(spec) {
               addBidUsingRequestMap(bids);
             }
           }
-          onResponse(request);
+          onResponse();
 
           function addBidUsingRequestMap(bid) {
             // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
