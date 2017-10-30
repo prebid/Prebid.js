@@ -43,7 +43,11 @@ describe('Komoona.com Adapter Tests', () => {
         width: 300,
         height: 250,
         cpm: 0.51,
-        creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>'
+        creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>',
+        ttl: 360,
+        currency: 'USD',
+        netRevenue: true,
+        creativeId: 'd30b58c2ba'
       }
     ]
   };
@@ -136,6 +140,10 @@ describe('Komoona.com Adapter Tests', () => {
     expect(bid.uuid).equal(bidsResponse.bids[0].uuid);
     expect(bid.width).to.equal(bidsResponse.bids[0].width);
     expect(bid.height).to.equal(bidsResponse.bids[0].height);
+    expect(bid.ttl).to.equal(bidsResponse.bids[0].ttl);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.creativeId).to.equal(bidsResponse.bids[0].creativeId);
   });
 
   describe('Verifies komoonaAdapter sync options', () => {
