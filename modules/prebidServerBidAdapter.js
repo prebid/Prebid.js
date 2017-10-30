@@ -183,6 +183,14 @@ function PrebidServer() {
           });
         }
 
+        // do client-side syncs if available
+        requestedBidders.forEach(bidder => {
+          let clientAdapter = adaptermanager.getBidAdapter(bidder);
+          if (clientAdapter && clientAdapter.registerSyncs) {
+            clientAdapter.registerSyncs();
+          }
+        });
+
         if (result.bids) {
           result.bids.forEach(bidObj => {
             let bidRequest = utils.getBidRequest(bidObj.bid_id);
