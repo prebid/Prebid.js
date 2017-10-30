@@ -58,6 +58,7 @@ function RoxotAnalyticAdapter() {
 
       if (isImpression || isBidAfterTimeout) {
         let newEvent = {};
+        let additionalPath = isImpression ? options.iUrl : options.bUrl;
 
         newEvent[args['adUnitCode']] = {
           eventType: isBidAfterTimeout ? 'BidAfterTimeoutEvent' : 'AdUnitImpressionEvent',
@@ -65,7 +66,7 @@ function RoxotAnalyticAdapter() {
           data: (new Bid(args))
         };
 
-        this.transport.send(newEvent);
+        this.transport.send(newEvent, additionalPath);
       }
       // TODO add bid ajustment processing
 
@@ -76,7 +77,7 @@ function RoxotAnalyticAdapter() {
 
       if (isAuctionEnd) {
         this.requestStack.finish(request.requestId);
-        return this.transport.send(request.buildData());
+        return this.transport.send(request.buildData(), options.aUrl);
       }
     }
   };
@@ -105,7 +106,7 @@ function Config() {
 
     fill: function (config) {
       this.publisherId = extractPublisherId(config);
-      this.currentHost = extractHost(config);
+      this.currentHost = extractHost(config, host);
       this.adUnits = extractAdUnits(config);
       this.utm = extractUtmData();
       this.sessionId = extractSessionId();
@@ -159,11 +160,18 @@ function Config() {
 
 function AjaxTransport() {
   return {
-    send(data) {
+    send(data, additionalPath) {
       let preparedData = this.prepareData(data);
-      let fullUrl = options.analyticHost + '?publisherId[]=' + options.publisherId + '&analyticHost=' + options.currentHost;
+      let fullUrl = options.analyticHost + additionalPath + '?publisherIds[]=' + options.publisherId + '&host=' + options.currentHost;
 
-      ajax(fullUrl, null, JSON.stringify(preparedData), {withCredentials: true});
+      ajax(fullUrl, {
+        success: function() {
+          utils.logMessage('xhr success');
+        },
+        error: function(e) {
+          utils.logError('xhr error', null, e);
+        }
+      }, JSON.stringify(preparedData), {withCredentials: true});
     },
     // TODO не верное место для этого метода
     prepareData(originData) {
