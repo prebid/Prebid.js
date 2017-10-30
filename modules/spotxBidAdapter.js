@@ -11,6 +11,20 @@ function Spotx() {
   let bidReq;
   let KVP_Object;
 
+  const _defaultBidderSettings = {
+    alwaysUseBid: true,
+    adserverTargeting: [
+      {
+        key: 'hb_adid',
+        val: function (bidResponse) {
+          return bidResponse.spotx_ad_key;
+        }
+      }
+    ]
+  };
+
+  bidmanager.registerDefaultBidderSetting('spotx', _defaultBidderSettings);
+
   baseAdapter.callBids = function(bidRequest) {
     if (!bidRequest || !bidRequest.bids || bidRequest.bids.length === 0) {
       return;
@@ -85,7 +99,7 @@ function Spotx() {
 
       bid.cpm = KVP_Object.spotx_bid;
       bid.vastUrl = url;
-      bid.ad = url;
+      bid.spotx_ad_key = KVP_Object.spotx_ad_key;
 
       var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
       bid.height = sizes[1];
