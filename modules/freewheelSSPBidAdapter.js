@@ -243,6 +243,10 @@ export const spec = {
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: function(serverResponse) {
+    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string'){
+      serverResponse = serverResponse.body;
+    }
+
     var xmlDoc;
     try {
       var parser = new DOMParser();
