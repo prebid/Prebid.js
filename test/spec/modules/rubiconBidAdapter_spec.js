@@ -610,7 +610,6 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(2);
 
-          expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
@@ -622,7 +621,6 @@ describe('the rubicon adapter', () => {
           expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
           expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
 
-          expect(bids[1].bidderCode).to.equal('rubicon');
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
@@ -758,7 +756,6 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(1);
 
-          expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].creative_id).to.equal('crid-999999');
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');

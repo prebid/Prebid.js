@@ -259,7 +259,6 @@ export const spec = {
         requestId: bidRequest.bidId,
         currency: 'USD',
         creative_id: ad.creative_id,
-        bidderCode: spec.code,
         cpm: ad.cpm || 0,
         dealId: ad.deal
       };
