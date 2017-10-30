@@ -243,7 +243,7 @@ export const spec = {
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: function(serverResponse) {
-    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string'){
+    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
     }
 
@@ -282,7 +282,7 @@ export const spec = {
 
       var mediaTypes = this._currentBidRequest.mediaTypes || {};
       if (mediaTypes.video) {
-        bidResponse.vastUrl = 'https//ads.stickyadstv.com/www/delivery/swfIndex.php?reqType=AdsSetup&protocolVersion=2.0&zoneId=2003';
+        bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
       } else {
         bidResponse.ad = formatAdHTML(this._currentBidRequest, this._currentPlayerSize)
