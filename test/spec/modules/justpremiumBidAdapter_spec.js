@@ -51,7 +51,7 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.wh).to.equal(window.top.innerHeight);
       expect(jpxRequest.c).to.not.equal('undefined');
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone);
-      expect(jpxRequest.i).to.not.equal('undefined');
+      expect(jpxRequest.sizes).to.not.equal('undefined');
     });
   });
 
@@ -119,9 +119,9 @@ describe('justpremium adapter', () => {
     it('Verifies sync options', () => {
       const options = spec.getUserSyncs();
       expect(options).to.not.be.undefined;
-      expect(options).to.have.lengthOf(1);
-      expect(options[0].type).to.equal('script');
-      expect(options[0].url).to.equal(top.document.location.protocol + '//ox-d.justpremium.com/w/1.0/cj');
+      expect(options).to.have.lengthOf(0);
+      // expect(options[0].type).to.equal('script');
+      // expect(options[0].url).to.equal(top.document.location.protocol + '//ox-d.justpremium.com/w/1.0/cj');
     });
   });
 });
