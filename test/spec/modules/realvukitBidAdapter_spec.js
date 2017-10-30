@@ -24,7 +24,7 @@ describe('RealVu_Kit Adapter Test', () => {
         mediaType: undefined,
         params: {
           partner_id: '1Y',
-          unit_id: '9339508',
+          unit_id: '8361',
         },
         placementCode: 'ad_unit_1',
         renderer: undefined,
@@ -48,7 +48,7 @@ describe('RealVu_Kit Adapter Test', () => {
           status: constants.STATUS.NO_BID
         }
       },
-    p: '9339508',
+    p: '8361',
     uid: 'ad_unit_1',
     bid_id: '1b5e314fe79b1d',
   };
@@ -65,12 +65,12 @@ describe('RealVu_Kit Adapter Test', () => {
           bidId: '1b5e314fe79b1d',
           cpm: 0.02,
           ad: '<div></div>',
-          adUrl: 'http:localhost/',
+          adUrl: undefined,
           dealId: 'N/A',
           status: constants.STATUS.GOOD
         }
       },
-    p: '9339508',
+    p: '8361',
     uid: 'ad_unit_1',
     bid_id: '1b5e314fe79b1d',
   };
@@ -96,7 +96,7 @@ describe('RealVu_Kit Adapter Test', () => {
 
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      expect(adloader.loadScript.firstCall.args[0]).to.contain('p=9339508');
+      expect(adloader.loadScript.firstCall.args[0]).to.contain('p=8361');
     });
   }); // end of describe callBids
 
