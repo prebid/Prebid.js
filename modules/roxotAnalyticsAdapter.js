@@ -15,8 +15,8 @@ const utils = require('src/utils');
  * 5. Content-type
  */
 
-const options = new Config;
 
+let options = new Config();
 let roxotAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), new RoxotAnalyticAdapter);
 
 adaptermanager.registerAnalyticsAdapter({
@@ -35,6 +35,10 @@ function RoxotAnalyticAdapter() {
     track({eventType, args}) {
       args = args || {};
 
+      if(eventType === CONSTANTS.EVENTS.AUCTION_INIT){
+        options.fill(args['config'])
+      }
+
       let requestId = this.requestStack.presentRequestId(args['requestId']);
       let request = this.requestStack.ensureRequestPresented(requestId);
 
@@ -43,11 +47,6 @@ function RoxotAnalyticAdapter() {
       let isBidAfterTimeout = (request.isFinished() && isBid);
       let isBidRequested = eventType === CONSTANTS.EVENTS.BID_REQUESTED;
       let isAuctionEnd = eventType === CONSTANTS.EVENTS.AUCTION_END;
-      let isAuctionStart = eventType === CONSTANTS.EVENTS.AUCTION_INIT;
-
-      if (isAuctionStart) {
-        options.fill(args['config']);
-      }
 
       if (isBidRequested) {
         let adUnitCodes = args.bids.map((bid) => bid.placementCode);
@@ -68,6 +67,7 @@ function RoxotAnalyticAdapter() {
 
         this.transport.send(newEvent);
       }
+      // TODO add bid ajustment processing
 
       if (isBid) {
         let auction = request.findAuction(args['adUnitCode']);
@@ -89,6 +89,8 @@ function Config() {
   let host = parser.host;
 
   return {
+    // TODO add tags
+    // TODO set analyitc host from parameters
     analyticHost: customHost || '//pa.rxthdr.com/api/v2/',
     // TODO extract only host without www
     currentHost: host,
@@ -98,17 +100,19 @@ function Config() {
     bUrl: '/b',
     prefix: 'roxot_analytics_',
     publisherId: null,
+    utm: {},
+    sessionId: {},
 
     fill: function (config) {
-      options.publisherId = extractPublisherId(config);
-      options.currentHost = extractHost(config);
-      options.adUnits = extractAdUnits();
-      options.utm = extractUtmData();
-      options.sessionId = extractSessionId();
+      this.publisherId = extractPublisherId(config);
+      this.currentHost = extractHost(config);
+      this.adUnits = extractAdUnits(config);
+      this.utm = extractUtmData();
+      this.sessionId = extractSessionId();
     }
   };
 
-  function extractAdUnits() {
+  function extractAdUnits(config) {
     return config['adUnits'] !== undefined ? config['adUnits'] : [];
   }
 
@@ -185,7 +189,7 @@ function RequestStack() {
 
     ensureRequestPresented(requestId) {
       if (!this.stack[requestId]) {
-        this.stack[requestId] = new Request(requestId, new Date(), options.publisherId);
+        this.stack[requestId] = new Request(requestId, options.publisherId);
       }
 
       return this.stack[requestId];
@@ -205,8 +209,7 @@ function RequestStack() {
     },
 
     presentRequestId(requestId) {
-
-      let requestId = requestId || this.current;
+      requestId = requestId || this.current;
 
       if (this.current && this.current !== requestId) {
         throw 'Try to rewrite current auction';
@@ -262,6 +265,7 @@ function RequestStack() {
             return this.auctionInfo.bidsAfterTimeout.push(bid);
           }
 
+          // todo Only one bid from bidder per auction
           return this.auctionInfo.bids.push(bid);
         }
 
@@ -312,6 +316,7 @@ function SessionId(realId) {
   this.isLive = function () {
     return isFresh();
   };
+
   this.load = function () {
     id = localStorage.getItem(key) || null;
 
