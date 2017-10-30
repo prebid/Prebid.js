@@ -119,9 +119,8 @@ describe('justpremium adapter', () => {
     it('Verifies sync options', () => {
       const options = spec.getUserSyncs();
       expect(options).to.not.be.undefined;
-      expect(options).to.have.lengthOf(0);
-      // expect(options[0].type).to.equal('script');
-      // expect(options[0].url).to.equal(top.document.location.protocol + '//ox-d.justpremium.com/w/1.0/cj');
+      expect(options[0].type).to.equal('iframe');
+      expect(options[0].src).to.match(/\/\/us-u.openx.net\/w\/1.0/);
     });
   });
 });
