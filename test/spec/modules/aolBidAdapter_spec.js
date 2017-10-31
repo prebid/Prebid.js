@@ -479,131 +479,123 @@ describe('AolAdapter', () => {
       });
     });
 
-    // describe('One mobile api', () => {
-    //   let xhr;
-    //   let requests;
-    //
-    //   beforeEach(() => {
-    //     xhr = sinon.useFakeXMLHttpRequest();
-    //     requests = [];
-    //     xhr.onCreate = request => requests.push(request);
-    //   });
-    //
-    //   afterEach(() => xhr.restore());
-    //
-    //   it('requires parameters to be made', () => {
-    //     adapter.callBids({});
-    //     expect(requests).to.be.empty;
-    //   });
-    //
-    //   it('should hit the nexage api endpoint with the nexage config', () => {
-    //     adapter.callBids(createBidderRequest({
-    //       params: getNexageGetBidParams()
-    //     }));
-    //
-    //     expect(requests[0].url).to.contain(NEXAGE_URL);
-    //   });
-    //
-    //   it('should hit the nexage api custom endpoint if specified in the nexage config', () => {
-    //     let bidParams = Object.assign({
-    //       host: 'qa-hb.nexage.com'
-    //     }, getNexageGetBidParams());
-    //
-    //     adapter.callBids(createBidderRequest({
-    //       params: bidParams
-    //     }));
-    //     expect(requests[0].url).to.contain('qa-hb.nexage.com/bidRequest?');
-    //   });
-    //
-    //   it('should hit nexage api when nexage and marketplace params are present', () => {
-    //     let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
-    //
-    //     adapter.callBids(createBidderRequest({
-    //       params: bidParams
-    //     }));
-    //     expect(requests[0].url).to.contain(NEXAGE_URL);
-    //   });
-    //
-    //   it('should hit nexage api via onemobile bidder code when nexage and marketplace params are present', () => {
-    //     let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
-    //
-    //     adapter.callBids(createBidderRequest({
-    //       bids: [{
-    //         bidder: 'onemobile'
-    //       }],
-    //       params: bidParams
-    //     }));
-    //     expect(requests[0].url).to.contain(NEXAGE_URL);
-    //   });
-    //
-    //   it('should not resolve endpoint for onemobile bidder code when only Marketplace params are present', () => {
-    //     adapter.callBids(createBidderRequest({
-    //       bids: [{
-    //         bidder: 'onemobile'
-    //       }],
-    //       params: getMarketplaceBidParams()
-    //     }));
-    //
-    //     expect(requests.length).to.equal(0);
-    //   });
-    //
-    //   it('should contain required params - dcn & pos', () => {
-    //     adapter.callBids(createBidderRequest({
-    //       params: getNexageGetBidParams()
-    //     }));
-    //
-    //     expect(requests[0].url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
-    //   });
-    //
-    //   it('should contain cmd=bid by default', () => {
-    //     adapter.callBids(createBidderRequest({
-    //       params: {
-    //         dcn: '54321123',
-    //         pos: 'footer-2324'
-    //       }
-    //     }));
-    //     expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid');
-    //   });
-    //
-    //   it('should contain optional parameters if they are set', () => {
-    //     adapter.callBids(createBidderRequest({
-    //       params: {
-    //         dcn: '54321123',
-    //         pos: 'footer-2324',
-    //         ext: {
-    //           param1: 'val1',
-    //           param2: 'val2',
-    //           param3: 'val3',
-    //           param4: 'val4'
-    //         }
-    //       }
-    //     }));
-    //     expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid' +
-    //       '&param1=val1&param2=val2&param3=val3&param4=val4');
-    //   });
-    //
-    //   it('should hit the nexage api endpoint with post data with the openrtb config', () => {
-    //     let bidConfig = getNexagePostBidParams();
-    //
-    //     adapter.callBids(createBidderRequest({
-    //       params: bidConfig
-    //     }));
-    //     expect(requests[0].url).to.contain(NEXAGE_URL);
-    //     expect(requests[0].requestBody).to.deep.equal(JSON.stringify(bidConfig));
-    //     expect(requests[0].requestHeaders).to.have.property('x-openrtb-version');
-    //   });
-    //
-    //   it('should not hit the nexage api endpoint with post data with the openrtb config' +
-    //     ' if a required parameter is missing', () => {
-    //     let bidConfig = getNexagePostBidParams();
-    //
-    //     bidConfig.imp[0].id = null;
-    //     adapter.callBids(createBidderRequest({
-    //       params: bidConfig
-    //     }));
-    //     expect(requests).to.be.empty;
-    //   });
-    // });
+    describe('One Mobile', () => {
+      it('should return One Mobile url when One Mobile get params are present', () => {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+      });
+
+      it('should return One Mobile url with different host when host option is present', () => {
+        let bidParams = Object.assign({
+          host: 'qa-hb.nexage.com'
+        }, getNexageGetBidParams());
+        let bidRequest = createCustomBidRequest({
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('qa-hb.nexage.com/bidRequest?');
+      });
+
+      it('should return One Mobile url when One Mobile and Marketplace params are present', () => {
+        let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+        let bidRequest = createCustomBidRequest({
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+      });
+
+      it('should return One Mobile url for onemobile bidder code ' +
+        'when One Mobile GET and Marketplace params are present', () => {
+        let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onemobile'
+          }],
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+      });
+
+      it('should not return any url for onemobile bidder code' +
+        'when only Marketplace params are present', () => {
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onemobile'
+          }],
+          params: getMarketplaceBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request).to.be.empty();
+      });
+
+      it('should return One Mobile url with required params - dcn & pos', () => {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
+      });
+
+      it('should return One Mobile url with cmd=bid option', () => {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('cmd=bid');
+      });
+
+      it('should return One Mobile url with generic params if ext option is present', () => {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            dcn: '54321123',
+            pos: 'footer-2324',
+            ext: {
+              param1: 'val1',
+              param2: 'val2',
+              param3: 'val3',
+              param4: 'val4'
+            }
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid' +
+          '&param1=val1&param2=val2&param3=val3&param4=val4');
+      });
+
+      it('should return request object for One Mobile POST endpoint when POST configuration is present', () => {
+        let bidConfig = getNexagePostBidParams();
+        let bidRequest = createCustomBidRequest({
+          params: bidConfig
+        });
+
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+        expect(request.method).to.equal('POST');
+        expect(request.data).to.deep.equal(bidConfig);
+        expect(request.options).to.deep.equal({
+          contentType: 'application/json',
+          customHeaders: {
+            'x-openrtb-version': '2.2'
+          }
+        });
+      });
+
+      it('should not return request object for One Mobile POST endpoint' +
+        'if required parameterers are missed', () => {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            imp: []
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request).to.be.empty;
+      });
+    });
   });
 
   describe('getUserSyncs()', () => {
