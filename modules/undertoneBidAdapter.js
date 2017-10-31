@@ -44,7 +44,7 @@ export const spec = {
 
     if (serverResponse && Array.isArray(serverResponse) && serverResponse.length > 0) {
       serverResponse.forEach((bidRes) => {
-        if (bidRes.ad && bidRes.cpm !== 0) {
+        if (bidRes.ad && bidRes.cpm > 0) {
           const bid = {
             requestId: bidRes.bidRequestId,
             bidderCode: BIDDER_CODE,

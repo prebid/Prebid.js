@@ -69,17 +69,6 @@ const bidResArray = [
   {
     ad: '<div>Hello</div>',
     bidRequestId: '',
-    cpm: 100,
-    creativeId: '123abc',
-    currency: 'USD',
-    netRevenue: true,
-    width: 300,
-    height: 250,
-    ttl: 360
-  },
-  {
-    ad: '<div>Hello</div>',
-    bidRequestId: '',
     cpm: 0,
     creativeId: '123abc',
     currency: 'USD',
