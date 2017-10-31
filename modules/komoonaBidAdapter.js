@@ -83,8 +83,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     try {
-      if (response.bids) {
-        response.bids.forEach(bid => {
+      if (response.body && response.body.bids) {
+        response.body.bids.forEach(bid => {
           // The bid ID. Used to tie this bid back to the request.
           bid.requestId = bid.uuid;
           // The creative payload of the returned bid.

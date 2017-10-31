@@ -36,20 +36,22 @@ describe('Komoona.com Adapter Tests', () => {
     }];
 
   const bidsResponse = {
-    bids: [
-      {
-        placementid: '170577',
-        uuid: '2faedf1095f815',
-        width: 300,
-        height: 250,
-        cpm: 0.51,
-        creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>',
-        ttl: 360,
-        currency: 'USD',
-        netRevenue: true,
-        creativeId: 'd30b58c2ba'
-      }
-    ]
+    body: {
+      bids: [
+        {
+          placementid: '170577',
+          uuid: '2faedf1095f815',
+          width: 300,
+          height: 250,
+          cpm: 0.51,
+          creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>',
+          ttl: 360,
+          currency: 'USD',
+          netRevenue: true,
+          creativeId: 'd30b58c2ba'
+        }
+      ]
+    }
   };
 
   it('Verifies komoonaAdapter bidder code', () => {
@@ -134,16 +136,18 @@ describe('Komoona.com Adapter Tests', () => {
 
     // verify bid object
     const bid = bids[0];
-    expect(bid.cpm).to.equal(bidsResponse.bids[0].cpm);
-    expect(bid.ad).to.equal(bidsResponse.bids[0].creative);
-    expect(bid.requestId).equal(bidsResponse.bids[0].uuid);
-    expect(bid.uuid).equal(bidsResponse.bids[0].uuid);
-    expect(bid.width).to.equal(bidsResponse.bids[0].width);
-    expect(bid.height).to.equal(bidsResponse.bids[0].height);
-    expect(bid.ttl).to.equal(bidsResponse.bids[0].ttl);
+    const responseBids = bidsResponse.body.bids;
+
+    expect(bid.cpm).to.equal(responseBids[0].cpm);
+    expect(bid.ad).to.equal(responseBids[0].creative);
+    expect(bid.requestId).equal(responseBids[0].uuid);
+    expect(bid.uuid).equal(responseBids[0].uuid);
+    expect(bid.width).to.equal(responseBids[0].width);
+    expect(bid.height).to.equal(responseBids[0].height);
+    expect(bid.ttl).to.equal(responseBids[0].ttl);
     expect(bid.currency).to.equal('USD');
     expect(bid.netRevenue).to.equal(true);
-    expect(bid.creativeId).to.equal(bidsResponse.bids[0].creativeId);
+    expect(bid.creativeId).to.equal(responseBids[0].creativeId);
   });
 
   describe('Verifies komoonaAdapter sync options', () => {
