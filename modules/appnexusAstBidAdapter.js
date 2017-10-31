@@ -182,8 +182,11 @@ function newBid(serverBid, rtbBid) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    creative_id: rtbBid.creative_id,
+    creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300
   };
 
   if (rtbBid.rtb.video) {
@@ -191,7 +194,8 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
-      descriptionUrl: rtbBid.rtb.video.asset_url
+      descriptionUrl: rtbBid.rtb.video.asset_url,
+      ttl: 3600
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
@@ -244,6 +248,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+  tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.reserve) {

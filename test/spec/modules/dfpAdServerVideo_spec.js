@@ -91,4 +91,13 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
+
+  it('should work with nobid responses', () => {
+    const url = buildDfpVideoUrl({
+      adUnit: adUnit,
+      params: { 'iu': 'my/adUnit' }
+    });
+
+    expect(url).to.be.a('string');
+  });
 });
