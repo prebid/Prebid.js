@@ -26,6 +26,7 @@ var optimizejs = require('gulp-optimize-js');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
+var through = require('through2');
 var fs = require('fs');
 
 var prebid = require('./package.json');
@@ -52,8 +53,25 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
-function bundle(dev) {
-  var modules = helpers.getArgModules(),
+function gulpBundle(dev) {
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+function nodeBundle(modules) {
+  return new Promise((resolve, reject) => {
+    bundle(false, modules)
+      .on('error', (err) => {
+        reject(err);
+      })
+      .pipe(through.obj(function(file, enc, done) {
+        resolve(file.contents.toString(enc));
+        done();
+      }));
+  });
+}
+
+function bundle(dev, moduleArr) {
+  var modules = moduleArr || helpers.getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
@@ -70,20 +88,27 @@ function bundle(dev) {
 
   var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
+  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+
+  // change output filename if argument --tag given
+  if (argv.tag && argv.tag.length) {
+    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+  }
+
   gutil.log('Concatenating files:\n', entries);
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
       entries
     )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
-    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
+    .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
     )))
-    .pipe(gulpif(dev, sourcemaps.write('.')))
-    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+    .pipe(gulpif(dev, sourcemaps.write('.')));
 }
 
 // Workaround for incompatibility between Karma & gulp callbacks.
@@ -98,9 +123,13 @@ function newKarmaCallback(done) {
   }
 }
 
-gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
-gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
-gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+gulp.task('build-bundle-dev', ['devpack'], gulpBundle.bind(null, true));
+gulp.task('build-bundle-prod', ['webpack'], gulpBundle.bind(null, false));
+gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+gulp.task('bundle-to-stdout', function() {
+  nodeBundle().then(file => console.log(file));
+});
 
 gulp.task('devpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
@@ -120,11 +149,6 @@ gulp.task('devpack', ['clean'], function () {
 
 gulp.task('webpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
-
-  // change output filename if argument --tag given
-  if (argv.tag && argv.tag.length) {
-    cloned.output.filename = 'prebid.' + argv.tag + '.js';
-  }
 
   delete cloned.devtool;
 
@@ -149,10 +173,11 @@ gulp.task('webpack', ['clean'], function () {
 // By default, this runs in headless chrome.
 //
 // If --watch is given, the task will re-run unit tests whenever the source code changes
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 gulp.task('test', ['clean'], function (done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch);
+  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
   var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
   if (browserOverride.length > 0) {
@@ -162,8 +187,9 @@ gulp.task('test', ['clean'], function (done) {
   new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 });
 
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
+  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 });
 
 // View the code coverage report in the browser.
@@ -275,3 +301,5 @@ gulp.task('build-postbid', function() {
     .pipe(uglify())
     .pipe(gulp.dest('build/dist'));
 });
+
+module.exports = nodeBundle;

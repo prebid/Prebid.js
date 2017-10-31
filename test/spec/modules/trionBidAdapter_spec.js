@@ -10,6 +10,7 @@ const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 const TRION_BID_REQUEST = {
+  start: new Date().getTime(),
   bidderCode: 'trion',
   bids: [
     {
