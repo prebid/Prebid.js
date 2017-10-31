@@ -18,6 +18,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests) {
     const payload = [];
+    const timeout = window.PREBID_TIMEOUT || null;
     const host = utils.getTopWindowLocation().host;
     const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
     validBidRequests.map(bidReq => {
@@ -27,6 +28,7 @@ export const spec = {
         placementId: bidReq.params.placementId,
         publisherId: bidReq.params.publisherId,
         sizes: bidReq.sizes,
+        timeout: timeout,
         params: bidReq.params
       };
       payload.push(bid);
