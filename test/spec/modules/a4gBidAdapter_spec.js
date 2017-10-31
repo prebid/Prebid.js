@@ -93,13 +93,16 @@ describe('a4gAdapterTests', () => {
       'auctionId': '18fd8b8b0bd757'
     }];
 
-    const bidResponse = [{
-      'id': 'div-gpt-ad-1460505748561-0',
-      'ad': 'test ad',
-      'width': 320,
-      'height': 250,
-      'cpm': 5.2
-    }];
+    const bidResponse = {
+      body: [{
+        'id': 'div-gpt-ad-1460505748561-0',
+        'ad': 'test ad',
+        'width': 320,
+        'height': 250,
+        'cpm': 5.2
+      }],
+      headers: {}
+    };
 
     it('required keys', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);

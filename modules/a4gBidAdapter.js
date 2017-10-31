@@ -8,6 +8,7 @@ const A4G_TTL = 120;
 
 const LOCATION_PARAM_NAME = 'siteurl';
 const ID_PARAM_NAME = 'id';
+const IFRAME_PARAM_NAME = 'if';
 const ZONE_ID_PARAM_NAME = 'zoneId';
 const SIZE_PARAM_NAME = 'size';
 
@@ -31,7 +32,7 @@ export const spec = {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
       }
-      idParams.push(bid.adUnitCode);
+      idParams.push(bid.placementCode);
       sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
@@ -44,6 +45,7 @@ export const spec = {
       method: 'GET',
       url: deliveryUrl,
       data: {
+        [IFRAME_PARAM_NAME]: 0,
         [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
         [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
         [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
@@ -54,10 +56,9 @@ export const spec = {
 
   interpretResponse: function(serverResponses, request) {
     const bidResponses = [];
-    utils._each(serverResponses, function(response) {
+    utils._each(serverResponses.body, function(response) {
       const bidResponse = {
         requestId: request.bidId,
-        bidderCode: spec.code,
         cpm: response.cpm,
         width: response.width,
         height: response.height,
