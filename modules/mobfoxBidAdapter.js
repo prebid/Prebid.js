@@ -3,6 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 const utils = require('src/utils.js');
 const BIDDER_CODE = 'mobfox';
 const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
+const CPM_HEADER = 'X-Pricing-CPM';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -91,27 +92,26 @@ export const spec = {
       return bidResponses;
     }
     try {
+      let serverResponseBody = serverResponse.body;
+      let serverResponseHeaders = serverResponse.headers;
       let bidRequestData = bidRequest.data.split('&');
       const bidResponse = {
         requestId: bidRequest.requestId,
-        bidderCode: BIDDER_CODE,
-        cpm: serverResponse.request.cpmPrice,
+        cpm: serverResponseHeaders.get(CPM_HEADER),
         width: bidRequestData[5].split('=')[1],
         height: bidRequestData[6].split('=')[1],
         creativeId: bidRequestData[3].split('=')[1],
         currency: 'USD',
         netRevenue: true,
         ttl: 360,
-        referrer: serverResponse.request.clickurl,
-        ad: serverResponse.request.htmlString
+        referrer: serverResponseBody.request.clickurl,
+        ad: serverResponseBody.request.htmlString
       };
       bidResponses.push(bidResponse);
     } catch (e) {
       throw 'could not build bid response: ' + e;
     }
     return bidResponses;
-  },
-  getUserSyncs: function (syncOptions) {
   }
 };
 
