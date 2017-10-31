@@ -117,7 +117,6 @@ describe('mobfox adapter tests', () => {
       let bidResponses = adapter.spec.interpretResponse(mockServerResponse, request);
       expect(bidResponses.length).to.equal(1);
       expect(bidResponses[0].ad).to.equal('test');
-      expect(bidResponses[0].bidderCode).to.equal('mobfox');
       expect(bidResponses[0].cpm).to.equal(50);
       expect(bidResponses[0].creativeId).to.equal('267d72ac3f77a3f447b32cf7ebf20673');
       expect(bidResponses[0].requestId).to.equal('5t5t5t5');
