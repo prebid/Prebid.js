@@ -162,7 +162,7 @@ export const spec = {
     isBidRequestValid: function(bid) {},
     buildRequests: function(validBidRequests[]) {},
     interpretResponse: function(serverResponse, request) {},
-    getUserSyncs: function(syncOptions) {}
+    getUserSyncs: function(syncOptions, serverResponses) {}
 }
 registerBidder(spec);
 
@@ -287,13 +287,21 @@ All user ID sync activity must be done in one of two ways:
 {% highlight js %}
 
 {
-    getUserSyncs: function(syncOptions) {
+    getUserSyncs: function(syncOptions, serverResponses) {
+        const syncs = []
         if (syncOptions.iframeEnabled) {
-            return [{
+            syncs.push({
                 type: 'iframe',
                 url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-            }];
+            });
         }
+        if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+            syncs.push({
+                type: 'image',
+                url: serverResponses[0].body.userSync.url
+            });
+        }
+        return syncs;
     }
 }
 
@@ -465,13 +473,29 @@ export const spec = {
         };
         return bidResponses;
     },
-    getUserSyncs: function(syncOptions) {
+    
+    /**
+     * Register the user sync pixels which should be dropped after the auction.
+     *
+     * @param {SyncOptions} syncOptions Which user syncs are allowed?
+     * @param {ServerResponse[]} serverResponses List of server's responses.
+     * @return {UserSync[]} The user syncs which should be dropped.
+     */
+    getUserSyncs: function(syncOptions, serverResponses) {
+        const syncs = []
         if (syncOptions.iframeEnabled) {
-            return [{
+            syncs.push({
                 type: 'iframe',
-                url: 'ADAPTER_SYNC_URL'
-            }];
+                url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+            });
         }
+        if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+            syncs.push({
+                type: 'image',
+                url: serverResponses[0].body.userSync.url
+            });
+        }
+        return syncs;
     }
 }
 registerBidder(spec);
