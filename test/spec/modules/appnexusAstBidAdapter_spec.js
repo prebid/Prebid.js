@@ -244,6 +244,23 @@ describe('AppNexusAdapter', () => {
         'value': ['123']
       }]);
     });
+
+    it('should should add payment rules to the request', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            usePaymentRule: true
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].use_pmt_rule).to.equal(true);
+    });
   })
 
   describe('interpretResponse', () => {

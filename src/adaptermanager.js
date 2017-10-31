@@ -325,6 +325,10 @@ exports.setBidderSequence = function (order) {
   }
 };
 
+exports.getBidAdapter = function(bidder) {
+  return _bidderRegistry[bidder];
+};
+
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
