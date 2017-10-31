@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import * as utils from 'src/utils';
 import AolAdapter from 'modules/aolBidAdapter';
 import {spec} from 'modules/aolBidAdapter';
+import {config} from 'src/config';
 
 let getDefaultBidResponse = () => {
   return {
@@ -602,14 +603,16 @@ describe('AolAdapter', () => {
     let bidRequest;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = false;
+      config.setConfig({
+        aol: {
+          userSyncOn: 'bidResponse'
+        },
+      });
       bidResponse = getDefaultBidResponse();
       bidResponse.ext = {
         pixels: getPixels()
       };
-      bidRequest = {
-        userSyncOn: 'bidResponse'
-      };
-      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = false;
     });
 
     it('should return user syncs only if userSyncOn equals to "bidResponse"', () => {
