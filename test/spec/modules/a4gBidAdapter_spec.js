@@ -109,7 +109,6 @@ describe('a4gAdapterTests', () => {
 
       let requiredKeys = [
         'requestId',
-        'bidderCode',
         'cpm',
         'width',
         'height',
