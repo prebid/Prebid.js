@@ -74,6 +74,7 @@ export const spec = {
     var width;
     var height;
 
+    serverResponse = serverResponse.body;
     if (serverResponse && serverResponse.status === 'SUCCESS' && bidObj) {
       CPM = serverResponse.cpm;
       minCPM = utils.getBidIdParameter('minCPM', bidObj.params);
