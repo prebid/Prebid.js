@@ -527,7 +527,7 @@ describe('Utils', function () {
 
   /**
    *  tests fail in IE10 because __lookupSetter__ and __lookupGetter__ are
-   *  not supported.  commenting out until they can be fixed.
+   *  not supported. See #1656. commenting out until they can be fixed.
    *
    *  describe('cookie support', function () {
    *    // store original cookie getter and setter so we can reset later
