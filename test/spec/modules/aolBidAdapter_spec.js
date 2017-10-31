@@ -88,7 +88,6 @@ describe('AolAdapter', () => {
   }
 
   describe('callBids()', () => {
-
     // describe('bid response', () => {
     //   it('should be added to bidmanager if returned from pubapi', () => {
     //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
@@ -334,7 +333,7 @@ describe('AolAdapter', () => {
         expect(request.url).to.contain(MARKETPLACE_URL);
       });
 
-      it('should not resolve endpoint for onedisplay bidder code' +
+      it('should not resolve endpoint for onedisplay bidder code ' +
         'when only One Mobile params are present', () => {
         let bidParams = Object.assign(getNexageGetBidParams(), getNexagePostBidParams());
         let bidRequest = createCustomBidRequest({
@@ -345,7 +344,7 @@ describe('AolAdapter', () => {
         });
 
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request).to.be.empty();
+        expect(request).to.be.empty;
       });
 
       it('should return Marketplace URL for eu region', () => {
@@ -530,7 +529,7 @@ describe('AolAdapter', () => {
           params: getMarketplaceBidParams()
         });
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request).to.be.empty();
+        expect(request).to.be.empty;
       });
 
       it('should return One Mobile url with required params - dcn & pos', () => {

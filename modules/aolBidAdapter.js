@@ -322,7 +322,9 @@ export const spec = {
     return bids.map(bid => {
       const endpointCode = resolveEndpointCode(bid);
 
-      return formatBidRequest(endpointCode, bid)
+      if (endpointCode) {
+        return formatBidRequest(endpointCode, bid);
+      }
     });
   },
   interpretResponse: interpretResponse,
