@@ -8,6 +8,7 @@ const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
 const MUSTANG_URL = PROTOCOL + '://cdn.stickyadstv.com/mustang/mustang.min.js';
 const PRIMETIME_URL = PROTOCOL + '://cdn.stickyadstv.com/prime-time/';
+const USER_SYNC_URL = PROTOCOL + '://ads.stickyadstv.com/auto-user-sync';
 
 function getProtocol() {
   if (location.protocol && location.protocol.indexOf('https') === 0) {
@@ -294,6 +295,9 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {}
+  getUserSyncs: function(syncOptions) {
+    var img = new Image();
+    img.src = USER_SYNC_URL;
+  }
 }
 registerBidder(spec);
