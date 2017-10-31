@@ -10,6 +10,8 @@ var neverBundle = [
   'AnalyticsAdapter.js'
 ];
 
+var prebidGlobalName = process.env.test ? 'pbjs_' + Math.floor(Math.random() * 10000) : prebid.globalVarName;
+
 module.exports = {
   devtool: 'source-map',
   resolve: {
@@ -77,7 +79,7 @@ module.exports = {
             {
               pattern: /\$\$PREBID_GLOBAL\$\$/g,
               replacement: function (match, p1, offset, string) {
-                return prebid.globalVarName;
+                return prebidGlobalName;
               }
             }
           ]
