@@ -287,8 +287,8 @@ export const spec = {
       return bids;
     }, []);
   },
-  getUserSyncs: function() {
-    if (!hasSynced) {
+  getUserSyncs: function(syncOptions) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
         type: 'iframe',
