@@ -83,6 +83,7 @@ export const spec = {
       bid.height = bidObject.h;
       bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
       bid.requestId = bidObject.id;
+      bid.ttl = 300;
       bid.width = bidObject.w;
 
       bids.push(bid);

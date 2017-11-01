@@ -207,6 +207,10 @@ export function newBidder(spec) {
       const bidRequestMap = {};
       validBidRequests.forEach(bid => {
         bidRequestMap[bid.bidId] = bid;
+        // Delete this once we are 1.0
+        if (!bid.adUnitCode) {
+          bid.adUnitCode = bid.placementCode
+        }
       });
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
