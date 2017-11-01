@@ -453,8 +453,10 @@ exports.insertElement = function(elm, doc, target) {
 };
 
 exports.triggerPixel = function (url) {
-  const img = new Image();
+  const img = new Image(0, 0);
   img.src = url;
+  img.style.display = 'none';
+  document.head.appendChild(img);
 };
 
 /**
