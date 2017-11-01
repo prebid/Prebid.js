@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
-import AolAdapter from 'modules/aolBidAdapter';
 import {spec} from 'modules/aolBidAdapter';
 import {config} from 'src/config';
 
@@ -14,9 +13,10 @@ let getDefaultBidResponse = () => {
         impid: '245730051428950632',
         price: 0.09,
         adm: '<script>logInfo(\'ad\');</script>',
-        crid: '0',
+        crid: 'creative-id',
         h: 90,
         w: 728,
+        dealid: 'deal-id',
         ext: {sizeid: 225}
       }]
     }]
@@ -88,192 +88,68 @@ describe('AolAdapter', () => {
     return bidderRequest;
   }
 
-  describe('callBids()', () => {
-    // describe('bid response', () => {
-    //   it('should be added to bidmanager if returned from pubapi', () => {
-    //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //   });
-    //
-    //   it('should be added to bidmanager if returned from nexage GET bid request', () => {
-    //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
-    //     adapter.callBids(createBidderRequest({
-    //       params: {
-    //         dcn: '54321123',
-    //         pos: 'footer-2324'
-    //       }
-    //     }));
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //   });
-    //
-    //   it('should be added to bidmanager if returned from nexage POST bid request', () => {
-    //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
-    //     adapter.callBids(createBidderRequest({
-    //       params: {
-    //         id: 'id-1',
-    //         imp: [{
-    //           id: 'id-2',
-    //           banner: {
-    //             w: '100',
-    //             h: '100'
-    //           },
-    //           tagid: 'header1'
-    //         }]
-    //       }
-    //     }));
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-    //   });
-    //
-    //   it('should be added to bidmanager with correct bidderCode', () => {
-    //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'aol');
-    //   });
-    //
-    //   it('should have adId matching the bidId from related bid request', () => {
-    //     server.respondWith(JSON.stringify(getDefaultBidResponse()));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1])
-    //       .to.have.property('adId', '84ab500420319d');
-    //   });
-    //
-    //   it('should be added to bidmanager as invalid in case of empty response', () => {
-    //     server.respondWith('');
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-    //   });
-    //
-    //   it('should be added to bidmanager as invalid in case of invalid JSON response', () => {
-    //     server.respondWith('{foo:{bar:{baz:');
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-    //   });
-    //
-    //   it('should be added to bidmanager as invalid in case of no bid data', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.seatbid = [];
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-    //   });
-    //
-    //   it('should be added to bidmanager as invalid in case of empty price', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.seatbid[0].bid[0].price = undefined;
-    //
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-    //   });
-    //
-    //   it('should be added to bidmanager with attributes from pubapi response', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.seatbid[0].bid[0].crid = '12345';
-    //
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-    //     expect(addedBidResponse.ad).to.equal('<script>logInfo(\'ad\');</script>');
-    //     expect(addedBidResponse.cpm).to.equal(0.09);
-    //     expect(addedBidResponse.width).to.equal(728);
-    //     expect(addedBidResponse.height).to.equal(90);
-    //     expect(addedBidResponse.creativeId).to.equal('12345');
-    //     expect(addedBidResponse.pubapiId).to.equal('245730051428950632');
-    //   });
-    //
-    //   it('should be added to bidmanager including pixels from pubapi response', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.ext = {
-    //       pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
-    //     };
-    //
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-    //     expect(addedBidResponse.ad).to.equal(
-    //       '<script>logInfo(\'ad\');</script>' +
-    //       '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
-    //       'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' +
-    //       'document.write(\'<img src="pixel.gif">\');}</script>'
-    //     );
-    //   });
-    //
-    //   it('should be added to bidmanager including dealid from pubapi response', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.seatbid[0].bid[0].dealid = '12345';
-    //
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-    //     expect(addedBidResponse.dealId).to.equal('12345');
-    //   });
-    //
-    //   it('should be added to bidmanager including encrypted price from pubapi response', () => {
-    //     let bidResponse = getDefaultBidResponse();
-    //     bidResponse.seatbid[0].bid[0].ext.encp = 'a9334987';
-    //     server.respondWith(JSON.stringify(bidResponse));
-    //
-    //     adapter.callBids(getDefaultBidRequest());
-    //     server.respond();
-    //     expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-    //     let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-    //     expect(addedBidResponse.cpm).to.equal('a9334987');
-    //   });
-    // });
+  describe('interpretResponse()', () => {
+    let bidderSettingsBackup;
+    let bidRequest;
+    let logWarnSpy;
 
-    describe('when bidCpmAdjustment is set', () => {
-      let bidderSettingsBackup;
-      let server;
+    beforeEach(() => {
+      bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
+      bidRequest = {
+        bidderCode: 'test-bidder-code',
+        bidId: 'bid-id'
+      };
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
 
-      beforeEach(() => {
-        bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
-        server = sinon.fakeServer.create();
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
+      logWarnSpy.restore();
+    });
+
+    it('should return formatted bid response with required properties', () => {
+      let bidResponse = getDefaultBidResponse();
+
+      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
+      expect(formattedBidResponse).to.deep.equal({
+        bidderCode: bidRequest.bidderCode,
+        requestId: 'bid-id',
+        ad: '<script>logInfo(\'ad\');</script>',
+        cpm: 0.09,
+        width: 728,
+        height: 90,
+        creativeId: 'creative-id',
+        pubapiId: '245730051428950632',
+        currencyCode: 'USD',
+        dealId: 'deal-id'
       });
+    });
 
-      afterEach(() => {
-        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
-        server.restore();
-        if (utils.logWarn.restore) {
-          utils.logWarn.restore();
+    it('should return formatted bid response including pixels', () => {
+      let bidResponse = getDefaultBidResponse();
+      bidResponse.ext = {
+        pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
+      };
+
+      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
+
+      expect(formattedBidResponse.ad).to.equal(
+        '<script>logInfo(\'ad\');</script>' +
+        '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
+        'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' +
+        'document.write(\'<img src="pixel.gif">\');}</script>'
+      );
+    });
+
+    it('should show warning in the console', function() {
+      let bidResponse = getDefaultBidResponse();
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        aol: {
+          bidCpmAdjustment: function() {}
         }
-      });
-
-      it('should show warning in the console', function() {
-        sinon.spy(utils, 'logWarn');
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        $$PREBID_GLOBAL$$.bidderSettings = {
-          aol: {
-            bidCpmAdjustment: function() {}
-          }
-        };
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(utils.logWarn.calledOnce).to.be.true;
-      });
+      };
+      spec.interpretResponse(bidResponse, bidRequest);
+      expect(utils.logWarn.calledOnce).to.be.true;
     });
   });
 
