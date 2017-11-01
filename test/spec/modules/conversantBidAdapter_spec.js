@@ -205,8 +205,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
     expect(payload.imp[3].video).to.not.have.property('pos');
-    expect(payload.imp[3].video).to.have.property('format');
-    expect(payload.imp[3].video.format).to.deep.equal([{w: 640, h: 480}]);
+    expect(payload.imp[3].video).to.have.property('w', 640);
+    expect(payload.imp[3].video).to.have.property('h', 480);
     expect(payload.imp[3].video).to.have.property('mimes');
     expect(payload.imp[3].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
     expect(payload.imp[3].video).to.have.property('protocols');
@@ -243,6 +243,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 250);
     expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
 
     // There is no bid001 because cpm is $0
 
@@ -254,6 +256,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 600);
     expect(bid).to.have.property('ad', 'markup002<img src="notify002" />');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
 
     bid = response[2];
     expect(bid).to.have.property('requestId', 'bid003');
@@ -264,6 +268,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('height', 480);
     expect(bid).to.have.property('vastUrl', 'markup003');
     expect(bid).to.have.property('mediaType', 'video');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
   });
 
   it('Verify handling of bad responses', function() {
