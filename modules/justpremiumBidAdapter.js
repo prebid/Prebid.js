@@ -49,6 +49,12 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     return null;
   }
 
+  function isOldBrowser() {
+    const isPromisse = typeof Promise !== 'undefined' && Promise.toString().indexOf('[native code]') !== -1;
+    const isWeakMap = typeof WeakMap !== 'undefined' && WeakMap.toString().indexOf('[native code]') !== -1;
+    return (!Array.prototype.find || !Array.prototype.sort || !Array.prototype.map || !Array.prototype.filter || !Array.prototype.keys || !isPromisse || !isWeakMap);
+  }
+
   function setupVar() {
     d = top.document;
     jPAM = top.jPAM = top.jPAM || window.jPAM || {};
@@ -58,7 +64,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
         server: null
       };
     const libVer = readCookie('jpxhbjs') || null;
-    toLoad = dConfig.toLoad || [d.location.protocol + '//cdn-cf.justpremium.com/js/' + (libVer ? libVer + '/' : '') + 'jpx.js'];
+    toLoad = dConfig.toLoad || [d.location.protocol + '//cdn-cf.justpremium.com/js/' + (libVer ? libVer + '/' : '') + (isOldBrowser() ? 'jpxp.js' : 'jpx.js')];
     server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com/v/1.4';
   }
 
@@ -114,7 +120,6 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
         return rec.length ? rec.pop() : false;
       }
     }
-
     return false;
   }
 
