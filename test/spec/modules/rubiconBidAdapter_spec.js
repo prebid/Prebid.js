@@ -79,7 +79,7 @@ describe('the rubicon adapter', () => {
             position: 'atf',
             referrer: 'localhost'
           },
-          placementCode: '/19968336/header-bid-tag-0',
+          adUnitCode: '/19968336/header-bid-tag-0',
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
@@ -313,16 +313,14 @@ describe('the rubicon adapter', () => {
             window.DigiTrust = {
               getUser: sandbox.spy()
             };
-            origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
           });
 
           afterEach(() => {
             delete window.DigiTrust;
-            window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
           });
 
           it('should send digiTrustId config params', () => {
-            sandbox.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -355,7 +353,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sandbox.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -384,7 +382,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sandbox.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -413,7 +411,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sandbox.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig', (key) => {
               var config = {};
               return config[key];
             });
@@ -474,8 +472,8 @@ describe('the rubicon adapter', () => {
           expect(slot.zone_id).to.equal('335918');
           expect(slot.position).to.equal('atf');
           expect(slot.floor).to.equal(0.01);
-          expect(slot.element_id).to.equal(bidderRequest.bids[0].placementCode);
-          expect(slot.name).to.equal(bidderRequest.bids[0].placementCode);
+          expect(slot.element_id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(slot.name).to.equal(bidderRequest.bids[0].adUnitCode);
           expect(slot.language).to.equal('en');
           expect(slot.width).to.equal(640);
           expect(slot.height).to.equal(320);
@@ -611,11 +609,12 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(2);
 
-          expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
-          expect(bids[0].creative_id).to.equal('crid-9');
+          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
@@ -623,11 +622,12 @@ describe('the rubicon adapter', () => {
           expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
           expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
 
-          expect(bids[1].bidderCode).to.equal('rubicon');
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
-          expect(bids[1].creative_id).to.equal('crid-9');
+          expect(bids[1].ttl).to.equal(300);
+          expect(bids[1].netRevenue).to.equal(false);
+          expect(bids[1].creativeId).to.equal('crid-9');
           expect(bids[1].currency).to.equal('USD');
           expect(bids[1].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
@@ -759,9 +759,10 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(1);
 
-          expect(bids[0].bidderCode).to.equal('rubicon');
-          expect(bids[0].creative_id).to.equal('crid-999999');
+          expect(bids[0].creativeId).to.equal('crid-999999');
           expect(bids[0].cpm).to.equal(1);
+          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].netRevenue).to.equal(false);
           expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
