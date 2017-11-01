@@ -100,37 +100,35 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseDecorator(fn) {
-  return function(adUnitCode, bid) {
-    if (!bid) {
-      return fn.apply(this, arguments); // if no bid, call original and let it display warnings
-    }
+export function addBidResponseHook(adUnitCode, bid, fn) {
+  if (!bid) {
+    return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+  }
 
-    let bidder = bid.bidderCode || bid.bidder;
-    if (bidderCurrencyDefault[bidder]) {
-      let currencyDefault = bidderCurrencyDefault[bidder];
-      if (bid.currency && currencyDefault !== bid.currency) {
-        utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
-      } else {
-        bid.currency = currencyDefault;
-      }
+  let bidder = bid.bidderCode || bid.bidder;
+  if (bidderCurrencyDefault[bidder]) {
+    let currencyDefault = bidderCurrencyDefault[bidder];
+    if (bid.currency && currencyDefault !== bid.currency) {
+      utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
+    } else {
+      bid.currency = currencyDefault;
     }
+  }
 
-    // default to USD if currency not set
-    if (!bid.currency) {
-      utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
-      bid.currency = 'USD';
-    }
+  // default to USD if currency not set
+  if (!bid.currency) {
+    utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
+    bid.currency = 'USD';
+  }
 
-    // execute immediately if the bid is already in the desired currency
-    if (bid.currency === adServerCurrency) {
-      return fn.apply(this, arguments);
-    }
+  // execute immediately if the bid is already in the desired currency
+  if (bid.currency === adServerCurrency) {
+    return fn.apply(this, arguments);
+  }
 
-    bidResponseQueue.push(wrapFunction(fn, this, arguments));
-    if (!currencySupportEnabled || currencyRatesLoaded) {
-      processBidResponseQueue();
-    }
+  bidResponseQueue.push(wrapFunction(fn, this, arguments));
+  if (!currencySupportEnabled || currencyRatesLoaded) {
+    processBidResponseQueue();
   }
 }
 
