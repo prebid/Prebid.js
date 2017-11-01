@@ -171,7 +171,7 @@ function AjaxTransport() {
         error: function(e) {
           utils.logError('xhr error', null, e);
         }
-      }, JSON.stringify(preparedData), {withCredentials: true});
+      }, JSON.stringify(preparedData), {withCredentials: true, withoutTimeout: true});
     },
     // TODO не верное место для этого метода
     prepareData(originData) {
