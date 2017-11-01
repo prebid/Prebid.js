@@ -24,17 +24,14 @@ export const spec = {
   buildRequests: function(bidReqs) {
     let sovrnImps = [];
     utils._each(bidReqs, function (bid) {
-      const tagId = utils.getBidIdParameter('tagid', bid.params);
-      const bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
-      var imp = {
+      sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: tagId,
-        bidfloor: bidFloor
-      };
-      sovrnImps.push(imp);
+        tagid: utils.getBidIdParameter('tagid', bid.params),
+        bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
+      });
     });
-    var sovrnBidReq = {
+    const sovrnBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
@@ -42,18 +39,17 @@ export const spec = {
         page: window.location.pathname + location.search + location.hash
       }
     };
-    const payloadString = JSON.stringify(sovrnBidReq);
     return {
       method: 'POST',
       url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
-      data: payloadString,
+      data: JSON.stringify(sovrnBidReq),
       options: {contentType: 'text/plain'}
     };
   },
 
   /**
    * Format Sovrn responses as Prebid bid responses
-   * @param {*} sovrnResponse A successful response from Sovrn.
+   * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
   */
   interpretResponse: function({id, seatbid}) {
@@ -75,7 +71,7 @@ export const spec = {
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,
-          ad: decodeURIComponent(`${sovrnBid.adm}<img src=${sovrnBid.nurl}>`),
+          ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
           ttl: 60000
         });
       });
