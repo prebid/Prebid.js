@@ -53,6 +53,11 @@ export const spec = {
         type: 'iframe',
         url: '//bh.contextweb.com/visitormatch'
       }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//bh.contextweb.com/visitormatch/prebid'
+      }];
     }
   }
 
@@ -64,6 +69,7 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
+  bidResponse = bidResponse.body
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = parse(bidRequest.data);
   ortbRequest.imp.forEach(imp => {
