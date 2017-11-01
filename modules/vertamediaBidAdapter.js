@@ -1,122 +1,123 @@
-import Adapter from "src/adapter";
-import bidfactory from "src/bidfactory";
-import bidmanager from "src/bidmanager";
-import * as utils from "src/utils";
-import {ajax} from "src/ajax";
-import {STATUS} from "src/constants";
-import adaptermanager from "src/adaptermanager";
+import * as utils from 'src/utils';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import {VIDEO} from 'src/mediaTypes';
 
-const ENDPOINT = '//rtb.vertamedia.com/hb/';
+const URL = '//rtb.vertamedia.com/hb/';
+const BIDDER_CODE = 'vertamedia';
 
-function VertamediaAdapter() {
-  const baseAdapter = new Adapter('vertamedia');
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [VIDEO],
+  isBidRequestValid: function (bid) {
+    return Boolean(bid && bid.params && bid.params.aid);
+  },
 
-  baseAdapter.callBids = function (bidRequests) {
-    if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
-      return;
-    }
-
-    for (var i = 0; i < bidRequests.bids.length; i++) {
-      var prepData = prepareAndSaveRTBRequestParams(bidRequests.bids[i])
-      var bidRequest = prepData[0];
-      var RTBDataParams = prepData[1];
-
-      if (!RTBDataParams) {
-        return;
-      }
-
-      ajax(ENDPOINT, handleResponse.bind(null, bidRequest), RTBDataParams, {
+  /**
+   * Make a server request from the list of BidRequests
+   * @param bidRequests
+   * @param bidderRequest
+   */
+  buildRequests: function (bidRequests, bidderRequest) {
+    return bidRequests.map((bid) => {
+      return {
         contentType: 'text/plain',
         withCredentials: true,
-        method: 'GET'
-      });
+        method: 'GET',
+        url: URL,
+        data: prepareRTBRequestParams(bid),
+        bidderRequest
+      }
+    });
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids
+   * @param serverResponse
+   * @param bidderRequest
+   * @return {Bid[]} An array of bids which were nested inside the server
+   */
+  interpretResponse: function (serverResponse, {bidderRequest}) {
+    serverResponse = serverResponse.body;
+    const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
+    let bids = [];
+
+    if (isInvalidValidResp) {
+      let extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
+
+      utils.logError(errorMessage);
+
+      return bids;
     }
+
+    serverResponse.bids.forEach(serverBid => {
+      if (serverBid.cpm !== 0) {
+        const bid = createBid(serverBid, bidderRequest);
+        bids.push(bid);
+      }
+    });
+
+    return bids;
+  },
+};
+
+/**
+ * Prepare all parameters for request
+ * @param bid {object}
+ * @returns {object}
+ */
+function prepareRTBRequestParams(bid) {
+  let size = getSize(bid.sizes);
+
+  return {
+    aid: bid.params.aid,
+    w: size.width,
+    h: size.height,
+    callbackId: bid.bidId,
+    domain: utils.getTopWindowLocation().hostname
   };
-
-  function prepareAndSaveRTBRequestParams(bid) {
-    if (!bid || !bid.params || !bid.params.aid || !bid.placementCode) {
-      return;
-    }
-
-    let bidRequest = bid;
-
-    let size = getSize(bid.sizes);
-
-    bidRequest.width = size.width;
-    bidRequest.height = size.height;
-
-    return [bidRequest, {
-      aid: bid.params.aid,
-      w: size.width,
-      h: size.height,
-      domain: document.location.hostname
-    }];
-  }
-
-  function getSize(requestSizes) {
-    const parsed = {};
-    const size = utils.parseSizesInput(requestSizes)[0];
-
-    if (typeof size !== 'string') {
-      return parsed;
-    }
-
-    let parsedSize = size.toUpperCase().split('X');
-
-    return {
-      width: parseInt(parsedSize[0], 10) || undefined,
-      height: parseInt(parsedSize[1], 10) || undefined
-    };
-  }
-
-  /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(bidRequest, response) {
-    var parsed;
-
-    try {
-      parsed = JSON.parse(response);
-    } catch (error) {
-      utils.logError(error);
-    }
-
-    if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
-      bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID));
-
-      return;
-    }
-
-    bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.GOOD, parsed.bids[0]));
-  }
-
-  function createBid(bidRequest, status, tag) {
-    var bid = bidfactory.createBid(status, tag);
-
-    bid.code = baseAdapter.getBidderCode();
-    bid.bidderCode = bidRequest.bidder;
-
-    if (!tag || status !== STATUS.GOOD) {
-      return bid;
-    }
-
-    bid.mediaType = 'video';
-    bid.cpm = tag.cpm;
-    bid.creative_id = tag.cmpId;
-    bid.width = bidRequest.width;
-    bid.height = bidRequest.height;
-    bid.descriptionUrl = tag.url;
-    bid.vastUrl = tag.vastUrl;
-
-    return bid;
-  }
-
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
-  });
 }
 
-adaptermanager.registerBidAdapter(new VertamediaAdapter(), 'vertamedia', {
-  supportedMediaTypes: ['video']
-});
+/**
+ * Prepare size for request
+ * @param requestSizes {array}
+ * @returns {object} bid The bid to validate
+ */
+function getSize(requestSizes) {
+  const parsed = {};
+  const size = utils.parseSizesInput(requestSizes)[0];
 
-module.exports = VertamediaAdapter;
+  if (typeof size !== 'string') {
+    return parsed;
+  }
+
+  let parsedSize = size.toUpperCase().split('X');
+
+  return {
+    width: parseInt(parsedSize[0], 10) || undefined,
+    height: parseInt(parsedSize[1], 10) || undefined
+  };
+}
+
+/**
+ * Configure new bid by response
+ * @param bidRequest {object}
+ * @param bidResponse {object}
+ * @returns {object}
+ */
+function createBid(bidResponse, bidRequest) {
+  return {
+    bidderCode: bidRequest.bidderCode,
+    mediaType: 'video',
+    cpm: bidResponse.cpm,
+    requestId: bidResponse.requestId,
+    creative_id: bidResponse.cmpId,
+    width: bidResponse.width,
+    height: bidResponse.height,
+    descriptionUrl: bidResponse.url,
+    vastUrl: bidResponse.vastUrl,
+    currency: bidResponse.cur
+  };
+}
+
+registerBidder(spec);
