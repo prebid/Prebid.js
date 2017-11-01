@@ -82,17 +82,17 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
+    let serverResponseBody = serverResponse.body;
 
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) {
-        errorMessage += `: ${serverResponse.error}`;
+    if (!serverResponseBody || serverResponseBody.error) {
+      let errorMessage = `in response for ${BIDDER_CODE} adapter`;
+      if (serverResponseBody && serverResponseBody.error) {
+        errorMessage += `: ${serverResponseBody.error}`;
       }
       utils.logError(errorMessage);
       return bidResponses;
     }
     try {
-      let serverResponseBody = serverResponse.body;
       let serverResponseHeaders = serverResponse.headers;
       let bidRequestData = bidRequest.data.split('&');
       const bidResponse = {

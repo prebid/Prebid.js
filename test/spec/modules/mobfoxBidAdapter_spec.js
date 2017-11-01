@@ -131,7 +131,9 @@ describe('mobfox adapter tests', () => {
     it('test intercept response with empty server response', () => {
       let request = adapter.spec.buildRequests(bidRequest);
       let serverResponse = {
-        error: 'cannot get response'
+        request: {
+          error: 'cannot get response'
+        }
       };
       let bidResponses = adapter.spec.interpretResponse(serverResponse, request);
       expect(bidResponses.length).to.equal(0);
