@@ -19,7 +19,7 @@ describe('OptimeraAdapter', () => {
           'clientID': '0'
         }
       },
-      'adUnitCode': 'adunit-code',
+      'adUnitCode': 'div-0',
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -32,7 +32,7 @@ describe('OptimeraAdapter', () => {
   })
 
   describe('buildRequests', () => {
-    let validBidRequests = [
+    let bid = [
       {
         'adUnitCode': 'div-0',
         'auctionId': '1ab30503e03994',
@@ -40,29 +40,30 @@ describe('OptimeraAdapter', () => {
         'bidder': 'optimera',
         'bidderRequestId': '202be1ce3f6194',
         'params': {
-          'placementCode': '0',
-          'placementId': '104333943',
           'custom': {
-            'clientId': '0'
+            'clientID': '0'
           }
         }
       }
     ];
     it('buildRequests fires', () => {
-      var request = spec.buildRequests(validBidRequests);
+      let request = spec.buildRequests(bid);
+      expect(request).to.exist;
+      expect(request.method).to.equal('GET');
+      expect(request.payload).to.exist;
+      expect(request.data.t).to.exist;
     });
   })
 
   describe('interpretResponse', () => {
-    let serverResponse = 'window.oVa = {"div-0":["RB_K","728x90K"], "div-1":["RB_K","300x250K", "300x600K"], "timestamp":["RB_K","1507565666"]};';
+    let serverResponse = {};
+    serverResponse.body = 'window.oVa = {"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"]};';
     var bidRequest = {
       'method': 'get',
       'payload': [
         {
           'bidder': 'optimera',
           'params': {
-            'placementId': '10433943',
-            'placementCode': '0',
             'custom': {
               'clientID': '0'
             }
@@ -74,7 +75,9 @@ describe('OptimeraAdapter', () => {
     }
     it('interpresResponse fires', () => {
       window.oDv = window.oDv || [];
-      var bidResponses = spec.interpretResponse(serverResponse, bidRequest);
+      let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
+      expect(bidResponses[0].dealId[0]).to.equal('RB_K');
+      expect(bidResponses[0].dealId[1]).to.equal('728x90K');
     });
   });
 });
