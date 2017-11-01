@@ -262,8 +262,7 @@ export function newBidder(spec) {
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               Object.assign({
                 method: 'POST',
-                contentType: request.contentType || 'text/plain',
-                customHeaders: request.customHeaders || {},
+                contentType: 'text/plain',
                 withCredentials: true
               }, request.options)
             );
