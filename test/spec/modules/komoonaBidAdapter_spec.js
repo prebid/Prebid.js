@@ -69,7 +69,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(spec.isBidRequestValid({ params: { hbid: 12345, placementId: 67890, floorPrice: 0.8 } })).to.equal(true);
   });
 
-  describe('Verify komoonaAdapter build request', () => {
+  it('Verify komoonaAdapter build request', () => {
     var startTime = new Date().getTime();
 
     const request = spec.buildRequests(bidsRequest);
@@ -127,7 +127,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(kbConf.hb_placements[1]).to.equal(bids[1].placementid);
   });
 
-  describe('Verify komoonaAdapter build response', () => {
+  it('Verify komoonaAdapter build response', () => {
     const request = spec.buildRequests(bidsRequest);
     const bids = spec.interpretResponse(bidsResponse, request);
 
@@ -150,7 +150,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(bid.creativeId).to.equal(responseBids[0].creativeId);
   });
 
-  describe('Verifies komoonaAdapter sync options', () => {
+  it('Verifies komoonaAdapter sync options', () => {
     // user sync disabled
     expect(spec.getUserSyncs({})).to.be.undefined;
     expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
