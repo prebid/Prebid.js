@@ -87,7 +87,7 @@ function Config() {
   let parser = parse(window.location);
 
   let customHost = parser.search['pa_host'];
-  let host = parser.host;
+  let host = parser.host.replace('www.','');
 
   return {
     // TODO add tags
