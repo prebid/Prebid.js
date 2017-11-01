@@ -102,7 +102,7 @@ function Config() {
     prefix: 'roxot_analytics_',
     publisherId: null,
     utm: {},
-    sessionId: {},
+    sessionId: null,
 
     fill: function (config) {
       this.publisherId = extractPublisherId(config);
@@ -313,10 +313,6 @@ function SessionId(realId) {
   };
 
   this.persist = function () {
-    if (!live) {
-      return utils.logError("Cann't persist rotten id");
-    }
-
     localStorage.setItem(key, id);
     localStorage.setItem(timeout.key, Date.now());
   };
@@ -340,7 +336,7 @@ function SessionId(realId) {
     let ts = localStorage.getItem(timeout.key);
 
     if (!ts) {
-      return true;
+      return false;
     }
 
     return Date.now() - ts <= timeout.ms;
