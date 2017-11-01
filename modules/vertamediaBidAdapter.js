@@ -20,12 +20,12 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map((bid) => {
       return {
+        data: prepareRTBRequestParams(bid),
         contentType: 'text/plain',
         withCredentials: true,
+        bidderRequest,
         method: 'GET',
-        url: URL,
-        data: prepareRTBRequestParams(bid),
-        bidderRequest
+        url: URL
       }
     });
   },
@@ -70,11 +70,11 @@ function prepareRTBRequestParams(bid) {
   let size = getSize(bid.sizes);
 
   return {
-    aid: bid.params.aid,
-    w: size.width,
-    h: size.height,
+    domain: utils.getTopWindowLocation().hostname,
     callbackId: bid.bidId,
-    domain: utils.getTopWindowLocation().hostname
+    aid: bid.params.aid,
+    h: size.height,
+    w: size.width
   };
 }
 
@@ -84,8 +84,8 @@ function prepareRTBRequestParams(bid) {
  * @returns {object} bid The bid to validate
  */
 function getSize(requestSizes) {
-  const parsed = {};
   const size = utils.parseSizesInput(requestSizes)[0];
+  const parsed = {};
 
   if (typeof size !== 'string') {
     return parsed;
@@ -94,8 +94,8 @@ function getSize(requestSizes) {
   let parsedSize = size.toUpperCase().split('X');
 
   return {
-    width: parseInt(parsedSize[0], 10) || undefined,
-    height: parseInt(parsedSize[1], 10) || undefined
+    height: parseInt(parsedSize[1], 10) || undefined,
+    width: parseInt(parsedSize[0], 10) || undefined
   };
 }
 
@@ -108,15 +108,17 @@ function getSize(requestSizes) {
 function createBid(bidResponse, bidRequest) {
   return {
     bidderCode: bidRequest.bidderCode,
-    mediaType: 'video',
-    cpm: bidResponse.cpm,
     requestId: bidResponse.requestId,
-    creative_id: bidResponse.cmpId,
-    width: bidResponse.width,
-    height: bidResponse.height,
     descriptionUrl: bidResponse.url,
+    creativeId: bidResponse.cmpId,
     vastUrl: bidResponse.vastUrl,
-    currency: bidResponse.cur
+    height: bidResponse.height,
+    currency: bidResponse.cur,
+    width: bidResponse.width,
+    cpm: bidResponse.cpm,
+    mediaType: 'video',
+    netRevenue: true,
+    ttl: 3600
   };
 }
 
