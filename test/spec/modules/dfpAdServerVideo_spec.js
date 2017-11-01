@@ -4,6 +4,7 @@ import parse from 'url-parse';
 import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
 import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
+import { newConfig } from 'src/config';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -34,6 +35,43 @@ describe('The DFP video support module', () => {
     expect(queryParams).to.have.property('sz', '640x480');
     expect(queryParams).to.have.property('unviewed_position_start', '1');
     expect(queryParams).to.have.property('url');
+  });
+
+  it('can take an adserver url as a parameter', () => {
+    const bidCopy = Object.assign({ }, bid);
+    bidCopy.vastUrl = 'vastUrl.example';
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      url: 'https://video.adserver.example/',
+    }));
+
+    expect(url.host).to.equal('video.adserver.example');
+
+    const queryObject = parseQS(url.query);
+    expect(queryObject.description_url).to.equal('vastUrl.example');
+  });
+
+  it('requires a params object or url', () => {
+    const url = buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+    });
+
+    expect(url).to.be.undefined;
+  });
+
+  it('overwrites url params when both url and params object are given', () => {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
+      params: { iu: 'my/adUnit' }
+    }));
+
+    const queryObject = parseQS(url.query);
+    expect(queryObject.iu).to.equal('my/adUnit');
   });
 
   it('should override param defaults with user-provided ones', () => {
@@ -90,6 +128,26 @@ describe('The DFP video support module', () => {
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('my_targeting', 'foo');
+  });
+
+  it('should not overwrite an existing description_url for object input and cache disabled', () => {
+    const config = newConfig();
+    config.setConfig({ usePrebidCache: true });
+
+    const bidCopy = Object.assign({}, bid);
+    bidCopy.vastUrl = 'vastUrl.example';
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        iu: 'my/adUnit',
+        description_url: 'descriptionurl.example'
+      }
+    }));
+
+    const queryObject = parseQS(url.query);
+    expect(queryObject.description_url).to.equal('descriptionurl.example');
   });
 
   it('should work with nobid responses', () => {
