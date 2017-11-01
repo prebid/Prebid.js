@@ -1,231 +1,216 @@
-import {expect} from 'chai';
-import Adapter from '../../../modules/quantcastBidAdapter';
-import * as ajax from 'src/ajax';
-import bidManager from '../../../src/bidmanager';
-import adLoader from '../../../src/adloader';
+import * as utils from 'src/utils';
+import { expect } from 'chai';
+import {
+  QUANTCAST_CALLBACK_URL_TEST,
+  QUANTCAST_CALLBACK_URL,
+  QUANTCAST_NET_REVENUE,
+  QUANTCAST_TTL,
+  spec as qcSpec
+} from '../../../modules/quantcastBidAdapter';
+import { newBidder } from '../../../src/adapters/bidderFactory';
 
-describe('quantcast adapter', () => {
-  let bidsRequestedOriginal;
-  let adapter;
-  let sandbox;
-  let ajaxStub;
-
-  const bidderRequest = {
-    bidderCode: 'quantcast',
-    requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
-    bidderRequestId: '1cc026909c24c8',
-    bids: [
-      {
-        bidId: '2f7b179d443f14',
-        bidder: 'quantcast',
-        placementCode: 'div-gpt-ad-1438287399331-0',
-        sizes: [[300, 250], [300, 600]],
-        params: {
-          publisherId: 'test-publisher',
-          battr: [1, 2],
-        }
-      }
-    ]
-  };
+describe('Quantcast adapter', () => {
+  const quantcastAdapter = newBidder(qcSpec);
+  let bidRequest;
 
   beforeEach(() => {
-    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-
-    adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
-    ajaxStub = sandbox.stub(ajax, 'ajax');
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-
-    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
-  });
-
-  describe('sizes', () => {
-    let bidderRequest = {
-      bidderCode: 'quantcast',
+    bidRequest = {
+      bidder: 'quantcast',
+      bidId: '2f7b179d443f14',
       requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
       bidderRequestId: '1cc026909c24c8',
-      bids: [
-        {
-          bidId: '2f7b179d443f14',
-          bidder: 'quantcast',
-          placementCode: 'div-gpt-ad-1438287399331-0',
-          sizes: [[300, 250], [300, 600]],
-          params: {
-            publisherId: 'test-publisher',
-            battr: [1, 2],
-          }
-        }
-      ]
+      placementCode: 'div-gpt-ad-1438287399331-0',
+      params: {
+        publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
+        battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
+      },
+      sizes: [[300, 250]]
     };
+  });
 
-    it('should not call server when empty input is provided', () => {
-      adapter.callBids({});
-      sinon.assert.notCalled(ajaxStub);
-    });
-
-    it('should call server once even when multiple sizes are passed', () => {
-      adapter.callBids(bidderRequest);
-      sinon.assert.calledOnce(ajaxStub);
-
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
-      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[2]).to.include('div-gpt-ad-1438287399331-0');
-      expect(ajaxStub.firstCall.args[2]).to.include('test-publisher');
-      expect(ajaxStub.firstCall.args[2]).to.include('2f7b179d443f14');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
-    });
-
-    it('should call server once when one size is passed', () => {
-      bidderRequest.bids[0].sizes = [728, 90];
-      adapter.callBids(bidderRequest);
-      sinon.assert.calledOnce(ajaxStub);
-
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
-      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
-    });
-
-    it('should call server once when size is passed as string', () => {
-      bidderRequest.bids[0].sizes = '728x90';
-      adapter.callBids(bidderRequest);
-      sinon.assert.calledOnce(ajaxStub);
-
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
-      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
-    });
-
-    it('should call server once when sizes are passed as a comma-separated string', () => {
-      bidderRequest.bids[0].sizes = '728x90,360x240';
-      adapter.callBids(bidderRequest);
-      sinon.assert.calledOnce(ajaxStub);
-
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
-      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
+  describe('inherited functions', () => {
+    it('exists and is a function', () => {
+      expect(quantcastAdapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('multiple requests', () => {
-    let bidderRequest = {
-      bidderCode: 'quantcast',
-      requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
-      bidderRequestId: '1cc026909c24c8',
-      bids: [
-        {
-          bidId: '2f7b179d443f14',
-          bidder: 'quantcast',
-          placementCode: 'div-gpt-ad-1438287399331-0',
-          sizes: [[300, 250]],
-          params: {
-            publisherId: 'test-publisher',
-            battr: [1, 2],
-          }
-        }, {
-          bidId: '2f7b179d443f15',
-          bidder: 'quantcast',
-          placementCode: 'div-gpt-ad-1438287399331-1',
-          sizes: [[300, 600]],
-          params: {
-            publisherId: 'test-publisher',
-            battr: [1, 2],
-          }
-        }
-      ]
-    };
+  describe('`isBidRequestValid`', () => {
+    it('should return `false` when bid is not passed', () => {
+      expect(qcSpec.isBidRequestValid()).to.equal(false);
+    });
 
-    it('request is fired twice for two bids', () => {
-      adapter.callBids(bidderRequest);
-      sinon.assert.calledTwice(ajaxStub);
+    it('should return `false` when bid `mediaType` is `video`', () => {
+      const bidRequest = { mediaType: 'video' };
 
-      let firstReq = JSON.parse(ajaxStub.firstCall.args[2]);
-      expect(firstReq.requestId).to.eql('2f7b179d443f14');
-      expect(firstReq.imp[0].placementCode).to.eql('div-gpt-ad-1438287399331-0');
+      expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
-      let secondReq = JSON.parse(ajaxStub.secondCall.args[2]);
-      expect(secondReq.requestId).to.eql('2f7b179d443f15');
-      expect(secondReq.imp[0].placementCode).to.eql('div-gpt-ad-1438287399331-1');
+    it('should return `true` when bid contains required params', () => {
+      const bidRequest = { mediaType: 'banner' };
+
+      expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(true);
     });
   });
 
-  describe('handleQuantcastCB add bids to the manager', () => {
-    let firstBid;
-    let addBidReponseStub;
-    let bidsRequestedOriginal;
-    // respond
-    let bidderReponse = {
-      'bidderCode': 'quantcast',
-      'requestId': bidderRequest.requestId,
-      'bids': [
-        {
-          'statusCode': 1,
-          'placementCode': bidderRequest.bids[0].bidId,
-          'cpm': 4.5,
-          'ad': '<!DOCTYPE html>\n\n\n<div style="height: 250; width: 300; display: table-cell; vertical-align: middle;">\n<div style="width: 300px; margin-left: auto; margin-right: auto;">  \n\n  <script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script>\n\n<img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/>\n\n</div>\n</div>',
-          'width': 300,
-          'height': 250
-        }
-      ]
-    };
+  describe('`buildRequests`', () => {
+    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
+      const requests = qcSpec.buildRequests([bidRequest]);
 
-    beforeEach(() => {
-      bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
-      addBidReponseStub = sandbox.stub(bidManager, 'addBidResponse');
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      switch (window.location.protocol) {
+        case 'https:':
+          expect(requests[0]['url']).to.equal(
+            `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`
+          );
+          break;
+        default:
+          expect(requests[0]['url']).to.equal(
+            `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`
+          );
+          break;
+      }
     });
 
-    afterEach(() => {
-      sandbox.restore();
-      $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
+    it('sends bid requests to Quantcast Global Endpoint for regular `publisherId`', () => {
+      const bidRequest = {
+        bidder: 'quantcast',
+        bidId: '2f7b179d443f14',
+        requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+        bidderRequestId: '1cc026909c24c8',
+        placementCode: 'div-gpt-ad-1438287399331-0',
+        params: {
+          publisherId: 'regular-publisher', // REQUIRED - Publisher ID provided by Quantcast
+          battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
+        },
+        sizes: [[300, 250]]
+      };
+      const requests = qcSpec.buildRequests([bidRequest]);
+
+      switch (window.location.protocol) {
+        case 'https:':
+          expect(requests[0]['url']).to.equal(
+            `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`
+          );
+          break;
+        default:
+          expect(requests[0]['url']).to.equal(
+            `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`
+          );
+          break;
+      }
     });
 
-    it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.handleQuantcastCB).to.exist.and.to.be.a('function');
+    it('sends bid requests to Quantcast Header Bidding Endpoints via POST', () => {
+      const requests = qcSpec.buildRequests([bidRequest]);
+
+      expect(requests[0].method).to.equal('POST');
     });
 
-    it('should not add bid when empty text response comes', () => {
-      $$PREBID_GLOBAL$$.handleQuantcastCB();
-      sinon.assert.notCalled(addBidReponseStub);
-    });
+    it('sends bid requests contains all the required parameters', () => {
+      const referrer = utils.getTopWindowUrl();
+      const loc = utils.getTopWindowLocation();
+      const domain = loc.hostname;
 
-    it('should not add bid when empty json response comes', () => {
-      $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify({}));
-      sinon.assert.notCalled(addBidReponseStub);
-    });
-
-    it('should not add bid when malformed json response comes', () => {
-      $$PREBID_GLOBAL$$.handleQuantcastCB('non json text');
-      sinon.assert.notCalled(addBidReponseStub);
-    });
-
-    it('should add a bid object for each bid', () => {
-      // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
-      adapter.callBids(bidderRequest);
-      $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify(bidderReponse));
-      sinon.assert.calledOnce(addBidReponseStub);
-      expect(addBidReponseStub.firstCall.args[0]).to.eql('div-gpt-ad-1438287399331-0');
-    });
-
-    it('should return no bid even when requestId and sizes are missing', () => {
-      let bidderReponse = {
-        'bidderCode': 'quantcast',
-        'bids': [
+      const requests = qcSpec.buildRequests([bidRequest]);
+      const expectedBidRequest = {
+        publisherId: 'test-publisher',
+        requestId: '2f7b179d443f14',
+        imp: [
           {
-            'statusCode': 0,
-            'placementCode': bidderRequest.bids[0].bidId,
+            banner: {
+              battr: [1, 2],
+              sizes: [{ width: 300, height: 250 }]
+            },
+            placementCode: 'div-gpt-ad-1438287399331-0',
+            bidFloor: 1e-10
           }
-        ]
+        ],
+        site: {
+          page: loc.href,
+          referrer,
+          domain
+        },
+        bidId: '2f7b179d443f14'
       };
 
-      // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
-      adapter.callBids(bidderRequest);
-      $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify(bidderReponse));
-      // sinon.assert.calledOnce(addBidReponseStub);
-      // expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
+      expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
+    });
+  });
+
+  describe('`interpretResponse`', () => {
+    // The sample response is from https://wiki.corp.qc/display/adinf/QCX
+    const body = {
+      bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
+      requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames
+      bids: [
+        {
+          statusCode: 1,
+          placementCode: 'imp1', // Changing this to placementCode to be reflective
+          cpm: 4.5,
+          currency: 'USD',
+          ad:
+            '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+          creativeId: 1001,
+          width: 300,
+          height: 250
+        }
+      ]
+    };
+
+    const response = {
+      body,
+      headers: {}
+    };
+
+    it('should return an empty array if `serverResponse` is `undefined`', () => {
+      const interpretedResponse = qcSpec.interpretResponse();
+
+      expect(interpretedResponse.length).to.equal(0);
+    });
+
+    it('should return an empty array if the parsed response does NOT include `bids`', () => {
+      const interpretedResponse = qcSpec.interpretResponse({});
+
+      expect(interpretedResponse.length).to.equal(0);
+    });
+
+    it('should return an empty array if the parsed response has an empty `bids`', () => {
+      const interpretedResponse = qcSpec.interpretResponse({ bids: [] });
+
+      expect(interpretedResponse.length).to.equal(0);
+    });
+
+    it('should get correct bid response', () => {
+      const expectedResponse = {
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+        cpm: 4.5,
+        width: 300,
+        height: 250,
+        ad:
+          '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+        ttl: QUANTCAST_TTL,
+        creativeId: 1001,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency: 'USD'
+      };
+      const interpretedResponse = qcSpec.interpretResponse(response);
+
+      expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('handles no bid response', () => {
+      const body = {
+        bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames
+        bids: []
+      };
+      const response = {
+        body,
+        headers: {}
+      };
+      const expectedResponse = [];
+      const interpretedResponse = qcSpec.interpretResponse(response);
+
+      expect(interpretedResponse.length).to.equal(0);
     });
   });
 });

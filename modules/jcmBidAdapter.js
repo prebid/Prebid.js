@@ -44,6 +44,7 @@ export const spec = {
 
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
+    serverResponse = serverResponse.body;
     // loop through serverResponses
     if (serverResponse) {
       if (serverResponse.bids) {
