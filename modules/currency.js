@@ -2,7 +2,7 @@ import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
-import { addBidResponse } from 'src/auction';
+import bidmanager from 'src/bidmanager';
 import { config } from 'src/config';
 
 const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
@@ -80,7 +80,7 @@ function initCurrency(url) {
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  addBidResponse.addHook(addBidResponseHook, 100);
+  bidmanager.addBidResponse.addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
     ajax(url, function (response) {
@@ -99,7 +99,7 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  addBidResponse.removeHook(addBidResponseHook);
+  bidmanager.addBidResponse.removeHook(addBidResponseHook);
 
   adServerCurrency = 'USD';
   conversionCache = {};

@@ -1,8 +1,8 @@
 
 /**
- * @typedef {function} HookedFunction
+ * @typedef {function} PluginFunction
  * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
- *  to the HookedFunction
+ *  to the PluginFunction
  * @property {function(function())} removeHook A method to remove attached hooks
  */
 
@@ -17,8 +17,8 @@ export const hooks = {};
  * @param {string} type The method for applying all attached hooks when this hooked function is called
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
- *  the addHook and removeHook methods for that hook (which are usually accessed as methods on the function itself)
- * @returns {HookedFunction} A new function that implements the HookedFunction interface
+ *  the addPlugin and removePlugin methods for that hook (which are usually accessed as methods on the function itself)
+ * @returns {PluginFunction} A new function that implements the PluginFunction interface
  */
 export function createHook(type, fn, hookName) {
   let _hooks = [{fn, priority: 0}];
@@ -26,18 +26,18 @@ export function createHook(type, fn, hookName) {
   let types = {
     sync: function(...args) {
       _hooks.forEach(hook => {
-        hook.fn.apply(this, args);
+        hook.fn.apply(null, args);
       });
     },
     asyncSeries: function(...args) {
       let curr = 0;
 
-      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
+      return _hooks[curr].fn.apply(null, args.concat(asyncSeriesNext));
 
       function asyncSeriesNext(...args) {
         let hook = _hooks[++curr];
         if (typeof hook === 'object' && typeof hook.fn === 'function') {
-          return hook.fn.apply(this, args.concat(asyncSeriesNext))
+          return hook.fn.apply(null, args.concat(asyncSeriesNext))
         }
       }
     }
@@ -69,9 +69,9 @@ export function createHook(type, fn, hookName) {
 
   function hookedFn(...args) {
     if (_hooks.length === 0) {
-      return fn.apply(this, args);
+      return fn.apply(null, args);
     }
-    return types[type].apply(this, args);
+    return types[type].apply(null, args);
   }
 
   return Object.assign(hookedFn, methods);
