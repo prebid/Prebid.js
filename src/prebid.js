@@ -289,7 +289,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         // emit 'bid won' event here
         events.emit(BID_WON, bid);
 
-        const { height, width, ad, mediaType, adUrl: url, renderer } = bid;
+        const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
         if (renderer && renderer.url) {
           renderer.render(bid);
@@ -299,13 +299,13 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
-        } else if (url) {
+        } else if (adUrl) {
           const iframe = utils.createInvisibleIframe();
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
           iframe.style.overflow = 'hidden';
-          iframe.src = url;
+          iframe.src = adUrl;
 
           utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
