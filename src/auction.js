@@ -250,7 +250,7 @@ export const addBidResponse = createHook('asyncSeries', function addBidResponse(
       addBidToAuction(bidResponse);
     }
   }
-});
+}, 'addBidResponse');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().

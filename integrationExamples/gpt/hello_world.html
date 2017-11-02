@@ -21,26 +21,16 @@
         sizes: [[300, 250], [300,600]],
 
         // Replace this object to test a new Adapter!
-        bids: [{
-          bidder: 'appnexusAst',
-          params: {
-            placementId: '10433394'
-          }
-        }]
-
-      },
-      {
-        code: 'div-gpt-ad-1460505748561-1',
-        sizes: [[300, 250], [300,600]],
-
-        // Replace this object to test a new Adapter!
-        bids: [{
-          bidder: 'appnexusAst',
-          params: {
-            placementId: '10433394'
-          }
-        }]
-
+        bids: [
+              {
+                  bidder: "rubicon",
+                  params: {
+                      accountId: 1001,
+                      siteId: 113932,
+                      zoneId: 535510
+                  }
+              }
+          ]
       }];
 
       var pbjs = pbjs || {};
@@ -57,16 +47,15 @@
       });
 
       pbjs.que.push(function() {
-        // pbjs.addAdUnits(adUnits);
+        pbjs.setConfig({
+          'currency': {
+            adServerCurrency: 'USD'
+          }
+        });
         pbjs.requestBids({
           adUnits : [adUnits[0]],
           timeout: 1000,
           bidsBackHandler: sendAdserverRequest
-        });
-        pbjs.requestBids({
-          adUnits : [adUnits[1]],
-          timeout: 1000,
-          bidsBackHandler: sendAdserverRequest2
         });
       });
 
