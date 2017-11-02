@@ -83,6 +83,11 @@ function initCurrency(url) {
   bidmanager.addBidResponse.addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
+    var useSSL = document.location.protocol == 'https:';
+    if (useSSL) {
+      url = url.replace('http://', 'https://');
+    }
+
     ajax(url, function (response) {
       try {
         currencyRates = JSON.parse(response);
