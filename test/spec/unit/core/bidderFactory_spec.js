@@ -405,7 +405,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
 
       const bid = {
-        requestId: 'some-id',
+        requestId: '1',
         ad: 'ad-url.com',
         cpm: 0.5,
         height: 200,
@@ -593,7 +593,9 @@ describe('validate bid response: ', () => {
     addBidResponseStub = sinon.stub();
     doneStub = sinon.stub();
     ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
-      callbacks.success('response body');
+      const fakeResponse = sinon.stub();
+      fakeResponse.returns('headerContent');
+      callbacks.success('response body', { getResponseHeader: fakeResponse });
     });
     logErrorSpy = sinon.spy(utils, 'logError');
   });

@@ -283,17 +283,12 @@ export function newBidder(spec) {
           onResponse();
 
           function addBidUsingRequestMap(bid) {
-            // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
-            if (hasValidKeys(bid)) {
-              const bidRequest = bidRequestMap[bid.requestId];
-              if (bidRequest) {
-                const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-                addBidWithCode(bidRequest.adUnitCode, prebidBid);
-              } else {
-                logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-              }
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
-              logError(`Bidder ${spec.code} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`);
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
           }
 
@@ -324,7 +319,11 @@ export function newBidder(spec) {
 
   // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
   function isValid(adUnitCode, bid, bidRequests) {
-    // TODO validate currency, ttl, netRevenue
+    function hasValidKeys() {
+      let bidKeys = Object.keys(bid);
+      return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+    }
+
     function errorMessage(msg) {
       return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
     }
@@ -338,6 +337,12 @@ export function newBidder(spec) {
       logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
       return false;
     }
+
+    if (!hasValidKeys()) {
+      logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
+      return false;
+    }
+
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
       logError(errorMessage('Native bid missing some required properties.'));
       return false;
@@ -375,10 +380,5 @@ export function newBidder(spec) {
     }
 
     return false;
-  }
-
-  function hasValidKeys(bid) {
-    let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
   }
 }
