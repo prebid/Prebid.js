@@ -22,14 +22,13 @@ export const sharethroughAdapterSpec = {
       };
     })
   },
-  interpretResponse: (resp, req) => {
-    if (!Object.keys(resp).length) return [];
+  interpretResponse: ({ body } , req) => {
+    if (!Object.keys(body).length) return [];
 
-    const creative = resp.creatives[0];
+    const creative = body.creatives[0];
 
     return [{
       requestId: req.data.bidId,
-      bidderCode: BIDDER_CODE,
       width: 0,
       height: 0,
       cpm: creative.cpm,
@@ -38,18 +37,18 @@ export const sharethroughAdapterSpec = {
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
-      ad: generateAd(resp, req)
+      ad: generateAd(body, req)
     }];
   }
 }
 
-function generateAd(resp, req) {
+function generateAd(body, req) {
   const strRespId = `str_response_${req.data.bidId}`;
 
   return `
     <div data-str-native-key="${req.data.placement_key}" data-stx-response-name="${strRespId}">
     </div>
-    <script>var ${strRespId} = "${btoa(JSON.stringify(resp))}"</script>
+    <script>var ${strRespId} = "${btoa(JSON.stringify(body))}"</script>
     <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>
     <script>
     (function() {

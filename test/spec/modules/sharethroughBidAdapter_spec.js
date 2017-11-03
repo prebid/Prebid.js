@@ -31,18 +31,21 @@ const prebidRequest = [{
   }
 }];
 const bidderResponse = {
-  'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
-  'bidId': 'bidId1',
-  'version': 1,
-  'creatives': [{
-    'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-    'cpm': 12.34,
-    'creative': {
-      'deal_id': 'aDealId',
-      'creative_key': 'aCreativeId'
-    }
-  }],
-  'stxUserId': ''
+  body: {
+    'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
+    'bidId': 'bidId1',
+    'version': 1,
+    'creatives': [{
+      'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
+      'cpm': 12.34,
+      'creative': {
+        'deal_id': 'aDealId',
+        'creative_key': 'aCreativeId'
+      }
+    }],
+    'stxUserId': ''    
+  },
+  header: { get: (header) => header }
 };
 
 describe('sharethrough adapter spec', () => {
@@ -95,7 +98,6 @@ describe('sharethrough adapter spec', () => {
     it('returns a correctly parsed out response', () => {
       expect(spec.interpretResponse(bidderResponse, prebidRequest[0])[0]).to.include(
         {
-          bidderCode: 'sharethrough',
           width: 0,
           height: 0,
           cpm: 12.34,
