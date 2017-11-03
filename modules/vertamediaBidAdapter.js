@@ -21,8 +21,6 @@ export const spec = {
     return bidRequests.map((bid) => {
       return {
         data: prepareRTBRequestParams(bid),
-        contentType: 'text/plain',
-        withCredentials: true,
         bidderRequest,
         method: 'GET',
         url: URL
@@ -52,7 +50,7 @@ export const spec = {
 
     serverResponse.bids.forEach(serverBid => {
       if (serverBid.cpm !== 0) {
-        const bid = createBid(serverBid, bidderRequest);
+        const bid = createBid(serverBid);
         bids.push(bid);
       }
     });
@@ -101,13 +99,11 @@ function getSize(requestSizes) {
 
 /**
  * Configure new bid by response
- * @param bidRequest {object}
  * @param bidResponse {object}
  * @returns {object}
  */
-function createBid(bidResponse, bidRequest) {
+function createBid(bidResponse) {
   return {
-    bidderCode: bidRequest.bidderCode,
     requestId: bidResponse.requestId,
     descriptionUrl: bidResponse.url,
     creativeId: bidResponse.cmpId,

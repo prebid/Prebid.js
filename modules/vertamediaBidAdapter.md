@@ -23,4 +23,5 @@ This adapter provides a solution for accessing Video demand
                 aid: 332842
             }
         }]
+    }];
 ```
