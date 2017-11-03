@@ -35,6 +35,68 @@ var appnexusAdapterMock = {
 };
 
 describe('adapterManager tests', () => {
+  describe('callBids', () => {
+    beforeEach(() => {
+      sinon.stub(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log an error if a bidder is used that does not exist', () => {
+      let bidRequests = [{
+        'bidderCode': 'appnexus',
+        'requestId': '1863e370099523',
+        'bidderRequestId': '2946b569352ef2',
+        'tid': '34566b569352ef2',
+        'bids': [
+          {
+            'bidder': 'appnexusAst',
+            'params': {
+              'placementId': '4799418',
+              'test': 'me'
+            },
+            'adUnitCode': '/19968336/header-bid-tag1',
+            'sizes': [[728, 90], [970, 70]],
+            'bidId': '392b5a6b05d648',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897462,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          },
+          {
+            'bidder': 'fakeBidder',
+            'params': {
+              'placementId': '4799418'
+            },
+            'adUnitCode': '/19968336/header-bid-tag-0',
+            'sizes': [[300, 250], [300, 600]],
+            'bidId': '4dccdc37746135',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897463,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          }
+        ],
+        'start': 1462918897460
+      }];
+      const adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}},
+          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      AdapterManager.callBids(adUnits, bidRequests);
+
+      sinon.assert.called(utils.logError);
+    });
+  });
+
   describe('S2S tests', () => {
     beforeEach(() => {
       config.setConfig({s2sConfig: CONFIG});
