@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import Adapter from '../../../modules/huddledmassesBidAdapter';
+import Adapter from '../../../modules/colossussspBidAdapter';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 
-describe('HuddledMasses adapter tests', function () {
+describe('ColossusSSP adapter tests', function () {
   let sandbox;
   const adUnit = {
-    code: 'huddledmasses',
+    code: 'colossusssp',
     sizes: [[300, 250], [300, 600]],
     bids: [{
-      bidder: 'huddledmasses',
+      bidder: 'colossusssp',
       params: {
         placement_id: 0
       }
@@ -34,7 +34,7 @@ describe('HuddledMasses adapter tests', function () {
     sandbox.restore();
   });
 
-  describe('HuddledMasses callBids validation', () => {
+  describe('ColossusSSP callBids validation', () => {
     let bids,
       server;
 
@@ -50,7 +50,7 @@ describe('HuddledMasses adapter tests', function () {
       server.restore();
     });
 
-    let adapter = adapterManager.bidderRegistry['huddledmasses'];
+    let adapter = adapterManager.bidderRegistry['colossusssp'];
 
     it('Valid bid-request', () => {
       sandbox.stub(adapter, 'callBids');
@@ -65,7 +65,7 @@ describe('HuddledMasses adapter tests', function () {
         .with.lengthOf(1);
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-        .to.have.property('bidder', 'huddledmasses');
+        .to.have.property('bidder', 'colossusssp');
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
         .with.property('sizes')
@@ -88,7 +88,7 @@ describe('HuddledMasses adapter tests', function () {
 
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bids[0].bidderCode).to.equal('huddledmasses');
+      expect(bids[0].bidderCode).to.equal('colossusssp');
       expect(bids[0].width).to.equal(300);
       expect(bids[0].height).to.equal(250);
       expect(bids[0].cpm).to.equal(0.712);
