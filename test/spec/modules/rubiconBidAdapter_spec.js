@@ -4,6 +4,7 @@ import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter'
 import { parse as parseQuery } from 'querystring';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { userSync } from 'src/userSync';
+import { config } from 'src/config';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -604,7 +605,7 @@ describe('the rubicon adapter', () => {
             ]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -654,7 +655,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -677,7 +678,7 @@ describe('the rubicon adapter', () => {
             'ads': []
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -701,7 +702,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -711,7 +712,7 @@ describe('the rubicon adapter', () => {
         it('should handle an error because of malformed json response', () => {
           let response = '{test{';
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -752,7 +753,7 @@ describe('the rubicon adapter', () => {
             'account_id': 7780
           };
 
-          let bids = spec.interpretResponse(response, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -779,13 +780,17 @@ describe('the rubicon adapter', () => {
     });
 
     it('should register the Emily iframe', () => {
-      let syncs = spec.getUserSyncs();
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
 
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
     });
 
     it('should not register the Emily iframe more than once', () => {
-      let syncs = spec.getUserSyncs();
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
 
       // when called again, should still have only been called once

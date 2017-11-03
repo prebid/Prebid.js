@@ -64,9 +64,11 @@ export default function buildDfpVideoUrl(options) {
     url: location.href,
   };
 
+  const adserverTargeting = (bid && bid.adserverTargeting) || {};
+
   const customParams = Object.assign({},
-    bid.adserverTargeting,
-    { hb_uuid: bid.videoCacheKey },
+    adserverTargeting,
+    { hb_uuid: bid && bid.videoCacheKey },
     options.params.cust_params);
 
   const queryParams = Object.assign({},

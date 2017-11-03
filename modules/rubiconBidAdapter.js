@@ -230,6 +230,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
+    responseObj = responseObj.body
     let ads = responseObj.ads;
 
     // check overall response
@@ -286,8 +287,8 @@ export const spec = {
       return bids;
     }, []);
   },
-  getUserSyncs: function() {
-    if (!hasSynced) {
+  getUserSyncs: function(syncOptions) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
         type: 'iframe',
