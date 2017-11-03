@@ -14,8 +14,8 @@ function FeatureForwardAdapter() {
   };
 
   function _callBids(bidderRequest) {
-    var i = 0;
     bidderRequest.bids.forEach(bidRequest => {
+      var i = 0;
       try {
         while (bidRequest.sizes[i] !== undefined) {
           var params = Object.assign({}, environment(), bidRequest.params, {'size': bidRequest.sizes[i]});
