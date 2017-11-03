@@ -54,7 +54,7 @@ describe('AdxcgAdapter', () => {
 
       let query = parsedRequestUrl.search;
       expect(query.renderformat).to.equal('javascript');
-      expect(query.ver).to.equal('r20171019PB10');
+      expect(query.ver).to.equal('r20171102PB10');
       expect(query.source).to.equal('pbjs10');
       expect(query.pbjs).to.equal('$prebid.version$');
       expect(query.adzoneid).to.equal('1');
