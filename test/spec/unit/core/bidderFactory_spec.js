@@ -4,6 +4,7 @@ import * as ajax from 'src/ajax';
 import { expect } from 'chai';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
+import * as utils from 'src/utils';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -513,3 +514,191 @@ describe('registerBidder', () => {
     expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
   });
 })
+
+describe('validate bid response: ', () => {
+  let spec;
+  let bidder;
+  let addBidResponseStub;
+  let doneStub;
+  let ajaxStub;
+  let logErrorSpy;
+
+  let bids = [{
+    'ad': 'creative',
+    'cpm': '1.99',
+    'width': 300,
+    'height': 250,
+    'requestId': '1',
+    'creativeId': 'some-id',
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 360
+  }];
+
+  beforeEach(() => {
+    spec = {
+      code: CODE,
+      isBidRequestValid: sinon.stub(),
+      buildRequests: sinon.stub(),
+      interpretResponse: sinon.stub(),
+    };
+
+    spec.isBidRequestValid.returns(true);
+    spec.buildRequests.returns({
+      method: 'POST',
+      url: 'test.url.com',
+      data: {}
+    });
+
+    addBidResponseStub = sinon.stub();
+    doneStub = sinon.stub();
+    ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      callbacks.success('response body');
+    });
+    logErrorSpy = sinon.spy(utils, 'logError');
+  });
+
+  afterEach(() => {
+    ajaxStub.restore();
+    logErrorSpy.restore();
+  });
+
+  it('should add native bids that do have required assets', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        'mediaType': 'native',
+        'native': {
+          'title': 'Native Creative',
+          'clickUrl': 'https://www.link.example',
+        }
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+
+  it('should not add native bids that do not have required assets', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        bidderCode: CODE,
+        mediaType: 'native',
+        native: {
+          title: undefined,
+          clickUrl: 'https://www.link.example',
+        }
+      }
+    );
+
+    const bidder = newBidder(spec);
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(false);
+    expect(logErrorSpy.callCount).to.equal(1);
+  });
+
+  it('should add bid when renderer is present on outstream bids', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        mediaTypes: {
+          video: {context: 'outstream'}
+        }
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        bidderCode: CODE,
+        mediaType: 'video',
+        renderer: {render: () => true, url: 'render.js'},
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+
+  it('should add banner bids that have no width or height but single adunit size', () => {
+    let bidRequest = {
+      bids: [{
+        bidder: CODE,
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        sizes: [[300, 250]],
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        width: undefined,
+        height: undefined
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+});

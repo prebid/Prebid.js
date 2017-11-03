@@ -205,7 +205,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
   }
 }
 
-export const addBidResponse = createHook('asyncSeries', function addBidResponse(adUnitCode, bid) {
+export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
   let auctionInstance = this;
   let bidRequests = auctionInstance.getBidRequests();
   let auctionId = auctionInstance.getAuctionId();

@@ -99,7 +99,6 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  // bidmanager.addBidResponse.removeHook(addBidResponseHook);
   hooks['addBidResponse'].removeHook(addBidResponseHook, 100);
 
   adServerCurrency = 'USD';
