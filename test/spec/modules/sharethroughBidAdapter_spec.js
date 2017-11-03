@@ -43,7 +43,7 @@ const bidderResponse = {
         'creative_key': 'aCreativeId'
       }
     }],
-    'stxUserId': ''    
+    'stxUserId': ''
   },
   header: { get: (header) => header }
 };
