@@ -91,13 +91,14 @@ describe('Undertone Adapter', () => {
   describe('build request', () => {
     it('should send request to correct url via POST', () => {
       const request = spec.buildRequests(bidReq);
-      expect(request.url).to.equal(URL);
+      const domain = null;
+      const REQ_URL = `${URL}?pubid=${bidReq[0].params.publisherId}&domain=${domain}`;
+      expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
     it('should have all relevant fields', () => {
-      const request = spec.buildRequests(bidReq);
+      const request = JSON.parse(spec.buildRequests(bidReq));
       const bid = request.data[0];
-
       expect(bid.bidRequestId).to.equal('263be71e91dd9d');
       expect(bid.sizes.length > 0).to.equal(true);
       expect(bid.placementId).to.equal(123456789);

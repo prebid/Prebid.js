@@ -7,7 +7,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//localhost:9090/hb';
+const URL = '//localhost:9090/hb'; // //ads.undertone.com/hb
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,6 +21,10 @@ export const spec = {
     const timeout = window.PREBID_TIMEOUT || null;
     const host = utils.getTopWindowLocation().host;
     const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
+
+    const pubid = validBidRequests[0].params.publisherId;
+    const REQ_URL = `${URL}?pubid=${pubid}&domain=${domain}`;
+
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -35,8 +39,8 @@ export const spec = {
     });
     return {
       method: 'POST',
-      url: URL,
-      data: payload
+      url: REQ_URL,
+      data: JSON.stringify(payload)
     };
   },
   interpretResponse: function(serverResponse, request) {
