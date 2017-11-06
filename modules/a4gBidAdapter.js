@@ -24,6 +24,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let deliveryUrl = '';
+    let bidId = '';
     const idParams = [];
     const sizeParams = [];
     const zoneIds = [];
@@ -31,6 +32,9 @@ export const spec = {
     utils._each(validBidRequests, function(bid) {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
+      }
+      if (!bidId) {
+        bidId = bid.bidId;
       }
       idParams.push(bid.placementCode);
       sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
@@ -44,6 +48,7 @@ export const spec = {
     return {
       method: 'GET',
       url: deliveryUrl,
+      bidId: bidId,
       data: {
         [IFRAME_PARAM_NAME]: 0,
         [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),

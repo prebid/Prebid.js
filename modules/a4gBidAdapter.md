@@ -6,7 +6,7 @@ Maintainer: devops@ad4game.com
 
 # Description
 
-Ad4Game Bidder Adapter for Prebid.js
+Ad4Game Bidder Adapter for Prebid.js. It should be tested on real domain. `localhost` should be rewritten (ex. example.com). 
 
 # Test Parameters
 ```
