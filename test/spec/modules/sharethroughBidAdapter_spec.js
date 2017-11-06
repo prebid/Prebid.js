@@ -1,239 +1,127 @@
 import { expect } from 'chai';
-import Adapter from '../../../modules/sharethroughBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import bidfactory from '../../../src/bidfactory';
+import { sharethroughAdapterSpec } from 'modules/sharethroughBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('sharethrough adapter', () => {
-  let adapter;
-  let sandbox;
-  let bidsRequestedOriginal;
-
-  const bidderRequest = {
-    bidderCode: 'sharethrough',
-    bids: [
-      {
-        bidder: 'sharethrough',
-        bidId: 'bidId1',
-        sizes: [[600, 300]],
-        placementCode: 'foo',
-        params: {
-          pkey: 'aaaa1111'
-        }
-      },
-      {
-        bidder: 'sharethrough',
-        bidId: 'bidId2',
-        sizes: [[700, 400]],
-        placementCode: 'bar',
-        params: {
-          pkey: 'bbbb2222'
-        }
+const spec = newBidder(sharethroughAdapterSpec).getSpec();
+const bidderRequest = [
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId1',
+    sizes: [[600, 300]],
+    placementCode: 'foo',
+    params: {
+      pkey: 'aaaa1111'
+    }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId2',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'bbbb2222'
+    }
+  }];
+const prebidRequest = [{
+  method: 'GET',
+  url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+  data: {
+    bidId: 'bidId',
+    placement_key: 'pKey'
+  }
+}];
+const bidderResponse = {
+  body: {
+    'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
+    'bidId': 'bidId1',
+    'version': 1,
+    'creatives': [{
+      'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
+      'cpm': 12.34,
+      'creative': {
+        'deal_id': 'aDealId',
+        'creative_key': 'aCreativeId'
       }
-    ]
-  };
+    }],
+    'stxUserId': ''
+  },
+  header: { get: (header) => header }
+};
 
-  beforeEach(() => {
-    adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
-    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-
-    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
-  });
-
-  describe('callBids', () => {
-    let firstBidUrl;
-    let secondBidUrl;
-
-    beforeEach(() => {
-      sandbox.spy(adapter.str, 'ajax');
+describe('sharethrough adapter spec', () => {
+  describe('.code', () => {
+    it('should return a bidder code of sharethrough', () => {
+      expect(spec.code).to.eql('sharethrough');
     });
+  })
 
-    it('should call ajax to make a request for each bid', () => {
-      adapter.callBids(bidderRequest);
-
-      firstBidUrl = adapter.str.ajax.firstCall.args[0];
-      secondBidUrl = adapter.str.ajax.secondCall.args[0];
-
-      sinon.assert.calledTwice(adapter.str.ajax);
-
-      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.2.0&hbSource=prebid&');
-      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.2.0&hbSource=prebid&');
-    });
-  });
-
-  describe('bid requests', () => {
-    let firstBid;
-    let secondBid;
-    let server;
-    let stubAddBidResponse;
-    let stubCreateBid;
-
-    beforeEach(() => {
-      stubAddBidResponse = sandbox.stub(bidManager, 'addBidResponse');
-      server = sinon.fakeServer.create();
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      adapter.str.placementCodeSet['foo'] = {};
-      adapter.str.placementCodeSet['bar'] = {};
-      // respond
-
-      let bidderResponse1 = {
-        'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
-        'bidId': 'bidId1',
-        'creatives': [
-          {
-            'cpm': 12.34,
-            'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-            'version': 1
-          }
-        ],
-        'stxUserId': ''
+  describe('.isBidRequestValid', () => {
+    it('should return false if req has no pkey', () => {
+      const invalidBidRequest = {
+        bidder: 'sharethrough',
+        params: {
+          notPKey: 'abc123'
+        }
       };
+      expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
+    });
 
-      let bidderResponse2 = {
-        'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
-        'bidId': 'bidId2',
-        'creatives': [
-          {
-            'cpm': 12.35,
-            'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-            'version': 1
-          }
-        ],
-        'stxUserId': ''
+    it('should return false if req has wrong bidder code', () => {
+      const invalidBidRequest = {
+        bidder: 'notSharethrough',
+        params: {
+          notPKey: 'abc123'
+        }
       };
-
-      server.respondWith(/aaaa1111/, JSON.stringify(bidderResponse1));
-      server.respondWith(/bbbb2222/, JSON.stringify(bidderResponse2));
-      adapter.callBids(bidderRequest);
-
-      server.respond();
-
-      firstBid = bidManager.addBidResponse.firstCall.args[1];
-      secondBid = bidManager.addBidResponse.secondCall.args[1];
+      expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    afterEach(() => {
-      server.restore();
+    it('should return true if req is correct', () => {
+      expect(spec.isBidRequestValid(bidderRequest[0])).to.eq(true);
+      expect(spec.isBidRequestValid(bidderRequest[1])).to.eq(true);
+    })
+  });
+
+  describe('.buildRequests', () => {
+    it('should return an array of requests', () => {
+      const bidRequests = spec.buildRequests(bidderRequest);
+
+      expect(bidRequests[0].url).to.eq(
+        'http://btlr.sharethrough.com/header-bid/v1');
+      expect(bidRequests[1].url).to.eq(
+        'http://btlr.sharethrough.com/header-bid/v1')
+      expect(bidRequests[0].method).to.eq('GET');
+    });
+  });
+
+  describe('.interpretResponse', () => {
+    it('returns a correctly parsed out response', () => {
+      expect(spec.interpretResponse(bidderResponse, prebidRequest[0])[0]).to.include(
+        {
+          width: 0,
+          height: 0,
+          cpm: 12.34,
+          creativeId: 'aCreativeId',
+          deal_id: 'aDealId',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360,
+        });
     });
 
-    it('should add a bid object for each bid', () => {
-      sinon.assert.calledTwice(bidManager.addBidResponse);
-    });
+    it('correctly sends back a sfp script tag', () => {
+      const adMarkup = spec.interpretResponse(bidderResponse, prebidRequest[0])[0].ad;
+      const resp = btoa(JSON.stringify(bidderResponse));
 
-    it('should pass the correct placement code as first param', () => {
-      let firstPlacementCode = bidManager.addBidResponse.firstCall.args[0];
-      let secondPlacementCode = bidManager.addBidResponse.secondCall.args[0];
-
-      expect(firstPlacementCode).to.eql('foo');
-      expect(secondPlacementCode).to.eql('bar');
-    });
-
-    it('should include the bid request bidId as the adId', () => {
-      expect(firstBid).to.have.property('adId', 'bidId1');
-      expect(secondBid).to.have.property('adId', 'bidId2');
-    });
-
-    it('should have a good statusCode', () => {
-      expect(firstBid.getStatusCode()).to.eql(1);
-      expect(secondBid.getStatusCode()).to.eql(1);
-    });
-
-    it('should add the CPM to the bid object', () => {
-      expect(firstBid).to.have.property('cpm', 12.34);
-      expect(secondBid).to.have.property('cpm', 12.35);
-    });
-
-    it('should add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'sharethrough');
-      expect(secondBid).to.have.property('bidderCode', 'sharethrough');
-    });
-
-    it('should include the ad on the bid object', () => {
-      expect(firstBid).to.have.property('ad');
-      expect(secondBid).to.have.property('ad');
-    });
-
-    it('should include the size on the bid object', () => {
-      expect(firstBid).to.have.property('width', 600);
-      expect(firstBid).to.have.property('height', 300);
-      expect(secondBid).to.have.property('width', 700);
-      expect(secondBid).to.have.property('height', 400);
-    });
-
-    it('should include the pkey', () => {
-      expect(firstBid).to.have.property('pkey', 'aaaa1111');
-      expect(secondBid).to.have.property('pkey', 'bbbb2222');
-    });
-
-    describe('when bidResponse string cannot be JSON parsed', () => {
-      beforeEach(() => {
-        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-        adapter.str.placementCodeSet['foo'] = {};
-
-        server.respondWith(/aaaa1111/, 'non JSON string');
-        adapter.callBids(bidderRequest);
-
-        server.respond();
-      });
-
-      afterEach(() => {
-        server.restore();
-        stubAddBidResponse.reset();
-      });
-
-      it('should add a bid response', () => {
-        sinon.assert.called(bidManager.addBidResponse);
-      });
-
-      it('should set bidder code on invalid bid response', () => {
-        let bidResponse = bidManager.addBidResponse.firstCall.args[1]
-        expect(bidResponse).to.have.property('bidderCode', 'sharethrough')
-      });
-    });
-
-    describe('when no fill', () => {
-      beforeEach(() => {
-        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-        adapter.str.placementCodeSet['foo'] = {};
-
-        let bidderResponse1 = {
-          'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
-          'bidId': 'bidId1',
-          'creatives': [
-            {
-              'cpm': 12.34,
-              'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-              'version': 1
-            }
-          ],
-          'stxUserId': ''
-        };
-
-        server.respondWith(/aaaa1111/, JSON.stringify(bidderResponse1));
-        adapter.callBids(bidderRequest);
-
-        server.respond();
-      });
-
-      afterEach(() => {
-        server.restore();
-        stubAddBidResponse.reset();
-      });
-
-      it('should add a bid response', () => {
-        sinon.assert.called(bidManager.addBidResponse);
-      });
-
-      it('should set bidder code on invalid bid response', () => {
-        let bidResponse = bidManager.addBidResponse.firstCall.args[1]
-        expect(bidResponse).to.have.property('bidderCode', 'sharethrough')
-      });
+      expect(adMarkup).to.match(
+        /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
+      expect(!!adMarkup.indexOf(resp)).to.eql(true);
+      expect(adMarkup).to.match(
+        /<script src="\/\/native.sharethrough.com\/assets\/sfp-set-targeting.js"><\/script>/);
+      expect(adMarkup).to.match(
+        /sfp_js.src = "\/\/native.sharethrough.com\/assets\/sfp.js";/);
+      expect(adMarkup).to.match(
+        /window.top.document.getElementsByTagName\('body'\)\[0\].appendChild\(sfp_js\);/)
     });
   });
 });
