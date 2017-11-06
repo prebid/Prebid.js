@@ -4,8 +4,10 @@ import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
+import { nativeBidIsValid } from 'src/native';
+import { isValidVideoBid } from 'src/video';
 
-import { logWarn, logError, parseQueryStringParameters, delayExecution } from 'src/utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -160,7 +162,9 @@ export function newBidder(spec) {
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        addBidResponse(adUnitCode, bid);
+        if (isValid(adUnitCode, bid, [bidderRequest])) {
+          addBidResponse(adUnitCode, bid);
+        }
       }
 
       // After all the responses have come back, call done() and
@@ -279,17 +283,12 @@ export function newBidder(spec) {
           onResponse();
 
           function addBidUsingRequestMap(bid) {
-            // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
-            if (hasValidKeys(bid)) {
-              const bidRequest = bidRequestMap[bid.requestId];
-              if (bidRequest) {
-                const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-                addBidWithCode(bidRequest.adUnitCode, prebidBid);
-              } else {
-                logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-              }
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
-              logError(`Bidder ${spec.code} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`);
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
           }
 
@@ -318,8 +317,68 @@ export function newBidder(spec) {
     return true;
   }
 
-  function hasValidKeys(bid) {
-    let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+  // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
+  function isValid(adUnitCode, bid, bidRequests) {
+    function hasValidKeys() {
+      let bidKeys = Object.keys(bid);
+      return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+    }
+
+    function errorMessage(msg) {
+      return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
+    }
+
+    if (!adUnitCode) {
+      logWarn('No adUnitCode was supplied to addBidResponse.');
+      return false;
+    }
+
+    if (!bid) {
+      logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
+      return false;
+    }
+
+    if (!hasValidKeys()) {
+      logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
+      return false;
+    }
+
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+      logError(errorMessage('Native bid missing some required properties.'));
+      return false;
+    }
+    if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
+      logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
+      return false;
+    }
+    if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+      logError(errorMessage(`Banner bids require a width and height`));
+      return false;
+    }
+
+    return true;
+  }
+
+  // check that the bid has a width and height set
+  function validBidSize(adUnitCode, bid, bidRequests) {
+    if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+      return true;
+    }
+
+    const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+
+    const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+    const parsedSizes = parseSizesInput(sizes);
+
+    // if a banner impression has one valid size, we assign that size to any bid
+    // response that does not explicitly set width or height
+    if (parsedSizes.length === 1) {
+      const [ width, height ] = parsedSizes[0].split('x');
+      bid.width = width;
+      bid.height = height;
+      return true;
+    }
+
+    return false;
   }
 }
