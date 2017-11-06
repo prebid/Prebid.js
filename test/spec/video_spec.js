@@ -39,15 +39,17 @@ describe('video.js', () => {
   });
 
   it('catches invalid bids when prebid-cache is disabled', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
-      bidder: 'vastOnlyVideoBidder',
-      mediaTypes: { video: {} },
-    }));
+    const bidRequests = [{
+      bids: [{
+        bidder: 'vastOnlyVideoBidder',
+        mediaTypes: { video: {} },
+      }]
+    }];
 
     const config = newConfig();
     config.setConfig({ usePrebidCache: false });
 
-    const valid = isValidVideoBid({ vastXml: '<xml>vast</xml>' });
+    const valid = isValidVideoBid({ vastXml: '<xml>vast</xml>' }, bidRequests);
 
     expect(valid).to.be(false);
   });
