@@ -50,13 +50,12 @@
 
 import { uniques, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
-import { NATIVE_KEYS, nativeBidIsValid } from './native';
-import { isValidVideoBid } from './video';
+import { NATIVE_KEYS } from './native';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
-import { addBidResponseDecorator } from 'modules/currency';
+import { createHook } from 'src/hook';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -112,6 +111,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
 
     if (_callback != null) {
       try {
+        _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
         const bids = [_bidsReceived
           .filter(adUnitsFilter.bind(this, adUnitCodes))
@@ -169,171 +169,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
     }, 1);
   }
 
-  function addBidResponse(adUnitCode, bid) {
-    if (isValid()) {
-      prepareBidForAuction();
-
-      if (bid.mediaType === 'video') {
-        tryAddVideoBid(bid);
-      } else {
-        doCallbacksIfNeeded();
-        addBidToAuction(bid);
-      }
-    }
-
-    // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-    function isValid() {
-      function errorMessage(msg) {
-        return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
-      }
-
-      if (!adUnitCode) {
-        utils.logWarn('No adUnitCode was supplied to addBidResponse.');
-        return false;
-      }
-
-      const bidRequest = getBidderRequest(_bidderRequests, bid.bidderCode, adUnitCode);
-      if (!bidRequest.start) {
-        utils.logError(errorMessage('Cannot find valid matching bid request.'));
-        return false;
-      }
-
-      if (!bid) {
-        utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
-        return false;
-      }
-      if (bid.mediaType === 'native' && !nativeBidIsValid(bid, _bidderRequests)) {
-        utils.logError(errorMessage('Native bid missing some required properties.'));
-        return false;
-      }
-      if (bid.mediaType === 'video' && !isValidVideoBid(bid, _bidderRequests)) {
-        utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
-        return false;
-      }
-      if (bid.mediaType === 'banner' && !validBidSize(bid)) {
-        utils.logError(errorMessage(`Banner bids require a width and height`));
-        return false;
-      }
-
-      return true;
-    }
-
-    // check that the bid has a width and height set
-    function validBidSize(bid) {
-      if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
-        return true;
-      }
-
-      const adUnit = getBidderRequest(_bidderRequests, bid.bidderCode, adUnitCode);
-
-      const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
-      const parsedSizes = utils.parseSizesInput(sizes);
-
-      // if a banner impression has one valid size, we assign that size to any bid
-      // response that does not explicitly set width or height
-      if (parsedSizes.length === 1) {
-        const [ width, height ] = parsedSizes[0].split('x');
-        bid.width = width;
-        bid.height = height;
-        return true;
-      }
-
-      return false;
-    }
-
-    // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
-    // This should be called before addBidToAuction().
-    function prepareBidForAuction() {
-      let bidRequest = _bidderRequests.find(request => {
-        return request.bids
-          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.adUnitCode === adUnitCode).length > 0;
-      }) || {start: null};
-
-      const start = bidRequest.start;
-
-      Object.assign(bid, {
-        auctionId: _auctionId,
-        requestId: bidRequest.requestId,
-        responseTimestamp: timestamp(),
-        requestTimestamp: start,
-        cpm: parseFloat(bid.cpm) || 0,
-        bidder: bid.bidderCode,
-        adUnitCode
-      });
-
-      bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
-
-      // Let listeners know that now is the time to adjust the bid, if they want to.
-      //
-      // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
-      // but others to not be set yet (like priceStrings). See #1372 and #1389.
-      events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-      // a publisher-defined renderer can be used to render bids
-      const adUnitRenderer =
-        bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
-
-      if (adUnitRenderer) {
-        bid.renderer = Renderer.install({ url: adUnitRenderer.url });
-        bid.renderer.setRender(adUnitRenderer.render);
-      }
-
-      const priceStringsObj = getPriceBucketString(
-        bid.cpm,
-        config.getConfig('customPriceBucket'),
-        config.getConfig('currency.granularityMultiplier')
-      );
-      bid.pbLg = priceStringsObj.low;
-      bid.pbMg = priceStringsObj.med;
-      bid.pbHg = priceStringsObj.high;
-      bid.pbAg = priceStringsObj.auto;
-      bid.pbDg = priceStringsObj.dense;
-      bid.pbCg = priceStringsObj.custom;
-
-      // if there is any key value pairs to map do here
-      var keyValues;
-      if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
-        keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
-      }
-
-      // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
-      bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
-    }
-
-    function doCallbacksIfNeeded() {
-      if (bid.timeToRespond > _timeout + config.getConfig('timeoutBuffer')) {
-        executeCallback(true);
-      }
-    }
-
-    // Add a bid to the auction.
-    function addBidToAuction() {
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-      addBidReceived(bid);
-    }
-
-    // Video bids may fail if the cache is down, or there's trouble on the network.
-    function tryAddVideoBid(bid) {
-      if (config.getConfig('usePrebidCache')) {
-        store([bid], function(error, cacheIds) {
-          if (error) {
-            utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-          } else {
-            bid.videoCacheKey = cacheIds[0].uuid;
-            if (!bid.vastUrl) {
-              bid.vastUrl = getCacheUrl(bid.videoCacheKey);
-            }
-            addBidToAuction(bid);
-          }
-          doCallbacksIfNeeded();
-        });
-      } else {
-        doCallbacksIfNeeded();
-        addBidToAuction(bid);
-      }
-    }
-  }
-
   function callBids() {
     startAuctionTimer();
     _auctionStatus = AUCTION_STARTED;
@@ -353,17 +188,126 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
     });
 
     _auctionStatus = AUCTION_IN_PROGRESS;
-    adaptermanager.callBids(_adUnits, bidRequests, addBidResponseDecorator(addBidResponse.bind(this)), done.bind(this));
+    adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
   };
 
   return {
+    addBidReceived,
+    executeCallback,
+    callBids,
+    getTimeout: () => _timeout,
+    getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
     getAdUnits: () => _adUnits,
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
-    callBids
   }
+}
+
+export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
+  let auctionInstance = this;
+  let bidRequests = auctionInstance.getBidRequests();
+  let auctionId = auctionInstance.getAuctionId();
+
+  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId});
+  if (bidResponse.mediaType === 'video') {
+    tryAddVideoBid(bidResponse);
+  } else {
+    doCallbacksIfNeeded();
+    addBidToAuction(bidResponse);
+  }
+
+  function doCallbacksIfNeeded() {
+    if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
+      auctionInstance.executeCallback(true);
+    }
+  }
+
+  // Add a bid to the auction.
+  function addBidToAuction() {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
+    auctionInstance.addBidReceived(bidResponse);
+  }
+
+  // Video bids may fail if the cache is down, or there's trouble on the network.
+  function tryAddVideoBid(bidResponse) {
+    if (config.getConfig('usePrebidCache')) {
+      store([bidResponse], function(error, cacheIds) {
+        if (error) {
+          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+        } else {
+          bidResponse.videoCacheKey = cacheIds[0].uuid;
+          if (!bid.vastUrl) {
+            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          }
+          addBidToAuction(bidResponse);
+        }
+        doCallbacksIfNeeded();
+      });
+    } else {
+      doCallbacksIfNeeded();
+      addBidToAuction(bidResponse);
+    }
+  }
+}, 'addBidResponse');
+
+// Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
+// This should be called before addBidToAuction().
+function getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId}) {
+  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+
+  const start = bidRequest.start;
+
+  let bidObject = Object.assign({}, bid, {
+    auctionId,
+    requestId: bidRequest.requestId,
+    responseTimestamp: timestamp(),
+    requestTimestamp: start,
+    cpm: parseFloat(bid.cpm) || 0,
+    bidder: bid.bidderCode,
+    adUnitCode
+  });
+
+  bidObject.timeToRespond = bidObject.responseTimestamp - bidObject.requestTimestamp;
+
+  // Let listeners know that now is the time to adjust the bid, if they want to.
+  //
+  // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
+  // but others to not be set yet (like priceStrings). See #1372 and #1389.
+  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
+
+  // a publisher-defined renderer can be used to render bids
+  const adUnitRenderer =
+    bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+
+  if (adUnitRenderer) {
+    bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
+    bidObject.renderer.setRender(adUnitRenderer.render);
+  }
+
+  const priceStringsObj = getPriceBucketString(
+    bidObject.cpm,
+    config.getConfig('customPriceBucket'),
+    config.getConfig('currency.granularityMultiplier')
+  );
+  bidObject.pbLg = priceStringsObj.low;
+  bidObject.pbMg = priceStringsObj.med;
+  bidObject.pbHg = priceStringsObj.high;
+  bidObject.pbAg = priceStringsObj.auto;
+  bidObject.pbDg = priceStringsObj.dense;
+  bidObject.pbCg = priceStringsObj.custom;
+
+  // if there is any key value pairs to map do here
+  var keyValues;
+  if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
+    keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
+  }
+
+  // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
+  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
+
+  return bidObject;
 }
 
 export function getStandardBidderSettings() {

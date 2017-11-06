@@ -3,6 +3,7 @@ import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
+import { hooks } from 'src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
@@ -77,6 +78,10 @@ function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
 
+  utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
+
+  hooks['addBidResponse'].addHook(addBidResponseHook, 100);
+
   if (!currencyRates.conversions) {
     ajax(url, function (response) {
       try {
@@ -92,6 +97,10 @@ function initCurrency(url) {
 }
 
 function resetCurrency() {
+  utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
+
+  hooks['addBidResponse'].removeHook(addBidResponseHook, 100);
+
   adServerCurrency = 'USD';
   conversionCache = {};
   currencySupportEnabled = false;
