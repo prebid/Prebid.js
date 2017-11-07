@@ -10,20 +10,20 @@ const constants = require('src/constants.json');
  * @returns {{callBids: _callBids}}
  * @constructor
  */
-var PubmaticAdapter = function PubmaticAdapter() {
-  var bids;
-  var usersync = false;
-  var _secure = 0;
+const PubmaticAdapter = function PubmaticAdapter() {
+  let bids;
+  let usersync = false;
+  let _secure = 0;
   let _protocol = (window.location.protocol === 'https:' ? (_secure = 1, 'https') : 'http') + '://';
   let iframe;
 
-  var dealChannelValues = {
+  let dealChannelValues = {
     1: 'PMP',
     5: 'PREF',
     6: 'PMPG'
   };
 
-  var customPars = {
+  let customPars = {
     'kadgender': 'gender',
     'age': 'kadage',
     'dctr': 'dctr', // Custom Targeting
