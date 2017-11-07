@@ -14,6 +14,7 @@
     <script>
      var pbjs = pbjs || {};
      pbjs.que = pbjs.que || [];
+     iosDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
 
      /* PRE-DEFINE `invokeVideoPlayer`
 
@@ -49,7 +50,7 @@
          {
            bidder: 'appnexusAst',
            params: {
-             placementId: '9333431', // Add your own placement id here
+             placementId:  iosDevice ? '12349520':'9333431', // Add your own placement id here. Note, skippable video is not supported on iOS 
              video: {
                skipppable: true,
                playback_method: ['auto_play_sound_off']
