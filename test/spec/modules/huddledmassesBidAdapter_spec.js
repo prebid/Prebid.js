@@ -82,7 +82,7 @@ describe('HuddledmassesAdapter', () => {
         currency: 'USD'
       } ]
     };
-    let serverResponses = spec.interpretResponse(JSON.stringify(resObject));
+    let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', () => {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
