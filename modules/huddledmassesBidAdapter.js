@@ -1,7 +1,4 @@
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
 
 const BIDDER_CODE = 'huddledmasses';
 const URL = '//huddledmassessupply.com/?c=o&m=multi';
