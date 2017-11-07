@@ -178,6 +178,14 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowReferrer = function() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+};
+
 exports.logWarn = function (msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
