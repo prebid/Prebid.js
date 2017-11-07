@@ -178,6 +178,14 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowReferrer = function() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+};
+
 exports.logWarn = function (msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
@@ -339,7 +347,7 @@ exports.isNumber = function(object) {
  */
 exports.isEmpty = function (object) {
   if (!object) return true;
-  if (this.isArray(object) || this.isStr(object)) {
+  if (exports.isArray(object) || exports.isStr(object)) {
     return !(object.length > 0);
   }
 
