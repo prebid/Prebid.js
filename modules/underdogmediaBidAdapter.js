@@ -13,11 +13,10 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests) {
-    spec.bidParams = validBidRequests;
     var sizes = [];
     var siteId = 0;
 
-    spec.bidParams.forEach(bidParam => {
+    validBidRequests.forEach(bidParam => {
       sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
       siteId = bidParam.params.siteId;
     });
@@ -26,12 +25,13 @@ export const spec = {
       method: 'GET',
       url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
       data: `tid=1;dt=10;sid=${siteId};sizes=${sizes.join(',')}`,
+      bidParams: validBidRequests
     };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    spec.bidParams.forEach(bidParam => {
+    bidRequest.bidParams.forEach(bidParam => {
       serverResponse.body.mids.forEach(mid => {
         if (mid.useCount > 0) {
           return;
@@ -74,7 +74,7 @@ export const spec = {
 
         mid.useCount++;
 
-        bidResponse.ad += spec.makeNotification(bidResponse, mid, bidParam);
+        bidResponse.ad += makeNotification(bidResponse, mid, bidParam);
 
         bidResponses.push(bidResponse);
       });
@@ -82,35 +82,36 @@ export const spec = {
 
     return bidResponses;
   },
-
-  makeNotification: function (bid, mid, bidParam) {
-    var url = mid.notification_url;
-
-    url += UDM_ADAPTER_VERSION;
-    url += ';cb=' + Math.random();
-    url += ';qqq=' + (1 / bid.cpm);
-    url += ';hbt=' + config.getConfig('_bidderTimeout');
-    url += ';style=adapter';
-    url += ';vis=' + encodeURIComponent(document.visibilityState);
-
-    url += ';traffic_info=' + encodeURIComponent(JSON.stringify(spec.getUrlVars()));
-    if (bidParam.params.subId) {
-      url += ';subid=' + encodeURIComponent(bidParam.params.subId);
-    }
-    return '<script async src="' + url + '"></script>';
-  },
-
-  getUrlVars: function () {
-    var vars = {};
-    var hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for (var i = 0; i < hashes.length; i++) {
-      hash = hashes[i].split('=');
-      if (hash[0].match(/^utm_/)) {
-        vars[hash[0]] = hash[1].substr(0, 150);
-      }
-    }
-    return vars;
-  }
 };
+
+function makeNotification (bid, mid, bidParam) {
+  var url = mid.notification_url;
+
+  url += UDM_ADAPTER_VERSION;
+  url += ';cb=' + Math.random();
+  url += ';qqq=' + (1 / bid.cpm);
+  url += ';hbt=' + config.getConfig('_bidderTimeout');
+  url += ';style=adapter';
+  url += ';vis=' + encodeURIComponent(document.visibilityState);
+
+  url += ';traffic_info=' + encodeURIComponent(JSON.stringify(getUrlVars()));
+  if (bidParam.params.subId) {
+    url += ';subid=' + encodeURIComponent(bidParam.params.subId);
+  }
+  return '<script async src="' + url + '"></script>';
+}
+
+function getUrlVars() {
+  var vars = {};
+  var hash;
+  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  for (var i = 0; i < hashes.length; i++) {
+    hash = hashes[i].split('=');
+    if (hash[0].match(/^utm_/)) {
+      vars[hash[0]] = hash[1].substr(0, 150);
+    }
+  }
+  return vars;
+}
+
 registerBidder(spec);
