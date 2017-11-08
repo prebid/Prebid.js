@@ -36,7 +36,7 @@ Module that connects to OpenX's demand sources
                 bidder: 'openx',
                 params: {
                   unit: '539131525',
-                  delDomain: 'se-demo-d.openx.net',
+                  delDomain: 'zdo.com',
                   video: {
                      url: 'abc.com'
                   }

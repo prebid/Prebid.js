@@ -278,7 +278,7 @@ describe.only('OpenxAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      bidResponse = {
+      let bidResponse = {
         'ads':
         {
           'version': 1,
@@ -352,7 +352,7 @@ describe.only('OpenxAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      bidResponse = {'cache_key': '', 'pub_rev': '', 'per_colo_domain': '', 'ph': ''};
+      let bidResponse = {'cache_key': '', 'pub_rev': '', 'per_colo_domain': '', 'ph': ''};
       let result = spec.interpretResponse({body: bidResponse}, bidRequest);
       expect(result.length).to.equal(0);
     });
