@@ -18,7 +18,7 @@ describe('33acrossBidAdapter:', function () {
           siteId: SITE_ID,
           productId: PRODUCT_ID
         },
-        placementCode: 'div-id',
+        adUnitCode: 'div-id',
         requestId: 'r1',
         sizes: [
           [300, 250],
