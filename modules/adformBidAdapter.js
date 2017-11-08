@@ -12,7 +12,8 @@ function AdformAdapter() {
   let baseAdapter = new Adapter(ADFORM_BIDDER_CODE);
 
   function _callBids(params) {
-    var bid, _value, _key, i, j, k, l, reqParams;
+    var bid, _value, _key, i, j, k, l;
+    var reqParams;
     var bids = params.bids;
     var request = [];
     var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
