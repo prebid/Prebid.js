@@ -171,34 +171,47 @@ export function newTargeting(auctionManager) {
    * e.g: Appnexus defining custom keyvalue pair foo:bar and Rubicon defining custom keyvalue pair foo:baz will be merged to foo: ['bar','baz']
    */
   function mergeAdServerTargeting(acc, bid, index, arr) {
-    let standardKeys = getStandardKeys();
+    function concatTargetingValue(key) {
+      return function(currentBidElement) {
+        if (!utils.isArray(currentBidElement.adserverTargeting[key])) {
+          currentBidElement.adserverTargeting[key] = [currentBidElement.adserverTargeting[key]];
+        }
+        currentBidElement.adserverTargeting[key] = currentBidElement.adserverTargeting[key].concat(bid.adserverTargeting[key]).filter(uniques);
+        delete bid.adserverTargeting[key];
+      }
+    }
+
+    function hasSameAdunitCodeAndKey(key) {
+      return function(currentBidElement) {
+        return currentBidElement.adUnitCode === bid.adUnitCode && currentBidElement.adserverTargeting[key]
+      }
+    }
 
     Object.keys(bid.adserverTargeting)
-      .filter(key => standardKeys.indexOf(key) === -1)
+      .filter(getCustomKeys())
       .forEach(key => {
         if (acc.length) {
-          acc.filter(bidVal => {
-            return bidVal.adUnitCode === bid.adUnitCode && bidVal.adserverTargeting[key]
-          }).forEach(bidVal => {
-            if (!utils.isArray(bidVal.adserverTargeting[key])) {
-              bidVal.adserverTargeting[key] = [bidVal.adserverTargeting[key]];
-            }
-            bidVal.adserverTargeting[key] = bidVal.adserverTargeting[key].concat(bid.adserverTargeting[key]).filter(uniques);
-            delete bid.adserverTargeting[key];
-          })
+          acc.filter(hasSameAdunitCodeAndKey(key))
+            .forEach(concatTargetingValue(key));
         }
       });
     acc.push(bid);
     return acc;
   }
 
-  function truncateCustomKeys(bid) {
+  function getCustomKeys() {
     let standardKeys = getStandardKeys();
+    return function(key) {
+      return standardKeys.indexOf(key) === -1;
+    }
+  }
+
+  function truncateCustomKeys(bid) {
     return {
       [bid.adUnitCode]: Object.keys(bid.adserverTargeting)
         // Get only the non-standard keys of the losing bids, since we
         // don't want to override the standard keys of the winning bid.
-        .filter(key => standardKeys.indexOf(key) === -1)
+        .filter(getCustomKeys())
         .map(key => {
           return {
             [key.substring(0, 20)]: [bid.adserverTargeting[key]]
