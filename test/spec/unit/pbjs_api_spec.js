@@ -1284,42 +1284,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('sendTimeoutEvent', () => {
-    let auctionManagerStub;
-    beforeEach(() => {
-      auctionManagerStub = sinon.stub(auctionManager, 'createAuction', function() {
-        return auction;
-      });
-    });
-
-    afterEach(() => {
-      auctionManager.createAuction.restore();
-    });
-
-    it('should emit BID_TIMEOUT for timed out bids', () => {
-      const eventsEmitSpy = sinon.spy(events, 'emit');
-
-      var requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 20
-      };
-      var adUnits = [{
-        code: 'code',
-        bids: [{
-          bidder: 'appnexus',
-          params: { placementId: '123' }
-        }]
-      }];
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      $$PREBID_GLOBAL$$.requestBids(requestObj);
-
-      setTimeout(function () {
-        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
-        events.emit.restore();
-      }, 100);
-    });
-  });
-
   describe('aliasBidder', () => {
     it('should call adaptermanager.aliasBidder', () => {
       const aliasBidAdapterSpy = sinon.spy(adaptermanager, 'aliasBidAdapter');

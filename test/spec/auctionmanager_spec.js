@@ -15,6 +15,7 @@ var utils = require('../../src/utils');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 var adaptermanager = require('src/adaptermanager');
+var events = require('src/events');
 
 function timestamp() {
   return new Date().getTime();
@@ -468,140 +469,193 @@ describe('auctionmanager.js', function () {
       adaptermanager.makeBidRequests.restore();
     });
 
-    beforeEach(() => {
-      adUnits = [{
-        code: 'adUnit-code',
-        bids: [
-          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
-        ]
-      }];
-      adUnitCodes = ['adUnit-code'];
-      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
-      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-      createAuctionStub.returns(auction);
+    describe('when auction timeout is 3000', () => {
+      beforeEach(() => {
+        adUnits = [{
+          code: 'adUnit-code',
+          bids: [
+            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          ]
+        }];
+        adUnitCodes = ['adUnit-code'];
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+        createAuctionStub.returns(auction);
 
-      spec = {
-        code: BIDDER_CODE,
-        isBidRequestValid: sinon.stub(),
-        buildRequests: sinon.stub(),
-        interpretResponse: sinon.stub(),
-        getUserSyncs: sinon.stub()
-      };
-    });
+        spec = {
+          code: BIDDER_CODE,
+          isBidRequestValid: sinon.stub(),
+          buildRequests: sinon.stub(),
+          interpretResponse: sinon.stub(),
+          getUserSyncs: sinon.stub()
+        };
+      });
 
-    afterEach(() => {
-      auctionModule.newAuction.restore();
-    });
+      afterEach(() => {
+        auctionModule.newAuction.restore();
+      });
 
-    it('should return proper price bucket increments for dense mode when cpm is in range 0-3', () => {
-      bids[0].cpm = '1.99';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, '1.99', '0 - 3 hits at to 1 cent increment');
-    });
+      it('should return proper price bucket increments for dense mode when cpm is in range 0-3', () => {
+        bids[0].cpm = '1.99';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.pbDg, '1.99', '0 - 3 hits at to 1 cent increment');
+      });
 
-    it('should return proper price bucket increments for dense mode when cpm is in range 3-8', () => {
-      bids[0].cpm = '4.39';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, '4.35', '3 - 8 hits at 5 cent increment');
-    });
+      it('should return proper price bucket increments for dense mode when cpm is in range 3-8', () => {
+        bids[0].cpm = '4.39';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.pbDg, '4.35', '3 - 8 hits at 5 cent increment');
+      });
 
-    it('should return proper price bucket increments for dense mode when cpm is in range 8-20', () => {
-      bids[0].cpm = '19.99';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, '19.50', '8 - 20 hits at 50 cent increment');
-    });
+      it('should return proper price bucket increments for dense mode when cpm is in range 8-20', () => {
+        bids[0].cpm = '19.99';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.pbDg, '19.50', '8 - 20 hits at 50 cent increment');
+      });
 
-    it('should return proper price bucket increments for dense mode when cpm is 20+', () => {
-      bids[0].cpm = '73.07';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, '20.00', '20+ caps at 20.00');
-    });
+      it('should return proper price bucket increments for dense mode when cpm is 20+', () => {
+        bids[0].cpm = '73.07';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.pbDg, '20.00', '20+ caps at 20.00');
+      });
 
-    it('should place dealIds in adserver targeting', () => {
-      bids[0].dealId = 'test deal';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
-    });
+      it('should place dealIds in adserver targeting', () => {
+        bids[0].dealId = 'test deal';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
+      });
 
-    it('should pass through default adserverTargeting sent from adapter', () => {
-      bids[0].adserverTargeting = {};
-      bids[0].adserverTargeting.extra = 'stuff';
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-      auction.callBids();
-      let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.adserverTargeting.hb_bidder, 'sampleBidder');
-      assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
-    });
+      it('should pass through default adserverTargeting sent from adapter', () => {
+        bids[0].adserverTargeting = {};
+        bids[0].adserverTargeting.extra = 'stuff';
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        let registeredBid = auction.getBidsReceived().pop();
+        assert.equal(registeredBid.adserverTargeting.hb_bidder, 'sampleBidder');
+        assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
+      });
 
-    it('installs publisher-defined renderers on bids', () => {
-      let bidRequests = [{
-        'bidderCode': BIDDER_CODE,
-        'auctionId': '20882439e3238c',
-        'bidderRequestId': '331f3cf3f1d9c8',
-        'bids': [
-          {
-            'bidder': BIDDER_CODE,
-            'params': {
-              'placementId': 'id'
-            },
-            'adUnitCode': 'adUnit-code',
-            'sizes': [[300, 250], [300, 600]],
-            'bidId': '4d0a6829338a07',
-            'bidderRequestId': '331f3cf3f1d9c8',
-            'auctionId': '20882439e3238c',
-            'renderer': {
-              url: 'renderer.js',
-              render: (bid) => bid
+      it('installs publisher-defined renderers on bids', () => {
+        let bidRequests = [{
+          'bidderCode': BIDDER_CODE,
+          'auctionId': '20882439e3238c',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'bids': [
+            {
+              'bidder': BIDDER_CODE,
+              'params': {
+                'placementId': 'id'
+              },
+              'adUnitCode': 'adUnit-code',
+              'sizes': [[300, 250], [300, 600]],
+              'bidId': '4d0a6829338a07',
+              'bidderRequestId': '331f3cf3f1d9c8',
+              'auctionId': '20882439e3238c',
+              'renderer': {
+                url: 'renderer.js',
+                render: (bid) => bid
+              }
             }
-          }
-        ],
-        'auctionStart': 1505250713622,
-        'timeout': 3000
-      }];
+          ],
+          'auctionStart': 1505250713622,
+          'timeout': 3000
+        }];
 
-      makeRequestsStub.returns(bidRequests);
-      let bids1 = Object.assign({},
-        bids[0],
-        {
-          bidderCode: BIDDER_CODE,
-          mediaType: 'video-outstream',
-        }
-      );
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids1);
-      auction.callBids();
-      const addedBid = auction.getBidsReceived().pop();
-      assert.equal(addedBid.renderer.url, 'renderer.js');
+        makeRequestsStub.returns(bidRequests);
+        let bids1 = Object.assign({},
+          bids[0],
+          {
+            bidderCode: BIDDER_CODE,
+            mediaType: 'video-outstream',
+          }
+        );
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids1);
+        auction.callBids();
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+    });
+
+    describe('with auction timeout 20', () => {
+      let auction;
+      let adUnits;
+      let adUnitCodes;
+      let createAuctionStub;
+      let spec;
+      let getBidderRequestStub;
+      let eventsEmitSpy;
+
+      beforeEach(() => {
+        adUnits = [{
+          code: 'adUnit-code',
+          bids: [
+            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          ]
+        }];
+        adUnitCodes = ['adUnit-code'];
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 20});
+        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+        createAuctionStub.returns(auction);
+        getBidderRequestStub = sinon.stub(utils, 'getBidderRequest');
+
+        let newBidRequest = Object.assign({}, bidRequests[0], {'start': 1000});
+        getBidderRequestStub.returns(newBidRequest);
+
+        spec = {
+          code: BIDDER_CODE,
+          isBidRequestValid: sinon.stub(),
+          buildRequests: sinon.stub(),
+          interpretResponse: sinon.stub(),
+          getUserSyncs: sinon.stub()
+        };
+        eventsEmitSpy = sinon.spy(events, 'emit');
+      });
+
+      afterEach(() => {
+        auctionModule.newAuction.restore();
+        utils.getBidderRequest.restore();
+        events.emit.restore();
+      });
+
+      it('should emit BID_TIMEOUT for timed out bids', () => {
+        registerBidder(spec);
+        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+        spec.isBidRequestValid.returns(true);
+        spec.interpretResponse.returns(bids);
+        auction.callBids();
+        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
+      });
     });
   });
 
