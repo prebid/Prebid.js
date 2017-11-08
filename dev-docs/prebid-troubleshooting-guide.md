@@ -51,7 +51,7 @@ You can review what ad units have been configured for Prebid by opening your bro
 
 Open your browser console and type `pbjs.getBidResponses();` to see a list of the ad units that have been configured.  This also shows what bids have been returned from each of the bidder partners in chronological order as shown in the screenshot below.
 
-To see all of the winning bids, open your browser console and type `pbjs.getAllWinningBids();`.
+To see all of the winning bids, open your browser console and type [`pbjs.getAllWinningBids();`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.getAllWinningBids).
 
 {: .alert.alert-danger :}
 Keep in mind that any bid responses that come back after [the timeout you configured during setup]({{site.github.url}}/dev-docs/getting-started.html#set-the-ad-server-timeout) will not be sent to the ad server.

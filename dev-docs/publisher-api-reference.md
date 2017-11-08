@@ -24,6 +24,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.getBidResponses()](#module_pbjs.getBidResponses) ⇒ `Object`
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.getHighestCpmBids([adUnitCode])](#module_pbjs.getHighestCpmBids) ⇒ `Array`
+  * [.getAllWinningBids()](#module_pbjs.getAllWinningBids) ⇒ `Array`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.setTargetingForAst()](#module_pbjs.setTargetingForAst)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
@@ -304,6 +305,16 @@ Use this method to retrieve an array of winning bids.
 
 + `pbjs.getHighestCpmBids()`: with no argument, returns an array of winning bid objects for each ad unit on page
 + `pbjs.getHighestCpmBids(adUnitCode)`: when passed an ad unit code, returns an array with the winning bid object for that ad unit
+
+<hr class="full-rule">
+
+<a name="module_pbjs.getAllWinningBids"></a>
+
+### pbjs.getAllWinningBids() ⇒ `Array`
+
+Use this method to get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+
++ `pbjs.getAllWinningBids()`: returns an array of bid objects that have won their respective auctions.
 
 <hr class="full-rule">
 
