@@ -31,7 +31,7 @@ export const spec = {
      */
   buildRequests: function (validBidRequests) {
     if (!Array.isArray(validBidRequests) || !validBidRequests.length) {
-      return {};
+      return [];
     }
     const payload = [];
     var custom_url = null;
