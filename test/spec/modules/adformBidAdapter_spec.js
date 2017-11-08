@@ -103,67 +103,64 @@ describe('Adform adapter', () => {
     it('should interpret server response correctly with one bid', () => {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[0]];
-      bidResponses = [bidResponses[0]]
-      let result = spec.interpretResponse(serverResponse, bidRequest);
+      let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
-      assert.deepEqual(result, bidResponses);
+      assert.equal(result.requestId, '2a0cf4e');
+      assert.equal(result.cpm, 13.9);
+      assert.equal(result.width, 300);
+      assert.equal(result.height, 250);
+      assert.equal(result.creativeId, '2a0cf4e');
+      assert.equal(result.dealId, '123abc');
+      assert.equal(result.currency, 'EUR');
+      assert.equal(result.netRevenue, true);
+      assert.equal(result.ttl, 3000);
+      assert.equal(result.ad, '<tag1>');
+      assert.equal(result.bidderCode, 'adform');
+      assert.equal(result.transactionId, '5f33781f-9552-4ca1');
     });
     
     it('should create bid response item for every requested item', () => {
       let result = spec.interpretResponse(serverResponse, bidRequest);
       assert.lengthOf(result, 3);
     });
-
-    it('should interpret server response correctly with more than one bid on more than one placement', () => {
-      let result = spec.interpretResponse(serverResponse, bidRequest);
-
-      assert.deepEqual(result, bidResponses);
-    });
   });
   beforeEach( ()=> {
+    let sizes = [[250, 300], [300, 250], [300, 600]];
+    let adUnitCode = ['div-01', 'div-02', 'div-03'];
+    let placementCode = adUnitCode;
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue'}, { adxDomain: null, mid: 3, pdom: 'home' }];
     bids = [
       {
-        adUnitCode: 'div-01',
+        adUnitCode: placementCode[0],
         bidId: '2a0cf4e',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
-        params: {
-          mid: 1,
-          url: 'some// there'
-        },
+        params: params[0],
         adxDomain: 'newDomain',
         tid: 45,
-        placementCode: 'div-01',
+        placementCode: placementCode[0],
         requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-4ca1'
       },
       {
-        adUnitCode: 'div-02',
+        adUnitCode: placementCode[1],
         bidId: '2a0cf5b',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
-        params: {
-          adxDomain: null,
-          mid: 2,
-          someVar: 'someValue',
-        },
-        placementCode: 'div-02',
+        params: params[1],
+        placementCode: placementCode[1],
         requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-4iuy'
       },
       {
-        adUnitCode: 'div-03',
+        adUnitCode: placementCode[2],
         bidId: '2a0cf6n',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
-        params: {
-          adxDomain: null,
-          mid: 3,
-          pdom: 'home'
-        },
-        placementCode: 'div-03',
+        params: params[2],
+        placementCode: placementCode[2],
         requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-7ev3'
@@ -195,7 +192,7 @@ describe('Adform adapter', () => {
           height: 300,
           response: 'banner',
           width: 600,
-          win_bid: 13.9,
+          win_bid: 10,
           win_cur: 'EUR'
         }
       ],
@@ -207,51 +204,7 @@ describe('Adform adapter', () => {
       method: 'GET',
       url: 'url'
     };
-    bidResponses = [
-      {
-        ad: '<tag1>',
-        bidderCode: 'adform',
-        cpm: 13.9,
-        creativeId: '2a0cf4e',
-        currency: 'EUR',
-        dealId: '123abc',
-        height: 250,
-        netRevenue: true,
-        requestId: '2a0cf4e',
-        transactionId: '5f33781f-9552-4ca1',
-        ttl: 3000,
-        width: 300
-      },
-      {
-        ad: '<tag2>',
-        bidderCode: 'adform',
-        cpm: 13.9,
-        creativeId: '2a0cf5b',
-        currency: 'EUR',
-        dealId: '123abc',
-        height: 300,
-        netRevenue: true,
-        requestId: '2a0cf5b',
-        transactionId: '5f33781f-9552-4iuy',
-        ttl: 3000,
-        width: 250
-      },
-      {
-        ad: '<tag3>',
-        bidderCode: 'adform',
-        cpm: 13.9,
-        creativeId: '2a0cf6n',
-        currency: 'EUR',
-        dealId: '123abc',
-        height: 300,
-        netRevenue: true,
-        requestId: '2a0cf6n',
-        transactionId: '5f33781f-9552-7ev3',
-        ttl: 3000,
-        width: 600
-      }
-    ];
-  })
+  });
 });
 
 function parseUrl(url) {
