@@ -1,141 +1,112 @@
-import { expect } from 'chai';
-import Adapter from 'modules/vertamediaBidAdapter';
-import bidmanager from 'src/bidmanager';
+import {expect} from 'chai';
+import {spec} from 'modules/vertamediaBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = 'http://rtb.vertamedia.com/hb/?aid=22489&w=640&h=480&domain=localhost';
-
+const ENDPOINT = '//rtb.vertamedia.com/hb/';
 const REQUEST = {
-  'bidderCode': 'vertamedia',
-  'requestId': 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-  'bidderRequestId': '7101db09af0db2',
-  'bids': [
-    {
-      'bidder': 'vertamedia',
-      'params': {
-        aid: 22489,
-        placementId: '123456'
-      },
-      'placementCode': '/19968336/header-bid-tag1',
-      'sizes': [640, 480],
-      'bidId': '84ab500420319d',
-      'bidderRequestId': '7101db09af0db2',
-      'requestId': 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6'
-    }
-  ],
-  'start': 1469479810130
-};
-var RESPONSE = {
-  'source': {
-    'aid': 22489,
-    'pubId': 18016,
-    'sid': '0'
+  'bidder': 'vertamedia',
+  'params': {
+    'aid': 12345
   },
-  'bids': [
-    {
-      'cmpId': 9541,
-      'cpm': 4.5,
-      'url': 'http://rtb.vertamedia.com/vast?adid=BFDB9CC0038AD918',
-      'cur': 'USD'
-    }
+  'bidderRequestId': '7101db09af0db2',
+  'auctionId': '2e41f65424c87c',
+  'adUnitCode': 'adunit-code',
+  'bidId': '84ab500420319d',
+  'sizes': [640, 480]
+};
+
+const serverResponse = {
+  'source': {'aid': 12345, 'pubId': 54321},
+  'bids': [{
+    'vastUrl': 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
+    'descriptionUrl': '44F2AEB9BFC881B3',
+    'requestId': '2e41f65424c87c',
+    'url': '44F2AEB9BFC881B3',
+    'creative_id': 342516,
+    'cmpId': 342516,
+    'height': 480,
+    'cur': 'USD',
+    'width': 640,
+    'cpm': 0.9
+  }
   ]
 };
 
-describe('VertamediaAdater', () => {
-  let adapter;
+describe('vertamediaBidAdapter', () => {
+  const adapter = newBidder(spec);
 
-  beforeEach(() => adapter = new Adapter());
-
-  describe('request function', () => {
-    let xhr;
-    let requests;
-
-    beforeEach(() => {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-    });
-
-    afterEach(() => xhr.restore());
-
+  describe('inherited functions', () => {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
+  });
 
-    it('requires paramters to make request', () => {
-      adapter.callBids({});
-      expect(requests).to.be.empty;
+  describe('isBidRequestValid', () => {
+    it('should return true when required params found', () => {
+      expect(spec.isBidRequestValid(REQUEST)).to.equal(true);
     });
 
-    it('requires member && invCode', () => {
-      let backup = REQUEST.bids[0].params;
-      REQUEST.bids[0].params = {member: 1234};
-      adapter.callBids(REQUEST);
-      expect(requests).to.be.empty;
-      REQUEST.bids[0].params = backup;
-    });
-
-    it('sends bid request to ENDPOINT via POST', () => {
-      adapter.callBids(REQUEST);
-      expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].method).to.equal('GET');
+    it('should return false when required params are not passed', () => {
+      let bid = Object.assign({}, REQUEST);
+      delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('response handler', () => {
-    let server;
+  describe('buildRequests', () => {
+    let bidRequests = [REQUEST];
 
-    beforeEach(() => {
-      server = sinon.fakeServer.create();
-      sinon.stub(bidmanager, 'addBidResponse');
+    const request = spec.buildRequests(bidRequests, {});
+
+    it('sends bid request to ENDPOINT via GET', () => {
+      expect(request[0].method).to.equal('GET');
+    });
+    it('sends bid request to correct ENDPOINT', () => {
+      expect(request[0].url).to.equal(ENDPOINT);
     });
 
-    afterEach(() => {
-      server.restore();
-      bidmanager.addBidResponse.restore();
+    it('sends correct bid parameters', () => {
+      const bid = Object.assign({}, request[0].data);
+      delete bid.domain;
+
+      const eq = {
+        callbackId: '84ab500420319d',
+        aid: 12345,
+        w: 640,
+        h: 480
+      };
+
+      expect(bid).to.deep.equal(eq);
     });
+  });
 
-    it('registers bids', () => {
-      server.respondWith(JSON.stringify(RESPONSE));
+  describe('interpretResponse', () => {
+    let bidderRequest = {bidderCode: 'bidderCode'};
+    it('should get correct bid response', () => {
+      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
+      const eq = [{
+        vastUrl: 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
+        descriptionUrl: '44F2AEB9BFC881B3',
+        requestId: '2e41f65424c87c',
+        bidderCode: 'bidderCode',
+        creativeId: 342516,
+        mediaType: 'video',
+        netRevenue: true,
+        currency: 'USD',
+        height: 480,
+        width: 640,
+        ttl: 3600,
+        cpm: 0.9
+      }];
 
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage', 'Bid available');
-      expect(response).to.have.property('cpm', 4.5);
+      expect(result).to.deep.equal(eq);
     });
 
     it('handles nobid responses', () => {
-      server.respondWith(JSON.stringify({
-        aid: 356465468,
-        w: 640,
-        h: 480,
-        domain: 'localhost'
-      }));
+      const nobidServerResponse = {bids: []};
+      const nobidResult = spec.interpretResponse({body: nobidServerResponse}, {bidderRequest});
 
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
-    });
-
-    it('handles JSON.parse errors', () => {
-      server.respondWith('');
-
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+      expect(nobidResult.length).to.equal(0);
     });
   });
 });
