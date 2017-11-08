@@ -90,6 +90,7 @@ describe('AolAdapter', () => {
 
   describe('interpretResponse()', () => {
     let bidderSettingsBackup;
+    let bidResponse;
     let bidRequest;
     let logWarnSpy;
 
@@ -98,6 +99,9 @@ describe('AolAdapter', () => {
       bidRequest = {
         bidderCode: 'test-bidder-code',
         bidId: 'bid-id'
+      };
+      bidResponse = {
+        body: getDefaultBidResponse()
       };
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
@@ -108,8 +112,6 @@ describe('AolAdapter', () => {
     });
 
     it('should return formatted bid response with required properties', () => {
-      let bidResponse = getDefaultBidResponse();
-
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
       expect(formattedBidResponse).to.deep.equal({
         bidderCode: bidRequest.bidderCode,
@@ -120,14 +122,14 @@ describe('AolAdapter', () => {
         height: 90,
         creativeId: 'creative-id',
         pubapiId: '245730051428950632',
-        currencyCode: 'USD',
-        dealId: 'deal-id'
+        currency: 'USD',
+        dealId: 'deal-id',
+        netRevenue: true
       });
     });
 
     it('should return formatted bid response including pixels', () => {
-      let bidResponse = getDefaultBidResponse();
-      bidResponse.ext = {
+      bidResponse.body.ext = {
         pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
       };
 
@@ -142,7 +144,6 @@ describe('AolAdapter', () => {
     });
 
     it('should show warning in the console', function() {
-      let bidResponse = getDefaultBidResponse();
       $$PREBID_GLOBAL$$.bidderSettings = {
         aol: {
           bidCpmAdjustment: function() {}
