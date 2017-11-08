@@ -8,7 +8,11 @@ const OUTSTREAM = 'outstream';
 /**
  * Helper functions for working with video-enabled adUnits
  */
-export const videoAdUnit = adUnit => adUnit.mediaType === VIDEO_MEDIA_TYPE;
+export const videoAdUnit = adUnit => {
+  const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
+  return !!mediaTypes || adUnit.mediaType === VIDEO_MEDIA_TYPE;
+};
+
 const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
 export const hasNonVideoBidder = adUnit =>
   adUnit.bids.filter(nonVideoBidder).length;

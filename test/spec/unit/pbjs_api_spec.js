@@ -799,6 +799,26 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.videoAdapters = videoAdaptersBackup;
     });
 
+    it('should not callBids if a video adUnit defined with mediaTypes has non-video bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      const videoAdaptersBackup = adaptermanager.videoAdapters;
+      adaptermanager.videoAdapters = ['appnexusAst'];
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaTypes: {video: {context: 'instream'}},
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.notCalled(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+      adaptermanager.videoAdapters = videoAdaptersBackup;
+    });
+
     it('should callBids if a video adUnit has all video bidders', () => {
       sinon.spy(adaptermanager, 'callBids');
       const videoAdaptersBackup = adaptermanager.videoAdapters;
