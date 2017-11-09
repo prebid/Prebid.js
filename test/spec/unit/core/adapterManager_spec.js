@@ -5,6 +5,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { setSizeConfig } from 'src/sizeMapping';
 var s2sTesting = require('../../../../modules/s2sTesting');
 
 const CONFIG = {
@@ -302,6 +303,120 @@ describe('adapterManager tests', () => {
         expect(AdapterManager.bidderRegistry).to.have.property(alias);
         expect(AdapterManager.videoAdapters).to.include(alias);
       });
+    });
+
+    describe('makeBidRequests', () => {
+      let adUnits;
+      beforeEach(() => {
+        adUnits = utils.cloneJson(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => ['appnexus', 'rubicon'].includes(bid.bidder));
+          return adUnit;
+        })
+      });
+
+      describe('sizeMapping', () => {
+        beforeEach(() => {
+          sinon.stub(window, 'matchMedia', () => ({matches: true}));
+        });
+
+        afterEach(() => {
+          matchMedia.restore();
+          setSizeConfig([]);
+        });
+
+        it('should not filter bids w/ no labels', () => {
+          let bidRequests = AdapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+
+          expect(bidRequests.length).to.equal(2);
+          let rubiconBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'rubicon');
+          expect(rubiconBidRequests.bids.length).to.equal(1);
+          expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+
+          let appnexusBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'appnexus');
+          expect(appnexusBidRequests.bids.length).to.equal(2);
+          expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
+          expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+        });
+
+        it('should filter sizes using size config', () => {
+          let validSizes = [
+            [728, 90],
+            [300, 250]
+          ];
+
+          let validSizeMap = validSizes.map(size => size.toString()).reduce((map, size) => {
+            map[size] = true;
+            return map;
+          }, {});
+
+          setSizeConfig([{
+            'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+            'sizesSupported': validSizes,
+            'labels': ['tablet', 'phone']
+          }]);
+
+          let bidRequests = AdapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+
+          // only valid sizes as specified in size config should show up in bidRequests
+          bidRequests.forEach(bidRequest => {
+            bidRequest.bids.forEach(bid => {
+              bid.sizes.forEach(size => {
+                expect(validSizeMap[size]).to.equal(true);
+              });
+            });
+          });
+
+          setSizeConfig([{
+            'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+            'sizesSupported': [],
+            'labels': ['tablet', 'phone']
+          }]);
+
+          bidRequests = AdapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+
+          // if no valid sizes, all bidders should be filtered out
+          expect(bidRequests.length).to.equal(0);
+        });
+
+        it('should filter adUnits/bidders based on applied labels', () => {
+          adUnits[0].labelAll = ['visitor-uk', 'mobile'];
+          adUnits[1].labelAny = ['visitor-uk', 'desktop'];
+          adUnits[1].bids[0].labelAny = ['mobile'];
+          adUnits[1].bids[1].labelAll = ['desktop'];
+
+          let bidRequests = AdapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            ['visitor-uk', 'desktop']
+          );
+
+          // only one adUnit and one bid from that adUnit should make it through the applied labels above
+          expect(bidRequests.length).to.equal(1);
+          expect(bidRequests[0].bidderCode).to.equal('rubicon');
+          expect(bidRequests[0].bids.length).to.equal(1);
+          expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
+        });
+      })
     });
   });
 });
