@@ -25,24 +25,25 @@ const invalidBidReq = {
   requestId: '9ad1fa8d-2297-4660-a018-b39945054746'
 };
 
-const bidReq = [
-  {
-    bidder: BIDDER_CODE,
-    params: {
-      placementId: 123456789,
-      publisherId: '123'
-    },
-    sizes: [[300, 250], [300, 600]],
-    bidId: '263be71e91dd9d',
-    requestId: '9ad1fa8d-2297-4660-a018-b39945054746',
-    auctionId: '1d1a030790a475'
-  }
-];
+const bidReq = [{
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: 123456789,
+    publisherId: '123'
+  },
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  requestId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  auctionId: '1d1a030790a475'
+}];
 
 const validBidRes = {
   ad: '<div>Hello</div>',
+  publisherId: 12345,
   bidRequestId: '263be71e91dd9d',
+  adId: 15,
   cpm: 100,
+  nCampaignId: 2,
   creativeId: '123abc',
   currency: 'USD',
   netRevenue: true,
@@ -59,7 +60,7 @@ const bidResArray = [
     ad: '',
     bidRequestId: '263be71e91dd9d',
     cpm: 100,
-    creativeId: '123abc',
+    adId: '123abc',
     currency: 'USD',
     netRevenue: true,
     width: 300,
@@ -70,7 +71,7 @@ const bidResArray = [
     ad: '<div>Hello</div>',
     bidRequestId: '',
     cpm: 0,
-    creativeId: '123abc',
+    adId: '123abc',
     currency: 'USD',
     netRevenue: true,
     width: 300,
@@ -97,8 +98,8 @@ describe('Undertone Adapter', () => {
       expect(request.method).to.equal('POST');
     });
     it('should have all relevant fields', () => {
-      const request = JSON.parse(spec.buildRequests(bidReq));
-      const bid = request.data[0];
+      const request = spec.buildRequests(bidReq);
+      const bid = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid.bidRequestId).to.equal('263be71e91dd9d');
       expect(bid.sizes.length > 0).to.equal(true);
       expect(bid.placementId).to.equal(123456789);
@@ -122,7 +123,7 @@ describe('Undertone Adapter', () => {
       expect(bid.cpm).to.equal(100);
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
-      expect(bid.creativeId).to.equal('123abc');
+      expect(bid.creativeId).to.equal(15);
       expect(bid.currency).to.equal('USD');
       expect(bid.netRevenue).to.equal(true);
       expect(bid.ttl).to.equal(360);

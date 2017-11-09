@@ -17,7 +17,9 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests) {
-    const payload = [];
+    const payload = {
+      'x-ut-hb-params': []
+    };
     const timeout = window.PREBID_TIMEOUT || null;
     const host = utils.getTopWindowLocation().host;
     const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
@@ -35,7 +37,7 @@ export const spec = {
         timeout: timeout,
         params: bidReq.params
       };
-      payload.push(bid);
+      payload['x-ut-hb-params'].push(bid);
     });
     return {
       method: 'POST',
@@ -55,7 +57,7 @@ export const spec = {
             cpm: bidRes.cpm,
             width: bidRes.width,
             height: bidRes.height,
-            creativeId: bidRes.creativeId,
+            creativeId: bidRes.adId,
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
             ttl: bidRes.ttl,
