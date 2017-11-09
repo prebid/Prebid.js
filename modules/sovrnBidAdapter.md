@@ -12,6 +12,7 @@ Sovrn's adapter integration to the Prebid library. Posts plain-text JSON to the 
 
 # Test Parameters
 
+```
 var adUnits = [
   {
     code: 'test-leaderboard',
@@ -43,3 +44,4 @@ var adUnits = [
     }]
   }
 ]
+```

@@ -2,9 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/sovrnBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { REPO_AND_VERSION } from 'src/constants';
-import bidmanager from 'src/bidmanager';
-import adloader from 'src/adloader';
-var utils = require('src/utils');
 
 const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
 
@@ -54,7 +51,7 @@ describe('sovrnBidAdapter', function() {
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      'auctionId': '1d1a030790a475'
     }];
 
     const request = spec.buildRequests(bidRequests);
@@ -70,18 +67,20 @@ describe('sovrnBidAdapter', function() {
 
   describe('interpretResponse', () => {
     let response = {
-      'id': '37386aade21a71',
-      'seatbid': [{
-        'bid': [{
-          'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
-          'impid': '263c448586f5a1',
-          'price': 0.45882675,
-          'nurl': '<!-- NURL -->',
-          'adm': '<!-- Creative -->',
-          'h': 90,
-          'w': 728
+      body: {
+        'id': '37386aade21a71',
+        'seatbid': [{
+          'bid': [{
+            'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+            'impid': '263c448586f5a1',
+            'price': 0.45882675,
+            'nurl': '<!-- NURL -->',
+            'adm': '<!-- Creative -->',
+            'h': 90,
+            'w': 728
+          }]
         }]
-      }]
+      }
     };
 
     it('should get the correct bid response', () => {
@@ -128,8 +127,10 @@ describe('sovrnBidAdapter', function() {
 
     it('handles empty bid response', () => {
       let response = {
-        'id': '37386aade21a71',
-        'seatbid': []
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': []
+        }
       };
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);

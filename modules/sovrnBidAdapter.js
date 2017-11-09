@@ -52,7 +52,7 @@ export const spec = {
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
   */
-  interpretResponse: function({id, seatbid}) {
+  interpretResponse: function({ body: {id, seatbid}}) {
     let sovrnBidResponses = [];
     if (id &&
       seatbid &&
