@@ -146,11 +146,11 @@ describe('sizeMapping', () => {
     });
 
     it('should active/deactivate adUnits/bidders based on requestBids labels', () => {
-      let requestLabels = ['us-visitor', 'desktop', 'smart'];
+      let activeLabels = ['us-visitor', 'desktop', 'smart'];
 
       let status = resolveStatus({
         labels: ['uk-visitor'],
-        requestLabels
+        activeLabels
       }, testSizes, sizeConfigWithLabels);
 
       expect(status).to.deep.equal({
@@ -160,7 +160,7 @@ describe('sizeMapping', () => {
 
       status = resolveStatus({
         labels: ['us-visitor'],
-        requestLabels
+        activeLabels
       }, testSizes, sizeConfigWithLabels);
 
       expect(status).to.deep.equal({
@@ -171,7 +171,7 @@ describe('sizeMapping', () => {
       status = resolveStatus({
         labels: ['us-visitor', 'tablet'],
         labelAll: true,
-        requestLabels
+        activeLabels
       }, testSizes, sizeConfigWithLabels);
 
       expect(status).to.deep.equal({
@@ -182,7 +182,7 @@ describe('sizeMapping', () => {
       status = resolveStatus({
         labels: ['us-visitor', 'desktop'],
         labelAll: true,
-        requestLabels
+        activeLabels
       }, testSizes, sizeConfigWithLabels);
 
       expect(status).to.deep.equal({

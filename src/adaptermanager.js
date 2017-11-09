@@ -19,14 +19,28 @@ let _s2sConfig = config.getConfig('s2sConfig');
 
 var _analyticsRegistry = {};
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
-  function getLabels(obj, requestLabels) {
-    if (obj.labelAll) {
-      return {labelAll: true, labels: obj.labelAll, requestLabels};
-    }
-    return {labelAll: false, labels: obj.labelAny, requestLabels};
-  }
+/**
+ * @typedef {object} LabelDescriptor
+ * @property {boolean} labelAll describes whether or not this object expects all labels to match, or any label to match
+ * @property {Array<string>} labels the labels listed on the bidder or adUnit
+ * @property {Array<string>} activeLabels the labels specified as being active by requestBids
+ */
 
+/**
+ * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
+ * @param bidOrAdUnit the bidder or adUnit to get label info on
+ * @param activeLabels the labels passed to requestBids
+ * @returns {LabelDescriptor}
+ */
+function getLabels(bidOrAdUnit, activeLabels) {
+  if (bidOrAdUnit.labelAll) {
+    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+  }
+  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+}
+
+
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
     let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
 

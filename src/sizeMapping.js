@@ -26,12 +26,12 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
  * @param {Array<string>} labels Labels specified on adUnit or bidder
  * @param {boolean} labelAll if true, all labels must match to be enabled
- * @param {Array<string>} requestLabels Labels passed in through requestBids
+ * @param {Array<string>} activeLabels Labels passed in through requestBids
  * @param {Array<Array<number>>} sizes Sizes specified on adUnit
  * @param {Array<SizeConfig>} configs
  * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
  */
-export function resolveStatus({labels = [], labelAll = false, requestLabels = []} = {}, sizes = [], configs = sizeConfig) {
+export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, sizes = [], configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
 
   let filteredSizes;
@@ -46,11 +46,11 @@ export function resolveStatus({labels = [], labelAll = false, requestLabels = []
       labels.length === 0 || (
         (!labelAll && (
           labels.some(label => maps.labels[label]) ||
-          labels.some(label => requestLabels.includes(label))
+          labels.some(label => activeLabels.includes(label))
         )) ||
         (labelAll && (
           labels.reduce((result, label) => !result ? result : (
-            maps.labels[label] || requestLabels.includes(label)
+            maps.labels[label] || activeLabels.includes(label)
           ), true)
         ))
       )
