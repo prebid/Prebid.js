@@ -39,7 +39,6 @@ function getLabels(bidOrAdUnit, activeLabels) {
   return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
 }
 
-
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
     let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
