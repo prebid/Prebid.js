@@ -42,7 +42,7 @@ Prebid Server is an open source project.  [The source code is hosted under the P
 
 ## Step 2. Download Prebid.js with Prebid Server enabled
 
-- Go to [the Prebid.org download page]({{site.github.url}}/download.html), select all the demand adapters you want to work with, and include "Prebid Server".
+- Go to [the Prebid.org download page]({{site.baseurl}}/download.html), select all the demand adapters you want to work with, and include "Prebid Server".
 
 - For example, if you want to use AppNexus, Index Exchange, and Rubicon with Prebid Server, select:
   - *AppNexus*
@@ -60,7 +60,9 @@ Update your site's hosted copy of Prebid.js to use the new build you just genera
 
 The Prebid Server settings (defined by the [`pbjs.setConfig`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig) method) go in the same anonymous function where you define your ad units.  This method must be called before `pbjs.requestBids`.
 
-The code in your Prebid configuration block should look something like the following.  See the table below the code sample for definitions of the keys in the `setS2SConfig` object.
+The code in your Prebid configuration block should look something like the following (unless you want to show video ads, in which case see [Using Prebid Server to show video ads](#prebid-server-video-openrtb) below).
+
+See [The `s2sConfig` object](#the-s2sconfig-object) below for definitions of the keys in the `setS2SConfig` object.
 
 {% highlight js %}
 var pbjs = pbjs || {};
@@ -88,7 +90,11 @@ pbjs.que.push(function() {
 });
 {% endhighlight %}
 
-Fields in the `setS2SConfig` object:
+<a name="the-s2sconfig-object" />
+
+### The `s2sConfig` object
+
+See below for a list of the fields in the `s2sConfig` object:
 
 {: .table .table-bordered .table-striped }
 | Field       | Type          | Required? | Description                                                            |
@@ -108,9 +114,40 @@ We recommend that users leave `cookieSet` enabled since it's essential for serve
 &bull; Prebid.js will not overwrite all links on page to redirect through an AppNexus persistent cookie URL  
 &bull; Prebid.js will not display a footer message on Safari indicating that AppNexus will be placing cookies on browsers that block 3rd party cookies  
 
+<a name="prebid-server-video-openrtb" />
+
+### Using Prebid Server to show video ads
+
+If you are using Prebid Server and you want to show video ads, you must use [OpenRTB video parameters](https://www.iab.com/guidelines/real-time-bidding-rtb-project/) in your Prebid ad unit as shown below.
+
+```javascript
+var adUnit1 = {
+    code: 'videoAdUnit',
+    sizes: [400, 600],
+    mediaTypes: {
+        video: {
+            context: "instream",
+            mimes: ['video/mp4'],
+            minduration: 1,
+            maxduration: 2,
+            protocols: [1, 2],
+            w: 1,
+            h: 2,
+            startdelay: 1,
+            placement: 1,
+            playbackmethod: [2]
+            // other OpenRTB video params
+        }
+    },
+    bids: [
+        // ...
+    ]
+}
+```
+
 ## Related Topics
 
-+ [Prebid.js Developer Docs]({{site.github.url}}/dev-docs/getting-started.html)
-
++ [Prebid.js Developer Docs]({{site.baseurl}}/dev-docs/getting-started.html)
++ [Add a Bidder Adapter to Prebid Server]({{site.baseurl}}/dev-docs/add-a-prebid-server-adapter.html)
 
 </div>
