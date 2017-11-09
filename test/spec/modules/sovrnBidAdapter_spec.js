@@ -86,7 +86,6 @@ describe('sovrnBidAdapter', function() {
     it('should get the correct bid response', () => {
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
-        'bidderCode': 'sovrn',
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
@@ -104,11 +103,10 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should get correct bid response when dealId is passed', () => {
-      response.dealId = 'baking';
+      response.body.dealId = 'baking';
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
-        'bidderCode': 'sovrn',
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
