@@ -233,7 +233,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       }
     });
   } else {
-    utils.logWarn('callBids executed with no bidRequests');
+    utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
   }
 };
 
