@@ -52,7 +52,7 @@ export const spec = {
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
   */
-  interpretResponse: function({ body: {id, seatbid}}) {
+  interpretResponse: function({ body: {id, seatbid} }) {
     let sovrnBidResponses = [];
     if (id &&
       seatbid &&
@@ -62,7 +62,6 @@ export const spec = {
       seatbid[0].bid.map(sovrnBid => {
         sovrnBidResponses.push({
           requestId: sovrnBid.impid,
-          bidderCode: spec.code,
           cpm: parseFloat(sovrnBid.price),
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
