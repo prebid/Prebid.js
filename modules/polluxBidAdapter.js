@@ -90,7 +90,6 @@ export const spec = {
       var bid = serverResponse[b];
       const bidResponse = {
         requestId: bid.bidId, // not request id, it's bid's id
-        bidderCode: spec.code,
         cpm: parseFloat(bid.cpm),
         width: parseInt(bid.width),
         height: parseInt(bid.height),

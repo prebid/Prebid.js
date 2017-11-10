@@ -131,7 +131,6 @@ describe('POLLUX Bid Adapter tests', function () {
     const bids = spec.interpretResponse(serverResponse, {});
     expect(bids).to.have.lengthOf(1);
     expect(bids[0].requestId).to.equal('789s6354sfg856');
-    expect(bids[0].bidderCode).to.equal(spec.code);
     expect(bids[0].cpm).to.equal(2.15);
     expect(bids[0].width).to.equal(728);
     expect(bids[0].height).to.equal(90);
@@ -157,7 +156,6 @@ describe('POLLUX Bid Adapter tests', function () {
     const bids = spec.interpretResponse(serverResponse, {});
     expect(bids).to.have.lengthOf(1);
     expect(bids[0].requestId).to.equal('789s6354sfg856');
-    expect(bids[0].bidderCode).to.equal(spec.code);
     expect(bids[0].cpm).to.equal(2.15);
     expect(bids[0].width).to.equal(728);
     expect(bids[0].height).to.equal(90);
