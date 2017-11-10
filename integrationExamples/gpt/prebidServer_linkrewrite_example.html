@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style type="text/css">
+        nav a {
+            display: inline-block;
+            color: black;
+            padding: 0.5em;
+            text-align: center;
+            border-radius: 0.5em;
+            text-decoration: none;
+            border: 1px solid black;
+        }
+    </style>
+
     <script>
       var PREBID_TIMEOUT = 2000;
 
@@ -39,7 +51,8 @@
       pbjs.que = pbjs.que || [];
 
     </script>
-    <script type="text/javascript" src="http://ads.rubiconproject.com/prebid/1001.js" async></script>
+    <!--<script type="text/javascript" src="http://ads.rubiconproject.com/prebid/1001.js" async></script>-->
+    <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
 
     <script>
       var googletag = googletag || {};
@@ -76,7 +89,8 @@
           endpoint: 'https://pbs-qa.aws.rubiconproject.com/auction?url_override=rubiconproject.com&debug=1',
 
           // String (optional): Will override the default cookieSet endpoint for Prebid Server.
-          cookieSetUrl : 'https://assets.rubiconproject.com/utils/cookieset/cs.js'
+          /*cookieSetUrl : 'https://assets.rubiconproject.com/utils/cookieset/cs.js'*/
+          cookieSetUrl : 'cs.js'
         }});
 
         pbjs.addAdUnits(adUnits);
@@ -127,7 +141,14 @@
 
 <body>
 <img src="prebid-trigger.gif" />
-<h2>Rubicon Project Prebid Server Demo</h2>
+<header>
+    <h1>Safari 3rd party set cookie workaround</h1>
+    <nav>
+        <a href="pages/page-one.html">site sub-page #1</a>
+        <a href="pages/page-two.html">site sub-page #2</a>
+    </nav>
+    <h2>Rubicon Project Prebid Server Demo</h2>
+</header>
 <p>The ad units below were retrieved from Rubicon Project's cluster of Prebid Servers.</p>
 <div id='test-div'>
     <script>
