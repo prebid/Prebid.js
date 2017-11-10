@@ -17,7 +17,8 @@ exports.bidderRegistry = _bidderRegistry;
 let _s2sConfig = {
   endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
   adapter: CONSTANTS.S2S.ADAPTER,
-  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
+  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
+  cookieSetUrl: CONSTANTS.S2S.COOKIE_SET_URL
 };
 
 const RANDOM = 'random';

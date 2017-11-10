@@ -806,6 +806,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {boolean} [cookieSet] enables cookieSet functionality
+ * @property {string} [cookieSetUrl] cookieset URL
  * @alias module:pbjs.setS2SConfig
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {

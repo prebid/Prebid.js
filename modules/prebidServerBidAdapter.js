@@ -256,7 +256,7 @@ function PrebidServer() {
       }
       if (result.status === 'no_cookie' && config.cookieSet) {
         // cookie sync
-        cookieSet(cookieSetUrl);
+        cookieSet(config.cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);
