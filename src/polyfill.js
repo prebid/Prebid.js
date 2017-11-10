@@ -12,8 +12,3 @@ Number.isInteger = Number.isInteger || function(value) {
     isFinite(value) &&
     Math.floor(value) === value;
 };
-
-// IE10 does not have this propery. https://gist.github.com/hbogs/7908703
-if (!window.location.origin) {
-  window.location.origin = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-}
