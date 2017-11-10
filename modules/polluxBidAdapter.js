@@ -80,7 +80,7 @@ export const spec = {
      */
   interpretResponse: function(serverResponse, bidRequest) {
     let bidResponses = [];
-    if (!serverResponse || typeof serverResponse === 'object' && !serverResponse.hasOwnProperty('body')) {
+    if (!serverResponse || (typeof serverResponse === 'object' && !serverResponse.hasOwnProperty('body'))) {
       utils.logMessage('No prebid response from == ' + BIDDER_CODE + ' == for bid requests:');
       utils.logMessage(bidRequest);
       return bidResponses;
