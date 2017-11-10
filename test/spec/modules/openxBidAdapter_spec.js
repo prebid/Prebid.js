@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';
 
-describe.only('OpenxAdapter', () => {
+describe('OpenxAdapter', () => {
   const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
@@ -169,9 +169,7 @@ describe.only('OpenxAdapter', () => {
         'unit': '12345678',
         'delDomain': 'test-del-domain',
         'video': {
-          'be': 'true',
           'url': 'abc.com',
-          'vtest': '1'
         }
       },
       'adUnitCode': 'adunit-code',
@@ -196,8 +194,6 @@ describe.only('OpenxAdapter', () => {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.url).to.exist;
       expect(dataParams.url).to.equal('abc.com');
-      expect(dataParams.vtest).to.exist;
-      expect(dataParams.vtest).to.equal('1');
     });
   });
 
@@ -301,9 +297,7 @@ describe.only('OpenxAdapter', () => {
         'unit': '12345678',
         'delDomain': 'test-del-domain',
         'video': {
-          'be': 'true',
           'url': 'abc.com',
-          'vtest': '1'
         }
       },
       'adUnitCode': 'adunit-code',
@@ -320,11 +314,12 @@ describe.only('OpenxAdapter', () => {
       payload: {'bid': bids[0], 'startTime': new Date()}
     };
     let bidResponse = {
-      'cache_key': 'test_cache_key',
       'pub_rev': '1',
-      'per_colo_domain': 'http://delivery-us-west-1.openx.net',
-      'ph': '7a3b9374-7986-4a41-a79d-034193518aee',
-      'adid': 5678,
+      'width': '640',
+      'height': '480',
+      'adid': '5678',
+      'vastUrl': 'http://testvast.com',
+      'pixels': 'http://testpixels.net'
     };
 
     it('should return correct bid response', () => {
@@ -335,12 +330,9 @@ describe.only('OpenxAdapter', () => {
           'cpm': 1,
           'width': '640',
           'height': '480',
-          'creativeId': 5678,
-          'openx': {
-            'ff': 'test_cache_key',
-            'oxcolo': 'http://delivery-us-west-1.openx.net',
-            'oxph': '7a3b9374-7986-4a41-a79d-034193518aee'
-          },
+          'mediaType': 'video',
+          'creativeId': '5678',
+          'vastUrl': 'http://testvast.com',
           'ttl': 300,
           'netRevenue': true,
           'currency': 'USD'
@@ -352,7 +344,7 @@ describe.only('OpenxAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      let bidResponse = {'cache_key': '', 'pub_rev': '', 'per_colo_domain': '', 'ph': ''};
+      let bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
       let result = spec.interpretResponse({body: bidResponse}, bidRequest);
       expect(result.length).to.equal(0);
     });

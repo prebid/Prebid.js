@@ -333,7 +333,7 @@ function generateVideoParameters(bid) {
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.cache_key !== '' && response.pub_rev !== '') {
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     bidResponse.bidderCode = BIDDER_CODE;
@@ -346,12 +346,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     bidResponse.width = response.width;
     bidResponse.height = response.height;
     bidResponse.creativeId = response.adid;
+    bidResponse.vastUrl = response.vastUrl;
+    bidResponse.mediaType = VIDEO;
 
-    bidResponse.openx = {
-      ff: response.cache_key,
-      oxcolo: response.per_colo_domain,
-      oxph: response.ph
-    };
     bidResponses.push(bidResponse);
   }
 
