@@ -18,7 +18,7 @@ export const spec = {
      */
   isBidRequestValid: function(bid) {
     if (!bid.hasOwnProperty('params') || !bid.params.hasOwnProperty('zone')) {
-      utils.logError('required param "zone" is missing');
+      utils.logError('required param "zone" is missing for == ' + BIDDER_CODE + ' ==');
       return false;
     }
     return true;
@@ -34,8 +34,8 @@ export const spec = {
       return [];
     }
     const payload = [];
-    var custom_url = null;
-    for (var i = 0; i < validBidRequests.length; i++) {
+    let custom_url = null;
+    for (let i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i];
       const request = {
         bidId: bid.bidId,
@@ -61,11 +61,11 @@ export const spec = {
       url_params.tracker2 = tracker2;
     }
     // build url
-    var bidder_url = custom_url || PLX_ENDPOINT_URL;
+    let bidder_url = custom_url || PLX_ENDPOINT_URL;
     if (url_params) {
       bidder_url = bidder_url + '?' + utils.parseQueryStringParameters(url_params);
     }
-    utils.logMessage('Pollux request built: ' + bidder_url);
+    utils.logMessage('== ' + BIDDER_CODE + ' == request built: ' + bidder_url);
     return {
       method: 'POST',
       url: bidder_url,
@@ -79,15 +79,21 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
-    if (!Array.isArray(serverResponse) || !serverResponse.length) {
-      utils.logMessage('No prebid response from polluxHandler for bid requests:');
+    let bidResponses = [];
+    if (!serverResponse || typeof serverResponse === 'object' && !serverResponse.hasOwnProperty('body')) {
+      utils.logMessage('No prebid response from == ' + BIDDER_CODE + ' == for bid requests:');
       utils.logMessage(bidRequest);
-      return [];
+      return bidResponses;
+    }
+    serverResponse = serverResponse.body;
+    if (!Array.isArray(serverResponse) || !serverResponse.length) {
+      utils.logMessage('No prebid response from == ' + BIDDER_CODE + ' == for bid requests:');
+      utils.logMessage(bidRequest);
+      return bidResponses;
     }
     // loop through serverResponses
-    const bidResponses = [];
-    for (var b in serverResponse) {
-      var bid = serverResponse[b];
+    for (let b in serverResponse) {
+      let bid = serverResponse[b];
       const bidResponse = {
         requestId: bid.bidId, // not request id, it's bid's id
         cpm: parseFloat(bid.cpm),

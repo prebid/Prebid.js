@@ -118,16 +118,20 @@ describe('POLLUX Bid Adapter tests', function () {
   });
 
   it('TEST: verify interpretResponse ad_type url', () => {
-    const serverResponse = [{
-      bidId: '789s6354sfg856',
-      cpm: '2.15',
-      width: '728',
-      height: '90',
-      ad: 'http://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125',
-      ad_type: 'url',
-      creativeId: '1125',
-      referrer: 'http://www.example.com'
-    }];
+    const serverResponse = {
+      body: [
+        {
+          bidId: '789s6354sfg856',
+          cpm: '2.15',
+          width: '728',
+          height: '90',
+          ad: 'http://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125',
+          ad_type: 'url',
+          creativeId: '1125',
+          referrer: 'http://www.example.com'
+        }
+      ]
+    };
     const bids = spec.interpretResponse(serverResponse, {});
     expect(bids).to.have.lengthOf(1);
     expect(bids[0].requestId).to.equal('789s6354sfg856');
@@ -144,15 +148,19 @@ describe('POLLUX Bid Adapter tests', function () {
   });
 
   it('TEST: verify interpretResponse ad_type html', () => {
-    const serverResponse = [{
-      bidId: '789s6354sfg856',
-      cpm: '2.15',
-      width: '728',
-      height: '90',
-      ad: '<html><h3>I am an ad</h3></html>',
-      ad_type: 'html',
-      creativeId: '1125'
-    }];
+    const serverResponse = {
+      body: [
+        {
+          bidId: '789s6354sfg856',
+          cpm: '2.15',
+          width: '728',
+          height: '90',
+          ad: '<html><h3>I am an ad</h3></html>',
+          ad_type: 'html',
+          creativeId: '1125'
+        }
+      ]
+    };
     const bids = spec.interpretResponse(serverResponse, {});
     expect(bids).to.have.lengthOf(1);
     expect(bids[0].requestId).to.equal('789s6354sfg856');
@@ -168,15 +176,15 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(bids[0].ad).to.equal('<html><h3>I am an ad</h3></html>');
   });
 
-  it('TEST: verify url and query params', function () {
-    var URL = require('url-parse');
-    var querystringify = require('querystringify');
-    var request = spec.buildRequests(setup_single_bid);
-    var parsedUrl = new URL('https:' + request.url);
+  it('TEST: verify url and query params', () => {
+    const URL = require('url-parse');
+    const querystringify = require('querystringify');
+    const request = spec.buildRequests(setup_single_bid);
+    const parsedUrl = new URL('https:' + request.url);
     expect(parsedUrl.origin).to.equal('https://adn.polluxnetwork.com');
     expect(parsedUrl.pathname).to.equal('/prebid/v1');
     expect(parsedUrl).to.have.property('query');
-    var parsedQuery = querystringify.parse(parsedUrl.query);
+    const parsedQuery = querystringify.parse(parsedUrl.query);
     expect(parsedQuery).to.have.property('domain').and.to.have.length.above(1);
   });
 
