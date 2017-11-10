@@ -84,21 +84,21 @@ exports.bidsBackAll = function () {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
-  if (isValid()) {
-    prepareBidForAuction();
+  if (isValid(bid, adUnitCode)) {
+    prepareBidForAuction(bid, adUnitCode);
 
     if (bid.mediaType === 'video') {
       tryAddVideoBid(bid);
     } else {
       addBidToAuction(bid);
-      doCallbacksIfNeeded();
+      doCallbacksIfNeeded(bid);
     }
   }
 
   // Actual method logic is above. Everything below is helper functions.
 
   // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-  function isValid() {
+  function isValid(bid, adUnitCode) {
     function errorMessage(msg) {
       return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
     }
@@ -126,7 +126,7 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
       utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
       return false;
     }
-    if (bid.mediaType === 'banner' && !validBidSize(bid)) {
+    if (bid.mediaType === 'banner' && !validBidSize(bid, adUnitCode)) {
       utils.logError(errorMessage(`Banner bids require a width and height`));
       return false;
     }
@@ -135,7 +135,7 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
   }
 
   // check that the bid has a width and height set
-  function validBidSize(bid) {
+  function validBidSize(bid, adUnitCode) {
     if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
       return true;
     }
@@ -158,7 +158,7 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
 
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
-  function prepareBidForAuction() {
+  function prepareBidForAuction(bid, adUnitCode) {
     const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
 
     Object.assign(bid, {
@@ -209,7 +209,7 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
     bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
   }
 
-  function doCallbacksIfNeeded() {
+  function doCallbacksIfNeeded(bid) {
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
       exports.executeCallback(timedOut);
@@ -217,7 +217,7 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
   }
 
   // Add a bid to the auction.
-  function addBidToAuction() {
+  function addBidToAuction(bid) {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
@@ -244,11 +244,11 @@ exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
           }
           addBidToAuction(bid);
         }
-        doCallbacksIfNeeded();
+        doCallbacksIfNeeded(bid);
       });
     } else {
       addBidToAuction(bid);
-      doCallbacksIfNeeded();
+      doCallbacksIfNeeded(bid);
     }
   }
 });
