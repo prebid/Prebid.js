@@ -1,6 +1,5 @@
 /**
  * Adapter to send bids to Undertone
- * @returns {{callBids: _callBids}}
  */
 
 import * as utils from 'src/utils';
@@ -30,6 +29,7 @@ export const spec = {
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
+        hbadaptor: 'prebid',
         domain: domain,
         placementId: bidReq.params.placementId,
         publisherId: bidReq.params.publisherId,
@@ -42,6 +42,7 @@ export const spec = {
     return {
       method: 'POST',
       url: REQ_URL,
+      withCredentials: true,
       data: JSON.stringify(payload)
     };
   },
