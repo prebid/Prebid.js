@@ -35,7 +35,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
   }
 
   function _appendAysncImpressionInformation(ymCall, cb) {
-    var bidderTimeout = configs.config.getConfig('_bidderTimeout') || 2000;
+    var bidderTimeout = configs.config.getConfig('_bidderTimeout') || 3000;
     var cbTriggered = false;
 
     // set listner for postmessage info
@@ -49,16 +49,16 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
     // Trigger bid request without async info if timeout reached
     setTimeout(function() {
-      if (!cbTriggered) { 
-        cb(ymCall); 
+      if (!cbTriggered) {
+        cb(ymCall);
       }
     }, bidderTimeout / 2);
 
     function appendMessageInfo(ymTracking) {
       if (ymTracking.origin === 'https://static.yieldmo.com') {
         var ymidString = ymTracking.data.ymid;
-        var validTracking = ymTracking.optout !== 1 && 
-          typeof ymidString === 'string' && 
+        var validTracking = ymTracking.optout !== 1 &&
+          typeof ymidString === 'string' &&
           (ymidString.length === 20 || ymidString.length === 0);
 
         if (validTracking) {
