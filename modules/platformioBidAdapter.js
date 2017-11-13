@@ -24,7 +24,7 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => (
-    bidResponseAvailable(request, response)
+    bidResponseAvailable(request, response.body)
   ),
 };
 function bidResponseAvailable(bidRequest, bidResponse) {
