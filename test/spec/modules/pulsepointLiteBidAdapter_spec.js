@@ -100,6 +100,9 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.adId).to.equal('bid12345');
     expect(bid.creative_id).to.equal('bid12345');
     expect(bid.creativeId).to.equal('bid12345');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(20);
   });
 
   it('Verify full passback', () => {

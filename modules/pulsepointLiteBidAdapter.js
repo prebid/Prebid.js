@@ -10,6 +10,9 @@ const NATIVE_DEFAULTS = {
   ICON_MIN: 50,
 };
 
+const BID_TTL = 20;
+const CURRENCY = 'USD';
+
 /**
  * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
  * alternative/original PulsePointAdapter because it has no external
@@ -89,6 +92,9 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creative_id: id,
         creativeId: id,
         adId: id,
+        ttl: BID_TTL,
+        netRevenue: true,
+        currency: CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
