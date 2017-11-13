@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { NATIVE_KEYS } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -132,27 +132,47 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBidders();
+        const timedOutBidders = getTimedOutBids();
         if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, { timedOutBidders, auctionId: _auctionId });
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
       }
     }
   }
 
-  function getTimedOutBidders() {
-    return _bidderRequests
-      .map((bidSet) => {
-        return bidSet.bidderCode;
-      })
-      .filter(uniques)
-      .filter(bidder => _bidsReceived
-        .map((bid) => {
-          return bid.bidder;
-        })
-        .filter(uniques)
-        .indexOf(bidder) < 0);
-  };
+  /**
+   * Returns a list of bids that we haven't received a response yet
+   * @typedef {Object} TimedOutBid
+   * @property {string} bidId The id representing the bid
+   * @property {string} bidder The string name of the bidder
+   * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
+   * @property {string} requestId The UUID representing the bid request
+   * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
+   */
+  function getTimedOutBids() {
+    const bidRequestedCodes = _bidderRequests
+      .map(bid => bid.bidderCode)
+      .filter(uniques);
+
+    const bidReceivedCodes = _bidsReceived
+      .map(bid => bid.bidder)
+      .filter(uniques);
+
+    const timedOutBidderCodes = bidRequestedCodes
+      .filter(bidder => !bidReceivedCodes.includes(bidder));
+
+    const timedOutBids = _bidderRequests
+      .map(bid => (bid.bids || []).filter(bid => timedOutBidderCodes.includes(bid.bidder)))
+      .reduce(flatten, [])
+      .map(bid => ({
+        bidId: bid.bidId,
+        bidder: bid.bidder,
+        adUnitCode: bid.adUnitCode,
+        requestId: bid.requestId,
+      }));
+
+    return timedOutBids;
+  }
 
   function done(bidRequestId) {
     var innerBidRequestId = bidRequestId;
