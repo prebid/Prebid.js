@@ -100,24 +100,24 @@ function PrebidServer() {
           }
         });
         // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to ingest properly
-        // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myVar","value":["myValue","124578"]}]
-        let kw_array = [];
+        // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myMultiVar","value":["myValue","124578"]}]
+        let kwArray = [];
         Object.keys(bid.params).forEach(key => {
           if (bid.bidder === 'appnexus' && (key !== 'member' && key !== 'invCode' && key !== 'placementId')) {
-            let kv_obj = {};
-            kv_obj.key = key
+            let kvObj = {};
+            kvObj.key = key
             if (bid.params[key] !== null) {
               if (Array.isArray(bid.params[key])) {
-                kv_obj.value = bid.params[key].map(val => tryConvertString(val));
+                kvObj.value = bid.params[key].map(val => tryConvertString(val));
               } else {
-                kv_obj.value = [tryConvertString(bid.params[key])];
+                kvObj.value = [tryConvertString(bid.params[key])];
               }
             }
-            kw_array.push(kv_obj);
+            kwArray.push(kvObj);
             delete bid.params[key];
           }
         });
-        bid.params.keywords = kw_array;
+        bid.params.keywords = kwArray;
       });
     });
   }
