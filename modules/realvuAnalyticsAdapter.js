@@ -36,7 +36,10 @@ try {
 } catch (e) { };
 
 realvuAnalyticsAdapter.inView = function (bid, partner_id) {
-  return top1.realvu_boost.addUnitById({unit_id: bid.placementCode, partner_id: partner_id, size: bid.sizes});
+  if (top1.realvu_boost) {
+    return top1.realvu_boost.addUnitById({unit_id: bid.placementCode, partner_id: partner_id, size: bid.sizes});
+  }
+  return 'NA';
 }
 
 // queue() is a proxy function to add a callback function to boost_fifo to be async executed in realvu_boost
