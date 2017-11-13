@@ -4,6 +4,8 @@ import * as utils from 'src/utils';
 import {userSync} from 'src/userSync';
 import { BANNER } from 'src/mediaTypes';
 
+const realvuAnalyticsAdapter = require('modules/realvuAnalyticsAdapter'); /* rvaa */
+
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
@@ -225,7 +227,6 @@ function buildOXRequest(bids, oxParams, delDomain) {
   oxParams.aus = utils._map(bids, bid => {
     return utils.parseSizesInput(bid.sizes).join(',');
   }).join('|');
-
   let customParamsForAllBids = [];
   let hasCustomParam = false;
   bids.forEach(function (bid) {
@@ -241,7 +242,6 @@ function buildOXRequest(bids, oxParams, delDomain) {
   if (hasCustomParam) {
     oxParams.tps = customParamsForAllBids.join(',');
   }
-
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
@@ -254,6 +254,20 @@ function buildOXRequest(bids, oxParams, delDomain) {
   });
   if (hasCustomFloor) {
     oxParams.aumfs = customFloorsForAllBids.join(',');
+  }
+
+  var rvaa = realvuAnalyticsAdapter;
+  rvaa.enableAnalytics({});
+  let inview = [];
+  bids.forEach(function (bid) {
+    inview.push(rvaa.inView(bid, 'DVJC'));
+  });
+  if (inview.length > 0) {
+    oxParams.realvu = inview.join(',');
+  }
+  var msg = document.getElementById('msg_an');
+  if (msg) {
+    msg.innerHTML += '<b>oxParams.realvu=' + oxParams.realvu + '</b><br>';
   }
 
   let url = `//${delDomain}/w/1.0/arj`;

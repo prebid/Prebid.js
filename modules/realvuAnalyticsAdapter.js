@@ -41,7 +41,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
     msg.innerHTML += 'track: ' + eventType + '; ';
   }
   if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-    if (options.partner_id) {
+    if (options && options.partner_id) {
       var hb = $$PREBID_GLOBAL$$;
       for (var i = 0; i < hb.adUnits.length; i++) {
         var code = hb.adUnits[i].code;
@@ -66,7 +66,10 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
 }
 
 realvuAnalyticsAdapter.inView = function (bid, partner_id) {
-  return top1.realvu_boost.addUnitById({unit_id: bid.placementCode, partner_id: partner_id, size: bid.sizes});
+  if (top1.realvu_boost) {
+    return top1.realvu_boost.addUnitById({unit_id: bid.placementCode, partner_id: partner_id, size: bid.sizes});
+  }
+  return 'NA';
 }
 
 // queue() is a proxy function to add a callback function to boost_fifo to be async executed in realvu_boost
