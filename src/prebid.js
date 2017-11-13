@@ -635,7 +635,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
  * For usage, see [Integrate with the Prebid Analytics
  * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
  *
- * For a list of supported analytics adapters, see [Analytics for
+ * For a list of analytics adapters, see [Analytics for
  * Prebid](http://prebid.org/overview/analytics.html).
  * @param  {Object} config
  * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.

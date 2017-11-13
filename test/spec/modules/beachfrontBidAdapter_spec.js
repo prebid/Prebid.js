@@ -104,7 +104,7 @@ describe('BeachfrontAdapter', () => {
 
   describe('spec.interpretResponse', () => {
     it('should return no bids if the response is not valid', () => {
-      const bidResponse = spec.interpretResponse(null, { bidRequest });
+      const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
@@ -112,7 +112,7 @@ describe('BeachfrontAdapter', () => {
       const serverResponse = {
         bidPrice: 5.00
       };
-      const bidResponse = spec.interpretResponse(serverResponse, { bidRequest });
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
@@ -120,7 +120,7 @@ describe('BeachfrontAdapter', () => {
       const serverResponse = {
         url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da'
       };
-      const bidResponse = spec.interpretResponse(serverResponse, { bidRequest });
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
@@ -130,7 +130,7 @@ describe('BeachfrontAdapter', () => {
         url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
         cmpId: '123abc'
       };
-      const bidResponse = spec.interpretResponse(serverResponse, { bidRequest });
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse).to.deep.equal({
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
