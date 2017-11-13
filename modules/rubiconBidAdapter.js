@@ -1,10 +1,8 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
-// use deferred function call since version isn't defined yet at this point
-function getIntegration() {
-  return 'pbjs_lite_' + $$PREBID_GLOBAL$$.version;
-}
+const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
 function isSecure() {
   return location.protocol === 'https:';
@@ -20,6 +18,7 @@ const TIMEOUT_BUFFER = 500;
 var sizeMap = {
   1: '468x60',
   2: '728x90',
+  5: '120x90',
   8: '120x600',
   9: '160x600',
   10: '300x600',
@@ -58,6 +57,7 @@ var sizeMap = {
   101: '480x320',
   102: '768x1024',
   103: '480x280',
+  108: '320x240',
   113: '1000x300',
   117: '320x100',
   125: '800x250',
@@ -113,7 +113,7 @@ export const spec = {
           page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
-          integration: getIntegration(),
+          integration: INTEGRATION,
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
@@ -126,8 +126,8 @@ export const spec = {
           zone_id: params.zoneId,
           position: params.position || 'btf',
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-          element_id: bidRequest.placementCode,
-          name: bidRequest.placementCode,
+          element_id: bidRequest.adUnitCode,
+          name: bidRequest.adUnitCode,
           language: params.video.language,
           width: size[0],
           height: size[1],
@@ -187,7 +187,7 @@ export const spec = {
         'p_pos', position,
         'rp_floor', floor,
         'rp_secure', isSecure() ? '1' : '0',
-        'tk_flint', getIntegration(),
+        'tk_flint', INTEGRATION,
         'tid', bidRequest.transactionId,
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
@@ -230,6 +230,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
+    responseObj = responseObj.body
     let ads = responseObj.ads;
 
     // check overall response
@@ -239,7 +240,7 @@ export const spec = {
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
-      ads = ads[bidRequest.placementCode];
+      ads = ads[bidRequest.adUnitCode];
     }
 
     // check the ad response
@@ -258,10 +259,11 @@ export const spec = {
       let bid = {
         requestId: bidRequest.bidId,
         currency: 'USD',
-        creative_id: ad.creative_id,
-        bidderCode: spec.code,
+        creativeId: ad.creative_id,
         cpm: ad.cpm || 0,
-        dealId: ad.deal
+        dealId: ad.deal,
+        ttl: 300, // 5 minutes
+        netRevenue: config.getConfig('rubicon.netRevenue') || false
       };
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
@@ -279,15 +281,15 @@ export const spec = {
         .reduce((memo, item) => {
           memo[item.key] = item.values[0];
           return memo;
-        }, {'rpfl_elemid': bidRequest.placementCode});
+        }, {'rpfl_elemid': bidRequest.adUnitCode});
 
       bids.push(bid);
 
       return bids;
     }, []);
   },
-  getUserSyncs: function() {
-    if (!hasSynced) {
+  getUserSyncs: function(syncOptions) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
         type: 'iframe',
@@ -307,7 +309,7 @@ function _getScreenResolution() {
 
 function _getDigiTrustQueryParams() {
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && ($$PREBID_GLOBAL$$.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId();
