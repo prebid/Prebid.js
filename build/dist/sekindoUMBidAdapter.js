@@ -1,14 +1,14 @@
-pbjsChunk([38],{
+pbjsChunk([53],{
 
-/***/ 208:
+/***/ 230:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(209);
+module.exports = __webpack_require__(231);
 
 
 /***/ }),
 
-/***/ 209:
+/***/ 231:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16,7 +16,7 @@ module.exports = __webpack_require__(209);
 
 var _utils = __webpack_require__(0);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
@@ -113,4 +113,4 @@ module.exports = SekindoUMAdapter;
 
 /***/ })
 
-},[208]);
+},[230]);

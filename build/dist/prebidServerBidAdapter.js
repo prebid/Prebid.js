@@ -1,14 +1,14 @@
-pbjsChunk([6],{
+pbjsChunk([7],{
 
-/***/ 180:
+/***/ 199:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(181);
+module.exports = __webpack_require__(200);
 
 
 /***/ }),
 
-/***/ 181:
+/***/ 200:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36,13 +36,15 @@ var _ajax = __webpack_require__(6);
 
 var _constants = __webpack_require__(4);
 
-var _cookie = __webpack_require__(182);
+var _cookie = __webpack_require__(201);
 
 var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
+
+var _mediaTypes = __webpack_require__(13);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -151,7 +153,9 @@ function PrebidServer() {
       if (videoMediaType) {
         // pbs expects a ad_unit.video attribute if the imp is video
         adUnit.video = _extends({}, videoMediaType);
-        delete adUnit.mediaTypes.video;
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
+        adUnit.media_types = [_mediaTypes.VIDEO];
       }
     }));
     convertTypes(adUnits);
@@ -162,7 +166,7 @@ function PrebidServer() {
       timeout_millis: config.timeout,
       secure: config.secure,
       url: utils.getTopWindowUrl(),
-      prebid_version: '0.31.0',
+      prebid_version: '0.32.0',
       ad_units: adUnits.filter(hasSizes),
       is_debug: isDebug
     };
@@ -224,6 +228,14 @@ function PrebidServer() {
           }));
         }
 
+        // do client-side syncs if available
+        requestedBidders.forEach((function (bidder) {
+          var clientAdapter = _adaptermanager2['default'].getBidAdapter(bidder);
+          if (clientAdapter && clientAdapter.registerSyncs) {
+            clientAdapter.registerSyncs();
+          }
+        }));
+
         if (result.bids) {
           result.bids.forEach((function (bidObj) {
             var bidRequest = utils.getBidRequest(bidObj.bid_id);
@@ -240,10 +252,26 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
-            bidObject.ad = bidObj.adm;
-            if (bidObj.nurl) {
-              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
+            if (bidObj.media_type === _mediaTypes.VIDEO) {
+              bidObject.mediaType = _mediaTypes.VIDEO;
+              if (bidObj.adm) {
+                bidObject.vastXml = bidObj.adm;
+              }
+              if (bidObj.nurl) {
+                bidObject.vastUrl = bidObj.nurl;
+              }
+            } else {
+              if (bidObj.adm && bidObj.nurl) {
+                bidObject.ad = bidObj.adm;
+                bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+              } else if (bidObj.adm) {
+                bidObject.ad = bidObj.adm;
+              } else if (bidObj.nurl) {
+                bidObject.adUrl = bidObj.nurl;
+              }
             }
+
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
@@ -268,7 +296,6 @@ function PrebidServer() {
             bidObject.source = TYPE;
             bidObject.adUnitCode = bidRequest.placementCode;
             bidObject.bidderCode = bidRequest.bidder;
-
             _bidmanager2['default'].addBidResponse(bidObject.adUnitCode, bidObject);
           }));
         }));
@@ -329,7 +356,7 @@ module.exports = PrebidServer;
 
 /***/ }),
 
-/***/ 182:
+/***/ 201:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -358,4 +385,4 @@ cookie.cookieSet = function (cookieSetUrl) {
 
 /***/ })
 
-},[180]);
+},[199]);

@@ -1,114 +1,100 @@
-pbjsChunk([82],{
+pbjsChunk([17],{
 
-/***/ 103:
+/***/ 112:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(104);
+__webpack_require__(113);
+module.exports = __webpack_require__(114);
 
 
 /***/ }),
 
-/***/ 104:
+/***/ 113:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var VERSION = '2.1.0';
-var CONSTANTS = __webpack_require__(4);
-var utils = __webpack_require__(0);
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
-var ajax = __webpack_require__(6).ajax;
-var adaptermanager = __webpack_require__(1);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
-/**
- * Adapter for requesting bids from Conversant
- */
-var ConversantAdapter = function ConversantAdapter() {
-  var w = window;
-  var n = navigator;
+var _utils = __webpack_require__(0);
 
-  // production endpoint
-  var conversantUrl = '//media.msg.dotomi.com/s2s/header/24?callback=pbjs.conversantResponse';
+var utils = _interopRequireWildcard(_utils);
 
-  // SSAPI returns JSONP with window.pbjs.conversantResponse as the cb
-  var appendScript = function appendScript(code) {
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.className = 'cnvr-response';
+var _bidderFactory = __webpack_require__(9);
 
-    try {
-      script.appendChild(document.createTextNode(code));
-      document.getElementsByTagName('head')[0].appendChild(script);
-    } catch (e) {
-      script.text = code;
-      document.getElementsByTagName('head')[0].appendChild(script);
+var _mediaTypes = __webpack_require__(13);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+var BIDDER_CODE = 'conversant';
+var URL = '//media.msg.dotomi.com/s2s/header/24';
+var SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
+var VERSION = '2.2.0';
+
+var spec = exports.spec = {
+  code: BIDDER_CODE,
+  aliases: ['cnvr'], // short code
+  supportedMediaTypes: [_mediaTypes.VIDEO],
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid - The bid params to validate.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function isBidRequestValid(bid) {
+    if (!bid || !bid.params) {
+      utils.logWarn(BIDDER_CODE + ': Missing bid parameters');
+      return false;
     }
-  };
 
-  var getDNT = function getDNT() {
-    return n.doNotTrack === '1' || w.doNotTrack === '1' || n.msDoNotTrack === '1' || n.doNotTrack === 'yes';
-  };
+    if (!utils.isStr(bid.params.site_id)) {
+      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string');
+      return false;
+    }
 
-  var getDevice = function getDevice() {
-    var language = n.language ? 'language' : 'userLanguage';
-    return {
-      h: screen.height,
-      w: screen.width,
-      dnt: getDNT() ? 1 : 0,
-      language: n[language].split('-')[0],
-      make: n.vendor ? n.vendor : '',
-      ua: n.userAgent
-    };
-  };
-
-  var callBids = function callBids(params) {
-    var conversantBids = params.bids || [];
-    requestBids(conversantBids);
-  };
-
-  var requestBids = function requestBids(bidReqs) {
-    // build bid request object
-    var page = location.pathname + location.search + location.hash;
-    var siteId = '';
-    var conversantImps = [];
-    var conversantBidReqs;
-    var secure = 0;
-
-    // build impression array for conversant
-    utils._each(bidReqs, (function (bid) {
-      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      var adW = 0;
-      var adH = 0;
-      var format;
-      var tagId;
-      var pos;
-      var imp;
-
-      secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParameter('site_id', bid.params) + '';
-      tagId = utils.getBidIdParameter('tag_id', bid.params);
-      pos = utils.getBidIdParameter('position', bid.params);
-
-      // Allow sizes to be overridden per placement
-      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
-
-      if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-        adW = bidSizes[0];
-        adH = bidSizes[1];
-      } else {
-        format = [];
-        utils._each(bidSizes, (function (bidSize) {
-          format.push({
-            w: bidSize[0],
-            h: bidSize[1]
-          });
-        }));
+    if (isVideoRequest(bid)) {
+      if (!bid.params.mimes) {
+        // Give a warning but let it pass
+        utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
+      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every((function (s) {
+        return utils.isStr(s);
+      }))) {
+        utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
+        return false;
       }
+    }
 
-      imp = {
+    return true;
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return {ServerRequest} Info describing the request to the server.
+   */
+  buildRequests: function buildRequests(validBidRequests) {
+    var loc = utils.getTopWindowLocation();
+    var page = loc.pathname + loc.search + loc.hash;
+    var isPageSecure = loc.protocol === 'https:' ? 1 : 0;
+    var siteId = '';
+    var requestId = '';
+
+    var conversantImps = validBidRequests.map((function (bid) {
+      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      var secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
+
+      siteId = utils.getBidIdParameter('site_id', bid.params);
+      requestId = bid.requestId;
+
+      var format = convertSizes(bid.sizes);
+
+      var imp = {
         id: bid.bidId,
         secure: secure,
         bidfloor: bidfloor || 0,
@@ -116,190 +102,202 @@ var ConversantAdapter = function ConversantAdapter() {
         displaymanagerver: VERSION
       };
 
-      if (tagId !== '') {
-        imp.tagid = tagId;
-      }
+      copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
 
-      if (bid.mediaType === 'video') {
-        var mimes = [];
-        var maxduration = 0;
-        var protocols = [];
-        var api = [];
+      if (isVideoRequest(bid)) {
+        var video = { format: format };
 
-        var video = Array.isArray(format) ? { format: format } : { w: adW, h: adH };
-
-        mimes = utils.getBidIdParameter('mimes', bid.params);
-        if (mimes !== '') {
-          video.mimes = mimes;
-        }
-
-        maxduration = utils.getBidIdParameter('maxduration', bid.params);
-        if (maxduration !== '') {
-          video.maxduration = maxduration;
-        }
-
-        protocols = utils.getBidIdParameter('protocols', bid.params);
-        if (protocols !== '') {
-          video.protocols = protocols;
-        }
-
-        api = utils.getBidIdParameter('api', bid.params);
-        if (api !== '') {
-          video.api = api;
-        }
-
-        if (pos !== '') {
-          video.pos = pos;
-        }
+        copyOptProperty(bid.params, 'position', video, 'pos');
+        copyOptProperty(bid.params, 'mimes', video);
+        copyOptProperty(bid.params, 'maxduration', video);
+        copyOptProperty(bid.params, 'protocols', video);
+        copyOptProperty(bid.params, 'api', video);
 
         imp.video = video;
       } else {
-        var banner = Array.isArray(format) ? { format: format } : { w: adW, h: adH };
+        var banner = { format: format };
 
-        if (pos !== '') {
-          banner.pos = pos;
-        }
+        copyOptProperty(bid.params, 'position', banner, 'pos');
+
         imp.banner = banner;
       }
 
-      conversantImps.push(imp);
+      return imp;
     }));
 
-    conversantBidReqs = {
-      'id': utils.getUniqueIdentifierStr(),
-      'imp': conversantImps,
-
-      'site': {
-        'id': siteId,
-        'mobile': document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
-        'page': page
+    var payload = {
+      id: requestId,
+      imp: conversantImps,
+      site: {
+        id: siteId,
+        mobile: document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
+        page: page
       },
-
-      'device': getDevice(),
-      'at': 1
+      device: getDevice(),
+      at: 1
     };
 
-    var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
-    ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
-      withCredentials: true
-    });
-  };
+    return {
+      method: 'POST',
+      url: URL,
+      data: payload
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function interpretResponse(serverResponse, bidRequest) {
+    var bidResponses = [];
+    var requestMap = {};
+    serverResponse = serverResponse.body;
 
-  var addEmptyBidResponses = function addEmptyBidResponses(placementsWithBidsBack) {
-    var allConversantBidRequests = pbjs._bidsRequested.find((function (bidSet) {
-      return bidSet.bidderCode === 'conversant';
-    }));
-
-    if (allConversantBidRequests && allConversantBidRequests.bids) {
-      utils._each(allConversantBidRequests.bids, (function (conversantBid) {
-        if (!utils.contains(placementsWithBidsBack, conversantBid.placementCode)) {
-          // Add a no-bid response for this placement.
-          var bid = bidfactory.createBid(2, conversantBid);
-          bid.bidderCode = 'conversant';
-          bidmanager.addBidResponse(conversantBid.placementCode, bid);
-        }
+    if (bidRequest && bidRequest.data && bidRequest.data.imp) {
+      utils._each(bidRequest.data.imp, (function (imp) {
+        return requestMap[imp.id] = imp;
       }));
     }
-  };
 
-  var parseSeatbid = function parseSeatbid(bidResponse) {
-    var placementsWithBidsBack = [];
-    utils._each(bidResponse.bid, (function (conversantBid) {
-      var responseCPM;
-      var placementCode = '';
-      var id = conversantBid.impid;
-      var bid = {};
-      var responseAd;
-      var responseNurl;
-      var sizeArrayLength;
+    if (serverResponse && utils.isArray(serverResponse.seatbid)) {
+      utils._each(serverResponse.seatbid, (function (bidList) {
+        utils._each(bidList.bid, (function (conversantBid) {
+          var responseCPM = parseFloat(conversantBid.price);
+          if (responseCPM > 0.0 && conversantBid.impid) {
+            var responseAd = conversantBid.adm || '';
+            var responseNurl = conversantBid.nurl || '';
+            var request = requestMap[conversantBid.impid];
 
-      // Bid request we sent Conversant
-      var bidRequested = pbjs._bidsRequested.find((function (bidSet) {
-        return bidSet.bidderCode === 'conversant';
-      })).bids.find((function (bid) {
-        return bid.bidId === id;
-      }));
+            var bid = {
+              requestId: conversantBid.impid,
+              currency: serverResponse.cur || 'USD',
+              cpm: responseCPM,
+              creativeId: conversantBid.crid || ''
+            };
 
-      if (bidRequested) {
-        placementCode = bidRequested.placementCode;
-        bidRequested.status = CONSTANTS.STATUS.GOOD;
-        responseCPM = parseFloat(conversantBid.price);
+            if (request.video) {
+              bid.vastUrl = responseAd;
+              bid.mediaType = 'video';
 
-        if (responseCPM !== 0.0) {
-          conversantBid.placementCode = placementCode;
-          placementsWithBidsBack.push(placementCode);
-          conversantBid.size = bidRequested.sizes;
-          responseAd = conversantBid.adm || '';
-          responseNurl = conversantBid.nurl || '';
+              if (request.video.format.length >= 1) {
+                bid.width = request.video.format[0].w;
+                bid.height = request.video.format[0].h;
+              }
+            } else {
+              bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+              bid.width = conversantBid.w;
+              bid.height = conversantBid.h;
+            }
 
-          // Our bid!
-          bid = bidfactory.createBid(1, bidRequested);
-          bid.creative_id = conversantBid.id || '';
-          bid.bidderCode = 'conversant';
-          bid.cpm = responseCPM;
-
-          if (bidRequested.mediaType === 'video') {
-            bid.vastUrl = responseAd;
-          } else {
-            // Track impression image onto returned html
-            bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+            bidResponses.push(bid);
           }
-
-          sizeArrayLength = bidRequested.sizes.length;
-          if (sizeArrayLength === 2 && typeof bidRequested.sizes[0] === 'number' && typeof bidRequested.sizes[1] === 'number') {
-            bid.width = bidRequested.sizes[0];
-            bid.height = bidRequested.sizes[1];
-          } else {
-            bid.width = bidRequested.sizes[0][0];
-            bid.height = bidRequested.sizes[0][1];
-          }
-
-          bidmanager.addBidResponse(placementCode, bid);
-        }
-      }
-    }));
-    addEmptyBidResponses(placementsWithBidsBack);
-  };
-
-  // Register our callback to the global object:
-  pbjs.conversantResponse = function (conversantResponseObj, path) {
-    // valid object?
-    if (conversantResponseObj && conversantResponseObj.id) {
-      if (conversantResponseObj.seatbid && conversantResponseObj.seatbid.length > 0 && conversantResponseObj.seatbid[0].bid && conversantResponseObj.seatbid[0].bid.length > 0) {
-        utils._each(conversantResponseObj.seatbid, parseSeatbid);
-      } else {
-        // no response data for any placements
-        addEmptyBidResponses([]);
-      }
-    } else {
-      // no response data for any placements
-      addEmptyBidResponses([]);
-    }
-    // for debugging purposes
-    if (path) {
-      adloader.loadScript(path, (function () {
-        var allConversantBidRequests = pbjs._bidsRequested.find((function (bidSet) {
-          return bidSet.bidderCode === 'conversant';
         }));
-
-        if (pbjs.conversantDebugResponse) {
-          pbjs.conversantDebugResponse(allConversantBidRequests);
-        }
       }));
     }
-  }; // conversantResponse
 
-  return {
-    callBids: callBids
-  };
+    return bidResponses;
+  },
+
+  /**
+   * Return use sync info
+   *
+   * @param {SyncOptions} syncOptions - Info about usersyncs that the adapter should obey
+   * @return {UserSync} Adapter sync type and url
+   */
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: SYNC_URL
+      }];
+    }
+  }
 };
 
-adaptermanager.registerBidAdapter(new ConversantAdapter(), 'conversant', {
-  supportedMediaTypes: ['video']
-});
+/**
+ * Determine do-not-track state
+ *
+ * @returns {boolean}
+ */
+function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
+}
 
-module.exports = ConversantAdapter;
+/**
+ * Return openrtb device object that includes ua, width, and height.
+ *
+ * @returns {Device} Openrtb device object
+ */
+function getDevice() {
+  var language = navigator.language ? 'language' : 'userLanguage';
+  return {
+    h: screen.height,
+    w: screen.width,
+    dnt: getDNT() ? 1 : 0,
+    language: navigator[language].split('-')[0],
+    make: navigator.vendor ? navigator.vendor : '',
+    ua: navigator.userAgent
+  };
+}
+
+/**
+ * Convert arrays of widths and heights to an array of objects with w and h properties.
+ *
+ * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
+ *
+ * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
+ * @returns {object[]} Array of objects with w and h
+ */
+function convertSizes(bidSizes) {
+  var format = void 0;
+
+  if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+    format = [{ w: bidSizes[0], h: bidSizes[1] }];
+  } else {
+    format = utils._map(bidSizes, (function (d) {
+      return { w: d[0], h: d[1] };
+    }));
+  }
+
+  return format;
+}
+
+/**
+ * Check if it's a video bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a video bid
+ */
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+/**
+ * Copy property if exists from src to dst
+ *
+ * @param {object} src
+ * @param {string} srcName
+ * @param {object} dst
+ * @param {string} [dstName] - Optional. If not specified then srcName is used.
+ */
+function copyOptProperty(src, srcName, dst, dstName) {
+  dstName = dstName || srcName;
+  var obj = utils.getBidIdParameter(srcName, src);
+  if (obj !== '') {
+    dst[dstName] = obj;
+  }
+}
+
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 114:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[103]);
+},[112]);

@@ -1,15 +1,15 @@
-pbjsChunk([3],{
+pbjsChunk([4],{
 
-/***/ 193:
+/***/ 212:
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(194);
-module.exports = __webpack_require__(195);
+__webpack_require__(213);
+module.exports = __webpack_require__(214);
 
 
 /***/ }),
 
-/***/ 194:
+/***/ 213:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ exports.spec = undefined;
 
 var _utils = __webpack_require__(0);
 
-var _bidderFactory = __webpack_require__(15);
+var _bidderFactory = __webpack_require__(9);
 
 /* eslint dot-notation:0, quote-props:0 */
 var NATIVE_DEFAULTS = {
@@ -94,6 +94,7 @@ var spec = exports.spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   var idToImpMap = {};
   var idToBidMap = {};
+  bidResponse = bidResponse.body;
   // extract the request bids and the response bids, keyed by impr-id
   var ortbRequest = parse(bidRequest.data);
   ortbRequest.imp.forEach((function (imp) {
@@ -341,11 +342,11 @@ function nativeResponse(imp, bid) {
 
 /***/ }),
 
-/***/ 195:
+/***/ 214:
 /***/ (function(module, exports) {
 
 
 
 /***/ })
 
-},[193]);
+},[212]);

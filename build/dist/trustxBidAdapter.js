@@ -1,183 +1,185 @@
-pbjsChunk([23],{
+pbjsChunk([0],{
 
-/***/ 240:
+/***/ 262:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(241);
+__webpack_require__(263);
+module.exports = __webpack_require__(264);
 
 
 /***/ }),
 
-/***/ 241:
+/***/ 263:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var utils = __webpack_require__(0);
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
-var adaptermanager = __webpack_require__(1);
-var CONSTANTS = __webpack_require__(4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
-var TrustxAdapter = function TrustxAdapter() {
-  var bidderCode = 'trustx';
-  var reqHost = '//sofia.trustx.org';
-  var reqPath = '/hb?';
-  var LOG_ERROR_MESS = {
-    noAuid: 'Bid from response has no auid parameter - ',
-    noAdm: 'Bid from response has no adm parameter - ',
-    noBid: 'Array of bid objects is empty',
-    noPlacementCode: 'Can\'t find placementCode for bid with auid - ',
-    havePCodeFor: ', placementCode is available only for the following uids - ',
-    emptyUids: 'Uids should be not empty',
-    emptySeatbid: 'Seatbid array from response has empty item',
-    emptyResponse: 'Response is empty',
-    hasEmptySeatbidArray: 'Response has empty seatbid array',
-    hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
-  };
+var _utils = __webpack_require__(0);
 
-  function _makeHandler(auids, placementMap) {
-    var cbName = bidderCode + '_callback_wrapper_' + auids.join('_');
-    pbjs[cbName] = function (resp) {
-      delete pbjs[cbName];
-      _responseProcessing(resp, auids, placementMap);
-    };
-    return 'pbjs.' + cbName;
-  }
+var utils = _interopRequireWildcard(_utils);
 
-  function _sendRequest(auids, placementMap) {
-    var query = [];
-    var path = reqPath;
-    query.push('u=' + encodeURIComponent(location.href));
-    query.push('auids=' + encodeURIComponent(auids.join(',')));
-    query.push('cb=' + _makeHandler(auids, placementMap));
-    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'gross' ? 'gross' : 'net'));
+var _bidderFactory = __webpack_require__(9);
 
-    adloader.loadScript(reqHost + path + query.join('&'));
-  }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-  function _callBids(params) {
+var BIDDER_CODE = 'trustx';
+var ENDPOINT_URL = '//sofia.trustx.org/hb';
+var TIME_TO_LIVE = 360;
+var ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
+var LOG_ERROR_MESS = {
+  noAuid: 'Bid from response has no auid parameter - ',
+  noAdm: 'Bid from response has no adm parameter - ',
+  noBid: 'Array of bid objects is empty',
+  noPlacementCode: 'Can\'t find in requested bids the bid with auid - ',
+  emptyUids: 'Uids should be not empty',
+  emptySeatbid: 'Seatbid array from response has empty item',
+  emptyResponse: 'Response is empty',
+  hasEmptySeatbidArray: 'Response has empty seatbid array',
+  hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
+};
+var spec = exports.spec = {
+  code: BIDDER_CODE,
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function isBidRequestValid(bid) {
+    return !!bid.params.uid;
+  },
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function buildRequests(validBidRequests) {
     var auids = [];
-    var placementMap = {};
-    var hasBid;
-    var bid;
-    var bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      bid = bids[i];
-      if (bid && bid.bidder === bidderCode && bid.placementCode) {
-        hasBid = true;
-        if (bid.params && bid.params.uid) {
-          if (!placementMap[bid.params.uid]) {
-            placementMap[bid.params.uid] = [bid.placementCode];
-            auids.push(bid.params.uid);
-          } else {
-            placementMap[bid.params.uid].push(bid.placementCode);
-          }
-        }
+    var bidsMap = {};
+    var bids = validBidRequests || [];
+    var priceType = 'net';
+
+    bids.forEach((function (bid) {
+      if (bid.params.priceType === 'gross') {
+        priceType = 'gross';
       }
-    }
-
-    if (auids.length) {
-      _sendRequest(auids, placementMap);
-    } else if (hasBid) {
-      utils.logError(LOG_ERROR_MESS.emptyUids);
-    }
-  }
-
-  function _getBidFromResponse(resp) {
-    if (!resp) {
-      utils.logError(LOG_ERROR_MESS.emptySeatbid);
-    } else if (!resp.bid) {
-      utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(resp));
-    } else if (!resp.bid[0]) {
-      utils.logError(LOG_ERROR_MESS.noBid);
-    }
-    return resp && resp.bid && resp.bid[0];
-  }
-
-  function _forEachPlacement(error, bid, placementCode) {
-    var bidObject;
-    if (error) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
-    } else {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
-      bidObject.cpm = bid.price;
-      bidObject.ad = bid.adm;
-      bidObject.width = bid.w;
-      bidObject.height = bid.h;
-      if (bid.dealid) {
-        bidObject.dealId = bid.dealid;
+      if (!bidsMap[bid.params.uid]) {
+        bidsMap[bid.params.uid] = [bid];
+        auids.push(bid.params.uid);
+      } else {
+        bidsMap[bid.params.uid].push(bid);
       }
-    }
-    bidObject.bidderCode = bidderCode;
-    bidmanager.addBidResponse(placementCode, bidObject);
-  }
+    }));
 
-  function _addBidResponse(bid, auids, placementMap) {
-    if (!bid) return;
-    var errorMessage, placementCodes;
-    if (!bid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(bid);else {
-      placementCodes = placementMap.hasOwnProperty(bid.auid) && placementMap[bid.auid];
-      if (!placementCodes) {
-        errorMessage = LOG_ERROR_MESS.noPlacementCode + bid.auid + LOG_ERROR_MESS.havePCodeFor + auids.join(',');
-      }
-    }
+    var payload = {
+      u: utils.getTopWindowUrl(),
+      pt: priceType,
+      auids: auids.join(',')
+    };
 
-    if (!errorMessage) {
-      if (!bid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(bid);
+    return {
+      method: 'GET',
+      url: ENDPOINT_URL,
+      data: payload,
+      bidsMap: bidsMap
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param {*} bidRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function interpretResponse(serverResponse, bidRequest) {
+    serverResponse = serverResponse && serverResponse.body;
+    var bidResponses = [];
+    var bidsMap = bidRequest.bidsMap;
+    var priceType = bidRequest.data.pt;
 
-      var l = placementCodes.length;
-      while (l--) {
-        _forEachPlacement(errorMessage, bid, placementCodes[l]);
-      }
+    var errorMessage = void 0;
 
-      delete placementMap[bid.auid];
-    }
-
-    if (errorMessage) {
-      utils.logError(errorMessage);
-    }
-  }
-
-  function _responseProcessing(resp, auids, placementMap) {
-    var errorMessage;
-
-    if (!resp) errorMessage = LOG_ERROR_MESS.emptyResponse;else if (resp.seatbid && !resp.seatbid.length) errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
-
-    if (!errorMessage) {
-      resp = resp.seatbid || [];
-      var l = resp.length;
-      while (l--) {
-        _addBidResponse(_getBidFromResponse(resp[l]), auids, placementMap);
-      }
+    if (!serverResponse) errorMessage = LOG_ERROR_MESS.emptyResponse;else if (serverResponse.seatbid && !serverResponse.seatbid.length) {
+      errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
     }
 
-    var n, bidObj;
-    for (var auid in placementMap) {
-      if (placementMap.hasOwnProperty(auid) && placementMap[auid]) {
-        n = placementMap[auid].length;
-        while (n--) {
-          bidObj = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
-          bidObj.bidderCode = bidderCode;
-          bidmanager.addBidResponse(placementMap[auid][n], bidObj);
-        }
-      }
+    if (!errorMessage && serverResponse.seatbid) {
+      serverResponse.seatbid.forEach((function (respItem) {
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses);
+      }));
     }
-
     if (errorMessage) utils.logError(errorMessage);
+    return bidResponses;
+  },
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: ADAPTER_SYNC_URL
+      }];
+    }
   }
-
-  return {
-    callBids: _callBids
-  };
 };
 
-adaptermanager.registerBidAdapter(new TrustxAdapter(), 'trustx');
+function _getBidFromResponse(respItem) {
+  if (!respItem) {
+    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+  } else if (!respItem.bid) {
+    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+  } else if (!respItem.bid[0]) {
+    utils.logError(LOG_ERROR_MESS.noBid);
+  }
+  return respItem && respItem.bid && respItem.bid[0];
+}
 
-module.exports = TrustxAdapter;
+function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
+  if (!serverBid) return;
+  var errorMessage = void 0;
+  if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
+  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);else {
+    var awaitingBids = bidsMap[serverBid.auid];
+    if (awaitingBids) {
+      awaitingBids.forEach((function (bid) {
+        var bidResponse = {
+          requestId: bid.bidId, // bid.bidderRequestId,
+          bidderCode: spec.code,
+          cpm: serverBid.price,
+          width: serverBid.w,
+          height: serverBid.h,
+          creativeId: serverBid.auid, // bid.bidId,
+          currency: 'USD',
+          netRevenue: priceType !== 'gross',
+          ttl: TIME_TO_LIVE,
+          ad: serverBid.adm,
+          dealId: serverBid.dealid
+        };
+        bidResponses.push(bidResponse);
+      }));
+    } else {
+      errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
+    }
+  }
+  if (errorMessage) {
+    utils.logError(errorMessage);
+  }
+}
+
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 264:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[240]);
+},[262]);

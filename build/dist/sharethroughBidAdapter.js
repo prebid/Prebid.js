@@ -1,14 +1,14 @@
-pbjsChunk([36],{
+pbjsChunk([51],{
 
-/***/ 214:
+/***/ 236:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(215);
+module.exports = __webpack_require__(237);
 
 
 /***/ }),
 
-/***/ 215:
+/***/ 237:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -110,7 +110,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   }
 
   function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.31.0');
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.32.0');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
 
@@ -129,4 +129,4 @@ module.exports = SharethroughAdapter;
 
 /***/ })
 
-},[214]);
+},[236]);

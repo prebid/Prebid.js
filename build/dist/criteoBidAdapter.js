@@ -1,14 +1,14 @@
-pbjsChunk([80],{
+pbjsChunk([89],{
 
-/***/ 107:
+/***/ 117:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(108);
+module.exports = __webpack_require__(118);
 
 
 /***/ }),
 
-/***/ 108:
+/***/ 118:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -180,4 +180,4 @@ module.exports = CriteoAdapter;
 
 /***/ })
 
-},[107]);
+},[117]);

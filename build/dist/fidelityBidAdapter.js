@@ -1,124 +1,127 @@
-pbjsChunk([73],{
+pbjsChunk([15],{
 
-/***/ 124:
+/***/ 134:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(125);
+__webpack_require__(135);
+module.exports = __webpack_require__(136);
 
 
 /***/ }),
 
-/***/ 125:
+/***/ 135:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var utils = __webpack_require__(0);
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
-var STATUS = __webpack_require__(4).STATUS;
-var adaptermanager = __webpack_require__(1);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
-var FidelityAdapter = function FidelityAdapter() {
-  var FIDELITY_BIDDER_NAME = 'fidelity';
-  var FIDELITY_SERVER_NAME = 'x.fidelity-media.com';
+var _utils = __webpack_require__(0);
 
-  function _callBids(params) {
-    var bids = params.bids || [];
-    bids.forEach((function (currentBid) {
-      var server = currentBid.params.server || FIDELITY_SERVER_NAME;
-      var m3_u = window.location.protocol + '//' + server + '/delivery/hb.php?';
-      m3_u += 'callback=window.pbjs.fidelityResponse';
-      m3_u += '&requestid=' + utils.getUniqueIdentifierStr();
-      m3_u += '&impid=' + currentBid.bidId;
-      m3_u += '&zoneid=' + currentBid.params.zoneid;
-      m3_u += '&cb=' + Math.floor(Math.random() * 99999999999);
-      m3_u += document.charset ? '&charset=' + document.charset : document.characterSet ? '&charset=' + document.characterSet : '';
+var utils = _interopRequireWildcard(_utils);
 
-      var loc;
-      try {
-        loc = window.top !== window ? document.referrer : window.location.href;
-      } catch (e) {
-        loc = document.referrer;
+var _bidderFactory = __webpack_require__(9);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+var BIDDER_CODE = 'fidelity';
+var BIDDER_SERVER = 'x.fidelity-media.com';
+var spec = exports.spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function isBidRequestValid(bid) {
+    return !!(bid && bid.params && bid.params.zoneid);
+  },
+  buildRequests: function buildRequests(validBidRequests, bidderRequest) {
+    return validBidRequests.map((function (bidRequest) {
+      var server = bidRequest.params.server || BIDDER_SERVER;
+
+      var payload = {
+        from: 'hb',
+        v: '1.0',
+        requestid: bidRequest.bidderRequestId,
+        impid: bidRequest.bidId,
+        zoneid: bidRequest.params.zoneid,
+        floor: parseFloat(bidRequest.params.floor) > 0 ? bidRequest.params.floor : 0,
+        charset: document.charSet || document.characterSet,
+        defloc: utils.getTopWindowUrl(),
+        altloc: window.location.href,
+        subid: 'hb',
+        flashver: getFlashVersion(),
+        tmax: bidderRequest.timeout
+      };
+      if (document.referrer) {
+        payload.referrer = document.referrer;
       }
-      loc = currentBid.params.loc || loc;
-      m3_u += '&loc=' + encodeURIComponent(loc);
 
-      var subid = currentBid.params.subid || 'hb';
-      m3_u += '&subid=' + subid;
-      if (document.referrer) m3_u += '&referer=' + encodeURIComponent(document.referrer);
-      if (currentBid.params.click) m3_u += '&ct0=' + encodeURIComponent(currentBid.params.click);
-      m3_u += '&flashver=' + encodeURIComponent(getFlashVersion());
-
-      adloader.loadScript(m3_u);
+      return {
+        method: 'GET',
+        url: '//' + server + '/delivery/hb.php',
+        data: payload
+      };
     }));
-  }
+  },
+  interpretResponse: function interpretResponse(serverResponse) {
+    serverResponse = serverResponse.body;
+    var bidResponses = [];
+    if (serverResponse && serverResponse.seatbid) {
+      serverResponse.seatbid.forEach((function (seatBid) {
+        return seatBid.bid.forEach((function (bid) {
+          var bidResponse = {
+            requestId: bid.impid,
+            creativeId: bid.impid,
+            cpm: bid.price,
+            width: bid.width,
+            height: bid.height,
+            ad: bid.adm,
+            netRevenue: bid.netRevenue,
+            currency: bid.cur,
+            ttl: bid.ttl
+          };
 
-  function getFlashVersion() {
-    var plugins, plugin, result;
-
-    if (navigator.plugins && navigator.plugins.length > 0) {
-      plugins = navigator.plugins;
-      for (var i = 0; i < plugins.length && !result; i++) {
-        plugin = plugins[i];
-        if (plugin.name.indexOf('Shockwave Flash') > -1) {
-          result = plugin.description.split('Shockwave Flash ')[1];
-        }
-      }
-    }
-    return result || '';
-  }
-
-  function addBlankBidResponses(placementsWithBidsBack) {
-    var allFidelityBidRequests = pbjs._bidsRequested.find((function (bidSet) {
-      return bidSet.bidderCode === FIDELITY_BIDDER_NAME;
-    }));
-
-    if (allFidelityBidRequests && allFidelityBidRequests.bids) {
-      utils._each(allFidelityBidRequests.bids, (function (fidelityBid) {
-        if (!utils.contains(placementsWithBidsBack, fidelityBid.placementCode)) {
-          // Add a no-bid response for this placement.
-          var bid = bidfactory.createBid(STATUS.NO_BID, fidelityBid);
-          bid.bidderCode = FIDELITY_BIDDER_NAME;
-          bidmanager.addBidResponse(fidelityBid.placementCode, bid);
-        }
+          bidResponses.push(bidResponse);
+        }));
       }));
     }
+    return bidResponses;
+  },
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//' + BIDDER_SERVER + '/delivery/matches.php?type=iframe'
+      }];
+    }
   }
-
-  pbjs.fidelityResponse = function (responseObj) {
-    if (!responseObj || !responseObj.seatbid || responseObj.seatbid.length === 0 || !responseObj.seatbid[0].bid || responseObj.seatbid[0].bid.length === 0) {
-      addBlankBidResponses([]);
-      return;
-    }
-
-    var bid = responseObj.seatbid[0].bid[0];
-    var status = bid.adm ? STATUS.GOOD : STATUS.NO_BID;
-    var requestObj = utils.getBidRequest(bid.impid);
-
-    var bidResponse = bidfactory.createBid(status);
-    bidResponse.bidderCode = FIDELITY_BIDDER_NAME;
-    if (status === STATUS.GOOD) {
-      bidResponse.cpm = parseFloat(bid.price);
-      bidResponse.ad = bid.adm;
-      bidResponse.width = parseInt(bid.width);
-      bidResponse.height = parseInt(bid.height);
-    }
-    var placementCode = requestObj && requestObj.placementCode;
-    bidmanager.addBidResponse(placementCode, bidResponse);
-  };
-
-  return {
-    callBids: _callBids
-  };
 };
 
-adaptermanager.registerBidAdapter(new FidelityAdapter(), 'fidelity');
+function getFlashVersion() {
+  var plugins, plugin, result;
 
-module.exports = FidelityAdapter;
+  if (navigator.plugins && navigator.plugins.length > 0) {
+    plugins = navigator.plugins;
+    for (var i = 0; i < plugins.length && !result; i++) {
+      plugin = plugins[i];
+      if (plugin.name.indexOf('Shockwave Flash') > -1) {
+        result = plugin.description.split('Shockwave Flash ')[1];
+      }
+    }
+  }
+  return result || '';
+}
+
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 136:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[124]);
+},[134]);

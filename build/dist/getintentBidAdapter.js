@@ -1,103 +1,172 @@
-pbjsChunk([72],{
+pbjsChunk([14],{
 
-/***/ 126:
+/***/ 137:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(127);
+__webpack_require__(138);
+module.exports = __webpack_require__(139);
 
 
 /***/ }),
 
-/***/ 127:
+/***/ 138:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _constants = __webpack_require__(4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
-var _adaptermanager = __webpack_require__(1);
+var _bidderFactory = __webpack_require__(9);
 
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+var BIDDER_CODE = 'getintent';
+var IS_NET_REVENUE = true;
+var BID_HOST = 'px.adhigh.net';
+var BID_BANNER_PATH = '/rtb/direct_banner';
+var BID_VIDEO_PATH = '/rtb/direct_vast';
+var BID_RESPONSE_TTL_SEC = 360;
+var VIDEO_PROPERTIES = ['protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'];
+var OPTIONAL_PROPERTIES = ['cur', 'floor'];
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+var spec = exports.spec = {
+  code: BIDDER_CODE,
+  aliases: ['getintentAdapter'],
+  supportedMediaTypes: ['video', 'banner'],
 
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid to validate.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
+   * */
+  isBidRequestValid: function isBidRequestValid(bid) {
+    return !!(bid && bid.params && bid.params.pid && bid.params.tid);
+  },
 
-var GetIntentAdapter = function GetIntentAdapter() {
-  var headerBiddingStaticJS = window.location.protocol + '//cdn.adhigh.net/adserver/hb.js';
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} bidRequests - an array of bids.
+   * @return ServerRequest[]
+   */
+  buildRequests: function buildRequests(bidRequests) {
+    return bidRequests.map((function (bidRequest) {
+      var giBidRequest = buildGiBidRequest(bidRequest);
+      return {
+        method: 'GET',
+        url: buildUrl(giBidRequest),
+        data: giBidRequest
+      };
+    }));
+  },
 
-  function _callBids(params) {
-    if (typeof window.gi_hb === 'undefined') {
-      adloader.loadScript(headerBiddingStaticJS, (function () {
-        bid(params);
-      }), true);
-    } else {
-      bid(params);
+  /**
+   * Callback for bids, after the call to DSP completes.
+   * Parse the response from the server into a list of bids.
+   *
+   * @param {object} serverResponse A response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function interpretResponse(serverResponse) {
+    var responseBody = serverResponse.body;
+    var bids = [];
+    if (responseBody && responseBody.no_bid !== 1) {
+      var size = parseSize(responseBody.size);
+      var bid = {
+        requestId: responseBody.bid_id,
+        ttl: BID_RESPONSE_TTL_SEC,
+        netRevenue: IS_NET_REVENUE,
+        currency: responseBody.currency,
+        creativeId: responseBody.creative_id,
+        cpm: responseBody.cpm,
+        width: size[0],
+        height: size[1]
+      };
+      if (responseBody.vast_url) {
+        bid.mediaType = 'video';
+        bid.vastUrl = responseBody.vast_url;
+      } else {
+        bid.mediaType = 'banner';
+        bid.ad = responseBody.ad;
+      }
+      bids.push(bid);
     }
+    return bids;
   }
 
-  function addOptional(params, request, props) {
-    for (var i = 0; i < props.length; i++) {
-      if (params.hasOwnProperty(props[i])) {
-        request[props[i]] = params[props[i]];
+};
+
+function buildUrl(bid) {
+  return '//' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
+}
+
+/**
+ * Builds GI bid request from BidRequest.
+ *
+ * @param {BidRequest} bidRequest.
+ * @return {object} GI bid request.
+ * */
+function buildGiBidRequest(bidRequest) {
+  var giBidRequest = {
+    bid_id: bidRequest.bidId,
+    pid: bidRequest.params.pid, // required
+    tid: bidRequest.params.tid, // required
+    known: bidRequest.params.known || 1,
+    is_video: bidRequest.mediaType === 'video',
+    resp_type: 'JSON'
+  };
+  if (bidRequest.sizes) {
+    giBidRequest.size = produceSize(bidRequest.sizes);
+  }
+  addVideo(bidRequest.params.video, giBidRequest);
+  addOptional(bidRequest.params, giBidRequest, OPTIONAL_PROPERTIES);
+  return giBidRequest;
+}
+
+function addVideo(video, giBidRequest) {
+  if (giBidRequest.is_video && video) {
+    for (var i = 0, l = VIDEO_PROPERTIES.length; i < l; i++) {
+      var key = VIDEO_PROPERTIES[i];
+      if (video.hasOwnProperty(key)) {
+        giBidRequest[key] = Array.isArray(video[key]) ? video[key].join(',') : video[key];
       }
     }
   }
+}
 
-  function bid(params) {
-    var bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var request = {
-        pid: bidRequest.params.pid, // required
-        tid: bidRequest.params.tid, // required
-        known: bidRequest.params.known || 1,
-        is_video: bidRequest.mediaType === 'video',
-        video: bidRequest.params.video || {},
-        size: bidRequest.sizes[0].join('x')
-      };
-      addOptional(bidRequest.params, request, ['cur', 'floor']);
-      (function (r, br) {
-        window.gi_hb.makeBid(r, (function (bidResponse) {
-          if (bidResponse.no_bid === 1) {
-            var nobid = bidfactory.createBid(_constants.STATUS.NO_BID);
-            nobid.bidderCode = br.bidder;
-            bidmanager.addBidResponse(br.placementCode, nobid);
-          } else {
-            var bid = bidfactory.createBid(_constants.STATUS.GOOD);
-            var size = bidResponse.size.split('x');
-            bid.bidderCode = br.bidder;
-            bid.cpm = bidResponse.cpm;
-            bid.width = size[0];
-            bid.height = size[1];
-            if (br.mediaType === 'video') {
-              bid.vastUrl = bidResponse.vast_url;
-              bid.descriptionUrl = bidResponse.vast_url;
-              bid.mediaType = 'video';
-            } else {
-              bid.ad = bidResponse.ad;
-            }
-            bidmanager.addBidResponse(br.placementCode, bid);
-          }
-        }));
-      })(request, bidRequest);
+function addOptional(params, request, props) {
+  for (var i = 0; i < props.length; i++) {
+    if (params.hasOwnProperty(props[i])) {
+      request[props[i]] = params[props[i]];
     }
   }
+}
 
-  return {
-    callBids: _callBids
-  };
-};
+function parseSize(s) {
+  return s.split('x').map(Number);
+}
 
-_adaptermanager2['default'].registerBidAdapter(new GetIntentAdapter(), 'getintent', {
-  supportedMediaTypes: ['video']
-});
+function produceSize(sizes) {
+  // TODO: add support for multiple sizes
+  if (Array.isArray(sizes[0])) {
+    return sizes[0].join('x');
+  } else {
+    return sizes.join('x');
+  }
+}
 
-module.exports = GetIntentAdapter;
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 139:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[126]);
+},[137]);

@@ -1,14 +1,14 @@
-pbjsChunk([62],{
+pbjsChunk([75],{
 
-/***/ 146:
+/***/ 160:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(147);
+module.exports = __webpack_require__(161);
 
 
 /***/ }),
 
-/***/ 147:
+/***/ 161:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -84,6 +84,12 @@ var JustpremiumAdapter = function JustpremiumAdapter() {
     return null;
   }
 
+  function isOldBrowser() {
+    var isPromisse = typeof Promise !== 'undefined' && Promise.toString().indexOf('[native code]') !== -1;
+    var isWeakMap = typeof WeakMap !== 'undefined' && WeakMap.toString().indexOf('[native code]') !== -1;
+    return !Array.prototype.find || !Array.prototype.sort || !Array.prototype.map || !Array.prototype.filter || !Array.prototype.keys || !isPromisse || !isWeakMap;
+  }
+
   function setupVar() {
     d = top.document;
     jPAM = top.jPAM = top.jPAM || window.jPAM || {};
@@ -92,7 +98,7 @@ var JustpremiumAdapter = function JustpremiumAdapter() {
       server: null
     };
     var libVer = readCookie('jpxhbjs') || null;
-    toLoad = dConfig.toLoad || [d.location.protocol + '//cdn-cf.justpremium.com/js/' + (libVer ? libVer + '/' : '') + 'jpx.js'];
+    toLoad = dConfig.toLoad || [d.location.protocol + '//cdn-cf.justpremium.com/js/' + (libVer ? libVer + '/' : '') + (isOldBrowser() ? 'jpxp.js' : 'jpx.js')];
     server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com/v/1.4';
   }
 
@@ -150,7 +156,6 @@ var JustpremiumAdapter = function JustpremiumAdapter() {
         return rec.length ? rec.pop() : false;
       }
     }
-
     return false;
   }
 
@@ -302,4 +307,4 @@ module.exports = JustpremiumAdapter;
 
 /***/ })
 
-},[146]);
+},[160]);

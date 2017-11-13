@@ -1,14 +1,14 @@
-pbjsChunk([74],{
+pbjsChunk([83],{
 
-/***/ 122:
+/***/ 132:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(123);
+module.exports = __webpack_require__(133);
 
 
 /***/ }),
 
-/***/ 123:
+/***/ 133:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37,8 +37,8 @@ function FeatureForwardAdapter() {
   };
 
   function _callBids(bidderRequest) {
-    var i = 0;
     bidderRequest.bids.forEach((function (bidRequest) {
+      var i = 0;
       try {
         while (bidRequest.sizes[i] !== undefined) {
           var params = _extends({}, environment(), bidRequest.params, { 'size': bidRequest.sizes[i] });
@@ -116,4 +116,4 @@ module.exports = FeatureForwardAdapter;
 
 /***/ })
 
-},[122]);
+},[132]);

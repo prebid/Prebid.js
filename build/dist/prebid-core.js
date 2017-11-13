@@ -1,5 +1,5 @@
-/* prebid.js v0.31.0
-Updated : 2017-10-24 */
+/* prebid.js v0.32.0
+Updated : 2017-11-13 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// install a JSONP callback for chunk loading
 /******/ 	var parentJsonpFunction = window["pbjsChunk"];
@@ -36,7 +36,7 @@ Updated : 2017-10-24 */
 /******/
 /******/ 	// objects to store loaded and loading chunks
 /******/ 	var installedChunks = {
-/******/ 		107: 0
+/******/ 		110: 0
 /******/ 	};
 /******/
 /******/ 	// The require function
@@ -108,7 +108,7 @@ Updated : 2017-10-24 */
 /******/ 	__webpack_require__.oe = function(err) { console.error(err); throw err; };
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 264);
+/******/ 	return __webpack_require__(__webpack_require__.s = 287);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -152,7 +152,7 @@ exports.deepAccess = deepAccess;
 exports.getDefinedParams = getDefinedParams;
 exports.isValidMediaTypes = isValidMediaTypes;
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -496,7 +496,7 @@ exports.isNumber = function (object) {
  */
 exports.isEmpty = function (object) {
   if (!object) return true;
-  if (this.isArray(object) || this.isStr(object)) {
+  if (exports.isArray(object) || exports.isStr(object)) {
     return !(object.length > 0);
   }
 
@@ -955,15 +955,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _utils = __webpack_require__(0);
 
-var _sizeMapping = __webpack_require__(45);
+var _sizeMapping = __webpack_require__(46);
 
-var _native = __webpack_require__(13);
+var _native = __webpack_require__(15);
 
-var _bidderFactory = __webpack_require__(15);
+var _bidderFactory = __webpack_require__(9);
 
 var utils = __webpack_require__(0);
 var CONSTANTS = __webpack_require__(4);
-var events = __webpack_require__(10);
+var events = __webpack_require__(11);
 var s2sTestingModule = void 0; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
@@ -1157,20 +1157,18 @@ exports.callBids = function (_ref2) {
         pbjs._bidsRequested.push(bidderRequest);
         _bidderRequests.push(bidderRequest);
       }
+    } else {
+      utils.logError('Adapter trying to be called which does not exist: ' + bidderCode + ' adaptermanager.callBids');
     }
   }));
 
   _bidderRequests.forEach((function (bidRequest) {
     bidRequest.start = new Date().getTime();
     var adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      if (bidRequest.bids && bidRequest.bids.length !== 0) {
-        utils.logMessage('CALLING BIDDER ======= ' + bidRequest.bidderCode);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-        adapter.callBids(bidRequest);
-      }
-    } else {
-      utils.logError('Adapter trying to be called which does not exist: ' + bidRequest.bidderCode + ' adaptermanager.callBids');
+    if (bidRequest.bids && bidRequest.bids.length !== 0) {
+      utils.logMessage('CALLING BIDDER ======= ' + bidRequest.bidderCode);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      adapter.callBids(bidRequest);
     }
   }));
 };
@@ -1292,6 +1290,10 @@ exports.setBidderSequence = function (order) {
   }
 };
 
+exports.getBidAdapter = function (bidder) {
+  return _bidderRegistry[bidder];
+};
+
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
@@ -1315,22 +1317,24 @@ var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = 
 
 var _utils = __webpack_require__(0);
 
-var _cpmBucketManager = __webpack_require__(26);
+var _cpmBucketManager = __webpack_require__(28);
 
-var _native = __webpack_require__(13);
+var _native = __webpack_require__(15);
 
-var _video = __webpack_require__(27);
+var _video = __webpack_require__(29);
 
-var _videoCache = __webpack_require__(46);
+var _videoCache = __webpack_require__(47);
 
-var _Renderer = __webpack_require__(18);
+var _Renderer = __webpack_require__(20);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
+
+var _hook = __webpack_require__(48);
 
 var CONSTANTS = __webpack_require__(4);
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = __webpack_require__(0);
-var events = __webpack_require__(10);
+var events = __webpack_require__(11);
 
 var externalCallbacks = { byAdUnit: [], all: [], oneTime: null, timer: false };
 var defaultBidderSettingsMap = {};
@@ -1406,7 +1410,7 @@ exports.bidsBackAll = function () {
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse = (0, _hook.createHook)('asyncSeries', (function (adUnitCode, bid) {
   if (isValid()) {
     prepareBidForAuction();
 
@@ -1579,7 +1583,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       doCallbacksIfNeeded();
     }
   }
-};
+}));
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
@@ -1896,7 +1900,7 @@ exports.createBid = function (statusCode, bidRequest) {
 /* 4 */
 /***/ (function(module, exports) {
 
-module.exports = {"JSON_MAPPING":{"PL_CODE":"code","PL_SIZE":"sizes","PL_BIDS":"bids","BD_BIDDER":"bidder","BD_ID":"paramsd","BD_PL_ID":"placementId","ADSERVER_TARGETING":"adserverTargeting","BD_SETTING_STANDARD":"standard"},"REPO_AND_VERSION":"prebid_prebid_0.31.0","DEBUG_MODE":"pbjs_debug","STATUS":{"GOOD":1,"NO_BID":2},"CB":{"TYPE":{"ALL_BIDS_BACK":"allRequestedBidsBack","AD_UNIT_BIDS_BACK":"adUnitBidsBack","BID_WON":"bidWon","REQUEST_BIDS":"requestBids"}},"EVENTS":{"AUCTION_INIT":"auctionInit","AUCTION_END":"auctionEnd","BID_ADJUSTMENT":"bidAdjustment","BID_TIMEOUT":"bidTimeout","BID_REQUESTED":"bidRequested","BID_RESPONSE":"bidResponse","BID_WON":"bidWon","SET_TARGETING":"setTargeting","REQUEST_BIDS":"requestBids","ADD_AD_UNITS":"addAdUnits"},"EVENT_ID_PATHS":{"bidWon":"adUnitCode"},"GRANULARITY_OPTIONS":{"LOW":"low","MEDIUM":"medium","HIGH":"high","AUTO":"auto","DENSE":"dense","CUSTOM":"custom"},"TARGETING_KEYS":["hb_bidder","hb_adid","hb_pb","hb_size","hb_deal"],"S2S":{"DEFAULT_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/auction","SRC":"s2s","ADAPTER":"prebidServer","SYNC_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/cookie_sync","SYNCED_BIDDERS_KEY":"pbjsSyncs"}}
+module.exports = {"JSON_MAPPING":{"PL_CODE":"code","PL_SIZE":"sizes","PL_BIDS":"bids","BD_BIDDER":"bidder","BD_ID":"paramsd","BD_PL_ID":"placementId","ADSERVER_TARGETING":"adserverTargeting","BD_SETTING_STANDARD":"standard"},"REPO_AND_VERSION":"prebid_prebid_0.32.0","DEBUG_MODE":"pbjs_debug","STATUS":{"GOOD":1,"NO_BID":2},"CB":{"TYPE":{"ALL_BIDS_BACK":"allRequestedBidsBack","AD_UNIT_BIDS_BACK":"adUnitBidsBack","BID_WON":"bidWon","REQUEST_BIDS":"requestBids"}},"EVENTS":{"AUCTION_INIT":"auctionInit","AUCTION_END":"auctionEnd","BID_ADJUSTMENT":"bidAdjustment","BID_TIMEOUT":"bidTimeout","BID_REQUESTED":"bidRequested","BID_RESPONSE":"bidResponse","BID_WON":"bidWon","SET_TARGETING":"setTargeting","REQUEST_BIDS":"requestBids","ADD_AD_UNITS":"addAdUnits"},"EVENT_ID_PATHS":{"bidWon":"adUnitCode"},"GRANULARITY_OPTIONS":{"LOW":"low","MEDIUM":"medium","HIGH":"high","AUTO":"auto","DENSE":"dense","CUSTOM":"custom"},"TARGETING_KEYS":["hb_bidder","hb_adid","hb_pb","hb_size","hb_deal"],"S2S":{"DEFAULT_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/auction","SRC":"s2s","ADAPTER":"prebidServer","SYNC_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/cookie_sync","SYNCED_BIDDERS_KEY":"pbjsSyncs"}}
 
 /***/ }),
 /* 5 */
@@ -2005,7 +2009,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 exports.setAjaxTimeout = setAjaxTimeout;
 exports.ajax = ajax;
 
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
 var utils = __webpack_require__(0);
 
@@ -2144,8 +2148,7 @@ function Adapter(code) {
 }
 
 /***/ }),
-/* 8 */,
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2171,7 +2174,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 exports.newConfig = newConfig;
 
-var _cpmBucketManager = __webpack_require__(26);
+var _cpmBucketManager = __webpack_require__(28);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -2424,7 +2427,402 @@ function newConfig() {
 var config = exports.config = newConfig();
 
 /***/ }),
-/* 10 */
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.registerBidder = registerBidder;
+exports.newBidder = newBidder;
+
+var _adapter = __webpack_require__(7);
+
+var _adapter2 = _interopRequireDefault(_adapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+var _config = __webpack_require__(8);
+
+var _ajax = __webpack_require__(6);
+
+var _bidmanager = __webpack_require__(2);
+
+var _bidmanager2 = _interopRequireDefault(_bidmanager);
+
+var _bidfactory = __webpack_require__(3);
+
+var _bidfactory2 = _interopRequireDefault(_bidfactory);
+
+var _constants = __webpack_require__(4);
+
+var _userSync = __webpack_require__(19);
+
+var _utils = __webpack_require__(0);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+/**
+ * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
+ *
+ * Prebid 1.x and Prebid 0.x will be in separate branches--perhaps for a long time.
+ * This function defines an API for adapter construction which is compatible with both versions.
+ * Adapters which use it can maintain their code in master, and only this file will need to change
+ * in the 1.x branch.
+ *
+ * Typical usage looks something like:
+ *
+ * const adapter = registerBidder({
+ *   code: 'myBidderCode',
+ *   aliases: ['alias1', 'alias2'],
+ *   supportedMediaTypes: ['video', 'native'],
+ *   isBidRequestValid: function(paramsObject) { return true/false },
+ *   buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
+ *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
+ * });
+ *
+ * @see BidderSpec for the full API and more thorough descriptions.
+ */
+
+/**
+ * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
+ * make a Bidder.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
+ * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
+ * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
+ *   needed to make a valid request.
+ * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
+ *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
+ *   passed the isBidRequestValid() test.
+ * @property {function(ServerResponse, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
+ *   interpret it and return the Bid objects. This function will be run inside a try/catch.
+ *   If it throws any errors, your bids will be discarded.
+ * @property {function(SyncOptions, ServerResponse[]): UserSync[]} [getUserSyncs] Given an array of all the responses
+ *   from the server, determine which user syncs should occur. The argument array will contain every element
+ *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
+ *   important ones should come first, since publishers may limit how many are dropped on their page.
+ */
+
+/**
+ * @typedef {object} BidRequest
+ *
+ * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ */
+
+/**
+ * @typedef {object} ServerRequest
+ *
+ * @property {('GET'|'POST')} method The type of request which this is.
+ * @property {string} url The endpoint for the request. For example, "//bids.example.com".
+ * @property {string|object} data Data to be sent in the request.
+ * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
+ *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
+ *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
+ *   JSON-serialized into the Request body.
+ */
+
+/**
+ * @typedef {object} ServerResponse
+ *
+ * @property {*} body The response body. If this is legal JSON, then it will be parsed. Otherwise it'll be a
+ *   string with the body's content.
+ * @property {{get: function(string): string} headers The response headers.
+ *   Call this like `ServerResponse.headers.get("Content-Type")`
+ */
+
+/**
+ * @typedef {object} Bid
+ *
+ * @property {string} requestId The specific BidRequest which this bid is aimed at.
+ *   This should match the BidRequest.bidId which this Bid targets.
+ * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {string} currency The currency code for the cpm value
+ * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
+ * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
+ * @property {number} height The height of the ad, in pixels.
+ * @property {number} width The width of the ad, in pixels.
+ *
+ * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
+ *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
+ */
+
+/**
+ * @typedef {Object} SyncOptions
+ *
+ * An object containing information about usersyncs which the adapter should obey.
+ *
+ * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
+ * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
+ */
+
+/**
+ * TODO: Move this to the UserSync module after that PR is merged.
+ *
+ * @typedef {object} UserSync
+ *
+ * @property {('image'|'iframe')} type The type of user sync to be done.
+ * @property {string} url The URL which makes the sync happen.
+ */
+
+// common params for all mediaTypes
+var COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+
+/**
+ * Register a bidder with prebid, using the given spec.
+ *
+ * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
+ *
+ * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
+ */
+function registerBidder(spec) {
+  var mediaTypes = Array.isArray(spec.supportedMediaTypes) ? { supportedMediaTypes: spec.supportedMediaTypes } : undefined;
+  function putBidder(spec) {
+    var bidder = newBidder(spec);
+    _adaptermanager2['default'].registerBidAdapter(bidder, spec.code, mediaTypes);
+  }
+
+  putBidder(spec);
+  if (Array.isArray(spec.aliases)) {
+    spec.aliases.forEach((function (alias) {
+      putBidder(_extends({}, spec, { code: alias }));
+    }));
+  }
+}
+
+/**
+ * Make a new bidder from the given spec. This is exported mainly for testing.
+ * Adapters will probably find it more convenient to use registerBidder instead.
+ *
+ * @param {BidderSpec} spec
+ */
+function newBidder(spec) {
+  return _extends(new _adapter2['default'](spec.code), {
+    getSpec: function getSpec() {
+      return Object.freeze(spec);
+    },
+    registerSyncs: registerSyncs,
+    callBids: function callBids(bidderRequest) {
+      if (!Array.isArray(bidderRequest.bids)) {
+        return;
+      }
+
+      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
+      // end properly. This map stores placement codes which we've made _real_ bids on.
+      //
+      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
+      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
+      // will end the auction.
+      //
+      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
+      var adUnitCodesHandled = {};
+      function addBidWithCode(adUnitCode, bid) {
+        adUnitCodesHandled[adUnitCode] = true;
+        addBid(adUnitCode, bid);
+      }
+      function fillNoBids() {
+        bidderRequest.bids.map((function (bidRequest) {
+          return bidRequest.placementCode;
+        })).forEach((function (adUnitCode) {
+          if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
+            addBid(adUnitCode, newEmptyBid());
+          }
+        }));
+      }
+
+      function addBid(code, bid) {
+        try {
+          _bidmanager2['default'].addBidResponse(code, bid);
+        } catch (err) {
+          (0, _utils.logError)('Error adding bid', code, err);
+        }
+      }
+
+      // After all the responses have come back, fill up the "no bid" bids and
+      // register any required usersync pixels.
+      var responses = [];
+      function afterAllResponses() {
+        fillNoBids();
+        registerSyncs(responses);
+      }
+
+      var validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      if (validBidRequests.length === 0) {
+        afterAllResponses();
+        return;
+      }
+      var bidRequestMap = {};
+      validBidRequests.forEach((function (bid) {
+        bidRequestMap[bid.bidId] = bid;
+        // Delete this once we are 1.0
+        if (!bid.adUnitCode) {
+          bid.adUnitCode = bid.placementCode;
+        }
+      }));
+
+      var requests = spec.buildRequests(validBidRequests, bidderRequest);
+      if (!requests || requests.length === 0) {
+        afterAllResponses();
+        return;
+      }
+      if (!Array.isArray(requests)) {
+        requests = [requests];
+      }
+
+      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
+      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
+      // we need to rig up a function which only executes after all the requests have been responded.
+      var onResponse = (0, _utils.delayExecution)(afterAllResponses, requests.length);
+      requests.forEach(processRequest);
+
+      function processRequest(request) {
+        switch (request.method) {
+          case 'GET':
+            (0, _ajax.ajax)(request.url + '?' + (_typeof(request.data) === 'object' ? (0, _utils.parseQueryStringParameters)(request.data) : request.data), {
+              success: onSuccess,
+              error: onFailure
+            }, undefined, _extends({
+              method: 'GET',
+              withCredentials: true
+            }, request.options));
+            break;
+          case 'POST':
+            (0, _ajax.ajax)(request.url, {
+              success: onSuccess,
+              error: onFailure
+            }, typeof request.data === 'string' ? request.data : JSON.stringify(request.data), _extends({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            }, request.options));
+            break;
+          default:
+            (0, _utils.logWarn)('Skipping invalid request from ' + spec.code + '. Request type ' + request.type + ' must be GET or POST');
+            onResponse();
+        }
+
+        // If the server responds successfully, use the adapter code to unpack the Bids from it.
+        // If the adapter code fails, no bids should be added. After all the bids have been added, make
+        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        function onSuccess(response, responseObj) {
+          try {
+            response = JSON.parse(response);
+          } catch (e) {} /* response might not be JSON... that's ok. */
+
+          // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
+          response = {
+            body: response,
+            headers: headerParser(responseObj)
+          };
+          responses.push(response);
+
+          var bids = void 0;
+          try {
+            bids = spec.interpretResponse(response, request);
+          } catch (err) {
+            (0, _utils.logError)('Bidder ' + spec.code + ' failed to interpret the server\'s response. Continuing without bids', null, err);
+            onResponse();
+            return;
+          }
+
+          if (bids) {
+            if (bids.forEach) {
+              bids.forEach(addBidUsingRequestMap);
+            } else {
+              addBidUsingRequestMap(bids);
+            }
+          }
+          onResponse();
+
+          function addBidUsingRequestMap(bid) {
+            // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
+            if (hasValidKeys(bid)) {
+              var bidRequest = bidRequestMap[bid.requestId];
+              if (bidRequest) {
+                var prebidBid = _extends(_bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest), bid);
+                addBidWithCode(bidRequest.placementCode, prebidBid);
+              } else {
+                (0, _utils.logWarn)('Bidder ' + spec.code + ' made bid for unknown request ID: ' + bid.requestId + '. Ignoring.');
+              }
+            } else {
+              (0, _utils.logError)('Bidder ' + spec.code + ' is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.');
+            }
+          }
+
+          function headerParser(xmlHttpResponse) {
+            return {
+              get: responseObj.getResponseHeader.bind(responseObj)
+            };
+          }
+        }
+
+        // If the server responds with an error, there's not much we can do. Log it, and make sure to
+        // call onResponse() so that we're one step closer to calling fillNoBids().
+        function onFailure(err) {
+          (0, _utils.logError)('Server call for ' + spec.code + ' failed: ' + err + '. Continuing without bids.');
+          onResponse();
+        }
+      }
+    }
+  });
+
+  function registerSyncs(responses) {
+    if (spec.getUserSyncs) {
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: _config.config.getConfig('userSync.iframeEnabled'),
+        pixelEnabled: _config.config.getConfig('userSync.pixelEnabled')
+      }, responses);
+      if (syncs) {
+        if (!Array.isArray(syncs)) {
+          syncs = [syncs];
+        }
+        syncs.forEach((function (sync) {
+          _userSync.userSync.registerSync(sync.type, spec.code, sync.url);
+        }));
+      }
+    }
+  }
+
+  function filterAndWarn(bid) {
+    if (!spec.isBidRequestValid(bid)) {
+      (0, _utils.logWarn)('Invalid bid sent to bidder ' + spec.code + ': ' + JSON.stringify(bid));
+      return false;
+    }
+    return true;
+  }
+
+  function hasValidKeys(bid) {
+    var bidKeys = Object.keys(bid);
+    return COMMON_BID_RESPONSE_KEYS.every((function (key) {
+      return bidKeys.includes(key);
+    }));
+  }
+
+  function newEmptyBid() {
+    var bid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID);
+    bid.code = spec.code;
+    bid.bidderCode = spec.code;
+    return bid;
+  }
+}
+
+/***/ }),
+/* 10 */,
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2584,7 +2982,7 @@ module.exports = (function () {
 })();
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2649,7 +3047,35 @@ function format(obj) {
 }
 
 /***/ }),
-/* 12 */
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/**
+ * This file contains the valid Media Types in Prebid.
+ *
+ * All adapters are assumed to support banner ads. Other media types are specified by Adapters when they
+ * register themselves with prebid-core.
+ */
+
+/**
+ * @typedef {('native'|'video'|'banner')} MediaType
+ */
+
+/** @type MediaType */
+var NATIVE = exports.NATIVE = 'native';
+/** @type MediaType */
+var VIDEO = exports.VIDEO = 'video';
+/** @type MediaType */
+var BANNER = exports.BANNER = 'banner';
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports) {
 
 var core = module.exports = { version: '2.5.1' };
@@ -2657,7 +3083,7 @@ if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2837,7 +3263,7 @@ function getNativeTargeting(bid) {
 }
 
 /***/ }),
-/* 14 */
+/* 16 */
 /***/ (function(module, exports) {
 
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
@@ -2849,363 +3275,14 @@ if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 
 
 /***/ }),
-/* 15 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-exports.registerBidder = registerBidder;
-exports.newBidder = newBidder;
-
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-var _config = __webpack_require__(9);
-
-var _ajax = __webpack_require__(6);
-
-var _bidmanager = __webpack_require__(2);
-
-var _bidmanager2 = _interopRequireDefault(_bidmanager);
-
-var _bidfactory = __webpack_require__(3);
-
-var _bidfactory2 = _interopRequireDefault(_bidfactory);
-
-var _constants = __webpack_require__(4);
-
-var _userSync = __webpack_require__(28);
-
-var _utils = __webpack_require__(0);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-/**
- * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
- *
- * Prebid 1.x and Prebid 0.x will be in separate branches--perhaps for a long time.
- * This function defines an API for adapter construction which is compatible with both versions.
- * Adapters which use it can maintain their code in master, and only this file will need to change
- * in the 1.x branch.
- *
- * Typical usage looks something like:
- *
- * const adapter = registerBidder({
- *   code: 'myBidderCode',
- *   aliases: ['alias1', 'alias2'],
- *   supportedMediaTypes: ['video', 'native'],
- *   isBidRequestValid: function(paramsObject) { return true/false },
- *   buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
- *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
- * });
- *
- * @see BidderSpec for the full API and more thorough descriptions.
- */
-
-/**
- * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
- * make a Bidder.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
- * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
- * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
- *   needed to make a valid request.
- * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
- *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   passed the isBidRequestValid() test.
- * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
- *   interpret it and return the Bid objects. This function will be run inside a try/catch.
- *   If it throws any errors, your bids will be discarded.
- * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
- *   from the server, determine which user syncs should occur. The argument array will contain every element
- *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
- *   important ones should come first, since publishers may limit how many are dropped on their page.
- */
-
-/**
- * @typedef {object} BidRequest
- *
- * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- */
-
-/**
- * @typedef {object} ServerRequest
- *
- * @property {('GET'|'POST')} method The type of request which this is.
- * @property {string} url The endpoint for the request. For example, "//bids.example.com".
- * @property {string|object} data Data to be sent in the request.
- * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
- *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
- *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
- *   JSON-serialized into the Request body.
- */
-
-/**
- * @typedef {object} Bid
- *
- * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should correspond to one of the
- * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @property {string} currency The currency code for the cpm value
- * @property {number} cpm The bid price, in US cents per thousand impressions.
- * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
- * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
- * @property {number} height The height of the ad, in pixels.
- * @property {number} width The width of the ad, in pixels.
- *
- * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
- *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
- */
-
-/**
- * @typedef {Object} SyncOptions
- *
- * An object containing information about usersyncs which the adapter should obey.
- *
- * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
- * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
- */
-
-/**
- * TODO: Move this to the UserSync module after that PR is merged.
- *
- * @typedef {object} UserSync
- *
- * @property {('image'|'iframe')} type The type of user sync to be done.
- * @property {string} url The URL which makes the sync happen.
- */
-
-/**
- * Register a bidder with prebid, using the given spec.
- *
- * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
- *
- * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
- */
-function registerBidder(spec) {
-  var mediaTypes = Array.isArray(spec.supportedMediaTypes) ? { supportedMediaTypes: spec.supportedMediaTypes } : undefined;
-  function putBidder(spec) {
-    var bidder = newBidder(spec);
-    _adaptermanager2['default'].registerBidAdapter(bidder, spec.code, mediaTypes);
-  }
-
-  putBidder(spec);
-  if (Array.isArray(spec.aliases)) {
-    spec.aliases.forEach((function (alias) {
-      putBidder(_extends({}, spec, { code: alias }));
-    }));
-  }
-}
-
-/**
- * Make a new bidder from the given spec. This is exported mainly for testing.
- * Adapters will probably find it more convenient to use registerBidder instead.
- *
- * @param {BidderSpec} spec
- */
-function newBidder(spec) {
-  return _extends(new _adapter2['default'](spec.code), {
-    getSpec: function getSpec() {
-      return Object.freeze(spec);
-    },
-    callBids: function callBids(bidderRequest) {
-      if (!Array.isArray(bidderRequest.bids)) {
-        return;
-      }
-
-      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
-      // end properly. This map stores placement codes which we've made _real_ bids on.
-      //
-      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
-      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
-      // will end the auction.
-      //
-      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
-      var adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
-        adUnitCodesHandled[adUnitCode] = true;
-        addBid(adUnitCode, bid);
-      }
-      function fillNoBids() {
-        bidderRequest.bids.map((function (bidRequest) {
-          return bidRequest.placementCode;
-        })).forEach((function (adUnitCode) {
-          if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-            addBid(adUnitCode, newEmptyBid());
-          }
-        }));
-      }
-
-      function addBid(code, bid) {
-        try {
-          _bidmanager2['default'].addBidResponse(code, bid);
-        } catch (err) {
-          (0, _utils.logError)('Error adding bid', code, err);
-        }
-      }
-
-      // After all the responses have come back, fill up the "no bid" bids and
-      // register any required usersync pixels.
-      var responses = [];
-      function afterAllResponses() {
-        fillNoBids();
-        if (spec.getUserSyncs) {
-          var syncs = spec.getUserSyncs({
-            iframeEnabled: _config.config.getConfig('userSync.iframeEnabled'),
-            pixelEnabled: _config.config.getConfig('userSync.pixelEnabled')
-          }, responses);
-          if (syncs) {
-            if (!Array.isArray(syncs)) {
-              syncs = [syncs];
-            }
-            syncs.forEach((function (sync) {
-              _userSync.userSync.registerSync(sync.type, spec.code, sync.url);
-            }));
-          }
-        }
-      }
-
-      var validBidRequests = bidderRequest.bids.filter(filterAndWarn);
-      if (validBidRequests.length === 0) {
-        afterAllResponses();
-        return;
-      }
-      var bidRequestMap = {};
-      validBidRequests.forEach((function (bid) {
-        bidRequestMap[bid.bidId] = bid;
-      }));
-
-      var requests = spec.buildRequests(validBidRequests, bidderRequest);
-      if (!requests || requests.length === 0) {
-        afterAllResponses();
-        return;
-      }
-      if (!Array.isArray(requests)) {
-        requests = [requests];
-      }
-
-      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
-      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
-      // we need to rig up a function which only executes after all the requests have been responded.
-      var onResponse = (0, _utils.delayExecution)(afterAllResponses, requests.length);
-      requests.forEach(processRequest);
-
-      function processRequest(request) {
-        switch (request.method) {
-          case 'GET':
-            (0, _ajax.ajax)(request.url + '?' + (_typeof(request.data) === 'object' ? (0, _utils.parseQueryStringParameters)(request.data) : request.data), {
-              success: onSuccess,
-              error: onFailure
-            }, undefined, _extends({
-              method: 'GET',
-              withCredentials: true
-            }, request.options));
-            break;
-          case 'POST':
-            (0, _ajax.ajax)(request.url, {
-              success: onSuccess,
-              error: onFailure
-            }, typeof request.data === 'string' ? request.data : JSON.stringify(request.data), _extends({
-              method: 'POST',
-              contentType: 'text/plain',
-              withCredentials: true
-            }, request.options));
-            break;
-          default:
-            (0, _utils.logWarn)('Skipping invalid request from ' + spec.code + '. Request type ' + request.type + ' must be GET or POST');
-            onResponse();
-        }
-
-        // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
-        function onSuccess(response) {
-          try {
-            response = JSON.parse(response);
-          } catch (e) {/* response might not be JSON... that's ok. */}
-          responses.push(response);
-
-          var bids = void 0;
-          try {
-            bids = spec.interpretResponse(response, request);
-          } catch (err) {
-            (0, _utils.logError)('Bidder ' + spec.code + ' failed to interpret the server\'s response. Continuing without bids', null, err);
-            onResponse();
-            return;
-          }
-
-          if (bids) {
-            if (bids.forEach) {
-              bids.forEach(addBidUsingRequestMap);
-            } else {
-              addBidUsingRequestMap(bids);
-            }
-          }
-          onResponse();
-
-          function addBidUsingRequestMap(bid) {
-            var bidRequest = bidRequestMap[bid.requestId];
-            if (bidRequest) {
-              var prebidBid = _extends(_bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.placementCode, prebidBid);
-            } else {
-              (0, _utils.logWarn)('Bidder ' + spec.code + ' made bid for unknown request ID: ' + bid.requestId + '. Ignoring.');
-            }
-          }
-        }
-
-        // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling fillNoBids().
-        function onFailure(err) {
-          (0, _utils.logError)('Server call for ' + spec.code + ' failed: ' + err + '. Continuing without bids.');
-          onResponse();
-        }
-      }
-    }
-  });
-
-  function filterAndWarn(bid) {
-    if (!spec.isBidRequestValid(bid)) {
-      (0, _utils.logWarn)('Invalid bid sent to bidder ' + spec.code + ': ' + JSON.stringify(bid));
-      return false;
-    }
-    return true;
-  }
-
-  function newEmptyBid() {
-    var bid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID);
-    bid.code = spec.code;
-    bid.bidderCode = spec.code;
-    return bid;
-  }
-}
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var global = __webpack_require__(14);
-var core = __webpack_require__(12);
-var hide = __webpack_require__(20);
-var redefine = __webpack_require__(275);
-var ctx = __webpack_require__(32);
+var global = __webpack_require__(16);
+var core = __webpack_require__(14);
+var hide = __webpack_require__(22);
+var redefine = __webpack_require__(298);
+var ctx = __webpack_require__(33);
 var PROTOTYPE = 'prototype';
 
 var $export = function (type, name, source) {
@@ -3247,7 +3324,7 @@ module.exports = $export;
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports) {
 
 module.exports = function (it) {
@@ -3256,7 +3333,238 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 18 */
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.userSync = undefined;
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.newUserSync = newUserSync;
+
+var _utils = __webpack_require__(0);
+
+var utils = _interopRequireWildcard(_utils);
+
+var _config = __webpack_require__(8);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+/**
+ * Factory function which creates a new UserSyncPool.
+ *
+ * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
+ *   UserSync object needs in order to behave properly.
+ */
+function newUserSync(userSyncDependencies) {
+  var publicApi = {};
+  // A queue of user syncs for each adapter
+  // Let getDefaultQueue() set the defaults
+  var queue = getDefaultQueue();
+
+  // Whether or not user syncs have been trigger on this page load
+  var hasFired = false;
+  // How many bids for each adapter
+  var numAdapterBids = {};
+
+  // Use what is in config by default
+  var usConfig = userSyncDependencies.config;
+  // Update if it's (re)set
+  _config.config.getConfig('userSync', (function (conf) {
+    usConfig = _extends(usConfig, conf.userSync);
+  }));
+
+  /**
+   * @function getDefaultQueue
+   * @summary Returns the default empty queue
+   * @private
+   * @return {object} A queue with no syncs
+   */
+  function getDefaultQueue() {
+    return {
+      image: [],
+      iframe: []
+    };
+  }
+
+  /**
+   * @function fireSyncs
+   * @summary Trigger all user syncs in the queue
+   * @private
+   */
+  function fireSyncs() {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
+      return;
+    }
+
+    try {
+      // Image pixels
+      fireImagePixels();
+      // Iframe syncs
+      loadIframes();
+    } catch (e) {
+      return utils.logError('Error firing user syncs', e);
+    }
+    // Reset the user sync queue
+    queue = getDefaultQueue();
+    hasFired = true;
+  }
+
+  /**
+   * @function fireImagePixels
+   * @summary Loops through user sync pixels and fires each one
+   * @private
+   */
+  function fireImagePixels() {
+    if (!usConfig.pixelEnabled) {
+      return;
+    }
+    // Randomize the order of the pixels before firing
+    // This is to avoid giving any bidder who has registered multiple syncs
+    // any preferential treatment and balancing them out
+    utils.shuffle(queue.image).forEach((function (sync) {
+      var _sync = _slicedToArray(sync, 2),
+          bidderName = _sync[0],
+          trackingPixelUrl = _sync[1];
+
+      utils.logMessage('Invoking image pixel user sync for bidder: ' + bidderName);
+      // Create image object and add the src url
+      utils.triggerPixel(trackingPixelUrl);
+    }));
+  }
+
+  /**
+   * @function loadIframes
+   * @summary Loops through iframe syncs and loads an iframe element into the page
+   * @private
+   */
+  function loadIframes() {
+    if (!usConfig.iframeEnabled) {
+      return;
+    }
+    // Randomize the order of these syncs just like the pixels above
+    utils.shuffle(queue.iframe).forEach((function (sync) {
+      var _sync2 = _slicedToArray(sync, 2),
+          bidderName = _sync2[0],
+          iframeUrl = _sync2[1];
+
+      utils.logMessage('Invoking iframe user sync for bidder: ' + bidderName);
+      // Insert iframe into DOM
+      utils.insertUserSyncIframe(iframeUrl);
+    }));
+  }
+
+  /**
+   * @function incrementAdapterBids
+   * @summary Increment the count of user syncs queue for the adapter
+   * @private
+   * @params {object} numAdapterBids The object contain counts for all adapters
+   * @params {string} bidder The name of the bidder adding a sync
+   * @returns {object} The updated version of numAdapterBids
+   */
+  function incrementAdapterBids(numAdapterBids, bidder) {
+    if (!numAdapterBids[bidder]) {
+      numAdapterBids[bidder] = 1;
+    } else {
+      numAdapterBids[bidder] += 1;
+    }
+    return numAdapterBids;
+  }
+
+  /**
+   * @function registerSync
+   * @summary Add sync for this bidder to a queue to be fired later
+   * @public
+   * @params {string} type The type of the sync including image, iframe
+   * @params {string} bidder The name of the adapter. e.g. "rubicon"
+   * @params {string} url Either the pixel url or iframe url depending on the type
+    * @example <caption>Using Image Sync</caption>
+   * // registerSync(type, adapter, pixelUrl)
+   * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
+   */
+  publicApi.registerSync = function (type, bidder, url) {
+    if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
+      return utils.logWarn('User sync type "' + type + '" not supported');
+    }
+    if (!bidder) {
+      return utils.logWarn('Bidder is required for registering sync');
+    }
+    if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
+      return utils.logWarn('Number of user syncs exceeded for "{$bidder}"');
+    }
+    // All bidders are enabled by default. If specified only register for enabled bidders.
+    var hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
+    if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
+      return utils.logWarn('Bidder "' + bidder + '" not supported');
+    }
+    queue[type].push([bidder, url]);
+    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
+  };
+
+  /**
+   * @function syncUsers
+   * @summary Trigger all the user syncs based on publisher-defined timeout
+   * @public
+   * @params {int} timeout The delay in ms before syncing data - default 0
+   */
+  publicApi.syncUsers = function () {
+    var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+    if (timeout) {
+      return window.setTimeout(fireSyncs, Number(timeout));
+    }
+    fireSyncs();
+  };
+
+  /**
+   * @function triggerUserSyncs
+   * @summary A `syncUsers` wrapper for determining if enableOverride has been turned on
+   * @public
+   */
+  publicApi.triggerUserSyncs = function () {
+    if (usConfig.enableOverride) {
+      publicApi.syncUsers();
+    }
+  };
+
+  return publicApi;
+}
+
+var browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+
+var userSync = exports.userSync = newUserSync({
+  config: _config.config.getConfig('userSync'),
+  browserSupportsCookies: browserSupportsCookies
+});
+
+/**
+ * @typedef {Object} UserSyncDependencies
+ *
+ * @property {UserSyncConfig} config
+ * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
+ */
+
+/**
+ * @typedef {Object} UserSyncConfig
+ *
+ * @property {boolean} enableOverride
+ * @property {boolean} syncEnabled
+ * @property {boolean} pixelEnabled
+ * @property {boolean} iframeEnabled
+ * @property {int} syncsPerBidder
+ * @property {string[]} enabledBidders
+ */
+
+/***/ }),
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3368,7 +3676,7 @@ Renderer.prototype.process = function () {
 };
 
 /***/ }),
-/* 19 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3376,9 +3684,9 @@ Renderer.prototype.process = function () {
 
 var _utils = __webpack_require__(0);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
-var _native = __webpack_require__(13);
+var _native = __webpack_require__(15);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -3589,12 +3897,12 @@ function getEmptyBid(adUnitCode) {
 }
 
 /***/ }),
-/* 20 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var dP = __webpack_require__(269);
-var createDesc = __webpack_require__(274);
-module.exports = __webpack_require__(21) ? function (object, key, value) {
+var dP = __webpack_require__(292);
+var createDesc = __webpack_require__(297);
+module.exports = __webpack_require__(23) ? function (object, key, value) {
   return dP.f(object, key, createDesc(1, value));
 } : function (object, key, value) {
   object[key] = value;
@@ -3603,17 +3911,17 @@ module.exports = __webpack_require__(21) ? function (object, key, value) {
 
 
 /***/ }),
-/* 21 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // Thank's IE8 for his funny defineProperty
-module.exports = !__webpack_require__(22)((function () {
+module.exports = !__webpack_require__(24)((function () {
   return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
 }));
 
 
 /***/ }),
-/* 22 */
+/* 24 */
 /***/ (function(module, exports) {
 
 module.exports = function (exec) {
@@ -3626,7 +3934,7 @@ module.exports = function (exec) {
 
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, exports) {
 
 var id = 0;
@@ -3637,11 +3945,11 @@ module.exports = function (key) {
 
 
 /***/ }),
-/* 24 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // fallback for non-array-like ES3 and non-enumerable old V8 strings
-var cof = __webpack_require__(34);
+var cof = __webpack_require__(35);
 // eslint-disable-next-line no-prototype-builtins
 module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
   return cof(it) == 'String' ? it.split('') : Object(it);
@@ -3649,20 +3957,20 @@ module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
 
 
 /***/ }),
-/* 25 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 22.1.3.31 Array.prototype[@@unscopables]
-var UNSCOPABLES = __webpack_require__(39)('unscopables');
+var UNSCOPABLES = __webpack_require__(40)('unscopables');
 var ArrayProto = Array.prototype;
-if (ArrayProto[UNSCOPABLES] == undefined) __webpack_require__(20)(ArrayProto, UNSCOPABLES, {});
+if (ArrayProto[UNSCOPABLES] == undefined) __webpack_require__(22)(ArrayProto, UNSCOPABLES, {});
 module.exports = function (key) {
   ArrayProto[UNSCOPABLES][key] = true;
 };
 
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3800,7 +4108,7 @@ exports.getPriceBucketString = getPriceBucketString;
 exports.isValidPriceConfig = isValidPriceConfig;
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3815,6 +4123,8 @@ exports.isValidVideoBid = isValidVideoBid;
 var _adaptermanager = __webpack_require__(1);
 
 var _utils = __webpack_require__(0);
+
+var _config = __webpack_require__(8);
 
 var VIDEO_MEDIA_TYPE = 'video';
 var OUTSTREAM = 'outstream';
@@ -3851,6 +4161,12 @@ function isValidVideoBid(bid) {
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
   if (!bidRequest || videoMediaType && context !== OUTSTREAM) {
+    // xml-only video bids require prebid-cache to be enabled
+    if (!_config.config.getConfig('usePrebidCache') && bid.vastXml && !bid.vastUrl) {
+      (0, _utils.logError)('\n        This bid contains only vastXml and will not work when prebid-cache is disabled.\n        Try enabling prebid-cache with pbjs.setConfig({ usePrebidCache: true });\n      ');
+      return false;
+    }
+
     return !!(bid.vastUrl || bid.vastXml);
   }
 
@@ -3863,238 +4179,7 @@ function isValidVideoBid(bid) {
 }
 
 /***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.userSync = undefined;
-
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-exports.newUserSync = newUserSync;
-
-var _utils = __webpack_require__(0);
-
-var utils = _interopRequireWildcard(_utils);
-
-var _config = __webpack_require__(9);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
-
-/**
- * Factory function which creates a new UserSyncPool.
- *
- * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
- *   UserSync object needs in order to behave properly.
- */
-function newUserSync(userSyncDependencies) {
-  var publicApi = {};
-  // A queue of user syncs for each adapter
-  // Let getDefaultQueue() set the defaults
-  var queue = getDefaultQueue();
-
-  // Whether or not user syncs have been trigger on this page load
-  var hasFired = false;
-  // How many bids for each adapter
-  var numAdapterBids = {};
-
-  // Use what is in config by default
-  var usConfig = userSyncDependencies.config;
-  // Update if it's (re)set
-  _config.config.getConfig('userSync', (function (conf) {
-    usConfig = _extends(usConfig, conf.userSync);
-  }));
-
-  /**
-   * @function getDefaultQueue
-   * @summary Returns the default empty queue
-   * @private
-   * @return {object} A queue with no syncs
-   */
-  function getDefaultQueue() {
-    return {
-      image: [],
-      iframe: []
-    };
-  }
-
-  /**
-   * @function fireSyncs
-   * @summary Trigger all user syncs in the queue
-   * @private
-   */
-  function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
-      return;
-    }
-
-    try {
-      // Image pixels
-      fireImagePixels();
-      // Iframe syncs
-      loadIframes();
-    } catch (e) {
-      return utils.logError('Error firing user syncs', e);
-    }
-    // Reset the user sync queue
-    queue = getDefaultQueue();
-    hasFired = true;
-  }
-
-  /**
-   * @function fireImagePixels
-   * @summary Loops through user sync pixels and fires each one
-   * @private
-   */
-  function fireImagePixels() {
-    if (!usConfig.pixelEnabled) {
-      return;
-    }
-    // Randomize the order of the pixels before firing
-    // This is to avoid giving any bidder who has registered multiple syncs
-    // any preferential treatment and balancing them out
-    utils.shuffle(queue.image).forEach((function (sync) {
-      var _sync = _slicedToArray(sync, 2),
-          bidderName = _sync[0],
-          trackingPixelUrl = _sync[1];
-
-      utils.logMessage('Invoking image pixel user sync for bidder: ' + bidderName);
-      // Create image object and add the src url
-      utils.triggerPixel(trackingPixelUrl);
-    }));
-  }
-
-  /**
-   * @function loadIframes
-   * @summary Loops through iframe syncs and loads an iframe element into the page
-   * @private
-   */
-  function loadIframes() {
-    if (!usConfig.iframeEnabled) {
-      return;
-    }
-    // Randomize the order of these syncs just like the pixels above
-    utils.shuffle(queue.iframe).forEach((function (sync) {
-      var _sync2 = _slicedToArray(sync, 2),
-          bidderName = _sync2[0],
-          iframeUrl = _sync2[1];
-
-      utils.logMessage('Invoking iframe user sync for bidder: ' + bidderName);
-      // Insert iframe into DOM
-      utils.insertUserSyncIframe(iframeUrl);
-    }));
-  }
-
-  /**
-   * @function incrementAdapterBids
-   * @summary Increment the count of user syncs queue for the adapter
-   * @private
-   * @params {object} numAdapterBids The object contain counts for all adapters
-   * @params {string} bidder The name of the bidder adding a sync
-   * @returns {object} The updated version of numAdapterBids
-   */
-  function incrementAdapterBids(numAdapterBids, bidder) {
-    if (!numAdapterBids[bidder]) {
-      numAdapterBids[bidder] = 1;
-    } else {
-      numAdapterBids[bidder] += 1;
-    }
-    return numAdapterBids;
-  }
-
-  /**
-   * @function registerSync
-   * @summary Add sync for this bidder to a queue to be fired later
-   * @public
-   * @params {string} type The type of the sync including image, iframe
-   * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
-    * @example <caption>Using Image Sync</caption>
-   * // registerSync(type, adapter, pixelUrl)
-   * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
-   */
-  publicApi.registerSync = function (type, bidder, url) {
-    if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
-      return utils.logWarn('User sync type "' + type + '" not supported');
-    }
-    if (!bidder) {
-      return utils.logWarn('Bidder is required for registering sync');
-    }
-    if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
-      return utils.logWarn('Number of user syncs exceeded for "{$bidder}"');
-    }
-    // All bidders are enabled by default. If specified only register for enabled bidders.
-    var hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
-    if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
-      return utils.logWarn('Bidder "' + bidder + '" not supported');
-    }
-    queue[type].push([bidder, url]);
-    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
-  };
-
-  /**
-   * @function syncUsers
-   * @summary Trigger all the user syncs based on publisher-defined timeout
-   * @public
-   * @params {int} timeout The delay in ms before syncing data - default 0
-   */
-  publicApi.syncUsers = function () {
-    var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-
-    if (timeout) {
-      return window.setTimeout(fireSyncs, Number(timeout));
-    }
-    fireSyncs();
-  };
-
-  /**
-   * @function triggerUserSyncs
-   * @summary A `syncUsers` wrapper for determining if enableOverride has been turned on
-   * @public
-   */
-  publicApi.triggerUserSyncs = function () {
-    if (usConfig.enableOverride) {
-      publicApi.syncUsers();
-    }
-  };
-
-  return publicApi;
-}
-
-var browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
-
-var userSync = exports.userSync = newUserSync({
-  config: _config.config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
-
-/**
- * @typedef {Object} UserSyncDependencies
- *
- * @property {UserSyncConfig} config
- * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
- */
-
-/**
- * @typedef {Object} UserSyncConfig
- *
- * @property {boolean} enableOverride
- * @property {boolean} syncEnabled
- * @property {boolean} pixelEnabled
- * @property {boolean} iframeEnabled
- * @property {int} syncsPerBidder
- * @property {string[]} enabledBidders
- */
-
-/***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports) {
 
 var g;
@@ -4121,7 +4206,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4142,7 +4227,7 @@ function getGlobal() {
 }
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports) {
 
 var hasOwnProperty = {}.hasOwnProperty;
@@ -4152,11 +4237,11 @@ module.exports = function (it, key) {
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // optional / simple context binding
-var aFunction = __webpack_require__(276);
+var aFunction = __webpack_require__(299);
 module.exports = function (fn, that, length) {
   aFunction(fn);
   if (that === undefined) return fn;
@@ -4178,7 +4263,7 @@ module.exports = function (fn, that, length) {
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 0 -> Array#forEach
@@ -4188,11 +4273,11 @@ module.exports = function (fn, that, length) {
 // 4 -> Array#every
 // 5 -> Array#find
 // 6 -> Array#findIndex
-var ctx = __webpack_require__(32);
-var IObject = __webpack_require__(24);
-var toObject = __webpack_require__(35);
-var toLength = __webpack_require__(37);
-var asc = __webpack_require__(277);
+var ctx = __webpack_require__(33);
+var IObject = __webpack_require__(26);
+var toObject = __webpack_require__(36);
+var toLength = __webpack_require__(38);
+var asc = __webpack_require__(300);
 module.exports = function (TYPE, $create) {
   var IS_MAP = TYPE == 1;
   var IS_FILTER = TYPE == 2;
@@ -4228,7 +4313,7 @@ module.exports = function (TYPE, $create) {
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports) {
 
 var toString = {}.toString;
@@ -4239,18 +4324,18 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.13 ToObject(argument)
-var defined = __webpack_require__(36);
+var defined = __webpack_require__(37);
 module.exports = function (it) {
   return Object(defined(it));
 };
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports) {
 
 // 7.2.1 RequireObjectCoercible(argument)
@@ -4261,11 +4346,11 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.15 ToLength
-var toInteger = __webpack_require__(38);
+var toInteger = __webpack_require__(39);
 var min = Math.min;
 module.exports = function (it) {
   return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
@@ -4273,7 +4358,7 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports) {
 
 // 7.1.4 ToInteger
@@ -4285,12 +4370,12 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var store = __webpack_require__(40)('wks');
-var uid = __webpack_require__(23);
-var Symbol = __webpack_require__(14).Symbol;
+var store = __webpack_require__(41)('wks');
+var uid = __webpack_require__(25);
+var Symbol = __webpack_require__(16).Symbol;
 var USE_SYMBOL = typeof Symbol == 'function';
 
 var $exports = module.exports = function (name) {
@@ -4302,10 +4387,10 @@ $exports.store = store;
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global = __webpack_require__(14);
+var global = __webpack_require__(16);
 var SHARED = '__core-js_shared__';
 var store = global[SHARED] || (global[SHARED] = {});
 module.exports = function (key) {
@@ -4314,14 +4399,14 @@ module.exports = function (key) {
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // false -> Array#indexOf
 // true  -> Array#includes
-var toIObject = __webpack_require__(42);
-var toLength = __webpack_require__(37);
-var toAbsoluteIndex = __webpack_require__(284);
+var toIObject = __webpack_require__(43);
+var toLength = __webpack_require__(38);
+var toAbsoluteIndex = __webpack_require__(307);
 module.exports = function (IS_INCLUDES) {
   return function ($this, el, fromIndex) {
     var O = toIObject($this);
@@ -4343,21 +4428,21 @@ module.exports = function (IS_INCLUDES) {
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // to indexed object, toObject with fallback for non-array-like ES3 strings
-var IObject = __webpack_require__(24);
-var defined = __webpack_require__(36);
+var IObject = __webpack_require__(26);
+var defined = __webpack_require__(37);
 module.exports = function (it) {
   return IObject(defined(it));
 };
 
 
 /***/ }),
-/* 43 */,
 /* 44 */,
-/* 45 */
+/* 45 */,
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4438,7 +4523,7 @@ exports.getScreenWidth = getScreenWidth;
 exports.setWindow = setWindow;
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4573,8 +4658,127 @@ function getCacheUrl(id) {
 }
 
 /***/ }),
-/* 47 */,
-/* 48 */,
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+exports.createHook = createHook;
+
+/**
+ * @typedef {function} HookedFunction
+ * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
+ *  to the HookedFunction
+ * @property {function(function())} removeHook A method to remove attached hooks
+ */
+
+/**
+ * A map of global hook methods to allow easy extension of hooked functions that are intended to be extended globally
+ * @type {{}}
+ */
+var hooks = exports.hooks = {};
+
+/**
+ * A utility function for allowing a regular function to be extensible with additional hook functions
+ * @param {string} type The method for applying all attached hooks when this hooked function is called
+ * @param {function()} fn The function to make hookable
+ * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
+ *  the addHook and removeHook methods for that hook (which are usually accessed as methods on the function itself)
+ * @returns {HookedFunction} A new function that implements the HookedFunction interface
+ */
+function createHook(type, fn, hookName) {
+  var _hooks = [{ fn: fn, priority: 0 }];
+
+  var types = {
+    sync: function sync() {
+      var _this = this;
+
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _hooks.forEach((function (hook) {
+        hook.fn.apply(_this, args);
+      }));
+    },
+    asyncSeries: function asyncSeries() {
+      var _this2 = this;
+
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      var curr = 0;
+
+      var asyncSeriesNext = function asyncSeriesNext() {
+        for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+          args[_key3] = arguments[_key3];
+        }
+
+        var hook = _hooks[++curr];
+        if ((typeof hook === 'undefined' ? 'undefined' : _typeof(hook)) === 'object' && typeof hook.fn === 'function') {
+          return hook.fn.apply(_this2, args.concat(asyncSeriesNext));
+        }
+      };
+
+      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
+    }
+  };
+
+  if (!types[type]) {
+    throw 'invalid hook type';
+  }
+
+  var methods = {
+    addHook: function addHook(fn) {
+      var priority = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+
+      if (typeof fn === 'function') {
+        _hooks.push({
+          fn: fn,
+          priority: priority
+        });
+
+        _hooks.sort((function (a, b) {
+          return b.priority - a.priority;
+        }));
+      }
+    },
+    removeHook: function removeHook(removeFn) {
+      _hooks = _hooks.filter((function (hook) {
+        return hook.fn === fn || hook.fn !== removeFn;
+      }));
+    }
+  };
+
+  if (typeof hookName === 'string') {
+    hooks[hookName] = methods;
+  }
+
+  function hookedFn() {
+    for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+      args[_key4] = arguments[_key4];
+    }
+
+    if (_hooks.length === 0) {
+      return fn.apply(this, args);
+    }
+    return types[type].apply(this, args);
+  }
+
+  return _extends(hookedFn, methods);
+}
+
+/***/ }),
 /* 49 */,
 /* 50 */,
 /* 51 */,
@@ -4790,14 +4994,37 @@ function getCacheUrl(id) {
 /* 261 */,
 /* 262 */,
 /* 263 */,
-/* 264 */
+/* 264 */,
+/* 265 */,
+/* 266 */,
+/* 267 */,
+/* 268 */,
+/* 269 */,
+/* 270 */,
+/* 271 */,
+/* 272 */,
+/* 273 */,
+/* 274 */,
+/* 275 */,
+/* 276 */,
+/* 277 */,
+/* 278 */,
+/* 279 */,
+/* 280 */,
+/* 281 */,
+/* 282 */,
+/* 283 */,
+/* 284 */,
+/* 285 */,
+/* 286 */,
+/* 287 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(265);
+module.exports = __webpack_require__(288);
 
 
 /***/ }),
-/* 265 */
+/* 288 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4807,27 +5034,27 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _prebidGlobal = __webpack_require__(30);
+var _prebidGlobal = __webpack_require__(31);
 
 var _utils = __webpack_require__(0);
 
-var _video = __webpack_require__(27);
+var _video = __webpack_require__(29);
 
-var _native = __webpack_require__(13);
+var _native = __webpack_require__(15);
 
-__webpack_require__(266);
+__webpack_require__(289);
 
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
-var _secureCreatives = __webpack_require__(294);
+var _secureCreatives = __webpack_require__(317);
 
-var _userSync = __webpack_require__(28);
+var _userSync = __webpack_require__(19);
 
 var _adloader = __webpack_require__(5);
 
 var _ajax = __webpack_require__(6);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; } /** @module pbjs */
 
@@ -4838,9 +5065,9 @@ var utils = __webpack_require__(0);
 var bidmanager = __webpack_require__(2);
 var adaptermanager = __webpack_require__(1);
 var bidfactory = __webpack_require__(3);
-var events = __webpack_require__(10);
-var adserver = __webpack_require__(295);
-var targeting = __webpack_require__(19);
+var events = __webpack_require__(11);
+var adserver = __webpack_require__(318);
+var targeting = __webpack_require__(21);
 var syncUsers = _userSync.userSync.syncUsers,
     triggerUserSyncs = _userSync.userSync.triggerUserSyncs;
 
@@ -4887,8 +5114,8 @@ pbjs.publisherDomain = pbjs.publisherDomain;
 pbjs.libLoaded = true;
 
 // version auto generated from build
-pbjs.version = 'v0.31.0';
-utils.logInfo('Prebid.js v0.31.0 loaded');
+pbjs.version = 'v0.32.0';
+utils.logInfo('Prebid.js v0.32.0 loaded');
 
 // create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
@@ -4958,6 +5185,7 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @returns {Object}  returnObj return bids
  */
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
@@ -5054,6 +5282,10 @@ pbjs.setTargetingForGPTAsync = function (adUnit) {
   events.emit(SET_TARGETING);
 };
 
+/**
+ * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @alias module:pbjs.setTargetingForAst
+ */
 pbjs.setTargetingForAst = function () {
   utils.logInfo('Invoking pbjs.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
@@ -5164,6 +5396,9 @@ pbjs.removeAdUnit = function (adUnitCode) {
   }
 };
 
+/**
+ * @alias module:pbjs.clearAuction
+ */
 pbjs.clearAuction = function () {
   auctionRunning = false;
   // Only automatically sync if the publisher has not chosen to "enableOverride"
@@ -5185,6 +5420,7 @@ pbjs.clearAuction = function () {
  * @param {number} requestOptions.timeout
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
+ * @alias module:pbjs.requestBids
  */
 pbjs.requestBids = function () {
   var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -5301,6 +5537,7 @@ pbjs.addAdUnits = function (adUnitArr) {
  * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
  * @param {string} id an identifier in the context of the event
+ * @alias module:pbjs.onEvent
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -5331,6 +5568,7 @@ pbjs.onEvent = function (event, handler, id) {
  * @param {string} event the name of the event
  * @param {Function} handler a callback to remove from the event
  * @param {string} id an identifier in the context of the event (see `pbjs.onEvent`)
+ * @alias module:pbjs.offEvent
  */
 pbjs.offEvent = function (event, handler, id) {
   utils.logInfo('Invoking pbjs.offEvent', arguments);
@@ -5384,6 +5622,7 @@ pbjs.removeCallback = function () /* cbId */{
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
+ * @alias module:pbjs.registerBidAdapter
  */
 pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking pbjs.registerBidAdapter', arguments);
@@ -5397,6 +5636,7 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 /**
  * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
  * @param  {Object} options [description]
+ * @alias module:pbjs.registerAnalyticsAdapter
  */
 pbjs.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking pbjs.registerAnalyticsAdapter', arguments);
@@ -5407,6 +5647,9 @@ pbjs.registerAnalyticsAdapter = function (options) {
   }
 };
 
+/**
+ * @alias module:pbjs.bidsAvailableForAdapter
+*/
 pbjs.bidsAvailableForAdapter = function (bidderCode) {
   utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
 
@@ -5425,6 +5668,7 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {string} statusCode [description]
+ * @alias module:pbjs.createBid
  * @return {Object} bidResponse [description]
  */
 pbjs.createBid = function (statusCode) {
@@ -5436,7 +5680,7 @@ pbjs.createBid = function (statusCode) {
  * Wrapper to bidmanager.addBidResponse
  * @param {string} adUnitCode [description]
  * @param {Object} bid [description]
- *
+ * @alias module:pbjs.addBidResponse
  * @deprecated This function will be removed in Prebid 1.0
  * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
  * See https://github.com/prebid/Prebid.js/issues/1087 for more details.
@@ -5451,6 +5695,7 @@ pbjs.addBidResponse = function (adUnitCode, bid) {
  * Wrapper to adloader.loadScript
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
+ * @alias module:pbjs.loadScript
  */
 pbjs.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking pbjs.loadScript', arguments);
@@ -5464,11 +5709,12 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
  * For usage, see [Integrate with the Prebid Analytics
  * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
  *
- * For a list of supported analytics adapters, see [Analytics for
+ * For a list of analytics adapters, see [Analytics for
  * Prebid](http://prebid.org/overview/analytics.html).
  * @param  {Object} config
  * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.
  * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
+ * @alias module:pbjs.enableAnalytics
  */
 pbjs.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -5479,6 +5725,9 @@ pbjs.enableAnalytics = function (config) {
   }
 };
 
+/**
+ * @alias module:pbjs.aliasBidder
+ */
 pbjs.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking pbjs.aliasBidder', arguments);
   if (bidderCode && alias) {
@@ -5491,6 +5740,7 @@ pbjs.aliasBidder = function (bidderCode, alias) {
 /**
  * Sets a default price granularity scheme.
  * @param {string|Object} granularity - the granularity scheme.
+ * @alias module:pbjs.setPriceGranularity
  * @deprecated - use pbjs.setConfig({ priceGranularity: <granularity> })
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
@@ -5508,12 +5758,16 @@ pbjs.setPriceGranularity = function (granularity) {
   _config.config.setConfig({ priceGranularity: granularity });
 };
 
-/** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
+/**
+ * @alias module:pbjs.enableSendAllBids
+ * @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> })
+*/
 pbjs.enableSendAllBids = function () {
   _config.config.setConfig({ enableSendAllBids: true });
 };
 
 /**
+ * @alias module:pbjs.getAllWinningBids
  * The bid response object returned by an external bidder adapter during the auction.
  * @typedef {Object} AdapterBidResponse
  * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
@@ -5560,7 +5814,7 @@ pbjs.getAllWinningBids = function () {
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
  * @param {Object} options options for video tag
- *
+ * @alias module:pbjs.buildMasterVideoTagFromAdserverTag
  * @deprecated Include the dfpVideoSupport module in your build, and use the pbjs.adservers.dfp.buildVideoAdUrl function instead.
  * This function will be removed in Prebid 1.0.
  */
@@ -5598,6 +5852,7 @@ pbjs.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
  * If never called, Prebid will use "random" as the default.
  *
  * @param {string} order One of the valid orders, described above.
+ * @alias module:pbjs.setBidderSequence
  * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
 pbjs.setBidderSequence = adaptermanager.setBidderSequence;
@@ -5606,6 +5861,7 @@ pbjs.setBidderSequence = adaptermanager.setBidderSequence;
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
+ * @alias module:pbjs.getHighestCpmBids
  * @return {Array} array containing highest cpm bid object(s)
  */
 pbjs.getHighestCpmBids = function (adUnitCode) {
@@ -5624,6 +5880,7 @@ pbjs.getHighestCpmBids = function (adUnitCode) {
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {boolean} [cookieSet] enables cookieSet functionality
+ * @alias module:pbjs.setS2SConfig
  */
 pbjs.setS2SConfig = function (options) {
   if (!utils.contains(Object.keys(options), 'accountId')) {
@@ -5652,6 +5909,7 @@ pbjs.setS2SConfig = function (options) {
 /**
  * Get Prebid config options
  * @param {Object} options
+ * @alias module:pbjs.getConfig
  */
 pbjs.getConfig = _config.config.getConfig;
 
@@ -5688,6 +5946,7 @@ pbjs.getConfig = _config.config.getConfig;
  * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
  * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
  * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
+ * @alias module:pbjs.setConfig
  * ```
  * pbjs.setConfig({
  *     s2sConfig: {
@@ -5754,13 +6013,16 @@ function processQueue(queue) {
   }));
 }
 
+/**
+ * @alias module:pbjs.processQueue
+ */
 pbjs.processQueue = function () {
   processQueue(pbjs.que);
   processQueue(pbjs.cmd);
 };
 
 /***/ }),
-/* 266 */
+/* 289 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5769,10 +6031,10 @@ pbjs.processQueue = function () {
 /** @module polyfill
 Misc polyfills
 */
-__webpack_require__(267);
-__webpack_require__(280);
-__webpack_require__(282);
-__webpack_require__(285);
+__webpack_require__(290);
+__webpack_require__(303);
+__webpack_require__(305);
+__webpack_require__(308);
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
 Number.isInteger = Number.isInteger || function (value) {
@@ -5780,22 +6042,22 @@ Number.isInteger = Number.isInteger || function (value) {
 };
 
 /***/ }),
-/* 267 */
+/* 290 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(268);
-module.exports = __webpack_require__(12).Array.find;
+__webpack_require__(291);
+module.exports = __webpack_require__(14).Array.find;
 
 
 /***/ }),
-/* 268 */
+/* 291 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 22.1.3.8 Array.prototype.find(predicate, thisArg = undefined)
-var $export = __webpack_require__(16);
-var $find = __webpack_require__(33)(5);
+var $export = __webpack_require__(17);
+var $find = __webpack_require__(34)(5);
 var KEY = 'find';
 var forced = true;
 // Shouldn't skip holes
@@ -5805,19 +6067,19 @@ $export($export.P + $export.F * forced, 'Array', {
     return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
   }
 });
-__webpack_require__(25)(KEY);
+__webpack_require__(27)(KEY);
 
 
 /***/ }),
-/* 269 */
+/* 292 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var anObject = __webpack_require__(270);
-var IE8_DOM_DEFINE = __webpack_require__(271);
-var toPrimitive = __webpack_require__(273);
+var anObject = __webpack_require__(293);
+var IE8_DOM_DEFINE = __webpack_require__(294);
+var toPrimitive = __webpack_require__(296);
 var dP = Object.defineProperty;
 
-exports.f = __webpack_require__(21) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+exports.f = __webpack_require__(23) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
   anObject(O);
   P = toPrimitive(P, true);
   anObject(Attributes);
@@ -5831,10 +6093,10 @@ exports.f = __webpack_require__(21) ? Object.defineProperty : function definePro
 
 
 /***/ }),
-/* 270 */
+/* 293 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var isObject = __webpack_require__(17);
+var isObject = __webpack_require__(18);
 module.exports = function (it) {
   if (!isObject(it)) throw TypeError(it + ' is not an object!');
   return it;
@@ -5842,20 +6104,20 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 271 */
+/* 294 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = !__webpack_require__(21) && !__webpack_require__(22)((function () {
-  return Object.defineProperty(__webpack_require__(272)('div'), 'a', { get: function () { return 7; } }).a != 7;
+module.exports = !__webpack_require__(23) && !__webpack_require__(24)((function () {
+  return Object.defineProperty(__webpack_require__(295)('div'), 'a', { get: function () { return 7; } }).a != 7;
 }));
 
 
 /***/ }),
-/* 272 */
+/* 295 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var isObject = __webpack_require__(17);
-var document = __webpack_require__(14).document;
+var isObject = __webpack_require__(18);
+var document = __webpack_require__(16).document;
 // typeof document.createElement is 'object' in old IE
 var is = isObject(document) && isObject(document.createElement);
 module.exports = function (it) {
@@ -5864,11 +6126,11 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 273 */
+/* 296 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.1 ToPrimitive(input [, PreferredType])
-var isObject = __webpack_require__(17);
+var isObject = __webpack_require__(18);
 // instead of the ES6 spec version, we didn't implement @@toPrimitive case
 // and the second argument - flag - preferred type is a string
 module.exports = function (it, S) {
@@ -5882,7 +6144,7 @@ module.exports = function (it, S) {
 
 
 /***/ }),
-/* 274 */
+/* 297 */
 /***/ (function(module, exports) {
 
 module.exports = function (bitmap, value) {
@@ -5896,18 +6158,18 @@ module.exports = function (bitmap, value) {
 
 
 /***/ }),
-/* 275 */
+/* 298 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global = __webpack_require__(14);
-var hide = __webpack_require__(20);
-var has = __webpack_require__(31);
-var SRC = __webpack_require__(23)('src');
+var global = __webpack_require__(16);
+var hide = __webpack_require__(22);
+var has = __webpack_require__(32);
+var SRC = __webpack_require__(25)('src');
 var TO_STRING = 'toString';
 var $toString = Function[TO_STRING];
 var TPL = ('' + $toString).split(TO_STRING);
 
-__webpack_require__(12).inspectSource = function (it) {
+__webpack_require__(14).inspectSource = function (it) {
   return $toString.call(it);
 };
 
@@ -5933,7 +6195,7 @@ __webpack_require__(12).inspectSource = function (it) {
 
 
 /***/ }),
-/* 276 */
+/* 299 */
 /***/ (function(module, exports) {
 
 module.exports = function (it) {
@@ -5943,11 +6205,11 @@ module.exports = function (it) {
 
 
 /***/ }),
-/* 277 */
+/* 300 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 9.4.2.3 ArraySpeciesCreate(originalArray, length)
-var speciesConstructor = __webpack_require__(278);
+var speciesConstructor = __webpack_require__(301);
 
 module.exports = function (original, length) {
   return new (speciesConstructor(original))(length);
@@ -5955,12 +6217,12 @@ module.exports = function (original, length) {
 
 
 /***/ }),
-/* 278 */
+/* 301 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var isObject = __webpack_require__(17);
-var isArray = __webpack_require__(279);
-var SPECIES = __webpack_require__(39)('species');
+var isObject = __webpack_require__(18);
+var isArray = __webpack_require__(302);
+var SPECIES = __webpack_require__(40)('species');
 
 module.exports = function (original) {
   var C;
@@ -5977,33 +6239,33 @@ module.exports = function (original) {
 
 
 /***/ }),
-/* 279 */
+/* 302 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.2.2 IsArray(argument)
-var cof = __webpack_require__(34);
+var cof = __webpack_require__(35);
 module.exports = Array.isArray || function isArray(arg) {
   return cof(arg) == 'Array';
 };
 
 
 /***/ }),
-/* 280 */
+/* 303 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(281);
-module.exports = __webpack_require__(12).Array.findIndex;
+__webpack_require__(304);
+module.exports = __webpack_require__(14).Array.findIndex;
 
 
 /***/ }),
-/* 281 */
+/* 304 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 22.1.3.9 Array.prototype.findIndex(predicate, thisArg = undefined)
-var $export = __webpack_require__(16);
-var $find = __webpack_require__(33)(6);
+var $export = __webpack_require__(17);
+var $find = __webpack_require__(34)(6);
 var KEY = 'findIndex';
 var forced = true;
 // Shouldn't skip holes
@@ -6013,26 +6275,26 @@ $export($export.P + $export.F * forced, 'Array', {
     return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
   }
 });
-__webpack_require__(25)(KEY);
+__webpack_require__(27)(KEY);
 
 
 /***/ }),
-/* 282 */
+/* 305 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(283);
-module.exports = __webpack_require__(12).Array.includes;
+__webpack_require__(306);
+module.exports = __webpack_require__(14).Array.includes;
 
 
 /***/ }),
-/* 283 */
+/* 306 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // https://github.com/tc39/Array.prototype.includes
-var $export = __webpack_require__(16);
-var $includes = __webpack_require__(41)(true);
+var $export = __webpack_require__(17);
+var $includes = __webpack_require__(42)(true);
 
 $export($export.P, 'Array', {
   includes: function includes(el /* , fromIndex = 0 */) {
@@ -6040,14 +6302,14 @@ $export($export.P, 'Array', {
   }
 });
 
-__webpack_require__(25)('includes');
+__webpack_require__(27)('includes');
 
 
 /***/ }),
-/* 284 */
+/* 307 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toInteger = __webpack_require__(38);
+var toInteger = __webpack_require__(39);
 var max = Math.max;
 var min = Math.min;
 module.exports = function (index, length) {
@@ -6057,39 +6319,39 @@ module.exports = function (index, length) {
 
 
 /***/ }),
-/* 285 */
+/* 308 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(286);
-module.exports = __webpack_require__(12).Object.assign;
+__webpack_require__(309);
+module.exports = __webpack_require__(14).Object.assign;
 
 
 /***/ }),
-/* 286 */
+/* 309 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.3.1 Object.assign(target, source)
-var $export = __webpack_require__(16);
+var $export = __webpack_require__(17);
 
-$export($export.S + $export.F, 'Object', { assign: __webpack_require__(287) });
+$export($export.S + $export.F, 'Object', { assign: __webpack_require__(310) });
 
 
 /***/ }),
-/* 287 */
+/* 310 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
-var getKeys = __webpack_require__(288);
-var gOPS = __webpack_require__(292);
-var pIE = __webpack_require__(293);
-var toObject = __webpack_require__(35);
-var IObject = __webpack_require__(24);
+var getKeys = __webpack_require__(311);
+var gOPS = __webpack_require__(315);
+var pIE = __webpack_require__(316);
+var toObject = __webpack_require__(36);
+var IObject = __webpack_require__(26);
 var $assign = Object.assign;
 
 // should work with symbols and should have deterministic property order (V8 bug)
-module.exports = !$assign || __webpack_require__(22)((function () {
+module.exports = !$assign || __webpack_require__(24)((function () {
   var A = {};
   var B = {};
   // eslint-disable-next-line no-undef
@@ -6116,12 +6378,12 @@ module.exports = !$assign || __webpack_require__(22)((function () {
 
 
 /***/ }),
-/* 288 */
+/* 311 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.2.14 / 15.2.3.14 Object.keys(O)
-var $keys = __webpack_require__(289);
-var enumBugKeys = __webpack_require__(291);
+var $keys = __webpack_require__(312);
+var enumBugKeys = __webpack_require__(314);
 
 module.exports = Object.keys || function keys(O) {
   return $keys(O, enumBugKeys);
@@ -6129,13 +6391,13 @@ module.exports = Object.keys || function keys(O) {
 
 
 /***/ }),
-/* 289 */
+/* 312 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var has = __webpack_require__(31);
-var toIObject = __webpack_require__(42);
-var arrayIndexOf = __webpack_require__(41)(false);
-var IE_PROTO = __webpack_require__(290)('IE_PROTO');
+var has = __webpack_require__(32);
+var toIObject = __webpack_require__(43);
+var arrayIndexOf = __webpack_require__(42)(false);
+var IE_PROTO = __webpack_require__(313)('IE_PROTO');
 
 module.exports = function (object, names) {
   var O = toIObject(object);
@@ -6152,18 +6414,18 @@ module.exports = function (object, names) {
 
 
 /***/ }),
-/* 290 */
+/* 313 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var shared = __webpack_require__(40)('keys');
-var uid = __webpack_require__(23);
+var shared = __webpack_require__(41)('keys');
+var uid = __webpack_require__(25);
 module.exports = function (key) {
   return shared[key] || (shared[key] = uid(key));
 };
 
 
 /***/ }),
-/* 291 */
+/* 314 */
 /***/ (function(module, exports) {
 
 // IE 8- don't enum bug keys
@@ -6173,21 +6435,21 @@ module.exports = (
 
 
 /***/ }),
-/* 292 */
+/* 315 */
 /***/ (function(module, exports) {
 
 exports.f = Object.getOwnPropertySymbols;
 
 
 /***/ }),
-/* 293 */
+/* 316 */
 /***/ (function(module, exports) {
 
 exports.f = {}.propertyIsEnumerable;
 
 
 /***/ }),
-/* 294 */
+/* 317 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6198,11 +6460,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.listenMessagesFromCreative = listenMessagesFromCreative;
 
-var _events = __webpack_require__(10);
+var _events = __webpack_require__(11);
 
 var _events2 = _interopRequireDefault(_events);
 
-var _native = __webpack_require__(13);
+var _native = __webpack_require__(15);
 
 var _constants = __webpack_require__(4);
 
@@ -6288,15 +6550,15 @@ function resizeRemoteCreative(_ref) {
 }
 
 /***/ }),
-/* 295 */
+/* 318 */
 /***/ ((function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
-var _targeting = __webpack_require__(19);
+var _targeting = __webpack_require__(21);
 
 // Adserver parent class
 var AdServer = function AdServer(attr) {

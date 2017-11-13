@@ -1,14 +1,14 @@
-pbjsChunk([12],{
+pbjsChunk([28],{
 
-/***/ 262:
+/***/ 285:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(263);
+module.exports = __webpack_require__(286);
 
 
 /***/ }),
 
-/***/ 263:
+/***/ 286:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37,7 +37,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
-    var ymURI = '//bid.yieldmo.com/exchange/prebid?';
+    var ymURI = '//ads.yieldmo.com/exchange/prebid?';
     var ymCall = document.location.protocol + ymURI;
 
     // Placement specific information
@@ -174,4 +174,4 @@ module.exports = YieldmoAdapter;
 
 /***/ })
 
-},[262]);
+},[285]);

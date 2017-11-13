@@ -1,14 +1,14 @@
-pbjsChunk([40],{
+pbjsChunk([55],{
 
-/***/ 204:
+/***/ 226:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(205);
+module.exports = __webpack_require__(227);
 
 
 /***/ }),
 
-/***/ 205:
+/***/ 227:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -30,14 +30,13 @@ var _utils = __webpack_require__(0);
 
 var utils = _interopRequireWildcard(_utils);
 
-var _bidderFactory = __webpack_require__(15);
+var _bidderFactory = __webpack_require__(9);
+
+var _config = __webpack_require__(8);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-// use deferred function call since version isn't defined yet at this point
-function getIntegration() {
-  return 'pbjs_lite_' + pbjs.version;
-}
+var INTEGRATION = 'pbjs_lite_v0.32.0';
 
 function isSecure() {
   return location.protocol === 'https:';
@@ -148,7 +147,7 @@ var spec = exports.spec = {
           page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
-          integration: getIntegration(),
+          integration: INTEGRATION,
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
@@ -161,8 +160,8 @@ var spec = exports.spec = {
           zone_id: params.zoneId,
           position: params.position || 'btf',
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-          element_id: bidRequest.placementCode,
-          name: bidRequest.placementCode,
+          element_id: bidRequest.adUnitCode,
+          name: bidRequest.adUnitCode,
           language: params.video.language,
           width: size[0],
           height: size[1],
@@ -213,7 +212,7 @@ var spec = exports.spec = {
       var parsedSizes = parseSizes(bidRequest);
 
       // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
-      var data = ['account_id', accountId, 'site_id', siteId, 'zone_id', zoneId, 'size_id', parsedSizes[0], 'alt_size_ids', parsedSizes.slice(1).join(',') || undefined, 'p_pos', position, 'rp_floor', floor, 'rp_secure', isSecure() ? '1' : '0', 'tk_flint', getIntegration(), 'tid', bidRequest.transactionId, 'p_screen_res', _getScreenResolution(), 'kw', keywords, 'tk_user_key', userId];
+      var data = ['account_id', accountId, 'site_id', siteId, 'zone_id', zoneId, 'size_id', parsedSizes[0], 'alt_size_ids', parsedSizes.slice(1).join(',') || undefined, 'p_pos', position, 'rp_floor', floor, 'rp_secure', isSecure() ? '1' : '0', 'tk_flint', INTEGRATION, 'tid', bidRequest.transactionId, 'p_screen_res', _getScreenResolution(), 'kw', keywords, 'tk_user_key', userId];
 
       if (visitor !== null && (typeof visitor === 'undefined' ? 'undefined' : _typeof(visitor)) === 'object') {
         utils._each(visitor, (function (item, key) {
@@ -251,6 +250,7 @@ var spec = exports.spec = {
   interpretResponse: function interpretResponse(responseObj, _ref) {
     var bidRequest = _ref.bidRequest;
 
+    responseObj = responseObj.body;
     var ads = responseObj.ads;
 
     // check overall response
@@ -260,7 +260,7 @@ var spec = exports.spec = {
 
     // video ads array is wrapped in an object
     if ((typeof bidRequest === 'undefined' ? 'undefined' : _typeof(bidRequest)) === 'object' && bidRequest.mediaType === 'video' && (typeof ads === 'undefined' ? 'undefined' : _typeof(ads)) === 'object') {
-      ads = ads[bidRequest.placementCode];
+      ads = ads[bidRequest.adUnitCode];
     }
 
     // check the ad response
@@ -279,10 +279,11 @@ var spec = exports.spec = {
       var bid = {
         requestId: bidRequest.bidId,
         currency: 'USD',
-        creative_id: ad.creative_id,
-        bidderCode: spec.code,
+        creativeId: ad.creative_id,
         cpm: ad.cpm || 0,
-        dealId: ad.deal
+        dealId: ad.deal,
+        ttl: 300, // 5 minutes
+        netRevenue: _config.config.getConfig('rubicon.netRevenue') || false
       };
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
@@ -307,15 +308,15 @@ var spec = exports.spec = {
       bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : []).reduce((function (memo, item) {
         memo[item.key] = item.values[0];
         return memo;
-      }), { 'rpfl_elemid': bidRequest.placementCode });
+      }), { 'rpfl_elemid': bidRequest.adUnitCode });
 
       bids.push(bid);
 
       return bids;
     }), []);
   },
-  getUserSyncs: function getUserSyncs() {
-    if (!hasSynced) {
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
         type: 'iframe',
@@ -335,7 +336,7 @@ function _getScreenResolution() {
 
 function _getDigiTrustQueryParams() {
   function getDigiTrustId() {
-    var digiTrustUser = window.DigiTrust && (pbjs.getConfig('digiTrustId') || window.DigiTrust.getUser({ member: 'T9QSFKPDN9' }));
+    var digiTrustUser = window.DigiTrust && (_config.config.getConfig('digiTrustId') || window.DigiTrust.getUser({ member: 'T9QSFKPDN9' }));
     return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
   }
   var digiTrustId = getDigiTrustId();
@@ -406,4 +407,4 @@ function resetUserSync() {
 
 /***/ })
 
-},[204]);
+},[226]);

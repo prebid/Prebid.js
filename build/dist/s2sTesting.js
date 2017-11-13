@@ -1,14 +1,14 @@
-pbjsChunk([39],{
+pbjsChunk([54],{
 
-/***/ 206:
+/***/ 228:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(207);
+module.exports = __webpack_require__(229);
 
 
 /***/ }),
 
-/***/ 207:
+/***/ 229:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21,7 +21,7 @@ exports.CLIENT = exports.SERVER = undefined;
 exports.getSourceBidderMap = getSourceBidderMap;
 exports.getSource = getSource;
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 var _adaptermanager = __webpack_require__(1);
 
@@ -163,4 +163,4 @@ function getSource() {
 
 /***/ })
 
-},[206]);
+},[228]);

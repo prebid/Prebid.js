@@ -1,14 +1,14 @@
-pbjsChunk([66],{
+pbjsChunk([78],{
 
-/***/ 138:
+/***/ 151:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(139);
+module.exports = __webpack_require__(152);
 
 
 /***/ }),
 
-/***/ 139:
+/***/ 152:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38,7 +38,7 @@ var utils = _interopRequireWildcard(_utils);
 
 var _constants = __webpack_require__(4);
 
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
 var url = _interopRequireWildcard(_url);
 
@@ -465,7 +465,7 @@ var cygnus_index_start = function cygnus_index_start() {
     } else {
       scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
     }
-    var prebidVersion = encodeURIComponent('0.31.0');
+    var prebidVersion = encodeURIComponent('0.32.0');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -1173,4 +1173,4 @@ module.exports = IndexExchangeAdapter;
 
 /***/ })
 
-},[138]);
+},[151]);

@@ -1,14 +1,14 @@
-pbjsChunk([92],{
+pbjsChunk([98],{
 
-/***/ 83:
+/***/ 90:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(84);
+module.exports = __webpack_require__(91);
 
 
 /***/ }),
 
-/***/ 84:
+/***/ 91:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -67,12 +67,15 @@ AppNexusAdapter = function AppNexusAdapter() {
     var query = utils.getBidIdParameter('query', bid.params);
     var referrer = utils.getBidIdParameter('referrer', bid.params);
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
+    var usePaymentRule = utils.getBidIdParameter('usePaymentRule', bid.params);
     var jptCall = '//ib.adnxs.com/jpt?';
 
     jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
+    jptCall = utils.tryAppendQueryString(jptCall, 'use_pmt_rule', usePaymentRule);
+
     if (member) {
       jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
     } else if (memberId) {
@@ -129,6 +132,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     delete paramsCopy.referrer;
     delete paramsCopy.alt_referrer;
     delete paramsCopy.member;
+    delete paramsCopy.usePaymentRule;
 
     // get the reminder
     var queryParams = utils.parseQueryStringParameters(paramsCopy);
@@ -257,4 +261,4 @@ module.exports = AppNexusAdapter;
 
 /***/ })
 
-},[83]);
+},[90]);

@@ -1,14 +1,14 @@
-pbjsChunk([79],{
+pbjsChunk([88],{
 
-/***/ 109:
+/***/ 119:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(110);
+module.exports = __webpack_require__(120);
 
 
 /***/ }),
 
-/***/ 110:
+/***/ 120:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ exports.currencyRates = exports.currencySupportEnabled = undefined;
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 exports.setConfig = setConfig;
-exports.addBidResponseDecorator = addBidResponseDecorator;
+exports.addBidResponseHook = addBidResponseHook;
 
 var _bidfactory = __webpack_require__(3);
 
@@ -40,7 +40,7 @@ var _bidmanager = __webpack_require__(2);
 
 var _bidmanager2 = _interopRequireDefault(_bidmanager);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -53,9 +53,6 @@ var bidResponseQueue = [];
 var conversionCache = {};
 var currencyRatesLoaded = false;
 var adServerCurrency = 'USD';
-
-// Used as reference to the original bidmanager.addBidResponse
-var originalBidResponse;
 
 var currencySupportEnabled = exports.currencySupportEnabled = false;
 var currencyRates = exports.currencyRates = {};
@@ -124,12 +121,9 @@ function initCurrency(url) {
   conversionCache = {};
   exports.currencySupportEnabled = currencySupportEnabled = true;
 
-  if (!originalBidResponse) {
-    utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
+  utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-    originalBidResponse = _bidmanager2['default'].addBidResponse;
-    _bidmanager2['default'].addBidResponse = addBidResponseDecorator(_bidmanager2['default'].addBidResponse);
-  }
+  _bidmanager2['default'].addBidResponse.addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
     (0, _ajax.ajax)(url, (function (response) {
@@ -146,12 +140,9 @@ function initCurrency(url) {
 }
 
 function resetCurrency() {
-  if (originalBidResponse) {
-    utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
+  utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-    _bidmanager2['default'].addBidResponse = originalBidResponse;
-    originalBidResponse = undefined;
-  }
+  _bidmanager2['default'].addBidResponse.removeHook(addBidResponseHook);
 
   adServerCurrency = 'USD';
   conversionCache = {};
@@ -161,38 +152,36 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-function addBidResponseDecorator(fn) {
-  return function (adUnitCode, bid) {
-    if (!bid) {
-      return fn.apply(this, arguments); // if no bid, call original and let it display warnings
-    }
+function addBidResponseHook(adUnitCode, bid, fn) {
+  if (!bid) {
+    return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+  }
 
-    var bidder = bid.bidderCode || bid.bidder;
-    if (bidderCurrencyDefault[bidder]) {
-      var currencyDefault = bidderCurrencyDefault[bidder];
-      if (bid.currency && currencyDefault !== bid.currency) {
-        utils.logWarn('Currency default \'' + bidder + ': ' + currencyDefault + '\' ignored. adapter specified \'' + bid.currency + '\'');
-      } else {
-        bid.currency = currencyDefault;
-      }
+  var bidder = bid.bidderCode || bid.bidder;
+  if (bidderCurrencyDefault[bidder]) {
+    var currencyDefault = bidderCurrencyDefault[bidder];
+    if (bid.currency && currencyDefault !== bid.currency) {
+      utils.logWarn('Currency default \'' + bidder + ': ' + currencyDefault + '\' ignored. adapter specified \'' + bid.currency + '\'');
+    } else {
+      bid.currency = currencyDefault;
     }
+  }
 
-    // default to USD if currency not set
-    if (!bid.currency) {
-      utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
-      bid.currency = 'USD';
-    }
+  // default to USD if currency not set
+  if (!bid.currency) {
+    utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
+    bid.currency = 'USD';
+  }
 
-    // execute immediately if the bid is already in the desired currency
-    if (bid.currency === adServerCurrency) {
-      return fn.apply(this, arguments);
-    }
+  // execute immediately if the bid is already in the desired currency
+  if (bid.currency === adServerCurrency) {
+    return fn.apply(this, arguments);
+  }
 
-    bidResponseQueue.push(wrapFunction(fn, this, arguments));
-    if (!currencySupportEnabled || currencyRatesLoaded) {
-      processBidResponseQueue();
-    }
-  };
+  bidResponseQueue.push(wrapFunction(fn, this, arguments));
+  if (!currencySupportEnabled || currencyRatesLoaded) {
+    processBidResponseQueue();
+  }
 }
 
 function processBidResponseQueue() {
@@ -299,4 +288,4 @@ function roundFloat(num, dec) {
 
 /***/ })
 
-},[109]);
+},[119]);

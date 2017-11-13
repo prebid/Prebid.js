@@ -1,6 +1,14 @@
-pbjsChunk([84],{
+pbjsChunk([92],{
 
-/***/ 100:
+/***/ 108:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(109);
+
+
+/***/ }),
+
+/***/ 109:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -58,7 +66,7 @@ var CentroAdapter = function CentroAdapter() {
       query.push('sz=' + size.join('x'));
     }
     // make handler name for JSONP request
-    var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(requestedBid.placementCode);
+    var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(requestedBid.bidId);
     query.push('callback=' + encodeURIComponent('window["' + handlerName + '"]'));
 
     // maybe is needed add some random parameter to disable cache
@@ -127,14 +135,6 @@ adaptermanager.registerBidAdapter(new CentroAdapter(), 'centro');
 
 module.exports = CentroAdapter;
 
-/***/ }),
-
-/***/ 99:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(100);
-
-
 /***/ })
 
-},[99]);
+},[108]);

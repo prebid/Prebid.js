@@ -1,141 +1,6 @@
-pbjsChunk([10],{
+pbjsChunk([23],{
 
-/***/ 67:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(68);
-
-
-/***/ }),
-
-/***/ 68:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _ajax = __webpack_require__(6);
-
-var _AnalyticsAdapter = __webpack_require__(8);
-
-var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-var _url = __webpack_require__(11);
-
-var url = _interopRequireWildcard(_url);
-
-var _utils = __webpack_require__(0);
-
-var utils = _interopRequireWildcard(_utils);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var emptyUrl = '';
-var analyticsType = 'endpoint';
-var adxcgAnalyticsVersion = 'v1.04';
-
-var initOptions = void 0;
-var auctionTimestamp = void 0;
-var events = {
-  bidRequests: [],
-  bidResponses: []
-};
-
-var adxcgAnalyticsAdapter = _extends((0, _AnalyticsAdapter2['default'])({
-  emptyUrl: emptyUrl,
-  analyticsType: analyticsType
-}), {
-  track: function track(_ref) {
-    var eventType = _ref.eventType,
-        args = _ref.args;
-
-    if (typeof args !== 'undefined') {
-      if (eventType === 'bidTimeout') {
-        events.bidTimeout = args;
-      } else if (eventType === 'auctionInit') {
-        events.auctionInit = args;
-        auctionTimestamp = args.timestamp;
-      } else if (eventType === 'bidRequested') {
-        events.bidRequests.push(args);
-      } else if (eventType === 'bidResponse') {
-        events.bidResponses.push(mapBidResponse(args));
-      } else if (eventType === 'bidWon') {
-        send({
-          bidWon: mapBidResponse(args)
-        });
-      }
-    }
-
-    if (eventType === 'auctionEnd') {
-      send(events);
-    }
-  }
-});
-
-function mapBidResponse(bidResponse) {
-  return {
-    adUnitCode: bidResponse.adUnitCode,
-    statusMessage: bidResponse.statusMessage,
-    bidderCode: bidResponse.bidderCode,
-    adId: bidResponse.adId,
-    mediaType: bidResponse.mediaType,
-    creative_id: bidResponse.creative_id,
-    width: bidResponse.width,
-    height: bidResponse.height,
-    cpm: bidResponse.cpm,
-    timeToRespond: bidResponse.timeToRespond
-  };
-}
-
-function send(data) {
-  data.initOptions = initOptions;
-  data.auctionTimestamp = auctionTimestamp;
-
-  var location = utils.getTopWindowLocation();
-  var secure = location.protocol == 'https:';
-
-  var adxcgAnalyticsRequestUrl = url.format({
-    protocol: secure ? 'https' : 'http',
-    hostname: secure ? 'hbarxs.adxcg.net' : 'hbarx.adxcg.net',
-    pathname: '/pbrx',
-    search: {
-      auctionTimestamp: auctionTimestamp,
-      adxcgAnalyticsVersion: adxcgAnalyticsVersion,
-      prebidVersion: pbjs.version
-    }
-  });
-
-  (0, _ajax.ajax)(adxcgAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST' });
-}
-
-adxcgAnalyticsAdapter.originEnableAnalytics = adxcgAnalyticsAdapter.enableAnalytics;
-adxcgAnalyticsAdapter.enableAnalytics = function (config) {
-  initOptions = config.options;
-  adxcgAnalyticsAdapter.originEnableAnalytics(config);
-};
-
-_adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: adxcgAnalyticsAdapter,
-  code: 'adxcg'
-});
-
-exports['default'] = adxcgAnalyticsAdapter;
-
-/***/ }),
-
-/***/ 8:
+/***/ 10:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -161,7 +26,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var events = __webpack_require__(10);
+var events = __webpack_require__(11);
 var utils = __webpack_require__(0);
 
 var AUCTION_INIT = _constants2['default'].EVENTS.AUCTION_INIT;
@@ -341,6 +206,141 @@ function AnalyticsAdapter(_ref) {
   }
 }
 
+/***/ }),
+
+/***/ 74:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(75);
+
+
+/***/ }),
+
+/***/ 75:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _ajax = __webpack_require__(6);
+
+var _AnalyticsAdapter = __webpack_require__(10);
+
+var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+var _url = __webpack_require__(12);
+
+var url = _interopRequireWildcard(_url);
+
+var _utils = __webpack_require__(0);
+
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var emptyUrl = '';
+var analyticsType = 'endpoint';
+var adxcgAnalyticsVersion = 'v1.04';
+
+var initOptions = void 0;
+var auctionTimestamp = void 0;
+var events = {
+  bidRequests: [],
+  bidResponses: []
+};
+
+var adxcgAnalyticsAdapter = _extends((0, _AnalyticsAdapter2['default'])({
+  emptyUrl: emptyUrl,
+  analyticsType: analyticsType
+}), {
+  track: function track(_ref) {
+    var eventType = _ref.eventType,
+        args = _ref.args;
+
+    if (typeof args !== 'undefined') {
+      if (eventType === 'bidTimeout') {
+        events.bidTimeout = args;
+      } else if (eventType === 'auctionInit') {
+        events.auctionInit = args;
+        auctionTimestamp = args.timestamp;
+      } else if (eventType === 'bidRequested') {
+        events.bidRequests.push(args);
+      } else if (eventType === 'bidResponse') {
+        events.bidResponses.push(mapBidResponse(args));
+      } else if (eventType === 'bidWon') {
+        send({
+          bidWon: mapBidResponse(args)
+        });
+      }
+    }
+
+    if (eventType === 'auctionEnd') {
+      send(events);
+    }
+  }
+});
+
+function mapBidResponse(bidResponse) {
+  return {
+    adUnitCode: bidResponse.adUnitCode,
+    statusMessage: bidResponse.statusMessage,
+    bidderCode: bidResponse.bidderCode,
+    adId: bidResponse.adId,
+    mediaType: bidResponse.mediaType,
+    creative_id: bidResponse.creative_id,
+    width: bidResponse.width,
+    height: bidResponse.height,
+    cpm: bidResponse.cpm,
+    timeToRespond: bidResponse.timeToRespond
+  };
+}
+
+function send(data) {
+  data.initOptions = initOptions;
+  data.auctionTimestamp = auctionTimestamp;
+
+  var location = utils.getTopWindowLocation();
+  var secure = location.protocol == 'https:';
+
+  var adxcgAnalyticsRequestUrl = url.format({
+    protocol: secure ? 'https' : 'http',
+    hostname: secure ? 'hbarxs.adxcg.net' : 'hbarx.adxcg.net',
+    pathname: '/pbrx',
+    search: {
+      auctionTimestamp: auctionTimestamp,
+      adxcgAnalyticsVersion: adxcgAnalyticsVersion,
+      prebidVersion: pbjs.version
+    }
+  });
+
+  (0, _ajax.ajax)(adxcgAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST' });
+}
+
+adxcgAnalyticsAdapter.originEnableAnalytics = adxcgAnalyticsAdapter.enableAnalytics;
+adxcgAnalyticsAdapter.enableAnalytics = function (config) {
+  initOptions = config.options;
+  adxcgAnalyticsAdapter.originEnableAnalytics(config);
+};
+
+_adaptermanager2['default'].registerAnalyticsAdapter({
+  adapter: adxcgAnalyticsAdapter,
+  code: 'adxcg'
+});
+
+exports['default'] = adxcgAnalyticsAdapter;
+
 /***/ })
 
-},[67]);
+},[74]);

@@ -1,15 +1,15 @@
-pbjsChunk([0],{
+pbjsChunk([20],{
 
-/***/ 79:
+/***/ 87:
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(80);
-module.exports = __webpack_require__(82);
+__webpack_require__(88);
+module.exports = __webpack_require__(89);
 
 
 /***/ }),
 
-/***/ 80:
+/***/ 88:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -24,15 +24,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _Renderer = __webpack_require__(18);
+var _Renderer = __webpack_require__(20);
 
 var _utils = __webpack_require__(0);
 
 var utils = _interopRequireWildcard(_utils);
 
-var _bidderFactory = __webpack_require__(15);
+var _bidderFactory = __webpack_require__(9);
 
-var _mediaTypes = __webpack_require__(81);
+var _mediaTypes = __webpack_require__(13);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -101,7 +101,7 @@ var spec = exports.spec = {
       user: userObj,
       sdk: {
         source: SOURCE,
-        version: '0.31.0'
+        version: '0.32.0'
       }
     };
     if (member > 0) {
@@ -125,6 +125,7 @@ var spec = exports.spec = {
   interpretResponse: function interpretResponse(serverResponse, _ref) {
     var bidderRequest = _ref.bidderRequest;
 
+    serverResponse = serverResponse.body;
     var bids = [];
     if (!serverResponse || serverResponse.error) {
       var errorMessage = 'in response for ' + bidderRequest.bidderCode + ' adapter';
@@ -227,8 +228,11 @@ function newBid(serverBid, rtbBid) {
   var bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    creative_id: rtbBid.creative_id,
-    dealId: rtbBid.deal_id
+    creativeId: rtbBid.creative_id,
+    dealId: rtbBid.deal_id,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300
   };
 
   if (rtbBid.rtb.video) {
@@ -236,7 +240,8 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
-      descriptionUrl: rtbBid.rtb.video.asset_url
+      descriptionUrl: rtbBid.rtb.video.asset_url,
+      ttl: 3600
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
@@ -289,6 +294,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.reserve) {
@@ -454,40 +460,11 @@ function parseMediaType(rtbBid) {
 
 /***/ }),
 
-/***/ 81:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-/**
- * This file contains the valid Media Types in Prebid.
- *
- * All adapters are assumed to support banner ads. Other media types are specified by Adapters when they
- * register themselves with prebid-core.
- */
-
-/**
- * @typedef {('native'|'video'|'banner')} MediaType
- */
-
-/** @type MediaType */
-var NATIVE = exports.NATIVE = 'native';
-/** @type MediaType */
-var VIDEO = exports.VIDEO = 'video';
-/** @type MediaType */
-var BANNER = exports.BANNER = 'banner';
-
-/***/ }),
-
-/***/ 82:
+/***/ 89:
 /***/ (function(module, exports) {
 
 
 
 /***/ })
 
-},[79]);
+},[87]);

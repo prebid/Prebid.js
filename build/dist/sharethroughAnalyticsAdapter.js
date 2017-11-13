@@ -1,106 +1,6 @@
 pbjsChunk([1],{
 
-/***/ 212:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(213);
-
-
-/***/ }),
-
-/***/ 213:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _AnalyticsAdapter = __webpack_require__(8);
-
-var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var utils = __webpack_require__(0);
-
-var emptyUrl = '';
-var analyticsType = 'endpoint';
-var STR_BIDDER_CODE = 'sharethrough';
-var STR_VERSION = '0.1.0';
-
-var sharethroughAdapter = _extends((0, _AnalyticsAdapter2['default'])({
-  emptyUrl: emptyUrl,
-  analyticsType: analyticsType
-}), {
-  STR_BEACON_HOST: document.location.protocol + '//b.sharethrough.com/butler?',
-  placementCodeSet: {},
-
-  track: function track(_ref) {
-    var eventType = _ref.eventType,
-        args = _ref.args;
-
-    if (eventType === 'bidRequested' && args.bidderCode === 'sharethrough') {
-      var bids = args.bids;
-      var keys = Object.keys(bids);
-      for (var i = 0; i < keys.length; i++) {
-        this.placementCodeSet[bids[keys[i]].placementCode] = args.bids[keys[i]];
-      }
-    }
-
-    if (eventType === 'bidWon') {
-      this.bidWon(args);
-    }
-  },
-  bidWon: function bidWon(args) {
-    var curBidderCode = args.bidderCode;
-
-    if (curBidderCode !== STR_BIDDER_CODE && args.adUnitCode in this.placementCodeSet) {
-      var strBid = this.placementCodeSet[args.adUnitCode];
-      this.fireLoseBeacon(curBidderCode, args.cpm, strBid.adserverRequestId, 'headerBidLose');
-    }
-  },
-  fireLoseBeacon: function fireLoseBeacon(winningBidderCode, winningCPM, arid, type) {
-    var loseBeaconUrl = this.STR_BEACON_HOST;
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerBidderCode', winningBidderCode);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerCpm', winningCPM);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'arid', arid);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'type', type);
-    loseBeaconUrl = this.appendEnvFields(loseBeaconUrl);
-
-    this.fireBeacon(loseBeaconUrl);
-  },
-  appendEnvFields: function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.31.0');
-    url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
-    url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
-
-    return url;
-  },
-  fireBeacon: function fireBeacon(theUrl) {
-    var img = new Image();
-    img.src = theUrl;
-  }
-});
-
-_adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: sharethroughAdapter,
-  code: 'sharethrough'
-});
-
-exports['default'] = sharethroughAdapter;
-
-/***/ }),
-
-/***/ 8:
+/***/ 10:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -126,7 +26,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var events = __webpack_require__(10);
+var events = __webpack_require__(11);
 var utils = __webpack_require__(0);
 
 var AUCTION_INIT = _constants2['default'].EVENTS.AUCTION_INIT;
@@ -306,6 +206,106 @@ function AnalyticsAdapter(_ref) {
   }
 }
 
+/***/ }),
+
+/***/ 234:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(235);
+
+
+/***/ }),
+
+/***/ 235:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _AnalyticsAdapter = __webpack_require__(10);
+
+var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var utils = __webpack_require__(0);
+
+var emptyUrl = '';
+var analyticsType = 'endpoint';
+var STR_BIDDER_CODE = 'sharethrough';
+var STR_VERSION = '0.1.0';
+
+var sharethroughAdapter = _extends((0, _AnalyticsAdapter2['default'])({
+  emptyUrl: emptyUrl,
+  analyticsType: analyticsType
+}), {
+  STR_BEACON_HOST: document.location.protocol + '//b.sharethrough.com/butler?',
+  placementCodeSet: {},
+
+  track: function track(_ref) {
+    var eventType = _ref.eventType,
+        args = _ref.args;
+
+    if (eventType === 'bidRequested' && args.bidderCode === 'sharethrough') {
+      var bids = args.bids;
+      var keys = Object.keys(bids);
+      for (var i = 0; i < keys.length; i++) {
+        this.placementCodeSet[bids[keys[i]].placementCode] = args.bids[keys[i]];
+      }
+    }
+
+    if (eventType === 'bidWon') {
+      this.bidWon(args);
+    }
+  },
+  bidWon: function bidWon(args) {
+    var curBidderCode = args.bidderCode;
+
+    if (curBidderCode !== STR_BIDDER_CODE && args.adUnitCode in this.placementCodeSet) {
+      var strBid = this.placementCodeSet[args.adUnitCode];
+      this.fireLoseBeacon(curBidderCode, args.cpm, strBid.adserverRequestId, 'headerBidLose');
+    }
+  },
+  fireLoseBeacon: function fireLoseBeacon(winningBidderCode, winningCPM, arid, type) {
+    var loseBeaconUrl = this.STR_BEACON_HOST;
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerBidderCode', winningBidderCode);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerCpm', winningCPM);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'arid', arid);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'type', type);
+    loseBeaconUrl = this.appendEnvFields(loseBeaconUrl);
+
+    this.fireBeacon(loseBeaconUrl);
+  },
+  appendEnvFields: function appendEnvFields(url) {
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.32.0');
+    url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
+    url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
+
+    return url;
+  },
+  fireBeacon: function fireBeacon(theUrl) {
+    var img = new Image();
+    img.src = theUrl;
+  }
+});
+
+_adaptermanager2['default'].registerAnalyticsAdapter({
+  adapter: sharethroughAdapter,
+  code: 'sharethrough'
+});
+
+exports['default'] = sharethroughAdapter;
+
 /***/ })
 
-},[212]);
+},[234]);

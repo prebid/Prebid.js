@@ -1,80 +1,95 @@
-pbjsChunk([61],{
+pbjsChunk([11],{
 
-/***/ 148:
+/***/ 162:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(149);
+__webpack_require__(163);
+module.exports = __webpack_require__(164);
 
 
 /***/ }),
 
-/***/ 149:
+/***/ 163:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
+
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
-var utils = __webpack_require__(0);
-var adaptermanager = __webpack_require__(1);
-var CONSTANTS = __webpack_require__(4);
-var HOST = pbjs.kargo_kraken_host || 'https://krk.kargo.com';
+var _utils = __webpack_require__(0);
 
-var KargoAdapter = function KargoAdapter() {
-  function _handleBid(bids) {
-    return function wrappedHandleBid(adUnits) {
-      utils._map(bids, (function (bid) {
-        var adUnit = adUnits[bid.params.placementId];
+var utils = _interopRequireWildcard(_utils);
 
-        if (adUnit) {
-          bidmanager.addBidResponse(bid.placementCode, _createBid(adUnit));
+var _config = __webpack_require__(8);
 
-          if (adUnit.receivedTracker) {
-            var el = document.createElement('img');
-            el.src = adUnit.receivedTracker;
-            document.body.appendChild(el);
-          }
-        }
-      }));
-    };
-  }
+var _bidderFactory = __webpack_require__(9);
 
-  function _createBid(adUnit) {
-    var bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
-    bidObject.bidderCode = 'kargo';
-    bidObject.cpm = Number(adUnit.cpm);
-    bidObject.ad = adUnit.adm;
-    bidObject.width = adUnit.width;
-    bidObject.height = adUnit.height;
-    return bidObject;
-  }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-  function _callBids(params) {
+var BIDDER_CODE = 'kargo';
+var HOST = 'https://krk.kargo.com';
+var spec = exports.spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function isBidRequestValid(bid) {
+    if (!bid || !bid.params) {
+      return false;
+    }
+    return !!bid.params.placementId;
+  },
+  buildRequests: function buildRequests(validBidRequests, bidderRequest) {
+    var currency = _config.config.getConfig('currency');
     var transformedParams = _extends({}, {
-      timeout: params.timeout,
-      currency: 'USD',
+      timeout: bidderRequest.timeout,
+      currency: currency,
       cpmGranularity: 1,
       cpmRange: {
         floor: 0,
         ceil: 20
       },
-      adSlotIds: utils._map(params.bids, (function (bid) {
+      adSlotIds: utils._map(validBidRequests, (function (bid) {
         return bid.params.placementId;
       }))
-    }, _getAllMetadata());
+    }, spec._getAllMetadata());
     var encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
-    var callbackName = 'kargo_prebid_' + params.requestId.replace(/-/g, '_');
+    return _extends({}, bidderRequest, {
+      method: 'GET',
+      url: HOST + '/api/v1/bid',
+      data: 'json=' + encodedParams,
+      currency: currency
+    });
+  },
+  interpretResponse: function interpretResponse(response, bidRequest) {
+    var adUnits = response.body;
+    var bids = {};
+    utils._each(bidRequest.bids, (function (bid) {
+      return bids[bid.params.placementId] = bid;
+    }));
+    var bidResponses = [];
+    for (var adUnitId in adUnits) {
+      var adUnit = adUnits[adUnitId];
+      bidResponses.push({
+        requestId: bids[adUnitId].bidId,
+        cpm: Number(adUnit.cpm),
+        width: adUnit.width,
+        height: adUnit.height,
+        ad: adUnit.adm,
+        ttl: 300,
+        creativeId: adUnitId,
+        netRevenue: true,
+        currency: bidRequest.currency
+      });
+    }
+    return bidResponses;
+  },
 
-    window.pbjs[callbackName] = _handleBid(params.bids);
-
-    adloader.loadScript(HOST + '/api/v1/bid?json=' + encodedParams + '&cb=window.pbjs.' + callbackName);
-  }
-
-  function _readCookie(name) {
+  // PRIVATE
+  _readCookie: function _readCookie(name) {
     var nameEquals = name + '=';
     var cookies = document.cookie.split(';');
 
@@ -90,11 +105,10 @@ var KargoAdapter = function KargoAdapter() {
     }
 
     return null;
-  }
-
-  function _getCrbIds() {
+  },
+  _getCrbIds: function _getCrbIds() {
     try {
-      var crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb')));
+      var crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
       var syncIds = {};
 
       if (crb && crb.v) {
@@ -109,11 +123,10 @@ var KargoAdapter = function KargoAdapter() {
     } catch (e) {
       return {};
     }
-  }
-
-  function _getUid() {
+  },
+  _getUid: function _getUid() {
     try {
-      var uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid')));
+      var uid = JSON.parse(decodeURIComponent(spec._readCookie('krg_uid')));
       var vData = {};
 
       if (uid && uid.v) {
@@ -124,18 +137,15 @@ var KargoAdapter = function KargoAdapter() {
     } catch (e) {
       return {};
     }
-  }
-
-  function _getKruxUserId() {
-    return _getLocalStorageSafely('kxkar_user');
-  }
-
-  function _getKruxSegments() {
-    return _getLocalStorageSafely('kxkar_segs');
-  }
-
-  function _getKrux() {
-    var segmentsStr = _getKruxSegments();
+  },
+  _getKruxUserId: function _getKruxUserId() {
+    return spec._getLocalStorageSafely('kxkar_user');
+  },
+  _getKruxSegments: function _getKruxSegments() {
+    return spec._getLocalStorageSafely('kxkar_segs');
+  },
+  _getKrux: function _getKrux() {
+    var segmentsStr = spec._getKruxSegments();
     var segments = [];
 
     if (segmentsStr) {
@@ -143,22 +153,20 @@ var KargoAdapter = function KargoAdapter() {
     }
 
     return {
-      userID: _getKruxUserId(),
+      userID: spec._getKruxUserId(),
       segments: segments
     };
-  }
-
-  function _getLocalStorageSafely(key) {
+  },
+  _getLocalStorageSafely: function _getLocalStorageSafely(key) {
     try {
       return localStorage.getItem(key);
     } catch (e) {
       return null;
     }
-  }
-
-  function _getUserIds() {
-    var uid = _getUid();
-    var crbIds = _getCrbIds();
+  },
+  _getUserIds: function _getUserIds() {
+    var uid = spec._getUid();
+    var crbIds = spec._getCrbIds();
 
     return {
       kargoID: uid.userId,
@@ -166,27 +174,25 @@ var KargoAdapter = function KargoAdapter() {
       crbIDs: crbIds,
       optOut: uid.optOut
     };
-  }
-
-  function _getAllMetadata() {
+  },
+  _getAllMetadata: function _getAllMetadata() {
     return {
-      userIDs: _getUserIds(),
-      krux: _getKrux(),
-      pageURL: window.location.href
+      userIDs: spec._getUserIds(),
+      krux: spec._getKrux(),
+      pageURL: window.location.href,
+      rawCRB: spec._readCookie('krg_crb')
     };
   }
-
-  // Export the callBids function, so that prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return {
-    callBids: _callBids
-  };
 };
+(0, _bidderFactory.registerBidder)(spec);
 
-adaptermanager.registerBidAdapter(new KargoAdapter(), 'kargo');
+/***/ }),
 
-module.exports = KargoAdapter;
+/***/ 164:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[148]);
+},[162]);

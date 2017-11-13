@@ -1,20 +1,24 @@
-pbjsChunk([90],{
+pbjsChunk([19],{
 
-/***/ 87:
+/***/ 94:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(88);
+__webpack_require__(95);
+module.exports = __webpack_require__(96);
 
 
 /***/ }),
 
-/***/ 88:
+/***/ 95:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.spec = undefined;
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
@@ -23,40 +27,28 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                                                                                                                                                                                                                                                                                */
 
 
-var _ajax = __webpack_require__(6);
+var _bidderFactory = __webpack_require__(9);
 
-var _bidfactory = __webpack_require__(3);
+var _config = __webpack_require__(8);
 
-var _bidmanager = __webpack_require__(2);
-
-var _constants = __webpack_require__(4);
-
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
 var _utils = __webpack_require__(0);
 
-var _adapter = __webpack_require__(7);
-
-var _adapter2 = _interopRequireDefault(_adapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _ref = new _adapter2['default']('audienceNetwork'),
-    setBidderCode = _ref.setBidderCode,
-    getBidderCode = _ref.getBidderCode;
+var code = 'audienceNetwork';
+var currency = 'USD';
+var method = 'GET';
+var url = 'https://an.facebook.com/v2/placementbid.json';
+var supportedMediaTypes = ['video'];
+var netRevenue = true;
+var hb_bidder = 'fan';
 
 /**
  * Does this bid request contain valid parameters?
  * @param {Object} bid
  * @returns {Boolean}
  */
-
-
-var validateBidRequest = function validateBidRequest(bid) {
+var isBidRequestValid = function isBidRequestValid(bid) {
   return _typeof(bid.params) === 'object' && typeof bid.params.placementId === 'string' && bid.params.placementId.length > 0 && Array.isArray(bid.sizes) && bid.sizes.length > 0 && (isVideo(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 };
 
@@ -68,15 +60,6 @@ var validateBidRequest = function validateBidRequest(bid) {
  */
 var flattenSize = function flattenSize(size) {
   return Array.isArray(size) && size.length === 2 ? size[0] + 'x' + size[1] : size;
-};
-
-/**
- * Expands a 'WxH' string as a 2-element [W, H] array
- * @param {String} size
- * @returns {Array}
- */
-var expandSize = function expandSize(size) {
-  return size.split('x').map(Number);
 };
 
 /**
@@ -116,19 +99,6 @@ var isTestmode = function isTestmode() {
 };
 
 /**
- * Parse JSON-as-string into an Object, default to empty.
- * @param {String} JSON-as-string
- * @returns {Object}
- */
-var parseJson = function parseJson(jsonAsString) {
-  var data = {};
-  try {
-    data = JSON.parse(jsonAsString);
-  } catch (err) {}
-  return data;
-};
-
-/**
  * Generate ad HTML for injection into an iframe
  * @param {String} placementId
  * @param {String} format
@@ -142,165 +112,146 @@ var createAdHtml = function createAdHtml(placementId, format, bidId) {
 };
 
 /**
- * Creates a "good" Bid object with the given bid ID and CPM.
- * @param {String} placementId
- * @param {String} size
- * @param {String} format
- * @param {String} bidId
- * @param {Number} cpmCents
- * @param {String} pageurl
- * @returns {Object} Bid
+ * Convert each bid request to a single URL to fetch those bids.
+ * @param {Array} bids - list of bids
+ * @param {String} bids[].placementCode - Prebid placement identifier
+ * @param {Object} bids[].params
+ * @param {String} bids[].params.placementId - Audience Network placement identifier
+ * @param {String} bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
+ * @param {Array} bids[].sizes - list of desired advert sizes
+ * @param {Array} bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
+ * @returns {Array<Object>} List of URLs to fetch, plus formats and sizes for later use with interpretResponse
  */
-var createSuccessBidResponse = function createSuccessBidResponse(placementId, size, format, bidId, cpmCents, pageurl) {
-  var bid = (0, _bidfactory.createBid)(_constants.STATUS.GOOD, { bidId: bidId });
-  // Prebid attributes
-  bid.bidderCode = getBidderCode();
-  bid.cpm = cpmCents / 100;
-  bid.ad = createAdHtml(placementId, format, bidId);
-
-  // Audience Network attributes
-  var _expandSize = expandSize(size);
-
-  var _expandSize2 = _slicedToArray(_expandSize, 2);
-
-  bid.width = _expandSize2[0];
-  bid.height = _expandSize2[1];
-  bid.hb_bidder = 'fan';
-  bid.fb_bidid = bidId;
-  bid.fb_format = format;
-  bid.fb_placementid = placementId;
-  // Video attributes
-  if (isVideo(format)) {
-    var vast = 'https://an.facebook.com/v1/instream/vast.xml?placementid=' + placementId + '&pageurl=' + pageurl + '&playerwidth=' + bid.width + '&playerheight=' + bid.height + '&bidid=' + bidId;
-    bid.mediaType = 'video';
-    bid.vastUrl = vast;
-    bid.descriptionUrl = vast;
-  }
-  return bid;
-};
-
-/**
- * Creates a "no bid" Bid object.
- * @returns {Object} Bid
- */
-var createFailureBidResponse = function createFailureBidResponse() {
-  var bid = (0, _bidfactory.createBid)(_constants.STATUS.NO_BID);
-  bid.bidderCode = getBidderCode();
-  return bid;
-};
-
-/**
- * Fetch bids for given parameters.
- * @param {Object} bidRequest
- * @param {Array} params.bids - list of bids
- * @param {String} params.bids[].placementCode - Prebid placement identifier
- * @param {Object} params.bids[].params
- * @param {String} params.bids[].params.placementId - Audience Network placement identifier
- * @param {String} params.bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
- * @param {Array} params.bids[].sizes - list of desired advert sizes
- * @param {Array} params.bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
- * @returns {void}
- */
-var callBids = function callBids(bidRequest) {
-  // Build lists of adUnitCodes, placementids, adformats and sizes
-  var adUnitCodes = [];
+var buildRequests = function buildRequests(bids) {
+  // Build lists of placementids, adformats, sizes and SDK versions
   var placementids = [];
   var adformats = [];
   var sizes = [];
   var sdk = [];
+  var requestIds = [];
 
-  bidRequest.bids.filter(validateBidRequest).forEach((function (bid) {
+  bids.forEach((function (bid) {
     return bid.sizes.map(flattenSize).filter((function (size) {
       return isValidSize(size) || isVideo(bid.params.format);
     })).slice(0, 1).forEach((function (size) {
-      adUnitCodes.push(bid.placementCode);
       placementids.push(bid.params.placementId);
       adformats.push(bid.params.format || size);
       sizes.push(size);
       sdk.push(sdkVersion(bid.params.format));
+      requestIds.push(bid.bidId);
     }));
   }));
 
-  if (placementids.length) {
-    // Build URL
-    var testmode = isTestmode();
-    var pageurl = encodeURIComponent(location.href);
-    var search = {
-      placementids: placementids,
-      adformats: adformats,
-      testmode: testmode,
-      pageurl: pageurl,
-      sdk: sdk
-    };
-    var video = adformats.findIndex(isVideo);
-    if (video !== -1) {
-      var _expandSize3 = expandSize(sizes[video]);
+  // Build URL
+  var testmode = isTestmode();
+  var pageurl = (0, _utils.getTopWindowUrl)();
+  var search = {
+    placementids: placementids,
+    adformats: adformats,
+    testmode: testmode,
+    pageurl: pageurl,
+    sdk: sdk
+  };
+  var video = adformats.findIndex(isVideo);
+  if (video !== -1) {
+    var _sizes$video$split$ma = sizes[video].split('x').map(Number);
 
-      var _expandSize4 = _slicedToArray(_expandSize3, 2);
+    var _sizes$video$split$ma2 = _slicedToArray(_sizes$video$split$ma, 2);
 
-      search.playerwidth = _expandSize4[0];
-      search.playerheight = _expandSize4[1];
-    }
-    var url = (0, _url.format)({
-      protocol: 'https',
-      host: 'an.facebook.com',
-      pathname: '/v2/placementbid.json',
-      search: search
-    });
-    // Request
-    (0, _ajax.ajax)(url, (function (res) {
-      // Handle response
-      var data = parseJson(res);
-      if (data.errors && data.errors.length) {
-        var noBid = createFailureBidResponse();
-        adUnitCodes.forEach((function (adUnitCode) {
-          return (0, _bidmanager.addBidResponse)(adUnitCode, noBid);
-        }));
-        data.errors.forEach(_utils.logError);
-      } else {
-        // For each placementId in bids Object
-        Object.keys(data.bids)
-        // extract Array of bid responses
-        .map((function (placementId) {
-          return data.bids[placementId];
-        }))
-        // flatten
-        .reduce((function (a, b) {
-          return a.concat(b);
-        }), [])
-        // call addBidResponse
-        .forEach((function (bid, i) {
-          return (0, _bidmanager.addBidResponse)(adUnitCodes[i], createSuccessBidResponse(bid.placement_id, sizes[i], adformats[i], bid.bid_id, bid.bid_price_cents, pageurl));
-        }));
-      }
-    }), null, { withCredentials: true });
-  } else {
-    // No valid bids
-    (0, _utils.logError)('No valid bids requested');
+    search.playerwidth = _sizes$video$split$ma2[0];
+    search.playerheight = _sizes$video$split$ma2[1];
   }
+  var data = (0, _url.formatQS)(search);
+
+  return [{ adformats: adformats, data: data, method: method, requestIds: requestIds, sizes: sizes, url: url }];
 };
 
 /**
- * @class AudienceNetwork
- * @type {Object}
- * @property {Function} callBids - fetch bids for given parameters
- * @property {Function} setBidderCode - used for bidder aliasing
- * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
+ * Convert a server response to a bid response.
+ * @param {Object} response - object representing the response
+ * @param {Object} response.body - response body, already converted from JSON
+ * @param {Object} bidRequests - the original bid requests
+ * @param {Array} bidRequest.adformats - list of formats for the original bid requests
+ * @param {Array} bidRequest.sizes - list of sizes fot the original bid requests
+ * @returns {Array<Object>} A list of bid response objects
  */
-function AudienceNetwork() {
-  return _extends(this, {
-    callBids: callBids,
-    setBidderCode: setBidderCode,
-    getBidderCode: getBidderCode
-  });
-}
+var interpretResponse = function interpretResponse(_ref, _ref2) {
+  var body = _ref.body;
+  var adformats = _ref2.adformats,
+      requestIds = _ref2.requestIds,
+      sizes = _ref2.sizes;
 
-_adaptermanager2['default'].registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
-  supportedMediaTypes: ['video']
-});
+  var ttl = Number(_config.config.getConfig().bidderTimeout);
 
-module.exports = AudienceNetwork;
+  return body.errors && body.errors.length ? [] : Object.keys(body.bids)
+  // extract Array of bid responses
+  .map((function (placementId) {
+    return body.bids[placementId];
+  }))
+  // flatten
+  .reduce((function (a, b) {
+    return a.concat(b);
+  }), [])
+  // transform to bidResponse
+  .map((function (bid, i) {
+    var fb_bidid = bid.bid_id,
+        creativeId = bid.placement_id,
+        cpm = bid.bid_price_cents;
+
+
+    var format = adformats[i];
+
+    var _sizes$i = _slicedToArray(sizes[i], 2),
+        width = _sizes$i[0],
+        height = _sizes$i[1];
+
+    var ad = createAdHtml(creativeId, format, fb_bidid);
+    var requestId = requestIds[i];
+
+    var bidResponse = {
+      // Prebid attributes
+      requestId: requestId,
+      cpm: cpm / 100,
+      width: width,
+      height: height,
+      ad: ad,
+      ttl: ttl,
+      creativeId: creativeId,
+      netRevenue: netRevenue,
+      currency: currency,
+      // Audience Network attributes
+      hb_bidder: hb_bidder,
+      fb_bidid: fb_bidid,
+      fb_format: format,
+      fb_placementid: creativeId
+    };
+    // Video attributes
+    if (isVideo(format)) {
+      var pageurl = (0, _utils.getTopWindowUrl)();
+      bidResponse.mediaType = 'video';
+      bidResponse.vastUrl = 'https://an.facebook.com/v1/instream/vast.xml?placementid=' + creativeId + '&pageurl=' + encodeURIComponent(pageurl) + '&playerwidth=' + width + '&playerheight=' + height + '&bidid=' + fb_bidid;
+    }
+    return bidResponse;
+  }));
+};
+
+var spec = exports.spec = {
+  code: code,
+  supportedMediaTypes: supportedMediaTypes,
+  isBidRequestValid: isBidRequestValid,
+  buildRequests: buildRequests,
+  interpretResponse: interpretResponse
+};
+
+(0, _bidderFactory.registerBidder)(spec);
+
+/***/ }),
+
+/***/ 96:
+/***/ (function(module, exports) {
+
+
 
 /***/ })
 
-},[87]);
+},[94]);

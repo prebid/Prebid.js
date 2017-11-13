@@ -1,14 +1,14 @@
-pbjsChunk([42],{
+pbjsChunk([57],{
 
-/***/ 198:
+/***/ 220:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(199);
+module.exports = __webpack_require__(221);
 
 
 /***/ }),
 
-/***/ 199:
+/***/ 221:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -345,4 +345,4 @@ module.exports = RhythmoneAdapter;
 
 /***/ })
 
-},[198]);
+},[220]);

@@ -1,20 +1,20 @@
-pbjsChunk([51],{
+pbjsChunk([65],{
 
-/***/ 170:
+/***/ 188:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(171);
+module.exports = __webpack_require__(189);
 
 
 /***/ }),
 
-/***/ 171:
+/***/ 189:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _config = __webpack_require__(9);
+var _config = __webpack_require__(8);
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -324,4 +324,4 @@ module.exports = OpenxAdapter;
 
 /***/ })
 
-},[170]);
+},[188]);

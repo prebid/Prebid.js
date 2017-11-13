@@ -1,14 +1,14 @@
-pbjsChunk([33],{
+pbjsChunk([48],{
 
-/***/ 220:
+/***/ 242:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(221);
+module.exports = __webpack_require__(243);
 
 
 /***/ }),
 
-/***/ 221:
+/***/ 243:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -28,7 +28,7 @@ var SonobiAdapter = function SonobiAdapter() {
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    var ref = window.frameElement ? '&ref=' + encodeURI(top.location.host || document.referrer) : '';
+    var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
     adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
   }
 
@@ -135,4 +135,4 @@ module.exports = SonobiAdapter;
 
 /***/ })
 
-},[220]);
+},[242]);

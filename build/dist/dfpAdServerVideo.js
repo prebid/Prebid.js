@@ -1,14 +1,14 @@
-pbjsChunk([8],{
+pbjsChunk([16],{
 
-/***/ 111:
+/***/ 121:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(112);
+module.exports = __webpack_require__(122);
 
 
 /***/ }),
 
-/***/ 112:
+/***/ 122:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -24,13 +24,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 exports['default'] = buildDfpVideoUrl;
 
-var _adServerManager = __webpack_require__(113);
+var _adServerManager = __webpack_require__(123);
 
-var _targeting = __webpack_require__(19);
+var _targeting = __webpack_require__(21);
 
-var _url = __webpack_require__(11);
+var _url = __webpack_require__(12);
 
 var _utils = __webpack_require__(0);
+
+var _config = __webpack_require__(8);
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -56,8 +58,9 @@ var _utils = __webpack_require__(0);
  * @param [Object] bid The bid which should be considered alongside the rest of the adserver's demand.
  *   If this isn't defined, then we'll use the winning bid for the adUnit.
  *
- * @param {DfpVideoParams} params Query params which should be set on the DFP request.
+ * @param {DfpVideoParams} [params] Query params which should be set on the DFP request.
  *   These will override this module's defaults whenever they conflict.
+ * @param {string} [url] video adserver url
  */
 
 /** Safe defaults which work on pretty much all video calls. */
@@ -80,8 +83,25 @@ var defaultParamConstants = {
  *   demand in DFP.
  */
 function buildDfpVideoUrl(options) {
+  if (!options.params && !options.url) {
+    (0, _utils.logError)('A params object or a url is required to use pbjs.adServers.dfp.buildVideoUrl');
+    return;
+  }
+
   var adUnit = options.adUnit;
   var bid = options.bid || (0, _targeting.getWinningBids)(adUnit.code)[0];
+
+  var urlComponents = {};
+
+  if (options.url) {
+    // when both `url` and `params` are given, parsed url will be overwriten
+    // with any matching param components
+    urlComponents = (0, _url.parse)(options.url);
+
+    if ((0, _utils.isEmpty)(options.params)) {
+      return buildUrlFromAdserverUrlComponents(urlComponents, bid);
+    }
+  }
 
   var derivedParams = {
     correlator: Date.now(),
@@ -89,9 +109,16 @@ function buildDfpVideoUrl(options) {
     url: location.href
   };
 
-  var customParams = _extends({}, bid.adserverTargeting, { hb_uuid: bid.videoCacheKey }, options.params.cust_params);
+  var adserverTargeting = bid && bid.adserverTargeting || {};
 
-  var queryParams = _extends({}, defaultParamConstants, derivedParams, options.params, { cust_params: encodeURIComponent((0, _url.formatQS)(customParams)) });
+  var customParams = _extends({}, adserverTargeting, { hb_uuid: bid && bid.videoCacheKey }, options.params.cust_params);
+
+  var queryParams = _extends({}, defaultParamConstants, urlComponents.search, derivedParams, options.params, { cust_params: encodeURIComponent((0, _url.formatQS)(customParams)) });
+
+  var descriptionUrl = getDescriptionUrl(bid, options, 'params');
+  if (descriptionUrl) {
+    queryParams.description_url = descriptionUrl;
+  }
 
   return (0, _url.format)({
     protocol: 'https',
@@ -101,13 +128,56 @@ function buildDfpVideoUrl(options) {
   });
 }
 
+/**
+ * Builds a video url from a base dfp video url and a winning bid, appending
+ * Prebid-specific key-values.
+ * @param {Object} components base video adserver url parsed into components object
+ * @param {AdapterBidResponse} bid winning bid object to append parameters from
+ * @return {string} video url
+ */
+function buildUrlFromAdserverUrlComponents(components, bid) {
+  var descriptionUrl = getDescriptionUrl(bid, components, 'search');
+  if (descriptionUrl) {
+    components.search.description_url = descriptionUrl;
+  }
+
+  var adserverTargeting = bid && bid.adserverTargeting || {};
+  var customParams = _extends({}, adserverTargeting);
+  components.search.cust_params = encodeURIComponent((0, _url.formatQS)(customParams));
+
+  return (0, _url.format)(components);
+}
+
+/**
+ * Returns the encoded vast url if it exists on a bid object, only if prebid-cache
+ * is disabled, and description_url is not already set on a given input
+ * @param {AdapterBidResponse} bid object to check for vast url
+ * @param {Object} components the object to check that description_url is NOT set on
+ * @param {string} prop the property of components that would contain description_url
+ * @return {string | undefined} The encoded vast url if it exists, or undefined
+ */
+function getDescriptionUrl(bid, components, prop) {
+  if (_config.config.getConfig('usePrebidCache')) {
+    return;
+  }
+
+  if (!(0, _utils.deepAccess)(components, prop + '.description_url')) {
+    var vastUrl = bid && bid.vastUrl;
+    if (vastUrl) {
+      return encodeURIComponent(vastUrl);
+    }
+  } else {
+    (0, _utils.logError)('input cannnot contain description_url');
+  }
+}
+
 (0, _adServerManager.registerVideoSupport)('dfp', {
   buildVideoUrl: buildDfpVideoUrl
 });
 
 /***/ }),
 
-/***/ 113:
+/***/ 123:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -118,7 +188,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.registerVideoSupport = registerVideoSupport;
 
-var _prebidGlobal = __webpack_require__(30);
+var _prebidGlobal = __webpack_require__(31);
 
 var _utils = __webpack_require__(0);
 
@@ -176,4 +246,4 @@ function registerVideoSupport(name, videoSupport) {
 
 /***/ })
 
-},[111]);
+},[121]);
