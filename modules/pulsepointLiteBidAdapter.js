@@ -92,7 +92,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creative_id: id,
         creativeId: id,
         adId: id,
-        ttl: BID_TTL,
+        ttl: ttl(idToBidMap[id]),
         netRevenue: true,
         currency: CURRENCY
       };
@@ -108,6 +108,10 @@ function bidResponseAvailable(bidRequest, bidResponse) {
     }
   });
   return bids;
+}
+
+function ttl(bid) {
+  return (bid && bid.ext && bid.ext.ttl) ? bid.ext.ttl : BID_TTL;
 }
 
 /**
