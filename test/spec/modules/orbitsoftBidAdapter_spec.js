@@ -14,7 +14,7 @@ describe('Orbitsoft Adapter tests', function () {
 
   describe('test orbitsoft callback response', function () {
     it('should exist and be a function', function () {
-      expect(pbjs.handleOASCB).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.handleOASCB).to.exist.and.to.be.a('function');
     });
 
     it('should add empty bid responses if no bids returned', function () {
@@ -43,8 +43,8 @@ describe('Orbitsoft Adapter tests', function () {
         cpm: 0
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
-      pbjs.handleOASCB(response);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$.handleOASCB(response);
 
       let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
@@ -79,8 +79,8 @@ describe('Orbitsoft Adapter tests', function () {
         cpm: 0
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
-      pbjs.handleOASCB(response);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$.handleOASCB(response);
 
       expect(stubAddBidResponse.getCall(0)).to.equal(null);
       stubAddBidResponse.restore();
@@ -116,8 +116,8 @@ describe('Orbitsoft Adapter tests', function () {
       height: 250
     };
 
-    pbjs._bidsRequested.push(bidderRequest);
-    pbjs.handleOASCB(response);
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$.handleOASCB(response);
 
     let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
     let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
@@ -277,9 +277,9 @@ describe('Orbitsoft Adapter tests', function () {
         height: 250
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
-      pbjs.handleOASCB(response);
+      $$PREBID_GLOBAL$$.handleOASCB(response);
 
       let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
       let adUrl = bidResponse1.adUrl;
@@ -339,8 +339,8 @@ describe('Orbitsoft Adapter tests', function () {
         height: 250
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
-      pbjs.handleOASCB(response);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$.handleOASCB(response);
 
       let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
       let adUrl = bidResponse1.adUrl;
