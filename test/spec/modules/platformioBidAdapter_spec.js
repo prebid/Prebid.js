@@ -68,7 +68,7 @@ describe('Platformio Adapter Tests', () => {
       }],
       cur: 'USD'
     };
-    const bids = spec.interpretResponse(ortbResponse, request);
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(1);
     // verify first bid
     const bid = bids[0];
@@ -83,7 +83,7 @@ describe('Platformio Adapter Tests', () => {
 
   it('Verify full passback', () => {
     const request = spec.buildRequests(slotConfigs);
-    const bids = spec.interpretResponse(null, request)
+    const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
