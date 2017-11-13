@@ -115,7 +115,9 @@ describe('PulsePoint Lite Adapter Tests', () => {
           price: 1.25,
           adm: 'This is an Ad',
           ext: {
-            ttl: 30
+            ttl: 30,
+            netRevenue: false,
+            currency: 'INR'
           }
         }]
       }]
@@ -125,6 +127,8 @@ describe('PulsePoint Lite Adapter Tests', () => {
     // verify first bid
     const bid = bids[0];
     expect(bid.ttl).to.equal(30);
+    expect(bid.netRevenue).to.equal(false);
+    expect(bid.currency).to.equal('INR');
   });
 
   it('Verify full passback', () => {
