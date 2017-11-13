@@ -121,17 +121,19 @@ describe('AdButler adapter', () => {
     describe('bid responses', () => {
       it('should return complete bid response', () => {
         let serverResponse = {
-            status: 'SUCCESS',
-            account_id: 167283,
-            zone_id: 210093,
-            cpm: 1.5,
-            width: 300,
-            height: 250,
-            place: 0,
-            ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
-            tracking_pixels: [
-              'http://tracking.pixel.com/params=info'
-            ]
+            body: {
+              status: 'SUCCESS',
+              account_id: 167283,
+              zone_id: 210093,
+              cpm: 1.5,
+              width: 300,
+              height: 250,
+              place: 0,
+              ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+              tracking_pixels: [
+                'http://tracking.pixel.com/params=info'
+              ]
+            }
           },
           bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
