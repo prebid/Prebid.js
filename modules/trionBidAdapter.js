@@ -41,7 +41,6 @@ export const spec = {
         var cpm = parseInt(result.cpm, 10) / 100;
 
         bid.requestId = bidRequest.bidId;
-        bid.bidderCode = bidRequest.bidder;
         bid.cpm = cpm;
         bid.ad = result.ad;
         bid.width = result.width;

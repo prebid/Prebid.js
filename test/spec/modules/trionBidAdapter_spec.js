@@ -148,11 +148,6 @@ describe('Trion adapter tests', () => {
       TRION_BID_RESPONSE.result.ad = 'test';
     });
 
-    it('bid response is formatted correctly', () => {
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
-      expect(response[0].bidderCode).to.equal('trion');
-    });
-
     it('height and width are appropriately set', () => {
       let bidWidth = '1';
       let bidHeight = '2';
