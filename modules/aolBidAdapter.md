@@ -20,8 +20,8 @@ Module that connects to AOL's demand sources
                 {
                     bidder: 'onedisplay',
                     params: {
-                        placement: '23324932',
-                        network: '5071.1',
+                        placement: '3611253',
+                        network: '9599.1',
                         bidFloor: '0.80',
                         keyValues: {
                             test: 'key'
