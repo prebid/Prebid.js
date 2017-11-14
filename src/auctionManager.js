@@ -31,6 +31,20 @@ export function newAuctionManager() {
   let _auctions = [];
   let _public = {};
 
+  _public.addWinningBid = function(bid) {
+    let auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
+    if (auction) {
+      auction.setWinningBid(bid);
+    } else {
+      utils.logWarn(`Auction not found when adding winning bid`);
+    }
+  }
+
+  _public.getAllWinningBids = function() {
+    return _auctions.map(auction => auction.getWinningBid())
+      .reduce(flatten, []);
+  }
+
   _public.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
       .reduce(flatten, []);
