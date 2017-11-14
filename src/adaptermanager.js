@@ -198,8 +198,15 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': getAdUnitCopyForPrebidServer(adUnits)};
-      utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
       if (s2sBidRequest.ad_units.length) {
+        // only log adapters that actually have adUnit bids
+        let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
+          return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidderCode) }, []));
+        }, []);
+        utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
+          return allBidders.includes(adapter);
+        }).join(',')}`);
+        // make bid requests
         s2sAdapter.callBids(s2sBidRequest);
       }
     }
