@@ -22,6 +22,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
+var slice = Array.prototype.slice;
 const { syncUsers, triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -459,6 +460,17 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   }
   // emit event
   events.emit(ADD_AD_UNITS);
+};
+
+/**
+ * @param {string} event the name of the event
+ * @alias module:pbjs.emitEvent
+ */
+$$PREBID_GLOBAL$$.emitEvent = function (event) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.emitEvent', arguments);
+  
+  var args = slice.call(arguments, 1);
+  events.emit(event, args);
 };
 
 /**
