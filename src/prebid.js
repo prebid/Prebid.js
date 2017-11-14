@@ -22,7 +22,6 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
-var slice = Array.prototype.slice;
 const { syncUsers, triggerUserSyncs } = userSync;
 
 /* private variables */
