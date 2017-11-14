@@ -1064,6 +1064,15 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.callBids.restore();
     });
   });
+  
+  describe('emitEvent', () => {
+    it('should call events.emit with valid parameters', () => {
+      var spyEventsEmit = sinon.spy(events, 'emit');
+      $$PREBID_GLOBAL$$.emitEvent('bidWon', Function);
+      assert.ok(spyEventsEmit.calledWith('bidWon', Function));
+      events.emit.restore();
+    });
+  });
 
   describe('onEvent', () => {
     it('should log an error when handler is not a function', () => {
