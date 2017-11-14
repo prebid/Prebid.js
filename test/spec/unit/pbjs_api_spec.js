@@ -1064,7 +1064,7 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.callBids.restore();
     });
   });
-  
+
   describe('onEvent', () => {
     it('should log an error when handler is not a function', () => {
       var spyLogError = sinon.spy(utils, 'logError');
