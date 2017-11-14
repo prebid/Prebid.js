@@ -1110,10 +1110,12 @@ describe('Unit: Prebid Module', function () {
 
   describe('emit', () => {
     it('should call events.emit with valid parameters', () => {
-      const bid = $$PREBID_GLOBAL$$.createBid(0);
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      const result = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
+      const bids = getBidResponses().filter(bid => bid.adUnitCode === adUnitCode);
       const spyEventsEmit = sinon.spy(events, 'emit');
-      $$PREBID_GLOBAL$$.emitEvent(CONSTANTS.EVENTS.BID_WON, bid);
-      assert.ok(spyEventsEmit.calledWith('bidWon', bid));
+      $$PREBID_GLOBAL$$.emitEvent(CONSTANTS.EVENTS.BID_WON, bids[0]);
+      assert.ok(spyEventsEmit.calledWith('bidWon', bids[0]));
       events.emit.restore();
     });
 
