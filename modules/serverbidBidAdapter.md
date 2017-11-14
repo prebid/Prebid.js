@@ -4,7 +4,7 @@ Module Name: Serverbid Bid Adapter
 
 Module Type: Bid Adapter
 
-Maintainer: jgrimes@serverbid.com
+Maintainer: jgrimes@serverbid.com, jswart@serverbid.com
 
 # Description
 
