@@ -81,8 +81,9 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   *
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) {
   let _adUnits = adUnits;
+  let _labels = labels;
   let _adUnitCodes = adUnitCodes;
   let _bidderRequests = [];
   let _bidsReceived = [];
@@ -181,7 +182,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
     };
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-    let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout);
+    let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
