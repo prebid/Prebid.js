@@ -3,7 +3,7 @@
 ```
 Module Name: HuddledMasses Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@example.com
+Maintainer: supply@huddledmasses.com
 ```
 
 # Description

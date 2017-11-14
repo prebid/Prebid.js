@@ -1,9 +1,11 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'huddledmasses';
 const URL = '//huddledmassessupply.com/?c=o&m=multi';
 const URL_SYNC = '//huddledmassessupply.com/?c=o&m=cookie';
-const SIZE_INDEX = {
+
+let sizeObj = {
   '468x60': 1,
   '728x90': 2,
   '300x600': 10,
@@ -31,34 +33,8 @@ const SIZE_INDEX = {
   '800x250': 118,
   '200x600': 119
 };
-const INDEX_SIZE = {
-  1: '468x60',
-  2: '728x90',
-  10: '300x600',
-  15: '300x250',
-  19: '300x100',
-  43: '320x50',
-  44: '300x50',
-  48: '300x300',
-  54: '300x1050',
-  55: '970x90',
-  57: '970x250',
-  58: '1000x90',
-  59: '320x80',
-  65: '640x480',
-  67: '320x480',
-  72: '320x320',
-  73: '320x160',
-  83: '480x300',
-  94: '970x310',
-  96: '970x210',
-  101: '480x320',
-  102: '768x1024',
-  113: '1000x300',
-  117: '320x100',
-  118: '800x250',
-  119: '200x600'
-};
+
+utils._each(sizeObj, (item, key) => sizeObj[item] = key);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -71,8 +47,8 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     return (!isNaN(bid.params.placement_id) &&
-    ((bid.params.sizes != undefined && bid.params.sizes.length > 0 && bid.params.sizes.some((sizeIndex) => INDEX_SIZE[sizeIndex] != undefined)) ||
-    (bid.sizes != undefined && bid.sizes.length > 0 && bid.sizes.map((size) => `${size[0]}x${size[1]}`).some((size) => SIZE_INDEX[size] != undefined))));
+    ((bid.params.sizes !== undefined && bid.params.sizes.length > 0 && bid.params.sizes.some((sizeIndex) => sizeObj[sizeIndex] !== undefined)) ||
+    (bid.sizes !== undefined && bid.sizes.length > 0 && bid.sizes.map((size) => `${size[0]}x${size[1]}`).some((size) => sizeObj[size] !== undefined))));
   },
 
   /**
@@ -87,9 +63,9 @@ export const spec = {
       window.top.location.toString();
       winTop = window.top;
     } catch (e) {
-      console.log(e);
+      utils.logMessage(e);
     };
-    let location = winTop.location;
+    let location = utils.getTopWindowLocation();
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -140,7 +116,7 @@ export const spec = {
         }
       }
     } catch (e) {
-      console.log(e);
+      utils.logMessage(e);
     };
     return response;
   },
