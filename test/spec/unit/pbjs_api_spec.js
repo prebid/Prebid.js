@@ -1065,15 +1065,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
   
-  describe('emitEvent', () => {
-    it('should call events.emit with valid parameters', () => {
-      var spyEventsEmit = sinon.spy(events, 'emit');
-      $$PREBID_GLOBAL$$.emitEvent('bidWon', Function);
-      assert.ok(spyEventsEmit.calledWith('bidWon', Function));
-      events.emit.restore();
-    });
-  });
-
   describe('onEvent', () => {
     it('should log an error when handler is not a function', () => {
       var spyLogError = sinon.spy(utils, 'logError');
@@ -1118,6 +1109,14 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('emit', () => {
+    it('should call events.emit with valid parameters', () => {
+      const bid = $$PREBID_GLOBAL$$.createBid(0);
+      const spyEventsEmit = sinon.spy(events, 'emit');
+      $$PREBID_GLOBAL$$.emitEvent(CONSTANTS.EVENTS.BID_WON, bid);
+      assert.ok(spyEventsEmit.calledWith('bidWon', bid));
+      events.emit.restore();
+    });
+
     it('should be able to emit event without arguments', () => {
       var spyEventsEmit = sinon.spy(events, 'emit');
       events.emit(CONSTANTS.EVENTS.AUCTION_END);

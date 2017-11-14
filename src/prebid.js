@@ -469,8 +469,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
 $$PREBID_GLOBAL$$.emitEvent = function (event) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.emitEvent', arguments);
   
-  var args = slice.call(arguments, 1);
-  events.emit(event, args);
+  events.emit.apply(this, arguments);
 };
 
 /**
