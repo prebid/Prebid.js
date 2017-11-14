@@ -114,8 +114,6 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-// ericeric: why is this broken out into a public function?  why not just call from callBids()?
-// I see auction.js is tracking _bidderRequests, but maybe callBids can just return them directly?
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) {
   let bidRequests = [];
   let bidderCodes = getBidderCodes(adUnits);
