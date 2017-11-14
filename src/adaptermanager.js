@@ -206,7 +206,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   if (!bidRequests.length) {
-    utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+    utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
   }
 
