@@ -814,6 +814,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {boolean} [cookieSet] enables cookieSet functionality
+ * @property {string} [cookieSetUrl] override the default cookieSet endpoint
  * @alias module:pbjs.setS2SConfig
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
@@ -835,6 +836,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     adapter: CONSTANTS.S2S.ADAPTER,
     syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
     cookieSet: true,
+    cookieSetUrl: CONSTANTS.S2S.COOKIE_SET_URL,
     bidders: []
   }, options);
   adaptermanager.setS2SConfig(config);

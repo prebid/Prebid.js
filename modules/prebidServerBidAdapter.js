@@ -12,7 +12,6 @@ import { VIDEO } from 'src/mediaTypes';
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
-const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 let _synced = false;
 
 /**
@@ -275,7 +274,7 @@ function PrebidServer() {
       }
       if (result.status === 'no_cookie' && config.cookieSet) {
         // cookie sync
-        cookieSet(cookieSetUrl);
+        cookieSet(config.cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);
