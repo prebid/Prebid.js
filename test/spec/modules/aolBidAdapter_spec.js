@@ -124,7 +124,8 @@ describe('AolAdapter', () => {
         pubapiId: '245730051428950632',
         currency: 'USD',
         dealId: 'deal-id',
-        netRevenue: true
+        netRevenue: true,
+        ttl: 300
       });
     });
 

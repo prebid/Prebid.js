@@ -39,6 +39,7 @@ const MP_SERVER_MAP = {
   as: 'adserver-as.adtech.advertising.com'
 };
 const NEXAGE_SERVER = 'hb.nexage.com';
+const BID_RESPONSE_TTL = 300;
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -216,7 +217,8 @@ function _parseBidResponse(response, bidRequest) {
     pubapiId: response.id,
     currency: response.cur,
     dealId: bidData.dealid,
-    netRevenue: true
+    netRevenue: true,
+    ttl: BID_RESPONSE_TTL
   };
 }
 
