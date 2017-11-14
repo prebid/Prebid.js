@@ -11,7 +11,8 @@ describe('Platformio Adapter Tests', () => {
       pubId: '28082',
       siteId: '26047',
       placementId: '123',
-      size: '300x250'
+      size: '300x250',
+      bidFloor: '0.001'
     }
   }, {
     placementCode: '/DfpAccount2/slot2',
@@ -44,11 +45,13 @@ describe('Platformio Adapter Tests', () => {
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
     expect(ortbRequest.imp[0].banner.w).to.equal(300);
     expect(ortbRequest.imp[0].banner.h).to.equal(250);
+    expect(ortbRequest.imp[0].bidfloor).to.equal('0.001');
     // slot 2
     expect(ortbRequest.imp[1].tagid).to.equal('456');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
     expect(ortbRequest.imp[1].banner.w).to.equal(250);
     expect(ortbRequest.imp[1].banner.h).to.equal(250);
+    expect(ortbRequest.imp[1].bidfloor).to.equal('0.000001');
   });
 
   it('Verify parse response', () => {
@@ -59,9 +62,11 @@ describe('Platformio Adapter Tests', () => {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: 'This is an Ad'
+          adm: 'This is an Ad',
+          adid: '471810',
         }]
-      }]
+      }],
+      cur: 'USD'
     };
     const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(1);
@@ -71,9 +76,9 @@ describe('Platformio Adapter Tests', () => {
     expect(bid.ad).to.equal('This is an Ad');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
-    expect(bid.adId).to.equal('bid12345');
-    expect(bid.creative_id).to.equal('bid12345');
-    expect(bid.creativeId).to.equal('bid12345');
+    expect(bid.creativeId).to.equal('471810');
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(360);
   });
 
   it('Verify full passback', () => {
