@@ -773,7 +773,7 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
 }
 
 /**
- * Returns the origin 
+ * Returns the origin
  */
 export function getOrigin() {
   // IE10 does not have this propery. https://gist.github.com/hbogs/7908703

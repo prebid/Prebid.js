@@ -137,12 +137,6 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
     bidderCodes = shuffle(bidderCodes);
   }
 
-  const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
-  if (s2sAdapter) {
-    s2sAdapter.setConfig(_s2sConfig);
-    s2sAdapter.queueSync({bidderCodes});
-  }
-
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
   if (_s2sConfig.enabled) {
@@ -205,10 +199,12 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     return;
   }
 
-  // handle s2s requests
-  let serverBidRequests = bidRequests.filter(bidRequest => {
-    return bidRequest.src && bidRequest.src === CONSTANTS.S2S.SRC;
-  });
+  let ajax = ajaxBuilder(bidRequests[0].timeout);
+
+  let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
+    partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
+    return partitions;
+  }, [[], []]);
 
   if (serverBidRequests.length) {
     let adaptersServerSide = _s2sConfig.bidders;
@@ -218,6 +214,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': getAdUnitCopyForPrebidServer(adUnits)};
       if (s2sBidRequest.ad_units.length) {
+        let doneCbs = serverBidRequests.map(bidRequest => {
+          bidRequest.doneCbCallCount = 0;
+          return doneCb(bidRequest.bidderRequestId)
+        });
+
         // only log adapters that actually have adUnit bids
         let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
           return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidderCode) }, []));
@@ -225,18 +226,21 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
         utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
           return allBidders.includes(adapter);
         }).join(',')}`);
+
         // make bid requests
-        s2sAdapter.callBids(s2sBidRequest);
+        s2sAdapter.callBids(
+          s2sBidRequest,
+          serverBidRequests,
+          addBidResponse,
+          () => doneCbs.forEach(done => done()),
+          ajax
+        );
       }
     }
   }
 
   // handle client adapter requests
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
-  // first filter out s2s requests
-  bidRequests.filter(bidRequest => {
-    return !serverBidRequests.includes(bidRequest);
-  }).forEach(bidRequest => {
+  clientBidRequests.forEach(bidRequest => {
     bidRequest.start = new Date().getTime();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
@@ -344,6 +348,10 @@ exports.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
+};
+
+exports.getBidAdapter = function(bidder) {
+  return _bidderRegistry[bidder];
 };
 
 // the s2sTesting module is injected when it's loaded rather than being imported

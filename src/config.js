@@ -22,16 +22,6 @@ const DEFAULT_USERSYNC = {
   syncDelay: 3000
 };
 const DEFAULT_TIMEOUTBUFFER = 200;
-const DEFAULT_S2SCONFIG = {
-  enabled: false,
-  endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
-  timeout: 1000,
-  maxBids: 1,
-  adapter: 'prebidServer',
-  syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
-  cookieSet: true,
-  bidders: []
-};
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -150,24 +140,6 @@ export function newConfig() {
     },
     set timeoutBuffer(val) {
       this._timoutBuffer = val;
-    },
-
-    _s2sConfig: DEFAULT_S2SCONFIG,
-    get s2sConfig() {
-      return this._s2sConfig;
-    },
-    set s2sConfig(val) {
-      if (!utils.contains(Object.keys(val), 'accountId')) {
-        utils.logError('accountId missing in Server to Server config');
-        return;
-      }
-
-      if (!utils.contains(Object.keys(val), 'bidders')) {
-        utils.logError('bidders missing in Server to Server config');
-        return;
-      }
-
-      this._s2sConfig = Object.assign({}, DEFAULT_S2SCONFIG, val);
     },
 
     // userSync defaults
