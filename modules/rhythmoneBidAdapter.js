@@ -3,7 +3,7 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-function rhythmOneBidAdapter() {
+function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
 
@@ -32,25 +32,25 @@ function rhythmOneBidAdapter() {
     slotsToBids = {};
 
     let query = [];
-    let w = (typeof window !== "undefined" ? window : {});
-  
+    let w = (typeof window !== 'undefined' ? window : {});
+
     function p(k, v) {
       if (v instanceof Array) { v = v.join(','); }
       if (typeof v !== 'undefined') { query.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }
     }
 
     function attempt(valueFunction, defaultValue) {
-      try { 
-        return valueFunction(); 
-      } catch (ex) {
-      }
+      try {
+        return valueFunction();
+      } catch (ex) { }
       return defaultValue;
     }
-  
+
     p('domain', attempt(function() {
       var d = w.document.location.ancestorOrigins;
-      if (d && d.length > 0) { 
-      return d[d.length - 1]; }
+      if (d && d.length > 0) {
+        return d[d.length - 1];
+      }
       return w.top.document.location.hostname; // try/catch is in the attempt function
     }, ''));
     p('url', attempt(function() {
@@ -63,12 +63,12 @@ function rhythmOneBidAdapter() {
       }
       return l;
     }, ''));
-    
+
     function getRMPUrl() {
       let url = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
       let defaultZone = getFirstParam('zone', BRs) || '1r';
       let defaultPath = getFirstParam('path', BRs) || 'mvo';
-      
+
       url = url.replace(/\{placementId\}/i, fallbackPlacementId);
       url = url.replace(/\{zone\}/i, defaultZone);
       url = url.replace(/\{path\}/i, defaultPath);
@@ -89,14 +89,14 @@ function rhythmOneBidAdapter() {
           p['Shockwave Flash'] &&
           m &&
           m[t] &&
-          m[t].enabledPlugin) { 
-            return 1; 
-          }
+          m[t].enabledPlugin) {
+          return 1;
+        }
 
         if (x) {
-          try { 
+          try {
             if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) {
-              return 1; 
+              return 1;
             }
           } catch (e) {
           }
@@ -121,9 +121,9 @@ function rhythmOneBidAdapter() {
         let params = BRs[i].params || {};
 
         slotsToBids[BRs[i].adUnitCode] = BRs[i];
-          
-        if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') { 
-          BRs[i].sizes = [BRs[i].sizes]; 
+
+        if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') {
+          BRs[i].sizes = [BRs[i].sizes];
         }
 
         for (let j = 0; j < BRs[i].sizes.length; j++) {
@@ -155,7 +155,6 @@ function rhythmOneBidAdapter() {
   };
 
   this.interpretResponse = function (serverResponse) {
-
     let responses = serverResponse.body || [];
     let bids = [];
     let i = 0;
@@ -163,7 +162,7 @@ function rhythmOneBidAdapter() {
     if (responses.seatbid) {
       let temp = [];
       for (i = 0; i < responses.seatbid.length; i++) {
-        for(let j = 0; j < responses.seatbid[i].bid.length; j++) {
+        for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
         }
       }
@@ -189,17 +188,14 @@ function rhythmOneBidAdapter() {
         bidResponse.vastUrl = bid.nurl;
         bidResponse.descriptionUrl = bid.nurl;
         bidResponse.ttl = 10000;
+      } else {
+        bidResponse.ad = bid.adm;
       }
-      else {
-        bidResponse.ad = bid.adm; 
-      }
-
       bids.push(bidResponse);
     }
-
     return bids;
   };
 }
 
-export const spec = new rhythmOneBidAdapter();
+export const spec = new RhythmOneBidAdapter();
 registerBidder(spec);
