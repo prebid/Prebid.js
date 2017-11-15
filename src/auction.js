@@ -146,7 +146,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
    * @property {string} bidId The id representing the bid
    * @property {string} bidder The string name of the bidder
    * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
-   * @property {string} requestId The UUID representing the bid request
+   * @property {string} auctionId The id representing the auction
    * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
    */
   function getTimedOutBids() {
@@ -168,7 +168,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         bidId: bid.bidId,
         bidder: bid.bidder,
         adUnitCode: bid.adUnitCode,
-        requestId: bid.requestId,
+        auctionId: bid.auctionId,
       }));
 
     return timedOutBids;
