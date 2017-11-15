@@ -5,6 +5,7 @@ import * as ajax from 'src/ajax';
 import { expect } from 'chai';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
+import * as utils from 'src/utils';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -113,7 +114,7 @@ describe('bidders created by newBidder', () => {
       expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([MOCK_BIDS_REQUEST.bids[0]]);
     });
 
-    it("should make no server requests if the spec doesn't return any", () => {
+    it('should make no server requests if the spec doesn\'t return any', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -147,6 +148,31 @@ describe('bidders created by newBidder', () => {
       });
     });
 
+    it('should make the appropriate POST request when options are passed', () => {
+      const bidder = newBidder(spec);
+      const url = 'test.url.com';
+      const data = { arg: 2 };
+      const options = { contentType: 'application/json'};
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: url,
+        data: data,
+        options: options
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal(url);
+      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+        method: 'POST',
+        contentType: 'application/json',
+        withCredentials: true
+      });
+    });
+
     it('should make the appropriate GET request', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
@@ -166,6 +192,30 @@ describe('bidders created by newBidder', () => {
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',
         withCredentials: true
+      });
+    });
+
+    it('should make the appropriate GET request when options are passed', () => {
+      const bidder = newBidder(spec);
+      const url = 'test.url.com';
+      const data = { arg: 2 };
+      const opt = { withCredentials: false }
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'GET',
+        url: url,
+        data: data,
+        options: opt
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[2]).to.be.undefined;
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+        method: 'GET',
+        withCredentials: false
       });
     });
 
@@ -213,20 +263,25 @@ describe('bidders created by newBidder', () => {
   describe('when the ajax call succeeds', () => {
     let ajaxStub;
     let userSyncStub;
+    let logErrorSpy;
 
     beforeEach(() => {
       ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
-        callbacks.success('response body');
+        const fakeResponse = sinon.stub();
+        fakeResponse.returns('headerContent');
+        callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
       userSyncStub = sinon.stub(userSync, 'registerSync')
+      logErrorSpy = sinon.spy(utils, 'logError');
     });
 
     afterEach(() => {
       ajaxStub.restore();
       userSyncStub.restore();
+      utils.logError.restore();
     });
 
-    it('should call spec.interpretResponse() with the response body content', () => {
+    it('should call spec.interpretResponse() with the response content', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -240,7 +295,9 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(spec.interpretResponse.calledOnce).to.equal(true);
-      expect(spec.interpretResponse.firstCall.args[0]).to.equal('response body');
+      const response = spec.interpretResponse.firstCall.args[0]
+      expect(response.body).to.equal('response body')
+      expect(response.headers.get('some-header')).to.equal('headerContent');
       expect(spec.interpretResponse.firstCall.args[1]).to.deep.equal({
         method: 'POST',
         url: 'test.url.com',
@@ -271,7 +328,81 @@ describe('bidders created by newBidder', () => {
       expect(spec.interpretResponse.calledTwice).to.equal(true);
     });
 
-    it("should add bids for each placement code into the bidmanager, even if the bidder doesn't bid on all of them", () => {
+    it('should add bids for each placement code into the bidmanager, even if the bidder doesn\'t bid on all of them', () => {
+      const bidder = newBidder(spec);
+
+      const bid = {
+        creativeId: 'creative-id',
+        bidderCode: 'code',
+        requestId: 'some-id',
+        ad: 'ad-url.com',
+        cpm: 0.5,
+        height: 200,
+        width: 300,
+        placementCode: 'mock/placement',
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 300
+      };
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+
+      spec.interpretResponse.returns(bid);
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
+      const placementsWithBids =
+        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
+      expect(placementsWithBids).to.contain('mock/placement');
+      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should call spec.getUserSyncs() with the response', () => {
+      const bidder = newBidder(spec);
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(spec.getUserSyncs.calledOnce).to.equal(true);
+      expect(spec.getUserSyncs.firstCall.args[1].length).to.equal(1);
+      expect(spec.getUserSyncs.firstCall.args[1][0].body).to.equal('response body');
+      expect(spec.getUserSyncs.firstCall.args[1][0].headers).to.have.property('get');
+      expect(spec.getUserSyncs.firstCall.args[1][0].headers.get).to.be.a('function');
+    });
+
+    it('should register usersync pixels', () => {
+      const bidder = newBidder(spec);
+
+      spec.isBidRequestValid.returns(false);
+      spec.buildRequests.returns([]);
+      spec.getUserSyncs.returns([{
+        type: 'iframe',
+        url: 'usersync.com'
+      }]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(userSyncStub.called).to.equal(true);
+      expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
+      expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
+      expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
+    });
+
+    it('should logError when required bid response params are missing', () => {
       const bidder = newBidder(spec);
 
       const bid = {
@@ -294,46 +425,7 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
-      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
-    });
-
-    it('should call spec.getUserSyncs() with the response', () => {
-      const bidder = newBidder(spec);
-
-      spec.isBidRequestValid.returns(true);
-      spec.buildRequests.returns({
-        method: 'POST',
-        url: 'test.url.com',
-        data: {}
-      });
-      spec.getUserSyncs.returns([]);
-
-      bidder.callBids(MOCK_BIDS_REQUEST);
-
-      expect(spec.getUserSyncs.calledOnce).to.equal(true);
-      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal(['response body']);
-    });
-
-    it('should register usersync pixels', () => {
-      const bidder = newBidder(spec);
-
-      spec.isBidRequestValid.returns(false);
-      spec.buildRequests.returns([]);
-      spec.getUserSyncs.returns([{
-        type: 'iframe',
-        url: 'usersync.com'
-      }]);
-
-      bidder.callBids(MOCK_BIDS_REQUEST);
-
-      expect(userSyncStub.called).to.equal(true);
-      expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
-      expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
-      expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
+      expect(logErrorSpy.calledOnce).to.equal(true);
     });
   });
 

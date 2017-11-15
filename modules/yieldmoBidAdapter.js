@@ -19,7 +19,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
-    var ymURI = '//bid.yieldmo.com/exchange/prebid?';
+    var ymURI = '//ads.yieldmo.com/exchange/prebid?';
     var ymCall = document.location.protocol + ymURI;
 
     // Placement specific information
@@ -50,6 +50,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
       placement.callback_id = bid.bidId;
       placement.placement_id = bid.placementCode;
       placement.sizes = bid.sizes;
+
+      if (bid.params && bid.params.placementId) {
+        placement.ym_placement_id = bid.params.placementId;
+      }
 
       placements.push(placement);
     }

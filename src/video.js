@@ -1,5 +1,6 @@
 import { videoAdapters } from './adaptermanager';
-import { getBidRequest, deepAccess } from './utils';
+import { getBidRequest, deepAccess, logError } from './utils';
+import { config } from '../src/config';
 
 const VIDEO_MEDIA_TYPE = 'video';
 const OUTSTREAM = 'outstream';
@@ -7,10 +8,14 @@ const OUTSTREAM = 'outstream';
 /**
  * Helper functions for working with video-enabled adUnits
  */
-export const videoAdUnit = adUnit => adUnit.mediaType === VIDEO_MEDIA_TYPE;
-const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
+export const videoAdUnit = adUnit => {
+  const mediaType = adUnit.mediaType === VIDEO_MEDIA_TYPE;
+  const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
+  return mediaType || mediaTypes;
+};
+export const videoBidder = bid => videoAdapters.includes(bid.bidder);
 export const hasNonVideoBidder = adUnit =>
-  adUnit.bids.filter(nonVideoBidder).length;
+  adUnit.bids.filter(bid => !videoBidder(bid)).length;
 
 /**
  * @typedef {object} VideoBid
@@ -32,6 +37,15 @@ export function isValidVideoBid(bid) {
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
+    // xml-only video bids require prebid-cache to be enabled
+    if (!config.getConfig('usePrebidCache') && bid.vastXml && !bid.vastUrl) {
+      logError(`
+        This bid contains only vastXml and will not work when prebid-cache is disabled.
+        Try enabling prebid-cache with pbjs.setConfig({ usePrebidCache: true });
+      `);
+      return false;
+    }
+
     return !!(bid.vastUrl || bid.vastXml);
   }
 

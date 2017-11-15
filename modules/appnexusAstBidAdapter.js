@@ -14,13 +14,15 @@ const NATIVE_MAPPING = {
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] },
   },
   icon: {
     serverName: 'icon',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] },
   },
-  sponsoredBy: 'sponsored_by'
+  sponsoredBy: 'sponsored_by',
 };
 const SOURCE = 'pbjs';
 
@@ -44,7 +46,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = bidRequests.find(hasUserInfo);
     let userObj;
@@ -74,6 +76,7 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: payloadString,
+      bidderRequest
     };
   },
 
@@ -83,18 +86,28 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, {bidderRequest}) {
+    serverResponse = serverResponse.body;
     const bids = [];
-    serverResponse.tags.forEach(serverBid => {
-      const rtbBid = getRtbBid(serverBid);
-      if (rtbBid) {
-        if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
-          const bid = newBid(serverBid, rtbBid);
-          bid.mediaType = parseMediaType(rtbBid);
-          bids.push(bid);
+    if (!serverResponse || serverResponse.error) {
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
+      utils.logError(errorMessage);
+      return bids;
+    }
+
+    if (serverResponse.tags) {
+      serverResponse.tags.forEach(serverBid => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid) {
+          if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
+            const bid = newBid(serverBid, rtbBid);
+            bid.mediaType = parseMediaType(rtbBid);
+            bids.push(bid);
+          }
         }
-      }
-    });
+      });
+    }
     return bids;
   },
 
@@ -169,8 +182,11 @@ function newBid(serverBid, rtbBid) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    creative_id: rtbBid.creative_id,
+    creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300
   };
 
   if (rtbBid.rtb.video) {
@@ -178,7 +194,8 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
-      descriptionUrl: rtbBid.rtb.video.asset_url
+      descriptionUrl: rtbBid.rtb.video.asset_url,
+      ttl: 3600
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
@@ -189,17 +206,18 @@ function newBid(serverBid, rtbBid) {
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb.native) {
-    const native = rtbBid.rtb.native;
-    bid.native = {
-      title: native.title,
-      body: native.desc,
-      cta: native.ctatext,
-      sponsoredBy: native.sponsored,
-      image: native.main_img && native.main_img.url,
-      icon: native.icon && native.icon.url,
-      clickUrl: native.link.url,
-      impressionTrackers: native.impression_trackers,
+  } else if (rtbBid.rtb['native']) {
+    const nativeAd = rtbBid.rtb['native'];
+    bid['native'] = {
+      title: nativeAd.title,
+      body: nativeAd.desc,
+      cta: nativeAd.ctatext,
+      sponsoredBy: nativeAd.sponsored,
+      image: nativeAd.main_img && nativeAd.main_img.url,
+      icon: nativeAd.icon && nativeAd.icon.url,
+      clickUrl: nativeAd.link.url,
+      clickTrackers: nativeAd.link.click_trackers,
+      impressionTrackers: nativeAd.impression_trackers,
     };
   } else {
     Object.assign(bid, {
@@ -230,6 +248,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+  tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.reserve) {
@@ -260,33 +279,12 @@ function bidToTag(bid) {
     tag.keywords = getKeywords(bid.params.keywords);
   }
 
-  if (bid.mediaType === 'native') {
+  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
     tag.ad_types = ['native'];
 
     if (bid.nativeParams) {
-      const nativeRequest = {};
-
-      // map standard prebid native asset identifier to /ut parameters
-      // e.g., tag specifies `body` but /ut only knows `description`
-      // mapping may be in form {tag: '<server name>'} or
-      // {tag: {serverName: '<server name>', serverParams: {...}}}
-      Object.keys(bid.nativeParams).forEach(key => {
-        // check if one of the <server name> forms is used, otherwise
-        // a mapping wasn't specified so pass the key straight through
-        const requestKey =
-          (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-          NATIVE_MAPPING[key] ||
-          key;
-
-        // if the mapping for this identifier specifies required server
-        // params via the `serverParams` object, merge that in
-        nativeRequest[requestKey] = Object.assign({},
-          NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams,
-          bid.nativeParams[key]
-        );
-      });
-
-      tag.native = {layouts: [nativeRequest]};
+      const nativeRequest = buildNativeRequest(bid.nativeParams);
+      tag['native'] = {layouts: [nativeRequest]};
     }
   }
 
@@ -341,6 +339,44 @@ function hasMemberId(bid) {
 
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+}
+
+function buildNativeRequest(params) {
+  const request = {};
+
+  // map standard prebid native asset identifier to /ut parameters
+  // e.g., tag specifies `body` but /ut only knows `description`.
+  // mapping may be in form {tag: '<server name>'} or
+  // {tag: {serverName: '<server name>', requiredParams: {...}}}
+  Object.keys(params).forEach(key => {
+    // check if one of the <server name> forms is used, otherwise
+    // a mapping wasn't specified so pass the key straight through
+    const requestKey =
+      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+      NATIVE_MAPPING[key] ||
+      key;
+
+    // required params are always passed on request
+    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
+    request[requestKey] = Object.assign({}, requiredParams, params[key]);
+
+    // minimum params are passed if no non-required params given on adunit
+    const minimumParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].minimumParams;
+
+    if (requiredParams && minimumParams) {
+      // subtract required keys from adunit keys
+      const adunitKeys = Object.keys(params[key]);
+      const requiredKeys = Object.keys(requiredParams);
+      const remaining = adunitKeys.filter(key => !requiredKeys.includes(key));
+
+      // if none are left over, the minimum params needs to be sent
+      if (remaining.length === 0) {
+        request[requestKey] = Object.assign({}, request[requestKey], minimumParams);
+      }
+    }
+  });
+
+  return request;
 }
 
 function outstreamRender(bid) {
