@@ -101,7 +101,6 @@ function getAdUnitCopyForPrebidServer(adUnits) {
       adUnit.sizes = mapSizes(adUnit);
       delete adUnit.sizeMapping;
     }
-    adUnit.sizes = transformHeightWidth(adUnit);
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
       return adaptersServerSide.includes(bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
@@ -259,20 +258,6 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
-}
-
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
-  });
-  return sizesObj;
 }
 
 function getSupportedMediaTypes(bidderCode) {
