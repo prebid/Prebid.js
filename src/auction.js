@@ -88,7 +88,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _bidderRequests = [];
   let _bidsReceived = [];
   let _auctionStart;
-  let _auctionId = utils.getUniqueIdentifierStr();
+  let _auctionId = utils.generateUUID();
   let _auctionStatus;
   let _callback = callback;
   let _timer;

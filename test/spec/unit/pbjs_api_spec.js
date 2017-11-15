@@ -850,7 +850,7 @@ describe('Unit: Prebid Module', function () {
         };
 
         $$PREBID_GLOBAL$$.requestBids(requestObj);
-        let re = new RegExp('^Auction [0-9A-Za-z]+ timedOut$');
+        let re = new RegExp('^Auction [a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12} timedOut$');
         clock.tick(requestObj.timeout - 1);
         assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
 
