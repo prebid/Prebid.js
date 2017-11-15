@@ -1,5 +1,5 @@
 
-import {logError, getTopWindowLocation} from 'src/utils';
+import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 export const spec = {
@@ -24,13 +24,18 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => (
-    bidResponseAvailable(request, response)
+    bidResponseAvailable(request, response.body)
   ),
 };
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
-  const ortbRequest = parse(bidRequest.data);
+  let ortbRequest = null;
+  try {
+    ortbRequest = JSON.parse(bidRequest.data);
+  } catch (ex) {
+    logError('kumma.parse', 'ERROR', ex);
+  }
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -42,13 +47,13 @@ function bidResponseAvailable(bidRequest, bidResponse) {
   const bids = [];
   Object.keys(idToImpMap).forEach(id => {
     if (idToBidMap[id]) {
-      const bid = {
-        requestId: id,
-        cpm: idToBidMap[id].price,
-        creative_id: id,
-        creativeId: id,
-        adId: id,
-      };
+      const bid = {};
+      bid.requestId = id;
+      bid.creativeId = idToBidMap[id].adid;
+      bid.cpm = idToBidMap[id].price;
+      bid.currency = bidResponse.cur;
+      bid.ttl = 360;
+      bid.netRevenue = true;
       bid.ad = idToBidMap[id].adm;
       bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_IMP_ID(%7D|\})/gi, idToBidMap[id].impid);
       bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_AD_ID(%7D|\})/gi, idToBidMap[id].adid);
@@ -66,7 +71,7 @@ function impression(slot) {
   return {
     id: slot.bidId,
     banner: banner(slot),
-    bidfloor: '0.000001',
+    bidfloor: slot.params.bidFloor || '0.000001',
     tagid: slot.params.placementId.toString(),
   };
 }
@@ -90,18 +95,11 @@ function site(bidderRequest) {
         domain: getTopWindowLocation().hostname,
       },
       id: siteId.toString(),
-      ref: referrer(),
+      ref: getTopWindowReferrer(),
       page: getTopWindowLocation().href,
     }
   }
   return null;
-}
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 function device() {
   return {
@@ -110,16 +108,6 @@ function device() {
     w: (window.screen.width || window.innerWidth),
     h: (window.screen.height || window.innerHeigh),
   };
-}
-function parse(rawResponse) {
-  try {
-    if (rawResponse) {
-      return JSON.parse(rawResponse);
-    }
-  } catch (ex) {
-    logError('kumma.parse', 'ERROR', ex);
-  }
-  return null;
 }
 
 registerBidder(spec);

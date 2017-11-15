@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/kummaBidAdapter';
-import {getTopWindowLocation} from 'src/utils';
+import {getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 
 describe('Kumma Adapter Tests', () => {
   const slotConfigs = [{
@@ -8,17 +8,18 @@ describe('Kumma Adapter Tests', () => {
     sizes: [[300, 250]],
     bidId: 'bid12345',
     params: {
-      pubId: '28082',
+      pubId: '55879',
       siteId: '26047',
       placementId: '123',
-      size: '300x250'
+      size: '300x250',
+      bidFloor: '0.001'
     }
   }, {
     placementCode: '/DfpAccount2/slot2',
     sizes: [[250, 250]],
     bidId: 'bid23456',
     params: {
-      pubId: '28082',
+      pubId: '55879',
       siteId: '26047',
       placementId: '456',
       size: '250x250'
@@ -32,8 +33,8 @@ describe('Kumma Adapter Tests', () => {
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
-    expect(ortbRequest.site.publisher.id).to.equal('28082');
-    expect(ortbRequest.site.ref).to.equal(window.top.document.referrer);
+    expect(ortbRequest.site.publisher.id).to.equal('55879');
+    expect(ortbRequest.site.ref).to.equal(getTopWindowReferrer());
     expect(ortbRequest.site.page).to.equal(getTopWindowLocation().href);
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object
@@ -44,11 +45,13 @@ describe('Kumma Adapter Tests', () => {
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
     expect(ortbRequest.imp[0].banner.w).to.equal(300);
     expect(ortbRequest.imp[0].banner.h).to.equal(250);
+    expect(ortbRequest.imp[0].bidfloor).to.equal('0.001');
     // slot 2
     expect(ortbRequest.imp[1].tagid).to.equal('456');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
     expect(ortbRequest.imp[1].banner.w).to.equal(250);
     expect(ortbRequest.imp[1].banner.h).to.equal(250);
+    expect(ortbRequest.imp[1].bidfloor).to.equal('0.000001');
   });
 
   it('Verify parse response', () => {
@@ -59,11 +62,13 @@ describe('Kumma Adapter Tests', () => {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: 'This is an Ad'
+          adm: 'This is an Ad',
+          adid: '471810',
         }]
-      }]
+      }],
+      cur: 'USD'
     };
-    const bids = spec.interpretResponse(ortbResponse, request);
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(1);
     // verify first bid
     const bid = bids[0];
@@ -71,14 +76,14 @@ describe('Kumma Adapter Tests', () => {
     expect(bid.ad).to.equal('This is an Ad');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
-    expect(bid.adId).to.equal('bid12345');
-    expect(bid.creative_id).to.equal('bid12345');
-    expect(bid.creativeId).to.equal('bid12345');
+    expect(bid.creativeId).to.equal('471810');
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(360);
   });
 
   it('Verify full passback', () => {
     const request = spec.buildRequests(slotConfigs);
-    const bids = spec.interpretResponse(null, request)
+    const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 

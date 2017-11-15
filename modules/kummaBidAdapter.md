@@ -2,7 +2,7 @@
 
 **Module Name**: Kumma Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: 
+**Maintainer**: yehonatan@kumma.com
 
 # Description
 
@@ -13,14 +13,15 @@ Please use ```kumma``` as the bidder code.
 ```
     var adUnits = [{
       code: 'banner-ad-div',
-      sizes: [[250, 250]],
+      sizes: [[300, 250]],
       bids: [{
           bidder: 'kumma',
           params: { 
-            pubId: '28082',
-            siteId: '26047',
+            pubId: '55879', // required
+            siteId: '26047', // required
+            size: '300X250', // required
             placementId: '123',
-            size: '250X250'
+            bidFloor: '0.001'
           }
       }]
     }];
