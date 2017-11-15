@@ -1,42 +1,38 @@
 'use strict';
 
-import * as utils from 'src/utils';
-import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-function rhythmOneBidAdapter(){
-
-  this.code = "rhythmone";
+function rhythmOneBidAdapter() {
+  this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
 
   this.isBidRequestValid = function (bid) {
     return (bid.adUnitCode !== undefined);
   };
 
-  function getFirstParam(key, validBidRequests){
-    for(let i=0; i<validBidRequests.length; i++){
-      if(validBidRequests[i].params && validBidRequests[i].params[key]){
+  function getFirstParam(key, validBidRequests) {
+    for (let i = 0; i < validBidRequests.length; i++) {
+      if (validBidRequests[i].params && validBidRequests[i].params[key]) {
         return validBidRequests[i].params[key];
       }
     }
   }
-  
-  let slotsToBids = {},
-    that = this,
-    version = '1.0.0.0';
-  
-  this.buildRequests = function (BRs) {
 
-    let fallbackPlacementId = getFirstParam("placementId", BRs);
-    
-    if(fallbackPlacementId === undefined || BRs.length < 1)
+  let slotsToBids = {};
+  let that = this;
+  let version = '1.0.0.0';
+
+  this.buildRequests = function (BRs) {
+    let fallbackPlacementId = getFirstParam('placementId', BRs);
+    if (fallbackPlacementId === undefined || BRs.length < 1) {
       return [];
+	}
 
     slotsToBids = {};
   
-    let query = [],
-      w = (typeof window !== "undefined" ? window : {});
+    let query = [];
+    let w = (typeof window !== "undefined" ? window : {});
   
     function p(k, v) {
       if (v instanceof Array) { v = v.join(','); }
@@ -44,14 +40,18 @@ function rhythmOneBidAdapter(){
     }
 
     function attempt(valueFunction, defaultValue) {
-      try { return valueFunction(); } 
-      catch (ex) {}
+      try { 
+        return valueFunction(); 
+      } 
+      catch (ex) {
+      }
       return defaultValue;
     }
   
     p('domain', attempt(function() {
       var d = w.document.location.ancestorOrigins;
-      if (d && d.length > 0) { return d[d.length - 1]; }
+      if (d && d.length > 0) { 
+	    return d[d.length - 1]; }
       return w.top.document.location.hostname; // try/catch is in the attempt function
     }, ''));
     p('url', attempt(function() {
@@ -65,10 +65,10 @@ function rhythmOneBidAdapter(){
       return l;
     }, ''));
     
-    function getRMPUrl(){
-      let url = getFirstParam("endpoint", BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}',
-        defaultZone = getFirstParam("zone", BRs) || "1r",
-        defaultPath = getFirstParam("path", BRs) || "mvo";
+    function getRMPUrl() {
+      let url = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+	  let defaultZone = getFirstParam('zone', BRs) || '1r';
+	  let defaultPath = getFirstParam('path', BRs) || 'mvo';
       
       url = url.replace(/\{placementId\}/i, fallbackPlacementId);
       url = url.replace(/\{zone\}/i, defaultZone);
@@ -79,44 +79,54 @@ function rhythmOneBidAdapter(){
       p('dsw', (w.screen ? w.screen.width : ''));
       p('tz', (new Date()).getTimezoneOffset());
       p('dtype', ((/(ios|ipod|ipad|iphone|android)/i).test(w.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(w.navigator.userAgent) ? 3 : 2)));
-      p('flash', attempt(function(){
-        let n = w.navigator,
-          p = n.plugins,
-          m = n.mimeTypes,
-          t = 'application/x-shockwave-flash',
-          x = w.ActiveXObject;
+      p('flash', attempt(function() {
+        let n = w.navigator;
+	      let p = n.plugins;
+	      let m = n.mimeTypes;
+	      let t = 'application/x-shockwave-flash';
+	      let x = w.ActiveXObject;
 
         if (p &&
           p['Shockwave Flash'] &&
           m &&
           m[t] &&
-          m[t].enabledPlugin) { return 1; }
+          m[t].enabledPlugin) { 
+            return 1; 
+          }
 
         if (x) {
-          try { if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) return 1; } catch (e) {}
+          try { 
+            if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) {
+              return 1; 
+            }
+          }
+          catch (e) {
+          }
         }
 
         return 0;
       }, 0));
 
-      let heights = [],
-        widths = [],
-        floors = [],
-        mediaTypes = [],
-        i = 0,
-        configuredPlacements = [],
-        fat = /(^v|(\.0)+$)/gi;
+      let heights = [];
+      let widths = [];
+      let floors = [];
+      let mediaTypes = [];
+      let i = 0;
+      let configuredPlacements = [];
+      let fat = /(^v|(\.0)+$)/gi;
 
       p('hbv', w.$$PREBID_GLOBAL$$.version.replace(fat, '') + ',' + version.replace(fat, ''));
 
       for (; i < BRs.length; i++) {
-        let th = [],
-          tw = [],
-          params = BRs[i].params || {};
+        let th = [];
+        let tw = [];
+        let params = BRs[i].params || {};
 
         slotsToBids[BRs[i].adUnitCode] = BRs[i];
           
-        if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') { BRs[i].sizes = [BRs[i].sizes]; }
+        if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') { 
+          BRs[i].sizes = [BRs[i].sizes]; 
+        }
 
         for (let j = 0; j < BRs[i].sizes.length; j++) {
           tw.push(BRs[i].sizes[j][0]);
@@ -141,50 +151,50 @@ function rhythmOneBidAdapter(){
     }
 
     return [{
-      method: "GET",
+      method: 'GET',
       url: getRMPUrl()
     }];
   };
 
   this.interpretResponse = function (serverResponse) {
 
-    let responses = serverResponse.body || [],
-      bids = [],
-      i = 0;
+    let responses = serverResponse.body || [];
+    let bids = [];
+    let i = 0;
 
-    if(responses.seatbid){
+    if (responses.seatbid) {
       let temp = [];
-      for(i=0;i<responses.seatbid.length;i++){
-        for(let j=0; j<responses.seatbid[i].bid.length; j++){
+      for (i = 0; i < responses.seatbid.length; i++) {
+        for(let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
         }
       }
       responses = temp;
     }
 
-    for (i=0; i < responses.length; i++)
-    {
-      let bid = responses[i],
-        bidRequest = slotsToBids[bid.impid],
-        bidResponse = {
-          requestId: bidRequest.bidId,
-          bidderCode: that.code,
-          cpm: parseFloat(bid.price),
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.crid,
-          currency: "USD",
-          netRevenue: true,
-          ttl: 1000
-        };
+    for (i = 0; i < responses.length; i++) {
+      let bid = responses[i];
+      let bidRequest = slotsToBids[bid.impid];
+      let bidResponse = {
+        requestId: bidRequest.bidId,
+        bidderCode: that.code,
+        cpm: parseFloat(bid.price),
+        width: bid.w,
+        height: bid.h,
+        creativeId: bid.crid,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 1000
+      };
 
-      if (bidRequest.mediaTypes && bidRequest.mediaTypes.video){
+      if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
         bidResponse.descriptionUrl = bid.nurl;
         bidResponse.ttl = 10000;
       }
-      else 
+      else {
         bidResponse.ad = bid.adm; 
+      }
     
       bids.push(bidResponse);
     }
