@@ -27,10 +27,10 @@ function rhythmOneBidAdapter() {
     let fallbackPlacementId = getFirstParam('placementId', BRs);
     if (fallbackPlacementId === undefined || BRs.length < 1) {
       return [];
-	}
+    }
 
     slotsToBids = {};
-  
+
     let query = [];
     let w = (typeof window !== "undefined" ? window : {});
   
@@ -42,8 +42,7 @@ function rhythmOneBidAdapter() {
     function attempt(valueFunction, defaultValue) {
       try { 
         return valueFunction(); 
-      } 
-      catch (ex) {
+      } catch (ex) {
       }
       return defaultValue;
     }
@@ -51,7 +50,7 @@ function rhythmOneBidAdapter() {
     p('domain', attempt(function() {
       var d = w.document.location.ancestorOrigins;
       if (d && d.length > 0) { 
-	    return d[d.length - 1]; }
+      return d[d.length - 1]; }
       return w.top.document.location.hostname; // try/catch is in the attempt function
     }, ''));
     p('url', attempt(function() {
@@ -67,8 +66,8 @@ function rhythmOneBidAdapter() {
     
     function getRMPUrl() {
       let url = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
-	  let defaultZone = getFirstParam('zone', BRs) || '1r';
-	  let defaultPath = getFirstParam('path', BRs) || 'mvo';
+      let defaultZone = getFirstParam('zone', BRs) || '1r';
+      let defaultPath = getFirstParam('path', BRs) || 'mvo';
       
       url = url.replace(/\{placementId\}/i, fallbackPlacementId);
       url = url.replace(/\{zone\}/i, defaultZone);
@@ -81,10 +80,10 @@ function rhythmOneBidAdapter() {
       p('dtype', ((/(ios|ipod|ipad|iphone|android)/i).test(w.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(w.navigator.userAgent) ? 3 : 2)));
       p('flash', attempt(function() {
         let n = w.navigator;
-	      let p = n.plugins;
-	      let m = n.mimeTypes;
-	      let t = 'application/x-shockwave-flash';
-	      let x = w.ActiveXObject;
+        let p = n.plugins;
+        let m = n.mimeTypes;
+        let t = 'application/x-shockwave-flash';
+        let x = w.ActiveXObject;
 
         if (p &&
           p['Shockwave Flash'] &&
@@ -99,8 +98,7 @@ function rhythmOneBidAdapter() {
             if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) {
               return 1; 
             }
-          }
-          catch (e) {
+          } catch (e) {
           }
         }
 
@@ -195,10 +193,10 @@ function rhythmOneBidAdapter() {
       else {
         bidResponse.ad = bid.adm; 
       }
-    
+
       bids.push(bidResponse);
     }
-    
+
     return bids;
   };
 }
