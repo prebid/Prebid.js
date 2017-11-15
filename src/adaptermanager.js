@@ -15,7 +15,10 @@ let s2sTestingModule; // store s2sTesting module if it's loaded
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-let _s2sConfig = config.getConfig('s2sConfig');
+let _s2sConfig = {};
+config.getConfig('s2sConfig', config => {
+  _s2sConfig = config.s2sConfig;
+});
 
 var _analyticsRegistry = {};
 
@@ -93,15 +96,10 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.cloneJson(adUnits);
 
-  // filter out client side bids
   adUnitsCopy.forEach((adUnit) => {
-    if (adUnit.sizeMapping) {
-      adUnit.sizes = mapSizes(adUnit);
-      delete adUnit.sizeMapping;
-    }
-    adUnit.sizes = transformHeightWidth(adUnit);
+    // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return adaptersServerSide.includes(bid.bidder) && (!s2sTesting || bid.finalSource !== s2sTestingModule.CLIENT);
+      return adaptersServerSide.includes(bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -113,6 +111,23 @@ function getAdUnitCopyForPrebidServer(adUnits) {
     return adUnit.bids.length !== 0;
   });
   return adUnitsCopy;
+}
+
+function getAdUnitCopyForClientAdapters(adUnits) {
+  let adUnitsClientCopy = utils.cloneJson(adUnits);
+  // filter out s2s bids
+  adUnitsClientCopy.forEach((adUnit) => {
+    adUnit.bids = adUnit.bids.filter((bid) => {
+      return !doingS2STesting() || bid.finalSource !== s2sTestingModule.SERVER;
+    })
+  });
+
+  // don't send empty requests
+  adUnitsClientCopy = adUnitsClientCopy.filter(adUnit => {
+    return adUnit.bids.length !== 0;
+  });
+
+  return adUnitsClientCopy;
 }
 
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
@@ -128,12 +143,11 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
     s2sAdapter.queueSync({bidderCodes});
   }
 
+  let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
-  let s2sTesting = false;
   if (_s2sConfig.enabled) {
     // if s2sConfig.bidderControl testing is turned on
-    s2sTesting = _s2sConfig.testing && typeof s2sTestingModule !== 'undefined';
-    if (s2sTesting) {
+    if (doingS2STesting()) {
       // get all adapters doing client testing
       clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
     }
@@ -142,11 +156,11 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
     let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side (unless client request is needed for testing)
-    bidderCodes = bidderCodes.filter((elm) => {
+    clientBidderCodes = bidderCodes.filter((elm) => {
       return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
     });
-    let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
 
+    let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -166,27 +180,15 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
     });
   }
 
-  // client side adapters
-  let adUnitsClientCopy = utils.cloneJson(adUnits);
-  // filter out s2s bids
-  adUnitsClientCopy.forEach((adUnit) => {
-    adUnit.bids = adUnit.bids.filter((bid) => {
-      return !s2sTesting || bid.finalSource !== s2sTestingModule.SERVER;
-    })
-  });
-
-  // don't send empty requests
-  adUnitsClientCopy = adUnitsClientCopy.filter(adUnit => {
-    return adUnit.bids.length !== 0;
-  });
-
-  bidderCodes.forEach(bidderCode => {
+  // client adapters
+  let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
+  clientBidderCodes.forEach(bidderCode => {
     const bidderRequestId = utils.getUniqueIdentifierStr();
     const bidderRequest = {
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}),
+      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
@@ -198,6 +200,12 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
 };
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+  if (!bidRequests.length) {
+    utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
+    return;
+  }
+
+  // handle s2s requests
   let serverBidRequests = bidRequests.filter(bidRequest => {
     return bidRequest.src && bidRequest.src === CONSTANTS.S2S.SRC;
   });
@@ -209,45 +217,43 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': getAdUnitCopyForPrebidServer(adUnits)};
-      utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
       if (s2sBidRequest.ad_units.length) {
+        // only log adapters that actually have adUnit bids
+        let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
+          return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidderCode) }, []));
+        }, []);
+        utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
+          return allBidders.includes(adapter);
+        }).join(',')}`);
+        // make bid requests
         s2sAdapter.callBids(s2sBidRequest);
       }
     }
   }
-  if (bidRequests.length) {
-    let ajax = ajaxBuilder(bidRequests[0].timeout);
-    bidRequests.forEach(bidRequest => {
-      bidRequest.start = new Date().getTime();
-      // TODO : Do we check for bid in pool from here and skip calling adapter again ?
-      const adapter = _bidderRegistry[bidRequest.bidderCode];
-      if (adapter) {
-        utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-        bidRequest.doneCbCallCount = 0;
-        let done = doneCb(bidRequest.bidderRequestId);
-        adapter.callBids(bidRequest, addBidResponse, done, ajax);
-      } else {
-        utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-      }
-    });
-  } else {
-    utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
-  }
-};
 
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
+  // handle client adapter requests
+  let ajax = ajaxBuilder(bidRequests[0].timeout);
+  // first filter out s2s requests
+  bidRequests.filter(bidRequest => {
+    return !serverBidRequests.includes(bidRequest);
+  }).forEach(bidRequest => {
+    bidRequest.start = new Date().getTime();
+    // TODO : Do we check for bid in pool from here and skip calling adapter again ?
+    const adapter = _bidderRegistry[bidRequest.bidderCode];
+    if (adapter) {
+      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      bidRequest.doneCbCallCount = 0;
+      let done = doneCb(bidRequest.bidderRequestId);
+      adapter.callBids(bidRequest, addBidResponse, done, ajax);
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+    }
   });
-  return sizesObj;
+}
+
+function doingS2STesting() {
+  return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
 }
 
 function getSupportedMediaTypes(bidderCode) {
