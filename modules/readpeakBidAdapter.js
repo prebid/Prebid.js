@@ -1,7 +1,7 @@
 import {logError, getTopWindowLocation} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
-export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
+export const ENDPOINT = '//app.readpeak.com/header/prebid';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 70,
