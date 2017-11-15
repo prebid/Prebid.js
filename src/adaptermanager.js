@@ -97,10 +97,6 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   let adUnitsCopy = utils.cloneJson(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
-    if (adUnit.sizeMapping) {
-      adUnit.sizes = mapSizes(adUnit);
-      delete adUnit.sizeMapping;
-    }
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
       return adaptersServerSide.includes(bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
