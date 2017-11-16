@@ -167,9 +167,9 @@ export function PrebidServer() {
   }
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest, bidRequests, addBidResponse, done, ajax) {
+  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const isDebug = !!getConfig('debug');
-    const adUnits = utils.cloneJson(bidRequest.ad_units);
+    const adUnits = utils.cloneJson(s2sBidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
@@ -183,7 +183,7 @@ export function PrebidServer() {
     convertTypes(adUnits);
     let requestJson = {
       account_id: _s2sConfig.accountId,
-      tid: bidRequest.tid,
+      tid: s2sBidRequest.tid,
       max_bids: _s2sConfig.maxBids,
       timeout_millis: _s2sConfig.timeout,
       secure: _s2sConfig.secure,
