@@ -63,7 +63,7 @@ const BID_REQUESTS = [
         'params': {
           'placementId': '10433394',
           'member': 123
-          },
+        },
         'bid_id': '123',
         'adUnitCode': 'div-gpt-ad-1460505748561-0',
         'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
@@ -216,8 +216,8 @@ describe('S2S Adapter', () => {
   beforeEach(() => adapter = new Adapter());
 
   afterEach(() => {
-      addBidResponse.reset();
-      done.reset();
+    addBidResponse.reset();
+    done.reset();
   });
 
   describe('request function', () => {
