@@ -62,6 +62,7 @@ var sizeMap = {
   117: '320x100',
   125: '800x250',
   126: '200x600',
+  144: '980x600',
   195: '600x300'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
