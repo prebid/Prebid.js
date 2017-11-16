@@ -265,7 +265,7 @@ describe('adapterManager tests', () => {
 
     function checkServerCalled(numAdUnits, numBids) {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
-      var requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
+      let requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(numAdUnits);
       for (let i = 0; i < numAdUnits; i++) {
         expect(requestObj.ad_units[i].bids.filter((bid) => {
@@ -279,15 +279,14 @@ describe('adapterManager tests', () => {
       expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
     }
 
-    var TESTING_CONFIG;
-    var stubGetSourceBidderMap;
+    let TESTING_CONFIG = utils.cloneJson(CONFIG);
+    Object.assign(TESTING_CONFIG, {
+      bidders: ['appnexus', 'adequant'],
+      testing: true
+    });
+    let stubGetSourceBidderMap;
 
     beforeEach(() => {
-      TESTING_CONFIG = Object.assign(CONFIG, {
-        bidders: ['appnexus', 'adequant'],
-        testing: true
-      });
-
       config.setConfig({s2sConfig: TESTING_CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
@@ -301,6 +300,7 @@ describe('adapterManager tests', () => {
     });
 
     afterEach(() => {
+      config.setConfig({s2sConfig: {}});
       s2sTesting.getSourceBidderMap.restore();
     });
 
