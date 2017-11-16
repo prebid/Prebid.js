@@ -47,7 +47,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = bidRequests.find(hasUserInfo);
     let userObj;
@@ -77,6 +77,7 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: payloadString,
+      bidderRequest
     };
   },
 
@@ -86,18 +87,28 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, {bidderRequest}) {
+    serverResponse = serverResponse.body;
     const bids = [];
-    serverResponse.tags.forEach(serverBid => {
-      const rtbBid = getRtbBid(serverBid);
-      if (rtbBid) {
-        if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
-          const bid = newBid(serverBid, rtbBid);
-          bid.mediaType = parseMediaType(rtbBid);
-          bids.push(bid);
+    if (!serverResponse || serverResponse.error) {
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
+      utils.logError(errorMessage);
+      return bids;
+    }
+
+    if (serverResponse.tags) {
+      serverResponse.tags.forEach(serverBid => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid) {
+          if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
+            const bid = newBid(serverBid, rtbBid);
+            bid.mediaType = parseMediaType(rtbBid);
+            bids.push(bid);
+          }
         }
-      }
-    });
+      });
+    }
     return bids;
   },
 
@@ -172,8 +183,11 @@ function newBid(serverBid, rtbBid) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    creative_id: rtbBid.creative_id,
+    creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300
   };
 
   if (rtbBid.rtb.video) {
@@ -181,7 +195,8 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
-      descriptionUrl: rtbBid.rtb.video.asset_url
+      descriptionUrl: rtbBid.rtb.video.asset_url,
+      ttl: 3600
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
@@ -202,6 +217,7 @@ function newBid(serverBid, rtbBid) {
       image: nativeAd.main_img && nativeAd.main_img.url,
       icon: nativeAd.icon && nativeAd.icon.url,
       clickUrl: nativeAd.link.url,
+      clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
     };
   } else {
@@ -233,6 +249,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+  tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.reserve) {

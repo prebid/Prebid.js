@@ -1,4 +1,4 @@
-/** @module $$PREBID_GLOBAL$$ */
+/** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
@@ -26,6 +26,7 @@ const { triggerUserSyncs } = userSync;
 const RENDERED = 'rendered';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -81,7 +82,7 @@ function setRenderSize(doc, width, height) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
  * @return {Array}  returnObj return bids array
  */
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
@@ -99,6 +100,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @returns {Object}  returnObj return bids
  */
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
@@ -108,7 +110,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 /**
  * returns all ad server targeting for all ad units
  * @return {Object} Map of adUnitCodes and targeting values []
- * @alias module:$$PREBID_GLOBAL$$.getAdserverTargeting
+ * @alias module:pbjs.getAdserverTargeting
  */
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
@@ -118,7 +120,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 /**
  * This function returns the bid responses at the given moment.
- * @alias module:$$PREBID_GLOBAL$$.getBidResponses
+ * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
  */
 
@@ -145,7 +147,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 /**
  * Returns bidResponses for the specified adUnitCode
  * @param  {string} adUnitCode adUnitCode
- * @alias module:$$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode
+ * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
 
@@ -159,7 +161,7 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
- * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
+ * @alias module:pbjs.setTargetingForGPTAsync
  */
 $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
@@ -181,6 +183,10 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   events.emit(SET_TARGETING);
 };
 
+/**
+ * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @alias module:pbjs.setTargetingForAst
+ */
 $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
@@ -199,7 +205,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
  * @param  {HTMLDocument} doc document
  * @param  {string} id bid id to locate the ad
- * @alias module:$$PREBID_GLOBAL$$.renderAd
+ * @alias module:pbjs.renderAd
  */
 $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
@@ -256,7 +262,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
  * @param  {string} adUnitCode the adUnitCode to remove
- * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
+ * @alias module:pbjs.removeAdUnit
  */
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
@@ -275,8 +281,10 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {number} requestOptions.timeout
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
+ * @param {Array} requestOptions.labels
+ * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
+$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit('requestBids');
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -324,7 +332,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout});
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
 };
 
@@ -332,7 +340,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
  *
  * Add adunit(s)
  * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
- * @alias module:$$PREBID_GLOBAL$$.addAdUnits
+ * @alias module:pbjs.addAdUnits
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
@@ -346,12 +354,15 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+  // emit event
+  events.emit(ADD_AD_UNITS);
 };
 
 /**
  * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
  * @param {string} id an identifier in the context of the event
+ * @alias module:pbjs.onEvent
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -382,6 +393,7 @@ $$PREBID_GLOBAL$$.onEvent = function (event, handler, id) {
  * @param {string} event the name of the event
  * @param {Function} handler a callback to remove from the event
  * @param {string} id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
+ * @alias module:pbjs.offEvent
  */
 $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.offEvent', arguments);
@@ -396,6 +408,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
+ * @alias module:pbjs.registerBidAdapter
  */
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
@@ -409,6 +422,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 /**
  * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
  * @param  {Object} options [description]
+ * @alias module:pbjs.registerAnalyticsAdapter
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
@@ -422,6 +436,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {string} statusCode [description]
+ * @alias module:pbjs.createBid
  * @return {Object} bidResponse [description]
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
@@ -433,6 +448,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * Wrapper to adloader.loadScript
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
+ * @alias module:pbjs.loadScript
  */
 $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
@@ -440,8 +456,18 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 };
 
 /**
- * Will enable sending a prebid.js to data provider specified
- * @param  {Object} config object {provider : 'string', options : {}}
+ * Enable sending analytics data to the analytics provider of your
+ * choice.
+ *
+ * For usage, see [Integrate with the Prebid Analytics
+ * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
+ *
+ * For a list of analytics adapters, see [Analytics for
+ * Prebid](http://prebid.org/overview/analytics.html).
+ * @param  {Object} config
+ * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.
+ * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
+ * @alias module:pbjs.enableAnalytics
  */
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -452,6 +478,9 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   }
 };
 
+/**
+ * @alias module:pbjs.aliasBidder
+ */
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
@@ -508,6 +537,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
+ * @alias module:pbjs.getHighestCpmBids
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
@@ -517,6 +547,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 /**
  * Get Prebid config options
  * @param {Object} options
+ * @alias module:pbjs.getConfig
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
@@ -553,6 +584,7 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
  * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
  * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
+ * @alias module:pbjs.setConfig
  * ```
  * pbjs.setConfig({
  *     s2sConfig: {
@@ -585,10 +617,10 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @memberof $$PREBID_GLOBAL$$
+ * @memberof pbjs
  * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                            the Prebid script has been fully loaded.
- * @alias module:$$PREBID_GLOBAL$$.cmd.push
+ * @alias module:pbjs.cmd.push
  */
 $$PREBID_GLOBAL$$.cmd.push = function(command) {
   if (typeof command === 'function') {
@@ -617,6 +649,9 @@ function processQueue(queue) {
   });
 }
 
+/**
+ * @alias module:pbjs.processQueue
+ */
 $$PREBID_GLOBAL$$.processQueue = function() {
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);

@@ -339,7 +339,7 @@ exports.isNumber = function(object) {
  */
 exports.isEmpty = function (object) {
   if (!object) return true;
-  if (this.isArray(object) || this.isStr(object)) {
+  if (exports.isArray(object) || exports.isStr(object)) {
     return !(object.length > 0);
   }
 
@@ -770,6 +770,18 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
+}
+
+/**
+ * Returns the origin 
+ */
+export function getOrigin() {
+  // IE10 does not have this propery. https://gist.github.com/hbogs/7908703
+  if (!window.location.origin) {
+    return window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+  } else {
+    return window.location.origin;
+  }
 }
 
 const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
