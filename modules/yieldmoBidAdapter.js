@@ -30,7 +30,11 @@ var YieldmoAdapter = function YieldmoAdapter() {
     ymCall = _appendImpressionInformation(ymCall);
 
     // Asycn info
-    return _appendAysncImpressionInformation(ymCall, cb);
+    if(_isIOS() && _trackingEnabled(bids)) {
+      _appendAysncImpressionInformation(ymCall, cb);
+    } else {
+      cb();
+    }
   }
 
   function _appendAysncImpressionInformation(ymCall, cb) {
@@ -115,6 +119,19 @@ var YieldmoAdapter = function YieldmoAdapter() {
     url = utils.tryAppendQueryString(url, 'title', title);
 
     return url;
+  }
+
+  function _isIOS() {
+    return navigator.userAgent.match(/(iPad|iPhone|iPod)/g);;
+  }
+
+  function _trackingEnabled(bids) {
+    // return false if DNT param has been set to true
+    if(bids && bids[0] && bids[0].params && bids[0].params.DNT) {
+      return false;
+    } else {
+      return true;
+    }
   }
 
   function _getPageDescription() {
