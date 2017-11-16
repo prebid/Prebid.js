@@ -132,46 +132,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids();
+        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
       }
     }
-  }
-
-  /**
-   * Returns a list of bids that we haven't received a response yet
-   * @typedef {Object} TimedOutBid
-   * @property {string} bidId The id representing the bid
-   * @property {string} bidder The string name of the bidder
-   * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
-   * @property {string} auctionId The id representing the auction
-   * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
-   */
-  function getTimedOutBids() {
-    const bidRequestedCodes = _bidderRequests
-      .map(bid => bid.bidderCode)
-      .filter(uniques);
-
-    const bidReceivedCodes = _bidsReceived
-      .map(bid => bid.bidder)
-      .filter(uniques);
-
-    const timedOutBidderCodes = bidRequestedCodes
-      .filter(bidder => !bidReceivedCodes.includes(bidder));
-
-    const timedOutBids = _bidderRequests
-      .map(bid => (bid.bids || []).filter(bid => timedOutBidderCodes.includes(bid.bidder)))
-      .reduce(flatten, [])
-      .map(bid => ({
-        bidId: bid.bidId,
-        bidder: bid.bidder,
-        adUnitCode: bid.adUnitCode,
-        auctionId: bid.auctionId,
-      }));
-
-    return timedOutBids;
   }
 
   function done(bidRequestId) {
@@ -477,4 +443,42 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
+}
+
+/**
+ * Returns a list of bids that we haven't received a response yet
+ * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
+ * @param {BidReceived[]} bidsReceived List of bids received for auction instance
+ *
+ * @typedef {Object} TimedOutBid
+ * @property {string} bidId The id representing the bid
+ * @property {string} bidder The string name of the bidder
+ * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
+ * @property {string} auctionId The id representing the auction
+ *
+ * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
+ */
+function getTimedOutBids(bidderRequests, bidsReceived) {
+  const bidRequestedCodes = bidderRequests
+    .map(bid => bid.bidderCode)
+    .filter(uniques);
+
+  const bidReceivedCodes = bidsReceived
+    .map(bid => bid.bidder)
+    .filter(uniques);
+
+  const timedOutBidderCodes = bidRequestedCodes
+    .filter(bidder => !bidReceivedCodes.includes(bidder));
+
+  const timedOutBids = bidderRequests
+    .map(bid => (bid.bids || []).filter(bid => timedOutBidderCodes.includes(bid.bidder)))
+    .reduce(flatten, [])
+    .map(bid => ({
+      bidId: bid.bidId,
+      bidder: bid.bidder,
+      adUnitCode: bid.adUnitCode,
+      auctionId: bid.auctionId,
+    }));
+
+  return timedOutBids;
 }
