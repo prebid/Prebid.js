@@ -21,7 +21,7 @@ export const spec = {
   supportedMediaTypes: ['native'],
 
   isBidRequestValid: bid => (
-    !!(bid && bid.params && bid.params.bidfloor && bid.params.publisherId && bid.nativeParams)
+    !!(bid && bid.params && bid.params.publisherId && bid.nativeParams)
   ),
 
   buildRequests: bidRequests => {
@@ -86,7 +86,7 @@ function impression(slot) {
   return {
     id: slot.bidId,
     native: nativeImpression(slot),
-    bidfloor: slot.params.bidfloor,
+    bidfloor: slot.params.bidfloor || 0,
     bidfloorcur: 'USD'
   };
 }
