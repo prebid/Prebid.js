@@ -175,7 +175,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargeting(targetingSet);
+  targeting.setTargetingForGPT(targetingSet);
 
   // emit event
   events.emit(SET_TARGETING);

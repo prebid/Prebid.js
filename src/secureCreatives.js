@@ -6,6 +6,7 @@
 import events from './events';
 import { fireNativeImpressions } from './native';
 import { EVENTS } from './constants';
+import { isSlotMatchingAdUnitCode } from './utils';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -66,11 +67,11 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(window.googletag.pubads()
-    .getSlots().find(slot => {
-      return slot.getAdUnitPath() === adUnitCode ||
-        slot.getSlotElementId() === adUnitCode;
-    }).getSlotElementId()).querySelector('iframe');
+  const iframe = document.getElementById(
+    window.googletag.pubads().getSlots()
+      .filter(isSlotMatchingAdUnitCode(adUnitCode))
+      .find(slot => slot)
+      .getSlotElementId()).querySelector('iframe');
 
   iframe.width = '' + width;
   iframe.height = '' + height;

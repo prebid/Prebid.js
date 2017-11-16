@@ -771,3 +771,23 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
+
+const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
+
+/**
+ * Returns filter function to match adUnitCode in slot
+ * @param {object} slot GoogleTag slot
+ * @return {function} filter function
+ */
+export function isAdUnitCodeMatchingSlot(slot) {
+  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+}
+
+/**
+ * Returns filter function to match adUnitCode in slot
+ * @param {string} adUnitCode AdUnit code
+ * @return {function} filter function
+ */
+export function isSlotMatchingAdUnitCode(adUnitCode) {
+  return (slot) => compareCodeAndSlot(slot, adUnitCode);
+}
