@@ -271,7 +271,7 @@ function Bid({width, height, adUnitCode, bidderCode, source, timeToRespond, cpm}
 
 function Bidder({bidderCode, source}) {
   this.bidderCode = bidderCode;
-  this.source = source;
+  this.source = source || '';
 }
 
 function SessionId(realId) {

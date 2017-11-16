@@ -137,7 +137,7 @@ describe('Roxot Prebid Analytic', function () {
       assert.equal(auctionInfo.host, 'example.com');
 
       assert.equal(Object.keys(auctionInfo.requestedBids).length, 1);
-      assert.equal(auctionInfo.bids.length, 3);
+      assert.equal(auctionInfo.bids.length, 4);
     });
 
     it('should contain correct bid with price', function () {
@@ -160,7 +160,7 @@ describe('Roxot Prebid Analytic', function () {
       assert.equal(bidAfterTimeoutEvent.data.size, '200x200');
       assert.equal(bidAfterTimeoutEvent.data.adUnitCode, 'div-gpt-ad-1');
       assert.equal(bidAfterTimeoutEvent.data.timeToRespond, 5601);
-      assert.equal(bidAfterTimeoutEvent.data.bidder, 'brealtime');
+      assert.equal(bidAfterTimeoutEvent.data.bidder.bidderCode, 'brealtime');
     });
 
     it('should send correct Impression', function () {
@@ -172,7 +172,7 @@ describe('Roxot Prebid Analytic', function () {
       assert.equal(impressionEvent.data.size, '100x300');
       assert.equal(impressionEvent.data.adUnitCode, 'div-gpt-ad-3');
       assert.equal(impressionEvent.data.timeToRespond, 300);
-      assert.equal(impressionEvent.data.bidder, 'brealtime');
+      assert.equal(impressionEvent.data.bidder.bidderCode, 'brealtime');
     });
   });
 });
