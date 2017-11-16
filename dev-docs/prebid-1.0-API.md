@@ -201,17 +201,20 @@ The `mediaType` attribute is **deprecated** in favor of a `mediaTypes` object. T
 
 {% highlight js %}
 
-adUnit =
-{
-  "code" : "unique_code_for_placement"
-  "sizes" : [[300,250]],
-   "mediaTypes": {          // new field to replace mediaType. Default to banner if not specified. 
-    video: { context: "outstream"},
-    banner: {...options},
-    nativeAd: {...options}
-   },
-  labels : ["desktop", "mobile"]
-  bids : {...}  // same as existing definition with addition of `label` attribute
+adUnit = {
+    "code": "unique_code_for_placement"
+    "sizes": [
+        [300, 250]
+    ],
+    "mediaTypes": { // New field to replace `mediaType`. Defaults to `banner` if not specified.
+        video: {
+            context: "outstream"
+        },
+        banner: { ...options },
+        native: { ...options }
+    },
+    labels: ["desktop", "mobile"]
+    bids: { ... } // Same as existing definition with addition of `label` attribute.
 }
 
 {% endhighlight %}
