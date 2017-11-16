@@ -1,23 +1,13 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import * as adaptermanager from 'src/adaptermanager';
-import {parse} from "../src/url";
-import {ajax} from "../src/ajax"
+import {parse} from '../src/url';
+import {ajax} from '../src/ajax';
 
 const utils = require('src/utils');
 
-
-/**
- * 1. UTM
- * 2. SessionId
- * 3. AdUnits
- * 4. PublisherId
- * 5. Content-type
- */
-
-
 let options = new Config();
-let roxotAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), new RoxotAnalyticAdapter);
+let roxotAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), new RoxotAnalyticAdapter());
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
@@ -26,16 +16,14 @@ adaptermanager.registerAnalyticsAdapter({
 
 export default roxotAdapter;
 
-
 function RoxotAnalyticAdapter() {
-
   return {
-    transport: new AjaxTransport,
-    requestStack: new RequestStack,
+    transport: new AjaxTransport(),
+    requestStack: new RequestStack(),
     track({eventType, args}) {
       args = args || {};
 
-      if(eventType === CONSTANTS.EVENTS.AUCTION_INIT){
+      if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
         options.fill(args['config'])
       }
 
@@ -51,7 +39,6 @@ function RoxotAnalyticAdapter() {
       if (isBidRequested) {
         let adUnitCodes = args.bids.map((bid) => bid.placementCode);
         let auctions = adUnitCodes.map((code) => request.ensureAdUnitPresented(code));
-        //todo check source
         let bidder = new Bidder(args);
         return auctions.forEach((auction) => auction.bidderRequested(bidder));
       }
@@ -68,7 +55,6 @@ function RoxotAnalyticAdapter() {
 
         this.transport.send(newEvent, additionalPath);
       }
-      // TODO add bid ajustment processing
 
       if (isBid) {
         let auction = request.findAuction(args['adUnitCode']);
@@ -87,7 +73,7 @@ function Config() {
   let parser = parse(window.location);
 
   let customHost = parser.search['pa_host'];
-  let host = parser.host.replace('www.','');
+  let host = parser.host.replace('www.', '');
 
   return {
     // TODO add tags
@@ -126,23 +112,21 @@ function Config() {
   }
 
   function extractSessionId() {
-    let currentSessionId = (new SessionId).load();
+    let currentSessionId = (new SessionId()).load();
 
     if (currentSessionId.isLive()) {
       currentSessionId.persist();
       return currentSessionId.id();
     }
 
-    let newSessionId = (new SessionId).generate();
+    let newSessionId = (new SessionId()).generate();
     newSessionId.persist();
-
     return newSessionId.id();
-
   }
 
   function extractUtmData() {
-    let previousUtm = (new Utm).fromLocalStorage();
-    let currentUtm = (new Utm).fromUrl(window.location);
+    let previousUtm = (new Utm()).fromLocalStorage();
+    let currentUtm = (new Utm()).fromUrl(window.location);
 
     if (currentUtm.isDetected()) {
       currentUtm.persist();
@@ -165,10 +149,10 @@ function AjaxTransport() {
       let fullUrl = options.analyticHost + additionalPath + '?publisherIds[]=' + options.publisherId + '&host=' + options.currentHost;
 
       ajax(fullUrl, {
-        success: function() {
+        success: function () {
           utils.logMessage('xhr success');
         },
-        error: function(e) {
+        error: function (e) {
           utils.logError('xhr error', null, e);
         }
       }, JSON.stringify(preparedData), {withCredentials: true, withoutTimeout: true});
@@ -224,7 +208,6 @@ function RequestStack() {
       }
 
       this.current = requestId;
-
       return this.current;
     },
   };
@@ -247,13 +230,11 @@ function RequestStack() {
     this.buildData = () => this.auctions;
     this.finish = () => this.isEnd = true;
     this.isFinished = () => this.isEnd;
-
     return this;
 
     function AuctionInfo(requestId, adUnitCode) {
-
       return {
-        eventType: "AdUnitAuctionEvent",
+        eventType: 'AdUnitAuctionEvent',
         auctionInfo: {
           requestId: requestId,
           publisherId: publisherId,
@@ -272,19 +253,15 @@ function RequestStack() {
           if (this.isFinish) {
             return this.auctionInfo.bidsAfterTimeout.push(bid);
           }
-
-          // todo Only one bid from bidder per auction
           return this.auctionInfo.bids.push(bid);
         }
 
       };
     }
   }
-
 }
 
 function Bid({width, height, adUnitCode, bidderCode, source, timeToRespond, cpm}) {
-  // todo check timeToRespond,size,cpm
   this.size = width + 'x' + height;
   this.adUnitCode = adUnitCode;
   this.bidder = new Bidder({bidderCode, source});
@@ -304,7 +281,6 @@ function SessionId(realId) {
     ms: 60 * 60 * 1000
   };
   let id = realId || null;
-  let live = false;
 
   this.id = () => id;
 
@@ -329,7 +305,6 @@ function SessionId(realId) {
     }
 
     return this;
-
   };
 
   function isFresh() {
@@ -402,7 +377,6 @@ function Utm() {
   function isFresh(utmTimestamp) {
     return (Date.now() - utmTimestamp) > timeout.ms;
   }
-
 }
 
 function uuid() {

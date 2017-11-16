@@ -1,10 +1,11 @@
+import {parse} from '../src/url';
+
 var CONSTANTS = require('src/constants.json');
 var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
-import {parse} from "../src/url";
 
 var RoxotAdapter = function RoxotAdapter() {
   let customHost = parse(window.location).search['roxot_auction_url'];
