@@ -116,10 +116,8 @@ describe('ReadPeakAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the "bidfloor" param is missing', () => {
-      bidRequest.params = {
-        publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
-      };
+    it('should return false when the native params are missing', () => {
+      bidRequest.nativeParams = undefined;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
