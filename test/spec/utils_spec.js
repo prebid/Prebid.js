@@ -658,6 +658,20 @@ describe('Utils', function () {
     });
   });
 
+  describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
+    it('should return empty string if url is not passed', function () {
+      var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
+      assert.equal(output, '');
+    });
+
+    it('should have URL in returned value if url is passed', function () {
+      var url = 'https://abcd.com/service?a=1&b=2&c=3';
+      var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
+      var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
+      assert.equal(output, expected);
+    });
+  });
+
   describe('getDefinedParams', () => {
     it('builds an object consisting of defined params', () => {
       const adUnit = {
