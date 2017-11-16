@@ -18,21 +18,15 @@ const CONFIG = {
 };
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
-  callBids: sinon.stub(),
-  setConfig: sinon.stub(),
-  queueSync: sinon.stub()
+  callBids: sinon.stub()
 };
 var adequantAdapterMock = {
   bidder: 'adequant',
-  callBids: sinon.stub(),
-  setConfig: sinon.stub(),
-  queueSync: sinon.stub()
+  callBids: sinon.stub()
 };
 var appnexusAdapterMock = {
   bidder: 'appnexus',
-  callBids: sinon.stub(),
-  setConfig: sinon.stub(),
-  queueSync: sinon.stub()
+  callBids: sinon.stub()
 };
 
 describe('adapterManager tests', () => {
@@ -106,8 +100,7 @@ describe('adapterManager tests', () => {
       prebidServerAdapterMock.callBids.reset();
     });
 
-    // Enable this test when prebidServer adapter is made 1.0 compliant
-    it.skip('invokes callBids on the S2S adapter', () => {
+    it('invokes callBids on the S2S adapter', () => {
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'requestId': '1863e370099523',
@@ -166,12 +159,17 @@ describe('adapterManager tests', () => {
         'start': 1462918897460
       }];
 
-      AdapterManager.callBids(getAdUnits(), bidRequests);
+      AdapterManager.callBids(
+        getAdUnits(),
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
 
     // Enable this test when prebidServer adapter is made 1.0 compliant
-    it.skip('invokes callBids with only s2s bids', () => {
+    it('invokes callBids with only s2s bids', () => {
       const adUnits = getAdUnits();
       // adUnit without appnexus bidder
       adUnits.push({
@@ -245,7 +243,12 @@ describe('adapterManager tests', () => {
         ],
         'start': 1462918897460
       }];
-      AdapterManager.callBids(adUnits, bidRequests);
+      AdapterManager.callBids(
+        adUnits,
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
       const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(2);
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
