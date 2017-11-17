@@ -12,6 +12,7 @@ import { targeting, newTargeting } from 'src/targeting';
 import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -29,7 +30,7 @@ var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
-require('modules/appnexusAstBidAdapter');
+require('modules/appnexusBidAdapter');
 
 var config = require('test/fixtures/config.json');
 
@@ -410,12 +411,12 @@ describe('Unit: Prebid Module', function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
       sinon.stub(adaptermanager, 'makeBidRequests', () => ([{
-        'bidderCode': 'appnexusAst',
+        'bidderCode': 'appnexus',
         'auctionId': '20882439e3238c',
         'bidderRequestId': '331f3cf3f1d9c8',
         'bids': [
           {
-            'bidder': 'appnexusAst',
+            'bidder': 'appnexus',
             'params': {
               'placementId': '10433394'
             },
@@ -451,7 +452,7 @@ describe('Unit: Prebid Module', function () {
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300, 600]],
         bids: [{
-          bidder: 'appnexusAst',
+          bidder: 'appnexus',
           params: {
             placementId: '10433394'
           }
@@ -818,6 +819,15 @@ describe('Unit: Prebid Module', function () {
     var auctionManagerStub;
     let logMessageSpy
 
+    let spec = {
+      code: 'sampleBidder',
+      isBidRequestValid: () => {},
+      buildRequests: () => {},
+      interpretResponse: () => {},
+      getUserSyncs: () => {}
+    };
+    registerBidder(spec);
+
     describe('part 1', () => {
       beforeEach(() => {
         adUnitsBackup = auction.getAdUnits
@@ -901,7 +911,7 @@ describe('Unit: Prebid Module', function () {
           sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}},
-            {bidder: 'appnexusAst', params: {placementId: 'id'}}
+            {bidder: 'sampleBidder', params: {placementId: 'id'}}
           ]
         }];
         adUnitCodes = ['adUnit-code'];
@@ -909,7 +919,7 @@ describe('Unit: Prebid Module', function () {
         spyCallBids = sinon.spy(adaptermanager, 'callBids');
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
-      })
+      });
 
       after(() => {
         auctionModule.newAuction.restore();
@@ -918,7 +928,7 @@ describe('Unit: Prebid Module', function () {
 
       it('should not callBids if a video adUnit has non-video bidders', () => {
         const videoAdaptersBackup = adaptermanager.videoAdapters;
-        adaptermanager.videoAdapters = ['appnexusAst'];
+        adaptermanager.videoAdapters = ['appnexus'];
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.notCalled(adaptermanager.callBids);
         adaptermanager.videoAdapters = videoAdaptersBackup;
@@ -936,7 +946,7 @@ describe('Unit: Prebid Module', function () {
           mediaType: 'video',
           sizes: [[300, 250], [300, 600]],
           bids: [
-            {bidder: 'appnexusAst', params: {placementId: 'id'}}
+            {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
         }];
         adUnitCodes = ['adUnit-code'];
@@ -953,7 +963,7 @@ describe('Unit: Prebid Module', function () {
 
       it('should callBids if a video adUnit has all video bidders', () => {
         const videoAdaptersBackup = adaptermanager.videoAdapters;
-        adaptermanager.videoAdapters = ['appnexusAst'];
+        adaptermanager.videoAdapters = ['appnexus'];
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.calledOnce(adaptermanager.callBids);
         adaptermanager.videoAdapters = videoAdaptersBackup;
@@ -972,7 +982,7 @@ describe('Unit: Prebid Module', function () {
           sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}},
-            {bidder: 'appnexusAst', params: {placementId: 'id'}}
+            {bidder: 'sampleBidder', params: {placementId: 'id'}}
           ]
         }];
         adUnitCodes = ['adUnit-code'];
@@ -980,7 +990,7 @@ describe('Unit: Prebid Module', function () {
         spyCallBids = sinon.spy(adaptermanager, 'callBids');
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
-      })
+      });
 
       after(() => {
         auctionModule.newAuction.restore();
@@ -988,7 +998,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       it('should only request native bidders on native adunits', () => {
-        // appnexusAst is a native bidder, appnexus is not
+        // appnexus is a native bidder, appnexus is not
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.calledOnce(adaptermanager.callBids);
         const spyArgs = adaptermanager.callBids.getCall(0);
@@ -1007,7 +1017,7 @@ describe('Unit: Prebid Module', function () {
           code: 'adUnit-code',
           sizes: [[300, 250], [300, 600]],
           bids: [
-            {bidder: 'appnexusAst', params: {placementId: '10433394'}}
+            {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
         }];
         let adUnitCodes = ['adUnit-code'];
@@ -1022,7 +1032,7 @@ describe('Unit: Prebid Module', function () {
           nativeParams: {type: 'image'},
           sizes: [[300, 250], [300, 600]],
           bids: [
-            {bidder: 'appnexusAst', params: {placementId: 'id'}}
+            {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
         }];
         let auction3 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
@@ -1046,7 +1056,7 @@ describe('Unit: Prebid Module', function () {
       })
 
       it('should callBids if a native adUnit has all native bidders', () => {
-        // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+        // TODO: appnexus is currently hardcoded in native.js, update this text when fixed
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.calledOnce(adaptermanager.callBids);
       });
@@ -1056,7 +1066,7 @@ describe('Unit: Prebid Module', function () {
           code: 'adUnit-code',
           sizes: [[300, 250], [300, 600]],
           bids: [
-            {bidder: 'appnexusAst', params: {placementId: '10433394'}}
+            {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
         }];
         $$PREBID_GLOBAL$$.requestBids({adUnits});
@@ -1069,7 +1079,7 @@ describe('Unit: Prebid Module', function () {
           nativeParams: {type: 'image'},
           sizes: [[300, 250], [300, 600]],
           bids: [
-            {bidder: 'appnexusAst', params: {placementId: 'id'}}
+            {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
         }];
         $$PREBID_GLOBAL$$.requestBids({adUnits});

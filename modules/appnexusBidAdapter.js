@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { NATIVE, VIDEO } from 'src/mediaTypes';
 
-const BIDDER_CODE = 'appnexusAst';
+const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
 const SUPPORTED_AD_TYPES = ['banner', 'video', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
