@@ -84,7 +84,11 @@ function makeRtbRequest(req) {
     };
 
     if ( req.params.coppa ) {
-        reqReq.regs = {coppa:1};
+        rtbReq.regs = {coppa:1};
+    }
+
+    if ( req.params.test ) {
+        rtbReq.test = 1;
     }
 
     return rtbReq;
@@ -153,7 +157,8 @@ function getDomain(url) {
 function makeDevice() {
     var device = {
         'ua': 'caller',
-        'ip': 'caller'
+        'ip': 'caller',
+        'js': 1
     };
 
     return device;

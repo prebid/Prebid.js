@@ -22,7 +22,8 @@ Module that connects to Arteebee's demand source
             params: {
               ssp: 'mock',
               pub: 'prebidtest',
-              source: 'prebidtest'
+              source: 'prebidtest',
+              test: true
             }
           }
         ]
