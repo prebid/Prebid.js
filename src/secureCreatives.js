@@ -6,6 +6,7 @@
 import events from './events';
 import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
+import { auctionManager } from './auctionManager';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -31,7 +32,7 @@ function receiveMessage(ev) {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      auctionManager.addWinningBid(adObject);
 
       events.emit(BID_WON, adObject);
     }

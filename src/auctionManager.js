@@ -32,7 +32,7 @@ export function newAuctionManager() {
   let _public = {};
 
   _public.addWinningBid = function(bid) {
-    let auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
+    const auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       auction.setWinningBid(bid);
     } else {
