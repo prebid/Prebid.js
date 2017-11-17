@@ -29,20 +29,34 @@ export const spec = {
         return requests;
     },
     interpretResponse: function(serverResponse, bidRequest) {
+        var rtbResp = serverResponse.body;
+
+        if ( (! rtbResp) || (! rtbResp.seatbid) ) {
+            return [];
+        }
+
         let bidResponses = [];
-        const bidResponse = {
-            requestId: bidRequest.bidId,
-            cpm: 1,
-            width: 300,
-            height: 250,
-            mediaType: BANNER,
-            creativeId: 'aaa',
-            currency: 'USD',
-            netRevenue: true,
-            ttl: 360,
-            ad: 'dsdsd'
-        };
-        bidResponses.push(bidResponse);
+
+        for(let i=0; i<rtbResp.seatbid.length; i++) {
+            let seatbid = rtbResp.seatbid[i];
+            for (let j=0; j<seatbid.bid.length; j++ ) {
+                let bid = seatbid.bid[j];
+                console.log(bid);
+                let bidResponse = {
+                    requestId: bid.impid,
+                    cpm: bid.price,
+                    width: 300,
+                    height: 250,
+                    mediaType: BANNER,
+                    creativeId: bid.crid,
+                    currency: 'USD',
+                    netRevenue: true,
+                    ttl: bid.exp,
+                    ad: bid.adm
+                };
+                bidResponses.push(bidResponse);
+            }
+        }
         return bidResponses;
     },
     getUserSyncs: function(syncOptions, serverResponses) {
