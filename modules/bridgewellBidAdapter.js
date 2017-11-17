@@ -53,8 +53,13 @@ export const spec = {
     // map responses to requests
     utils._each(bidRequest.validBidRequests, function(req) {
       const bidResponse = {};
+
+      if (!serverResponse.body) {
+        return;
+      }
+
       let matchedResponse = serverResponse.body.find(function(res) {
-        return !res.consumed && req.sizes.find(function(size) {
+        return !!res && !res.consumed && req.sizes.find(function(size) {
           return res.width === size[0] && res.height === size[1];
         });
       });

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bridgewellBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
 describe('bridgewellBidAdapter', function () {
   let bidRequests = [
@@ -130,15 +131,26 @@ describe('bridgewellBidAdapter', function () {
       'currency': 'NTD'
     }];
 
+    it('should return all required parameters', () => {
+      const result = spec.interpretResponse({'body': serverResponses}, request);
+      result.every(res => expect(res.cpm).to.be.a('number'))
+      result.every(res => expect(res.width).to.be.a('number'))
+      result.every(res => expect(res.height).to.be.a('number'))
+      result.every(res => expect(res.ttl).to.be.a('number'))
+      result.every(res => expect(res.netRevenue).to.be.a('boolean'))
+      result.every(res => expect(res.currency).to.be.a('string'))
+      result.every(res => expect(res.ad).to.be.a('string'))
+    });
+
     it('should give up bid if server response is undefiend', () => {
-      const result = spec.interpretResponse(undefined, request);
+      const result = spec.interpretResponse({'body': undefined}, request);
       expect(result).to.deep.equal([]);
     });
 
     it('should give up bid if cpm is missing', () => {
       let target = Object.assign({}, serverResponses[0]);
       delete target.cpm;
-      const result = spec.interpretResponse([target], request);
+      const result = spec.interpretResponse({'body': [target]}, request);
       expect(result).to.deep.equal([]);
     });
 
@@ -146,28 +158,28 @@ describe('bridgewellBidAdapter', function () {
       let target = Object.assign({}, serverResponses[0]);
       delete target.height;
       delete target.width;
-      const result = spec.interpretResponse([target], request);
+      const result = spec.interpretResponse({'body': [target]}, request);
       expect(result).to.deep.equal([]);
     });
 
     it('should give up bid if ad is missing', () => {
       let target = Object.assign({}, serverResponses[0]);
       delete target.ad;
-      const result = spec.interpretResponse([target], request);
+      const result = spec.interpretResponse({'body': [target]}, request);
       expect(result).to.deep.equal([]);
     });
 
     it('should give up bid if revenue mode is missing', () => {
       let target = Object.assign({}, serverResponses[0]);
       delete target.net_revenue;
-      const result = spec.interpretResponse([target], request);
+      const result = spec.interpretResponse({'body': [target]}, request);
       expect(result).to.deep.equal([]);
     });
 
     it('should give up bid if currency is missing', () => {
       let target = Object.assign({}, serverResponses[0]);
       delete target.currency;
-      const result = spec.interpretResponse([target], request);
+      const result = spec.interpretResponse({'body': [target]}, request);
       expect(result).to.deep.equal([]);
     });
   });
