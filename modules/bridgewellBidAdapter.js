@@ -75,7 +75,6 @@ export const spec = {
           return;
         }
 
-        bidResponse.bidderCode = spec.code;
         bidResponse.requestId = req.bidId;
         bidResponse.cpm = matchedResponse.cpm;
         bidResponse.width = matchedResponse.width;
@@ -91,10 +90,6 @@ export const spec = {
     });
 
     return bidResponses;
-  },
-
-  getUserSyncs: function(syncOptions) {
-    // currently not needed
   }
 };
 
