@@ -78,6 +78,7 @@ function makeRtbRequest(req) {
         'id': auctionId,
         'imp': imp,
         'site': makeSite(req),
+        'device': makeDevice(),
         'at': 1,
         'tmax': config.getConfig("bidderTimeout")
     };
@@ -147,4 +148,13 @@ function getDomain(url) {
     a.href = url;
 
     return a.host;
+}
+
+function makeDevice() {
+    var device = {
+        'ua': 'caller',
+        'ip': 'caller'
+    };
+
+    return device;
 }
