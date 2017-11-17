@@ -41,7 +41,6 @@ export const spec = {
             let seatbid = rtbResp.seatbid[i];
             for (let j=0; j<seatbid.bid.length; j++ ) {
                 let bid = seatbid.bid[j];
-                console.log(bid);
                 let bidResponse = {
                     requestId: bid.impid,
                     cpm: bid.price,
@@ -114,7 +113,7 @@ function makeImp(req) {
         'tagid': req.placementCode
     };
 
-    if (utils.getTopWindowLocation().protocol === 'https:') {
+    if ( window.location.protocol === 'https:') {
         imp.secure = 1;
     }
 
