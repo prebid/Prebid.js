@@ -23,7 +23,8 @@ const utils = require('src/utils');
 const analyticsType = 'endpoint';
 const analyticsName = 'PubWise Analytics: ';
 let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
-let pubwiseVersion = '2.2';
+let pubwiseVersion = '3.0';
+let pubwiseSchema = 'AVOCET';
 let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: ''};
 let pwAnalyticsEnabled = false;
 let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
@@ -84,6 +85,7 @@ function sendEvent(eventType, data) {
     eventType: eventType,
     args: data,
     target_site: configOptions.site,
+    pubwiseSchema: pubwiseSchema,
     debug: configOptions.debug ? 1 : 0,
   };
 
@@ -101,12 +103,12 @@ let pubwiseAnalytics = Object.assign(adapter(
     defaultUrl,
     analyticsType
   }),
-{
-  // Override AnalyticsAdapter functions by supplying custom methods
-  track({eventType, args}) {
-    sendEvent(eventType, args);
-  }
-});
+  {
+    // Override AnalyticsAdapter functions by supplying custom methods
+    track({eventType, args}) {
+      sendEvent(eventType, args);
+    }
+  });
 
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
 
