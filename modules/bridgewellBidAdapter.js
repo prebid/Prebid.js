@@ -24,7 +24,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */ 
   buildRequests: function(validBidRequests) {
-    var channelIDs = [];
+    const channelIDs = [];
 
     utils._each(validBidRequests, function(bid) {
       channelIDs.push(bid.params.ChannelID);
@@ -48,12 +48,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */ 
   interpretResponse: function(serverResponse, bidRequest) {
-    var bidResponses = [];
+    const bidResponses = [];
 
     // map responses to requests
     utils._each(bidRequest.validBidRequests, function(req) {
-      var bidResponse = {};
-      var matchedResponse = serverResponse.body.find(function(res) {
+      const bidResponse = {};
+      let matchedResponse = serverResponse.body.find(function(res) {
         return !res.consumed && req.sizes.find(function(size) {
           return res.width === size[0] && res.height === size[1];
         });
