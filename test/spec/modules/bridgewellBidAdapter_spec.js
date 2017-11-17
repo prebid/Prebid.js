@@ -133,13 +133,13 @@ describe('bridgewellBidAdapter', function () {
 
     it('should return all required parameters', () => {
       const result = spec.interpretResponse({'body': serverResponses}, request);
-      result.every(res => expect(res.cpm).to.be.a('number'))
-      result.every(res => expect(res.width).to.be.a('number'))
-      result.every(res => expect(res.height).to.be.a('number'))
-      result.every(res => expect(res.ttl).to.be.a('number'))
-      result.every(res => expect(res.netRevenue).to.be.a('boolean'))
-      result.every(res => expect(res.currency).to.be.a('string'))
-      result.every(res => expect(res.ad).to.be.a('string'))
+      result.every(res => expect(res.cpm).to.be.a('number'));
+      result.every(res => expect(res.width).to.be.a('number'));
+      result.every(res => expect(res.height).to.be.a('number'));
+      result.every(res => expect(res.ttl).to.be.a('number'));
+      result.every(res => expect(res.netRevenue).to.be.a('boolean'));
+      result.every(res => expect(res.currency).to.be.a('string'));
+      result.every(res => expect(res.ad).to.be.a('string'));
     });
 
     it('should give up bid if server response is undefiend', () => {
