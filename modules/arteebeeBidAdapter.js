@@ -45,8 +45,8 @@ export const spec = {
                 let bidResponse = {
                     requestId: bid.impid,
                     cpm: bid.price,
-                    width: 300,
-                    height: 250,
+                    width: bid.w,
+                    height: bid.h,
                     mediaType: BANNER,
                     creativeId: bid.crid,
                     currency: 'USD',
