@@ -3,7 +3,9 @@ const utils = require('../src/utils');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
+const TEST_END_POINT = 'https://staging-ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
+const TEST_SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -15,7 +17,7 @@ function _createBidResponse(response) {
     height: response.seatbid[0].bid[0].h,
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
-    creativeId: response.seatbid[0].bid[0].ext.rp.advid,
+    creativeId: response.seatbid[0].bid[0].crid,
     currency: response.cur,
     netRevenue: true
   }
@@ -25,6 +27,7 @@ function _createBidResponse(response) {
 function _createServerRequest(bidRequest) {
   const ttxRequest = {};
   const params = bidRequest.params;
+  const url = (params.test === 1) ? (TEST_END_POINT) : (END_POINT);
 
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
@@ -38,13 +41,16 @@ function _createServerRequest(bidRequest) {
     }
   }
 
-  // Allowing site to be a test configuration object or just the id (former required for testing,
-  // latter when used by publishers)
-  ttxRequest.site = params.site || { id: params.siteId };
+  ttxRequest.site =  { id: params.siteId };
 
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
+
+  // Finally, set the openRTB 'test' param if this is to be a test bid
+  if (params.test === 1) {
+    ttxRequest.test = 1;
+  }
 
   const options = {
     contentType: 'application/json',
@@ -57,7 +63,7 @@ function _createServerRequest(bidRequest) {
 
   return {
     'method': 'POST',
-    'url': bidRequest.params.url || END_POINT,
+    'url': url,
     'data': JSON.stringify(ttxRequest),
     'options': options
   }
@@ -65,7 +71,7 @@ function _createServerRequest(bidRequest) {
 
 // Sync object will always be of type iframe for ttx
 function _createSync(bid) {
-  const syncUrl = bid.params.syncUrl || SYNC_ENDPOINT;
+  const syncUrl = (bid.params.test === 1) ? (TEST_SYNC_ENDPOINT) : (SYNC_ENDPOINT);
 
   return {
     type: 'iframe',
