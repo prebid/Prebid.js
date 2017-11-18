@@ -50,8 +50,7 @@ function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
     for (let prop in utmKeys) {
-      let urlValue = utils.getParameterByName(prop);
-      utmKeys[prop] = urlValue;
+      utmKeys[prop] = utils.getParameterByName(prop);
       if (utmKeys[prop] != '') {
         newUtm = true;
         dataBag[prop] = utmKeys[prop];
@@ -103,12 +102,12 @@ let pubwiseAnalytics = Object.assign(adapter(
     defaultUrl,
     analyticsType
   }),
-  {
-    // Override AnalyticsAdapter functions by supplying custom methods
-    track({eventType, args}) {
-      sendEvent(eventType, args);
-    }
-  });
+{
+  // Override AnalyticsAdapter functions by supplying custom methods
+  track({eventType, args}) {
+    sendEvent(eventType, args);
+  }
+});
 
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
 
