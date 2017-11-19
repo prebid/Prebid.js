@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { spec } from 'modules/undertoneBidAdapter';
 
-const URL = '//localhost:9090/hb';
+const URL = '//hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
 const validBidReq = {
   bidder: BIDDER_CODE,
   params: {
-    placementId: '123456789',
-    publisherId: '123'
+    placementId: '10433394',
+    publisherId: 12345
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
@@ -28,8 +28,8 @@ const invalidBidReq = {
 const bidReq = [{
   bidder: BIDDER_CODE,
   params: {
-    placementId: 123456789,
-    publisherId: '123'
+    placementId: '10433394',
+    publisherId: 12345
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
@@ -93,7 +93,7 @@ describe('Undertone Adapter', () => {
     it('should send request to correct url via POST', () => {
       const request = spec.buildRequests(bidReq);
       const domain = null;
-      const REQ_URL = `${URL}?pubid=${bidReq[0].params.publisherId}&domain=${domain}`;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
@@ -102,8 +102,8 @@ describe('Undertone Adapter', () => {
       const bid = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid.bidRequestId).to.equal('263be71e91dd9d');
       expect(bid.sizes.length > 0).to.equal(true);
-      expect(bid.placementId).to.equal(123456789);
-      expect(bid.publisherId).to.equal('123');
+      expect(bid.placementId).to.equal('10433394');
+      expect(bid.publisherId).to.equal(12345);
       expect(bid.params).to.be.an('object');
     });
   });

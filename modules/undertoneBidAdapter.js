@@ -6,12 +6,13 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//localhost:9090/hb'; // //ads.undertone.com/hb
+const URL = '//hb.undertone.com/hb'; // //ads.undertone.com/hb
 
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId && bid.params.placementId) {
+      bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
   },
@@ -24,7 +25,7 @@ export const spec = {
     const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
 
     const pubid = validBidRequests[0].params.publisherId;
-    const REQ_URL = `${URL}?pubid=${pubid}&domain=${domain}`;
+    const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
 
     validBidRequests.map(bidReq => {
       const bid = {

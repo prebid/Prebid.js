@@ -3,7 +3,7 @@
 ```
 Module Name: Example Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@example.com
+Maintainer: RampProgrammatic@perion.com
 ```
 # Description
 
@@ -19,9 +19,9 @@ Module that connects to Undertone's demand sources
            {
              bidder: "undertone",
              params: {
-               placementId: '123456789',
-               publisherId: '123'
-             }
+               placementId: '10433394',
+               publisherId: 12345
+               }
            }
          ]
        }
