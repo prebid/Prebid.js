@@ -30,8 +30,15 @@ export const spec = {
     let requests = [];
     let bannerRequests = [];
     let videoRequests = [];
-    let bannerBids = bids.filter(function(bid) { return bid.mediaType === BANNER; });
-    let videoBids = bids.filter(function(bid) { return bid.mediaType === VIDEO; });
+    let bannerBids = [];
+    let videoBids = [];
+    bids.forEach(function (bid) {
+      if (bid.mediaType === VIDEO) {
+        videoBids.push(bid);
+      } else {
+        bannerBids.push(bid);
+      }
+    });
 
     // build banner requests
     if (bannerBids.length !== 0) {
