@@ -44,7 +44,7 @@ function receiveMessage(ev) {
     // }), '*');
     if (data.message === 'Prebid Native') {
       fireNativeTrackers(data, adObject);
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
   }
