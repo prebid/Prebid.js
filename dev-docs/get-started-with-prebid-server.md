@@ -103,6 +103,7 @@ See below for a list of the fields in the `s2sConfig` object:
 | `enabled`   | Boolean       | X         | Enables S2S; default: `false`                                          |
 | `bidders`   | Array[String] | X         | List of bidder codes; must have been enabled during Prebid.js build    |
 | `timeout`   | Number        |           | Bidder timeout, in milliseconds; default: `1000`                       |
+| `syncEndpoint` | String     |           | Configures the user-sync endpoint. Highly recommended                  |
 | `adapter`   | String        |           | Adapter code; default: `"prebidServer"`                                |
 | `endpoint`  | String        |           | Will override the default endpoint                                     |
 | `cookieSet` | Boolean       |           | Set to `false` to opt out of cookieset/link rewriting; default: `true` |

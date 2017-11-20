@@ -37,5 +37,6 @@ Configuration options
 | `accountId` | required | string:required: account ID obtained in sign up process |
 | `enabled` | required | boolean:required: enables s2s - default false |
 | `bidders` | required | array[string]:required: of bidder codes to enable S2S. |
+| `syncEndpoint` | optional | string:optional sets user-sync endpoint. |
 | `timeout` | optional | number:optional timeout in ms for bidders called via the S2S endpoint.|
 | `cookieSet` | optional | boolean:optional: If `false` (not recommended), opt out of link rewriting to improve cookie syncing. |
