@@ -1,4 +1,4 @@
-import {logError, getTopWindowLocation} from 'src/utils';
+import {getTopWindowReferrer, getTopWindowLocation} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 export const spec = {
@@ -7,14 +7,11 @@ export const spec = {
 
   aliases: ['somo'],
 
-  supportedMediaTypes: ['banner'],
-
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.placementId)
   ),
 
   buildRequests: function(bidRequests) {
-    logError('bidRequests', 'ERROR', bidRequests);
     return bidRequests.map(bidRequest => {
       return {
         method: 'POST',
@@ -33,10 +30,10 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   let bidResponses = [];
   let bidId = 1;
-  if(typeof bidRequest != 'undefined' && typeof bidRequest.bidRequest != 'undefined' && typeof bidRequest.bidRequest.bidId != 'undefined') {
+  if (typeof bidRequest != 'undefined' && typeof bidRequest.bidRequest != 'undefined' && typeof bidRequest.bidRequest.bidId != 'undefined') {
     bidId = bidRequest.bidRequest.bidId;
   }
-  if (bidResponse) {
+  if (bidResponse.body) {
     let bidData = bidResponse.body.seatbid[0].bid[0];
     const bid = {
       requestId: bidId,
@@ -46,21 +43,16 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       ad: bidData.adm,
       ttl: 360,
       creativeId: bidData.crid,
-      creative_id: bidData.crid,
-      ad_id: bidId,
-      adid: bidId,
       adId: bidId,
       netRevenue: false,
       currency: 'USD',
     };
-    logError('bidResponseAvailable', 'ERROR', bidResponses);
     bidResponses.push(bid);
   }
   return bidResponses;
 }
 
 function openRtbRequest(bidRequest) {
-  logError('openRtbRequest', 'ERROR', bidRequest);
   return {
     id: bidRequest.bidderRequestId,
     imp: [openRtbImpression(bidRequest)],
@@ -92,7 +84,7 @@ function openRtbSite(bidRequest) {
     const pageUrl = getTopWindowLocation().href;
     const domain = getTopWindowLocation().hostname;
     return {
-      ref: getReferrer(),
+      ref: getTopWindowReferrer(),
       page: pageUrl,
       domain: domain
     }
@@ -112,14 +104,6 @@ function openRtbApp(bidRequest) {
     }
   } else {
     return null;
-  }
-}
-
-function getReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
   }
 }
 

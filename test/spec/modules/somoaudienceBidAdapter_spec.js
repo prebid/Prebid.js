@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/somoaudienceBidAdapter';
 import bidManager from 'src/bidmanager';
-import {getTopWindowLocation} from 'src/utils';
+import {getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('Somo Audience Adapter Tests', () => {
@@ -46,12 +46,6 @@ describe('Somo Audience Adapter Tests', () => {
     expect(spec.aliases[0]).to.equal('somo');
   });
 
-
-  it('Verifies supported media types', () => {
-    expect(spec.supportedMediaTypes).to.have.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('banner');
-  });
-
   it('Verifies if bid request valid', () => {
     expect(spec.isBidRequestValid(bidderSet[0])).to.equal(true);
     expect(spec.isBidRequestValid(bidderAppSet[0])).to.equal(true);
@@ -68,7 +62,7 @@ describe('Somo Audience Adapter Tests', () => {
     expect(br.method).to.equal('POST');
     const ortbRequest = br.data;
     expect(ortbRequest.site).to.not.equal(null);
-    expect(ortbRequest.site.ref).to.equal(window.top.document.referrer);
+    expect(ortbRequest.site.ref).to.equal(getTopWindowReferrer());
     expect(ortbRequest.site.page).to.equal(getTopWindowLocation().href);
     expect(ortbRequest.imp).to.have.lengthOf(1);
     expect(ortbRequest.device).to.not.equal(null);
