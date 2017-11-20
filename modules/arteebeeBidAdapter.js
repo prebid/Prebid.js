@@ -13,8 +13,8 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bidRequest) {
-    return 'params' in bidRequest && bidRequest.params.pub !== undefined
-      && bidRequest.params.source !== undefined;
+    return 'params' in bidRequest && bidRequest.params.pub !== undefined &&
+      bidRequest.params.source !== undefined;
   },
   buildRequests: function (validBidRequests) {
     var requests = [];
@@ -69,7 +69,7 @@ function makePrebidRequest(req) {
   var host = req.params.host || DEFAULT_HOST;
   var ssp = req.params.ssp || DEFAULT_SSP;
 
-  var url = window.location.protocol + "//" + host + "/rtb/bid/" + ssp + "?type=json&register=0";
+  var url = window.location.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
 
   const payload = makeRtbRequest(req);
   const payloadString = JSON.stringify(payload);
@@ -93,7 +93,7 @@ function makeRtbRequest(req) {
     'site': makeSite(req),
     'device': makeDevice(),
     'at': 1,
-    'tmax': config.getConfig("bidderTimeout")
+    'tmax': config.getConfig('bidderTimeout')
   };
 
   if (req.params.coppa) {
@@ -140,10 +140,10 @@ function makeSite(req) {
   var params = req.params;
 
   var site = {
-    "id": params.source,
-    "page": utils.getTopWindowUrl(),
+    'id': params.source,
+    'page': utils.getTopWindowUrl(),
     'ref': utils.getTopWindowReferrer(),
-    "publisher": makePublisher(req)
+    'publisher': makePublisher(req)
   };
 
   return site;
@@ -153,8 +153,8 @@ function makePublisher(req) {
   var params = req.params;
 
   var publisher = {
-    "id": params.pub,
-    "domain": getDomain(config.getConfig("publisherDomain"))
+    'id': params.pub,
+    'domain': getDomain(config.getConfig('publisherDomain'))
   };
 
   return publisher;

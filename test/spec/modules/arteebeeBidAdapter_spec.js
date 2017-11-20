@@ -2,9 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/arteebeeBidAdapter';
 
 describe('Arteebee adapater', () => {
-
   describe('Test validate req', () => {
-
     it('should accept minimum valid bid', () => {
       let bid = {
         bidder: 'arteebee',
