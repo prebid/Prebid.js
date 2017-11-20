@@ -342,8 +342,6 @@ When the bidder returns VAST or a VAST URL in its bid response, it needs to add 
 
 function createBid(status, reqBid, response) {
     let bid = bidfactory.createBid(status, reqBid);
-    bid.code = baseAdapter.getBidderCode();
-    bid.bidderCode = baseAdapter.getBidderCode();
 
     if (response) {
         bid.cpm = response.price;
