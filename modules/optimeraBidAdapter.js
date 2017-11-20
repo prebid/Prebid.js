@@ -27,14 +27,8 @@ export const spec = {
     var optimeraHost = window.location.host;
     var optimeraPathName = window.location.pathname;
     var timestamp = Math.round(new Date().getTime() / 1000);
-    var oDv = [];
     if (typeof validBidRequests[0].params.custom.clientID != 'undefined') {
       var clientID = validBidRequests[0].params.custom.clientID;
-      oDv.push(clientID);
-      for (var i = 0; i < validBidRequests.length; i++) {
-        oDv.push(validBidRequests[i].adUnitCode);
-      }
-      window.oDv = oDv;
       var scoresURL = SCORES_BASE_URL + clientID + '/' + optimeraHost + optimeraPathName + '.js';
       return {
         method: 'GET',
