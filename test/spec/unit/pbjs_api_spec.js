@@ -1056,7 +1056,6 @@ describe('Unit: Prebid Module', function () {
       })
 
       it('should callBids if a native adUnit has all native bidders', () => {
-        // TODO: appnexus is currently hardcoded in native.js, update this text when fixed
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.calledOnce(adaptermanager.callBids);
       });
