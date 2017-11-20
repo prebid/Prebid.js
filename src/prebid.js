@@ -2,7 +2,7 @@
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
-import { videoAdUnit, hasNonVideoBidder } from './video';
+import { videoAdUnit, videoBidder, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
@@ -282,14 +282,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       if (bid) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
-        bid.url = utils.replaceAuctionPrice(bid.url, bid.cpm);
+        bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
         // save winning bids
         $$PREBID_GLOBAL$$._winningBids.push(bid);
 
         // emit 'bid won' event here
         events.emit(BID_WON, bid);
 
-        const { height, width, ad, mediaType, adUrl: url, renderer } = bid;
+        const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
         if (renderer && renderer.url) {
           renderer.render(bid);
@@ -299,13 +299,13 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
-        } else if (url) {
+        } else if (adUrl) {
           const iframe = utils.createInvisibleIframe();
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
           iframe.style.overflow = 'hidden';
-          iframe.src = url;
+          iframe.src = adUrl;
 
           utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
@@ -380,13 +380,18 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // for video-enabled adUnits, only request bids if all bidders support video
-  const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
-  invalidVideoAdUnits.forEach(adUnit => {
-    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
-    for (let i = 0; i < adUnits.length; i++) {
-      if (adUnits[i].code === adUnit.code) { adUnits.splice(i, 1); }
-    }
+  // for video-enabled adUnits, only request bids for bidders that support video
+  adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
+    const nonVideoBidders = adUnit.bids
+      .filter(bid => !videoBidder(bid))
+      .map(bid => bid.bidder)
+      .join(', ');
+
+    utils.logError(`
+      ${adUnit.code} is a 'video' ad unit but contains non-video bidder(s) ${nonVideoBidders}.
+      No Prebid demand requests will be triggered for those bidders.
+    `);
+    adUnit.bids = adUnit.bids.filter(videoBidder);
   });
 
   // for native-enabled adUnits, only request bids for bidders that support native
@@ -396,7 +401,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       .map(bid => bid.bidder)
       .join(', ');
 
-    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'native' but contains non-native bidder(s) ${nonNativeBidders}. No Prebid demand requests will be triggered for those bidders.`);
+    utils.logError(`
+      ${adUnit.code} is a 'native' ad unit but contains non-native bidder(s) ${nonNativeBidders}.
+      No Prebid demand requests will be triggered for those bidders.
+    `);
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
