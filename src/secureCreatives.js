@@ -6,6 +6,7 @@
 import events from './events';
 import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
+import { auctionManager } from './auctionManager';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -23,7 +24,7 @@ function receiveMessage(ev) {
   }
 
   if (data.adId) {
-    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
+    const adObject = auctionManager.getBidsReceived().find(function (bid) {
       return bid.adId === data.adId;
     });
 
