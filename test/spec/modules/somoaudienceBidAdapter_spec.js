@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {spec} from 'modules/somoaudienceBidAdapter';
-import bidManager from 'src/bidmanager';
 import {getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
