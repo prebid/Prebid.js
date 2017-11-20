@@ -27,12 +27,12 @@ describe('OptimaticBidAdapter', () => {
 
     it('should return false when the "bidfloor" param is missing', () => {
       bidRequest.params = {
-        partnerId: '2chy7Gc2eSQL'
+        placement: '2chy7Gc2eSQL'
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when the "partnerId" param is missing', () => {
+    it('should return false when the "placement" param is missing', () => {
       bidRequest.params = {
         bidfloor: 5.00
       };

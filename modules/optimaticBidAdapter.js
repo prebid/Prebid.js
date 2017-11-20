@@ -1,12 +1,6 @@
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
-const LOGURL = 'http://playerlog.optimatic.com/log';
-const VERSION = '7.0.0.1';
-
-let isLogActive = false;
-let rand = Math.round(Math.random() * 10000);
 
 export const ENDPOINT = '//mg-bid.optimatic.com/adrequest/';
 
@@ -16,13 +10,7 @@ export const spec = {
   supportedMediaTypes: ['video'],
 
   isBidRequestValid: function(bid) {
-    let isValid = !!(bid && bid.params && bid.params.placement && bid.params.bidfloor);
-    if (!isValid) {
-      let error = (!bid) ? 'nobid' : (!bid.params) ? 'nobidparams' : (!bid.params.placement) ? 'nobidplacement' : (!bid.params.bidfloor) ? 'nobidfloor' : 'noerror';
-      let id = (bid && bid.params && bid.params.placement);
-      log('bid-error', '' + id, '', '' + error, 10);
-    }
-    return isValid;
+    return !!(bid && bid.params && bid.params.placement && bid.params.bidfloor);
   },
 
   buildRequests: function(bids) {
@@ -49,8 +37,6 @@ export const spec = {
     }
     if (!response || !bid || !bid.adm || !bid.price) {
       utils.logWarn(`No valid bids from ${spec.code} bidder`);
-      let error = (!response) ? 'nullresponse' : (!bid) ? 'nullbid' : (!bid.adm) ? 'nulladm' : (!bid.price) ? 'nullprice' : 'nullerror';
-      log('bid-error', '' + bidRequest.params.placement, '', '' + error, 10);
       return [];
     }
     size = getSize(bidRequest.sizes);
@@ -110,18 +96,6 @@ function getData (bid) {
       devicetype: 1
     }
   };
-}
-
-function log (field1, field2, field3, field4, pct) {
-  pct = (!pct) ? 100 : pct * 100;
-  isLogActive = rand <= pct;
-  if (!isLogActive) return;
-
-  let data = [{'body': '\"' + field1 + '\",\"' + field2 + '\",\"' + field3 + '\",\"' + field4 + '\",\"' + VERSION + '\"'}];
-  let jsonData = JSON.stringify(data);
-
-  ajax(LOGURL, response => {
-  }, jsonData, {method: 'POST', contentType: 'application/json'});
 }
 
 config.setConfig({ usePrebidCache: true });
