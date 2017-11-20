@@ -1,7 +1,6 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
-
 export const ENDPOINT = '//mg-bid.optimatic.com/adrequest/';
 
 export const spec = {
