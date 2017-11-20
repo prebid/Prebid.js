@@ -889,7 +889,7 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('#video', () => {
+    describe.skip('#video', () => {
       let spyCallBids;
       let createAuctionStub;
       let adUnits;

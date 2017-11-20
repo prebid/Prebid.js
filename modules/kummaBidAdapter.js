@@ -1,10 +1,10 @@
 
-import {logError, getTopWindowLocation} from 'src/utils';
+import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 export const spec = {
 
-  code: 'platformio',
+  code: 'kumma',
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.pubId && bid.params.siteId)
@@ -19,7 +19,7 @@ export const spec = {
     };
     return {
       method: 'POST',
-      url: '//piohbdisp.hb.adx1.com/',
+      url: '//hb.kumma.com/',
       data: JSON.stringify(request),
     };
   },
@@ -30,7 +30,12 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
-  const ortbRequest = parse(bidRequest.data);
+  let ortbRequest = null;
+  try {
+    ortbRequest = JSON.parse(bidRequest.data);
+  } catch (ex) {
+    logError('kumma.parse', 'ERROR', ex);
+  }
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -90,18 +95,11 @@ function site(bidderRequest) {
         domain: getTopWindowLocation().hostname,
       },
       id: siteId.toString(),
-      ref: referrer(),
+      ref: getTopWindowReferrer(),
       page: getTopWindowLocation().href,
     }
   }
   return null;
-}
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 function device() {
   return {
@@ -110,16 +108,6 @@ function device() {
     w: (window.screen.width || window.innerWidth),
     h: (window.screen.height || window.innerHeigh),
   };
-}
-function parse(rawResponse) {
-  try {
-    if (rawResponse) {
-      return JSON.parse(rawResponse);
-    }
-  } catch (ex) {
-    logError('platformio.parse', 'ERROR', ex);
-  }
-  return null;
 }
 
 registerBidder(spec);

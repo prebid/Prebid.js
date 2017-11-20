@@ -1,14 +1,14 @@
 import {expect} from 'chai';
-import {spec} from 'modules/platformioBidAdapter';
-import {getTopWindowLocation} from 'src/utils';
+import {spec} from 'modules/kummaBidAdapter';
+import {getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 
-describe('Platformio Adapter Tests', () => {
+describe('Kumma Adapter Tests', () => {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     sizes: [[300, 250]],
     bidId: 'bid12345',
     params: {
-      pubId: '28082',
+      pubId: '55879',
       siteId: '26047',
       placementId: '123',
       size: '300x250',
@@ -19,7 +19,7 @@ describe('Platformio Adapter Tests', () => {
     sizes: [[250, 250]],
     bidId: 'bid23456',
     params: {
-      pubId: '28082',
+      pubId: '55879',
       siteId: '26047',
       placementId: '456',
       size: '250x250'
@@ -27,14 +27,14 @@ describe('Platformio Adapter Tests', () => {
   }];
   it('Verify build request', () => {
     const request = spec.buildRequests(slotConfigs);
-    expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
+    expect(request.url).to.equal('//hb.kumma.com/');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
-    expect(ortbRequest.site.publisher.id).to.equal('28082');
-    expect(ortbRequest.site.ref).to.equal(window.top.document.referrer);
+    expect(ortbRequest.site.publisher.id).to.equal('55879');
+    expect(ortbRequest.site.ref).to.equal(getTopWindowReferrer());
     expect(ortbRequest.site.page).to.equal(getTopWindowLocation().href);
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object
@@ -88,7 +88,7 @@ describe('Platformio Adapter Tests', () => {
   });
 
   it('Verifies bidder code', () => {
-    expect(spec.code).to.equal('platformio');
+    expect(spec.code).to.equal('kumma');
   });
 
   it('Verifies if bid request valid', () => {
