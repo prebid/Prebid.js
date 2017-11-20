@@ -186,7 +186,6 @@ function RhythmOneBidAdapter() {
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
-        bidResponse.descriptionUrl = bid.nurl;
         bidResponse.ttl = 10000;
       } else {
         bidResponse.ad = bid.adm;
