@@ -31,15 +31,15 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
     // Asycn info
     if(_isIOS() && _trackingEnabled(bids)) {
-      _appendAysncImpressionInformation(ymCall, cb);
+      _appendAysncImpressionInformation(ymCall, cb, bids);
     } else {
       cb();
     }
   }
 
-  function _appendAysncImpressionInformation(ymCall, cb) {
-    var bidderTimeout = configs.config.getConfig('_bidderTimeout') || 3000;
+  function _appendAysncImpressionInformation(ymCall, cb, bids) {
     var cbTriggered = false;
+    var asyncBidderTimeout = _getAsyncBidderTimeout(bids);
 
     // set listner for postmessage info
     window.addEventListener('message', appendMessageInfo, false);
@@ -55,7 +55,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       if (!cbTriggered) {
         cb(ymCall);
       }
-    }, bidderTimeout / 2);
+    }, asyncBidderTimeout);
 
     function appendMessageInfo(ymTracking) {
       if (ymTracking.origin === 'https://static.yieldmo.com') {
@@ -132,6 +132,19 @@ var YieldmoAdapter = function YieldmoAdapter() {
     } else {
       return true;
     }
+  }
+
+  function _getAsyncBidderTimeout(bids) {
+    var bidderTimeout;
+    var DEFAULT_TIMEOUT = 1500;
+    if (bids && bids[0] && bids[0].params && bids[0].params.trackingTimeOut) {
+      bidderTimeout = bids[0].params.trackingTimeOut;
+    } else if (configs.config.getConfig('_bidderTimeout')) {
+      bidderTimeout = configs.config.getConfig('_bidderTimeout') / 2;
+    } else {
+      bidderTimeout = DEFAULT_TIMEOUT;
+    }
+    return bidderTimeout;
   }
 
   function _getPageDescription() {
