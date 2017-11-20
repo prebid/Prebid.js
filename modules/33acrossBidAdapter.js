@@ -41,7 +41,7 @@ function _createServerRequest(bidRequest) {
     }
   }
 
-  ttxRequest.site =  { id: params.siteId };
+  ttxRequest.site = { id: params.siteId };
 
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
@@ -57,10 +57,6 @@ function _createServerRequest(bidRequest) {
     withCredentials: false
   };
 
-  if (bidRequest.params.customHeaders) {
-    options.customHeaders = bidRequest.params.customHeaders;
-  }
-
   return {
     'method': 'POST',
     'url': url,
@@ -75,7 +71,7 @@ function _createSync(bid) {
 
   return {
     type: 'iframe',
-    url: `${syncUrl}&id=${bid.params.siteId || bid.params.site.id}`
+    url: `${syncUrl}&id=${bid.params.siteId}`
   }
 }
 
@@ -92,12 +88,7 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if ((typeof bid.params.site === 'undefined' || typeof bid.params.site.id === 'undefined') &&
-  (typeof bid.params.siteId === 'undefined')) {
-    return false;
-  }
-
-  if (typeof bid.params.productId === 'undefined') {
+  if (typeof bid.params.siteId === 'undefined' || typeof bid.params.productId === 'undefined') {
     return false;
   }
 
