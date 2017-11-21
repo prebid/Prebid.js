@@ -5,7 +5,6 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
-const SUPPORTED_AD_TYPES = ['banner', 'video', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -28,7 +27,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO, NATIVE],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -100,7 +99,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
+          if (rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -206,9 +205,9 @@ function newBid(serverBid, rtbBid) {
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb['native']) {
-    const nativeAd = rtbBid.rtb['native'];
-    bid['native'] = {
+  } else if (rtbBid.rtb[NATIVE]) {
+    const nativeAd = rtbBid.rtb[NATIVE];
+    bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
       cta: nativeAd.ctatext,
@@ -280,20 +279,20 @@ function bidToTag(bid) {
     tag.keywords = getKeywords(bid.params.keywords);
   }
 
-  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
-    tag.ad_types.push('native');
+  if (bid.mediaType === NATIVE || utils.deepAccess(bid, 'mediaTypes.native')) {
+    tag.ad_types.push(NATIVE);
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
-      tag['native'] = {layouts: [nativeRequest]};
+      tag[NATIVE] = {layouts: [nativeRequest]};
     }
   }
 
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
-  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
-    tag.ad_types.push('video');
+  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
+    tag.ad_types.push(VIDEO);
     tag.require_asset_url = true;
   }
 
@@ -408,12 +407,12 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
 
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
-  if (adType === 'video') {
-    return 'video';
-  } else if (adType === 'native') {
-    return 'native';
+  if (adType === VIDEO) {
+    return VIDEO;
+  } else if (adType === NATIVE) {
+    return NATIVE;
   } else {
-    return 'banner';
+    return BANNER;
   }
 }
 
