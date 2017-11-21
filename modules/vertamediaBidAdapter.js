@@ -1,7 +1,10 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {VIDEO} from 'src/mediaTypes';
+<<<<<<< HEAD
 import {Renderer} from 'src/Renderer';
+=======
+>>>>>>> unstream/master
 
 const URL = '//rtb.vertamedia.com/hb/';
 const BIDDER_CODE = 'vertamedia';

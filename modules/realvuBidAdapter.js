@@ -14,7 +14,6 @@ var RealVuAdapter = function RealVuAdapter() {
     var pbids = params.bids;
     var boost_back = function() {
       var top1 = window;
-      realvu_frm = 0;
       try {
         var wnd = window;
         while ((top1 != top) && (typeof (wnd.document) != 'undefined')) {

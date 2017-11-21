@@ -228,11 +228,19 @@ export function newBidder(spec) {
       const onResponse = delayExecution(afterAllResponses, requests.length)
       requests.forEach(processRequest);
 
+      function formatGetParameters(data) {
+        if (data) {
+          return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
+        }
+
+        return '';
+      }
+
       function processRequest(request) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}?${typeof request.data === 'object' ? parseQueryStringParameters(request.data) : request.data}`,
+              `${request.url}${formatGetParameters(request.data)}`,
               {
                 success: onSuccess,
                 error: onFailure

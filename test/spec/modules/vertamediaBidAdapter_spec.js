@@ -88,7 +88,6 @@ describe('vertamediaBidAdapter', () => {
         vastUrl: 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
         descriptionUrl: '44F2AEB9BFC881B3',
         requestId: '2e41f65424c87c',
-        bidderCode: 'bidderCode',
         creativeId: 342516,
         mediaType: 'video',
         netRevenue: true,
