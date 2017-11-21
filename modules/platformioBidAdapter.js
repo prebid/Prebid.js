@@ -42,13 +42,13 @@ function bidResponseAvailable(bidRequest, bidResponse) {
   const bids = [];
   Object.keys(idToImpMap).forEach(id => {
     if (idToBidMap[id]) {
-      const bid = {
-        requestId: id,
-        cpm: idToBidMap[id].price,
-        creative_id: id,
-        creativeId: id,
-        adId: id,
-      };
+      const bid = {};
+      bid.requestId = id;
+      bid.creativeId = idToBidMap[id].adid;
+      bid.cpm = idToBidMap[id].price;
+      bid.currency = bidResponse.cur;
+      bid.ttl = 360;
+      bid.netRevenue = true;
       bid.ad = idToBidMap[id].adm;
       bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_IMP_ID(%7D|\})/gi, idToBidMap[id].impid);
       bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_AD_ID(%7D|\})/gi, idToBidMap[id].adid);
@@ -66,7 +66,7 @@ function impression(slot) {
   return {
     id: slot.bidId,
     banner: banner(slot),
-    bidfloor: '0.000001',
+    bidfloor: slot.params.bidFloor || '0.000001',
     tagid: slot.params.placementId.toString(),
   };
 }
