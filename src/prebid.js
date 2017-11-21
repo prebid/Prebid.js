@@ -471,6 +471,16 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
 
 /**
  * @param {string} event the name of the event
+ * @alias module:pbjs.emitEvent
+ */
+$$PREBID_GLOBAL$$.emitEvent = function (event) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.emitEvent', arguments);
+
+  events.emit.apply(this, arguments);
+};
+
+/**
+ * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
  * @param {string} id an identifier in the context of the event
  * @alias module:pbjs.onEvent
