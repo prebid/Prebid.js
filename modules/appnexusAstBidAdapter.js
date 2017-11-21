@@ -1,7 +1,7 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { NATIVE, VIDEO } from 'src/mediaTypes';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
@@ -241,6 +241,7 @@ function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];
+  tag.ad_types = [];
   tag.uuid = bid.bidId;
   if (bid.params.placementId) {
     tag.id = parseInt(bid.params.placementId, 10);
@@ -280,7 +281,7 @@ function bidToTag(bid) {
   }
 
   if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
-    tag.ad_types = ['native'];
+    tag.ad_types.push('native');
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
@@ -292,6 +293,7 @@ function bidToTag(bid) {
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
   if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+    tag.ad_types.push('video');
     tag.require_asset_url = true;
   }
 
@@ -301,6 +303,13 @@ function bidToTag(bid) {
     Object.keys(bid.params.video)
       .filter(param => VIDEO_TARGETING.includes(param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
+  }
+
+  if (
+    (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
+    (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
+  ) {
+    tag.ad_types.push(BANNER);
   }
 
   return tag;

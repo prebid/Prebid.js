@@ -77,18 +77,16 @@ describe('AppNexusAdapter', () => {
     });
 
     it('should populate the ad_types array on all requests', () => {
-      const bidRequest = Object.assign({}, bidRequests);
+      ['banner', 'video', 'native'].forEach(type => {
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        bidRequest.mediaTypes = {};
+        bidRequest.mediaTypes[type] = {};
 
-      // const bidRequest = Object.assign({},
-      //   bidRequests[0],
-      //   { mediaTypes: {native: {}} }
-      // );
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].ad_types).to.deep.equal(['banner']);
-      // expect(payload.tags[0].ad_types).to.deep.equal(['native']);
+        expect(payload.tags[0].ad_types).to.deep.equal([type]);
+      });
     });
 
     it('sends bid request to ENDPOINT via POST', () => {
