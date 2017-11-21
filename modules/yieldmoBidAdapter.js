@@ -33,7 +33,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     if (_isIOS() && _trackingEnabled(bids)) {
       _appendAysncImpressionInformation(ymCall, cb, bids);
     } else {
-      cb();
+      cb(ymCall);
     }
   }
 
