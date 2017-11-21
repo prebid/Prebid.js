@@ -1,9 +1,12 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {VIDEO} from 'src/mediaTypes';
+import {Renderer} from 'src/Renderer';
 
 const URL = '//rtb.vertamedia.com/hb/';
 const BIDDER_CODE = 'vertamedia';
+
+let isMediaTypeOutstream = true;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -18,6 +21,11 @@ export const spec = {
    * @param bidderRequest
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const videoMediaType = utils.deepAccess(bidRequests[0], 'mediaTypes.video');
+    const context = utils.deepAccess(bidRequests[0], 'mediaTypes.video.context');
+
+    isMediaTypeOutstream = videoMediaType && context === 'outstream';
+
     return bidRequests.map((bid) => {
       return {
         data: prepareRTBRequestParams(bid),
@@ -103,7 +111,7 @@ function getSize(requestSizes) {
  * @returns {object}
  */
 function createBid(bidResponse) {
-  return {
+  let bid = {
     requestId: bidResponse.requestId,
     descriptionUrl: bidResponse.url,
     creativeId: bidResponse.cmpId,
@@ -116,6 +124,38 @@ function createBid(bidResponse) {
     netRevenue: true,
     ttl: 3600
   };
+
+  if (isMediaTypeOutstream) {
+    Object.assign(bid, {
+      adResponse: bidResponse,
+      renderer: newRenderer(bidResponse.requestId)
+    });
+  }
+
+  return bid;
+}
+
+function newRenderer(requestId) {
+  const renderer = Renderer.install({
+    id: requestId,
+    url: '//player.vertamedia.com/outstream-unit/2.01/outstream.min.js',
+    loaded: false,
+  });
+
+  renderer.setRender(outstreamRender);
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.VOutstreamAPI.initOutstreams([{
+      width: bid.width,
+      height: bid.height,
+      vastUrl: bid.vastUrl,
+      elId: bid.adUnitCode
+    }]);
+  });
 }
 
 registerBidder(spec);
