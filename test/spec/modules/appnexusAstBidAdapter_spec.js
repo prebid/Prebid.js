@@ -76,6 +76,21 @@ describe('AppNexusAdapter', () => {
       });
     });
 
+    it('should populate the ad_types array on all requests', () => {
+      const bidRequest = Object.assign({}, bidRequests);
+
+      // const bidRequest = Object.assign({},
+      //   bidRequests[0],
+      //   { mediaTypes: {native: {}} }
+      // );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.deep.equal(['banner']);
+      // expect(payload.tags[0].ad_types).to.deep.equal(['native']);
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
