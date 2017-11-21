@@ -8,7 +8,7 @@ function RhythmOneBidAdapter() {
   this.supportedMediaTypes = [VIDEO, BANNER];
 
   this.isBidRequestValid = function (bid) {
-    return (bid.adUnitCode !== undefined);
+    return true;
   };
 
   function getFirstParam(key, validBidRequests) {
@@ -120,7 +120,7 @@ function RhythmOneBidAdapter() {
         let tw = [];
         let params = BRs[i].params || {};
 
-        slotsToBids[BRs[i].adUnitCode] = BRs[i];
+        slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
 
         if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') {
           BRs[i].sizes = [BRs[i].sizes];
@@ -130,7 +130,7 @@ function RhythmOneBidAdapter() {
           tw.push(BRs[i].sizes[j][0]);
           th.push(BRs[i].sizes[j][1]);
         }
-        configuredPlacements.push(BRs[i].adUnitCode);
+        configuredPlacements.push(BRs[i].adUnitCode || BRs[i].placementCode);
         heights.push(th.join('|'));
         widths.push(tw.join('|'));
         mediaTypes.push((BRs[i].mediaTypes && BRs[i].mediaTypes.video ? 'v' : 'd'));
