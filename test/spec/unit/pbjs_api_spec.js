@@ -686,6 +686,7 @@ describe('Unit: Prebid Module', function () {
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
+        auctionId: 1,
         adId: bidId,
         width: 300,
         height: 250,
@@ -695,6 +696,7 @@ describe('Unit: Prebid Module', function () {
         bidsReceived.push(adResponse);
         return bidsReceived;
       }
+      auction.getAuctionId = () => 1;
     }
 
     beforeEach(function () {
@@ -724,7 +726,6 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(function () {
       auction.getBidsReceived = getBidResponses;
-      $$PREBID_GLOBAL$$._winningBids = [];
       utils.logError.restore();
       utils.logMessage.restore();
       utils.inIframe.restore();
@@ -810,7 +811,7 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      assert.equal($$PREBID_GLOBAL$$._winningBids[0], adResponse);
+      assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
     });
   });
 
@@ -1368,17 +1369,6 @@ describe('Unit: Prebid Module', function () {
       let newCustomPriceBucket = configObj.getConfig('customPriceBucket');
       expect(goodConfig).to.deep.equal(newCustomPriceBucket);
       expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
-    });
-  });
-
-  describe('getAllWinningBids', () => {
-    it('should return all winning bids', () => {
-      const bids = {name: 'a winning bid'};
-      $$PREBID_GLOBAL$$._winningBids = bids;
-
-      assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids(), bids);
-
-      $$PREBID_GLOBAL$$._winningBids = [];
     });
   });
 
