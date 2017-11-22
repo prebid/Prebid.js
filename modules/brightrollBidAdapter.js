@@ -9,13 +9,14 @@ const BRIGHTROLL_BIDDER_CODE = 'brightroll';
 
 const BrightRollBidAdapter = function BrightRollBidAdapter() {
   let _protocol = (window.location.protocol === 'https:' ? 'https' : 'http') + '://';
+  let _host = 'pmp.ybp.yahoo.com';
   function buildBidRequest(params) {
     let provider = params.publisher;
     let slot = params.slot;
     let prebid = '&prebid=1';
     let cacheBuster = '&n=' + new Date().getTime();
     let isTest = params.test ? '&test=1' : '';
-    return `${_protocol}pmp.ybp.yahoo.com/bid/${provider}/adslot/${slot}/?${prebid}${isTest}${cacheBuster}`
+    return `${_protocol}${_host}/bid/${provider}/adslot/${slot}/?${prebid}${isTest}${cacheBuster}`
   }
 
   function _callBids(params) {
