@@ -243,6 +243,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           return allBidders.includes(adapter);
         }).join(',')}`);
 
+        // fire BID_REQUESTED event for each s2s bidRequest
+        serverBidRequests.forEach(bidRequest => {
+          events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+        });
+
         // make bid requests
         s2sAdapter.callBids(
           s2sBidRequest,
