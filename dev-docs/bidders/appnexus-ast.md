@@ -40,30 +40,13 @@ adapter include:
 
 The following video parameters are supported.  For more information, see the video parameters in the [OpenRTB specification](http://www.iab.com/wp-content/uploads/2016/01/OpenRTB-API-Specification-Version-2-4-DRAFT.pdf).
 
-+ `mimes`: An array of strings listing the content MIME types supported, e.g., `["video/x-flv", "video/x-ms-wmv"]`.
-
-+ `minduration`: An integer that defines the minimum video ad duration, in seconds.
-
-+ `maxduration`: An integer that defines the maximum video ad duration, in seconds.
-
-+ `startdelay`: An integer that determines whether the ad should be shown before, during, or after the video content.  If the value is greater than 0, the position is mid-roll and the value indicates the start delay, in seconds.  Defaults to 0.
-    + Pre-roll: `0`
-    + Mid-roll: `-1`
-    + Post-roll: `-2`
-
-+ `skippable`: A boolean which, if `true`, means the user can click a button to skip the video ad.  Defaults to `false`.
-
-+ `playback_method`: An array of strings listing the playback methods supported by the publisher.  Allowed values:
-    +  `"auto_play_sound_on"`
-    +  `"auto_play_sound_off"`
-    +  `"click_to_play"`
-    +  `"mouseover"`
-    +  `"auto_play_sound_unknown"`
-
-+ `frameworks`: An array of integers listing the API frameworks supported by the publisher. Allowed values:
-    + None: `0`
-    + VPAID 1.0: `1`
-    + VPAID 2.0: `2`
-    + MRAID 1.0: `3`
-    + ORMMA: `4`
-    + MRAID 2.0: `5`
+{: .table .table-bordered .table-striped }
+| Name              | Description                                                                                                                                                                                                                                  |
+|-------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `mimes`           | Array of strings listing the content MIME types supported, e.g., `["video/x-flv", "video/x-ms-wmv"]`.                                                                                                                                        |
+| `minduration`     | Integer that defines the minimum video ad duration in seconds.                                                                                                                                                                               |
+| `maxduration`     | Integer that defines the maximum video ad duration in seconds.                                                                                                                                                                               |
+| `startdelay`      | Integer that determines whether to show the ad before, during, or after video content.  If > 0, position is mid-roll and value indicates start delay, in seconds. Allowed values: Pre-roll: `0` (default); Mid-roll: `-1` ; Post-roll: `-2`. |
+| `skippable`       | Boolean which, if `true`, means the user can click a button to skip the video ad.  Defaults to `false`.                                                                                                                                      |
+| `playback_method` | Array of strings listing playback methods supported by the publisher.  Allowed values: `"auto_play_sound_on"`; `"auto_play_sound_off"`; `"click_to_play"`; `"mouseover"`; `"auto_play_sound_unknown"`.                                       |
+| `frameworks`      | Array of integers listing API frameworks supported by the publisher. Allowed values: None: `0`; VPAID 1.0: `1`; VPAID 2.0: `2`; MRAID 1.0: `3`; ORMMA: `4`; MRAID 2.0: `5`.                                                                  |
