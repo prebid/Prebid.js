@@ -11,10 +11,29 @@ var adaptermanager = require('src/adaptermanager');
  *
  */
 var AdmediaAdapter = function AdmediaAdapter() {
+  let uid = '';
+  let bids;
+  const bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
+
   function _callBids(params) {
-    var bids;
-    const bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
     bids = params.bids || [];
+    getUID();
+  }
+
+  function getUID() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        uid = this.responseText;
+        generateBidRequests();
+      }
+    };
+    xhttp.withCredentials = true;
+    xhttp.open('GET', (window.location.protocol) + '//pixel.s3xified.com/uid', true);
+    xhttp.send();
+  }
+
+  function generateBidRequests() {
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
       var bid = bids[i];
@@ -60,6 +79,9 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       request_obj.callback = '$$PREBID_GLOBAL$$';
       request_obj.callbackId = bid.bidId;
+
+      request_obj.rtbuid = uid;
+      request_obj.cb = Math.random();
 
       var endpoint = bidderUrl + utils.parseQueryStringParameters(request_obj);
 
