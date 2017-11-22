@@ -87,7 +87,6 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, {bidderRequest}) {
-    utils.logError('foo', 'bar', {some: 'object'});
     serverResponse = serverResponse.body;
     const bids = [];
     if (!serverResponse || serverResponse.error) {

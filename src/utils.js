@@ -232,10 +232,12 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
+/**
+ * Wrapper to console.error. Takes N arguments to log the same as console.error.
+ */
+exports.logError = function () {
   if (debugTurnedOn() && hasConsoleError()) {
-    window.console.error(msg, code || '', exception || '');
-    window.console.error.bind.apply(console, arguments);
+    console.error.apply(console, arguments);
   }
 };
 
