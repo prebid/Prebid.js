@@ -17,7 +17,7 @@ describe('UnrulyAdapter', () => {
         'placementId': '5768085'
       },
       'placementCode': placementCode,
-      'mediaType': 'video',
+      'mediaTypes': { video: { context: 'outstream' } },
       'transactionId': '62890707-3770-497c-a3b8-d905a2d0cb98',
       'sizes': [
         640,
