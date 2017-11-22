@@ -1,11 +1,12 @@
 import { expect } from 'chai';
-import { PrebidServer as Adapter, setS2sConfig } from 'modules/prebidServerBidAdapter';
+import { PrebidServer as Adapter } from 'modules/prebidServerBidAdapter';
 import adapterManager from 'src/adaptermanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
+import { config } from 'src/config';
 
 let CONFIG = {
   accountId: '1',
@@ -237,7 +238,7 @@ describe('S2S Adapter', () => {
     });
 
     it('exists converts types', () => {
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
@@ -272,7 +273,7 @@ describe('S2S Adapter', () => {
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(addBidResponse);
@@ -286,7 +287,7 @@ describe('S2S Adapter', () => {
     it('does not call addBidResponse and calls done when ad unit not set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -297,7 +298,7 @@ describe('S2S Adapter', () => {
     it('does not call addBidResponse and calls done when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -308,7 +309,7 @@ describe('S2S Adapter', () => {
     it('does not call addBidResponse and calls done  when ad unit is set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -319,7 +320,7 @@ describe('S2S Adapter', () => {
     it('registers successful bids and calls done when there are less bids than requests', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -337,7 +338,7 @@ describe('S2S Adapter', () => {
     it('should have dealId in bidObject', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       const response = addBidResponse.firstCall.args[1];
@@ -347,7 +348,7 @@ describe('S2S Adapter', () => {
     it('should pass through default adserverTargeting if present in bidObject', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       const response = addBidResponse.firstCall.args[1];
@@ -362,7 +363,7 @@ describe('S2S Adapter', () => {
 
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -374,7 +375,7 @@ describe('S2S Adapter', () => {
     it('registers bid responses when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(addBidResponse);
@@ -393,7 +394,7 @@ describe('S2S Adapter', () => {
     it('does cookie sync when no_cookie response', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -406,7 +407,7 @@ describe('S2S Adapter', () => {
     it('logs error when no_cookie response is missing type or url', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE_ERROR));
 
-      setS2sConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
@@ -418,11 +419,11 @@ describe('S2S Adapter', () => {
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      let config = Object.assign({
+      let myConfig = Object.assign({
         cookieSet: false
       }, CONFIG);
 
-      setS2sConfig(config);
+      config.setConfig({s2sConfig: myConfig});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.notCalled(cookie.cookieSet);
@@ -430,14 +431,52 @@ describe('S2S Adapter', () => {
 
     it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-      let config = Object.assign({
+      let myConfig = Object.assign({
         cookieSet: true
       }, CONFIG);
 
-      setS2sConfig(config);
+      config.setConfig({s2sConfig: myConfig});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(cookie.cookieSet);
+    });
+  });
+
+  describe('s2sConfig', () => {
+    let logErrorSpy;
+
+    beforeEach(() => {
+      logErrorSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log error when accountId is missing', () => {
+      const options = {
+        enabled: true,
+        bidders: ['appnexus'],
+        timeout: 1000,
+        adapter: 'prebidServer',
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should log error when bidders is missing', () => {
+      const options = {
+        accountId: '1',
+        enabled: true,
+        timeout: 1000,
+        adapter: 's2s',
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.calledOnce(logErrorSpy);
     });
   });
 });

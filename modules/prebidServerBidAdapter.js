@@ -39,7 +39,7 @@ let _s2sConfig = _s2sConfigDefaults;
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {boolean} [cookieSet] enables cookieSet functionality
  */
-export function setS2sConfig(options) {
+function setS2sConfig(options) {
   let keys = Object.keys(options);
   if (!keys.includes('accountId')) {
     utils.logError('accountId missing in Server to Server config');
@@ -136,8 +136,6 @@ const paramTypes = {
   },
 };
 
-let _cookiesQueued = false;
-
 /**
  * Bidder adapter for Prebid Server
  */
@@ -150,11 +148,7 @@ export function PrebidServer() {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
           if (bid.params[key]) {
-            const converted = types[key](bid.params[key]);
-            if (converted !== bid.params[key]) {
-              utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
-            }
-            bid.params[key] = converted;
+            bid.params[key] = types[key](bid.params[key]);
 
             // don't send invalid values
             if (isNaN(bid.params[key])) {
@@ -240,7 +234,7 @@ export function PrebidServer() {
       if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_cookie && !_cookiesQueued) {
+            if (bidder.no_cookie) {
               doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
             }
           });
@@ -300,22 +294,6 @@ export function PrebidServer() {
             addBidResponse(bidObj.code, bidObject);
           });
         }
-
-        // const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
-
-        // issue a no-bid response for every bid request that can not be matched with received bids
-        // requestedBidders.forEach(bidder => {
-        //   utils
-        //     .getBidderRequestAllAdUnits(bidder)
-        //     .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
-        //     .forEach(bidRequest => {
-        //       let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
-        //       bidObject.source = TYPE;
-        //       bidObject.adUnitCode = bidRequest.placementCode;
-        //       bidObject.bidderCode = bidRequest.bidder;
-        //       addBidResponse(bidObject.adUnitCode, bidObject);
-        //     });
-        // });
       }
       if (result.status === 'no_cookie' && _s2sConfig.cookieSet) {
         // cookie sync
