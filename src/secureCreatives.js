@@ -33,7 +33,7 @@ function receiveMessage(ev) {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      auctionManager.addWinningBid(adObject);
 
       events.emit(BID_WON, adObject);
     }
@@ -45,7 +45,7 @@ function receiveMessage(ev) {
     // }), '*');
     if (data.message === 'Prebid Native') {
       fireNativeTrackers(data, adObject);
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
   }

@@ -33,8 +33,6 @@ var eventValidators = {
 };
 
 /* Public vars */
-$$PREBID_GLOBAL$$._winningBids = [];
-
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
@@ -220,7 +218,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
         // save winning bids
-        $$PREBID_GLOBAL$$._winningBids.push(bid);
+        auctionManager.addWinningBid(bid);
 
         // emit 'bid won' event here
         events.emit(BID_WON, bid);
@@ -538,7 +536,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return $$PREBID_GLOBAL$$._winningBids;
+  return auctionManager.getAllWinningBids();
 };
 
 /**
