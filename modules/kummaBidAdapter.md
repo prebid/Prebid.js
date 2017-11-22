@@ -1,13 +1,13 @@
 # Overview
 
-**Module Name**: Platform.io Bidder Adapter
+**Module Name**: Kumma Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: sk@ultralab.by
+**Maintainer**: yehonatan@kumma.com
 
 # Description
 
-Connects to Platform.io demand source to fetch bids.
-Please use ```platformio``` as the bidder code.
+Connects to Kumma demand source to fetch bids.
+Please use ```kumma``` as the bidder code.
 
 # Test Parameters
 ```
@@ -15,11 +15,11 @@ Please use ```platformio``` as the bidder code.
       code: 'banner-ad-div',
       sizes: [[300, 250]],
       bids: [{
-          bidder: 'platformio',
+          bidder: 'kumma',
           params: { 
-            pubId: '28082', // required
+            pubId: '55879', // required
             siteId: '26047', // required
-            size: '250X250', // required
+            size: '300X250', // required
             placementId: '123',
             bidFloor: '0.001'
           }
