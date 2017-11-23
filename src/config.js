@@ -23,12 +23,12 @@ const DEFAULT_USERSYNC = {
 };
 
 const GRANULARITY_OPTIONS = {
-  'LOW': 'low',
-  'MEDIUM': 'medium',
-  'HIGH': 'high',
-  'AUTO': 'auto',
-  'DENSE': 'dense',
-  'CUSTOM': 'custom'
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  AUTO: 'auto',
+  DENSE: 'dense',
+  CUSTOM: 'custom'
 };
 
 const ALL_TOPICS = '*';
@@ -174,6 +174,7 @@ export function newConfig() {
   function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
+      return;
     }
 
     Object.assign(config, options);

@@ -78,6 +78,11 @@ export function nativeBidIsValid(bid) {
     return false;
   }
 
+  // all native bid responses must define a landing page url
+  if (!deepAccess(bid, 'native.clickUrl')) {
+    return false;
+  }
+
   const requestedAssets = bidRequest.nativeParams;
   if (!requestedAssets) {
     return true;
@@ -94,14 +99,58 @@ export function nativeBidIsValid(bid) {
 }
 
 /*
- * Native responses may have impression trackers. This retrieves the
- * impression tracker urls for the given ad object and fires them.
+ * Native responses may have associated impression or click trackers.
+ * This retrieves the appropriate tracker urls for the given ad object and
+ * fires them. As a native creatives may be in a cross-origin frame, it may be
+ * necessary to invoke this function via postMessage. secureCreatives is
+ * configured to fire this function when it receives a `message` of 'Prebid Native'
+ * and an `adId` with the value of the `bid.adId`. When a message is posted with
+ * these parameters, impression trackers are fired. To fire click trackers, the
+ * message should contain an `action` set to 'click'.
+ *
+ * // Native creative template example usage
+ * <a href="%%CLICK_URL_UNESC%%%%PATTERN:hb_native_linkurl%%"
+ *    target="_blank"
+ *    onclick="fireTrackers('click')">
+ *    %%PATTERN:hb_native_title%%
+ * </a>
+ *
+ * <script>
+ *   function fireTrackers(action) {
+ *     var message = {message: 'Prebid Native', adId: '%%PATTERN:hb_adid%%'};
+ *     if (action === 'click') {message.action = 'click';} // fires click trackers
+ *     window.parent.postMessage(JSON.stringify(message), '*');
+ *   }
+ *   fireTrackers(); // fires impressions when creative is loaded
+ * </script>
  */
-export function fireNativeImpressions(adObject) {
-  const impressionTrackers =
-    adObject['native'] && adObject['native'].impressionTrackers;
+export function fireNativeTrackers(message, adObject) {
+  let trackers;
 
-  (impressionTrackers || []).forEach(tracker => {
-    triggerPixel(tracker);
+  if (message.action === 'click') {
+    trackers = adObject['native'] && adObject['native'].clickTrackers;
+  } else {
+    trackers = adObject['native'] && adObject['native'].impressionTrackers;
+  }
+
+  (trackers || []).forEach(triggerPixel);
+}
+
+/**
+ * Gets native targeting key-value paris
+ * @param {Object} bid
+ * @return {Object} targeting
+ */
+export function getNativeTargeting(bid) {
+  let keyValues = {};
+
+  Object.keys(bid['native']).forEach(asset => {
+    const key = NATIVE_KEYS[asset];
+    const value = bid['native'][asset];
+    if (key) {
+      keyValues[key] = value;
+    }
   });
+
+  return keyValues;
 }

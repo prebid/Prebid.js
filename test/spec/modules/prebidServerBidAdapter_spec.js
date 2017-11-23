@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import Adapter from 'modules/prebidServerBidAdapter';
+import adapterManager from 'src/adaptermanager';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -42,7 +43,10 @@ const REQUEST = {
           'bidder': 'appnexus',
           'params': {
             'placementId': '10433394',
-            'member': 123
+            'member': 123,
+            'randomKey': 123456789,
+            'single_test': null,
+            'myMultiVar': ['myValue', 124578]
           }
         }
       ]
@@ -200,6 +204,8 @@ describe('S2S Adapter', () => {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+      expect(requestBid.ad_units[0].bids[0].params.keywords).to.exist.and.to.be.an('array').and.to.have.lengthOf(3);
+      expect(requestBid.ad_units[0].bids[0].params.keywords[0]).to.be.an('object').that.has.all.keys('key', 'value');
     });
   });
 
@@ -351,6 +357,23 @@ describe('S2S Adapter', () => {
       server.respond();
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('adserverTargeting').that.deep.equals({'foo': 'bar'});
+    });
+
+    it('registers client user syncs when client bid adapter is present', () => {
+      let rubiconAdapter = {
+        registerSyncs: sinon.spy()
+      };
+      sinon.stub(adapterManager, 'getBidAdapter', () => rubiconAdapter);
+
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+
+      sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
+
+      adapterManager.getBidAdapter.restore();
     });
 
     it('registers bid responses when server requests cookie sync', () => {
