@@ -57,7 +57,7 @@ export const spec = {
       pathname: '/get/adi',
       search: {
         renderformat: 'javascript',
-        ver: 'r20171019PB10',
+        ver: 'r20171102PB10',
         adzoneid: adZoneIds.join(','),
         format: sizes.join(','),
         prebidBidIds: prebidBidIds.join(','),
@@ -90,9 +90,9 @@ export const spec = {
         bid.requestId = serverResponseOneItem.bidId;
         bid.cpm = serverResponseOneItem.cpm;
         bid.creativeId = parseInt(serverResponseOneItem.creativeId);
-        bid.currency = 'USD';
+        bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD';
         bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
-        bid.ttl = 300;
+        bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300;
 
         if (serverResponseOneItem.deal_id != null && serverResponseOneItem.deal_id.trim().length > 0) {
           bid.dealId = serverResponseOneItem.deal_id;
