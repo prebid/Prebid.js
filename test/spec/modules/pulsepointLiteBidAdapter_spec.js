@@ -88,7 +88,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
         }]
       }]
     };
-    const bids = spec.interpretResponse(ortbResponse, request);
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(1);
     // verify first bid
     const bid = bids[0];
@@ -99,11 +99,40 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.adId).to.equal('bid12345');
     expect(bid.creative_id).to.equal('bid12345');
     expect(bid.creativeId).to.equal('bid12345');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(20);
+  });
+
+  it('Verify use ttl in ext', () => {
+    const request = spec.buildRequests(slotConfigs);
+    const ortbRequest = JSON.parse(request.data);
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          ext: {
+            ttl: 30,
+            netRevenue: false,
+            currency: 'INR'
+          }
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    // verify first bid
+    const bid = bids[0];
+    expect(bid.ttl).to.equal(30);
+    expect(bid.netRevenue).to.equal(false);
+    expect(bid.currency).to.equal('INR');
   });
 
   it('Verify full passback', () => {
     const request = spec.buildRequests(slotConfigs);
-    const bids = spec.interpretResponse(null, request)
+    const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
@@ -170,7 +199,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
         }]
       }]
     };
-    const bids = spec.interpretResponse(ortbResponse, request);
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
     // verify bid
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.25);
@@ -221,6 +250,14 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+  });
+
+  it('Verifies image pixel sync', () => {
+    const options = spec.getUserSyncs({ pixelEnabled: true});
+    expect(options).to.not.be.undefined;
+    expect(options).to.have.lengthOf(1);
+    expect(options[0].type).to.equal('image');
+    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch/prebid');
   });
 
   it('Verify app requests', () => {

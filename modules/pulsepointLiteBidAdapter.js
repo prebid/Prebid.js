@@ -10,6 +10,10 @@ const NATIVE_DEFAULTS = {
   ICON_MIN: 50,
 };
 
+const DEFAULT_BID_TTL = 20;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_NET_REVENUE = true;
+
 /**
  * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
  * alternative/original PulsePointAdapter because it has no external
@@ -53,6 +57,11 @@ export const spec = {
         type: 'iframe',
         url: '//bh.contextweb.com/visitormatch'
       }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//bh.contextweb.com/visitormatch/prebid'
+      }];
     }
   }
 
@@ -64,6 +73,7 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
+  bidResponse = bidResponse.body
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = parse(bidRequest.data);
   ortbRequest.imp.forEach(imp => {
@@ -83,6 +93,9 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creative_id: id,
         creativeId: id,
         adId: id,
+        ttl: DEFAULT_BID_TTL,
+        netRevenue: DEFAULT_NET_REVENUE,
+        currency: DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
@@ -92,10 +105,19 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid.width = idToImpMap[id].banner.w;
         bid.height = idToImpMap[id].banner.h;
       }
+      applyExt(bid, idToBidMap[id])
       bids.push(bid);
     }
   });
   return bids;
+}
+
+function applyExt(bid, ortbBid) {
+  if (ortbBid && ortbBid.ext) {
+    bid.ttl = ortbBid.ext.ttl || bid.ttl;
+    bid.currency = ortbBid.ext.currency || bid.currency;
+    bid.netRevenue = ortbBid.ext.netRevenue != null ? ortbBid.ext.netRevenue : bid.netRevenue;
+  }
 }
 
 /**
