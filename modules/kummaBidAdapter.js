@@ -76,7 +76,7 @@ function impression(slot) {
   };
 }
 function banner(slot) {
-  const size = parseSizesInput(slot.sizes)[0].split('x') || slot.params.size.toUpperCase().split('X');
+  const size = parseSizesInput(slot.sizes)[0].split('x');
   const width = parseInt(size[0]);
   const height = parseInt(size[1]);
   return {

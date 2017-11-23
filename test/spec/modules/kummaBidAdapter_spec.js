@@ -11,7 +11,6 @@ describe('Kumma Adapter Tests', () => {
       pubId: '55879',
       siteId: '26047',
       placementId: '123',
-      size: '300x250',
       bidFloor: '0.001'
     }
   }, {
