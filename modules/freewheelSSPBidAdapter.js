@@ -233,7 +233,8 @@ export const spec = {
     return {
       method: 'GET',
       url: FREEWHEEL_ADSSETUP,
-      data: requestParams
+      data: requestParams,
+      bidRequest: currentBidRequest
     };
   },
 
@@ -241,11 +242,13 @@ export const spec = {
   * Unpack the response from the server into a list of bids.
   *
   * @param {*} serverResponse A successful response from the server.
+  * @param {object} request: the built request object containing the initial bidRequest.
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
-  interpretResponse: function(serverResponse, bidrequest) {
+  interpretResponse: function(serverResponse, request) {
+    var bidrequest = request.bidRequest;
     var playerSize = getBiggerSize(bidrequest.sizes);
-    
+
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
     }
