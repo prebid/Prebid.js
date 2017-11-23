@@ -208,7 +208,7 @@ export const spec = {
   buildRequests: function(bidRequests) {
     // var currency = config.getConfig(currency);
 
-    this._currentBidRequest = bidRequests[0];
+    var currentBidRequest = bidRequests[0];
     if (bidRequests.length > 1) {
       utils.logMessage('Prebid.JS - freewheel bid adapter: only one ad unit is required.');
     }
@@ -216,8 +216,8 @@ export const spec = {
     var requestParams = {
       reqType: 'AdsSetup',
       protocolVersion: '2.0',
-      zoneId: this._currentBidRequest.params.zoneId,
-      componentId: getComponentId(this._currentBidRequest.params.format)
+      zoneId: currentBidRequest.params.zoneId,
+      componentId: getComponentId(currentBidRequest.params.format)
     };
 
     var location = utils.getTopWindowUrl();
@@ -225,9 +225,9 @@ export const spec = {
       requestParams.loc = location;
     }
 
-    this._currentPlayerSize = getBiggerSize(this._currentBidRequest.sizes);
-    if (this._currentPlayerSize[0] > 0 || this._currentPlayerSize[1] > 0) {
-      requestParams.playerSize = this._currentPlayerSize[0] + 'x' + this._currentPlayerSize[1];
+    var playerSize = getBiggerSize(currentBidRequest.sizes);
+    if (playerSize[0] > 0 || playerSize[1] > 0) {
+      requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
     }
 
     return {
@@ -243,7 +243,9 @@ export const spec = {
   * @param {*} serverResponse A successful response from the server.
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidrequest) {
+    var playerSize = getBiggerSize(bidrequest.sizes);
+    
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
     }
@@ -264,23 +266,23 @@ export const spec = {
     if (!topWin.freeheelssp_cache) {
       topWin.freeheelssp_cache = {};
     }
-    topWin.freeheelssp_cache[this._currentBidRequest.adUnitCode] = serverResponse;
+    topWin.freeheelssp_cache[bidrequest.adUnitCode] = serverResponse;
 
     const bidResponses = [];
 
     if (princingData.price) {
       const bidResponse = {
-        requestId: this._currentBidRequest.bidId,
+        requestId: bidrequest.bidId,
         cpm: princingData.price,
-        width: this._currentPlayerSize[0],
-        height: this._currentPlayerSize[1],
+        width: playerSize[0],
+        height: playerSize[1],
         creativeId: creativeId,
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360
       };
 
-      var mediaTypes = this._currentBidRequest.mediaTypes || {};
+      var mediaTypes = bidrequest.mediaTypes || {};
       if (mediaTypes.video) {
         // bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
@@ -288,7 +290,7 @@ export const spec = {
         var blob = new Blob([serverResponse], {type: 'application/xml'});
         bidResponse.vastUrl = window.URL.createObjectURL(blob);
       } else {
-        bidResponse.ad = formatAdHTML(this._currentBidRequest, this._currentPlayerSize);
+        bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       }
 
       bidResponses.push(bidResponse);
