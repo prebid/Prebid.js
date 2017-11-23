@@ -48,10 +48,10 @@ targeting.getAllTargeting = function(adUnitCode) {
   return targeting;
 };
 
-targeting.setTargeting = function(targetingConfig) {
+targeting.setTargeting = function(targetingConfig, gptSlot) {
   window.googletag.pubads().getSlots().forEach(slot => {
     targetingConfig.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
-      Object.keys(targeting)[0] === slot.getSlotElementId())
+      Object.keys(targeting)[0] === slot.getSlotElementId() || (gptSlot && gptSlot.getSlotElementId() === slot.getSlotElementId()))
       .forEach(targeting => targeting[Object.keys(targeting)[0]]
         .forEach(key => {
           key[Object.keys(key)[0]]
