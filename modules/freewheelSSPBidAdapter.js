@@ -298,8 +298,12 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    var img = new Image();
-    img.src = USER_SYNC_URL;
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL
+      }];
+    }
   }
 }
 registerBidder(spec);
