@@ -21,6 +21,26 @@ const DEFAULT_USERSYNC = {
   syncsPerBidder: 5,
   syncDelay: 3000
 };
+const DEFAULT_TIMEOUTBUFFER = 200;
+const DEFAULT_S2SCONFIG = {
+  enabled: false,
+  endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
+  timeout: 1000,
+  maxBids: 1,
+  adapter: 'prebidServer',
+  syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
+  cookieSet: true,
+  bidders: []
+};
+
+export const RANDOM = 'random';
+const FIXED = 'fixed';
+
+const VALID_ORDERS = {};
+VALID_ORDERS[RANDOM] = true;
+VALID_ORDERS[FIXED] = true;
+
+const DEFAULT_BIDDER_SEQUENCE = RANDOM;
 
 const GRANULARITY_OPTIONS = {
   LOW: 'low',
@@ -48,9 +68,6 @@ export function newConfig() {
     // `debug` is equivalent to legacy `pbjs.logging` property
     _debug: DEFAULT_DEBUG,
     get debug() {
-      if ($$PREBID_GLOBAL$$.logging || $$PREBID_GLOBAL$$.logging === false) {
-        return $$PREBID_GLOBAL$$.logging;
-      }
       return this._debug;
     },
     set debug(val) {
@@ -60,7 +77,7 @@ export function newConfig() {
     // default timeout for all bids
     _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
     get bidderTimeout() {
-      return $$PREBID_GLOBAL$$.bidderTimeout || this._bidderTimeout;
+      return this._bidderTimeout;
     },
     set bidderTimeout(val) {
       this._bidderTimeout = val;
@@ -69,7 +86,7 @@ export function newConfig() {
     // domain where prebid is running for cross domain iframe communication
     _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
     get publisherDomain() {
-      return $$PREBID_GLOBAL$$.publisherDomain || this._publisherDomain;
+      return this._publisherDomain;
     },
     set publisherDomain(val) {
       this._publisherDomain = val;
@@ -114,14 +131,43 @@ export function newConfig() {
       this._sendAllBids = val;
     },
 
-    // calls existing function which may be moved after deprecation
+    _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
+    get bidderSequence() {
+      return this._bidderSequence;
+    },
     set bidderSequence(val) {
-      $$PREBID_GLOBAL$$.setBidderSequence(val);
+      if (VALID_ORDERS[val]) {
+        this._bidderSequence = val;
+      } else {
+        utils.logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
+      }
     },
 
-    // calls existing function which may be moved after deprecation
+    // timeout buffer to adjust for bidder CDN latency
+    _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+    get timeoutBuffer() {
+      return this._timoutBuffer;
+    },
+    set timeoutBuffer(val) {
+      this._timoutBuffer = val;
+    },
+
+    _s2sConfig: DEFAULT_S2SCONFIG,
+    get s2sConfig() {
+      return this._s2sConfig;
+    },
     set s2sConfig(val) {
-      $$PREBID_GLOBAL$$.setS2SConfig(val);
+      if (!utils.contains(Object.keys(val), 'accountId')) {
+        utils.logError('accountId missing in Server to Server config');
+        return;
+      }
+
+      if (!utils.contains(Object.keys(val), 'bidders')) {
+        utils.logError('bidders missing in Server to Server config');
+        return;
+      }
+
+      this._s2sConfig = Object.assign({}, DEFAULT_S2SCONFIG, val);
     },
 
     // userSync defaults
