@@ -230,7 +230,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.setTargeting(targetingSet);
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, adUnit);
 };
 
 /**
