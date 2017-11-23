@@ -60,7 +60,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    console.log('PREBID - ' + BIDDER_CODE + ': Can\'t get pricing data. Is price awareness enabled?');
+    utils.logWarn('PREBID - ' + BIDDER_CODE + ': Can\'t get pricing data. Is price awareness enabled?');
   }
 
   return princingData;
@@ -210,7 +210,7 @@ export const spec = {
 
     this._currentBidRequest = bidRequests[0];
     if (bidRequests.length > 1) {
-      console.log('Prebid.JS - freewheel bid adapter: only one ad unit is required.');
+      utils.logMessage('Prebid.JS - freewheel bid adapter: only one ad unit is required.');
     }
 
     var requestParams = {
@@ -253,7 +253,7 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      console.warn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
@@ -283,10 +283,13 @@ export const spec = {
 
       var mediaTypes = this._currentBidRequest.mediaTypes || {};
       if (mediaTypes.video) {
-        bidResponse.vastXml = serverResponse;
+        // bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
+
+        var blob = new Blob([serverResponse], {type: 'application/xml'});
+        bidResponse.vastUrl = window.URL.createObjectURL(blob);
       } else {
-        bidResponse.ad = formatAdHTML(this._currentBidRequest, this._currentPlayerSize)
+        bidResponse.ad = formatAdHTML(this._currentBidRequest, this._currentPlayerSize);
       }
 
       bidResponses.push(bidResponse);
