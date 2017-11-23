@@ -271,7 +271,6 @@ export const spec = {
     if (princingData.price) {
       const bidResponse = {
         requestId: this._currentBidRequest.bidId,
-        bidderCode: this._currentBidRequest.bidder,
         cpm: princingData.price,
         width: this._currentPlayerSize[0],
         height: this._currentPlayerSize[1],
