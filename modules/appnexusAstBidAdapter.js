@@ -291,8 +291,12 @@ function bidToTag(bid) {
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
-  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
+  if (bid.mediaType === VIDEO || videoMediaType) {
     tag.ad_types.push(VIDEO);
+  }
+
+  // instream gets vastUrl, outstream gets vastXml
+  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
     tag.require_asset_url = true;
   }
 
