@@ -1,11 +1,9 @@
 import { registerBidder } from 'src/adapters/bidderFactory'
+import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = top.document.location.protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const pixels = [{
-  type: 'iframe',
-  src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
-}]
+const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const pixels = []
 
 export const spec = {
   code: BIDDER_CODE,
@@ -17,16 +15,17 @@ export const spec = {
 
   buildRequests: (validBidRequests) => {
     const c = preparePubCond(validBidRequests)
+    const dim = getWebsiteDim()
     const payload = {
       zone: [...new Set(validBidRequests.map(b => {
         return parseInt(b.params.zone)
       }))].join(','),
-      hostname: top.document.location.hostname,
-      protocol: top.document.location.protocol.replace(':', ''),
-      sw: window.top.screen.width,
-      sh: window.top.screen.height,
-      ww: window.top.innerWidth,
-      wh: window.top.innerHeight,
+      hostname: getTopWindowLocation().hostname,
+      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      sw: dim.screenWidth,
+      sh: dim.screenHeight,
+      ww: dim.innerWidth,
+      wh: dim.innerHeight,
       c: c,
       id: validBidRequests[0].params.zone,
       sizes: {}
@@ -48,19 +47,20 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse, bidRequests) => {
+    const body = serverResponse.body
     let bidResponses = []
     bidRequests.bids.forEach(adUnit => {
-      let bidId = adUnit.bidId
-      let bid = findBid(adUnit.params, serverResponse.bid)
+      let bid = findBid(adUnit.params, body.bid)
       if (bid) {
         let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
         let bidResponse = {
-          requestId: bidId,
-          bidderCode: spec.code,
+          requestId: adUnit.bidId,
+          creativeId: bid.id,
           width: size[0] || bid.width,
           height: size[1] || bid.height,
           ad: bid.adm,
           cpm: bid.price,
+          netRevenue: true,
           currency: bid.currency || 'USD',
           ttl: bid.ttl || spec.time
         }
@@ -71,7 +71,13 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: () => {
+  getUserSyncs: (syncOptions) => {
+    if (syncOptions.iframeEnabled) {
+      pixels.push({
+        type: 'iframe',
+        src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
+      })
+    }
     return pixels
   }
 }
@@ -181,6 +187,22 @@ function arrayUnique (array) {
   }
 
   return a
+}
+
+function getWebsiteDim () {
+  let top
+  try {
+    top = window.top
+  } catch (e) {
+    top = window
+  }
+
+  return {
+    screenWidth: top.screen.width,
+    screenHeight: top.screen.height,
+    innerWidth: top.innerWidth,
+    innerHeight: top.innerHeight
+  }
 }
 
 registerBidder(spec)
