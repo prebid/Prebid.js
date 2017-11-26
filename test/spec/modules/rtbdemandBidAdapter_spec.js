@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbdemandBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('FidelityAdapter', () => {
+describe('RtbdemandAdapter', () => {
   const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
