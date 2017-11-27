@@ -20,7 +20,7 @@ const CONFIG = {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc'],
 
   /**
    * Determines whether or not the given bid request is valid.
