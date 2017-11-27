@@ -7,22 +7,17 @@ import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
-import CONSTANTS from 'src/constants.json';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
-const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 let _synced = false;
 
 let _s2sConfigDefaults = {
   enabled: false,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
   timeout: 1000,
   maxBids: 1,
-  adapter: CONSTANTS.S2S.ADAPTER,
-  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
-  cookieSet: true,
+  adapter: 'prebidServer',
   bidders: []
 };
 let _s2sConfig = _s2sConfigDefaults;
@@ -32,24 +27,26 @@ let _s2sConfig = _s2sConfigDefaults;
  * @typedef {Object} options - required
  * @property {boolean} enabled enables S2S bidding
  * @property {string[]} bidders bidders to request S2S
+ * @property {string} endpoint endpoint to contact
  *  === optional params below ===
- * @property {string} [endpoint] endpoint to contact
  * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
- * @property {boolean} [cookieSet] enables cookieSet functionality
+ * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
   let keys = Object.keys(options);
-  if (!keys.includes('accountId')) {
-    utils.logError('accountId missing in Server to Server config');
+
+  if (['accountId', 'bidders', 'endpoint'].filter(key => {
+    if (!keys.includes(key)) {
+      utils.logError(key + ' missing in server to server config');
+      return true;
+    }
+    return false;
+  }).length > 0) {
     return;
   }
 
-  if (!keys.includes('bidders')) {
-    utils.logError('bidders missing in Server to Server config');
-    return;
-  }
   _s2sConfig = Object.assign({}, _s2sConfigDefaults, options);
   if (options.syncEndpoint) {
     queueSync(options.bidders);
@@ -81,6 +78,27 @@ function queueSync(bidderCodes) {
     contentType: 'text/plain',
     withCredentials: true
   });
+}
+
+/**
+ * Run a cookie sync for the given type, url, and bidder
+ *
+ * @param {string} type the type of sync, "image", "redirect", "iframe"
+ * @param {string} url the url to sync
+ * @param {string} bidder name of bidder doing sync for
+ */
+function doBidderSync(type, url, bidder) {
+  if (!url) {
+    utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+  } else if (type === 'image' || type === 'redirect') {
+    utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
+    utils.triggerPixel(url);
+  } else if (type == 'iframe') {
+    utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
+    utils.insertUserSyncIframe(url);
+  } else {
+    utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+  }
 }
 
 /**
@@ -204,27 +222,6 @@ export function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
-  /**
-   * Run a cookie sync for the given type, url, and bidder
-   *
-   * @param {string} type the type of sync, "image", "redirect", "iframe"
-   * @param {string} url the url to sync
-   * @param {string} bidder name of bidder doing sync for
-   */
-  function doBidderSync(type, url, bidder) {
-    if (!url) {
-      utils.logError(`No sync url for bidder "${bidder}": ${url}`);
-    } else if (type === 'image' || type === 'redirect') {
-      utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
-      utils.triggerPixel(url);
-    } else if (type == 'iframe') {
-      utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
-      utils.insertUserSyncIframe(url);
-    } else {
-      utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
-    }
-  }
-
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
     let result;
@@ -295,9 +292,9 @@ export function PrebidServer() {
           });
         }
       }
-      if (result.status === 'no_cookie' && _s2sConfig.cookieSet) {
+      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync
-        cookieSet(cookieSetUrl);
+        cookieSet(_s2sConfig.cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);

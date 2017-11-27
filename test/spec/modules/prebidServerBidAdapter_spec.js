@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { PrebidServer as Adapter } from 'modules/prebidServerBidAdapter';
 import adapterManager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
@@ -13,7 +12,7 @@ let CONFIG = {
   enabled: true,
   bidders: ['appnexus'],
   timeout: 1000,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT
+  endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
 };
 
 const REQUEST = {
@@ -419,9 +418,7 @@ describe('S2S Adapter', () => {
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      let myConfig = Object.assign({
-        cookieSet: false
-      }, CONFIG);
+      let myConfig = Object.assign({}, CONFIG);
 
       config.setConfig({s2sConfig: myConfig});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -432,7 +429,7 @@ describe('S2S Adapter', () => {
     it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
       let myConfig = Object.assign({
-        cookieSet: true
+        cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
       }, CONFIG);
 
       config.setConfig({s2sConfig: myConfig});
