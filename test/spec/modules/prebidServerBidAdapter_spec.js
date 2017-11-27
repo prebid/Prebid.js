@@ -43,7 +43,10 @@ const REQUEST = {
           'bidder': 'appnexus',
           'params': {
             'placementId': '10433394',
-            'member': 123
+            'member': 123,
+            'randomKey': 123456789,
+            'single_test': null,
+            'myMultiVar': ['myValue', 124578]
           }
         }
       ]
@@ -201,6 +204,8 @@ describe('S2S Adapter', () => {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+      expect(requestBid.ad_units[0].bids[0].params.keywords).to.exist.and.to.be.an('array').and.to.have.lengthOf(3);
+      expect(requestBid.ad_units[0].bids[0].params.keywords[0]).to.be.an('object').that.has.all.keys('key', 'value');
     });
   });
 
