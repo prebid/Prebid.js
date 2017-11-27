@@ -21,7 +21,7 @@ Connects to Serverbid for receiving bids from configured demand sources.
                     bidder: 'serverbid',
                     params: {
                         networkId: '9969',
-                        siteId: '45678'
+                        siteId: '980639'
                     }
                 }
             ]
@@ -34,8 +34,8 @@ Connects to Serverbid for receiving bids from configured demand sources.
                     bidder: 'serverbid',
                     params: {
                         networkId: '9969',
-                        siteId: '45678',
-                        zoneId: '56789'
+                        siteId: '980639',
+                        zoneId: '178503'
                     }
                 }
             ]
