@@ -29,6 +29,7 @@ describe('Adform adapter', () => {
       assert.equal(_query.tid, 145);
       assert.equal(_query.rp, 4);
       assert.equal(_query.fd, 1);
+      assert.equal(_query.auctionId, '1a2b3c');
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
 
@@ -117,6 +118,7 @@ describe('Adform adapter', () => {
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
     _adformAdapter.callBids({
+      bidderRequestId: '1a2b3c',
       bids: [
         {
           bidId: 'abc',
