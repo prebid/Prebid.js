@@ -19,9 +19,8 @@ Please use ```kumma``` as the bidder code.
           params: { 
             pubId: '55879', // required
             siteId: '26047', // required
-            size: '300X250', // required
-            placementId: '123',
-            bidFloor: '0.001'
+            placementId: '123', // optional
+            bidFloor: '0.001' // optional
           }
       }]
     }];
