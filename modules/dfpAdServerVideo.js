@@ -3,7 +3,7 @@
  */
 
 import { registerVideoSupport } from '../src/adServerManager';
-import { getWinningBids } from '../src/targeting';
+import { targeting } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
 import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
@@ -63,7 +63,7 @@ export default function buildDfpVideoUrl(options) {
   }
 
   const adUnit = options.adUnit;
-  const bid = options.bid || getWinningBids(adUnit.code)[0];
+  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
 
   let urlComponents = {};
 

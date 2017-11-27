@@ -1,7 +1,6 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointLiteBidAdapter';
-import bidManager from 'src/bidmanager';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
