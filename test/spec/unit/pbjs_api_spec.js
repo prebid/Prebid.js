@@ -13,6 +13,7 @@ import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import * as targetingModule from 'src/targeting';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -146,9 +147,16 @@ window.apntag = {
 };
 
 describe('Unit: Prebid Module', function () {
+  let bidExpiryStub;
+  before(() => {
+    bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
+  });
+
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
+    targetingModule.isBidExpired.restore();
   });
+
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(() => {
       resetAuction();
@@ -1147,7 +1155,6 @@ describe('Unit: Prebid Module', function () {
       });
 
       it('should not queue bid requests when a previous bid request is in process', () => {
-        // var clock = sinon.useFakeTimers();
         var requestObj1 = {
           bidsBackHandler: function bidsBackHandlerCallback() {},
           timeout: 2000,
@@ -1165,11 +1172,10 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
 
-        // clock.tick(requestObj1.timeout - 1);
         assert.ok(spyCallBids.calledTwice, 'When two requests for bids are made both should be' +
           ' callBids immediately');
 
-        let result = $$PREBID_GLOBAL$$.getAdserverTargeting();
+        let result = targeting.getAllTargeting(); // $$PREBID_GLOBAL$$.getAdserverTargeting();
         let expected = {
           '/19968336/header-bid-tag-0': {
             'foobar': '0x0,300x250,300x600',
@@ -1554,7 +1560,7 @@ describe('Unit: Prebid Module', function () {
     it('should not find hb_adid key in lowercase for all bidders', () => {
       const adUnitCode = '/19968336/header-bid-tag-0';
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
-      $$PREBID_GLOBAL$$.setTargetingForAst();
+      targeting.setTargetingForAst();
       const keywords = Object.keys(window.apntag.tags[adUnitCode].keywords).filter(keyword => (keyword.substring(0, 'hb_adid'.length) === 'hb_adid'));
       expect(keywords.length).to.equal(0);
     });

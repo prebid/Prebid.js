@@ -4,6 +4,7 @@ import { config } from 'src/config';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager';
+import * as targetingModule from 'src/targeting';
 
 const bid1 = {
   'bidderCode': 'rubicon',
@@ -29,7 +30,10 @@ const bid1 = {
     'hb_adid': '148018fe5e',
     'hb_pb': '0.53',
     'foobar': '300x250'
-  }
+  },
+  'netRevenue': true,
+  'currency': 'USD',
+  'ttl': 300
 };
 
 const bid2 = {
@@ -56,13 +60,18 @@ const bid2 = {
     'hb_adid': '5454545',
     'hb_pb': '0.25',
     'foobar': '300x250'
-  }
+  },
+  'netRevenue': true,
+  'currency': 'USD',
+  'ttl': 300
 };
 
 describe('targeting tests', () => {
   describe('getAllTargeting', () => {
     let amBidsReceivedStub;
     let amGetAdUnitsStub;
+    let bidExpiryStub;
+
     beforeEach(() => {
       $$PREBID_GLOBAL$$._sendAllBids = false;
       amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived', function() {
@@ -71,11 +80,13 @@ describe('targeting tests', () => {
       amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes', function() {
         return ['/123456/header-bid-tag-0'];
       });
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
     });
 
     afterEach(() => {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
+      targetingModule.isBidExpired.restore();
     });
 
     it('selects the top bid when _sendAllBids true', () => {
