@@ -297,6 +297,8 @@ gulp.task('e2etest-report', function() {
   }, 5000);
 });
 
+// This task creates postbid.js. Postbid setup is different from prebid.js
+// More info can be found here http://prebid.org/overview/what-is-post-bid.html
 gulp.task('build-postbid', ['escape-postbid-config'], function() {
   var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
 
@@ -305,6 +307,7 @@ gulp.task('build-postbid', ['escape-postbid-config'], function() {
     .pipe(gulp.dest('build/postbid/'));
 });
 
+// Dependant task for building postbid. It escapes postbid-config file.
 gulp.task('escape-postbid-config', function() {
   gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
     .pipe(jsEscape())
