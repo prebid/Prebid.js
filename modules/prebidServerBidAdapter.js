@@ -13,14 +13,15 @@ const getConfig = config.getConfig;
 const TYPE = S2S.SRC;
 let _synced = false;
 
-let _s2sConfigDefaults = {
-  enabled: false,
-  timeout: 1000,
-  maxBids: 1,
-  adapter: 'prebidServer',
-  bidders: []
-};
-let _s2sConfig = _s2sConfigDefaults;
+let _s2sConfig;
+config.setDefaults({
+  's2sConfig': {
+    enabled: false,
+    timeout: 1000,
+    maxBids: 1,
+    adapter: 'prebidServer'
+  }
+});
 
 /**
  * Set config for server to server header bidding
@@ -47,7 +48,7 @@ function setS2sConfig(options) {
     return;
   }
 
-  _s2sConfig = Object.assign({}, _s2sConfigDefaults, options);
+  _s2sConfig = options;
   if (options.syncEndpoint) {
     queueSync(options.bidders);
   }

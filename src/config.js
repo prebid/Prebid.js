@@ -54,6 +54,8 @@ const ALL_TOPICS = '*';
 export function newConfig() {
   let listeners = [];
 
+  let defaults = {};
+
   let config = {
     // `debug` is equivalent to legacy `pbjs.logging` property
     _debug: DEFAULT_DEBUG,
@@ -195,8 +197,33 @@ export function newConfig() {
       return;
     }
 
-    Object.assign(config, options);
-    callSubscribers(options);
+    let topics = Object.keys(options);
+    let topicalConfig = {};
+
+    topics.forEach(topic => {
+      let option = options[topic];
+
+      if (typeof defaults[topic] === 'object' && typeof option === 'object') {
+        option = Object.assign({}, defaults[topic], option);
+      }
+
+      topicalConfig[topic] = config[topic] = option;
+    });
+
+    callSubscribers(topicalConfig);
+  }
+
+  /**
+   * Sets configuration defaults which setConfig values can be applied on top of
+   * @param {object} options
+   */
+  function setDefaults(options) {
+    if (typeof defaults !== 'object') {
+      utils.logError('defaults must be an object');
+      return;
+    }
+
+    Object.assign(defaults, options);
   }
 
   /*
@@ -264,7 +291,8 @@ export function newConfig() {
 
   return {
     getConfig,
-    setConfig
+    setConfig,
+    setDefaults
   };
 }
 
