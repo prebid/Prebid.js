@@ -24,15 +24,24 @@ export const spec = {
 
   /**
    * @param {BidRequest[]} bidRequests
+   * @param {*} bidderRequest
    * @return {ServerRequest}
    */
-  buildRequests: bidRequests => {
-    const context = buildContext(bidRequests);
-    return {
-      method: 'POST',
-      url: buildCdbUrl(context),
-      data: buildCdbRequest(context, bidRequests),
-    };
+  buildRequests: (bidRequests, bidderRequest) => {
+    let url;
+    let data;
+
+    if (typeof Criteo !== 'undefined') {
+      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
+      url = adapter.buildCdbUrl();
+      data = adapter.buildCdbRequest();
+    } else {
+      const context = buildContext(bidRequests);
+      url = buildCdbUrl(context);
+      data = buildCdbRequest(context, bidRequests);
+    }
+
+    return { method: 'POST', url, data };
   },
 
   /**
@@ -41,10 +50,15 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
+    if (typeof Criteo !== 'undefined') {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request.data);
+      return adapter.interpretResponse(response.body);
+    }
+
     const bids = [];
 
-    if (response.slots && utils.isArray(response.slots)) {
-      response.slots.forEach(slot => {
+    if (response.body.slots && utils.isArray(response.body.slots)) {
+      response.body.slots.forEach(slot => {
         const bid = {
           requestId: slot.impid,
           cpm: slot.cpm,
@@ -125,6 +139,7 @@ function buildCdbRequest(context, bidRequests) {
       const slot = {
         impid: bidRequest.bidId,
         transactionid: bidRequest.transactionId,
+        auctionId: bidRequest.auctionId,
         sizes: bidRequest.sizes.map(size => size[0] + 'x' + size[1]),
       };
       if (bidRequest.params.zoneId) {
