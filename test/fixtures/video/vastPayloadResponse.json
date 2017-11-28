@@ -1,8 +1,8 @@
 {
   "adUnitCode": "video1",
-  "bidder": "appnexusAst",
-  "bidderCode": "appnexusAst",
-  "code": "appnexusAst",
+  "bidder": "appnexus",
+  "bidderCode": "appnexus",
+  "code": "appnexus",
   "dealId": "foo",
   "cpm": 0.1,
   "height": 480,

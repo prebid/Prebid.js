@@ -2,9 +2,9 @@ import { config } from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 import {userSync} from 'src/userSync';
-import { BANNER } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
-const SUPPORTED_AD_TYPES = [BANNER];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
 const BIDDER_VERSION = '2.0.0';
@@ -13,6 +13,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
+    if (bid.mediaType === VIDEO) {
+      if (typeof bid.params.video !== 'object' || !bid.params.video.url) {
+        return false;
+      }
+    }
     return !!(bid.params.unit && bid.params.delDomain);
   },
   buildRequests: function(bids) {
@@ -22,27 +27,59 @@ export const spec = {
       return;
     }
 
-    let delDomain = bids[0].params.delDomain;
-    let configuredBc = bids[0].params.bc;
-    let bc = configuredBc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
+    let requests = [];
+    let bannerRequests = [];
+    let videoRequests = [];
+    let bannerBids = bids.filter(function(bid) { return bid.mediaType === BANNER; });
+    let videoBids = bids.filter(function(bid) { return bid.mediaType === VIDEO; });
 
-    return buildOXRequest(bids, {
-      ju: currentURL,
-      jr: currentURL,
-      ch: document.charSet || document.characterSet,
-      res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
-      ifr: isIfr,
-      tz: new Date().getTimezoneOffset(),
-      tws: getViewportDimensions(isIfr),
-      ef: 'bt%2Cdb',
-      be: 1,
-      bc: bc,
-      nocache: new Date().getTime()
-    },
-    delDomain);
+    // build banner requests
+    if (bannerBids.length !== 0) {
+      let delDomain = bannerBids[0].params.delDomain;
+      let configuredBc = bannerBids[0].params.bc;
+      let bc = configuredBc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
+      bannerRequests = [ buildOXRequest(bannerBids, {
+        ju: currentURL,
+        jr: currentURL,
+        ch: document.charSet || document.characterSet,
+        res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+        ifr: isIfr,
+        tz: new Date().getTimezoneOffset(),
+        tws: getViewportDimensions(isIfr),
+        ef: 'bt%2Cdb',
+        be: 1,
+        bc: bc,
+        nocache: new Date().getTime()
+      },
+      delDomain)];
+    }
+    // build video requests
+    if (videoBids.length !== 0) {
+      videoRequests = buildOXVideoRequest(videoBids);
+    }
+
+    requests = bannerRequests.concat(videoRequests);
+    return requests;
   },
   interpretResponse: function({body: oxResponseObj}, bidRequest) {
     let bidResponses = [];
+    let mediaType = BANNER;
+    if (bidRequest && bidRequest.payload) {
+      if (bidRequest.payload.bids) {
+        mediaType = bidRequest.payload.bids[0].mediaType;
+      } else if (bidRequest.payload.bid) {
+        mediaType = bidRequest.payload.bid.mediaType;
+      }
+    }
+
+    if (mediaType === VIDEO) {
+      if (oxResponseObj && oxResponseObj.pixels) {
+        userSync.registerSync('iframe', 'openx', oxResponseObj.pixels);
+      }
+      bidResponses = createVideoBidResponses(oxResponseObj, bidRequest.payload);
+      return bidResponses;
+    }
+
     let adUnits = oxResponseObj.ads.ad;
     if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
       userSync.registerSync('iframe', BIDDER_CODE, oxResponseObj.ads.pixels);
@@ -96,13 +133,13 @@ function createBidResponses(adUnits, {bids, startTime}) {
     if (adUnit.deal_id) {
       bidResponse.dealId = adUnit.deal_id;
     }
-    // default 5 mins 
+    // default 5 mins
     bidResponse.ttl = 300;
-    // true is net, false is gross 
+    // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = adUnit.currency;
 
-    // additional fields to add 
+    // additional fields to add
     if (adUnit.tbd) {
       bidResponse.tbd = adUnit.tbd;
     }
@@ -211,7 +248,7 @@ function formatCustomParms(customKey, customParams) {
     // if value is an array, join them with commas first
     value = value.join(',');
   }
-  // return customKey=customValue format, escaping + to . and / to _ 
+  // return customKey=customValue format, escaping + to . and / to _
   return (customKey.toLowerCase() + '=' + value.toLowerCase()).replace('+', '.').replace('/', '_')
 }
 
@@ -263,6 +300,59 @@ function buildOXRequest(bids, oxParams, delDomain) {
     data: oxParams,
     payload: {'bids': bids, 'startTime': new Date()}
   };
+}
+
+function buildOXVideoRequest(bids) {
+  return bids.map(function(bid) {
+    let url = 'http://' + bid.params.delDomain + '/v/1.0/avjp';
+    let oxVideoParams = generateVideoParameters(bid);
+    return {
+      method: 'GET',
+      url: url,
+      data: oxVideoParams,
+      payload: {'bid': bid, 'startTime': new Date()}
+    };
+  });
+}
+
+function generateVideoParameters(bid) {
+  let oxVideo = bid.params.video;
+  let oxVideoParams = { auid: bid.params.unit };
+
+  Object.keys(oxVideo).forEach(function(key) {
+    if (key === 'openrtb') {
+      oxVideoParams[key] = JSON.stringify(oxVideo[key]);
+    } else {
+      oxVideoParams[key] = oxVideo[key];
+    }
+  });
+  oxVideoParams['be'] = 'true';
+  return oxVideoParams;
+}
+
+function createVideoBidResponses(response, {bid, startTime}) {
+  let bidResponses = [];
+
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
+    let bidResponse = {};
+    bidResponse.requestId = bid.bidId;
+    bidResponse.bidderCode = BIDDER_CODE;
+    // default 5 mins
+    bidResponse.ttl = 300;
+    // true is net, false is gross
+    bidResponse.netRevenue = true;
+    bidResponse.currency = response.currency;
+    bidResponse.cpm = Number(response.pub_rev) / 1000;
+    bidResponse.width = response.width;
+    bidResponse.height = response.height;
+    bidResponse.creativeId = response.adid;
+    bidResponse.vastUrl = response.vastUrl;
+    bidResponse.mediaType = VIDEO;
+
+    bidResponses.push(bidResponse);
+  }
+
+  return bidResponses;
 }
 
 registerBidder(spec);

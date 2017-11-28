@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name:  AppnexusAst Bid Adapter
+Module Name:  Appnexus Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: info@prebid.org
 ```
@@ -10,7 +10,7 @@ Maintainer: info@prebid.org
 
 Connects to Appnexus exchange for bids.
 
-AppnexusAst bid adapter supports Banner, Video (instream and outstream) and Native.
+Appnexus bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```
@@ -20,7 +20,7 @@ var adUnits = [
        code: 'banner-div',
        sizes: [[300, 250], [300,600]],
        bids: [{
-         bidder: 'appnexusAst',
+         bidder: 'appnexus',
          params: {
            placementId: '10433394'
          }
@@ -51,7 +51,7 @@ var adUnits = [
         }
       },
       bids: [{
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         params: {
           placementId: '9880618'
         }
@@ -67,7 +67,7 @@ var adUnits = [
         },
       },
       bids: [{
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         params: {
           placementId: '9333431',
           video: {
@@ -88,7 +88,7 @@ var adUnits = [
      },
      bids: [
        {
-         bidder: 'appnexusAst',
+         bidder: 'appnexus',
          params: {
            placementId: '5768085',
            video: {

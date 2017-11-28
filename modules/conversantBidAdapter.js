@@ -5,7 +5,7 @@ import { VIDEO } from 'src/mediaTypes';
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
 const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -75,7 +75,10 @@ export const spec = {
       copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
 
       if (isVideoRequest(bid)) {
-        const video = {format: format};
+        const video = {
+          w: format[0].w,
+          h: format[0].h
+        };
 
         copyOptProperty(bid.params, 'position', video, 'pos');
         copyOptProperty(bid.params, 'mimes', video);
@@ -141,17 +144,16 @@ export const spec = {
               requestId: conversantBid.impid,
               currency: serverResponse.cur || 'USD',
               cpm: responseCPM,
-              creativeId: conversantBid.crid || ''
+              creativeId: conversantBid.crid || '',
+              ttl: 300,
+              netRevenue: true
             };
 
             if (request.video) {
               bid.vastUrl = responseAd;
               bid.mediaType = 'video';
-
-              if (request.video.format.length >= 1) {
-                bid.width = request.video.format[0].w;
-                bid.height = request.video.format[0].h;
-              }
+              bid.width = request.video.w;
+              bid.height = request.video.h;
             } else {
               bid.ad = responseAd + '<img src="' + responseNurl + '" />';
               bid.width = conversantBid.w;

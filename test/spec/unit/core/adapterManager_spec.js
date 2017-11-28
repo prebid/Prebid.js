@@ -48,7 +48,7 @@ describe('adapterManager tests', () => {
         'tid': '34566b569352ef2',
         'bids': [
           {
-            'bidder': 'appnexusAst',
+            'bidder': 'appnexus',
             'params': {
               'placementId': '4799418',
               'test': 'me'
@@ -82,7 +82,7 @@ describe('adapterManager tests', () => {
       const adUnits = [{
         code: 'adUnit-code',
         bids: [
-          {bidder: 'appnexusAst', params: {placementId: 'id'}},
+          {bidder: 'appnexus', params: {placementId: 'id'}},
           {bidder: 'fakeBidder', params: {placementId: 'id'}}
         ]
       }];

@@ -11,7 +11,7 @@ describe('video.js', () => {
     const bidRequests = [{
       bids: [{
         bidId: '123abc',
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         mediaTypes: {
           video: { context: 'instream' }
         }
@@ -28,7 +28,7 @@ describe('video.js', () => {
     const bidRequests = [{
       bids: [{
         bidId: '123abc',
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         mediaTypes: {
           video: { context: 'instream' }
         }
@@ -65,7 +65,7 @@ describe('video.js', () => {
     const bidRequests = [{
       bids: [{
         bidId: '123abc',
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         mediaTypes: {
           video: { context: 'outstream' }
         }
@@ -82,7 +82,7 @@ describe('video.js', () => {
     const bidRequests = [{
       bids: [{
         bidId: '123abc',
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         mediaTypes: {
           video: { context: 'outstream' }
         }

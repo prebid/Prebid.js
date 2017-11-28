@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/appnexusAstBidAdapter';
+import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
@@ -15,7 +15,7 @@ describe('AppNexusAdapter', () => {
 
   describe('isBidRequestValid', () => {
     let bid = {
-      'bidder': 'appnexusAst',
+      'bidder': 'appnexus',
       'params': {
         'placementId': '10433394'
       },
@@ -54,7 +54,7 @@ describe('AppNexusAdapter', () => {
   describe('buildRequests', () => {
     let bidRequests = [
       {
-        'bidder': 'appnexusAst',
+        'bidder': 'appnexus',
         'params': {
           'placementId': '10433394'
         },
