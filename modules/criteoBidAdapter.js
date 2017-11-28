@@ -48,7 +48,7 @@ export const spec = {
         const bid = {
           requestId: slot.impid,
           cpm: slot.cpm,
-          // currency: 'USD', // FIXME: should return currency from CDB
+          currency: slot.currency,
           netRevenue: true,
           ad: slot.creative,
           width: slot.width,
