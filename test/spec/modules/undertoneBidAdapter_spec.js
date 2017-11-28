@@ -110,16 +110,15 @@ describe('Undertone Adapter', () => {
 
   describe('interpretResponse', () => {
     it('should build bid array', () => {
-      let result = spec.interpretResponse(bidResponse);
+      let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
     it('should have all relevant fields', () => {
-      const result = spec.interpretResponse(bidResponse);
+      const result = spec.interpretResponse({body: bidResponse});
       const bid = result[0];
 
       expect(bid.requestId).to.equal('263be71e91dd9d');
-      expect(bid.bidderCode).to.equal(BIDDER_CODE);
       expect(bid.cpm).to.equal(100);
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
@@ -130,12 +129,12 @@ describe('Undertone Adapter', () => {
     });
 
     it('should return empty array when response is incorrect', () => {
-      expect(spec.interpretResponse({}).length).to.equal(0);
-      expect(spec.interpretResponse([]).length).to.equal(0);
+      expect(spec.interpretResponse({body: {}}).length).to.equal(0);
+      expect(spec.interpretResponse({body: []}).length).to.equal(0);
     });
 
     it('should only use valid bid responses', () => {
-      expect(spec.interpretResponse(bidResArray).length).to.equal(1);
+      expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
     });
   });
 });
