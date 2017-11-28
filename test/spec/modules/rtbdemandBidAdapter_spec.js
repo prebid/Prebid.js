@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbdemandBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('RtbdemandAdapter', () => {
+describe('rtbdemandAdapter', () => {
   const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
@@ -108,7 +108,6 @@ describe('RtbdemandAdapter', () => {
 
     it('sends bid request to ENDPOINT via GET', () => {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      console.log(JSON.stringify(request));
       expect(request.url).to.equal('//bidding.rtbdemand.com/hb');
       expect(request.method).to.equal('GET');
     });
@@ -145,7 +144,6 @@ describe('RtbdemandAdapter', () => {
       ];
 
       let result = spec.interpretResponse({ body: response });
-      console.log(JSON.stringify(result));
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
@@ -156,7 +154,6 @@ describe('RtbdemandAdapter', () => {
       };
 
       let result = spec.interpretResponse({ body: response });
-      console.log(JSON.stringify(result));
       expect(result.length).to.equal(0);
     });
   });
