@@ -23,11 +23,6 @@
       "REQUEST_BIDS": "requestBids"
     }
   },
-  "objectType_function": "function",
-  "objectType_undefined": "undefined",
-  "objectType_object": "object",
-  "objectType_string": "string",
-  "objectType_number": "number",
   "EVENTS": {
     "AUCTION_INIT": "auctionInit",
     "AUCTION_END": "auctionEnd",
@@ -37,13 +32,11 @@
     "BID_RESPONSE": "bidResponse",
     "BID_WON": "bidWon",
     "SET_TARGETING": "setTargeting",
-    "REQUEST_BIDS": "requestBids"
+    "REQUEST_BIDS": "requestBids",
+    "ADD_AD_UNITS": "addAdUnits"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
-  },
-  "ORDER": {
-    "RANDOM": "random"
   },
   "GRANULARITY_OPTIONS": {
     "LOW": "low",
@@ -61,6 +54,10 @@
     "hb_deal"
   ],
   "S2S" : {
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction"
+    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction",
+    "SRC" : "s2s",
+    "ADAPTER" : "prebidServer",
+    "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync",
+    "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   }
 }

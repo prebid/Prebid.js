@@ -20,3 +20,4 @@ This document describes the governance model for the Prebid project. The Prebid 
 - @jaiminpanchal27
 - @snapwich
 - @harpere
+- @dbemiller
