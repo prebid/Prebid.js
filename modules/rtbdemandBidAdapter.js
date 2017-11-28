@@ -11,10 +11,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       var server = bidRequest.params.server || BIDDER_SERVER;
-      console.log(JSON.stringify(bidderRequest));
-      console.log(JSON.stringify(bidderRequest.bids[0].sizes[0]));
       var parse = getSize(bidderRequest.bids[0].sizes);
-      console.log(JSON.stringify(parse));
       const payload = {
         from: 'hb',
         v: '1.0',
