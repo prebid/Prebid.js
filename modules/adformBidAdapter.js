@@ -37,6 +37,7 @@ function AdformAdapter() {
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
+    request.push('auctionId=' + encodeURIComponent(params.bidderRequestId));
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
       _value = globalParams[i][1];
