@@ -6,7 +6,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//hb.undertone.com/hb'; // //ads.undertone.com/hb
+const URL = '//hb.undertone.com/hb';
 
 export const spec = {
   code: BIDDER_CODE,
