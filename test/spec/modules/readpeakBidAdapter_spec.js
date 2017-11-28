@@ -35,6 +35,8 @@ describe('ReadPeakAdapter', () => {
           id: 'bidRequest.bidId',
           impid: bidRequest.bidId,
           price: 0.12,
+          cid: '12',
+          crid: '123',
           adomain: ['readpeak.com'],
           adm: {
             assets: [{
@@ -178,7 +180,7 @@ describe('ReadPeakAdapter', () => {
       expect(bidResponse).to.contain({
         requestId: bidRequest.bidId,
         cpm: serverResponse.seatbid[0].bid[0].price,
-        creativeId: bidRequest.bidId,
+        creativeId: serverResponse.seatbid[0].bid[0].crid,
         ttl: 300,
         netRevenue: true,
         mediaType: 'native',
