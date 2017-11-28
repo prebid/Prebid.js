@@ -67,15 +67,14 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       const bid = {
         requestId: id,
         cpm: idToBidMap[id].price,
-        creativeId: id,
-        adId: id,
+        creativeId: idToBidMap[id].crid,
         ttl: 300,
         netRevenue: true,
         mediaType: 'native',
         currency: bidResponse.cur,
         bidderCode: BIDDER_CODE,
+        native: nativeResponse(idToImpMap[id], idToBidMap[id]),
       };
-      bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
       bids.push(bid);
     }
   });
@@ -87,7 +86,7 @@ function impression(slot) {
     id: slot.bidId,
     native: nativeImpression(slot),
     bidfloor: slot.params.bidfloor || 0,
-    bidfloorcur: 'USD'
+    bidfloorcur: slot.params.bidfloorcur || 'USD'
   };
 }
 
