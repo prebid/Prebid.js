@@ -20,7 +20,6 @@ export const spec = {
     const payload = {
       'x-ut-hb-params': []
     };
-    const timeout = window.PREBID_TIMEOUT || null;
     const host = utils.getTopWindowLocation().host;
     const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
 
@@ -35,7 +34,6 @@ export const spec = {
         placementId: bidReq.params.placementId,
         publisherId: bidReq.params.publisherId,
         sizes: bidReq.sizes,
-        timeout: timeout,
         params: bidReq.params
       };
       payload['x-ut-hb-params'].push(bid);
@@ -49,13 +47,13 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const bids = [];
+    const body = serverResponse.body;
 
-    if (serverResponse && Array.isArray(serverResponse) && serverResponse.length > 0) {
-      serverResponse.forEach((bidRes) => {
+    if (body && Array.isArray(body) && body.length > 0) {
+      body.forEach((bidRes) => {
         if (bidRes.ad && bidRes.cpm > 0) {
           const bid = {
             requestId: bidRes.bidRequestId,
-            bidderCode: BIDDER_CODE,
             cpm: bidRes.cpm,
             width: bidRes.width,
             height: bidRes.height,
