@@ -42,6 +42,7 @@ describe('Adform adapter', () => {
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
+      assert.equal(query.auctionId, '1ab8d9');
       assert.equal(query.url, encodeURIComponent('some// there'));
     });
 
