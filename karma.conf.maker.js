@@ -1,7 +1,7 @@
 // This configures Karma, describing how to run the tests and where to output code coverage reports.
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
-
+process.env.test = true;
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf');
 var path = require('path')
