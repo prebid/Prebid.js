@@ -53,6 +53,7 @@
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
+    "gulp-js-escape": "^1.0.1",
     "gulp-optimize-js": "^1.1.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
