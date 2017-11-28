@@ -98,27 +98,19 @@ describe('the rubicon adapter', () => {
   });
 
   describe('MAS mapping / ordering', () => {
-    it('should not include values without a proper mapping', () => {
-      // two invalid sizes included: [42, 42], [1, 1]
-      let ordering = masSizeOrdering([[320, 50], [42, 42], [300, 250], [640, 480], [1, 1], [336, 280]]);
-
-      expect(ordering).to.deep.equal([15, 16, 43, 65]);
-    });
-
     it('should sort values without any MAS priority sizes in regular ascending order', () => {
-      let ordering = masSizeOrdering([[320, 50], [640, 480], [336, 280], [200, 600]]);
-
+      let ordering = masSizeOrdering([126, 43, 65, 16]);
       expect(ordering).to.deep.equal([16, 43, 65, 126]);
     });
 
     it('should sort MAS priority sizes in the proper order w/ rest ascending', () => {
-      let ordering = masSizeOrdering([[320, 50], [160, 600], [640, 480], [300, 250], [336, 280], [200, 600]]);
+      let ordering = masSizeOrdering([43, 9, 65, 15, 16, 126]);
       expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
 
-      ordering = masSizeOrdering([[320, 50], [300, 250], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
+      ordering = masSizeOrdering([43, 15, 9, 65, 16, 126, 2]);
       expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
 
-      ordering = masSizeOrdering([[120, 600], [320, 50], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
+      ordering = masSizeOrdering([8, 43, 9, 65, 16, 126, 2]);
       expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
     });
   });
@@ -167,20 +159,20 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        it('should use rubicon sizes if present', () => {
+        it('should use rubicon sizes if present (including non-mappable sizes)', () => {
           var sizesBidderRequest = clone(bidderRequest);
-          sizesBidderRequest.bids[0].params.sizes = [55, 57, 59];
+          sizesBidderRequest.bids[0].params.sizes = [55, 57, 59, 801];
 
           let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
           let data = parseQuery(request.data);
 
           expect(data['size_id']).to.equal('55');
-          expect(data['alt_size_ids']).to.equal('57,59');
+          expect(data['alt_size_ids']).to.equal('57,59,801');
         });
 
         it('should not validate bid request if no valid sizes', () => {
           var sizesBidderRequest = clone(bidderRequest);
-          sizesBidderRequest.bids[0].sizes = [[620, 250], [300, 251]];
+          sizesBidderRequest.bids[0].sizes = [[621, 250], [300, 251]];
 
           let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
 

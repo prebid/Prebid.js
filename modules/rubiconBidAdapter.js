@@ -357,14 +357,13 @@ function parseSizes(bid) {
     }
     return size;
   }
-  return masSizeOrdering(Array.isArray(params.sizes)
-    ? params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
-  );
+
+  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+
+  return masSizeOrdering(sizes);
 }
 
-export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
-
+function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
     // map sizes while excluding non-matches
     .reduce((result, size) => {
@@ -373,25 +372,30 @@ export function masSizeOrdering(sizes) {
         result.push(mappedSize);
       }
       return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    }, []);
+}
 
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
+export function masSizeOrdering(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return sizes.sort((first, second) => {
+    // sort by MAS_SIZE_PRIORITY priority order
+    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+    if (firstPriority > -1 || secondPriority > -1) {
+      if (firstPriority === -1) {
+        return 1;
       }
+      if (secondPriority === -1) {
+        return -1;
+      }
+      return firstPriority - secondPriority;
+    }
 
-      // and finally ascending order
-      return first - second;
-    });
+    // and finally ascending order
+    return first - second;
+  });
 }
 
 var hasSynced = false;
