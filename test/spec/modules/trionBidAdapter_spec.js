@@ -1,30 +1,25 @@
-import { expect } from 'chai';
-import TrionAdapter from 'modules/trionBidAdapter';
-import bidmanager from 'src/bidmanager';
+import {expect} from 'chai';
 import * as utils from 'src/utils';
+import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter';
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
 const PLACEMENT_CODE = 'ad-tag';
-const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
-const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
+const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 
-const TRION_BID_REQUEST = {
-  start: new Date().getTime(),
-  bidderCode: 'trion',
-  bids: [
-    {
-      bidder: 'trion',
-      params: {
-        pubId: '1',
-        sectionId: '2'
-      },
-      placementCode: PLACEMENT_CODE,
-      sizes: [[300, 250], [300, 600]],
-      bidId: 'test-bid-id'
-    }
-  ]
+const TRION_BID = {
+  bidder: 'trion',
+  params: {
+    pubId: '1',
+    sectionId: '2'
+  },
+  adUnitCode: 'adunit-code',
+  sizes: [[300, 250], [300, 600]],
+  bidId: 'test-bid-id',
+  bidRequest: 'test-bid-request'
 };
+
+const TRION_BID_REQUEST = [TRION_BID];
 
 const TRION_BID_RESPONSE = {
   bidId: 'test-bid-id',
@@ -44,231 +39,179 @@ describe('Trion adapter tests', () => {
   let adapter;
 
   beforeEach(() => {
-    adapter = new TrionAdapter();
+    // adapter = trionAdapter.createNew();
     sinon.stub(document.body, 'appendChild');
   });
 
   afterEach(() => document.body.appendChild.restore());
 
-  it('should exist and be a function', function () {
-    expect($$PREBID_GLOBAL$$.handleTrionCB).to.exist.and.to.be.a('function');
-  });
+  describe('isBidRequestValid', () => {
+    it('should return true with correct params', () => {
+      expect(spec.isBidRequestValid(TRION_BID)).to.equal(true);
+    });
 
-  describe('request function', () => {
-    let spyLoadScript;
+    it('should return false when params are missing', () => {
+      TRION_BID.params = {};
 
-    beforeEach(() => {
-      spyLoadScript = sinon.spy(adloader, 'loadScript');
-      window.TRION_INT = {
-        int_t: -1
+      expect(spec.isBidRequestValid(TRION_BID)).to.equal(false);
+      TRION_BID.params = {
+        pubId: '1',
+        sectionId: '2'
       };
     });
 
-    afterEach(() => {
-      spyLoadScript.restore();
-      delete window.TRION_INT;
+    it('should return false when pubId is missing', () => {
+      TRION_BID.params = {
+        sectionId: '2'
+      };
+
+      expect(spec.isBidRequestValid(TRION_BID)).to.equal(false);
+      TRION_BID.params = {
+        pubId: '1',
+        sectionId: '2'
+      };
     });
 
-    it('callBids exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
+    it('should return false when sectionId is missing', () => {
+      TRION_BID.params = {
+        pubId: '1'
+      };
 
-    it('should not call loadscript when inputting with empty params', function () {
-      adapter.callBids({});
-      sinon.assert.notCalled(spyLoadScript);
-    });
-
-    it('should include the base bidrequest url', function () {
-      adapter.callBids(TRION_BID_REQUEST);
-
-      sinon.assert.calledOnce(spyLoadScript);
-
-      let bidUrl = spyLoadScript.getCall(0).args[0];
-      expect(bidUrl).to.include(BID_REQUEST_BASE_URL);
-    });
-
-    it('should call loadscript with the correct required params', function () {
-      adapter.callBids(TRION_BID_REQUEST);
-
-      sinon.assert.calledOnce(spyLoadScript);
-
-      let bidUrl = spyLoadScript.getCall(0).args[0];
-      expect(bidUrl).to.include('pubId=1');
-      expect(bidUrl).to.include('sectionId=2');
-      expect(bidUrl).to.include('sizes=300x250,300x600');
-    });
-
-    it('should call loadscript with the correct optional params', function () {
-      let params = TRION_BID_REQUEST.bids[0].params;
-      params.re = 1;
-
-      adapter.callBids(TRION_BID_REQUEST);
-
-      sinon.assert.calledOnce(spyLoadScript);
-
-      let bidUrl = spyLoadScript.getCall(0).args[0];
-      expect(bidUrl).to.include('re=1');
-      expect(bidUrl).to.include(utils.getTopWindowUrl());
-      expect(bidUrl).to.include('slot=' + PLACEMENT_CODE);
-      delete params.re;
-    });
-
-    describe('user sync', () => {
-      beforeEach(() => {
-        delete window.TRION_INT;
-        delete window.TR_INT_T;
-      });
-
-      it('user sync is called', () => {
-        adapter.callBids(TRION_BID_REQUEST);
-        sinon.assert.calledWith(spyLoadScript, USER_SYNC_URL);
-      });
-
-      it('user sync tag is included in bid url', () => {
-        window.TRION_INT = {
-          campaigns: [
-            'campaign1',
-            'campaign2'
-          ],
-          int_t: 'int_t'
-        };
-        let userTag = encodeURIComponent(JSON.stringify(window.TRION_INT));
-        adapter.callBids(TRION_BID_REQUEST);
-
-        let bidUrl = spyLoadScript.getCall(0).args[0];
-        expect(bidUrl).to.include(userTag);
-      });
-
-      it('user sync tag is included in bid url and includes the correct int_t', () => {
-        window.TRION_INT = {
-          campaigns: [
-            'campaign1',
-            'campaign2'
-          ]
-        };
-        let int_t = 'test';
-        let expectedObject = {
-          campaigns: [
-            'campaign1',
-            'campaign2'
-          ],
-          int_t: int_t
-        };
-        window.TR_INT_T = int_t;
-        let userTag = encodeURIComponent(JSON.stringify(expectedObject));
-        adapter.callBids(TRION_BID_REQUEST);
-
-        let bidUrl = spyLoadScript.getCall(0).args[0];
-        expect(bidUrl).to.include(userTag);
-      });
-
-      it('user sync tag variable int_t cannot be changed once set', () => {
-        window.TRION_INT = {
-          campaigns: [
-            'campaign1',
-            'campaign2'
-          ]
-        };
-        let int_t = 'test';
-        let expectedObject = {
-          campaigns: [
-            'campaign1',
-            'campaign2'
-          ],
-          int_t: int_t
-        };
-        window.TR_INT_T = int_t;
-        let userTag = encodeURIComponent(JSON.stringify(expectedObject));
-        adapter.callBids(TRION_BID_REQUEST);
-        window.TR_INT_T = 'bad';
-        let bidUrl = spyLoadScript.getCall(0).args[0];
-
-        expect(bidUrl).to.include(userTag);
-        expect(bidUrl).to.not.include('bad');
-      });
+      expect(spec.isBidRequestValid(TRION_BID)).to.equal(false);
+      TRION_BID.params = {
+        pubId: '1',
+        sectionId: '2'
+      };
     });
   });
 
-  describe('response handler', () => {
-    beforeEach(() => {
-      sinon.stub(bidmanager, 'addBidResponse');
+  describe('buildRequests', () => {
+    it('should return bids requests with empty params', () => {
+      let bidRequests = spec.buildRequests([]);
+      expect(bidRequests.length).to.equal(0);
     });
 
-    afterEach(() => {
-      bidmanager.addBidResponse.restore();
+    it('should include the base bidrequest url', () => {
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+
+      let bidUrl = bidRequests[0].url;
+      expect(bidUrl).to.include(BID_REQUEST_BASE_URL);
     });
 
-    it('when there is no response do not bid', function () {
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+    it('should call buildRequests with the correct required params', () => {
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+
+      let bidUrlParams = bidRequests[0].data;
+      expect(bidUrlParams).to.include('pubId=1');
+      expect(bidUrlParams).to.include('sectionId=2');
+      expect(bidUrlParams).to.include('sizes=300x250,300x600');
     });
 
-    it('when place bid is returned as false', function () {
+    it('should call buildRequests with the correct optional params', () => {
+      let params = TRION_BID_REQUEST[0].params;
+      params.re = 1;
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+
+      let bidUrlParams = bidRequests[0].data;
+      expect(bidUrlParams).to.include('re=1');
+      expect(bidUrlParams).to.include(utils.getTopWindowUrl());
+      delete params.re;
+    });
+  });
+
+  describe('interpretResponse', () => {
+    it('when there is no response do not bid', () => {
+      let response = spec.interpretResponse(null, {bidRequest: TRION_BID});
+      expect(response).to.deep.equal([]);
+    });
+
+    it('when place bid is returned as false', () => {
       TRION_BID_RESPONSE.result.placeBid = false;
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+
+      expect(response).to.deep.equal([]);
+
       TRION_BID_RESPONSE.result.placeBid = true;
     });
 
-    it('when no cpm is in the response', function () {
+    it('when no cpm is in the response', () => {
       TRION_BID_RESPONSE.result.cpm = 0;
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.cpm = 1;
     });
 
-    it('when no ad is in the response', function () {
+    it('when no ad is in the response', () => {
       TRION_BID_RESPONSE.result.ad = null;
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.ad = 'test';
     });
 
-    it('bid response is formatted correctly', function () {
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      const placementCode = bidmanager.addBidResponse.firstCall.args[0];
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(placementCode).to.equal(PLACEMENT_CODE);
-      expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(response.bidderCode).to.equal('trion');
-    });
-
-    it('height and width are appropriately set', function () {
+    it('height and width are appropriately set', () => {
       let bidWidth = '1';
       let bidHeight = '2';
       TRION_BID_RESPONSE.result.width = bidWidth;
       TRION_BID_RESPONSE.result.height = bidHeight;
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      const placementCode = bidmanager.addBidResponse.firstCall.args[0];
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.width).to.equal(bidWidth);
-      expect(response.height).to.equal(bidHeight);
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      expect(response[0].width).to.equal(bidWidth);
+      expect(response[0].height).to.equal(bidHeight);
       TRION_BID_RESPONSE.result.width = '300';
       TRION_BID_RESPONSE.result.height = '250';
     });
 
-    it('cpm is properly set and transformed to cents', function () {
+    it('cpm is properly set and transformed to cents', () => {
       let bidCpm = 2;
       TRION_BID_RESPONSE.result.cpm = bidCpm * 100;
-      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
-      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response.cpm).to.equal(bidCpm);
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      expect(response[0].cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
+    const BASE_KEY = '_trion_';
+
+    beforeEach(() => {
+      delete window.TR_INT_T;
+    });
+
+    it('trion int is included in bid url', () => {
+      window.TR_INT_T = 'test_user_sync';
+      let userTag = encodeURIComponent(window.TR_INT_T);
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+      let bidUrlParams = bidRequests[0].data;
+
+      expect(bidUrlParams).to.include(userTag);
+    });
+
+    it('should register trion user script', () => {
+      let syncs = spec.getUserSyncs({iframeEnabled: true});
+      let url = utils.getTopWindowUrl();
+      let pubId = 1;
+      let sectionId = 2;
+      let syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
+      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+    });
+
+    it('should except posted messages from user sync script', () => {
+      let testId = 'testId';
+      let message = BASE_KEY + 'userId=' + testId;
+      setStorageData(BASE_KEY + 'int_t', null);
+      acceptPostMessage({data: message});
+      let newKey = getStorageData(BASE_KEY + 'int_t');
+      expect(newKey).to.equal(testId);
+    });
+
+    it('should not try to post messages not from trion', () => {
+      let testId = 'testId';
+      let badId = 'badId';
+      let message = 'Not Trion: userId=' + testId;
+      setStorageData(BASE_KEY + 'int_t', badId);
+      acceptPostMessage({data: message});
+      let newKey = getStorageData(BASE_KEY + 'int_t');
+      expect(newKey).to.equal(badId);
     });
   });
 });

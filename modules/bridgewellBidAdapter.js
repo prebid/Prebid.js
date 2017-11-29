@@ -22,7 +22,7 @@ export const spec = {
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
-   */ 
+   */
   buildRequests: function(validBidRequests) {
     const channelIDs = [];
 
@@ -46,7 +46,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
-   */ 
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
 

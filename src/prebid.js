@@ -923,7 +923,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(command) {
     try {
       command.call();
     } catch (e) {
-      utils.logError('Error processing command :' + e.message);
+      utils.logError('Error processing command :', e.message, e.stack);
     }
   } else {
     utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');

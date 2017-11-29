@@ -214,12 +214,11 @@ function hasConsoleLogger() {
   return (window.console && window.console.log);
 }
 
-exports.hasConsoleLogger = hasConsoleLogger;
+function hasConsoleError() {
+  return (window.console && window.console.error);
+}
 
-var errLogFn = (function (hasLogger) {
-  if (!hasLogger) return '';
-  return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
+exports.hasConsoleLogger = hasConsoleLogger;
 
 var debugTurnedOn = function () {
   if (config.getConfig('debug') === false && _loggingChecked === false) {
@@ -233,10 +232,12 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
-  var errCode = code || 'ERROR';
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn](console, errCode + ': ' + msg, exception || '');
+/**
+ * Wrapper to console.error. Takes N arguments to log the same as console.error.
+ */
+exports.logError = function () {
+  if (debugTurnedOn() && hasConsoleError()) {
+    console.error.apply(console, arguments);
   }
 };
 

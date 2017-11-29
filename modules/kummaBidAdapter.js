@@ -1,5 +1,5 @@
 
-import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
+import {logError, getTopWindowLocation, getTopWindowReferrer, parseSizesInput} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 export const spec = {
@@ -76,7 +76,7 @@ function impression(slot) {
   };
 }
 function banner(slot) {
-  const size = slot.params.size.toUpperCase().split('X');
+  const size = parseSizesInput(slot.sizes)[0].split('x');
   const width = parseInt(size[0]);
   const height = parseInt(size[1]);
   return {
