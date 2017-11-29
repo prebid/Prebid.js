@@ -36,6 +36,13 @@ const flattenSize = size =>
   (Array.isArray(size) && size.length === 2) ? `${size[0]}x${size[1]}` : size;
 
 /**
+ * Expands a 'WxH' string as a 2-element [W, H] array
+ * @param {String} size
+ * @returns {Array}
+ */
+const expandSize = size => size.split('x').map(Number);
+
+/**
  * Is this a valid slot size?
  * @param {String} size
  * @returns {Boolean}
@@ -85,6 +92,12 @@ ${nativeContainer}</div></body></html>`;
 };
 
 /**
+ * Get the current window location URL correctly encoded for use in a URL query string.
+ * @returns {String} URI-encoded URL
+ */
+const getTopWindowUrlEncoded = () => encodeURIComponent(getTopWindowUrl());
+
+/**
  * Convert each bid request to a single URL to fetch those bids.
  * @param {Array} bids - list of bids
  * @param {String} bids[].placementCode - Prebid placement identifier
@@ -118,7 +131,7 @@ const buildRequests = bids => {
 
   // Build URL
   const testmode = isTestmode();
-  const pageurl = getTopWindowUrl();
+  const pageurl = getTopWindowUrlEncoded();
   const search = {
     placementids,
     adformats,
@@ -163,7 +176,7 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
         } = bid;
 
         const format = adformats[i];
-        const [width, height] = sizes[i];
+        const [width, height] = expandSize(flattenSize(sizes[i]));
         const ad = createAdHtml(creativeId, format, fb_bidid);
         const requestId = requestIds[i];
 
@@ -186,9 +199,9 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
         };
         // Video attributes
         if (isVideo(format)) {
-          const pageurl = getTopWindowUrl();
+          const pageurl = getTopWindowUrlEncoded();
           bidResponse.mediaType = 'video';
-          bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${encodeURIComponent(pageurl)}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
+          bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
         }
         return bidResponse;
       });
