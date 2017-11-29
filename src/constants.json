@@ -58,6 +58,7 @@
     "SRC" : "s2s",
     "ADAPTER" : "prebidServer",
     "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync",
-    "SYNCED_BIDDERS_KEY": "pbjsSyncs"
+    "SYNCED_BIDDERS_KEY": "pbjsSyncs",
+    "COOKIE_SET_URL": "https://acdn.adnxs.com/cookieset/cs.js"
   }
 }
