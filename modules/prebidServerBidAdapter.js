@@ -66,6 +66,11 @@ const paramTypes = {
     'cp': tryConvertNumber,
     'ct': tryConvertNumber
   },
+  'conversant': {
+    'site_id': tryConvertString,
+    'secure': tryConvertNumber,
+    'mobile': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
