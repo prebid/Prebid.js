@@ -17,9 +17,11 @@ export const spec = {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
     const payload = {
-      zone: [...new Set(validBidRequests.map(b => {
+      zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
-      }))].join(','),
+      }).filter((value, index, self) => {
+        return self.indexOf(value) === index
+      }),
       hostname: getTopWindowLocation().hostname,
       protocol: getTopWindowLocation().protocol.replace(':', ''),
       sw: dim.screenWidth,
