@@ -1,0 +1,24 @@
+---
+layout: bidder
+title: 33Across
+description: Prebid 33Across Bidder Adaptor
+
+top_nav_section: dev_docs
+nav_section: reference
+
+hide: true
+
+biddercode: 33across
+
+biddercode_longer_than_12: false
+
+---
+
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name            | Scope    | Description                          | Example                  |
+|:----------------|:---------|:-------------------------------------|:-------------------------|
+| `siteId`        | required | Publisher  GUID from 33Across        | `'pub123'`               |
+| `productId`     | required | 33Across Product ID that the Publisher has registered for  | `'infeed'`          
