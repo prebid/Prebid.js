@@ -3,7 +3,7 @@ import {spec} from 'modules/iqmBidAdapter'
 import * as utils from 'src/utils';
 
 describe('iqmBidAdapter', () => {
-  const ENDPOINT_URL = 'http://pbd.bids.iqm.com';
+  const ENDPOINT_URL = 'https://pbd.bids.iqm.com';
   const bidRequests = [{
     bidder: 'iqm',
     params: {

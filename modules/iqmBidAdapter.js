@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 // import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'iqm';
-const ENDPOINT_URL = 'http://pbd.bids.iqm.com';
+const ENDPOINT_URL = 'https://pbd.bids.iqm.com';
 const VERSION = 'v.1.0.0';
 
 export const spec = {
