@@ -12,7 +12,8 @@ let CONFIG = {
   enabled: true,
   bidders: ['appnexus'],
   timeout: 1000,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT
+  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+  cookieSetUrl: CONSTANTS.S2S.COOKIE_SET_URL
 };
 
 const REQUEST = {
