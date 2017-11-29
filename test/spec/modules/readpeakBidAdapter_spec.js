@@ -184,8 +184,7 @@ describe('ReadPeakAdapter', () => {
         ttl: 300,
         netRevenue: true,
         mediaType: 'native',
-        currency: serverResponse.cur,
-        bidderCode: spec.code,
+        currency: serverResponse.cur
       });
 
       expect(bidResponse.native.title).to.equal('Title')
