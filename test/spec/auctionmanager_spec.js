@@ -293,11 +293,10 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    it('alwaysUseBid=true, sendStandardTargeting=false, and inherit custom', function () {
+    it('sendStandardTargeting=false, and inherit custom', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
-          alwaysUseBid: true,
           sendStandardTargeting: false,
           adserverTargeting: [
             {
@@ -328,7 +327,6 @@ describe('auctionmanager.js', function () {
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
-      assert.equal(bid.alwaysUseBid, true);
       assert.equal(bid.sendStandardTargeting, false);
     });
 

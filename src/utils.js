@@ -805,3 +805,23 @@ export function getOrigin() {
     return window.location.origin;
   }
 }
+
+const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
+
+/**
+ * Returns filter function to match adUnitCode in slot
+ * @param {object} slot GoogleTag slot
+ * @return {function} filter function
+ */
+export function isAdUnitCodeMatchingSlot(slot) {
+  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+}
+
+/**
+ * Returns filter function to match adUnitCode in slot
+ * @param {string} adUnitCode AdUnit code
+ * @return {function} filter function
+ */
+export function isSlotMatchingAdUnitCode(adUnitCode) {
+  return (slot) => compareCodeAndSlot(slot, adUnitCode);
+}

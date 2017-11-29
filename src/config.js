@@ -14,7 +14,7 @@ const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
-const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
+const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_USERSYNC = {
   syncEnabled: true,
   pixelEnabled: true,

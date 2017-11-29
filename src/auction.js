@@ -364,7 +364,6 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   // 2) set keys from specific bidder setting override if they exist
   if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-    custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
     custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
   }
 

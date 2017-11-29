@@ -31,9 +31,6 @@ export function newAuctionManager() {
   let _auctions = [];
   let auctionManager = {};
 
-  // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-  const isUnusedBid = (bid) => bid && !bid.status;
-
   auctionManager.addWinningBid = function(bid) {
     const auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
@@ -62,7 +59,7 @@ export function newAuctionManager() {
         return auction.getBidsReceived();
       }
     }).reduce(flatten, [])
-      .filter(isUnusedBid);
+      .filter(bid => bid);
   };
 
   auctionManager.getAdUnits = function() {

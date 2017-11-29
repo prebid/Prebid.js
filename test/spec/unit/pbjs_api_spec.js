@@ -12,7 +12,8 @@ import { targeting, newTargeting } from 'src/targeting';
 import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import * as targetingModule from 'src/targeting';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -146,9 +147,16 @@ window.apntag = {
 };
 
 describe('Unit: Prebid Module', function () {
+  let bidExpiryStub;
+  before(() => {
+    bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
+  });
+
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
+    targetingModule.isBidExpired.restore();
   });
+
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(() => {
       resetAuction();
@@ -157,7 +165,7 @@ describe('Unit: Prebid Module', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
-      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr(adUnitCode);
       assert.equal(expected, result, 'returns expected string of ad targeting info');
     });
@@ -202,7 +210,7 @@ describe('Unit: Prebid Module', function () {
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
       var expected = {
         '/19968336/header-bid-tag-0': {
-          foobar: '300x250',
+          foobar: '0x0,300x250,300x600',
           hb_size: '300x250',
           hb_pb: '10.00',
           hb_adid: '233bcbee889d46d',
@@ -226,14 +234,13 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(targeting, expected);
     });
 
-    it("should include a losing bid's custom ad targeting key when the bid has `alwaysUseBid` set to `true`", () => {
+    it("should include a losing bid's custom ad targeting key", () => {
       // Let's make sure we're getting the expected losing bid.
       assert.equal(auction.getBidsReceived()[0]['bidderCode'], 'triplelift');
       assert.equal(auction.getBidsReceived()[0]['cpm'], 0.112256);
 
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
       let _bidsReceived = getBidResponses();
-      _bidsReceived[0]['alwaysUseBid'] = true;
       _bidsReceived[0]['adserverTargeting'] = {
         always_use_me: 'abc',
       };
@@ -241,6 +248,7 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return _bidsReceived };
 
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
+
       // Ensure targeting for both ad placements includes the custom key.
       assert.equal(
         targeting['/19968336/header-bid-tag-0'].hasOwnProperty('always_use_me'),
@@ -249,7 +257,7 @@ describe('Unit: Prebid Module', function () {
 
       var expected = {
         '/19968336/header-bid-tag-0': {
-          foobar: '300x250',
+          foobar: '300x250,300x600',
           hb_size: '300x250',
           hb_pb: '10.00',
           hb_adid: '233bcbee889d46d',
@@ -264,17 +272,15 @@ describe('Unit: Prebid Module', function () {
           hb_bidder: 'appnexus'
         }
       };
-
       assert.deepEqual(targeting, expected);
     });
 
-    it('should not overwrite winning bids custom keys targeting key when the bid has `alwaysUseBid` set to `true`', () => {
+    it('should not overwrite winning bids custom keys targeting key', () => {
       resetAuction();
       // mimic a bidderSetting.standard key here for each bid and alwaysUseBid true for every bid
       let _bidsReceived = getBidResponses();
       _bidsReceived.forEach(bid => {
         bid.adserverTargeting.custom_ad_id = bid.adId;
-        bid.alwaysUseBid = true;
       });
 
       auction.getBidsReceived = function() { return _bidsReceived };
@@ -343,15 +349,14 @@ describe('Unit: Prebid Module', function () {
 
       var expected = {
         '/19968336/header-bid-tag-0': {
-          foobar: '300x250',
-          custom_ad_id: '233bcbee889d46d'
+          foobar: '0x0,300x250,300x600',
+          custom_ad_id: '222bb26f9e8bd,233bcbee889d46d,25bedd4813632d7,26e0795ab963896,275bd666f5a5a5d,28f4039c636b6a7,29019e2ab586a5a'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
           custom_ad_id: '24bd938435ec3fc'
         }
       };
-
       assert.deepEqual(targeting, expected);
     });
   });
@@ -477,32 +482,28 @@ describe('Unit: Prebid Module', function () {
       RESPONSE.tags[0].ads[0].cpm = 2.1234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      let bid = bidTargeting[0]['div-gpt-ad-1460505748561-0'].filter(obj => obj.hb_pb !== undefined);
-      expect(bid[0]['hb_pb'][0]).to.equal('2.12');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('2.12');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 5 to 8', () => {
       RESPONSE.tags[0].ads[0].cpm = 6.78;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      let bid = bidTargeting[0]['div-gpt-ad-1460505748561-0'].filter(obj => obj.hb_pb !== undefined);
-      expect(bid[0]['hb_pb'][0]).to.equal('6.75');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('6.75');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 8 to 20', () => {
       RESPONSE.tags[0].ads[0].cpm = 19.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      let bid = bidTargeting[0]['div-gpt-ad-1460505748561-0'].filter(obj => obj.hb_pb !== undefined);
-      expect(bid[0]['hb_pb'][0]).to.equal('19.50');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('19.50');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 20 to 25', () => {
       RESPONSE.tags[0].ads[0].cpm = 21.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      let bid = bidTargeting[0]['div-gpt-ad-1460505748561-0'].filter(obj => obj.hb_pb !== undefined);
-      expect(bid[0]['hb_pb'][0]).to.equal('21.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('21.00');
     });
   });
 
@@ -578,6 +579,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should set targeting from googletag data', function () {
       var slots = createSlotArray();
+      slots[0].spySetTargeting.reset();
       window.googletag.pubads().setSlots(slots);
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
@@ -598,7 +600,7 @@ describe('Unit: Prebid Module', function () {
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
-    it('should set targeting for bids with `alwaysUseBid=true`', function () {
+    it('should set targeting for bids', function () {
       // Make sure we're getting the expected losing bid.
       assert.equal(auctionManager.getBidsReceived()[0]['bidderCode'], 'triplelift');
       assert.equal(auctionManager.getBidsReceived()[0]['cpm'], 0.112256);
@@ -606,7 +608,6 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
       let _bidsReceived = getBidResponses();
-      _bidsReceived[0]['alwaysUseBid'] = true;
       _bidsReceived[0]['adserverTargeting'] = {
         always_use_me: 'abc',
       };
@@ -637,15 +638,11 @@ describe('Unit: Prebid Module', function () {
         ],
         [
           'foobar',
-          '300x250'
+          ['300x250', '300x600']
         ],
         [
           'always_use_me',
           'abc'
-        ],
-        [
-          'foobar',
-          '300x250'
         ]
       ];
 
@@ -1158,7 +1155,6 @@ describe('Unit: Prebid Module', function () {
       });
 
       it('should not queue bid requests when a previous bid request is in process', () => {
-        // var clock = sinon.useFakeTimers();
         var requestObj1 = {
           bidsBackHandler: function bidsBackHandlerCallback() {},
           timeout: 2000,
@@ -1176,13 +1172,13 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
 
-        // clock.tick(requestObj1.timeout - 1);
         assert.ok(spyCallBids.calledTwice, 'When two requests for bids are made both should be' +
           ' callBids immediately');
 
-        assert.deepEqual($$PREBID_GLOBAL$$.getAdserverTargeting(), {
+        let result = targeting.getAllTargeting(); // $$PREBID_GLOBAL$$.getAdserverTargeting();
+        let expected = {
           '/19968336/header-bid-tag-0': {
-            'foobar': '300x250',
+            'foobar': '0x0,300x250,300x600',
             'hb_size': '300x250',
             'hb_pb': '10.00',
             'hb_adid': '233bcbee889d46d',
@@ -1195,7 +1191,8 @@ describe('Unit: Prebid Module', function () {
             'hb_size': '728x90',
             'foobar': '728x90'
           }
-        }, 'targeting info returned for current placements');
+        }
+        assert.deepEqual(result, expected, 'targeting info returned for current placements');
       });
     });
   });
@@ -1524,18 +1521,30 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('setTargetingForAst', () => {
+    let targeting;
+    let auctionManagerInstance;
+
     beforeEach(() => {
       resetAuction();
+      auctionManagerInstance = newAuctionManager();
+      sinon.stub(auctionManagerInstance, 'getBidsReceived', function() {
+        return [getBidResponses()[1]];
+      });
+      sinon.stub(auctionManagerInstance, 'getAdUnitCodes', function() {
+        return ['/19968336/header-bid-tag-0'];
+      });
+      targeting = newTargeting(auctionManagerInstance);
     });
 
     afterEach(() => {
+      auctionManagerInstance.getBidsReceived.restore();
+      auctionManagerInstance.getAdUnitCodes.restore();
       resetAuction();
     });
 
     it('should set targeting for appnexus apntag object', () => {
+      const bids = auctionManagerInstance.getBidsReceived();
       const adUnitCode = '/19968336/header-bid-tag-0';
-      const bidder = 'appnexus';
-      const bids = auctionManager.getBidsReceived().filter(bid => (bid.adUnitCode === adUnitCode && bid.bidderCode === bidder));
 
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
@@ -1544,14 +1553,14 @@ describe('Unit: Prebid Module', function () {
         newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
       }
 
-      $$PREBID_GLOBAL$$.setTargetingForAst();
+      targeting.setTargetingForAst();
       expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
     });
 
     it('should not find hb_adid key in lowercase for all bidders', () => {
       const adUnitCode = '/19968336/header-bid-tag-0';
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
-      $$PREBID_GLOBAL$$.setTargetingForAst();
+      targeting.setTargetingForAst();
       const keywords = Object.keys(window.apntag.tags[adUnitCode].keywords).filter(keyword => (keyword.substring(0, 'hb_adid'.length) === 'hb_adid'));
       expect(keywords.length).to.equal(0);
     });
