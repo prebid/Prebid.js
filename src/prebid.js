@@ -233,15 +233,11 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   events.emit(SET_TARGETING);
 };
 
-<<<<<<< HEAD
-$$PREBID_GLOBAL$$.setTargetingForAst = function () {
-=======
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
  * @alias module:pbjs.setTargetingForAst
  */
 $$PREBID_GLOBAL$$.setTargetingForAst = function() {
->>>>>>> d3833882813453d98bbb032d0b0cb695f15db32c
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
@@ -301,12 +297,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
           // calling confiantWrap()
-          // Optional: list of bidders that don't need wrapping
-          var confiantExcludeBidders = ["bidder1", "bidder2", "bidder3"];
-          var confiantWrap = function (a,b,c,d,e,f){function g(a){return(l(a)||"")[r]("/","_")[r]("+","-")}function h(b,c,d){var e=v+m(b)+"&d="+c,f="err__"+1*new Date;j[f]=d;var g="<"+p+" on"+s+'="void('+f+'())" '+q+'="'+e+'" type="text/java'+p+'" ></'+p+">";a[u](g)}function i(){var c=g(f+"/"+w.k.hb_bidder[0]+":"+w.k.hb_size[0]),d={wh:c,wd:k.parse(k[t](w)),wr:0};h(c,g(k[t](d)),function(){a[u](b)});var e={d:d,t:b};j[f]={},j[f][c]=e}var j=a.parentWindow||a.defaultView,k=j.JSON,l=j.btoa,m=j.encodeURIComponent;if(!k||!l)return!1;var n="t",o="i",p="script",q="src",r="replace",s="error",t="stringify",u="wr"+o+n+"e",v="https://"+e+"/?wrapper="+m(f)+"&tpid=",w={k:{hb_bidder:[c],hb_size:[d]}};return i(),a.close(),!0};
+          function confiantWrap(a,b,c,d,e){function f(a){return(m(a)||"")[s]("/","_")[s]("+","-")}function g(b,c,d){var e=w+n(b)+"&d="+c,f="err__"+1*new Date;k[f]=d;var g="<"+q+" on"+t+'="void('+f+'())" '+r+'="'+e+'" type="text/java'+q+'" ></'+q+">";a[v](g)}function h(){var c=f(d+"/"+x.k.hb_bidder[0]+":"+x.k.hb_size[0]),h={wh:c,wd:l.parse(l[u](x)),wr:0};g(c,f(l[u](h)),function(){a[v](b.ad)});var i={prebid:{adId:b.adId,cpm:b.cpm}},j={d:h,t:b.ad,cb:e,id:i};k[d]={},k[d][c]=j}var i=b.bidder,j=b.size,k=a.parentWindow||a.defaultView,l=k.JSON,m=k.btoa,n=k.encodeURIComponent;if(!l||!m)return!1;var o="t",p="i",q="script",r="src",s="replace",t="error",u="stringify",v="wr"+p+o+"e",w="https://"+c+"/?wrapper="+n(d)+"&tpid=",x={k:{hb_bidder:[i],hb_size:[j]}};return h(),a.close(),!0}
           // Serve with Confiant or default to regular ad serving
-          // Replace CONFIANT_CDN and CONFIANT_ID with your account information
-          if (confiantExcludeBidders.includes(bid.bidder) || !confiantWrap(doc, ad, bid.bidder, width + 'x' + height, 'clarium.global.ssl.fastly.net', 'dvS98IKwDukcG6gPDYBBcCk9sKY')) {
+          if (!confiantWrap(doc, bid, 'clarium.global.ssl.fastly.net', 'dvS98IKwDukcG6gPDYBBcCk9sKY', function () { console.log('Freestar - AD BLOCKED - ',bid); })) {
             doc.write(ad);
             doc.close();
           }
