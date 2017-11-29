@@ -210,6 +210,7 @@ export function PrebidServer() {
       max_bids: _s2sConfig.maxBids,
       timeout_millis: _s2sConfig.timeout,
       secure: _s2sConfig.secure,
+      cache_markup: _s2sConfig.cacheMarkup,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits.filter(hasSizes),
@@ -272,6 +273,12 @@ export function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
+            if (bidObj.cache_id) {
+              bidObject.cache_id = bidObj.cache_id;
+            }
+            if (bidObj.cache_url) {
+              bidObject.cache_url = bidObj.cache_url;
+            }
             // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
             if (bidObj.media_type === VIDEO) {
               bidObject.mediaType = VIDEO;
