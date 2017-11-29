@@ -1127,14 +1127,34 @@ Added in version 0.27.0
 
 See below for usage examples.
 
++ [Debugging](#setConfig-Debugging)
++ [Bidder Timeouts](#setConfig-Bidder-Timeouts)
++ [Turn on send all bids mode](#setConfig-Send-All-Bids)
++ [Set the order in which bidders are called](#setConfig-Bidder-Order)
++ [Set the publisher's domain](#setConfig-Publisher-Domain)
++ [Set a delay before requesting cookie sync](#setConfig-Cookie-Sync-Delay)
++ [Set price granularity](#setConfig-Price-Granularity)
++ [Configure server-to-server header bidding](#setConfig-Server-to-Server)
++ [Configure responsive ad units with `sizeConfig` and `labels`](#setConfig-Configure-Responsive-Ads)
++ [Generic Configuration](#setConfig-Generic-Configuration)
++ [Troubleshooting your configuration](#setConfig-Troubleshooting-your-configuration)
+
 {: .alert.alert-warning :}
 The `options` param object must be JSON - no JavaScript functions are allowed.
+
+<a name="setConfig-Debugging" />
+
+#### Debugging
 
 Turn on debugging:
 
 {% highlight js %}
 pbjs.setConfig({ debug: true });
 {% endhighlight %}
+
+<a name="setConfig-Bidder-Timeouts" />
+
+#### Bidder Timeouts
 
 Set a global bidder timeout:
 
@@ -1148,11 +1168,19 @@ Note that it's possible for the timeout to be triggered later than expected, lea
 With a busy page load, bids can be included in the auction even if the time to respond is greater than the timeout set by Prebid.js.  However, we do close the auction immediately if the threshold is greater than 200ms, so you should see a drop off after that period.  
 For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
 
+<a name="setConfig-Send-All-Bids" />
+
+#### Send All Bids
+
 Turn on enable send all bids mode:
 
 {% highlight js %}
 pbjs.setConfig({ enableSendAllBids: true })
 {% endhighlight %}
+
+<a name="setConfig-Bidder-Order" />
+
+#### Bidder Order
 
 Set the order in which bidders are called:
 
@@ -1160,17 +1188,29 @@ Set the order in which bidders are called:
 pbjs.setConfig({ bidderSequence: "fixed" })   /* default is "random" as of 0.27.0 */
 {% endhighlight %}
 
+<a name="setConfig-Publisher-Domain" />
+
+#### Publisher Domain
+
 Set the publisher's domain where Prebid is running, for cross-domain iFrame communication:
 
 {% highlight js %}
 pbjs.setConfig({ publisherDomain: "https://www.theverge.com" )
 {% endhighlight %}
 
+<a name="setConfig-Cookie-Sync-Delay" />
+
+#### Cookie Sync Delay
+
 Set a delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load:
 
 {% highlight js %}
 pbjs.setConfig({ cookieSyncDelay: 100 )
 {% endhighlight %}
+
+<a name="setConfig-Price-Granularity" />
+
+#### Price Granularity
 
 Set a default price granularity scheme:
 
@@ -1197,6 +1237,10 @@ pbjs.setConfig({
 })
 {% endhighlight %}
 
+<a name="setConfig-Server-to-Server" />
+
+#### Server to Server
+
 Set config for [server-to-server]({{site.baseurl}}/dev-docs/get-started-with-prebid-server.html) header bidding:
 
 {% highlight js %}
@@ -1212,9 +1256,150 @@ pbjs.setConfig({
 })
 {% endhighlight %}
 
+<a name="setConfig-Configure-Responsive-Ads" />
+
+#### Configure Responsive Ads
+
+The `sizeConfig` object passed to `pbjs.setConfig` provides a powerful way to describe types of devices and screens using [CSS media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries).  See below for an explanation of the feature and examples showing how to use it.
+
++ [How it works](#sizeConfig-How-it-Works)
++ [Example](#sizeConfig-Example)
++ [Labels](#sizeConfig-Labels)
+
+<a name="sizeConfig-How-it-Works" />
+
+##### How it Works
+
+- Before `requestBids` sends bid requests to adapters, it will evaluate and pick the appropriate label(s) based on the `sizeConfig.mediaQuery` and device properties and then filter the `adUnit.bids` array based on the `labels` defined (by dropping those ad units that don't match the label definition).
+- The `sizeConfig.mediaQuery` property allows [CSS media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries).  The queries are tested using the [`window.matchMedia`](https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia) API.
+- If a label doesn't exist on an ad unit, it is automatically included in all requests for bids.
+- If multiple rules match, the sizes will be filtered to the intersection of all matching rules' `sizeConfig.sizesSupported` arrays.
+- The `adUnit.sizes` selected will be filtered based on the `sizesSupported` of the matched `sizeConfig`. So the `adUnit.sizes` is a subset of the sizes defined from the resulting intersection of `sizesSupported` sizes and `adUnit.sizes`.
+
+<a name="sizeConfig-Example" />
+
+##### Example
+
+To set size configuration rules, pass in `sizeConfig` as follows:
+
+{% highlight js %}
+
+pbjs.setConfig({
+    sizeConfig: [{
+        'mediaQuery': '(min-width: 1200px)',
+        'sizesSupported': [
+            [970, 90],
+            [728, 90],
+            [300, 250]
+        ],
+        'labels': ['desktop']
+    }, {
+        'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+        'sizesSupported': [
+            [728, 90],
+            [300, 250]
+        ],
+        'labels': ['tablet', 'phone']
+    }, {
+        'mediaQuery': '(min-width: 0px)',
+        'sizesSupported': [
+            [300, 250],
+            [300, 100]
+        ],
+        'labels': ['phone']
+    }]
+});
+
+{% endhighlight %}
+
+<a name="sizeConfig-Labels" />
+
+##### Labels
+
+Labels can now be specified as a property on either an `adUnit` or on `adUnit.bids[]`.  The presence of a label will disable the ad unit or bidder unless either:
+
++ A `sizeConfig` rule has matched and enabled the label, or
+
++ The label has been enabled manually, e.g.,
+    ```javascript
+    pbjs.setConfig({
+        labels: [labels: ['visitor-uk']]
+    })
+    ```
+
+Defining labels on the ad unit looks like the following:
+
+{% highlight js %}
+
+pbjs.addAdUnits([{
+    "code": "ad-slot-1",
+    "sizes": [
+        [970, 90],
+        [728, 90],
+        [300, 250],
+        [300, 100]
+    ],
+    "labels": ["visitor-uk"]
+    /* The full set of bids, not all of which are relevant on all devices */
+    "bids": [{
+            "bidder": "pulsepoint",
+            /* Labels flag this bid as relevant only on these screen sizes. */
+            "labels": ["desktop", "tablet"],
+            "params": {
+                "cf": "728X90",
+                "cp": 123456,
+                "ct": 123456
+            }
+        },
+        {
+            "bidder": "pulsepoint",
+            "labels": ["desktop", "phone"],
+            "params": {
+                "cf": "300x250",
+                "cp": 123456,
+                "ct": 123456
+            }
+        },
+        {
+            "bidder": "sovrn",
+            "labels": ["desktop", "tablet"],
+            "params": {
+                "tagid": "123456"
+            }
+        },
+        {
+            "bidder": "sovrn",
+            "labels": ["phone"],
+            "params": {
+                "tagid": "111111"
+            }
+        }
+    ]
+}]);
+
+{% endhighlight %}
+
+{: .alert.alert-warning :}
+**Manual Label Configuration**  
+If an ad unit and/or a bidder in `adUnit.bids[]` already has `labels` defined, they will be disabled by default.  Manually setting active labels as shown below will re-enable the selected ad units and/or bidders.
+
+{% highlight js %}
+
+pbjs.setConfig({
+    labels: ['visitor-uk']
+});
+
+{% endhighlight %}
+
+<a name="setConfig-Generic-Configuration" />
+
+#### Generic Configuration
+
 Set arbitrary configuration values:
 
 `pbjs.setConfig({ <key>: <value> });`
+
+<a name="setConfig-Troubleshooting-your-configuration" />
 
 #### Troubleshooting your configuration
 
