@@ -72,7 +72,6 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         netRevenue: true,
         mediaType: 'native',
         currency: bidResponse.cur,
-        bidderCode: BIDDER_CODE,
         native: nativeResponse(idToImpMap[id], idToBidMap[id]),
       };
       bids.push(bid);
