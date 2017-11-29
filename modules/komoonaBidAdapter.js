@@ -1,74 +1,121 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
-import adloader from 'src/adloader';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
-function KomoonaAdapter() {
-  let baseAdapter = new Adapter('komoona');
-  let bidRequests = {};
+const BIDDER_CODE = 'komoona';
+const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
+const USYNCURL = '//s.komoona.com/sync/usync.html';
 
-  /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(params) {
-      var kbConf = {
-      ts_as: new Date().getTime(),
-      hb_placements: [],
-      hb_placement_bidids: {},
-      kb_callback: _bid_arrived,
-      hb_floors: {}
-    };
+export const spec = {
+  code: BIDDER_CODE,
 
-    var bids = params.bids || [];
-    if (!bids || !bids.length) {
-      return;
-    }
+  /**
+  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return boolean True if this is a valid bid, and false otherwise.
+  */
+  isBidRequestValid: bid => {
+    return !!(bid && bid.params && bid.params.placementId && bid.params.hbid);
+  },
+  /**
+  * Make a server request from the list of BidRequests.
+  *
+  * @param {validBidRequests[]} - an array of bids
+  * @return ServerRequest Info describing the request to the server.
+  */
+  buildRequests: validBidRequests => {
+    const tags = validBidRequests.map(bid => {
+      // map each bid id to bid object to retrieve adUnit code in callback
+      let tag = {
+        uuid: bid.bidId,
+        sizes: bid.sizes,
+        trid: bid.transactionId,
+        hbid: bid.params.hbid,
+        placementid: bid.params.placementId
+      };
 
-    bids.forEach((currentBid) => {
-      kbConf.hdbdid = kbConf.hdbdid || currentBid.params.hbid;
-      kbConf.encode_bid = kbConf.encode_bid || currentBid.params.encode_bid;
-      kbConf.hb_placement_bidids[currentBid.params.placementId] = currentBid.bidId;
-      if (currentBid.params.floorPrice) {
-        kbConf.hb_floors[currentBid.params.placementId] = currentBid.params.floorPrice;
+      // add floor price if specified (not mandatory)
+      if (bid.params.floorPrice) {
+        tag.floorprice = bid.params.floorPrice;
       }
-      kbConf.hb_placements.push(currentBid.params.placementId);      
+
+      return tag;
     });
 
-    var scriptUrl = `//s.komoona.com/kb/0.1/kmn_sa_kb_c.${kbConf.hdbdid}.js`;
+    // Komoona server config
+    const time = new Date().getTime();
+    const kbConf = {
+      ts_as: time,
+      hb_placements: [],
+      hb_placement_bidids: {},
+      hb_floors: {},
+      cb: _generateCb(time),
+      tz: new Date().getTimezoneOffset(),
+    };
 
-    adloader.loadScript(scriptUrl, function() {
-      /*global KmnKB */
-      if (typeof KmnKB === 'function') {
-        KmnKB.start(kbConf, pbjsObject);
+    validBidRequests.forEach(bid => {
+      kbConf.hdbdid = kbConf.hdbdid || bid.params.hbid;
+      kbConf.encode_bid = kbConf.encode_bid || bid.params.encode_bid;
+      kbConf.hb_placement_bidids[bid.params.placementId] = bid.bidId;
+      if (bid.params.floorPrice) {
+        kbConf.hb_floors[bid.params.placementId] = bid.params.floorPrice;
       }
-    }, true);
-  };
+      kbConf.hb_placements.push(bid.params.placementId);
+    });
 
-  function _bid_arrived(bid) {
-    var bidObj = utils.getBidRequest(bid.bidid);
-    var bidStatus = bid.creative ? STATUS.GOOD : STATUS.NO_BID;
-    var bidResponse = bidfactory.createBid(bidStatus, bidObj);
-    bidResponse.bidderCode = KOMOONA_BIDDER_NAME;
-
-    if (bidStatus === STATUS.GOOD) {
-      bidResponse.ad = bid.creative;
-      bidResponse.cpm = bid.cpm;
-      bidResponse.width = parseInt(bid.width);
-      bidResponse.height = parseInt(bid.height);
+    let payload = {};
+    if (!utils.isEmpty(tags)) {
+      payload = { bids: [...tags], kbConf: kbConf };
     }
 
-    var placementCode = bidObj && bidObj.placementCode;
-    bidmanager.addBidResponse(placementCode, bidResponse);
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(payload)
+    };
+  },
+  /**
+  * Unpack the response from the server into a list of bids.
+  *
+  * @param {*} response A successful response from the server.
+  * @return {Bid[]} An array of bids which were nested inside the server.
+  */
+  interpretResponse: (response, request) => {
+    const bidResponses = [];
+    try {
+      if (response.body && response.body.bids) {
+        response.body.bids.forEach(bid => {
+          // The bid ID. Used to tie this bid back to the request.
+          bid.requestId = bid.uuid;
+          // The creative payload of the returned bid.
+          bid.ad = bid.creative;
+          bidResponses.push(bid);
+        });
+      }
+    } catch (error) {
+      utils.logError(error);
+    }
+    return bidResponses;
+  },
+  /**
+  * Register User Sync.
+  */
+  getUserSyncs: syncOptions => {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USYNCURL
+      }];
+    }
   }
+};
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-  });
+/**
+* Generated cache baster value to be sent to bid server
+* @param {*} time current time to use for creating cb.
+*/
+function _generateCb(time) {
+  return Math.floor((time % 65536) + (Math.floor(Math.random() * 65536) * 65536));
 }
 
-adaptermanager.registerBidAdapter(new KomoonaAdapter(), 'komoona');
-
-module.exports = KomoonaAdapter;
+registerBidder(spec);

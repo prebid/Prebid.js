@@ -19,7 +19,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
-    var ymURI = '//bid.yieldmo.com/exchange/prebid?';
+    var ymURI = '//ads.yieldmo.com/exchange/prebid?';
     var ymCall = document.location.protocol + ymURI;
 
     // Placement specific information
