@@ -12,9 +12,9 @@
     pbjs.que = pbjs.que || [];
 
     // define invokeVideoPlayer in advance in case we get the bids back from prebid before the entire page loads
-    var dynamicTag = false;
+    var tempTag = false;
     var invokeVideoPlayer = function(url){
-      dynamicTag = url;
+      tempTag = url;
     }
 
     /*
@@ -134,9 +134,9 @@
       });
     }
 
-    if (dynamicTag) {
-        invokeVideoPlayer(dynamicTag);
-        dynamicTag = false;
+    if (tempTag) {
+        invokeVideoPlayer(tempTag);
+        tempTag = false;
     }
   </script>
 </body>

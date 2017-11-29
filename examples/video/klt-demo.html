@@ -24,9 +24,9 @@
         In this first version it simply stores the winning VAST to use
         later. */
 
-	 var dynamicTag = false;
+	 var tempTag = false;
 	 var invokeVideoPlayer = function(url){
-	   dynamicTag = url;
+	   tempTag = url;
 	 }
 
 	 /* Prebid video ad unit */
@@ -184,9 +184,9 @@
         meaning the 'real' version of `invokeVideoPlayer` was already
         called. */
 
-	 if (dynamicTag) {
-	   invokeVideoPlayer(dynamicTag);
-	   dynamicTag = false;
+	 if (tempTag) {
+	   invokeVideoPlayer(tempTag);
+	   tempTag = false;
 	 }
 	</script>
   </body>
