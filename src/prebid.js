@@ -401,9 +401,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       .map(bid => bid.bidder)
       .join(', ');
 
-    utils.logError(`
-      ${adUnit.code} is a 'native' ad unit but contains non-native bidder(s) ${nonNativeBidders}.
-      No Prebid demand requests will be triggered for those bidders.
+    utils.logWarn(`
+      ${adUnit.code} is a 'native' ad unit that contains non-native bidder(s): ${nonNativeBidders}.
+      Those bidders won't fetch demand.
     `);
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
