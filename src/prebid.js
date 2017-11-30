@@ -384,13 +384,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
     const nonVideoBidders = adUnit.bids
       .filter(bid => !videoBidder(bid))
-      .map(bid => bid.bidder)
-      .join(', ');
+      .map(bid => bid.bidder);
 
-    utils.logWarn(`
-      ${adUnit.code} is a 'video' ad unit that contains non-video bidder(s): ${nonVideoBidders}.
-      Those bidders won't fetch demand.
-    `);
+    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonVideoBidders));
     adUnit.bids = adUnit.bids.filter(videoBidder);
   });
 
@@ -398,13 +394,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
     const nonNativeBidders = adUnit.bids
       .filter(bid => !nativeBidder(bid))
-      .map(bid => bid.bidder)
-      .join(', ');
+      .map(bid => bid.bidder);
 
-    utils.logWarn(`
-      ${adUnit.code} is a 'native' ad unit that contains non-native bidder(s): ${nonNativeBidders}.
-      Those bidders won't fetch demand.
-    `);
+    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonNativeBidders));
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
