@@ -299,9 +299,17 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           // calling confiantWrap()
           function confiantWrap(a,b,c,d,e){function f(a){return(m(a)||"")[s]("/","_")[s]("+","-")}function g(b,c,d){var e=w+n(b)+"&d="+c,f="err__"+1*new Date;k[f]=d;var g="<"+q+" on"+t+'="void('+f+'())" '+r+'="'+e+'" type="text/java'+q+'" ></'+q+">";a[v](g)}function h(){var c=f(d+"/"+x.k.hb_bidder[0]+":"+x.k.hb_size[0]),h={wh:c,wd:l.parse(l[u](x)),wr:0};g(c,f(l[u](h)),function(){a[v](b.ad)});var i={prebid:{adId:b.adId,cpm:b.cpm}},j={d:h,t:b.ad,cb:e,id:i};k[d]={},k[d][c]=j}var i=b.bidder,j=b.size,k=a.parentWindow||a.defaultView,l=k.JSON,m=k.btoa,n=k.encodeURIComponent;if(!l||!m)return!1;var o="t",p="i",q="script",r="src",s="replace",t="error",u="stringify",v="wr"+p+o+"e",w="https://"+c+"/?wrapper="+n(d)+"&tpid=",x={k:{hb_bidder:[i],hb_size:[j]}};return h(),a.close(),!0}
           // Serve with Confiant or default to regular ad serving
-          if (!confiantWrap(doc, bid, 'clarium.global.ssl.fastly.net', 'dvS98IKwDukcG6gPDYBBcCk9sKY', function () { console.log('Freestar - AD BLOCKED - ',bid); })) {
+          if (!confiantWrap(doc, bid, 'clarium.global.ssl.fastly.net', 'dvS98IKwDukcG6gPDYBBcCk9sKY', function () {
+            console.log('Freestar - AD BLOCKED - ', bid);
+            if (freestar.msg && freestar.msg.que) {
+              freestar.msg.que.push({ eventType: 'adBlocked', args: bid });
+            }
+          })) {
             doc.write(ad);
             doc.close();
+          }
+          if (freestar.msg && freestar.msg.que) {
+            freestar.msg.que.push({ eventType: 'adServed', args: bid });
           }
           setRenderSize(doc, width, height);
         } else if (adUrl) {
