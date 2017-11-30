@@ -387,9 +387,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       .map(bid => bid.bidder)
       .join(', ');
 
-    utils.logError(`
-      ${adUnit.code} is a 'video' ad unit but contains non-video bidder(s) ${nonVideoBidders}.
-      No Prebid demand requests will be triggered for those bidders.
+    utils.logWarn(`
+      ${adUnit.code} is a 'video' ad unit that contains non-video bidder(s): ${nonVideoBidders}.
+      Those bidders won't fetch demand.
     `);
     adUnit.bids = adUnit.bids.filter(videoBidder);
   });
