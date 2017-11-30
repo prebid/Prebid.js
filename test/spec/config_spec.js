@@ -6,6 +6,7 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let setDefaults;
 
 describe('config API', () => {
   let logErrorSpy;
@@ -13,6 +14,7 @@ describe('config API', () => {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
   });
 
@@ -86,12 +88,14 @@ describe('config API', () => {
   });
 
   it('gets default userSync config', () => {
-    expect(getConfig('userSync')).to.eql({
+    const DEFAULT_USERSYNC = {
       syncEnabled: true,
       pixelEnabled: true,
       syncsPerBidder: 5,
       syncDelay: 3000
-    });
+    };
+    setDefaults({'userSync': DEFAULT_USERSYNC});
+    expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
   it('has subscribe functionality for adding listeners to config updates', () => {
