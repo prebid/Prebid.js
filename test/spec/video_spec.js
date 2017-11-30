@@ -1,6 +1,4 @@
 import { isValidVideoBid } from 'src/video';
-import { newConfig } from 'src/config';
-import * as utils from 'src/utils';
 
 describe('video.js', () => {
   it('validates valid instream bids', () => {
@@ -45,9 +43,6 @@ describe('video.js', () => {
         mediaTypes: { video: {} },
       }]
     }];
-
-    const config = newConfig();
-    config.setConfig({ usePrebidCache: false });
 
     const valid = isValidVideoBid({ vastXml: '<xml>vast</xml>' }, bidRequests);
 

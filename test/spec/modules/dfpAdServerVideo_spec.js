@@ -132,7 +132,11 @@ describe('The DFP video support module', () => {
 
   it('should not overwrite an existing description_url for object input and cache disabled', () => {
     const config = newConfig();
-    config.setConfig({ usePrebidCache: true });
+    config.setConfig({
+      video: {
+        cacheUrl: 'https://prebid.adnxs.com/pbc/v1/cache'
+      }
+    });
 
     const bidCopy = Object.assign({}, bid);
     bidCopy.vastUrl = 'vastUrl.example';

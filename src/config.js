@@ -46,128 +46,130 @@ const ALL_TOPICS = '*';
 /**
  * @typedef {object} PrebidConfig
  *
- * @property {bool} usePrebidCache True if we should use prebid-cache to store video bids before adding
- *   bids to the auction, and false otherwise. **NOTE** This must be true if you want to use the
- *   dfpAdServerVideo module.
+ * @property {bool} config.cacheUrl Set a url if we should use prebid-cache to store video bids before adding
+ *   bids to the auction. **NOTE** This must be set if you want to use the dfpAdServerVideo module.
  */
 
 export function newConfig() {
   let listeners = [];
+  let defaults;
+  let config;
 
-  let defaults = {};
+  function resetConfig() {
+    defaults = {};
+    config = {
+      // `debug` is equivalent to legacy `pbjs.logging` property
+      _debug: DEFAULT_DEBUG,
+      get debug() {
+        return this._debug;
+      },
+      set debug(val) {
+        this._debug = val;
+      },
 
-  let config = {
-    // `debug` is equivalent to legacy `pbjs.logging` property
-    _debug: DEFAULT_DEBUG,
-    get debug() {
-      return this._debug;
-    },
-    set debug(val) {
-      this._debug = val;
-    },
+      // default timeout for all bids
+      _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
+      get bidderTimeout() {
+        return this._bidderTimeout;
+      },
+      set bidderTimeout(val) {
+        this._bidderTimeout = val;
+      },
 
-    // default timeout for all bids
-    _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
-    get bidderTimeout() {
-      return this._bidderTimeout;
-    },
-    set bidderTimeout(val) {
-      this._bidderTimeout = val;
-    },
+      // domain where prebid is running for cross domain iframe communication
+      _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+      get publisherDomain() {
+        return this._publisherDomain;
+      },
+      set publisherDomain(val) {
+        this._publisherDomain = val;
+      },
 
-    // domain where prebid is running for cross domain iframe communication
-    _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
-    get publisherDomain() {
-      return this._publisherDomain;
-    },
-    set publisherDomain(val) {
-      this._publisherDomain = val;
-    },
+      // delay to request cookie sync to stay out of critical path
+      _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
+      get cookieSyncDelay() {
+        return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
+      },
+      set cookieSyncDelay(val) {
+        this._cookieSyncDelay = val;
+      },
 
-    // delay to request cookie sync to stay out of critical path
-    _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-    get cookieSyncDelay() {
-      return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
-    },
-    set cookieSyncDelay(val) {
-      this._cookieSyncDelay = val;
-    },
-
-    // calls existing function which may be moved after deprecation
-    _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
-    set priceGranularity(val) {
-      if (validatePriceGranularity(val)) {
-        if (typeof val === 'string') {
-          this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
-        } else if (typeof val === 'object') {
-          this._customPriceBucket = val;
-          this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
-          utils.logMessage('Using custom price granularity');
+      // calls existing function which may be moved after deprecation
+      _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
+      set priceGranularity(val) {
+        if (validatePriceGranularity(val)) {
+          if (typeof val === 'string') {
+            this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
+          } else if (typeof val === 'object') {
+            this._customPriceBucket = val;
+            this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
+            utils.logMessage('Using custom price granularity');
+          }
         }
-      }
-    },
-    get priceGranularity() {
-      return this._priceGranularity;
-    },
+      },
+      get priceGranularity() {
+        return this._priceGranularity;
+      },
 
-    _customPriceBucket: {},
-    get customPriceBucket() {
-      return this._customPriceBucket;
-    },
+      _customPriceBucket: {},
+      get customPriceBucket() {
+        return this._customPriceBucket;
+      },
 
-    _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
-    get enableSendAllBids() {
-      return this._sendAllBids;
-    },
-    set enableSendAllBids(val) {
-      this._sendAllBids = val;
-    },
+      _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
+      get enableSendAllBids() {
+        return this._sendAllBids;
+      },
+      set enableSendAllBids(val) {
+        this._sendAllBids = val;
+      },
 
-    _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
-    get bidderSequence() {
-      return this._bidderSequence;
-    },
-    set bidderSequence(val) {
-      if (VALID_ORDERS[val]) {
-        this._bidderSequence = val;
-      } else {
-        utils.logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
-      }
-    },
+      _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
+      get bidderSequence() {
+        return this._bidderSequence;
+      },
+      set bidderSequence(val) {
+        if (VALID_ORDERS[val]) {
+          this._bidderSequence = val;
+        } else {
+          utils.logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
+        }
+      },
 
-    // timeout buffer to adjust for bidder CDN latency
-    _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
-    get timeoutBuffer() {
-      return this._timoutBuffer;
-    },
-    set timeoutBuffer(val) {
-      this._timoutBuffer = val;
-    },
+      // timeout buffer to adjust for bidder CDN latency
+      _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+      get timeoutBuffer() {
+        return this._timoutBuffer;
+      },
+      set timeoutBuffer(val) {
+        this._timoutBuffer = val;
+      },
 
-    // userSync defaults
-    userSync: DEFAULT_USERSYNC
-  };
+      // userSync defaults
+      userSync: DEFAULT_USERSYNC
+    };
 
-  function hasGranularity(val) {
-    return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
-  }
-
-  function validatePriceGranularity(val) {
-    if (!val) {
-      utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-      return false;
+    function hasGranularity(val) {
+      return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
     }
-    if (typeof val === 'string') {
-      if (!hasGranularity(val)) {
-        utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
-      }
-    } else if (typeof val === 'object') {
-      if (!isValidPriceConfig(val)) {
-        utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+
+    function validatePriceGranularity(val) {
+      if (!val) {
+        utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
         return false;
       }
+      if (typeof val === 'string') {
+        if (!hasGranularity(val)) {
+          utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
+        }
+      } else if (typeof val === 'object') {
+        if (!isValidPriceConfig(val)) {
+          utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+          return false;
+        }
+      }
+      return true;
     }
-    return true;
   }
 
   /*
@@ -289,10 +291,13 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
+  resetConfig();
+
   return {
     getConfig,
     setConfig,
-    setDefaults
+    setDefaults,
+    resetConfig
   };
 }
 

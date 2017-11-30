@@ -38,11 +38,11 @@ export function isValidVideoBid(bid, bidRequests) {
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
-    // xml-only video bids require prebid-cache to be enabled
-    if (!config.getConfig('usePrebidCache') && bid.vastXml && !bid.vastUrl) {
+    // xml-only video bids require a prebid cache url
+    if (!config.getConfig('video.cacheUrl') && bid.vastXml && !bid.vastUrl) {
       logError(`
-        This bid contains only vastXml and will not work when prebid-cache is disabled.
-        Try enabling prebid-cache with pbjs.setConfig({ usePrebidCache: true });
+        This bid contains only vastXml and will not work when a prebid cache url is not specified.
+        Try enabling prebid cache with pbjs.setConfig({ video: {cacheUrl: "..."} });
       `);
       return false;
     }
