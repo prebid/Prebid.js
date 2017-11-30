@@ -94,20 +94,8 @@ pbjs.que.push(function() {
 
 ### The `s2sConfig` object
 
-See below for a list of the fields in the `s2sConfig` object:
+See the [Prebid Server adapter docs]({{site.baseurl}}/dev-docs/add-a-prebid-server-adapter.html) for a list of the fields in the `s2sConfig` object.
 
-{: .table .table-bordered .table-striped }
-| Field       | Type          | Required? | Description                                                            |
-|-------------+---------------+-----------+------------------------------------------------------------------------|
-| `accountId` | String        | X         | Prebid Server account ID                                               |
-| `enabled`   | Boolean       | X         | Enables S2S; default: `false`                                          |
-| `bidders`   | Array[String] | X         | List of bidder codes; must have been enabled during Prebid.js build    |
-| `timeout`   | Number        |           | Bidder timeout, in milliseconds; default: `1000`                       |
-| `syncEndpoint` | String     |           | Configures the user-sync endpoint. Highly recommended                  |
-| `adapter`   | String        |           | Adapter code; default: `"prebidServer"`                                |
-| `endpoint`  | String        |           | Will override the default endpoint                                     |
-| `cookieSet` | Boolean       |           | Set to `false` to opt out of cookieset/link rewriting; default: `true` |
-| `secure`    | Integer       |           | Override Prebid Server's determination of whether the request needs secure assets. Set to `1` to force secure assets on the response, or `0` for non-secure assets. |
 
 {: .alert.alert-info :}
 **Additional `cookieSet` details**  

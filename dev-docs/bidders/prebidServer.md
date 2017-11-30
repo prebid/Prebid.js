@@ -32,11 +32,14 @@ pbjs.setS2SConfig({
 Configuration options
 
 {: .table .table-bordered .table-striped }
-| Name | Required? | Description
-|:-----------|:-----------|:---------------------------|
-| `accountId` | required | string:required: account ID obtained in sign up process |
-| `enabled` | required | boolean:required: enables s2s - default false |
-| `bidders` | required | array[string]:required: of bidder codes to enable S2S. |
-| `syncEndpoint` | optional | string:optional sets user-sync endpoint. |
-| `timeout` | optional | number:optional timeout in ms for bidders called via the S2S endpoint.|
-| `cookieSet` | optional | boolean:optional: If `false` (not recommended), opt out of link rewriting to improve cookie syncing. |
+| Field        | Type          | Required? | Description                                                              |
+|--------------+---------------+-----------+--------------------------------------------------------------------------|
+| `accountId`  | String        | X         | Prebid Server account ID.                                                |
+| `enabled`    | Boolean       | X         | Enables S2S; default: `false`.                                           |
+| `bidders`    | Array[String] | X         | List of bidder codes; must have been enabled during Prebid.js build.     |
+| `endpoint`   | String        | X         | Set the endpoint. For example: `https://prebid.adnxs.com/pbs/v1/auction` |
+| `timeout`    | Number        |           | Bidder timeout, in milliseconds; default: `1000`.                         |
+| `syncEndpoint` | String     |           | Configures the user-sync endpoint. Highly recommended.                    |
+| `adapter`    | String        |           | Adapter code; default: `"prebidServer"`.                                  |
+| `cookieSet`  | Boolean       |           | Set to `false` to opt out of cookieset/link rewriting; default: `true`.   |
+| `secure`     | Integer       |           | Override Prebid Server's determination of whether the request needs secure assets. Set to `1` to force secure assets on the response, or `0` for non-secure assets. |
