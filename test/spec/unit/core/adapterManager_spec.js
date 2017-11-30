@@ -5,6 +5,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 var s2sTesting = require('../../../../modules/s2sTesting');
+var events = require('../../../../src/events');
 
 const CONFIG = {
   enabled: true,
@@ -34,6 +35,44 @@ var appnexusAdapterMock = {
 };
 
 describe('adapterManager tests', () => {
+  describe('callBids', () => {
+    beforeEach(() => {
+      sinon.stub(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log an error if a bidder is used that does not exist', () => {
+      const adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      AdapterManager.callBids({adUnits});
+
+      sinon.assert.called(utils.logError);
+    });
+
+    it('should emit BID_REQUESTED event', () => {
+      // function to count BID_REQUESTED events
+      let cnt = 0;
+      let count = () => cnt++;
+      events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      AdapterManager.callBids({adUnits: getAdUnits()});
+      expect(cnt).to.equal(1);
+      sinon.assert.calledOnce(appnexusAdapterMock.callBids);
+      appnexusAdapterMock.callBids.reset();
+      delete AdapterManager.bidderRegistry['appnexus'];
+      events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+    });
+  });
+
   describe('S2S tests', () => {
     beforeEach(() => {
       AdapterManager.setS2SConfig(CONFIG);
@@ -67,6 +106,36 @@ describe('adapterManager tests', () => {
       const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(2);
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+    });
+
+    describe('BID_REQUESTED event', () => {
+      // function to count BID_REQUESTED events
+      let cnt, count = () => cnt++;
+
+      beforeEach(() => {
+        cnt = 0;
+        events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      afterEach(() => {
+        events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      it('should fire for s2s requests', () => {
+        AdapterManager.callBids({adUnits: getAdUnits()});
+        expect(cnt).to.equal(1);
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      });
+
+      it('should fire for simultaneous s2s and client requests', () => {
+        AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+        AdapterManager.callBids({adUnits: getAdUnits()});
+        expect(cnt).to.equal(2);
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+        sinon.assert.calledOnce(adequantAdapterMock.callBids);
+        adequantAdapterMock.callBids.reset();
+        delete AdapterManager.bidderRegistry['adequant'];
+      });
     });
   }); // end s2s tests
 

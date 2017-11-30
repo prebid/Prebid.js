@@ -7,6 +7,7 @@ import { STATUS, S2S } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { VIDEO } from 'src/mediaTypes';
 
 const getConfig = config.getConfig;
 
@@ -65,6 +66,11 @@ const paramTypes = {
     'cp': tryConvertNumber,
     'ct': tryConvertNumber
   },
+  'conversant': {
+    'site_id': tryConvertString,
+    'secure': tryConvertNumber,
+    'mobile': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
@@ -98,6 +104,25 @@ function PrebidServer() {
             }
           }
         });
+        // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to ingest properly
+        // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myMultiVar","value":["myValue","124578"]}]
+        let kwArray = [];
+        Object.keys(bid.params).forEach(key => {
+          if (bid.bidder === 'appnexus' && (key !== 'member' && key !== 'invCode' && key !== 'placementId')) {
+            let kvObj = {};
+            kvObj.key = key
+            if (bid.params[key] !== null) {
+              if (Array.isArray(bid.params[key])) {
+                kvObj.value = bid.params[key].map(val => tryConvertString(val));
+              } else {
+                kvObj.value = [tryConvertString(bid.params[key])];
+              }
+            }
+            kwArray.push(kvObj);
+            delete bid.params[key];
+          }
+        });
+        bid.params.keywords = kwArray;
       });
     });
   }
@@ -111,7 +136,9 @@ function PrebidServer() {
       if (videoMediaType) {
         // pbs expects a ad_unit.video attribute if the imp is video
         adUnit.video = Object.assign({}, videoMediaType);
-        delete adUnit.mediaTypes.video;
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
+        adUnit.media_types = [VIDEO];
       }
     })
     convertTypes(adUnits);
@@ -180,6 +207,14 @@ function PrebidServer() {
           });
         }
 
+        // do client-side syncs if available
+        requestedBidders.forEach(bidder => {
+          let clientAdapter = adaptermanager.getBidAdapter(bidder);
+          if (clientAdapter && clientAdapter.registerSyncs) {
+            clientAdapter.registerSyncs();
+          }
+        });
+
         if (result.bids) {
           result.bids.forEach(bidObj => {
             let bidRequest = utils.getBidRequest(bidObj.bid_id);
@@ -196,10 +231,26 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
-            bidObject.ad = bidObj.adm;
-            if (bidObj.nurl) {
-              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
+            if (bidObj.media_type === VIDEO) {
+              bidObject.mediaType = VIDEO;
+              if (bidObj.adm) {
+                bidObject.vastXml = bidObj.adm;
+              }
+              if (bidObj.nurl) {
+                bidObject.vastUrl = bidObj.nurl;
+              }
+            } else {
+              if (bidObj.adm && bidObj.nurl) {
+                bidObject.ad = bidObj.adm;
+                bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+              } else if (bidObj.adm) {
+                bidObject.ad = bidObj.adm;
+              } else if (bidObj.nurl) {
+                bidObject.adUrl = bidObj.nurl
+              }
             }
+
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
@@ -223,7 +274,6 @@ function PrebidServer() {
               bidObject.source = TYPE;
               bidObject.adUnitCode = bidRequest.placementCode;
               bidObject.bidderCode = bidRequest.bidder;
-
               bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             });
         });

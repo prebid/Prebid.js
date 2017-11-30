@@ -76,6 +76,30 @@ describe('AppNexusAdapter', () => {
       });
     });
 
+    it('should populate the ad_types array on all requests', () => {
+      ['banner', 'video', 'native'].forEach(type => {
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        bidRequest.mediaTypes = {};
+        bidRequest.mediaTypes[type] = {};
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].ad_types).to.deep.equal([type]);
+      });
+    });
+
+    it('should populate the ad_types array on outstream requests', () => {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
@@ -244,6 +268,23 @@ describe('AppNexusAdapter', () => {
         'value': ['123']
       }]);
     });
+
+    it('should should add payment rules to the request', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            usePaymentRule: true
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].use_pmt_rule).to.equal(true);
+    });
   })
 
   describe('interpretResponse', () => {
@@ -296,18 +337,20 @@ describe('AppNexusAdapter', () => {
         {
           'requestId': '3db3773286ee59',
           'cpm': 0.5,
-          'creative_id': 29681110,
+          'creativeId': 29681110,
           'dealId': undefined,
           'width': 300,
           'height': 250,
           'ad': '<!-- Creative -->',
-          'mediaType': 'banner'
+          'mediaType': 'banner',
+          'currency': 'USD',
+          'ttl': 300,
+          'netRevenue': true
         }
       ];
       let bidderRequest;
-
-      let result = spec.interpretResponse(response, {bidderRequest});
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', () => {
@@ -322,7 +365,7 @@ describe('AppNexusAdapter', () => {
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
 
@@ -343,7 +386,7 @@ describe('AppNexusAdapter', () => {
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0]).to.have.property('descriptionUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
@@ -376,7 +419,7 @@ describe('AppNexusAdapter', () => {
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse(response1, {bidderRequest});
+      let result = spec.interpretResponse({ body: response1 }, {bidderRequest});
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
