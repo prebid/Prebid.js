@@ -29,7 +29,7 @@ describe('user sync', () => {
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
-    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    timeoutStub = sinon.stub(window, 'setTimeout').callsFake((callbackFunc) => { callbackFunc(); });
   });
 
   afterEach(() => {

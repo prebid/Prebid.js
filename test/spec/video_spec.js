@@ -8,7 +8,7 @@ describe('video.js', () => {
   });
 
   it('validates valid instream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
+    sinon.stub(utils, 'getBidRequest').callsFake(() => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'instream' },
@@ -23,7 +23,7 @@ describe('video.js', () => {
   });
 
   it('catches invalid instream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
+    sinon.stub(utils, 'getBidRequest').callsFake(() => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'instream' },
@@ -36,7 +36,7 @@ describe('video.js', () => {
   });
 
   it('catches invalid bids when prebid-cache is disabled', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
+    sinon.stub(utils, 'getBidRequest').callsFake(() => ({
       bidder: 'vastOnlyVideoBidder',
       mediaTypes: { video: {} },
     }));
@@ -50,7 +50,7 @@ describe('video.js', () => {
   });
 
   it('validates valid outstream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
+    sinon.stub(utils, 'getBidRequest').callsFake(() => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'outstream' },
@@ -68,7 +68,7 @@ describe('video.js', () => {
   });
 
   it('catches invalid outstream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
+    sinon.stub(utils, 'getBidRequest').callsFake(() => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'outstream' },
