@@ -61,10 +61,11 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal('//bidder.criteo.com/cdb');
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
       expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
-      expect(ortbRequest.slots).to.have.lengthOf(2);
+      expect(ortbRequest.slots).to.have.lengthOf(1);
       expect(ortbRequest.slots[0].impid).to.equal('bid-123');
       expect(ortbRequest.slots[0].transactionid).to.equal('transaction-123');
       expect(ortbRequest.slots[0].sizes).to.have.lengthOf(1);
@@ -85,8 +86,9 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal('//bidder.criteo.com/cdb');
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
       expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
       expect(ortbRequest.publisher.networkid).to.equal(456);
       expect(ortbRequest.slots).to.have.lengthOf(1);
@@ -119,8 +121,9 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal('//bidder.criteo.com/cdb');
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
       expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
       expect(ortbRequest.publisher.networkid).to.equal(456);
       expect(ortbRequest.slots).to.have.lengthOf(2);
@@ -145,13 +148,15 @@ describe('The Criteo bidding adapter', () => {
 
     it('should properly parse a bid response', () => {
       const response = {
-        slots: [{
-          impid: 'test-requestId',
-          cpm: 1.23,
-          ad: 'test-ad',
-          width: 728,
-          height: 90,
-        }],
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            width: 728,
+            height: 90,
+          }],
+        },
       };
       const bids = spec.interpretResponse(response, null);
       expect(bids).to.have.lengthOf(1);

@@ -1,14 +1,16 @@
+import { loadScript } from 'src/adloader';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
 
+const ADAPTER_VERSION = 2;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
-const PROFILE_ID = 207;
-const ADAPTER_VERSION = 2;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
+const PROFILE_ID = 207;
+const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -30,6 +32,11 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
+
+    // If publisher tag not already loaded try to get it from fast bid else load it
+    if (typeof Criteo === 'undefined' && !tryGetCriteoFastBid()) {
+      loadScript(PUBLISHER_TAG_URL);
+    }
 
     if (typeof Criteo !== 'undefined') {
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
@@ -57,7 +64,7 @@ export const spec = {
 
     const bids = [];
 
-    if (response.body.slots && utils.isArray(response.body.slots)) {
+    if (response.body && response.body.slots && utils.isArray(response.body.slots)) {
       response.body.slots.forEach(slot => {
         const bid = {
           requestId: slot.impid,
@@ -155,6 +162,23 @@ function buildCdbRequest(context, bidRequests) {
     request.publisher.networkid = networkId;
   }
   return request;
+}
+
+/**
+ * @return {boolean}
+ */
+function tryGetCriteoFastBid() {
+  let success = false;
+  try {
+    const fastBid = localStorage.getItem('criteo_fast_bid');
+    if (fastBid !== null) {
+      eval(fastBid); // eslint-disable-line no-eval
+      success = true;
+    }
+  } catch (e) {
+    // Unable to get fast bid
+  }
+  return success;
 }
 
 registerBidder(spec);
