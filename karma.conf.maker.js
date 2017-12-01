@@ -116,9 +116,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
     // list of files / patterns to load in the browser
-    files: [
-      'test/test_index.js'
-    ],
+    files: files,
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
