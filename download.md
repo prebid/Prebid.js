@@ -76,7 +76,7 @@ function get_form_data() {
     for (var i = 0; i < bidder_check_boxes.length; i++) {
         var box = bidder_check_boxes[i];
         if (box.checked) {
-            bidders.push(box.getAttribute('bidderCode'));
+            bidders.push(box.getAttribute('moduleCode'));
         }
     }
 
@@ -116,6 +116,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 ### Option 1: Select header bidding partners
 
 {% assign bidder_pages = (site.pages | where: "layout", "bidder") %}
+{% assign module_pages = (site.pages | where: "nav_section", "modules") %}
 
 <form>
 <div class="row">
@@ -129,9 +130,9 @@ To improve the speed and load time of your site, build Prebid.js for only the he
  <div class="checkbox">
   <label>
   {% if page.aliasCode %} 
-    <input type="checkbox" bidderCode="{{ page.aliasCode }}" class="bidder-check-box"> {{ page.title }}
+    <input type="checkbox" moduleCode="{{ page.aliasCode }}BidAdapter" class="bidder-check-box"> {{ page.title }}
   {% else %}
-    <input type="checkbox" bidderCode="{{ page.biddercode }}" class="bidder-check-box"> {{ page.title }}
+    <input type="checkbox" moduleCode="{{ page.biddercode }}BidAdapter" class="bidder-check-box"> {{ page.title }}
   {% endif %}
       
     </label>
@@ -210,6 +211,18 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 </div>
 <br/>
+<div class="row">
+ <h4>Modules</h4>
+ {% for page in module_pages %}
+ <div class="col-md-4">
+ <div class="checkbox">
+  <label> <input type="checkbox" moduleCode="{{ page.module_code }}" class="bidder-check-box"> {{ page.display_name }}</label>
+</div>
+</div>
+ {% endfor %}
+</div>
+
+<br>
 <p>
 (Version 0.33.0)
 </p>

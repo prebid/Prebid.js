@@ -1,9 +1,11 @@
 ---
 layout: page
-title: Module - Prebid Server Testing
+title: Module - Server-to-Server Testing
 description: Adds A/B test support to ease analysis of server-side header bidding
 top_nav_section: dev_docs
 nav_section: modules
+module_code : s2sTesting
+display_name : Server-to-Server Testing
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -19,20 +21,20 @@ additional options for controlling how requests are sent:
 * Global A/B control - defines what percent of requests should be satisfied via the server and which by the traditional client-based method. This is cross AdUnit-configuration.
 * AdUnit A/B control - the ratio of server-to-client requests can be overridden at the AdUnit level.
 
-The package is built by specifying the s2sTesting module on the build command. For example:
+The package is built by specifying the `s2sTesting` module on the build command. For example:
 
 ```
 gulp build --modules=rubiconBidAdapter,appnexusAstBidAdapter,prebidServerBidAdapter,s2sTesting
 ```
 
-The expectation is the s2sTesting module will used for a limited period.
+The expectation is the Server-to-Server Testing module will used for a limited period.
 During the test period, the publisher analyzes metrics from various places
 to gauge the impact of moving header bidding to the server. After the test
 period is complete, regardless of outcome, A/B testing would be turned off
 and this module no longer included in the PrebidJS build.
 
 ## Features
-With the s2sTesting module, the following enhancements are provided:
+With the Server-to-Server Testing module, the following enhancements are provided:
 
 New 'bidderControl' options in s2sConfig. E.g.
 

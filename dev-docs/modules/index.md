@@ -37,6 +37,7 @@ If you are looking for bidder adapter parameters, see [Bidders' Params]({{site.b
 | [**DFP Express**]({{site.baseurl}}/dev-docs/modules/dfp_express.html) | A simplified installation mechanism for publishers that have DoubleClick Google Publisher Tag (GPT) ad calls in their pages. |
 | [**DigiTrust**]({{site.baseurl}}/dev-docs/modules/digitrust.html) | A method of including the standard cross-domain ID in a DigiTrust package. |
 | [**Server-to-Server Testing**]({{site.baseurl}}/dev-docs/modules/s2sTesting.html) | Adds A/B test support for easing into server-side header bidding. |
+| [**DFP Video**]({{site.baseurl}}/dev-docs/modules/dfp_video.html) | Required for serving instream video through DFP. |
 
 ## Further Reading
 

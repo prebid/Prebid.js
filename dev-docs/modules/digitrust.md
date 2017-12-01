@@ -4,6 +4,8 @@ title: Module - DigiTrust
 description: Addition of DigiTrust to the Prebid package
 top_nav_section: dev_docs
 nav_section: modules
+module_code : digitTrust
+display_name : DigiTrust
 ---
 
 <div class="bs-docs-section" markdown="1">

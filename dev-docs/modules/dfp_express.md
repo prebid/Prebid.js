@@ -4,6 +4,8 @@ title: Module - DFP Express
 description: Simplified installation mechanism for publishers that have DFP in their pages
 top_nav_section: dev_docs
 nav_section: modules
+module_code : express
+display_name : DFP Express
 ---
 
 <div class="bs-docs-section" markdown="1">
