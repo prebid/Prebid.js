@@ -13,7 +13,7 @@ const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 let _synced = false;
-const DEFAULT_S2S_TTL = 300;
+const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 

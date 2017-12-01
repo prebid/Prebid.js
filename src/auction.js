@@ -113,6 +113,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      if (timedOut) {
+        utils.logMessage(`Auction ${_auctionId} timedOut`);
+        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        if (timedOutBidders.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+        }
+      }
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: _auctionId});
+
       try {
         _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
@@ -131,14 +141,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         }
       }
       _callback = null;
-
-      if (timedOut) {
-        utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
-        if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
-        }
-      }
     }
   }
 
