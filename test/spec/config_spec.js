@@ -1,14 +1,25 @@
-import { excpet } from 'chai';
+import { expect } from 'chai';
+import { assert } from 'chai';
 import { newConfig } from 'src/config';
+
+const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let setDefaults;
 
 describe('config API', () => {
+  let logErrorSpy;
   beforeEach(() => {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    setDefaults = config.setDefaults;
+    logErrorSpy = sinon.spy(utils, 'logError');
+  });
+
+  afterEach(() => {
+    utils.logError.restore();
   });
 
   it('setConfig is a function', () => {
@@ -22,6 +33,25 @@ describe('config API', () => {
   it('sets and gets arbitrary configuarion properties', () => {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
+  });
+
+  it('only accepts objects', () => {
+    setConfig('invalid');
+    expect(getConfig('0')).to.not.equal('i');
+  });
+
+  it('sets multiple config properties', () => {
+    setConfig({ foo: 'bar' });
+    setConfig({ biz: 'buz' });
+    var config = getConfig();
+    expect(config.foo).to.equal('bar');
+    expect(config.biz).to.equal('buz');
+  });
+
+  it('overwrites existing config properties', () => {
+    setConfig({ foo: {biz: 'buz'} });
+    setConfig({ foo: {baz: 'qux'} });
+    expect(getConfig('foo')).to.eql({baz: 'qux'});
   });
 
   it('sets debugging', () => {
@@ -55,6 +85,17 @@ describe('config API', () => {
   it('gets legacy publisherDomain in deprecation window', () => {
     $$PREBID_GLOBAL$$.publisherDomain = 'ad.example.com';
     expect(getConfig('publisherDomain')).to.equal('ad.example.com');
+  });
+
+  it('gets default userSync config', () => {
+    const DEFAULT_USERSYNC = {
+      syncEnabled: true,
+      pixelEnabled: true,
+      syncsPerBidder: 5,
+      syncDelay: 3000
+    };
+    setDefaults({'userSync': DEFAULT_USERSYNC});
+    expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
   it('has subscribe functionality for adding listeners to config updates', () => {
@@ -102,5 +143,30 @@ describe('config API', () => {
 
     sinon.assert.notCalled(listener);
     sinon.assert.calledOnce(wildcard);
+  });
+
+  it('sets priceGranularity', () => {
+    setConfig({ priceGranularity: 'low' });
+    expect(getConfig('priceGranularity')).to.be.equal('low');
+  });
+
+  it('sets priceGranularity and customPriceBucket', () => {
+    const goodConfig = {
+      'buckets': [{
+        'min': 0,
+        'max': 3,
+        'increment': 0.01,
+        'cap': true
+      }]
+    };
+    setConfig({ priceGranularity: goodConfig });
+    expect(getConfig('priceGranularity')).to.be.equal('custom');
+    expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  });
+
+  it('should log error for invalid priceGranularity', () => {
+    setConfig({ priceGranularity: '' });
+    const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
 });

@@ -1,11 +1,11 @@
 import { assert } from 'chai';
-import * as utils from '../../../src/utils';
-import adLoader from '../../../src/adloader';
-import bidManager from '../../../src/bidmanager';
-import adapter from '../../../modules/adformBidAdapter';
+import * as utils from 'src/utils';
+import adLoader from 'src/adloader';
+import bidManager from 'src/bidmanager';
+import AdformAdapter from 'modules/adformBidAdapter';
 
 describe('Adform adapter', () => {
-  let _adapter, sandbox;
+  let _adformAdapter, sandbox;
 
   describe('request', () => {
     it('should create callback method on PREBID_GLOBAL', () => {
@@ -29,6 +29,7 @@ describe('Adform adapter', () => {
       assert.equal(_query.tid, 145);
       assert.equal(_query.rp, 4);
       assert.equal(_query.fd, 1);
+      assert.equal(_query.auctionId, '1a2b3c');
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
 
@@ -112,11 +113,12 @@ describe('Adform adapter', () => {
 
   beforeEach(() => {
     var transactionId = 'transactionId';
-    _adapter = adapter();
+    _adformAdapter = new AdformAdapter();
     utils.getUniqueIdentifierStr = () => 'callback';
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
-    _adapter.callBids({
+    _adformAdapter.callBids({
+      bidderRequestId: '1a2b3c',
       bids: [
         {
           bidId: 'abc',

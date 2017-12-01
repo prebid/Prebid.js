@@ -7,6 +7,7 @@
  * Defining and access properties in this way is now deprecated, but these will
  * continue to work during a deprecation window.
  */
+import { isValidPriceConfig } from './cpmBucketManager';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -14,6 +15,15 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
+
+const GRANULARITY_OPTIONS = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  AUTO: 'auto',
+  DENSE: 'dense',
+  CUSTOM: 'custom'
+};
 
 const ALL_TOPICS = '*';
 
@@ -27,6 +37,8 @@ const ALL_TOPICS = '*';
 
 export function newConfig() {
   let listeners = [];
+
+  let defaults = {};
 
   let config = {
     // `debug` is equivalent to legacy `pbjs.logging` property
@@ -69,8 +81,25 @@ export function newConfig() {
     },
 
     // calls existing function which may be moved after deprecation
+    _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
     set priceGranularity(val) {
-      $$PREBID_GLOBAL$$.setPriceGranularity(val);
+      if (validatePriceGranularity(val)) {
+        if (typeof val === 'string') {
+          this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
+        } else if (typeof val === 'object') {
+          this._customPriceBucket = val;
+          this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
+          utils.logMessage('Using custom price granularity');
+        }
+      }
+    },
+    get priceGranularity() {
+      return this._priceGranularity;
+    },
+
+    _customPriceBucket: {},
+    get customPriceBucket() {
+      return this._customPriceBucket;
     },
 
     _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
@@ -89,14 +118,35 @@ export function newConfig() {
     // calls existing function which may be moved after deprecation
     set s2sConfig(val) {
       $$PREBID_GLOBAL$$.setS2SConfig(val);
-    },
-
+    }
   };
+
+  function hasGranularity(val) {
+    return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
+  }
+
+  function validatePriceGranularity(val) {
+    if (!val) {
+      utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
+      return false;
+    }
+    if (typeof val === 'string') {
+      if (!hasGranularity(val)) {
+        utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
+      }
+    } else if (typeof val === 'object') {
+      if (!isValidPriceConfig(val)) {
+        utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+        return false;
+      }
+    }
+    return true;
+  }
 
   /*
    * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuartion
-   * property name.
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
    *
    * If called with callback parameter, or a string and a callback parameter,
    * subscribes to configuration updates. See `subscribe` function for usage.
@@ -104,7 +154,7 @@ export function newConfig() {
   function getConfig(...args) {
     if (args.length <= 1 && typeof args[0] !== 'function') {
       const option = args[0];
-      return option ? config[option] : config;
+      return option ? utils.deepAccess(config, option) : config;
     }
 
     return subscribe(...args);
@@ -117,10 +167,38 @@ export function newConfig() {
   function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
+      return;
     }
 
+    let topics = Object.keys(options);
+    let topicalConfig = {};
+
+    topics.forEach(topic => {
+      let option = options[topic];
+
+      if (typeof defaults[topic] === 'object' && typeof option === 'object') {
+        option = Object.assign({}, defaults[topic], option);
+      }
+
+      topicalConfig[topic] = config[topic] = option;
+    });
+
+    callSubscribers(topicalConfig);
+  }
+
+  /**
+   * Sets configuration defaults which setConfig values can be applied on top of
+   * @param {object} options
+   */
+  function setDefaults(options) {
+    if (typeof defaults !== 'object') {
+      utils.logError('defaults must be an object');
+      return;
+    }
+
+    Object.assign(defaults, options);
+    // Add default values to config as well
     Object.assign(config, options);
-    callSubscribers(options);
   }
 
   /*
@@ -188,7 +266,8 @@ export function newConfig() {
 
   return {
     getConfig,
-    setConfig
+    setConfig,
+    setDefaults
   };
 }
 

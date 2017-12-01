@@ -92,9 +92,15 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode) {
+module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
+  var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
+  // This file opens the /debug.html tab automatically.
+  // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
+  if (watchMode) {
+    files.push('test/helpers/karma-init.js');
+  }
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
