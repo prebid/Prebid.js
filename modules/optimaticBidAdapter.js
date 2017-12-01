@@ -97,5 +97,4 @@ function getData (bid) {
   };
 }
 
-config.setConfig({ usePrebidCache: true });
 registerBidder(spec);
