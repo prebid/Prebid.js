@@ -103,11 +103,11 @@ export const spec = {
 
     bids = bidRequest.bidRequest;
 
+    serverResponse = (serverResponse || {}).body;
     for (let i = 0; i < bids.length; i++) {
       bid = {};
       bidObj = bids[i];
       bidId = bidObj.bidId;
-      bid.bidderCode = bidObj.bidder;
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];

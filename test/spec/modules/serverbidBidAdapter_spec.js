@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/serverbidBidAdapter';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
+
+var bidFactory = require('src/bidfactory.js');
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -46,53 +46,56 @@ const REQUEST = {
 };
 
 const RESPONSE = {
-  'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
-  'decisions': {
-    '2b0f82502298c9': {
-      'adId': 2364764,
-      'creativeId': 1950991,
-      'flightId': 2788300,
-      'campaignId': 542982,
-      'clickUrl': 'https://e.serverbid.com/r',
-      'impressionUrl': 'https://e.serverbid.com/i.gif',
-      'contents': [{
-        'type': 'html',
-        'body': '<html></html>',
-        'data': {
-          'height': 90,
-          'width': 728,
-          'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
-          'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
-        },
-        'template': 'image'
-      }],
-      'height': 90,
-      'width': 728,
-      'events': [],
-      'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
-    },
-    '123': {
-      'adId': 2364764,
-      'creativeId': 1950991,
-      'flightId': 2788300,
-      'campaignId': 542982,
-      'clickUrl': 'https://e.serverbid.com/r',
-      'impressionUrl': 'https://e.serverbid.com/i.gif',
-      'contents': [{
-        'type': 'html',
-        'body': '<html></html>',
-        'data': {
-          'height': 90,
-          'width': 728,
-          'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
-          'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
-        },
-        'template': 'image'
-      }],
-      'height': 90,
-      'width': 728,
-      'events': [],
-      'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'decisions': {
+      '2b0f82502298c9': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      },
+      '123': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      }
     }
   }
 };
@@ -188,12 +191,12 @@ describe('Serverbid BidAdapter', () => {
       expect(request.method).to.have.string('POST');
     });
   });
-
   describe('interpretResponse validation', () => {
     it('response should have valid bidderCode', () => {
-      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
+      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
 
-      expect(bids[0].bidderCode).to.equal('serverbid');
+      expect(bid.bidderCode).to.equal('serverbid');
     });
 
     it('response should include objects for all bids', () => {
@@ -221,7 +224,7 @@ describe('Serverbid BidAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      let EMPTY_RESP = Object.assign({}, RESPONSE, {'decisions': null})
+      let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
       let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
@@ -233,7 +236,6 @@ describe('Serverbid BidAdapter', () => {
       expect(bids).to.be.empty;
     });
   });
-
   describe('getUserSyncs', () => {
     let syncOptions = {'iframeEnabled': true};
 
