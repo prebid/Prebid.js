@@ -213,7 +213,15 @@ function newBid(serverBid, rtbBid) {
       cta: nativeAd.ctatext,
       sponsoredBy: nativeAd.sponsored,
       image: nativeAd.main_img && nativeAd.main_img.url,
+      imageSize: {
+        height: nativeAd.main_img && nativeAd.main_img.height,
+        width: nativeAd.main_img && nativeAd.main_img.width,
+      },
       icon: nativeAd.icon && nativeAd.icon.url,
+      iconSize: {
+        height: nativeAd.icon && nativeAd.icon.height,
+        width: nativeAd.icon && nativeAd.icon.width,
+      },
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
