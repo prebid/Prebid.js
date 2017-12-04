@@ -237,7 +237,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
         // only log adapters that actually have adUnit bids
         let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
-          return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidderCode) }, []));
+          return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidder) }, []));
         }, []);
         utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
           return allBidders.includes(adapter);
