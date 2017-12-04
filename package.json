@@ -5,7 +5,8 @@
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp run-tests",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "build_prebid_js": "gulp build --modules=aolBidAdapter,admediaBidAdapter,vertozBidAdapter,criteoBidAdapter,appnexusBidAdapter,pulsepointBidAdapter,memeglobalBidAdapter"
   },
   "repository": {
     "type": "git",
