@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import Adapter from 'modules/serverbidBidAdapter';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
+import { spec } from 'modules/serverbidBidAdapter';
+
+var bidFactory = require('src/bidfactory.js');
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -10,7 +10,7 @@ const REQUEST = {
   'bidderCode': 'serverbid',
   'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d',
   'bidderRequestId': '109f2a181342a9',
-  'bids': [{
+  'bidRequest': [{
     'bidder': 'serverbid',
     'params': {
       'networkId': 9969,
@@ -24,6 +24,21 @@ const REQUEST = {
     'bidId': '2b0f82502298c9',
     'bidderRequestId': '109f2a181342a9',
     'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+  },
+  {
+    'bidder': 'serverbid',
+    'params': {
+      'networkId': 9969,
+      'siteId': 730181
+    },
+    'placementCode': 'div-gpt-ad-1487778092495-0',
+    'sizes': [
+      [728, 90],
+      [970, 90]
+    ],
+    'bidId': '123',
+    'bidderRequestId': '109f2a181342a9',
+    'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   }],
   'start': 1487883186070,
   'auctionStart': 1487883186069,
@@ -31,203 +46,209 @@ const REQUEST = {
 };
 
 const RESPONSE = {
-  'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
-  'decisions': {
-    '2b0f82502298c9': {
-      'adId': 2364764,
-      'creativeId': 1950991,
-      'flightId': 2788300,
-      'campaignId': 542982,
-      'clickUrl': 'https://e.serverbid.com/r',
-      'impressionUrl': 'https://e.serverbid.com/i.gif',
-      'contents': [{
-        'type': 'html',
-        'body': '<html></html>',
-        'data': {
-          'height': 90,
-          'width': 728,
-          'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
-          'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
-        },
-        'template': 'image'
-      }],
-      'height': 90,
-      'width': 728,
-      'events': [],
-      'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
-    },
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'decisions': {
+      '2b0f82502298c9': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      },
+      '123': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      }
+    }
   }
 };
 
-describe('serverbidAdapter', () => {
-  let adapter;
+describe('Serverbid BidAdapter', () => {
+  let bidRequests;
+  let adapter = spec;
 
-  beforeEach(() => adapter = new Adapter());
+  beforeEach(() => {
+    bidRequests = [
+      {
+        bidder: 'serverbid',
+        params: {
+          networkId: '9969',
+          siteId: '730181'
+        },
+        placementCode: 'header-bid-tag-1',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '23acc48ad47af5',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+  });
 
-  describe('request function', () => {
-    let xhr;
-    let requests;
-    let pbConfig;
-
-    beforeEach(() => {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-      pbConfig = REQUEST;
-      // just a single slot
-      pbConfig.bids = [pbConfig.bids[0]];
+  describe('bid request validation', () => {
+    it('should accept valid bid requests', () => {
+      let bid = {
+        bidder: 'serverbid',
+        params: {
+          networkId: '9969',
+          siteId: '123'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    afterEach(() => xhr.restore());
-
-    it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    it('should accept valid bid requests with extra fields', () => {
+      let bid = {
+        bidder: 'serverbid',
+        params: {
+          networkId: '9969',
+          siteId: '123',
+          zoneId: '123'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('requires paramaters to make request', () => {
-      adapter.callBids({});
-      expect(requests).to.be.empty;
+    it('should reject bid requests without siteId', () => {
+      let bid = {
+        bidder: 'serverbid',
+        params: {
+          networkId: '9969'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('requires networkId and siteId', () => {
-      let backup = pbConfig.bids[0].params;
-      pbConfig.bids[0].params = { networkId: 1234 }; // no hbid
-      adapter.callBids(pbConfig);
-      expect(requests).to.be.empty;
-
-      pbConfig.bids[0].params = { siteId: 1234 }; // no placementid
-      adapter.callBids(pbConfig);
-      expect(requests).to.be.empty;
-
-      pbConfig.bids[0].params = backup;
-    });
-
-    it('sends bid request to ENDPOINT via POST', () => {
-      adapter.callBids(pbConfig);
-      expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].method).to.equal('POST');
+    it('should reject bid requests without networkId', () => {
+      let bid = {
+        bidder: 'serverbid',
+        params: {
+          siteId: '9969'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('response handler', () => {
-    let server;
+  describe('buildRequests validation', () => {
+    it('creates request data', () => {
+      let request = spec.buildRequests(bidRequests);
 
-    beforeEach(() => {
-      server = sinon.fakeServer.create();
-      sinon.stub(bidmanager, 'addBidResponse');
-      sinon.stub(utils, 'getBidRequest').returns(REQUEST);
+      expect(request).to.exist.and.to.be.a('object');
     });
 
-    afterEach(() => {
-      server.restore();
-      bidmanager.addBidResponse.restore();
-      utils.getBidRequest.restore();
+    it('request to serverbid should contain a url', () => {
+      let request = spec.buildRequests(bidRequests);
+
+      expect(request.url).to.have.string('serverbid.com');
+    });
+
+    it('requires valid bids to make request', () => {
+      let request = spec.buildRequests([]);
+      expect(request.bidRequest).to.be.empty;
+    });
+
+    it('sends bid request to ENDPOINT via POST', () => {
+      let request = spec.buildRequests(bidRequests);
+
+      expect(request.method).to.have.string('POST');
+    });
+  });
+  describe('interpretResponse validation', () => {
+    it('response should have valid bidderCode', () => {
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
+      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+
+      expect(bid.bidderCode).to.equal('serverbid');
+    });
+
+    it('response should include objects for all bids', () => {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+
+      expect(bids.length).to.equal(2);
     });
 
     it('registers bids', () => {
-      server.respondWith(JSON.stringify(RESPONSE));
-
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage', 'Bid available');
-      expect(response).to.have.property('cpm');
-      expect(response.cpm).to.be.above(0);
-    });
-
-    describe('with SMARTSYNC=true', () => {
-      it('registers bids when callback is called promptly by smartsync', (done) => {
-        window.SMARTSYNC = true;
-        server.respondWith(JSON.stringify(RESPONSE));
-
-        adapter.callBids(REQUEST);
-
-        setTimeout(() => {
-          window[SMARTSYNC_CALLBACK]();
-          server.respond();
-          sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-          const response = bidmanager.addBidResponse.firstCall.args[1];
-          expect(response).to.have.property('statusMessage', 'Bid available');
-          expect(response).to.have.property('cpm');
-          expect(response.cpm).to.be.above(0);
-          window.SMARTSYNC = false;
-          done();
-        }, 0);
-      });
-
-      it('registers bids when callback is never called by smartsync', (done) => {
-        window.SMARTSYNC = true;
-        window.SMARTSYNC_TIMEOUT = 100;
-
-        server.respondWith(JSON.stringify(RESPONSE));
-
-        adapter.callBids(REQUEST);
-        setTimeout(() => {
-          server.respond();
-          sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-          const response = bidmanager.addBidResponse.firstCall.args[1];
-          expect(response).to.have.property('statusMessage', 'Bid available');
-          expect(response).to.have.property('cpm');
-          expect(response.cpm).to.be.above(0);
-          window.SMARTSYNC = false;
-          done();
-        }, window.SMARTSYNC_TIMEOUT * 2);
-      });
-
-      it('registers bids when callback is called (but late) by smartsync', (done) => {
-        window.SMARTSYNC = true;
-        window.SMARTSYNC_TIMEOUT = 100;
-
-        server.respondWith(JSON.stringify(RESPONSE));
-
-        adapter.callBids(REQUEST);
-        setTimeout(() => {
-          window[SMARTSYNC_CALLBACK]();
-          server.respond();
-          sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-          const response = bidmanager.addBidResponse.firstCall.args[1];
-          expect(response).to.have.property('statusMessage', 'Bid available');
-          expect(response).to.have.property('cpm');
-          expect(response.cpm).to.be.above(0);
-          window.SMARTSYNC = false;
-          done();
-        }, window.SMARTSYNC_TIMEOUT * 2);
-      });
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      for (var b of bids) {
+        expect(b).to.have.property('cpm');
+        expect(b.cpm).to.be.above(0);
+        expect(b).to.have.property('requestId');
+        expect(b).to.have.property('cpm');
+        expect(b).to.have.property('width');
+        expect(b).to.have.property('height');
+        expect(b).to.have.property('ad');
+        expect(b).to.have.property('currency', 'USD');
+        expect(b).to.have.property('creativeId');
+        expect(b).to.have.property('ttl', 360);
+        expect(b).to.have.property('netRevenue', true);
+        expect(b).to.have.property('referrer');
+      }
     });
 
     it('handles nobid responses', () => {
-      server.respondWith(JSON.stringify({
-        'decisions': []
-      }));
+      let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
+      let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+      expect(bids).to.be.empty;
     });
 
-    it('handles JSON.parse errors', () => {
-      server.respondWith('');
+    it('handles no server response', () => {
+      let bids = spec.interpretResponse(null, REQUEST);
 
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
+      expect(bids).to.be.empty;
+    });
+  });
+  describe('getUserSyncs', () => {
+    let syncOptions = {'iframeEnabled': true};
 
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+    it('handles empty sync options', () => {
+      let opts = spec.getUserSyncs({});
+
+      expect(opts).to.be.empty;
+    });
+
+    it('should always return empty array', () => {
+      let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts).to.be.empty;
     });
   });
 });
