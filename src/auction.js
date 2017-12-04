@@ -56,6 +56,7 @@ import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
+import { videoAdUnit } from 'src/video';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -112,6 +113,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      if (timedOut) {
+        utils.logMessage(`Auction ${_auctionId} timedOut`);
+        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        if (timedOutBidders.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+        }
+      }
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: _auctionId});
+
       try {
         _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
@@ -130,14 +141,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         }
       }
       _callback = null;
-
-      if (timedOut) {
-        utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
-        if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
-        }
-      }
     }
   }
 
@@ -148,13 +151,23 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
       request.doneCbCallCount += 1;
-      if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
-        // when all bidders have called done callback atleast once it means auction is complete
-        utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
-        _auctionStatus = AUCTION_COMPLETED;
-        executeCallback(false, true);
+      // In case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
+      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('usePrebidCache'))) {
+        bidsBackAll()
       }
     }, 1);
+  }
+
+  /**
+   * Execute bidBackHandler if all bidders have called done.
+   */
+  function bidsBackAll() {
+    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
+      // when all bidders have called done callback atleast once it means auction is complete
+      utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
+      _auctionStatus = AUCTION_COMPLETED;
+      executeCallback(false, true);
+    }
   }
 
   function callBids() {
@@ -183,6 +196,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     addBidReceived,
     executeCallback,
     callBids,
+    bidsBackAll,
     setWinningBid: (winningBid) => { _winningBid = winningBid },
     getWinningBid: () => _winningBid,
     getTimeout: () => _timeout,
@@ -232,6 +246,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
           addBidToAuction(bidResponse);
+          auctionInstance.bidsBackAll();
         }
         doCallbacksIfNeeded();
       });
