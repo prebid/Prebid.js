@@ -6,7 +6,7 @@
   "scripts": {
     "test": "gulp run-tests",
     "lint": "gulp lint",
-    "build_prebid_js": "gulp build --modules=aolBidAdapter,admediaBidAdapter,vertozBidAdapter,criteoBidAdapter,appnexusBidAdapter,pulsepointBidAdapter,memeglobalBidAdapter"
+    "build_prebid_js": "gulp build --modules=aolBidAdapter,admediaBidAdapter,vertozBidAdapter,criteoBidAdapter,appnexusBidAdapter,pulsepointBidAdapter,memeglobalBidAdapter,memegenBidAdapter"
   },
   "repository": {
     "type": "git",

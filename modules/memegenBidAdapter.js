@@ -11,7 +11,7 @@ var bidderName = 'memegen';
  * Adapter for requesting bids from Meme Global Media Group
  * OpenRTB compatible
  */
-var MemeGlobalAdapter = function MemeGlobalAdapter() {
+var MemeGenAdapter = function MemeGenAdapter() {
   var openRtbAdapterHost = 'ssp.velemh.com';
   var timeout;
   function _callBids(params) {
@@ -31,7 +31,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     var domain = window.location.host;
     var page = window.location.host + window.location.pathname + location.search + location.hash;
 
-    var tagId = utils.getBidIdParameter('tagid', bidReq.params);
+    var publisherId = utils.getBidIdParameter('publisherId', bidReq.params);
     var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
     var adW = 0;
     var adH = 0;
@@ -62,7 +62,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         domain: domain,
         page: page,
         publisher: {
-          id: tagId
+          id: publisherId
         }
       }
     };
@@ -122,6 +122,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new MemeGlobalAdapter(), bidderName);
+adaptermanager.registerBidAdapter(new MemeGenAdapter(), bidderName);
 
-module.exports = MemeGlobalAdapter;
+module.exports = MemeGenAdapter;
