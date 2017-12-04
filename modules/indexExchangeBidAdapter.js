@@ -641,7 +641,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       }
 
       var usingSizeSpecificSiteID = false;
-      // Check for size defined in bidder params 
+      // Check for size defined in bidder params
       if (bid.params.size && utils.isArray(bid.params.size)) {
         if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) {
           passOnBid(bid.placementCode);

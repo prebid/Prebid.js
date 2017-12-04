@@ -76,6 +76,30 @@ describe('AppNexusAdapter', () => {
       });
     });
 
+    it('should populate the ad_types array on all requests', () => {
+      ['banner', 'video', 'native'].forEach(type => {
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        bidRequest.mediaTypes = {};
+        bidRequest.mediaTypes[type] = {};
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].ad_types).to.deep.equal([type]);
+      });
+    });
+
+    it('should populate the ad_types array on outstream requests', () => {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
@@ -243,6 +267,23 @@ describe('AppNexusAdapter', () => {
         'key': 'singleValNum',
         'value': ['123']
       }]);
+    });
+
+    it('should should add payment rules to the request', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            usePaymentRule: true
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
   })
 

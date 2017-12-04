@@ -17,10 +17,11 @@ Please use ```platformio``` as the bidder code.
       bids: [{
           bidder: 'platformio',
           params: { 
-            pubId: '28082',
-            siteId: '26047',
+            pubId: '28082', // required
+            siteId: '26047', // required
+            size: '250X250', // required
             placementId: '123',
-            size: '250X250'
+            bidFloor: '0.001'
           }
       }]
     }];

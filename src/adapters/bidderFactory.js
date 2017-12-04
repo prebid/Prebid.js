@@ -154,6 +154,7 @@ export function newBidder(spec) {
     getSpec: function() {
       return Object.freeze(spec);
     },
+    registerSyncs,
     callBids: function(bidderRequest) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
@@ -195,20 +196,7 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses() {
         fillNoBids();
-        if (spec.getUserSyncs) {
-          let syncs = spec.getUserSyncs({
-            iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-            pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-          }, responses);
-          if (syncs) {
-            if (!Array.isArray(syncs)) {
-              syncs = [syncs];
-            }
-            syncs.forEach((sync) => {
-              userSync.registerSync(sync.type, spec.code, sync.url)
-            });
-          }
-        }
+        registerSyncs(responses);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -219,6 +207,10 @@ export function newBidder(spec) {
       const bidRequestMap = {};
       validBidRequests.forEach(bid => {
         bidRequestMap[bid.bidId] = bid;
+        // Delete this once we are 1.0
+        if (!bid.adUnitCode) {
+          bid.adUnitCode = bid.placementCode
+        }
       });
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
@@ -236,11 +228,19 @@ export function newBidder(spec) {
       const onResponse = delayExecution(afterAllResponses, requests.length)
       requests.forEach(processRequest);
 
+      function formatGetParameters(data) {
+        if (data) {
+          return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
+        }
+
+        return '';
+      }
+
       function processRequest(request) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}?${typeof request.data === 'object' ? parseQueryStringParameters(request.data) : request.data}`,
+              `${request.url}${formatGetParameters(request.data)}`,
               {
                 success: onSuccess,
                 error: onFailure
@@ -336,6 +336,23 @@ export function newBidder(spec) {
       }
     }
   });
+
+  function registerSyncs(responses) {
+    if (spec.getUserSyncs) {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
+        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
+      }, responses);
+      if (syncs) {
+        if (!Array.isArray(syncs)) {
+          syncs = [syncs];
+        }
+        syncs.forEach((sync) => {
+          userSync.registerSync(sync.type, spec.code, sync.url)
+        });
+      }
+    }
+  }
 
   function filterAndWarn(bid) {
     if (!spec.isBidRequestValid(bid)) {

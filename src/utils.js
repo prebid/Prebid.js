@@ -178,6 +178,14 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowReferrer = function() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+};
+
 exports.logWarn = function (msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
@@ -206,12 +214,11 @@ function hasConsoleLogger() {
   return (window.console && window.console.log);
 }
 
-exports.hasConsoleLogger = hasConsoleLogger;
+function hasConsoleError() {
+  return (window.console && window.console.error);
+}
 
-var errLogFn = (function (hasLogger) {
-  if (!hasLogger) return '';
-  return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
+exports.hasConsoleLogger = hasConsoleLogger;
 
 var debugTurnedOn = function () {
   if (config.getConfig('debug') === false && _loggingChecked === false) {
@@ -225,10 +232,12 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
-  var errCode = code || 'ERROR';
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn](console, errCode + ': ' + msg, exception || '');
+/**
+ * Wrapper to console.error. Takes N arguments to log the same as console.error.
+ */
+exports.logError = function () {
+  if (debugTurnedOn() && hasConsoleError()) {
+    console.error.apply(console, arguments);
   }
 };
 
@@ -339,7 +348,7 @@ exports.isNumber = function(object) {
  */
 exports.isEmpty = function (object) {
   if (!object) return true;
-  if (this.isArray(object) || this.isStr(object)) {
+  if (exports.isArray(object) || exports.isStr(object)) {
     return !(object.length > 0);
   }
 
@@ -728,6 +737,19 @@ export function deepAccess(obj, path) {
     }
   }
   return obj;
+}
+
+/**
+ * Returns content for a friendly iframe to execute a URL in script tag
+ * @param {url} URL to be executed in a script tag in a friendly iframe
+ * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
+ */
+export function createContentToExecuteExtScriptInFriendlyFrame(url) {
+  if (!url) {
+    return '';
+  }
+
+  return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
 }
 
 /**

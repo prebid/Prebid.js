@@ -1,129 +1,152 @@
-var CONSTANTS = require('src/constants.json');
-var utils = require('src/utils.js');
-var adloader = require('src/adloader.js');
-var bidmanager = require('src/bidmanager.js');
-var bidfactory = require('src/bidfactory.js');
-var Adapter = require('src/adapter.js').default;
-var adaptermanager = require('src/adaptermanager');
+import * as utils from 'src/utils';
+import {registerBidder} from 'src/adapters/bidderFactory';
 
-const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
-const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
+const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
+const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
+const BIDDER_CODE = 'trion';
+const BASE_KEY = '_trion_';
 
-function TrionAdapter() {
-  var baseAdapter = new Adapter('trion');
-  var userTag = null;
+export const spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function (bid) {
+    return !!(bid && bid.params && bid.params.pubId && bid.params.sectionId);
+  },
+  buildRequests: function (validBidRequests) {
+    var bidRequests = [];
 
-  baseAdapter.callBids = function (params) {
-    var bids = params.bids || [];
+    for (var i = 0; i < validBidRequests.length; i++) {
+      var bid = validBidRequests[i];
 
-    if (!bids.length) {
-      return;
+      var trionUrlParams = buildTrionUrlParams(bid);
+
+      bidRequests.push({
+        method: 'GET',
+        url: BID_REQUEST_BASE_URL,
+        bidRequest: bid,
+        data: trionUrlParams
+      });
     }
+    return bidRequests;
+  },
 
-    if (!window.TRION_INT) {
-      adloader.loadScript(USER_SYNC_URL, function () {
-        userTag = window.TRION_INT || {};
-        userTag.pubId = utils.getBidIdParameter('pubId', bids[0].params);
-        userTag.sectionId = utils.getBidIdParameter('sectionId', bids[0].params);
-        if (!userTag.to) {
-          getBids(bids);
-        } else {
-          setTimeout(function () {
-            getBids(bids);
-          }, userTag.to);
-        }
-      }, true);
-    } else {
-      userTag = window.TRION_INT;
-      getBids(bids);
-    }
-  };
+  interpretResponse: function (trionResponseObj, request) {
+    var bid = {};
+    var bidResponses = [];
+    var bidRequest = request.bidRequest;
 
-  function getBids(bids) {
-    if (!userTag.int_t) {
-      userTag.int_t = window.TR_INT_T || -1;
-    }
-
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var bidId = bidRequest.bidId;
-      adloader.loadScript(buildTrionUrl(bidRequest, bidId));
-    }
-  }
-
-  function buildTrionUrl(bid, bidId) {
-    var pubId = utils.getBidIdParameter('pubId', bid.params);
-    var sectionId = utils.getBidIdParameter('sectionId', bid.params);
-    var re = utils.getBidIdParameter('re', bid.params);
-    var url = utils.getTopWindowUrl();
-    var sizes = utils.parseSizesInput(bid.sizes).join(',');
-
-    var trionUrl = BID_REQUEST_BASE_URL;
-
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'callback', '$$PREBID_GLOBAL$$.handleTrionCB');
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bidId);
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
-    trionUrl = utils.tryAppendQueryString(trionUrl, 're', re);
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'slot', bid.placementCode);
-    if (url) {
-      trionUrl += 'url=' + url + '&';
-    }
-    if (sizes) {
-      trionUrl += 'sizes=' + sizes + '&';
-    }
-    if (userTag) {
-      trionUrl += 'tag=' + encodeURIComponent(JSON.stringify(userTag)) + '&';
-    }
-
-    // remove the trailing "&"
-    if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {
-      trionUrl = trionUrl.substring(0, trionUrl.length - 1);
-    }
-
-    return trionUrl;
-  }
-
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleTrionCB = function (trionResponseObj) {
-    var bid;
-    var bidObj = {};
-    var placementCode = '';
-
-    if (trionResponseObj && trionResponseObj.bidId) {
-      var bidCode;
-      var bidId = trionResponseObj.bidId;
-      var result = trionResponseObj && trionResponseObj.result;
-
-      bidObj = utils.getBidRequest(bidId);
-      if (bidObj) {
-        bidCode = bidObj.bidder;
-        placementCode = bidObj.placementCode;
-      }
+    if (trionResponseObj && trionResponseObj.bidId && bidRequest) {
+      var result = trionResponseObj.result;
 
       if (result && result.cpm && result.placeBid && result.ad) {
         var cpm = parseInt(result.cpm, 10) / 100;
-        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
-        bid.bidderCode = bidCode;
+
+        bid.requestId = bidRequest.bidId;
         bid.cpm = cpm;
         bid.ad = result.ad;
         bid.width = result.width;
         bid.height = result.height;
+        bidResponses.push(bid);
       }
     }
-    if (!bid) {
-      bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidObj);
-    }
-    bidmanager.addBidResponse(placementCode, bid);
-  };
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    buildTrionUrl: buildTrionUrl
-  });
+    return bidResponses;
+  },
+  getUserSyncs: function getUserSyncs(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      handlePostMessage();
+      return [{
+        type: 'iframe',
+        url: getSyncUrl()
+      }];
+    }
+  }
+
+};
+registerBidder(spec);
+
+function getSyncUrl() {
+  var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
+  var pubSectionArray = unParsedPubAndSection.split(':') || [];
+  var pubId = pubSectionArray[0] || -1;
+  var sectionId = pubSectionArray[1] || -1;
+  var url = utils.getTopWindowUrl();
+  return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}&u=${url}`;
 }
 
-adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');
+function buildTrionUrlParams(bid) {
+  var pubId = utils.getBidIdParameter('pubId', bid.params);
+  var sectionId = utils.getBidIdParameter('sectionId', bid.params);
+  var re = utils.getBidIdParameter('re', bid.params);
+  var url = utils.getTopWindowUrl();
+  var sizes = utils.parseSizesInput(bid.sizes).join(',');
 
-module.exports = TrionAdapter;
+  var int_t = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
+  if (!int_t) {
+    int_t = getStorageData(BASE_KEY + 'int_t');
+  }
+  if (int_t) {
+    setStorageData(BASE_KEY + 'int_t', int_t)
+  }
+  setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
+  var trionUrl = '';
+
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bid.bidId);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 're', re);
+  if (url) {
+    trionUrl += 'url=' + url + '&';
+  }
+  if (sizes) {
+    trionUrl += 'sizes=' + sizes + '&';
+  }
+  if (int_t) {
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(int_t));
+  }
+
+  // remove the trailing "&"
+  if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {
+    trionUrl = trionUrl.substring(0, trionUrl.length - 1);
+  }
+  return trionUrl;
+}
+
+function handlePostMessage() {
+  try {
+    if (window.addEventListener) {
+      window.addEventListener('message', acceptPostMessage);
+    }
+  } catch (e) {
+  }
+}
+
+export function getStorageData(key) {
+  var item = null;
+  try {
+    if (window.localStorage) {
+      item = window.localStorage.getItem(key);
+    }
+  } catch (e) {
+  }
+  return item;
+}
+
+export function setStorageData(key, item) {
+  try {
+    if (window.localStorage) {
+      window.localStorage.setItem(key, item);
+    }
+  } catch (e) {
+  }
+}
+
+export function acceptPostMessage(e) {
+  var message = e.data || '';
+  if (message.indexOf(BASE_KEY + 'userId') !== 0) {
+    return;
+  }
+  var int_t = message.split(BASE_KEY + 'userId=')[1];
+  if (int_t) {
+    setStorageData(BASE_KEY + 'int_t', int_t);
+  }
+}
