@@ -1,5 +1,5 @@
 import { config } from './config';
-import cloneDeep from 'just-clone';
+import clone from 'just-clone';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -644,8 +644,8 @@ export function isSrcdocSupported(doc) {
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
-export function clone(obj) {
-  return cloneDeep(obj);
+export function deepClone(obj) {
+  return clone(obj);
 }
 
 export function inIframe() {

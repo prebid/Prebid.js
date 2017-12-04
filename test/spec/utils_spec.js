@@ -691,7 +691,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('clone', () => {
+  describe('deepClone', () => {
     it('deep copies objects', () => {
       const adUnit = [{
         code: 'swan',
@@ -706,7 +706,7 @@ describe('Utils', function () {
         }],
       }];
 
-      const adUnitCopy = utils.clone(adUnit);
+      const adUnitCopy = utils.deepClone(adUnit);
       expect(adUnitCopy[0].renderer.url).to.be.a('string');
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
     });

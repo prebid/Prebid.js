@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {clone} from 'src/utils';
+import {deepClone} from 'src/utils';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
 import LifestreetAdapter from 'modules/lifestreetBidAdapter';
@@ -44,7 +44,7 @@ describe('LifestreetAdapter', () => {
 
       beforeEach(() => {
         tagRequests = [];
-        request = clone(BIDDER_REQUEST);
+        request = deepClone(BIDDER_REQUEST);
         sinon.stub(adloader, 'loadScript', (url, callback) => {
           tagRequests.push(url);
           callback();
