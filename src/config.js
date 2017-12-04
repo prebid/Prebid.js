@@ -15,12 +15,7 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
-const DEFAULT_USERSYNC = {
-  syncEnabled: true,
-  pixelEnabled: true,
-  syncsPerBidder: 5,
-  syncDelay: 3000
-};
+
 const DEFAULT_TIMEOUTBUFFER = 200;
 
 export const RANDOM = 'random';
@@ -144,8 +139,6 @@ export function newConfig() {
       this._timoutBuffer = val;
     },
 
-    // userSync defaults
-    userSync: DEFAULT_USERSYNC
   };
 
   function hasGranularity(val) {
@@ -224,6 +217,8 @@ export function newConfig() {
     }
 
     Object.assign(defaults, options);
+    // Add default values to config as well
+    Object.assign(config, options);
   }
 
   /*
