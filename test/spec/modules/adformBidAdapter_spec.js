@@ -29,7 +29,7 @@ describe('Adform adapter', () => {
       assert.equal(_query.tid, 145);
       assert.equal(_query.rp, 4);
       assert.equal(_query.fd, 1);
-      assert.equal(_query.auctionId, '1a2b3c');
+      assert.equal(_query.auctionId, '4db6ddaa-ec86-459e-99aa-f7ffe940c473');
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
 
@@ -119,6 +119,7 @@ describe('Adform adapter', () => {
     sandbox.stub(adLoader, 'loadScript');
     _adformAdapter.callBids({
       bidderRequestId: '1a2b3c',
+      requestId: '4db6ddaa-ec86-459e-99aa-f7ffe940c473',
       bids: [
         {
           bidId: 'abc',
