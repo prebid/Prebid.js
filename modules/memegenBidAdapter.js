@@ -8,7 +8,7 @@ import {config} from 'src/config';
 
 var bidderName = 'memegen';
 /**
- * Adapter for requesting bids from Meme Global Media Group
+ * General Adapter for requesting bids from Meme Global Media Group
  * OpenRTB compatible
  */
 var MemeGenAdapter = function MemeGenAdapter() {
