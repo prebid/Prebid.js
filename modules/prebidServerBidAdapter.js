@@ -130,7 +130,7 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
-    const adUnits = utils.cloneJson(bidRequest.ad_units);
+    const adUnits = utils.deepClone(bidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {

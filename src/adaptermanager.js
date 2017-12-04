@@ -118,7 +118,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     bidderCodes = bidderCodes.filter((elm) => {
       return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
     });
-    let adUnitsS2SCopy = utils.cloneJson(adUnits);
+    let adUnitsS2SCopy = utils.deepClone(adUnits);
 
     // filter out client side bids
     adUnitsS2SCopy.forEach((adUnit) => {
@@ -169,7 +169,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   let _bidderRequests = [];
   // client side adapters
-  let adUnitsClientCopy = utils.cloneJson(adUnits);
+  let adUnitsClientCopy = utils.deepClone(adUnits);
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = adUnit.bids.filter((bid) => {

@@ -1,4 +1,5 @@
 import { config } from './config';
+import clone from 'just-clone';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -643,8 +644,8 @@ export function isSrcdocSupported(doc) {
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
-export function cloneJson(obj) {
-  return JSON.parse(JSON.stringify(obj));
+export function deepClone(obj) {
+  return clone(obj);
 }
 
 export function inIframe() {
