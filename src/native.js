@@ -146,7 +146,13 @@ export function getNativeTargeting(bid) {
 
   Object.keys(bid['native']).forEach(asset => {
     const key = NATIVE_KEYS[asset];
-    const value = bid['native'][asset];
+    let value = bid['native'][asset];
+
+    // native image-type assets can be a string or an object with a url prop
+    if (typeof value === 'object' && value.url) {
+      value = value.url;
+    }
+
     if (key) {
       keyValues[key] = value;
     }

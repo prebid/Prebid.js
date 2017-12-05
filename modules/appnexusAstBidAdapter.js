@@ -212,13 +212,13 @@ function newBid(serverBid, rtbBid) {
       body: nativeAd.desc,
       cta: nativeAd.ctatext,
       sponsoredBy: nativeAd.sponsored,
-      image: nativeAd.main_img && nativeAd.main_img.url,
-      imageSize: {
+      image: {
+        url: nativeAd.main_img && nativeAd.main_img.url,
         height: nativeAd.main_img && nativeAd.main_img.height,
         width: nativeAd.main_img && nativeAd.main_img.width,
       },
-      icon: nativeAd.icon && nativeAd.icon.url,
-      iconSize: {
+      icon: {
+        url: nativeAd.icon && nativeAd.icon.url,
         height: nativeAd.icon && nativeAd.icon.height,
         width: nativeAd.icon && nativeAd.icon.width,
       },
