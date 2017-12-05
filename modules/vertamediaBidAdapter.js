@@ -105,7 +105,6 @@ function getSize(requestSizes) {
 function createBid(bidResponse) {
   return {
     requestId: bidResponse.requestId,
-    descriptionUrl: bidResponse.url,
     creativeId: bidResponse.cmpId,
     vastUrl: bidResponse.vastUrl,
     height: bidResponse.height,

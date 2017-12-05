@@ -19,7 +19,6 @@ const serverResponse = {
   'source': {'aid': 12345, 'pubId': 54321},
   'bids': [{
     'vastUrl': 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
-    'descriptionUrl': '44F2AEB9BFC881B3',
     'requestId': '2e41f65424c87c',
     'url': '44F2AEB9BFC881B3',
     'creative_id': 342516,
@@ -86,7 +85,6 @@ describe('vertamediaBidAdapter', () => {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
       const eq = [{
         vastUrl: 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
-        descriptionUrl: '44F2AEB9BFC881B3',
         requestId: '2e41f65424c87c',
         creativeId: 342516,
         mediaType: 'video',
