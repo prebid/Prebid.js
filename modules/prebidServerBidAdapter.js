@@ -66,6 +66,11 @@ const paramTypes = {
     'cp': tryConvertNumber,
     'ct': tryConvertNumber
   },
+  'conversant': {
+    'site_id': tryConvertString,
+    'secure': tryConvertNumber,
+    'mobile': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
@@ -99,6 +104,25 @@ function PrebidServer() {
             }
           }
         });
+        // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to ingest properly
+        // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myMultiVar","value":["myValue","124578"]}]
+        let kwArray = [];
+        Object.keys(bid.params).forEach(key => {
+          if (bid.bidder === 'appnexus' && (key !== 'member' && key !== 'invCode' && key !== 'placementId')) {
+            let kvObj = {};
+            kvObj.key = key
+            if (bid.params[key] !== null) {
+              if (Array.isArray(bid.params[key])) {
+                kvObj.value = bid.params[key].map(val => tryConvertString(val));
+              } else {
+                kvObj.value = [tryConvertString(bid.params[key])];
+              }
+            }
+            kwArray.push(kvObj);
+            delete bid.params[key];
+          }
+        });
+        bid.params.keywords = kwArray;
       });
     });
   }
@@ -106,7 +130,7 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
-    const adUnits = utils.cloneJson(bidRequest.ad_units);
+    const adUnits = utils.deepClone(bidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {

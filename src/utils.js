@@ -1,4 +1,5 @@
 import { config } from './config';
+import clone from 'just-clone';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -214,12 +215,11 @@ function hasConsoleLogger() {
   return (window.console && window.console.log);
 }
 
-exports.hasConsoleLogger = hasConsoleLogger;
+function hasConsoleError() {
+  return (window.console && window.console.error);
+}
 
-var errLogFn = (function (hasLogger) {
-  if (!hasLogger) return '';
-  return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
+exports.hasConsoleLogger = hasConsoleLogger;
 
 var debugTurnedOn = function () {
   if (config.getConfig('debug') === false && _loggingChecked === false) {
@@ -233,10 +233,12 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
-  var errCode = code || 'ERROR';
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn](console, errCode + ': ' + msg, exception || '');
+/**
+ * Wrapper to console.error. Takes N arguments to log the same as console.error.
+ */
+exports.logError = function () {
+  if (debugTurnedOn() && hasConsoleError()) {
+    console.error.apply(console, arguments);
   }
 };
 
@@ -642,8 +644,8 @@ export function isSrcdocSupported(doc) {
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
-export function cloneJson(obj) {
-  return JSON.parse(JSON.stringify(obj));
+export function deepClone(obj) {
+  return clone(obj);
 }
 
 export function inIframe() {
@@ -791,4 +793,21 @@ export function isValidMediaTypes(mediaTypes) {
   }
 
   return true;
+}
+
+/**
+ * Constructs warning message for when unsupported bidders are dropped from an adunit
+ * @param {Object} adUnit ad unit from which the bidder is being dropped
+ * @param {Array} unSupportedBidders arrary of bidder codes that are not compatible with the adUnit
+ * @return {string} warning message to display when condition is met
+ */
+export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
+  const mediaType = adUnit.mediaType || Object.keys(adUnit.mediaTypes).join(', ');
+  const plural = unSupportedBidders.length === 1 ? 'This bidder' : 'These bidders';
+
+  return `
+    ${adUnit.code} is a ${mediaType} ad unit
+    containing bidders that don't support ${mediaType}: ${unSupportedBidders.join(', ')}.
+    ${plural} won't fetch demand.
+  `;
 }

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.33.0-pre",
+  "version": "0.34.1-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -53,6 +53,7 @@
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
+    "gulp-js-escape": "^1.0.1",
     "gulp-optimize-js": "^1.1.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
@@ -106,6 +107,7 @@
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
-    "gulp-sourcemaps": "^2.6.0"
+    "gulp-sourcemaps": "^2.6.0",
+    "just-clone": "^1.0.2"
   }
 }
