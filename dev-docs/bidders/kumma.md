@@ -20,5 +20,7 @@ biddercode_longer_than_12: false
 {: .table .table-bordered .table-striped }
 | Name           | Scope    | Description                         | Example |
 | :------------- | :------- | :---------------------------------- | :------ |
-| `pubId`        | required | The publisher account ID            | `37054` |
-| `siteId`       | required | The publisher site ID               | `123` |
+| `pubId`        | required | The publisher account ID            | `55879` |
+| `siteId`       | required | The publisher site ID               | `26047` |
+| `placementId`  | optional | The publisher placement ID          | `17394` |
+| `bidFloor`     | optional | The bid floor                       | `0.001` |
