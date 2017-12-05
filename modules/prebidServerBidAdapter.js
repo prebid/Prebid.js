@@ -7,11 +7,15 @@ import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
+import { isValid } from 'src/adapters/bidderFactory';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 let _synced = false;
+const DEFAULT_S2S_TTL = 60;
+const DEFAULT_S2S_CURRENCY = 'USD';
+const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
 config.setDefaults({
@@ -293,8 +297,17 @@ export function PrebidServer() {
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
+            bidObject.requestId = bidObj.bid_id;
+            bidObject.creativeId = bidObj.creative_id;
 
-            addBidResponse(bidObj.code, bidObject);
+            // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+            bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
+            bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
+            bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
+
+            if (isValid(bidObj.code, bidObject, bidRequests)) {
+              addBidResponse(bidObj.code, bidObject);
+            }
           });
         }
       }

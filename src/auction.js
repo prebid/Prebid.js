@@ -50,12 +50,13 @@
 
 import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
-import { NATIVE_KEYS } from './native';
+import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
+import { videoAdUnit } from 'src/video';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -112,6 +113,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      if (timedOut) {
+        utils.logMessage(`Auction ${_auctionId} timedOut`);
+        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        if (timedOutBidders.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+        }
+      }
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: _auctionId});
+
       try {
         _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
@@ -130,14 +141,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         }
       }
       _callback = null;
-
-      if (timedOut) {
-        utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
-        if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
-        }
-      }
     }
   }
 
@@ -148,13 +151,23 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
       request.doneCbCallCount += 1;
-      if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
-        // when all bidders have called done callback atleast once it means auction is complete
-        utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
-        _auctionStatus = AUCTION_COMPLETED;
-        executeCallback(false, true);
+      // In case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
+      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('usePrebidCache'))) {
+        bidsBackAll()
       }
     }, 1);
+  }
+
+  /**
+   * Execute bidBackHandler if all bidders have called done.
+   */
+  function bidsBackAll() {
+    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
+      // when all bidders have called done callback atleast once it means auction is complete
+      utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
+      _auctionStatus = AUCTION_COMPLETED;
+      executeCallback(false, true);
+    }
   }
 
   function callBids() {
@@ -183,6 +196,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     addBidReceived,
     executeCallback,
     callBids,
+    bidsBackAll,
     setWinningBid: (winningBid) => { _winningBid = winningBid },
     getWinningBid: () => _winningBid,
     getTimeout: () => _timeout,
@@ -232,12 +246,13 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
           addBidToAuction(bidResponse);
+          auctionInstance.bidsBackAll();
         }
         doCallbacksIfNeeded();
       });
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction(bidResponse);
+      doCallbacksIfNeeded();
     }
   }
 }, 'addBidResponse');
@@ -304,48 +319,49 @@ export function getStandardBidderSettings() {
   let granularity = config.getConfig('priceGranularity');
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
-      adserverTargeting: [
-        {
-          key: 'hb_bidder',
-          val: function (bidResponse) {
-            return bidResponse.bidderCode;
-          }
-        }, {
-          key: 'hb_adid',
-          val: function (bidResponse) {
-            return bidResponse.adId;
-          }
-        }, {
-          key: 'hb_pb',
-          val: function (bidResponse) {
-            if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-              return bidResponse.pbAg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-              return bidResponse.pbDg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-              return bidResponse.pbLg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-              return bidResponse.pbMg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-              return bidResponse.pbHg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-              return bidResponse.pbCg;
-            }
-          }
-        }, {
-          key: 'hb_size',
-          val: function (bidResponse) {
-            return bidResponse.size;
-          }
-        }, {
-          key: 'hb_deal',
-          val: function (bidResponse) {
-            return bidResponse.dealId;
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
+  }
+  if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
+      {
+        key: 'hb_bidder',
+        val: function (bidResponse) {
+          return bidResponse.bidderCode;
+        }
+      }, {
+        key: 'hb_adid',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      }, {
+        key: 'hb_pb',
+        val: function (bidResponse) {
+          if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+            return bidResponse.pbAg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+            return bidResponse.pbDg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+            return bidResponse.pbLg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+            return bidResponse.pbMg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+            return bidResponse.pbHg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+            return bidResponse.pbCg;
           }
         }
-      ]
-    };
+      }, {
+        key: 'hb_size',
+        val: function (bidResponse) {
+          return bidResponse.size;
+        }
+      }, {
+        key: 'hb_deal',
+        val: function (bidResponse) {
+          return bidResponse.dealId;
+        }
+      }
+    ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
@@ -369,11 +385,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
   // set native key value targeting
   if (custBidObj.native) {
-    Object.keys(custBidObj.native).forEach(asset => {
-      const key = NATIVE_KEYS[asset];
-      const value = custBidObj.native[asset];
-      if (key) { keyValues[key] = value; }
-    });
+    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
   return keyValues;
@@ -418,12 +430,18 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 }
 
 export function adjustBids(bid) {
-  var code = bid.bidderCode;
-  var bidPriceAdjusted = bid.cpm;
-  if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
+  let code = bid.bidderCode;
+  let bidPriceAdjusted = bid.cpm;
+  let bidCpmAdjustment;
+  if ($$PREBID_GLOBAL$$.bidderSettings) {
+    if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment;
+    } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
+    }
+    if (bidCpmAdjustment) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
+        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
       } catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
       }
