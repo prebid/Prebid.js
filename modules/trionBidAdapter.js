@@ -33,10 +33,9 @@ export const spec = {
     var bid = {};
     var bidResponses = [];
     var bidRequest = request.bidRequest;
-    var responseBody = trionResponseObj ? trionResponseObj.body : {};
 
-    if (responseBody && responseBody.bidId && bidRequest) {
-      var result = responseBody.result;
+    if (trionResponseObj && trionResponseObj.bidId && bidRequest) {
+      var result = trionResponseObj.result;
 
       if (result && result.cpm && result.placeBid && result.ad) {
         var cpm = parseInt(result.cpm, 10) / 100;
@@ -46,10 +45,6 @@ export const spec = {
         bid.ad = result.ad;
         bid.width = result.width;
         bid.height = result.height;
-        bid.ttl = result.ttl;
-        bid.creativeId = result.creativeId;
-        bid.currency = result.currency;
-        bid.netRevenue = result.netRevenue;
         bidResponses.push(bid);
       }
     }
