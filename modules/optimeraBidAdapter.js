@@ -60,7 +60,6 @@ export const spec = {
           dealId = scores[validBids[i].adUnitCode];
         }
         var bidResponse = {
-          bidderCode: spec.code,
           requestId: validBids[i].bidId,
           ad: '<div></div>',
           cpm: 0.01,
