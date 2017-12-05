@@ -109,6 +109,9 @@ We recommend that users leave `cookieSet` enabled since it's essential for serve
 
 If you are using Prebid Server and you want to show video ads, you must use [OpenRTB video parameters](https://www.iab.com/guidelines/real-time-bidding-rtb-project/) in your Prebid ad unit as shown below.
 
+{: .alert.alert-warning :}
+The `mimes` parameter is required by OpenRTB.  For all other parameters, check with your server-side header bidding partner.
+
 ```javascript
 var adUnit1 = {
     code: 'videoAdUnit',
