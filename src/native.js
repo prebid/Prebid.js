@@ -1,4 +1,5 @@
 import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
+import includes from 'core-js/library/fn/array/virtual/includes';
 
 export const nativeAdapters = [];
 
@@ -46,7 +47,7 @@ export function processNativeAdUnitParams(params) {
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
-  if (!(type && Object.keys(SUPPORTED_TYPES).includes(type))) {
+  if (!(type && Object.keys(SUPPORTED_TYPES)::includes(type))) {
     logError(`${type} nativeParam is not supported`);
     return false;
   }
@@ -64,7 +65,7 @@ export const nativeAdUnit = adUnit => {
   const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
   return mediaType || mediaTypes;
 }
-export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
+export const nativeBidder = bid => nativeAdapters::includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
@@ -96,7 +97,7 @@ export function nativeBidIsValid(bid, bidRequests) {
     key => bid['native'][key]
   );
 
-  return requiredAssets.every(asset => returnedAssets.includes(asset));
+  return requiredAssets.every(asset => returnedAssets::includes(asset));
 }
 
 /*

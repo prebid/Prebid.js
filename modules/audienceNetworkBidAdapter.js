@@ -5,6 +5,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
 import { getTopWindowUrl } from 'src/utils';
+import findIndex from 'core-js/library/fn/array/virtual/find-index';
+import includes from 'core-js/library/fn/array/virtual/includes';
 
 const code = 'audienceNetwork';
 const currency = 'USD';
@@ -47,7 +49,7 @@ const expandSize = size => size.split('x').map(Number);
  * @param {String} size
  * @returns {Boolean}
  */
-const isValidSize = size => ['300x250', '320x50'].includes(size);
+const isValidSize = size => ['300x250', '320x50']::includes(size);
 
 /**
  * Is this a video format?
@@ -139,7 +141,7 @@ const buildRequests = bids => {
     pageurl,
     sdk
   };
-  const video = adformats.findIndex(isVideo);
+  const video = adformats::findIndex(isVideo);
   if (video !== -1) {
     [search.playerwidth, search.playerheight] = sizes[video].split('x').map(Number)
   }

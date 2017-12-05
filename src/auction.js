@@ -57,6 +57,8 @@ import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
 import { videoAdUnit } from 'src/video';
+import find from 'core-js/library/fn/array/virtual/find';
+import includes from 'core-js/library/fn/array/virtual/includes';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -147,7 +149,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   function done(bidRequestId) {
     var innerBidRequestId = bidRequestId;
     return delayExecution(function() {
-      let request = _bidderRequests.find((bidRequest) => {
+      let request = _bidderRequests::find((bidRequest) => {
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
       request.doneCbCallCount += 1;
@@ -485,10 +487,10 @@ function getTimedOutBids(bidderRequests, bidsReceived) {
     .filter(uniques);
 
   const timedOutBidderCodes = bidRequestedCodes
-    .filter(bidder => !bidReceivedCodes.includes(bidder));
+    .filter(bidder => !bidReceivedCodes::includes(bidder));
 
   const timedOutBids = bidderRequests
-    .map(bid => (bid.bids || []).filter(bid => timedOutBidderCodes.includes(bid.bidder)))
+    .map(bid => (bid.bids || []).filter(bid => timedOutBidderCodes::includes(bid.bidder)))
     .reduce(flatten, [])
     .map(bid => ({
       bidId: bid.bidId,
