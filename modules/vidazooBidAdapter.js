@@ -5,8 +5,8 @@ import { BANNER } from 'src/mediaTypes';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-// export const URL = '//openrtb.cliipa.com';
-export const URL = '//localhost:8067';
+export const URL = '//prebid.cliipa.com';
+// export const URL = '//localhost:8067';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
