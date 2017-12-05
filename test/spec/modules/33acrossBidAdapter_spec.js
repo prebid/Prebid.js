@@ -347,7 +347,7 @@ describe('33acrossBidAdapter:', function () {
   describe('getUserSyncs', function() {
     beforeEach(function() {
       this.bidderRequests = {
-        bids : [
+        bids: [
           {
             params: {
               siteId: 'id1',
