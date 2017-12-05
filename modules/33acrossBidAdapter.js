@@ -1,5 +1,4 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
-const utils = require('../src/utils');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -116,12 +115,11 @@ function interpretResponse(serverResponse) {
 }
 
 // Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
-function getUserSyncs(syncOptions) {
+function getUserSyncs(syncOptions, bidderRequests) {
   let syncs = [];
-  const ttxBidRequests = utils.getBidderRequestAllAdUnits(BIDDER_CODE).bids;
 
   if (syncOptions.iframeEnabled) {
-    syncs = ttxBidRequests.map(_createSync);
+    syncs = bidderRequests.bids.map(_createSync);
   }
 
   return syncs;
