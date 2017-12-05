@@ -41,7 +41,7 @@ const ALL_TOPICS = '*';
 /**
  * @typedef {object} PrebidConfig
  *
- * @property {bool} config.cacheUrl Set a url if we should use prebid-cache to store video bids before adding
+ * @property {string} cache.url Set a url if we should use prebid-cache to store video bids before adding
  *   bids to the auction. **NOTE** This must be set if you want to use the dfpAdServerVideo module.
  */
 

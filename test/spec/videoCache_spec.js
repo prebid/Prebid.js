@@ -50,8 +50,8 @@ describe('The video cache', () => {
       requests = [];
       xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
-        video: {
-          cacheUrl: 'https://prebid.adnxs.com/pbc/v1/cache'
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
         }
       })
     });
@@ -139,8 +139,8 @@ describe('The video cache', () => {
 describe('The getCache function', () => {
   beforeEach(() => {
     config.setConfig({
-      video: {
-        cacheUrl: 'https://prebid.adnxs.com/pbc/v1/cache'
+      cache: {
+        url: 'https://prebid.adnxs.com/pbc/v1/cache'
       }
     })
   });

@@ -118,12 +118,12 @@ export function store(bids, done) {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(config.getConfig('video.cacheUrl'), shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
 }
 
 export function getCacheUrl(id) {
-  return `${config.getConfig('video.cacheUrl')}?uuid=${id}`;
+  return `${config.getConfig('cache.url')}?uuid=${id}`;
 }

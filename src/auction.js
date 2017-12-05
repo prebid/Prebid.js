@@ -236,7 +236,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
   function tryAddVideoBid(bidResponse) {
-    if (config.getConfig('video.cacheUrl')) {
+    if (config.getConfig('cache.url')) {
       store([bidResponse], function(error, cacheIds) {
         if (error) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
