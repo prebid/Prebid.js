@@ -1,5 +1,4 @@
 const { expect } = require('chai');
-const utils = require('../../../src/utils');
 const {
   isBidRequestValid,
   buildRequests,
@@ -31,16 +30,11 @@ describe('33acrossBidAdapter:', function () {
         ],
         transactionId: 't1'
       }
-    ]
-    this.sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(function() {
-    this.sandbox.restore();
+    ];
   });
 
   describe('isBidRequestValid:', function () {
-    it('returns true when bidder params.siteId, params.productId are set', function() {
+    it('returns true when valid bid request is sent', function() {
       const validBid = {
         bidder: BIDDER_CODE,
         params: {
@@ -52,11 +46,13 @@ describe('33acrossBidAdapter:', function () {
       expect(isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('returns true when bidder, params.siteId, params.productId and test are set', function() {
+    it('returns true when valid test bid request is sent', function() {
       const validBid = {
         bidder: BIDDER_CODE,
         params: {
-          siteId: SITE_ID,
+          site: {
+            id: SITE_ID
+          },
           productId: PRODUCT_ID,
           test: 1
         }
@@ -85,7 +81,7 @@ describe('33acrossBidAdapter:', function () {
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
 
-    it('returns false when params.siteId not set', function() {
+    it('returns false when site ID is not set in params', function() {
       const invalidBid = {
         bidder: 'foo',
         params: {
@@ -96,7 +92,7 @@ describe('33acrossBidAdapter:', function () {
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
 
-    it('returns false when params.productId not set', function() {
+    it('returns false when product ID not set in params', function() {
       const invalidBid = {
         bidder: 'foo',
         params: {
@@ -152,6 +148,12 @@ describe('33acrossBidAdapter:', function () {
     });
 
     it('returns corresponding server requests for each valid test bidRequest', function() {
+      delete this.bidRequests[0].params.siteId;
+      this.bidRequests[0].params.site = {
+        id: SITE_ID,
+        page: 'http://test-url.com'
+      }
+      this.bidRequests[0].params.url = 'https://staging-ssc.33across.com/api/v1/hb';
       this.bidRequests[0].params.test = 1;
 
       const ttxRequest = {
@@ -177,7 +179,8 @@ describe('33acrossBidAdapter:', function () {
           }
         } ],
         site: {
-          id: SITE_ID
+          id: SITE_ID,
+          page: 'http://test-url.com'
         },
         id: 'b1',
         test: 1
@@ -238,7 +241,7 @@ describe('33acrossBidAdapter:', function () {
       expect(interpretResponse({ body: serverResponse })).to.deep.equal([ bidResponse ]);
     });
 
-    it('interprets and returns empty array', function() {
+    it('interprets nbr and returns empty array', function() {
       const serverResponse = {
         cur: 'USD',
         ext: { },
@@ -304,39 +307,45 @@ describe('33acrossBidAdapter:', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs:', function() {
     beforeEach(function() {
-      this.ttxBids = [
-        {
-          params: {
-            siteId: 'id1',
-            productId: 'p1'
+      this.bidderRequests = {
+        bids: [
+          {
+            params: {
+              siteId: 'id1',
+              productId: 'p1'
+            }
+          },
+          {
+            params: {
+              siteId: 'id2',
+              productId: 'p1'
+            }
           }
-        },
-        {
-          params: {
-            siteId: 'id2',
-            productId: 'p1'
-          }
-        }
-      ];
+        ]
+      };
 
-      this.testTTXBids = [
-        {
-          params: {
-            siteId: 'id1',
-            productId: 'p1',
-            test: 1
+      this.testBidderRequests = {
+        bids: [
+          {
+            params: {
+              site: { id: 'id1' },
+              productId: 'p1',
+              syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch',
+              test: 1
+            }
+          },
+          {
+            params: {
+              site: { id: 'id2' },
+              productId: 'p1',
+              syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch',
+              test: 1
+            }
           }
-        },
-        {
-          params: {
-            siteId: 'id2',
-            productId: 'p1',
-            test: 1
-          }
-        }
-      ];
+        ]
+      };
 
       this.syncs = [
         {
@@ -352,52 +361,35 @@ describe('33acrossBidAdapter:', function () {
       this.testSyncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&id=id1'
+          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&id=id2'
+          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id2'
         },
       ];
-
-      this.getFakeBids = () => (
-        {
-          bids: this.ttxBids
-        }
-      );
-
-      this.getFakeTestBids = () => (
-        {
-          bids: this.testTTXBids
-        }
-      );
     });
 
     it('returns empty sync array when iframe is not enabled', function() {
-      this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', this.getFakeBids);
       const syncOptions = {};
-      expect(getUserSyncs(syncOptions)).to.deep.equal([]);
+      expect(getUserSyncs(syncOptions, this.biddderRequests)).to.deep.equal([]);
     });
 
     it('returns sync array equal to number of bids for ttx when iframe is enabled', function() {
-      this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', this.getFakeBids);
-
       const syncOptions = {
         iframeEnabled: true
       };
-      const syncs = getUserSyncs(syncOptions);
-      expect(syncs.length).to.equal(this.ttxBids.length);
+      const syncs = getUserSyncs(syncOptions, this.bidderRequests);
+      expect(syncs.length).to.equal(this.bidderRequests.bids.length);
       expect(syncs).to.deep.equal(this.syncs);
     });
 
     it('returns sync array equal to number of test bids for ttx when iframe is enabled', function() {
-      this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', this.getFakeTestBids);
-
       const syncOptions = {
         iframeEnabled: true
       };
-      const syncs = getUserSyncs(syncOptions);
-      expect(syncs.length).to.equal(this.testTTXBids.length);
+      const syncs = getUserSyncs(syncOptions, this.testBidderRequests);
+      expect(syncs.length).to.equal(this.testBidderRequests.bids.length);
       expect(syncs).to.deep.equal(this.testSyncs);
     });
   });

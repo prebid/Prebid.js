@@ -1,11 +1,8 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
-const utils = require('../src/utils');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-const TEST_END_POINT = 'https://staging-ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
-const TEST_SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -27,7 +24,7 @@ function _createBidResponse(response) {
 function _createServerRequest(bidRequest) {
   const ttxRequest = {};
   const params = bidRequest.params;
-  const url = (params.test === 1) ? (TEST_END_POINT) : (END_POINT);
+  const url = bidRequest.params.url || END_POINT;
 
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
@@ -41,7 +38,9 @@ function _createServerRequest(bidRequest) {
     }
   }
 
-  ttxRequest.site = { id: params.siteId };
+  // Allowing site to be a test configuration object or just the id (former required for testing,
+  // latter when used by publishers)
+  ttxRequest.site = params.site || { id: params.siteId };
 
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
@@ -67,11 +66,11 @@ function _createServerRequest(bidRequest) {
 
 // Sync object will always be of type iframe for ttx
 function _createSync(bid) {
-  const syncUrl = (bid.params.test === 1) ? (TEST_SYNC_ENDPOINT) : (SYNC_ENDPOINT);
+  const syncUrl = bid.params.syncUrl || SYNC_ENDPOINT;
 
   return {
     type: 'iframe',
-    url: `${syncUrl}&id=${bid.params.siteId}`
+    url: `${syncUrl}&id=${bid.params.siteId || bid.params.site.id}`
   }
 }
 
@@ -88,7 +87,12 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if (typeof bid.params.siteId === 'undefined' || typeof bid.params.productId === 'undefined') {
+  if ((typeof bid.params.site === 'undefined' || typeof bid.params.site.id === 'undefined') &&
+  (typeof bid.params.siteId === 'undefined')) {
+    return false;
+  }
+
+  if (typeof bid.params.productId === 'undefined') {
     return false;
   }
 
@@ -113,12 +117,11 @@ function interpretResponse(serverResponse) {
 }
 
 // Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
-function getUserSyncs(syncOptions) {
+function getUserSyncs(syncOptions, bidderRequests) {
   let syncs = [];
-  const ttxBidRequests = utils.getBidderRequestAllAdUnits(BIDDER_CODE).bids;
 
   if (syncOptions.iframeEnabled) {
-    syncs = ttxBidRequests.map(_createSync);
+    syncs = bidderRequests.bids.map(_createSync);
   }
 
   return syncs;
