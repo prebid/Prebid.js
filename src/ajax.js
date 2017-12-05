@@ -25,10 +25,10 @@ export function ajax(url, callback, data, options = {}) {
     let method = options.method || (data ? 'POST' : 'GET');
 
     let callbacks = typeof callback === 'object' ? callback : {
-      success: function() {
+      success: function () {
         utils.logMessage('xhr success');
       },
-      error: function(e) {
+      error: function (e) {
         utils.logError('xhr error', null, e);
       }
     };
@@ -59,7 +59,7 @@ export function ajax(url, callback, data, options = {}) {
       x.ontimeout = function () {
         callbacks.error('timeout', x);
       };
-      x.onprogress = function() {
+      x.onprogress = function () {
         utils.logMessage('xhr onprogress');
       };
     } else {
@@ -83,7 +83,9 @@ export function ajax(url, callback, data, options = {}) {
 
     x.open(method, url);
     // IE needs timoeut to be set after open - see #1410
-    x.timeout = _timeout;
+    if (options.withoutTimeout !== true) {
+      x.timeout = _timeout;
+    }
 
     if (!useXDomainRequest) {
       if (options.withCredentials) {

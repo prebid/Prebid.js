@@ -1,3 +1,5 @@
+import {parse} from '../src/url';
+
 var CONSTANTS = require('src/constants.json');
 var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
@@ -6,7 +8,8 @@ var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 
 var RoxotAdapter = function RoxotAdapter() {
-  var roxotUrl = 'r.rxthdr.com';
+  let customHost = parse(window.location).search['roxot_auction_url'];
+  var roxotUrl = customHost || 'r.rxthdr.com';
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 

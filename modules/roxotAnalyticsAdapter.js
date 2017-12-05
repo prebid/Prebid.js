@@ -1,268 +1,13 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import * as adaptermanager from 'src/adaptermanager';
+import {parse} from '../src/url';
+import {ajax} from '../src/ajax';
 
 const utils = require('src/utils');
 
-const url = '//pa.rxthdr.com/analytic';
-const analyticsType = 'endpoint';
-
-let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
-let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
-let bidWonConst = CONSTANTS.EVENTS.BID_WON;
-let bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
-let bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
-let bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
-
-let initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
-let bidWon = {options: {}, events: []};
-let eventStack = {options: {}, events: []};
-
-let auctionStatus = 'not_started';
-
-let localStoragePrefix = 'roxot_analytics_';
-let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-let utmTimeoutKey = 'utm_timeout';
-let utmTimeout = 60 * 60 * 1000;
-let sessionTimeout = 60 * 60 * 1000;
-let sessionIdStorageKey = 'session_id';
-let sessionTimeoutKey = 'session_timeout';
-
-function getParameterByName(param) {
-  let vars = {};
-  window.location.href.replace(location.hash, '').replace(
-    /[?&]+([^=&]+)=?([^&]*)?/gi,
-    function(m, key, value) {
-      vars[key] = value !== undefined ? value : '';
-    }
-  );
-
-  return vars[param] ? vars[param] : '';
-}
-
-function buildSessionIdLocalStorageKey() {
-  return localStoragePrefix.concat(sessionIdStorageKey);
-}
-
-function buildSessionIdTimeoutLocalStorageKey() {
-  return localStoragePrefix.concat(sessionTimeoutKey);
-}
-
-function updateSessionId() {
-  if (isSessionIdTimeoutExpired()) {
-    let newSessionId = utils.generateUUID();
-    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
-  }
-  initOptions.sessionId = getSessionId();
-  updateSessionIdTimeout();
-}
-
-function updateSessionIdTimeout() {
-  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
-}
-
-function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
-  return Date.now() - cpmSessionTimestamp > sessionTimeout;
-}
-
-function getSessionId() {
-  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
-}
-
-function updateUtmTimeout() {
-  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
-}
-
-function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
-  return (Date.now() - utmTimestamp) > utmTimeout;
-}
-
-function buildUtmLocalStorageTimeoutKey() {
-  return localStoragePrefix.concat(utmTimeoutKey);
-}
-
-function buildUtmLocalStorageKey(utmMarkKey) {
-  return localStoragePrefix.concat(utmMarkKey);
-}
-
-function checkOptions() {
-  if (typeof initOptions.publisherIds === 'undefined') {
-    return false;
-  }
-
-  return initOptions.publisherIds.length > 0;
-}
-
-function checkAdUnitConfig() {
-  if (typeof initOptions.adUnits === 'undefined') {
-    return false;
-  }
-
-  return initOptions.adUnits.length > 0;
-}
-
-function buildBidWon(eventType, args) {
-  bidWon.options = initOptions;
-  if (checkAdUnitConfig()) {
-    if (initOptions.adUnits.includes(args.adUnitCode)) {
-      bidWon.events = [{ args: args, eventType: eventType }];
-    }
-  } else {
-    bidWon.events = [{ args: args, eventType: eventType }];
-  }
-}
-
-function buildEventStack() {
-  eventStack.options = initOptions;
-}
-
-function filterBidsByAdUnit(bids) {
-  var filteredBids = [];
-  bids.forEach(function (bid) {
-    if (initOptions.adUnits.includes(bid.placementCode)) {
-      filteredBids.push(bid);
-    }
-  });
-  return filteredBids;
-}
-
-function isValidEvent(eventType, adUnitCode) {
-  if (checkAdUnitConfig()) {
-    let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
-    if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isValidEventStack() {
-  if (eventStack.events.length > 0) {
-    return eventStack.events.some(function(event) {
-      return bidRequestConst === event.eventType || bidWonConst === event.eventType;
-    });
-  }
-  return false;
-}
-
-function isValidBidWon() {
-  return bidWon.events.length > 0;
-}
-
-function flushEventStack() {
-  eventStack.events = [];
-}
-
-function flushBidWon() {
-  bidWon.events = [];
-}
-
-let roxotAdapter = Object.assign(adapter({url, analyticsType}),
-  {
-    track({eventType, args}) {
-      if (!checkOptions()) {
-        return;
-      }
-
-      let info = Object.assign({}, args);
-
-      if (info && info.ad) {
-        info.ad = '';
-      }
-
-      if (eventType === auctionInitConst) {
-        auctionStatus = 'started';
-        flushEventStack();
-      }
-
-      if (eventType === bidWonConst && auctionStatus === 'not_started') {
-        updateSessionId();
-        buildBidWon(eventType, info);
-        if (isValidBidWon()) {
-          send(eventType, bidWon, 'bidWon');
-        }
-        flushBidWon();
-        return;
-      }
-
-      if (eventType === auctionEndConst) {
-        updateSessionId();
-        buildEventStack(eventType);
-        if (isValidEventStack()) {
-          send(eventType, eventStack, 'eventStack');
-        }
-        flushEventStack();
-        auctionStatus = 'not_started';
-      } else {
-        pushEvent(eventType, info);
-      }
-    },
-
-  });
-
-roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
-
-roxotAdapter.enableAnalytics = function (config) {
-  initOptions = config.options;
-  initOptions.utmTagData = this.buildUtmTagData();
-  utils.logInfo('Roxot Analytics enabled with config', initOptions);
-  roxotAdapter.originEnableAnalytics(config);
-};
-
-roxotAdapter.buildUtmTagData = function () {
-  let utmTagData = {};
-  let utmTagsDetected = false;
-  utmTags.forEach(function(utmTagKey) {
-    let utmTagValue = getParameterByName(utmTagKey);
-    if (utmTagValue !== '') {
-      utmTagsDetected = true;
-    }
-    utmTagData[utmTagKey] = utmTagValue;
-  });
-  utmTags.forEach(function(utmTagKey) {
-    if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
-      updateUtmTimeout();
-    } else {
-      if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
-        updateUtmTimeout();
-      }
-    }
-  });
-  return utmTagData;
-};
-
-function send(eventType, data, sendDataType) {
-  let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
-  let xhr = new XMLHttpRequest();
-  xhr.open('POST', fullUrl, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.withCredentials = true;
-  xhr.onreadystatechange = function(result) {
-    if (this.readyState != 4) return;
-
-    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
-  }
-  xhr.send(JSON.stringify(data));
-};
-
-function pushEvent(eventType, args) {
-  if (eventType === bidRequestConst) {
-    if (checkAdUnitConfig()) {
-      args.bids = filterBidsByAdUnit(args.bids);
-    }
-    if (args.bids.length > 0) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  } else {
-    if (isValidEvent(eventType, args.adUnitCode)) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  }
-}
+let options = new Config();
+let roxotAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), new RoxotAnalyticAdapter());
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
@@ -270,3 +15,377 @@ adaptermanager.registerAnalyticsAdapter({
 });
 
 export default roxotAdapter;
+
+function RoxotAnalyticAdapter() {
+  return {
+    transport: new AjaxTransport(),
+    requestStack: new RequestStack(),
+    track({eventType, args}) {
+      args = args || {};
+
+      if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+        options.fill(args['config'])
+      }
+
+      let requestId = this.requestStack.presentRequestId(args['requestId']);
+      let request = this.requestStack.ensureRequestPresented(requestId);
+
+      let isImpression = eventType === CONSTANTS.EVENTS.BID_WON;
+      let isBid = eventType === CONSTANTS.EVENTS.BID_ADJUSTMENT;
+      let isBidAfterTimeout = (request.isFinished() && isBid);
+      let isBidRequested = eventType === CONSTANTS.EVENTS.BID_REQUESTED;
+      let isAuctionEnd = eventType === CONSTANTS.EVENTS.AUCTION_END;
+
+      if (isBidRequested) {
+        let adUnitCodes = args.bids.map((bid) => bid.placementCode);
+        let auctions = adUnitCodes.map((code) => request.ensureAdUnitPresented(code));
+        let bidder = new Bidder(args);
+        return auctions.forEach((auction) => auction.bidderRequested(bidder));
+      }
+
+      if (isImpression || isBidAfterTimeout) {
+        let newEvent = {};
+        let additionalPath = isImpression ? options.iUrl : options.bUrl;
+
+        newEvent[args['adUnitCode']] = {
+          eventType: isBidAfterTimeout ? 'BidAfterTimeoutEvent' : 'AdUnitImpressionEvent',
+          auctionInfo: request.findAuction(args['adUnitCode']).auctionInfo,
+          data: (new Bid(args))
+        };
+
+        this.transport.send(newEvent, additionalPath);
+      }
+
+      if (isBid) {
+        let auction = request.findAuction(args['adUnitCode']);
+        auction.bidReceived(new Bid(args));
+      }
+
+      if (isAuctionEnd) {
+        this.requestStack.finish(request.requestId);
+        return this.transport.send(request.buildData(), options.aUrl);
+      }
+    }
+  };
+}
+
+function Config() {
+  let parser = parse(window.location);
+
+  let customHost = parser.search['pa_host'];
+  let host = parser.host.replace('www.', '');
+
+  return {
+    // TODO add tags
+    // TODO set analyitc host from parameters
+    analyticHost: customHost || '//pa.rxthdr.com/api/v2/',
+    // TODO extract only host without www
+    currentHost: host,
+    adUnits: [],
+    iUrl: '/i',
+    aUrl: '/a',
+    bUrl: '/b',
+    prefix: 'roxot_analytics_',
+    publisherId: null,
+    utm: {},
+    sessionId: null,
+
+    fill: function (config) {
+      this.publisherId = extractPublisherId(config);
+      this.currentHost = extractHost(config, host);
+      this.adUnits = extractAdUnits(config);
+      this.utm = extractUtmData();
+      this.sessionId = extractSessionId();
+    }
+  };
+
+  function extractAdUnits(config) {
+    return config['adUnits'] !== undefined ? config['adUnits'] : [];
+  }
+
+  function extractHost(config, currentHost) {
+    return config['host'] !== undefined ? config['host'] : currentHost;
+  }
+
+  function extractPublisherId(config) {
+    return config['publisherIds'][0];
+  }
+
+  function extractSessionId() {
+    let currentSessionId = (new SessionId()).load();
+
+    if (currentSessionId.isLive()) {
+      currentSessionId.persist();
+      return currentSessionId.id();
+    }
+
+    let newSessionId = (new SessionId()).generate();
+    newSessionId.persist();
+    return newSessionId.id();
+  }
+
+  function extractUtmData() {
+    let previousUtm = (new Utm()).fromLocalStorage();
+    let currentUtm = (new Utm()).fromUrl(window.location);
+
+    if (currentUtm.isDetected()) {
+      currentUtm.persist();
+      return currentUtm.data;
+    }
+
+    if (previousUtm.isLive()) {
+      previousUtm.persist();
+      return previousUtm.data;
+    }
+
+    return {};
+  }
+}
+
+function AjaxTransport() {
+  return {
+    send(data, additionalPath) {
+      let preparedData = this.prepareData(data);
+      let fullUrl = options.analyticHost + additionalPath + '?publisherIds[]=' + options.publisherId + '&host=' + options.currentHost;
+
+      ajax(fullUrl, {
+        success: function () {
+          utils.logMessage('xhr success');
+        },
+        error: function (e) {
+          utils.logError('xhr error', null, e);
+        }
+      }, JSON.stringify(preparedData), {withCredentials: true, withoutTimeout: true});
+    },
+    // TODO не верное место для этого метода
+    prepareData(originData) {
+      let data = Object.assign({}, originData);
+      Object.keys(data).map(function (objectKey) {
+        let event = data[objectKey];
+
+        event.data = event.data || {};
+        event.data.utmTagData = options.utm;
+        event.data.sessionId = options.sessionId;
+      });
+
+      return data;
+    }
+  }
+}
+
+function RequestStack() {
+  return {
+    stack: {},
+
+    current: null,
+
+    ensureRequestPresented(requestId) {
+      if (!this.stack[requestId]) {
+        this.stack[requestId] = new Request(requestId, options.publisherId);
+      }
+
+      return this.stack[requestId];
+    },
+
+    findRequest(requestId) {
+      return this.stack[requestId];
+    },
+    finish(requestId) {
+      this.current = null;
+      this.findRequest(requestId).finish();
+    },
+
+    clear() {
+      this.stack = {};
+      this.current = null;
+    },
+
+    presentRequestId(requestId) {
+      requestId = requestId || this.current;
+
+      if (this.current && this.current !== requestId) {
+        throw 'Try to rewrite current auction';
+      }
+
+      this.current = requestId;
+      return this.current;
+    },
+  };
+
+  function Request(requestId, publisherId) {
+    this.requestId = requestId;
+    this.publisherId = publisherId;
+    this.auctions = {};
+    this.isEnd = false;
+
+    this.ensureAdUnitPresented = function (adUnitCode) {
+      if (!this.auctions[adUnitCode]) {
+        this.auctions[adUnitCode] = AuctionInfo(this.requestId, adUnitCode)
+      }
+
+      return this.auctions[adUnitCode];
+    };
+
+    this.findAuction = (adUnitCode) => this.auctions[adUnitCode];
+    this.buildData = () => this.auctions;
+    this.finish = () => this.isEnd = true;
+    this.isFinished = () => this.isEnd;
+    return this;
+
+    function AuctionInfo(requestId, adUnitCode) {
+      return {
+        eventType: 'AdUnitAuctionEvent',
+        auctionInfo: {
+          requestId: requestId,
+          publisherId: publisherId,
+          adUnitCode: adUnitCode,
+          host: options.currentHost,
+          requestedBids: {},
+          bids: [],
+          bidsAfterTimeout: []
+        },
+        isFinish: false,
+        finish: () => this.isFinish = true,
+        bidderRequested(bidder) {
+          this.auctionInfo.requestedBids[bidder.bidderCode] = bidder;
+        },
+        bidReceived(bid) {
+          if (this.isFinish) {
+            return this.auctionInfo.bidsAfterTimeout.push(bid);
+          }
+          return this.auctionInfo.bids.push(bid);
+        }
+
+      };
+    }
+  }
+}
+
+function Bid({width, height, adUnitCode, bidderCode, source, timeToRespond, cpm}) {
+  this.size = width + 'x' + height;
+  this.adUnitCode = adUnitCode;
+  this.bidder = new Bidder({bidderCode, source});
+  this.timeToRespond = timeToRespond;
+  this.cpm = cpm;
+}
+
+function Bidder({bidderCode, source}) {
+  this.bidderCode = bidderCode;
+  this.source = source || '';
+}
+
+function SessionId(realId) {
+  let key = options.prefix.concat('session_id');
+  let timeout = {
+    key: options.prefix.concat('session_timeout'),
+    ms: 60 * 60 * 1000
+  };
+  let id = realId || null;
+
+  this.id = () => id;
+
+  this.generate = function () {
+    return new SessionId(uuid());
+  };
+
+  this.persist = function () {
+    localStorage.setItem(key, id);
+    localStorage.setItem(timeout.key, Date.now());
+  };
+
+  this.isLive = function () {
+    return isFresh();
+  };
+
+  this.load = function () {
+    id = localStorage.getItem(key) || null;
+
+    if (id && isFresh()) {
+      live = true;
+    }
+
+    return this;
+  };
+
+  function isFresh() {
+    let ts = localStorage.getItem(timeout.key);
+
+    if (!ts) {
+      return false;
+    }
+
+    return Date.now() - ts <= timeout.ms;
+  }
+}
+
+function Utm() {
+  let tags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  let prefix = options.prefix.concat('utm');
+  let timeout = {
+    key: 'utm_timeout',
+    ms: 60 * 60 * 1000
+  };
+
+  let detected = false;
+  this.data = {};
+
+  this.isDetected = function () {
+    return detected;
+  };
+
+  this.isLive = function () {
+    return detected && isFresh(localStorage.getItem(timeout.key) || 0);
+  };
+
+  this.fromUrl = function (url) {
+    let $this = this;
+    tags.forEach(function (tag) {
+      let utmTagValue = parse(url).search[tag];
+
+      if (utmTagValue !== '') {
+        detected = true;
+      }
+
+      $this.data[tag] = utmTagValue;
+    });
+
+    return this;
+  };
+
+  this.fromLocalStorage = function () {
+    let $this = this;
+    tags.forEach(function (utmTagKey) {
+      $this.data[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+    });
+
+    return this;
+  };
+
+  this.persist = function () {
+    let $this = this;
+    Object.keys(this.data).map(function (tagKey) {
+      localStorage.setItem(buildUtmLocalStorageKey(tagKey), $this.data[tagKey]);
+    });
+
+    localStorage.setItem(timeout.key, Date.now());
+  };
+
+  function buildUtmLocalStorageKey(key) {
+    return prefix.concat(key);
+  }
+
+  function isFresh(utmTimestamp) {
+    return (Date.now() - utmTimestamp) > timeout.ms;
+  }
+}
+
+function uuid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
