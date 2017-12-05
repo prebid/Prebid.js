@@ -66,6 +66,18 @@ var MemeGenAdapter = function MemeGenAdapter() {
         }
       }
     };
+
+    var pageUrl = utils.getBidIdParameter('pageUrl', bidReq.params);
+    var pageDomain = utils.getBidIdParameter('pageDomain', bidReq.params);
+
+    if (pageUrl) {
+      bidRequest.site.page = pageUrl;
+    }
+
+    if (pageDomain) {
+      bidRequest.site.domain = pageDomain;
+    }
+
     var scriptUrl = '//' + openRtbAdapterHost + '/api/v1/services/prebid?callback=window.$$PREBID_GLOBAL$$.mgres' +
       '&br=' + encodeURIComponent(JSON.stringify(bidRequest)) +
       '&tmax=' + timeout +
