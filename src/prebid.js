@@ -113,22 +113,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode)
-    .map(targeting => {
-      return {
-        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
-          .map(target => {
-            return {
-              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
-            };
-          }).reduce((p, c) => Object.assign(c, p), {})
-      };
-    })
-    .reduce(function (accumulator, targeting) {
-      var key = Object.keys(targeting)[0];
-      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
-      return accumulator;
-    }, {});
+  return targeting.getAllTargeting(adUnitCode);
 };
 
 /**
@@ -190,7 +175,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargeting(targetingSet);
+  targeting.setTargetingForGPT(targetingSet);
 
   // emit event
   events.emit(SET_TARGETING);
@@ -316,13 +301,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
     const nonVideoBidders = adUnit.bids
       .filter(bid => !videoBidder(bid))
-      .map(bid => bid.bidder)
-      .join(', ');
+      .map(bid => bid.bidder);
 
-    utils.logError(`
-      ${adUnit.code} is a 'video' ad unit but contains non-video bidder(s) ${nonVideoBidders}.
-      No Prebid demand requests will be triggered for those bidders.
-    `);
+    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonVideoBidders));
     adUnit.bids = adUnit.bids.filter(videoBidder);
   });
 
@@ -330,13 +311,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
     const nonNativeBidders = adUnit.bids
       .filter(bid => !nativeBidder(bid))
-      .map(bid => bid.bidder)
-      .join(', ');
+      .map(bid => bid.bidder);
 
-    utils.logError(`
-      ${adUnit.code} is a 'native' ad unit but contains non-native bidder(s) ${nonNativeBidders}.
-      No Prebid demand requests will be triggered for those bidders.
-    `);
+    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonNativeBidders));
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
@@ -648,7 +625,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(command) {
     try {
       command.call();
     } catch (e) {
-      utils.logError('Error processing command :' + e.message);
+      utils.logError('Error processing command :', e.message, e.stack);
     }
   } else {
     utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
