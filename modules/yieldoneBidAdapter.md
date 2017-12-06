@@ -20,7 +20,7 @@ THE YIELDONE adapter requires setup and approval from the Rubicon Project team. 
     bids: [{
     bidder: 'yieldone',
       params: { 
-        placementId: '44084',
+        placementId: '44082',
         width:'300',
         height:'250' 
       }
