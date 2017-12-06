@@ -80,7 +80,11 @@ describe('vertamediaBidAdapter', () => {
   });
 
   describe('interpretResponse', () => {
-    let bidderRequest = {bidderCode: 'bidderCode'};
+    let bidderRequest = {
+      bidderCode: 'bidderCode',
+      bids: [{mediaTypes: {video: {}}}]
+    };
+
     it('should get correct bid response', () => {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
       const eq = [{
