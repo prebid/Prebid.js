@@ -78,9 +78,12 @@ var MemeGenAdapter = function MemeGenAdapter() {
       bidRequest.site.domain = pageDomain;
     }
 
-    var scriptUrl = '//' + openRtbAdapterHost + '/api/v1/services/prebid?callback=window.$$PREBID_GLOBAL$$.mgres' +
+    var tagId = utils.getBidIdParameter('tagId', bidReq.params);
+
+    var scriptUrl = '//' + openRtbAdapterHost + '/api/v2/services/prebid?callback=window.$$PREBID_GLOBAL$$.mgres' +
       '&br=' + encodeURIComponent(JSON.stringify(bidRequest)) +
       '&tmax=' + timeout +
+      '&tag_id=' + tagId +
       '&bidder_url=' + encodeURIComponent(utils.getBidIdParameter('bidderUrl', bidReq.params));
     adloader.loadScript(scriptUrl);
   }
@@ -90,8 +93,9 @@ var MemeGenAdapter = function MemeGenAdapter() {
   }
 
   // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.mgres = function (bidResp) {
+  $$PREBID_GLOBAL$$.mgres = function (bidRespWrapper) {
     // valid object?
+    var bidResp = bidRespWrapper.response;
     if ((!bidResp || !bidResp.id) ||
       (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
       return;
@@ -102,6 +106,8 @@ var MemeGenAdapter = function MemeGenAdapter() {
       var placementCode = '';
 
       var bidSet = getBidSetForBidder();
+      var memegenTagId = bidRespWrapper.tag;
+
       var bidRequested = bidSet.bids.find(b => b.bidId === bidderBid.impid);
       if (bidRequested) {
         var bidResponse = bidfactory.createBid(1);
@@ -124,6 +130,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
         bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
         bidResponse.width = parseInt(bidderBid.w);
         bidResponse.height = parseInt(bidderBid.h);
+        bidResponse.memegenTagId = memegenTagId;
         bidmanager.addBidResponse(placementCode, bidResponse);
       }
     });
