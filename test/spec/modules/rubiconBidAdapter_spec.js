@@ -763,7 +763,6 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(false);
-          expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
