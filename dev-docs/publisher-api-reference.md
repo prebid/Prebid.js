@@ -1023,17 +1023,18 @@ Currently, `bidWon` is the only event that accepts the `id` parameter.
 The available events are:
 
 {: .table .table-bordered .table-striped }
-| Event         | Description                            |
-|---------------+----------------------------------------|
-| auctionInit   | The auction has started                |
-| auctionEnd    | The auction has ended                  |
-| bidAdjustment | A bid was adjusted                     |
-| bidTimeout    | A bid timed out                        |
-| bidRequested  | A bid was requested                    |
-| bidResponse   | A bid response has arrived             |
-| bidWon        | A bid has won                          |
-| setTargeting  | Targeting has been set                 |
-| requestBids   | Bids have been requested from adapters |
+| Event         | Description                             |
+|---------------+-----------------------------------------|
+| auctionInit   | The auction has started                 |
+| auctionEnd    | The auction has ended                   |
+| bidAdjustment | A bid was adjusted                      |
+| bidTimeout    | A bid timed out                         |
+| bidRequested  | A bid was requested                     |
+| bidResponse   | A bid response has arrived              |
+| bidWon        | A bid has won                           |
+| setTargeting  | Targeting has been set                  |
+| requestBids   | Bids have been requested from adapters  |
+| addAdUnits    | Ad units have been added to the auction |
 
 The example below shows how to use these methods:
 
