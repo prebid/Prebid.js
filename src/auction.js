@@ -152,7 +152,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       });
       request.doneCbCallCount += 1;
       // In case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
-      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('usePrebidCache'))) {
+      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('cache.url'))) {
         bidsBackAll()
       }
     }, 1);
