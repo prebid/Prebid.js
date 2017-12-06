@@ -1,10 +1,10 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
-import {spec} from 'modules/pulsepointLiteBidAdapter';
+import {spec} from 'modules/pulsepointBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('PulsePoint Lite Adapter Tests', () => {
+describe('PulsePoint Adapter Tests', () => {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',
@@ -218,12 +218,13 @@ describe('PulsePoint Lite Adapter Tests', () => {
   });
 
   it('Verifies bidder code', () => {
-    expect(spec.code).to.equal('pulseLite');
+    expect(spec.code).to.equal('pulsepoint');
   });
 
   it('Verifies bidder aliases', () => {
-    expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('pulsepointLite');
+    expect(spec.aliases).to.have.lengthOf(2);
+    expect(spec.aliases[0]).to.equal('pulseLite');
+    expect(spec.aliases[1]).to.equal('pulsepointLite');
   });
 
   it('Verifies supported media types', () => {
