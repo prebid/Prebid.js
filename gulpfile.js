@@ -234,7 +234,7 @@ gulp.task('watch', function () {
 });
 
 gulp.task('lint', () => {
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
+  return gulp.src(['modules/**/33across*.js', 'test/**/33across*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError());

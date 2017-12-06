@@ -1,5 +1,5 @@
+import { userSync } from 'src/userSync'
 const { registerBidder } = require('../src/adapters/bidderFactory');
-const { userSync } = require('../src/userSync');
 const { config } = require('../src/config');
 
 const BIDDER_CODE = '33across';
@@ -73,7 +73,13 @@ function _getFormatSize(sizeArr) {
 // Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
 // Sync type will always be 'iframe' for 33Across
 function _registerUserSyncs(requestData) {
-  const ttxRequest = JSON.parse(requestData);
+  let ttxRequest;
+  try {
+    ttxRequest = JSON.parse(requestData);
+  } catch (err) {
+    // No point in trying to register sync since the requisite data cannot be parsed.
+    return;
+  }
   const ttxSettings = config.getConfig('ttxSettings');
 
   let syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
