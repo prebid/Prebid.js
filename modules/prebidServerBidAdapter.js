@@ -191,7 +191,7 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const isDebug = !!getConfig('debug');
-    const adUnits = utils.cloneJson(s2sBidRequest.ad_units);
+    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {

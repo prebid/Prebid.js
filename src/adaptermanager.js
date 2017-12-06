@@ -108,7 +108,7 @@ function transformHeightWidth(adUnit) {
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
-  let adUnitsCopy = utils.cloneJson(adUnits);
+  let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
     adUnit.sizes = transformHeightWidth(adUnit);
@@ -130,7 +130,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
-  let adUnitsClientCopy = utils.cloneJson(adUnits);
+  let adUnitsClientCopy = utils.deepClone(adUnits);
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = adUnit.bids.filter((bid) => {
