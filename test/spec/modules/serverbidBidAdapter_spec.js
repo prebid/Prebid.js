@@ -207,7 +207,7 @@ describe('Serverbid BidAdapter', () => {
 
     it('registers bids', () => {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
-      for (var b of bids) {
+      bids.forEach(b => {
         expect(b).to.have.property('cpm');
         expect(b.cpm).to.be.above(0);
         expect(b).to.have.property('requestId');
@@ -220,7 +220,7 @@ describe('Serverbid BidAdapter', () => {
         expect(b).to.have.property('ttl', 360);
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
-      }
+      });
     });
 
     it('handles nobid responses', () => {
