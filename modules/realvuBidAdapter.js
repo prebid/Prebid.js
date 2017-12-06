@@ -7,7 +7,7 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
-// const rvaa = require('modules/realvuAnalyticsAdapter.js');
+const rvaa = require('modules/realvuAnalyticsAdapter.js');
 
 var RealVuAdapter = function RealVuAdapter() {
   var baseAdapter = new Adapter('realvu');
@@ -15,16 +15,19 @@ var RealVuAdapter = function RealVuAdapter() {
     var pbids = params.bids;
     for (var i = 0; i < pbids.length; i++) {
       var bid_rq = pbids[i];
-      // var inview = rvaa.inView(bid_rq, bid_rq.params.partnerId);
-      // if (inview === 'yes') {
-      var adap = new RvAppNexusAdapter();
-      var callbackId = bid_rq.bidId;
-      adloader.loadScript(adap.buildJPTCall(bid_rq, callbackId));
-      /* } else { // not in view - respond with no bid.
+      var inview = rvaa.checkIn(bid_rq.placementCode, bid_rq.sizes, bid_rq.params.partnerId);
+
+      utils.logMessage('realvuBidAdapter: i=' + i + ', inview= ' + inview);
+
+      if (inview === 'yes') {
+        var adap = new RvAppNexusAdapter();
+        var callbackId = bid_rq.bidId;
+        adloader.loadScript(adap.buildJPTCall(bid_rq, callbackId));
+      } else { // not in view - respond with no bid.
         var adResponse = bidfactory.createBid(2);
         adResponse.bidderCode = 'realvu';
         bidmanager.addBidResponse(bid_rq.placementCode, adResponse);
-      } */
+      }
     }
   };
   // +copy/pasted appnexusBidAdapter, "handleAnCB" replaced with "handleRvAnCB"
@@ -159,7 +162,8 @@ var RealVuAdapter = function RealVuAdapter() {
 
         // @endif
         var bid = [];
-        if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
+        var inview = rvaa.isInView(placementCode);
+        if (inview === 'yes' && jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
           responseCPM = parseInt(jptResponseObj.result.cpm, 10);
 
           // CPM response from /jpt is dollar/cent multiplied by 10000
