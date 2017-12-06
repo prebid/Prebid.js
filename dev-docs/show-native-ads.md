@@ -52,7 +52,7 @@ The ad ops team will then reference these keys in the ad server to set up the ti
 
 Keep the following prerequisites in mind during the implementation:
 
-+ Make sure to work with native-enabled bidders. To see which bidders have native demand, see [Bidders with Video and Native Demand]({{site.baseurl}}/bidders.html#bidders-with-video-and-native-demand).
++ Make sure to work with native-enabled bidders. To see which bidders have native demand, see [Bidders with Video and Native Demand]({{site.baseurl}}/dev-docs/bidders.html#bidders-with-video-and-native-demand).
 
 ## Implementation
 
@@ -145,7 +145,7 @@ pbjs.addAdUnits({
 {% endhighlight %}
 
 {: .alert.alert-danger :}
-For each native ad unit, all of the bidders within that ad unit must have declared native support in their adapter if you want ads to appear.  If there are any bidders without native support in a native ad unit, requests will not be made to those bidders.  For a list of bidders with native support, see [Bidders with Video and Native Demand]({{site.baseurl}}/bidders.html#bidders-with-video-and-native-demand).
+For each native ad unit, all of the bidders within that ad unit must have declared native support in their adapter if you want ads to appear.  If there are any bidders without native support in a native ad unit, requests will not be made to those bidders.  For a list of bidders with native support, see [Bidders with Video and Native Demand]({{site.baseurl}}/dev-docs/bidders.html#bidders-with-video-and-native-demand).
 
 #### Pre-defined native types
 
