@@ -2,6 +2,7 @@ import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchi
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
+import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -33,7 +34,7 @@ export function newTargeting(auctionManager) {
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-      const adUnits = auctionManager.getAdUnits().filter(adUnit => adUnitCodes.includes(adUnit.code));
+      const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
       window.googletag.pubads().getSlots().forEach(slot => {
         pbTargetingKeys.forEach(function(key) {
           // reset only registered adunits
@@ -50,7 +51,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Returns all ad server targeting for all ad units.
-   * @param {string=} adUnitCode 
+   * @param {string=} adUnitCode
    * @return {Object.<string,targeting>} targeting
    */
   targeting.getAllTargeting = function(adUnitCode) {
@@ -79,7 +80,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Converts targeting array and flattens to make it easily iteratable
-   * e.g: Sample input to this function 
+   * e.g: Sample input to this function
    * ```
    * [
    *    {
@@ -99,7 +100,7 @@ export function newTargeting(auctionManager) {
    *  }
    * }
    * ```
-   * 
+   *
    * @param {targetingArray}  targeting
    * @return {Object.<string,targeting>}  targeting
    */
@@ -123,7 +124,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Sets targeting for DFP
-   * @param {Object.<string,Object.<string,string>>} targetingConfig 
+   * @param {Object.<string,Object.<string,string>>} targetingConfig
    */
   targeting.setTargetingForGPT = function(targetingConfig) {
     window.googletag.pubads().getSlots().forEach(slot => {
@@ -172,7 +173,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
     return getBidsReceived()
-      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
@@ -240,7 +241,7 @@ export function newTargeting(auctionManager) {
   /**
    * Merge custom adserverTargeting with same key name for same adUnitCode.
    * e.g: Appnexus defining custom keyvalue pair foo:bar and Rubicon defining custom keyvalue pair foo:baz will be merged to foo: ['bar','baz']
-   * 
+   *
    * @param {Object[]} acc Accumulator for reducer. It will store updated bidResponse objects
    * @param {Object} bid BidResponse
    * @param {number} index current index
@@ -303,7 +304,7 @@ export function newTargeting(auctionManager) {
    */
   function getCustomBidTargeting(adUnitCodes) {
     return getBidsReceived()
-      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .map(bid => Object.assign({}, bid))
       .reduce(mergeAdServerTargeting, [])
       .map(truncateCustomKeys)

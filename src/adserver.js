@@ -31,7 +31,7 @@ exports.dfpAdserver = function (options, urlComponents) {
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
     if (bid) {
-      this.urlComponents.search.description_url = encodeURIComponent(bid.descriptionUrl);
+      this.urlComponents.search.description_url = encodeURIComponent(bid.vastUrl);
       this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
       this.urlComponents.search.correlator = Date.now();
     }

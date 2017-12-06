@@ -6,6 +6,7 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
+import includes from 'core-js/library/fn/array/includes';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -115,7 +116,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return adaptersServerSide.includes(bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
+      return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -167,7 +168,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
 
     // don't call these client side (unless client request is needed for testing)
     clientBidderCodes = bidderCodes.filter((elm) => {
-      return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
+      return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
     });
 
     let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
@@ -240,7 +241,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidder) }, []));
         }, []);
         utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
-          return allBidders.includes(adapter);
+          return includes(allBidders, adapter);
         }).join(',')}`);
 
         // fire BID_REQUESTED event for each s2s bidRequest
@@ -283,8 +284,8 @@ function doingS2STesting() {
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
-  if (exports.videoAdapters.includes(bidderCode)) result.push('video');
-  if (nativeAdapters.includes(bidderCode)) result.push('native');
+  if (includes(exports.videoAdapters, bidderCode)) result.push('video');
+  if (includes(nativeAdapters, bidderCode)) result.push('native');
   return result;
 }
 
@@ -295,10 +296,10 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
     if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
 
-      if (supportedMediaTypes.includes('video')) {
+      if (includes(supportedMediaTypes, 'video')) {
         exports.videoAdapters.push(bidderCode);
       }
-      if (supportedMediaTypes.includes('native')) {
+      if (includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {

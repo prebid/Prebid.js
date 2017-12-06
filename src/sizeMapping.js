@@ -1,4 +1,5 @@
 import { config } from 'src/config';
+import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
 
@@ -46,11 +47,11 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
       labels.length === 0 || (
         (!labelAll && (
           labels.some(label => maps.labels[label]) ||
-          labels.some(label => activeLabels.includes(label))
+          labels.some(label => includes(activeLabels, label))
         )) ||
         (labelAll && (
           labels.reduce((result, label) => !result ? result : (
-            maps.labels[label] || activeLabels.includes(label)
+            maps.labels[label] || includes(activeLabels, label)
           ), true)
         ))
       )

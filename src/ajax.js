@@ -71,6 +71,9 @@ export function ajaxBuilder(timeout = 3000) {
             }
           }
         };
+        x.ontimeout = function () {
+          utils.logError('  xhr timeout after ', x.timeout, 'ms');
+        };
       }
 
       if (method === 'GET' && data) {

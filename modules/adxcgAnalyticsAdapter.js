@@ -24,7 +24,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
   track({eventType, args}) {
     if (typeof args !== 'undefined') {
       if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
-        events.bidTimeout = [...new Set(args.map(item => item.bidder))];
+        events.bidTimeout = args.map(item => item.bidder).filter(utils.uniques);
       } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;

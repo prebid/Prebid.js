@@ -6,6 +6,7 @@ import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
+import includes from 'core-js/library/fn/array/includes';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
 
@@ -362,7 +363,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
   }
 
   function errorMessage(msg) {

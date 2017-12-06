@@ -273,7 +273,6 @@ export const spec = {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
-        bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);

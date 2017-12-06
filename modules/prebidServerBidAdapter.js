@@ -8,6 +8,7 @@ import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
+import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
 
@@ -43,7 +44,7 @@ function setS2sConfig(options) {
   let keys = Object.keys(options);
 
   if (['accountId', 'bidders', 'endpoint'].filter(key => {
-    if (!keys.includes(key)) {
+    if (!includes(keys, key)) {
       utils.logError(key + ' missing in server to server config');
       return true;
     }
@@ -319,7 +320,7 @@ export function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || (result.status && result.status.includes('Error'))) {
+    if (!result || (result.status && includes(result.status, 'Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
 

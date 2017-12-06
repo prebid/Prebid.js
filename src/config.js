@@ -8,6 +8,8 @@
  * continue to work during a deprecation window.
  */
 import { isValidPriceConfig } from './cpmBucketManager';
+import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -143,7 +145,7 @@ export function newConfig() {
     };
 
     function hasGranularity(val) {
-      return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
+      return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
     }
 
     function validatePriceGranularity(val) {
@@ -275,7 +277,7 @@ export function newConfig() {
 
     // call subscribers of a specific topic, passing only that configuration
     listeners
-      .filter(listener => TOPICS.includes(listener.topic))
+      .filter(listener => includes(TOPICS, listener.topic))
       .forEach(listener => {
         listener.callback({ [listener.topic]: options[listener.topic] });
       });
