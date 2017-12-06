@@ -422,7 +422,7 @@ describe('AppNexusAdapter', () => {
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
-      expect(result[0].native.image).to.equal('http://cdn.adnxs.com/img.png');
+      expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
     });
   });
 });
