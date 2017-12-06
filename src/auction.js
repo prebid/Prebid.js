@@ -50,7 +50,7 @@
 
 import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
-import { NATIVE_KEYS } from './native';
+import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
@@ -253,8 +253,8 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
         doCallbacksIfNeeded();
       });
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction(bidResponse);
+      doCallbacksIfNeeded();
     }
   }
 }, 'addBidResponse');
@@ -321,48 +321,49 @@ export function getStandardBidderSettings() {
   let granularity = config.getConfig('priceGranularity');
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
-      adserverTargeting: [
-        {
-          key: 'hb_bidder',
-          val: function (bidResponse) {
-            return bidResponse.bidderCode;
-          }
-        }, {
-          key: 'hb_adid',
-          val: function (bidResponse) {
-            return bidResponse.adId;
-          }
-        }, {
-          key: 'hb_pb',
-          val: function (bidResponse) {
-            if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-              return bidResponse.pbAg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-              return bidResponse.pbDg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-              return bidResponse.pbLg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-              return bidResponse.pbMg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-              return bidResponse.pbHg;
-            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-              return bidResponse.pbCg;
-            }
-          }
-        }, {
-          key: 'hb_size',
-          val: function (bidResponse) {
-            return bidResponse.size;
-          }
-        }, {
-          key: 'hb_deal',
-          val: function (bidResponse) {
-            return bidResponse.dealId;
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
+  }
+  if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
+      {
+        key: 'hb_bidder',
+        val: function (bidResponse) {
+          return bidResponse.bidderCode;
+        }
+      }, {
+        key: 'hb_adid',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      }, {
+        key: 'hb_pb',
+        val: function (bidResponse) {
+          if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+            return bidResponse.pbAg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+            return bidResponse.pbDg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+            return bidResponse.pbLg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+            return bidResponse.pbMg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+            return bidResponse.pbHg;
+          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+            return bidResponse.pbCg;
           }
         }
-      ]
-    };
+      }, {
+        key: 'hb_size',
+        val: function (bidResponse) {
+          return bidResponse.size;
+        }
+      }, {
+        key: 'hb_deal',
+        val: function (bidResponse) {
+          return bidResponse.dealId;
+        }
+      }
+    ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
@@ -386,11 +387,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
   // set native key value targeting
   if (custBidObj.native) {
-    Object.keys(custBidObj.native).forEach(asset => {
-      const key = NATIVE_KEYS[asset];
-      const value = custBidObj.native[asset];
-      if (key) { keyValues[key] = value; }
-    });
+    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
   return keyValues;
@@ -435,12 +432,18 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 }
 
 export function adjustBids(bid) {
-  var code = bid.bidderCode;
-  var bidPriceAdjusted = bid.cpm;
-  if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
+  let code = bid.bidderCode;
+  let bidPriceAdjusted = bid.cpm;
+  let bidCpmAdjustment;
+  if ($$PREBID_GLOBAL$$.bidderSettings) {
+    if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment;
+    } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
+      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
+    }
+    if (bidCpmAdjustment) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
+        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
       } catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
       }

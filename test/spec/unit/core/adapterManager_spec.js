@@ -335,7 +335,7 @@ describe('adapterManager tests', () => {
       expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
     }
 
-    let TESTING_CONFIG = utils.cloneJson(CONFIG);
+    let TESTING_CONFIG = utils.deepClone(CONFIG);
     Object.assign(TESTING_CONFIG, {
       bidders: ['appnexus', 'adequant'],
       testing: true
@@ -549,7 +549,7 @@ describe('adapterManager tests', () => {
     describe('makeBidRequests', () => {
       let adUnits;
       beforeEach(() => {
-        adUnits = utils.cloneJson(getAdUnits()).map(adUnit => {
+        adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
           return adUnit;
         })

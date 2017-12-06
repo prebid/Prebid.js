@@ -690,4 +690,25 @@ describe('Utils', function () {
       });
     });
   });
+
+  describe('deepClone', () => {
+    it('deep copies objects', () => {
+      const adUnit = [{
+        code: 'swan',
+        mediaTypes: {video: {context: 'outstream'}},
+        renderer: {
+          render: bid => player.render(bid),
+          url: '/video/renderer.js'
+        },
+        bids: [{
+          bidder: 'dharmaInitiative',
+          params: { placementId: '481516', }
+        }],
+      }];
+
+      const adUnitCopy = utils.deepClone(adUnit);
+      expect(adUnitCopy[0].renderer.url).to.be.a('string');
+      expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
 });
