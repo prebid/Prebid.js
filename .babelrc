@@ -3,7 +3,6 @@
 	"plugins": [
 		"transform-object-assign",
 		"transform-es3-property-literals",
-		"transform-es3-member-expression-literals",
-		"transform-function-bind"
+		"transform-es3-member-expression-literals"
 	]
 }
