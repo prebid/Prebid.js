@@ -8,6 +8,7 @@ import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode } from './utils';
 import { auctionManager } from './auctionManager';
+import find from 'core-js/library/fn/array/find';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -25,7 +26,7 @@ function receiveMessage(ev) {
   }
 
   if (data.adId) {
-    const adObject = auctionManager.getBidsReceived().find(function (bid) {
+    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });
 
@@ -69,9 +70,7 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   const iframe = document.getElementById(
-    window.googletag.pubads().getSlots()
-      .filter(isSlotMatchingAdUnitCode(adUnitCode))
-      .find(slot => slot)
+    find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
       .getSlotElementId()).querySelector('iframe');
 
   iframe.width = '' + width;

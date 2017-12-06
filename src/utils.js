@@ -1,5 +1,7 @@
 import { config } from './config';
 import clone from 'just-clone';
+import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -573,7 +575,7 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id, bidsRequested) {
-  return bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
 }
 
 export function getKeys(obj) {
@@ -631,7 +633,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.adUnitCode);
+  return includes(filter, bid && bid.adUnitCode);
 }
 
 /**
@@ -777,19 +779,19 @@ export function isValidMediaTypes(mediaTypes) {
 
   const types = Object.keys(mediaTypes);
 
-  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
+  if (!types.every(type => includes(SUPPORTED_MEDIA_TYPES, type))) {
     return false;
   }
 
   if (mediaTypes.video && mediaTypes.video.context) {
-    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
+    return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
   return true;
 }
 
 export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return bidRequests.find(request => {
+  return find(bidRequests, request => {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };

@@ -6,6 +6,8 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { setSizeConfig } from 'src/sizeMapping';
+import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 var s2sTesting = require('../../../../modules/s2sTesting');
 var events = require('../../../../src/events');
 
@@ -548,7 +550,7 @@ describe('adapterManager tests', () => {
       let adUnits;
       beforeEach(() => {
         adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => ['appnexus', 'rubicon'].includes(bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
           return adUnit;
         })
       });
@@ -573,14 +575,14 @@ describe('adapterManager tests', () => {
           );
 
           expect(bidRequests.length).to.equal(2);
-          let rubiconBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'rubicon');
+          let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
           expect(rubiconBidRequests.bids.length).to.equal(1);
-          expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+          expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
 
-          let appnexusBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'appnexus');
+          let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
           expect(appnexusBidRequests.bids.length).to.equal(2);
-          expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-          expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+          expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
+          expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
         });
 
         it('should filter sizes using size config', () => {
