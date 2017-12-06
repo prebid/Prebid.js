@@ -24,6 +24,7 @@ const PubmaticAdapter = function PubmaticAdapter() {
   };
 
   let customPars = {
+    'kadpageurl': 'kadpageurl',
     'kadgender': 'gender',
     'age': 'kadage',
     'dctr': 'dctr', // Custom Targeting
