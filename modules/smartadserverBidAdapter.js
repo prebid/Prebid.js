@@ -31,15 +31,12 @@ export const spec = {
     // to find which one the ad server needs
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
-    if (!Array.isArray(validBidRequests)) {
-      validBidRequests = [validBidRequests];
-    }
     var bid = validBidRequests[0];
     const payload = {
       siteid: bid.params.siteId,
       pageid: bid.params.pageId,
       formatid: bid.params.formatId,
-      currencyCode: config.getConfig('currency'),
+      currencyCode: config.getConfig('currency').adServerCurrency,
       bidfloor: bid.params.bidfloor || 0.0,
       targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
       tagId: bid.adUnitCode,
@@ -66,28 +63,25 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    if (serverResponse) {
+    var response = serverResponse.body;
+    if (response) {
       const bidResponse = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
-        cpm: serverResponse.cpm,
-        width: serverResponse.width,
-        height: serverResponse.height,
-        creativeId: serverResponse.creativeId,
-        dealId: serverResponse.dealId,
-        currency: serverResponse.currency,
-        netRevenue: serverResponse.isNetCpm,
-        ttl: serverResponse.ttl,
+        cpm: response.cpm,
+        width: response.width,
+        height: response.height,
+        creativeId: response.creativeId,
+        dealId: response.dealId,
+        currency: response.currency,
+        netRevenue: response.isNetCpm,
+        ttl: response.ttl,
         referrer: utils.getTopWindowUrl(),
-        ad: serverResponse.ad
+        ad: response.ad
       };
       bidResponses.push(bidResponse);
     }
     return bidResponses;
-  },
-  getUserSyncs: function (syncOptions) {
-    // iframe || image
-    return undefined;
   }
 }
 registerBidder(spec);
