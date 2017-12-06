@@ -2,7 +2,7 @@ import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchi
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
-import includes from 'core-js/library/fn/array/virtual/includes';
+import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -34,7 +34,7 @@ export function newTargeting(auctionManager) {
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-      const adUnits = auctionManager.getAdUnits().filter(adUnit => adUnitCodes::includes(adUnit.code));
+      const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
       window.googletag.pubads().getSlots().forEach(slot => {
         pbTargetingKeys.forEach(function(key) {
           // reset only registered adunits
@@ -173,7 +173,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
     return getBidsReceived()
-      .filter(bid => adUnitCodes::includes(bid.adUnitCode))
+      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
@@ -304,7 +304,7 @@ export function newTargeting(auctionManager) {
    */
   function getCustomBidTargeting(adUnitCodes) {
     return getBidsReceived()
-      .filter(bid => adUnitCodes::includes(bid.adUnitCode))
+      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .map(bid => Object.assign({}, bid))
       .reduce(mergeAdServerTargeting, [])
       .map(truncateCustomKeys)

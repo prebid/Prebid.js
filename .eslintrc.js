@@ -3,7 +3,6 @@ module.exports = {
     "browser": true,
     "commonjs": true
   },
-  "parser": "babel-eslint",
   "extends": "standard",
   "globals": {
     "$$PREBID_GLOBAL$$": false

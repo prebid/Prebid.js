@@ -1,7 +1,7 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import includes from 'core-js/library/fn/array/virtual/includes';
+import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('src/utils');
 
@@ -107,7 +107,7 @@ function checkAdUnitConfig() {
 function buildBidWon(eventType, args) {
   bidWon.options = initOptions;
   if (checkAdUnitConfig()) {
-    if (initOptions.adUnits::includes(args.adUnitCode)) {
+    if (includes(initOptions.adUnits, args.adUnitCode)) {
       bidWon.events = [{ args: args, eventType: eventType }];
     }
   } else {
@@ -122,7 +122,7 @@ function buildEventStack() {
 function filterBidsByAdUnit(bids) {
   var filteredBids = [];
   bids.forEach(function (bid) {
-    if (initOptions.adUnits::includes(bid.placementCode)) {
+    if (includes(initOptions.adUnits, bid.placementCode)) {
       filteredBids.push(bid);
     }
   });
@@ -132,7 +132,7 @@ function filterBidsByAdUnit(bids) {
 function isValidEvent(eventType, adUnitCode) {
   if (checkAdUnitConfig()) {
     let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
-    if (!initOptions.adUnits::includes(adUnitCode) && validationEvents::includes(eventType)) {
+    if (!includes(initOptions.adUnits, adUnitCode) && includes(validationEvents, eventType)) {
       return false;
     }
   }
