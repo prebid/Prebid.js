@@ -138,7 +138,7 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  if (config.getConfig('usePrebidCache')) { return; }
+  if (config.getConfig('cache.url')) { return; }
 
   if (!deepAccess(components, `${prop}.description_url`)) {
     const vastUrl = bid && bid.vastUrl;
