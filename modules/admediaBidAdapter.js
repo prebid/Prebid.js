@@ -1,4 +1,6 @@
 import { getBidRequest } from 'src/utils';
+import { userSync } from 'src/userSync.js';
+
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
@@ -66,6 +68,16 @@ var AdmediaAdapter = function AdmediaAdapter() {
       // utils.logMessage('Admedia request built: ' + endpoint);
 
       adloader.loadScript(endpoint);
+    }
+
+    if (userSync.iframeEnabled) {
+      userSync.registerSync('iframe', 'admedia', '//b.admedia.com/sync/iframe/');
+    } else {
+      userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=1');
+      userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=2');
+      userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=3');
+      userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=4');
+      userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=5');
     }
   }
 
