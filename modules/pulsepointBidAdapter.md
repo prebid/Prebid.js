@@ -1,6 +1,6 @@
 # Overview
 
-**Module Name**: PulsePoint Lite Bidder Adapter  
+**Module Name**: PulsePoint Bidder Adapter  
 **Module Type**: Bidder Adapter  
 **Maintainer**: ExchangeTeam@pulsepoint.com  
 
@@ -8,7 +8,8 @@
 
 Connects to PulsePoint demand source to fetch bids.  
 Banner, Outstream and Native formats are supported.  
-Please use ```pulseLite``` as the bidder code.  
+Please use ```pulsepoint``` as the bidder code.
+```pulseLite``` and ```pulsepointLite``` aliases also supported as well.
 
 # Test Parameters
 ```
@@ -16,7 +17,7 @@ Please use ```pulseLite``` as the bidder code.
       code: 'banner-ad-div',
       sizes: [[300, 250]],
       bids: [{
-          bidder: 'pulsepointLite',
+          bidder: 'pulsepoint',
           params: { 
               cf: '300X250',
               cp: 512379,
@@ -33,7 +34,7 @@ Please use ```pulseLite``` as the bidder code.
           sponsoredBy: { len: 20 }
       },
       bids: [{
-          bidder: 'pulseLite',
+          bidder: 'pulsepoint',
           params: { 
               cp: 512379,
               ct: 505642

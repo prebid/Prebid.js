@@ -15,16 +15,18 @@ const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 
 /**
- * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
- * alternative/original PulsePointAdapter because it has no external
- * dependencies and relies on a single OpenRTB request to the PulsePoint
- * bidder instead of separate requests per slot.
+ * PulsePoint Bid Adapter.
+ * Contact: ExchangeTeam@pulsepoint.com
+ *
+ * Aliases - pulseLite and pulsepointLite are supported for backwards compatibility.
+ * Formats - Display/Native/Outstream formats supported.
+ *
  */
 export const spec = {
 
-  code: 'pulseLite',
+  code: 'pulsepoint',
 
-  aliases: ['pulsepointLite'],
+  aliases: ['pulseLite', 'pulsepointLite'],
 
   supportedMediaTypes: ['native'],
 
