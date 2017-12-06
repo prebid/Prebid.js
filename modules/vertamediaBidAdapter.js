@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {VIDEO} from 'src/mediaTypes';
+import {Renderer} from 'src/Renderer';
 
 const URL = '//rtb.vertamedia.com/hb/';
 const BIDDER_CODE = 'vertamedia';
@@ -37,6 +38,10 @@ export const spec = {
   interpretResponse: function (serverResponse, {bidderRequest}) {
     serverResponse = serverResponse.body;
     const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
+    const videoMediaType = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video');
+    const context = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video.context');
+    const isMediaTypeOutstream = (videoMediaType && context === 'outstream');
+
     let bids = [];
 
     if (isInvalidValidResp) {
@@ -50,7 +55,7 @@ export const spec = {
 
     serverResponse.bids.forEach(serverBid => {
       if (serverBid.cpm !== 0) {
-        const bid = createBid(serverBid);
+        const bid = createBid(isMediaTypeOutstream, serverBid);
         bids.push(bid);
       }
     });
@@ -99,11 +104,12 @@ function getSize(requestSizes) {
 
 /**
  * Configure new bid by response
+ * @param isMediaTypeOutstream {boolean}
  * @param bidResponse {object}
  * @returns {object}
  */
-function createBid(bidResponse) {
-  return {
+function createBid(isMediaTypeOutstream, bidResponse) {
+  let bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
     vastUrl: bidResponse.vastUrl,
@@ -115,6 +121,38 @@ function createBid(bidResponse) {
     netRevenue: true,
     ttl: 3600
   };
+
+  if (isMediaTypeOutstream) {
+    Object.assign(bid, {
+      adResponse: bidResponse,
+      renderer: newRenderer(bidResponse.requestId)
+    });
+  }
+
+  return bid;
+}
+
+function newRenderer(requestId) {
+  const renderer = Renderer.install({
+    id: requestId,
+    url: '//player.vertamedia.com/outstream-unit/2.01/outstream.min.js',
+    loaded: false,
+  });
+
+  renderer.setRender(outstreamRender);
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.VOutstreamAPI.initOutstreams([{
+      width: bid.width,
+      height: bid.height,
+      vastUrl: bid.vastUrl,
+      elId: bid.adUnitCode
+    }]);
+  });
 }
 
 registerBidder(spec);
