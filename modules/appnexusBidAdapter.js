@@ -235,7 +235,7 @@ adaptermanager.aliasBidAdapter('appnexus', 'featureforward');
 adaptermanager.aliasBidAdapter('appnexus', 'oftmedia');
 
 // added by meme:
-adaptermanager.aliasBidAdapter('appnexus', '152media');
-adaptermanager.aliasBidAdapter('appnexus', 'springserve');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve');
 
 module.exports = AppNexusAdapter;
