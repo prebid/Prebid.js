@@ -136,7 +136,7 @@ function formatAdHTML(bid, size) {
   // get the top most accessible window
   '    var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();' +
   // inject the xml in the Vast object as string
-  '    vast.setXmlString(topWindow.freeheelssp_cache["' + bid.adUnitCode + '"]);' +
+  '    vast.setXmlString(topWindow.freewheelssp_cache["' + bid.adUnitCode + '"]);' +
   // force ad parsing on the given vast xml
   '    vastLoader.parseAds(vast, {' +
   '      onSuccess: function() {' + script + ' }' +
@@ -266,10 +266,10 @@ export const spec = {
     const creativeId = getCreativeId(xmlDoc);
 
     const topWin = getTopMostWindow();
-    if (!topWin.freeheelssp_cache) {
-      topWin.freeheelssp_cache = {};
+    if (!topWin.freewheelssp_cache) {
+      topWin.freewheelssp_cache = {};
     }
-    topWin.freeheelssp_cache[bidrequest.adUnitCode] = serverResponse;
+    topWin.freewheelssp_cache[bidrequest.adUnitCode] = serverResponse;
 
     const bidResponses = [];
 
