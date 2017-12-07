@@ -71,11 +71,16 @@ export const spec = {
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
-          ad: slot.creative,
           ttl: slot.ttl || 60,
           creativeId: slot.impid,
           width: slot.width,
           height: slot.height,
+        }
+        if (slot.native) {
+          const bidRequest = request.bidRequests.find(b => b.bidId === slot.impid);
+          bid.ad = createNativeAd(slot.impid, slot.native, bidRequest.params.nativeCallback);
+        } else {
+          bid.ad = slot.creative;
         }
         bids.push(bid);
       });
@@ -157,6 +162,9 @@ function buildCdbRequest(context, bidRequests) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
+      if (bidRequest.params.nativeCallback) {
+        slot.native = true;
+      }
       return slot;
     }),
   };
@@ -164,6 +172,32 @@ function buildCdbRequest(context, bidRequests) {
     request.publisher.networkid = networkId;
   }
   return request;
+}
+
+/**
+ * @param {string} id
+ * @param {*} payload
+ * @param {*} callback
+ * @return {string}
+ */
+function createNativeAd(id, payload, callback) {
+  // Store the callback and payload in a global object to be later accessed from the creative
+  window.criteo_prebid_native_slots = window.criteo_prebid_native_slots || {};
+  window.criteo_prebid_native_slots[id] = { callback, payload };
+
+  // The creative is in an iframe so we have to get the callback and payload
+  // from the parent window (doesn't work with safeframes)
+  return `<script type="text/javascript">
+    var win = window;
+    for (const i = 0; i < 10; ++i) {
+      win = win.parent;
+      if (win.criteo_prebid_native_slots) {
+        var responseSlot = win.criteo_prebid_native_slots["${id}"];
+        responseSlot.callback(responseSlot.payload);
+        break;
+      }
+    }
+  </script>`;
 }
 
 /**
