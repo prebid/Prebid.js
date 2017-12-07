@@ -75,6 +75,7 @@ The following parameters in the `bidResponse` object are common across all bidde
 {: .table .table-bordered .table-striped }
 | Bidder          | Supported Media Types |
 |-----------------+-----------------------|
+| adkernelAdn     | 'video'               |
 | adkernel        | 'video'               |
 | admixer         | 'video'               |
 | adxcg           | 'video', 'native'     |
@@ -85,9 +86,12 @@ The following parameters in the `bidResponse` object are common across all bidde
 | conversant      | 'video'               |
 | getintent       | 'video'               |
 | indexExchange   | 'video'               |
+| optimatic       | 'video'               |
 | pulsepointLite  | 'native'              |
+| readpeak        | 'native'              |
 | rhythmone       | 'video'               |
 | rubicon         | 'video'               |
+| sekindoUM       | 'video'               |
 | spotx           | 'video'               |
 | tremor          | 'video'               |
 | unruly          | 'video'               |
