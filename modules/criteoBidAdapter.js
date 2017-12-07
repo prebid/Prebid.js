@@ -48,7 +48,7 @@ export const spec = {
       data = buildCdbRequest(context, bidRequests);
     }
 
-    return { method: 'POST', url, data };
+    return { method: 'POST', url, data, bidRequests };
   },
 
   /**
@@ -58,8 +58,8 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     if (typeof Criteo !== 'undefined') {
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request.data);
-      return adapter.interpretResponse(response.body);
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
+      return adapter.interpretResponse(response.body, request);
     }
 
     const bids = [];
