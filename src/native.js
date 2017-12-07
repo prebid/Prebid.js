@@ -1,4 +1,5 @@
 import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
+import includes from 'core-js/library/fn/array/includes';
 
 export const nativeAdapters = [];
 
@@ -46,7 +47,7 @@ export function processNativeAdUnitParams(params) {
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
-  if (!(type && Object.keys(SUPPORTED_TYPES).includes(type))) {
+  if (!(type && includes(Object.keys(SUPPORTED_TYPES), type))) {
     logError(`${type} nativeParam is not supported`);
     return false;
   }
@@ -64,19 +65,20 @@ export const nativeAdUnit = adUnit => {
   const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
   return mediaType || mediaTypes;
 }
-export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
+export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
-/*
+/**
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
+ * @param {Bid} bid Native bid to validate
+ * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) {
-    return false;
-  }
+export function nativeBidIsValid(bid, bidRequests) {
+  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  if (!bidRequest) { return false; }
 
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
@@ -95,7 +97,7 @@ export function nativeBidIsValid(bid) {
     key => bid['native'][key]
   );
 
-  return requiredAssets.every(asset => returnedAssets.includes(asset));
+  return requiredAssets.every(asset => includes(returnedAssets, asset));
 }
 
 /*

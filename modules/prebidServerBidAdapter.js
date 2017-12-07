@@ -1,6 +1,5 @@
 import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
@@ -8,12 +7,106 @@ import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
+import { isValid } from 'src/adapters/bidderFactory';
+import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
-const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 let _synced = false;
+const DEFAULT_S2S_TTL = 60;
+const DEFAULT_S2S_CURRENCY = 'USD';
+const DEFAULT_S2S_NETREVENUE = true;
+
+let _s2sConfig;
+config.setDefaults({
+  's2sConfig': {
+    enabled: false,
+    timeout: 1000,
+    maxBids: 1,
+    adapter: 'prebidServer'
+  }
+});
+
+/**
+ * Set config for server to server header bidding
+ * @typedef {Object} options - required
+ * @property {boolean} enabled enables S2S bidding
+ * @property {string[]} bidders bidders to request S2S
+ * @property {string} endpoint endpoint to contact
+ *  === optional params below ===
+ * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {boolean} [cacheMarkup] whether to cache the adm result
+ * @property {string} [adapter] adapter code to use for S2S
+ * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
+ */
+function setS2sConfig(options) {
+  let keys = Object.keys(options);
+
+  if (['accountId', 'bidders', 'endpoint'].filter(key => {
+    if (!includes(keys, key)) {
+      utils.logError(key + ' missing in server to server config');
+      return true;
+    }
+    return false;
+  }).length > 0) {
+    return;
+  }
+
+  _s2sConfig = options;
+  if (options.syncEndpoint) {
+    queueSync(options.bidders);
+  }
+}
+getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
+
+/**
+ * @param  {Array} bidderCodes list of bidders to request user syncs for.
+ */
+function queueSync(bidderCodes) {
+  if (_synced) {
+    return;
+  }
+  _synced = true;
+  const payload = JSON.stringify({
+    uuid: utils.generateUUID(),
+    bidders: bidderCodes
+  });
+  ajax(_s2sConfig.syncEndpoint, (response) => {
+    try {
+      response = JSON.parse(response);
+      response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
+    } catch (e) {
+      utils.logError(e);
+    }
+  },
+  payload, {
+    contentType: 'text/plain',
+    withCredentials: true
+  });
+}
+
+/**
+ * Run a cookie sync for the given type, url, and bidder
+ *
+ * @param {string} type the type of sync, "image", "redirect", "iframe"
+ * @param {string} url the url to sync
+ * @param {string} bidder name of bidder doing sync for
+ */
+function doBidderSync(type, url, bidder) {
+  if (!url) {
+    utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+  } else if (type === 'image' || type === 'redirect') {
+    utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
+    utils.triggerPixel(url);
+  } else if (type == 'iframe') {
+    utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
+    utils.insertUserSyncIframe(url);
+  } else {
+    utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+  }
+}
 
 /**
  * Try to convert a value to a type.
@@ -73,18 +166,11 @@ const paramTypes = {
   },
 };
 
-let _cookiesQueued = false;
-
 /**
  * Bidder adapter for Prebid Server
  */
-function PrebidServer() {
+export function PrebidServer() {
   let baseAdapter = new Adapter('prebidServer');
-  let config;
-
-  baseAdapter.setConfig = function(s2sconfig) {
-    config = s2sconfig;
-  };
 
   function convertTypes(adUnits) {
     adUnits.forEach(adUnit => {
@@ -92,11 +178,7 @@ function PrebidServer() {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
           if (bid.params[key]) {
-            const converted = types[key](bid.params[key]);
-            if (converted !== bid.params[key]) {
-              utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
-            }
-            bid.params[key] = converted;
+            bid.params[key] = types[key](bid.params[key]);
 
             // don't send invalid values
             if (isNaN(bid.params[key])) {
@@ -104,33 +186,14 @@ function PrebidServer() {
             }
           }
         });
-        // will collect any custom params and place them under bid.params.keywords attribute in the following manner for pbs to ingest properly
-        // "keywords":[{"key":"randomKey","value":["123456789"]},{"key":"single_test"},{"key":"myMultiVar","value":["myValue","124578"]}]
-        let kwArray = [];
-        Object.keys(bid.params).forEach(key => {
-          if (bid.bidder === 'appnexus' && (key !== 'member' && key !== 'invCode' && key !== 'placementId')) {
-            let kvObj = {};
-            kvObj.key = key
-            if (bid.params[key] !== null) {
-              if (Array.isArray(bid.params[key])) {
-                kvObj.value = bid.params[key].map(val => tryConvertString(val));
-              } else {
-                kvObj.value = [tryConvertString(bid.params[key])];
-              }
-            }
-            kwArray.push(kvObj);
-            delete bid.params[key];
-          }
-        });
-        bid.params.keywords = kwArray;
       });
     });
   }
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest) {
+  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const isDebug = !!getConfig('debug');
-    const adUnits = utils.deepClone(bidRequest.ad_units);
+    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
@@ -140,14 +203,15 @@ function PrebidServer() {
         // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
         adUnit.media_types = [VIDEO];
       }
-    })
+    });
     convertTypes(adUnits);
     let requestJson = {
-      account_id: config.accountId,
-      tid: bidRequest.tid,
-      max_bids: config.maxBids,
-      timeout_millis: config.timeout,
-      secure: config.secure,
+      account_id: _s2sConfig.accountId,
+      tid: s2sBidRequest.tid,
+      max_bids: _s2sConfig.maxBids,
+      timeout_millis: _s2sConfig.timeout,
+      secure: _s2sConfig.secure,
+      cache_markup: _s2sConfig.cacheMarkup,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits.filter(hasSizes),
@@ -157,10 +221,10 @@ function PrebidServer() {
     // in case config.bidders contains invalid bidders, we only process those we sent requests for.
     const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
     function processResponse(response) {
-      handleResponse(response, requestedBidders);
+      handleResponse(response, requestedBidders, bidRequests, addBidResponse, done);
     }
     const payload = JSON.stringify(requestJson);
-    ajax(config.endpoint, processResponse, payload, {
+    ajax(_s2sConfig.endpoint, processResponse, payload, {
       contentType: 'text/plain',
       withCredentials: true
     });
@@ -171,29 +235,8 @@ function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
-  /**
-   * Run a cookie sync for the given type, url, and bidder
-   *
-   * @param {string} type the type of sync, "image", "redirect", "iframe"
-   * @param {string} url the url to sync
-   * @param {string} bidder name of bidder doing sync for
-   */
-  function doBidderSync(type, url, bidder) {
-    if (!url) {
-      utils.logError(`No sync url for bidder "${bidder}": ${url}`);
-    } else if (type === 'image' || type === 'redirect') {
-      utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
-      utils.triggerPixel(url);
-    } else if (type == 'iframe') {
-      utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
-      utils.insertUserSyncIframe(url);
-    } else {
-      utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
-    }
-  }
-
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders) {
+  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
     let result;
     try {
       result = JSON.parse(response);
@@ -201,7 +244,7 @@ function PrebidServer() {
       if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_cookie && !_cookiesQueued) {
+            if (bidder.no_cookie) {
               doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
             }
           });
@@ -217,7 +260,7 @@ function PrebidServer() {
 
         if (result.bids) {
           result.bids.forEach(bidObj => {
-            let bidRequest = utils.getBidRequest(bidObj.bid_id);
+            let bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
             let cpm = bidObj.price;
             let status;
             if (cpm !== 0) {
@@ -231,6 +274,12 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
+            if (bidObj.cache_id) {
+              bidObject.cache_id = bidObj.cache_id;
+            }
+            if (bidObj.cache_url) {
+              bidObject.cache_url = bidObj.cache_url;
+            }
             // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
             if (bidObj.media_type === VIDEO) {
               bidObject.mediaType = VIDEO;
@@ -257,68 +306,36 @@ function PrebidServer() {
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
+            bidObject.requestId = bidObj.bid_id;
+            bidObject.creativeId = bidObj.creative_id;
 
-            bidmanager.addBidResponse(bidObj.code, bidObject);
+            // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+            bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
+            bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
+            bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
+
+            if (isValid(bidObj.code, bidObject, bidRequests)) {
+              addBidResponse(bidObj.code, bidObject);
+            }
           });
         }
-
-        const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
-
-        // issue a no-bid response for every bid request that can not be matched with received bids
-        requestedBidders.forEach(bidder => {
-          utils
-            .getBidderRequestAllAdUnits(bidder)
-            .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
-            .forEach(bidRequest => {
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
-              bidObject.source = TYPE;
-              bidObject.adUnitCode = bidRequest.placementCode;
-              bidObject.bidderCode = bidRequest.bidder;
-              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
-            });
-        });
       }
-      if (result.status === 'no_cookie' && config.cookieSet) {
+      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync
-        cookieSet(cookieSetUrl);
+        cookieSet(_s2sConfig.cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);
     }
 
-    if (!result || (result.status && result.status.includes('Error'))) {
+    if (!result || (result.status && includes(result.status, 'Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
+
+    done();
   }
-  /**
-   * @param  {} {bidders} list of bidders to request user syncs for.
-   */
-  baseAdapter.queueSync = function({bidderCodes}) {
-    if (_synced) {
-      return;
-    }
-    _synced = true;
-    const payload = JSON.stringify({
-      uuid: utils.generateUUID(),
-      bidders: bidderCodes
-    });
-    ajax(config.syncEndpoint, (response) => {
-      try {
-        response = JSON.parse(response);
-        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
-      } catch (e) {
-        utils.logError(e);
-      }
-    },
-    payload, {
-      contentType: 'text/plain',
-      withCredentials: true
-    });
-  };
 
   return Object.assign(this, {
-    queueSync: baseAdapter.queueSync,
-    setConfig: baseAdapter.setConfig,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
@@ -326,5 +343,3 @@ function PrebidServer() {
 }
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
-
-module.exports = PrebidServer;
