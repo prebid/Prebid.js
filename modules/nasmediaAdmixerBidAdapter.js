@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 // const ADMIXER_ENDPOINT = '//adn2.admixer.co.kr:25846/prebid';
-const ADMIXER_ENDPOINT = 'https://adn2.admixer.co.kr:10443/prebid';
+const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid';
 const DEFAULT_BID_TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_REVENUE = false;
