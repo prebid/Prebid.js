@@ -126,6 +126,84 @@ describe('adapterManager tests', () => {
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
+        'adUnitsS2SCopy': [
+          {
+            'code': '/19968336/header-bid-tag1',
+            'sizes': [
+              {
+                'w': 728,
+                'h': 90
+              },
+              {
+                'w': 970,
+                'h': 90
+              }
+            ],
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': '543221',
+                  'test': 'me'
+                },
+                'placementCode': '/19968336/header-bid-tag1',
+                'sizes': [
+                  [
+                    728,
+                    90
+                  ],
+                  [
+                    970,
+                    90
+                  ]
+                ],
+                'bidId': '68136e1c47023d',
+                'bidderRequestId': '55e24a66bed717',
+                'requestId': '1ff753bd4ae5cb',
+                'startTime': 1463510220995,
+                'status': 1,
+                'bid_id': '378a8914450b334'
+              }
+            ]
+          },
+          {
+            'code': '/19968336/header-bid-tag-0',
+            'sizes': [
+              {
+                'w': 300,
+                'h': 250
+              },
+              {
+                'w': 300,
+                'h': 600
+              }
+            ],
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': '5324321'
+                },
+                'placementCode': '/19968336/header-bid-tag-0',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '7e5d6af25ed188',
+                'bidderRequestId': '55e24a66bed717',
+                'requestId': '1ff753bd4ae5cb',
+                'startTime': 1463510220996,
+                'bid_id': '387d9d9c32ca47c'
+              }
+            ]
+          }
+        ],
         'bids': [
           {
             'bidder': 'appnexus',
@@ -211,6 +289,84 @@ describe('adapterManager tests', () => {
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
+        'adUnitsS2SCopy': [
+          {
+            'code': '/19968336/header-bid-tag1',
+            'sizes': [
+              {
+                'w': 728,
+                'h': 90
+              },
+              {
+                'w': 970,
+                'h': 90
+              }
+            ],
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': '543221',
+                  'test': 'me'
+                },
+                'placementCode': '/19968336/header-bid-tag1',
+                'sizes': [
+                  [
+                    728,
+                    90
+                  ],
+                  [
+                    970,
+                    90
+                  ]
+                ],
+                'bidId': '68136e1c47023d',
+                'bidderRequestId': '55e24a66bed717',
+                'requestId': '1ff753bd4ae5cb',
+                'startTime': 1463510220995,
+                'status': 1,
+                'bid_id': '378a8914450b334'
+              }
+            ]
+          },
+          {
+            'code': '/19968336/header-bid-tag-0',
+            'sizes': [
+              {
+                'w': 300,
+                'h': 250
+              },
+              {
+                'w': 300,
+                'h': 600
+              }
+            ],
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': '5324321'
+                },
+                'placementCode': '/19968336/header-bid-tag-0',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '7e5d6af25ed188',
+                'bidderRequestId': '55e24a66bed717',
+                'requestId': '1ff753bd4ae5cb',
+                'startTime': 1463510220996,
+                'bid_id': '387d9d9c32ca47c'
+              }
+            ]
+          }
+        ],
         'bids': [
           {
             'bidder': 'appnexus',
