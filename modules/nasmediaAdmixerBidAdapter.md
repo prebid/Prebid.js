@@ -3,7 +3,7 @@
 ```
 Module Name: NasmeidaAdmixer Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: mobilep1@nasmedia.co.kr
+Maintainer: prebid@nasmedia.co.kr
 ```
 
 # Description
@@ -23,7 +23,7 @@ The NasmediaAdmixer adapter doesn't support multiple sizes per ad-unit and will 
           {
             bidder: 'nasmediaAdmixer',
             params: {
-              ax_key: 'thdaa110',  //required parameter
+              ax_key: 'ajj7jba3',  //required parameter
             }
           }
         ]

@@ -43,7 +43,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
       {
         'bidder': 'nasmediaAdmixer',
         'params': {
-          'ax_key': 'thdaa110'
+          'ax_key': 'ajj7jba3'
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[320, 480]],
@@ -85,7 +85,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     const bidRequest = {
       'bidder': 'nasmediaAdmixer',
       'params': {
-        'ax_key': 'thdaa110',
+        'ax_key': 'ajj7jba3',
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[320, 480], [300, 250]],
