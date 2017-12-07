@@ -845,3 +845,18 @@ export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
     ${plural} won't fetch demand.
   `;
 }
+
+/**
+ * Call the funciton only once. https://davidwalsh.name/javascript-once
+ * @param {*} fn 
+ * @param {*} context 
+ */
+export function once(fn, context) {
+  let result;
+  return function() {
+    if (!result) {
+      result = fn.apply(context || this, arguments);
+    }
+    return result;
+  }
+}
