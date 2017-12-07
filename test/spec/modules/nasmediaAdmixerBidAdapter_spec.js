@@ -56,7 +56,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     it('sends bid request to url via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`//adn2.admixer.co.kr:25846/prebid`));
+      expect(request.url).to.match(new RegExp(`https://adn.admixer.co.kr:10443/prebid`));
     });
   });
 
