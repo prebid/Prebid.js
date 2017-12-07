@@ -107,7 +107,7 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-function getAdUnitCopyForPrebidServer(adUnits) {
+const getAdUnitCopyForPrebidServer = utils.once(function(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.deepClone(adUnits);
 
@@ -128,7 +128,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
     return adUnit.bids.length !== 0;
   });
   return adUnitsCopy;
-}
+});
 
 function getAdUnitCopyForClientAdapters(adUnits) {
   let adUnitsClientCopy = utils.deepClone(adUnits);
@@ -232,6 +232,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       let s2sBidRequest = {tid, 'ad_units': getAdUnitCopyForPrebidServer(adUnits)};
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
+          bidRequest.start = utils.timestamp();
           bidRequest.doneCbCallCount = 0;
           return doneCb(bidRequest.bidderRequestId)
         });
@@ -263,7 +264,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
   // handle client adapter requests
   clientBidRequests.forEach(bidRequest => {
-    bidRequest.start = new Date().getTime();
+    bidRequest.start = utils.timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
     if (adapter) {
