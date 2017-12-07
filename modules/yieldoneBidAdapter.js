@@ -9,14 +9,14 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId && bid.params.width && bid.params.height);
+    return !!(bid.params.placementId);
   },
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
+      const width = bidRequest.sizes[0];
+      const height = bidRequest.sizes[1];
       const placementId = params.placementId;
-      const width = params.width;
-      const height = params.height;
       const cb = Math.floor(Math.random() * 99999999999);
       const referrer = encodeURIComponent(utils.getTopWindowUrl());
       const bidId = bidRequest.bidId;

@@ -11,9 +11,7 @@ describe('yieldoneBidAdapter', function() {
     let bid = {
       'bidder': 'yieldone',
       'params': {
-        placementId: '44082',
-        width: '300',
-        height: '250',
+        placementId: '44082'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
@@ -45,9 +43,7 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44082',
-          width: '300',
-          height: '250',
+          placementId: '44082'
         },
         'adUnitCode': 'adunit-code1',
         'sizes': [
@@ -60,9 +56,7 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44337',
-          width: '300',
-          height: '250',
+          placementId: '44337'
         },
         'adUnitCode': 'adunit-code2',
         'sizes': [
