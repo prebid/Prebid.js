@@ -40,7 +40,6 @@ After a transition period, documentation for these methods will be removed from 
   * [.addAdUnits(Array)](#module_pbjs.addAdUnits)
   * [.addBidResponse(adUnitCode, bid)](#module_pbjs.addBidResponse) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.bidderSettings](#module_pbjs.bidderSettings)
-  * [userSync](#module_pbjs.userSync)
   * [.addCallback(event, func)](#module_pbjs.addCallback) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.removeCallback(cbId)](#module_pbjs.removeCallback) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.buildMasterVideoTagFromAdserverTag(adserverTag, options)](#module_pbjs.buildMasterVideoTagFromAdserverTag) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
@@ -806,89 +805,6 @@ If a custom adServerTargeting function can return an empty value, this boolean f
 
 <hr class="full-rule">
 
-<a name="module_pbjs.userSync"></a>
-
-### UserSync
-
-UserSync configuration allows Publishers to control how adapters behave with respect to dropping pixels or scripts to cookie users with IDs.
-This practice is called 'userSync' because the aim is to let the bidders match IDs between their cookie space and the DSP cookie space.
-There's a good reason for bidders to be doing this -- DSPs are more likely to bid on impressions where they know something about the history of a user.
-However, there are also good reasons why Publishers may want to control the use of these practices:
-
-* page performance - Publishers may wish to move ad-related cookie work to much later in the page load after ads and content have loaded.
-* user privacy - Some publishers may want to opt out of these practices even though it limits their user's values on the open market.
-* security - Publishers may want to control which bidders are trusted to inject images and javascript into their pages.
-
-The default behavior of the platform is to allow every adapter to drop up to 5 image-based user syncs. The sync images will be dropped 3 seconds after the auction starts. Here are some examples of config that will change the default behavior.
-
-Push the user syncs to later in the page load:
-{% highlight js %}
-pbjs.setConfig({ userSync: {
-    syncDelay: 5000       // write image pixels 5 seconds after the auction
-}});
-{% endhighlight %}
-
-Turn off userSync entirely:
-{% highlight js %}
-pbjs.setConfig({ userSync: {
-    syncEnabled: false
-}});
-{% endhighlight %}
-
-Allow iframe-based syncs:
-{% highlight js %}
-pbjs.setConfig({ userSync: {
-    iframeEnabled: true
-}});
-{% endhighlight %}
-
-Only certain adapters are allowed to sync, either images or iframes:
-{% highlight js %}
-pbjs.setConfig({ userSync: {
-    enabledBidders: ['abc','xyz'], // only these bidders are allowed to sync
-    iframeEnabled: true,
-    syncsPerBidder: 3,            // and no more than 3 syncs at a time
-    syncDelay: 6000,              // 6 seconds after the auction
-}});
-{% endhighlight %}
-
-The same bidders can drop sync pixels, but the timing will be controlled by the page:
-{% highlight js %}
-pbjs.setConfig({ userSync: {
-    enabledBidders: ['abc','xyz'], // only these bidders are allowed to sync, and only image pixels
-    enableOverride: true          // publisher will call pbjs.triggerUserSyncs()
-}});
-{% endhighlight %}
-
-Here are all the options for userSync control:
-
-{: .table .table-bordered .table-striped }
-| Attribute | Type | Description |
-| --- | --- | --- |
-| syncEnabled | boolean | Enables/disables the userSync feature. Defaults to true. |
-| iframeEnabled | boolean | Enables/disables the use of iframes for syncing. Defaults to false. |
-| syncDelay | integer | The delay in milliseconds for autosyncing once the first auction is run. 3000 by default. |
-| syncsPerBidder | integer | Number of registered syncs allowed per adapter. Default is 5. Set to 0 to allow all. |
-| enabledBidders | array | Array of names of trusted adapters which are allowed to sync users. |
-| enableOverride | boolean | Allows the publisher to manually trigger the user syncs to fire by calling pbjs.triggerUserSyncs(). |
-
-As noted, there's a function available to give the page control of when registered userSyncs are added.
-{% highlight js %}
-pbjs.triggerUserSyncs()
-{% endhighlight %}
-
-#### How it works
-
-The [userSync.registerSync()]({{site.baseurl}}/dev-docs/bidder-adaptor.html#step-6-register-user-sync-pixels) function called by the adapter keeps a queue of valid userSync requests. It prevents unwanted sync entries from being placed on the queue:
-
-* Removes undesired sync types. (i.e. enforces the iframeEnabled flag)
-* Removes undesired adapter registrations. (i.e. enforces the enabledBidders option)
-* Makes sure there's not too many queue entries from a given adapter. (i.e. enforces syncsPerBidder)
-
-When user syncs are run, regardless of whether they are invoked by the platform or by the page calling pbjs.triggerUserSyncs(), the queue entries are randomized and appended to the bottom of the HTML head tag. If there's no head tag, then they're appended to the end of the body tag.
-
-<hr class="full-rule">
-
 <a name="module_pbjs.addCallback"></a>
 
 ### pbjs.addCallback(event, func) ⇒ `String`
@@ -1135,6 +1051,7 @@ See below for usage examples.
 + [Set a delay before requesting cookie sync](#setConfig-Cookie-Sync-Delay)
 + [Set price granularity](#setConfig-Price-Granularity)
 + [Configure server-to-server header bidding](#setConfig-Server-to-Server)
++ [Configure user syncing](#setConfig-Configure-User-Syncing)
 + [Configure responsive ad units with `sizeConfig` and `labels`](#setConfig-Configure-Responsive-Ads)
 + [Generic Configuration](#setConfig-Generic-Configuration)
 + [Troubleshooting your configuration](#setConfig-Troubleshooting-your-configuration)
@@ -1255,6 +1172,125 @@ pbjs.setConfig({
     }
 })
 {% endhighlight %}
+
+<a name="setConfig-Configure-User-Syncing" />
+
+#### Configure User Syncing
+
+The user sync configuration options described in this section give publishers control over how adapters behave with respect to dropping pixels or scripts to cookie users with IDs.
+This practice is called "user syncing" because the aim is to let the bidders match IDs between their cookie space and the DSP's cookie space.
+There's a good reason for bidders to be doing this -- DSPs are more likely to bid on impressions where they know something about the history of the user.
+However, there are also good reasons why publishers may want to control the use of these practices:
+
+- *Page performance*: Publishers may wish to move ad-related cookie work to much later in the page load after ads and content have loaded.
+- *User privacy*: Some publishers may want to opt out of these practices even though it limits their users' values on the open market.
+- *Security*: Publishers may want to control which bidders are trusted to inject images and JavaScript into their pages.
+
+{: .alert.alert-info :}
+**User syncing default behavior**  
+If you don't tweak any of the settings described in this section, the default behavior of Prebid.js is to wait 3 seconds after the auction ends, and then allow every adapter to drop up to 5 image-based user syncs.
+
+For more information, see the sections below.
+
+- [User Sync Properties](#setConfig-ConfigureUserSyncing-UserSyncProperties)
+- [User Sync Examples](#setConfig-ConfigureUserSyncing-UserSyncExamples)
+- [How User Syncing Works](#setConfig-ConfigureUserSyncing-HowUserSyncingWorks)
+
+<a name="setConfig-ConfigureUserSyncing-UserSyncProperties" />
+
+##### User Sync Properties
+
+For descriptions of all the properties that control user syncs, see the table below.
+
+{: .table .table-bordered .table-striped }
+| Attribute        | Type    | Description                                                                                             |
+|------------------+---------+---------------------------------------------------------------------------------------------------------|
+| `syncEnabled`    | Boolean | Enable/disable the user syncing feature. Default: `true`.                                               |
+| `pixelEnabled`   | Boolean | Enable/disable the use of pixels for user syncing.  Default: `true`.                                    |
+| `iframeEnabled`  | Boolean | Enable/disable the use of iFrames for syncing. Default: `false`.                                        |
+| `syncsPerBidder` | Integer | Number of registered syncs allowed per adapter. Default: `5`. To allow all, set to `0`.                 |
+| `syncDelay`      | Integer | Delay in milliseconds for syncing after the auction ends. Default: `3000`.                              |
+| `enabledBidders` | Array   | Trusted adapters which are allowed to do user syncing.                                                  |
+| `enableOverride` | Boolean | Enable/disable publisher to trigger user syncs by calling `pbjs.triggerUserSyncs()`.  Default: `false`. |
+
+<a name="setConfig-ConfigureUserSyncing-UserSyncExamples" />
+
+##### User Sync Examples
+
+For examples of configurations that will change the default behavior, see below.
+
+Push the user syncs to later in the page load:
+
+{% highlight js %}
+pbjs.setConfig({
+    userSync: {
+        syncDelay: 5000 // write image pixels 5 seconds after the auction
+    }
+});
+{% endhighlight %}
+
+Turn off user syncing entirely:
+
+{% highlight js %}
+pbjs.setConfig({
+    userSync: {
+        syncEnabled: false
+    }
+});
+{% endhighlight %}
+
+Allow iFrame-based syncs:
+
+{% highlight js %}
+pbjs.setConfig({
+    userSync: {
+        iframeEnabled: true
+    }
+});
+{% endhighlight %}
+
+Only certain adapters are allowed to sync -- either images or iFrames:
+
+{% highlight js %}
+pbjs.setConfig({
+    userSync: {
+        enabledBidders: ['abc', 'xyz'], // only these bidders are allowed to sync
+        iframeEnabled: true,
+        syncsPerBidder: 3, // and no more than 3 syncs at a time
+        syncDelay: 6000, // 6 seconds after the auction
+    }
+});
+{% endhighlight %}
+
+The same bidders can drop sync pixels, but the timing will be controlled by the page:
+
+{% highlight js %}
+pbjs.setConfig({
+    userSync: {
+        /* only these bidders are allowed to sync, and only image pixels */
+        enabledBidders: ['abc', 'xyz'],
+        enableOverride: true // publisher will call `pbjs.triggerUserSyncs()`
+    }
+});
+{% endhighlight %}
+
+As noted, there's a function available to give the page control of when registered user syncs are added.
+
+{% highlight js %}
+pbjs.triggerUserSyncs();
+{% endhighlight %}
+
+<a name="setConfig-ConfigureUserSyncing-HowUserSyncingWorks" />
+
+##### How User Syncing Works
+
+The [userSync.registerSync()]({{site.baseurl}}/dev-docs/bidder-adaptor.html#step-6-register-user-sync-pixels) function called by the adapter keeps a queue of valid userSync requests. It prevents unwanted sync entries from being placed on the queue:
+
+* Removes undesired sync types. (i.e. enforces the iframeEnabled flag)
+* Removes undesired adapter registrations. (i.e. enforces the enabledBidders option)
+* Makes sure there's not too many queue entries from a given adapter. (i.e. enforces syncsPerBidder)
+
+When user syncs are run, regardless of whether they are invoked by the platform or by the page calling pbjs.triggerUserSyncs(), the queue entries are randomized and appended to the bottom of the HTML head tag. If there's no head tag, then they're appended to the end of the body tag.
 
 <a name="setConfig-Configure-Responsive-Ads" />
 
