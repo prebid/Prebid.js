@@ -1,6 +1,8 @@
 import * as utils from 'src/utils';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
@@ -63,7 +65,7 @@ export const spec = {
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = rtbImps.find(imp => imp.id === rtbBid.impid);
+      let imp = find(rtbImps, imp => imp.id === rtbBid.impid);
       let prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -119,7 +121,7 @@ function buildImp(bid) {
     imp.video = {w: size[0], h: size[1]};
     if (bid.params.video) {
       Object.keys(bid.params.video)
-        .filter(param => VIDEO_TARGETING.includes(param))
+        .filter(param => includes(VIDEO_TARGETING, param))
         .forEach(param => imp.video[param] = bid.params.video[param]);
     }
   } else {

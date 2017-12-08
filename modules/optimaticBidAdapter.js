@@ -1,5 +1,4 @@
 import * as utils from 'src/utils';
-import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 export const ENDPOINT = '//mg-bid.optimatic.com/adrequest/';
 
@@ -97,5 +96,4 @@ function getData (bid) {
   };
 }
 
-config.setConfig({ usePrebidCache: true });
 registerBidder(spec);

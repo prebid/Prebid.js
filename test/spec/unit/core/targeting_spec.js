@@ -1,8 +1,10 @@
 import { expect } from 'chai';
-import Targeting from 'src/targeting';
+import { targeting as targetingInstance } from 'src/targeting';
 import { config } from 'src/config';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
+import { auctionManager } from 'src/auctionManager';
+import * as targetingModule from 'src/targeting';
 
 const bid1 = {
   'bidderCode': 'rubicon',
@@ -28,7 +30,10 @@ const bid1 = {
     'hb_adid': '148018fe5e',
     'hb_pb': '0.53',
     'foobar': '300x250'
-  }
+  },
+  'netRevenue': true,
+  'currency': 'USD',
+  'ttl': 300
 };
 
 const bid2 = {
@@ -55,45 +60,43 @@ const bid2 = {
     'hb_adid': '5454545',
     'hb_pb': '0.25',
     'foobar': '300x250'
-  }
+  },
+  'netRevenue': true,
+  'currency': 'USD',
+  'ttl': 300
 };
 
 describe('targeting tests', () => {
   describe('getAllTargeting', () => {
+    let amBidsReceivedStub;
+    let amGetAdUnitsStub;
+    let bidExpiryStub;
+
     beforeEach(() => {
       $$PREBID_GLOBAL$$._sendAllBids = false;
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-      $$PREBID_GLOBAL$$._adUnitCodes = [];
-      $$PREBID_GLOBAL$$.adUnits = [];
+      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived', function() {
+        return [bid1, bid2];
+      });
+      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes', function() {
+        return ['/123456/header-bid-tag-0'];
+      });
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
+    });
+
+    afterEach(() => {
+      auctionManager.getBidsReceived.restore();
+      auctionManager.getAdUnitCodes.restore();
+      targetingModule.isBidExpired.restore();
     });
 
     it('selects the top bid when _sendAllBids true', () => {
-      $$PREBID_GLOBAL$$.adUnits = [{
-        code: '/123456/header-bid-tag-0',
-        sizes: [300, 250],
-        bids: [
-          {
-            'bidder': 'rubicon',
-            'params': {
-              'accountId': 10617,
-              'siteId': 23635,
-              'zoneId': 453908
-            }
-          }
-        ]
-      }];
       config.setConfig({ enableSendAllBids: true });
-      $$PREBID_GLOBAL$$._bidsReceived.push(bid1, bid2);
-      $$PREBID_GLOBAL$$._adUnitCodes = ['/123456/header-bid-tag-0'];
-      let targeting = Targeting.getAllTargeting(['/123456/header-bid-tag-0']);
-      let flattened = [];
-      targeting.filter(obj => obj['/123456/header-bid-tag-0'] !== undefined).forEach(item => flattened = flattened.concat(item['/123456/header-bid-tag-0']));
-      let sendAllBidCpm = flattened.filter(obj => obj.hb_pb_rubicon !== undefined);
-      let winningBidCpm = flattened.filter(obj => obj.hb_pb !== undefined);
+      let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf('hb_pb_') != -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
       // expect the winning CPM to be equal to the sendAllBidCPM
-      expect(sendAllBidCpm[0]['hb_pb_rubicon']).to.deep.equal(winningBidCpm[0]['hb_pb']);
+      expect(targeting['/123456/header-bid-tag-0']['hb_pb_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0']['hb_pb']);
     });
   }); // end getAllTargeting tests
 });
