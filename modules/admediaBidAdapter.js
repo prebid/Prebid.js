@@ -1,5 +1,6 @@
 import { getBidRequest } from 'src/utils';
 import { userSync } from 'src/userSync.js';
+import { config } from 'src/config';
 
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
@@ -70,7 +71,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       adloader.loadScript(endpoint);
     }
 
-    if (userSync.iframeEnabled) {
+    if (config.getConfig('userSync').iframeEnabled) {
       userSync.registerSync('iframe', 'admedia', '//b.admedia.com/sync/iframe/');
     } else {
       userSync.registerSync('image', 'admedia', '//b.admedia.com/sync/img/?id=1');
