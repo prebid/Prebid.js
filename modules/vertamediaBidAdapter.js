@@ -111,7 +111,6 @@ function getSize(requestSizes) {
 function createBid(isMediaTypeOutstream, bidResponse) {
   let bid = {
     requestId: bidResponse.requestId,
-    descriptionUrl: bidResponse.url,
     creativeId: bidResponse.cmpId,
     vastUrl: bidResponse.vastUrl,
     height: bidResponse.height,

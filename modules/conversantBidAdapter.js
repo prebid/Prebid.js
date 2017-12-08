@@ -50,7 +50,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const loc = utils.getTopWindowLocation();
-    const page = loc.pathname + loc.search + loc.hash;
+    const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
     let requestId = '';

@@ -3,7 +3,6 @@ import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
 var Adapter = require('modules/conversantBidAdapter');
-var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -220,7 +219,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.site).to.have.property('id', siteId);
     expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
     const loc = utils.getTopWindowLocation();
-    const page = loc.pathname + loc.search + loc.hash;
+    const page = loc.href;
     expect(payload.site).to.have.property('page', page);
 
     expect(payload).to.have.property('device');

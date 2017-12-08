@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx';
@@ -22,7 +23,7 @@ export const spec = {
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
-   */ 
+   */
   buildRequests: function(validBidRequests) {
     const channelIDs = [];
 
@@ -46,7 +47,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
-   */ 
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
 
@@ -58,8 +59,8 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = serverResponse.body.find(function(res) {
-        return !!res && !res.consumed && req.sizes.find(function(size) {
+      let matchedResponse = find(serverResponse.body, function(res) {
+        return !!res && !res.consumed && find(req.sizes, function(size) {
           return res.width === size[0] && res.height === size[1];
         });
       });

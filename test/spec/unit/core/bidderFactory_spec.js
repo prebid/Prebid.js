@@ -1,5 +1,4 @@
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import bidmanager from 'src/bidmanager';
 import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
@@ -11,15 +10,17 @@ const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
   bids: [
     {
+      bidId: 1,
       requestId: 'first-bid-id',
-      placementCode: 'mock/placement',
+      adUnitCode: 'mock/placement',
       params: {
         param: 5
       }
     },
     {
+      bidId: 2,
       requestId: 'second-bid-id',
-      placementCode: 'mock/placement2',
+      adUnitCode: 'mock/placement2',
       params: {
         badParam: 6
       }
@@ -29,8 +30,9 @@ const MOCK_BIDS_REQUEST = {
 
 describe('bidders created by newBidder', () => {
   let spec;
-  let addBidRequestStub;
   let bidder;
+  let addBidResponseStub;
+  let doneStub;
 
   beforeEach(() => {
     spec = {
@@ -40,11 +42,9 @@ describe('bidders created by newBidder', () => {
       interpretResponse: sinon.stub(),
       getUserSyncs: sinon.stub()
     };
-    addBidRequestStub = sinon.stub(bidmanager, 'addBidResponse');
-  });
 
-  afterEach(() => {
-    addBidRequestStub.restore();
+    addBidResponseStub = sinon.stub();
+    doneStub = sinon.stub();
   });
 
   describe('when the ajax response is irrelevant', () => {
@@ -52,6 +52,8 @@ describe('bidders created by newBidder', () => {
 
     beforeEach(() => {
       ajaxStub = sinon.stub(ajax, 'ajax');
+      addBidResponseStub.reset();
+      doneStub.reset();
     });
 
     afterEach(() => {
@@ -78,7 +80,7 @@ describe('bidders created by newBidder', () => {
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.calledTwice).to.equal(true);
@@ -92,7 +94,7 @@ describe('bidders created by newBidder', () => {
       spec.isBidRequestValid.returns(false);
       spec.buildRequests.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.calledTwice).to.equal(true);
@@ -106,7 +108,7 @@ describe('bidders created by newBidder', () => {
       spec.isBidRequestValid.onSecondCall().returns(false);
       spec.buildRequests.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.calledTwice).to.equal(true);
@@ -120,7 +122,7 @@ describe('bidders created by newBidder', () => {
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
     });
@@ -136,7 +138,7 @@ describe('bidders created by newBidder', () => {
         data: data
       });
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(url);
@@ -161,7 +163,7 @@ describe('bidders created by newBidder', () => {
         options: options
       });
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(url);
@@ -184,7 +186,7 @@ describe('bidders created by newBidder', () => {
         data: data
       });
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
@@ -208,7 +210,7 @@ describe('bidders created by newBidder', () => {
         options: opt
       });
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
@@ -237,12 +239,12 @@ describe('bidders created by newBidder', () => {
         }
       ]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.calledTwice).to.equal(true);
     });
 
-    it('should add bids for each placement code if no requests are given', () => {
+    it('should not add bids for each placement code if no requests are given', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -250,13 +252,9 @@ describe('bidders created by newBidder', () => {
       spec.interpretResponse.returns([]);
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.callCount).to.equal(0);
     });
   });
 
@@ -271,6 +269,8 @@ describe('bidders created by newBidder', () => {
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
+      addBidResponseStub.reset();
+      doneStub.reset();
       userSyncStub = sinon.stub(userSync, 'registerSync')
       logErrorSpy = sinon.spy(utils, 'logError');
     });
@@ -292,7 +292,7 @@ describe('bidders created by newBidder', () => {
       });
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.interpretResponse.calledOnce).to.equal(true);
       const response = spec.interpretResponse.firstCall.args[0]
@@ -303,6 +303,7 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should call spec.interpretResponse() once for each request made', () => {
@@ -323,23 +324,23 @@ describe('bidders created by newBidder', () => {
       ]);
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.interpretResponse.calledTwice).to.equal(true);
+      expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it('should add bids for each placement code into the bidmanager, even if the bidder doesn\'t bid on all of them', () => {
+    it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', () => {
       const bidder = newBidder(spec);
 
       const bid = {
         creativeId: 'creative-id',
-        bidderCode: 'code',
-        requestId: 'some-id',
+        requestId: '1',
         ad: 'ad-url.com',
         cpm: 0.5,
         height: 200,
         width: 300,
-        placementCode: 'mock/placement',
+        adUnitCode: 'mock/placement',
         currency: 'USD',
         netRevenue: true,
         ttl: 300
@@ -354,13 +355,11 @@ describe('bidders created by newBidder', () => {
 
       spec.interpretResponse.returns(bid);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
@@ -375,7 +374,7 @@ describe('bidders created by newBidder', () => {
       });
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1].length).to.equal(1);
@@ -394,7 +393,7 @@ describe('bidders created by newBidder', () => {
         url: 'usersync.com'
       }]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(userSyncStub.called).to.equal(true);
       expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
@@ -406,7 +405,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
 
       const bid = {
-        requestId: 'some-id',
+        requestId: '1',
         ad: 'ad-url.com',
         cpm: 0.5,
         height: 200,
@@ -423,7 +422,7 @@ describe('bidders created by newBidder', () => {
 
       spec.interpretResponse.returns(bid);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
@@ -436,6 +435,8 @@ describe('bidders created by newBidder', () => {
       ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
         callbacks.error('ajax call failed.');
       });
+      addBidResponseStub.reset();
+      doneStub.reset();
     });
 
     afterEach(() => {
@@ -453,12 +454,13 @@ describe('bidders created by newBidder', () => {
       });
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.interpretResponse.called).to.equal(false);
+      expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it('should add bids for each placement code into the bidmanager', () => {
+    it('should not add bids for each adunit code into the auction', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -470,13 +472,10 @@ describe('bidders created by newBidder', () => {
       spec.interpretResponse.returns([]);
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.callCount).to.equal(0);
+      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should call spec.getUserSyncs() with no responses', () => {
@@ -490,10 +489,11 @@ describe('bidders created by newBidder', () => {
       });
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
+      expect(doneStub.calledOnce).to.equal(true);
     });
   });
 });
@@ -554,3 +554,193 @@ describe('registerBidder', () => {
     expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
   });
 })
+
+describe('validate bid response: ', () => {
+  let spec;
+  let bidder;
+  let addBidResponseStub;
+  let doneStub;
+  let ajaxStub;
+  let logErrorSpy;
+
+  let bids = [{
+    'ad': 'creative',
+    'cpm': '1.99',
+    'width': 300,
+    'height': 250,
+    'requestId': '1',
+    'creativeId': 'some-id',
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 360
+  }];
+
+  beforeEach(() => {
+    spec = {
+      code: CODE,
+      isBidRequestValid: sinon.stub(),
+      buildRequests: sinon.stub(),
+      interpretResponse: sinon.stub(),
+    };
+
+    spec.isBidRequestValid.returns(true);
+    spec.buildRequests.returns({
+      method: 'POST',
+      url: 'test.url.com',
+      data: {}
+    });
+
+    addBidResponseStub = sinon.stub();
+    doneStub = sinon.stub();
+    ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      const fakeResponse = sinon.stub();
+      fakeResponse.returns('headerContent');
+      callbacks.success('response body', { getResponseHeader: fakeResponse });
+    });
+    logErrorSpy = sinon.spy(utils, 'logError');
+  });
+
+  afterEach(() => {
+    ajaxStub.restore();
+    logErrorSpy.restore();
+  });
+
+  it('should add native bids that do have required assets', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        'mediaType': 'native',
+        'native': {
+          'title': 'Native Creative',
+          'clickUrl': 'https://www.link.example',
+        }
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+
+  it('should not add native bids that do not have required assets', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        bidderCode: CODE,
+        mediaType: 'native',
+        native: {
+          title: undefined,
+          clickUrl: 'https://www.link.example',
+        }
+      }
+    );
+
+    const bidder = newBidder(spec);
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(false);
+    expect(logErrorSpy.callCount).to.equal(1);
+  });
+
+  it('should add bid when renderer is present on outstream bids', () => {
+    let bidRequest = {
+      bids: [{
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        mediaTypes: {
+          video: {context: 'outstream'}
+        }
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        bidderCode: CODE,
+        mediaType: 'video',
+        renderer: {render: () => true, url: 'render.js'},
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+
+  it('should add banner bids that have no width or height but single adunit size', () => {
+    let bidRequest = {
+      bids: [{
+        bidder: CODE,
+        bidId: 1,
+        requestId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        params: {
+          param: 5
+        },
+        sizes: [[300, 250]],
+      }]
+    };
+
+    let bids1 = Object.assign({},
+      bids[0],
+      {
+        width: undefined,
+        height: undefined
+      }
+    );
+
+    const bidder = newBidder(spec);
+
+    spec.interpretResponse.returns(bids1);
+    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub);
+
+    expect(addBidResponseStub.calledOnce).to.equal(true);
+    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    expect(logErrorSpy.callCount).to.equal(0);
+  });
+});
