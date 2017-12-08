@@ -103,7 +103,7 @@ export const spec = {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
           if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-            const bid = newBid(serverBid, rtbBid);
+            const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
           }
@@ -123,11 +123,14 @@ export const spec = {
   }
 }
 
-function newRenderer(adUnitCode, rtbBid) {
+function newRenderer(adUnitCode, rtbBid, rendererOptions) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
-    config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+    config: Object.assign({},
+      { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+      rendererOptions,
+    ),
     loaded: false,
   });
 
@@ -178,9 +181,10 @@ function getKeywords(keywords) {
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
  * @param rtbBid
+ * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid) {
+function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -200,9 +204,11 @@ function newBid(serverBid, rtbBid) {
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
+      // TODO get appnexus params properly
+      const rendererOptions = bidderRequest.bids[0].params.video.rendererOptions;
       Object.assign(bid, {
         adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid)
+        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
       });
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
