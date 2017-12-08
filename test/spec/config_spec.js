@@ -10,16 +10,19 @@ let setDefaults;
 
 describe('config API', () => {
   let logErrorSpy;
+  let logWarnSpy;
   beforeEach(() => {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
     setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
+    logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
   afterEach(() => {
     utils.logError.restore();
+    utils.logWarn.restore();
   });
 
   it('setConfig is a function', () => {
@@ -59,32 +62,14 @@ describe('config API', () => {
     expect(getConfig('debug')).to.be.true;
   });
 
-  // remove test when @deprecated $$PREBID_GLOBAL$$.logging removed
-  it('gets legacy logging in deprecation window', () => {
-    $$PREBID_GLOBAL$$.logging = false;
-    expect(getConfig('debug')).to.equal(false);
-  });
-
   it('sets bidderTimeout', () => {
     setConfig({ bidderTimeout: 1000 });
     expect(getConfig('bidderTimeout')).to.be.equal(1000);
   });
 
-  // remove test when @deprecated $$PREBID_GLOBAL$$.bidderTimeout removed
-  it('gets legacy bidderTimeout in deprecation window', () => {
-    $$PREBID_GLOBAL$$.bidderTimeout = 5000;
-    expect(getConfig('bidderTimeout')).to.equal(5000);
-  });
-
   it('gets user-defined publisherDomain', () => {
     setConfig({ publisherDomain: 'fc.kahuna' });
     expect(getConfig('publisherDomain')).to.equal('fc.kahuna');
-  });
-
-  // remove test when @deprecated $$PREBID_GLOBAL$$.publisherDomain removed
-  it('gets legacy publisherDomain in deprecation window', () => {
-    $$PREBID_GLOBAL$$.publisherDomain = 'ad.example.com';
-    expect(getConfig('publisherDomain')).to.equal('ad.example.com');
   });
 
   it('gets default userSync config', () => {
@@ -168,5 +153,16 @@ describe('config API', () => {
     setConfig({ priceGranularity: '' });
     const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
     assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+  });
+
+  it('should log a warning on invalid values', () => {
+    setConfig({ bidderSequence: 'unrecognized sequence' });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+  });
+
+  it('should not log warnings when given recognized values', () => {
+    setConfig({ bidderSequence: 'fixed' });
+    setConfig({ bidderSequence: 'random' });
+    expect(logWarnSpy.called).to.equal(false);
   });
 });

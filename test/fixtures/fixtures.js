@@ -317,7 +317,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '0x0',
         'foobar': '0x0'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'appnexus',
@@ -346,7 +349,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'appnexus',
@@ -375,7 +381,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '728x90',
         'foobar': '728x90'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'pagescience',
@@ -403,7 +412,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'brightcom',
@@ -430,7 +442,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'brealtime',
@@ -458,7 +473,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'pubmatic',
@@ -487,7 +505,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     },
     {
       'bidderCode': 'rubicon',
@@ -514,7 +535,10 @@ export function getBidResponses() {
         'hb_pb': '10.00',
         'hb_size': '300x600',
         'foobar': '300x600'
-      }
+      },
+      'netRevenue': true,
+      'currency': 'USD',
+      'ttl': 300
     }
   ];
 }
@@ -1015,7 +1039,10 @@ export function getBidResponsesFromAPI() {
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          }
+          },
+          'netRevenue': true,
+          'currency': 'USD',
+          'ttl': 300
         },
         {
           'bidderCode': 'brealtime',
@@ -1043,7 +1070,10 @@ export function getBidResponsesFromAPI() {
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          }
+          },
+          'netRevenue': true,
+          'currency': 'USD',
+          'ttl': 300
         },
         {
           'bidderCode': 'pubmatic',
@@ -1072,7 +1102,10 @@ export function getBidResponsesFromAPI() {
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          }
+          },
+          'netRevenue': true,
+          'currency': 'USD',
+          'ttl': 300
         },
         {
           'bidderCode': 'rubicon',
@@ -1099,7 +1132,10 @@ export function getBidResponsesFromAPI() {
             'hb_pb': '10.00',
             'hb_size': '300x600',
             'foobar': '300x600'
-          }
+          },
+          'netRevenue': true,
+          'currency': 'USD',
+          'ttl': 300
         }
       ]
     }
@@ -1110,7 +1146,7 @@ export function getBidResponsesFromAPI() {
 export function getAdServerTargeting() {
   return {
     '/19968336/header-bid-tag-0': {
-      'foobar': '300x250',
+      'foobar': '0x0,300x250,300x600',
       'hb_size': '300x250',
       'hb_pb': '10.00',
       'hb_adid': '233bcbee889d46d',
@@ -1179,11 +1215,7 @@ export function getTargetingKeys() {
     ],
     [
       'foobar',
-      '300x250'
-    ],
-    [
-      'foobar',
-      '300x250'
+      ['0x0', '300x250', '300x600']
     ]
   ];
 }
@@ -1197,7 +1229,7 @@ export function getTargetingKeysBidLandscape() {
       'appnexus'
     ],
     [
-      'hb_adid',
+      'hb_adid_appnexus',
       '233bcbee889d46d'
     ],
     [
@@ -1210,11 +1242,7 @@ export function getTargetingKeysBidLandscape() {
     ],
     [
       'foobar',
-      '300x250'
-    ],
-    [
-      'foobar',
-      '300x250'
+      ['0x0', '300x250', '300x600']
     ],
     [
       'hb_bidder_triplelift',
@@ -1235,10 +1263,6 @@ export function getTargetingKeysBidLandscape() {
     [
       'hb_bidder_appnexus',
       'appnexus'
-    ],
-    [
-      'hb_adid_appnexus',
-      '233bcbee889d46d'
     ],
     [
       'hb_pb_appnexus',
