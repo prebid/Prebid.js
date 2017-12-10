@@ -6,16 +6,21 @@ import {
 import {
   setConfig,
   addBidResponseHook,
-
   currencySupportEnabled,
   currencyRates
 } from 'modules/currency';
+
+import { createHook } from 'src/hook';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
+
+  let fn = sinon.spy();
+  let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
+
   beforeEach(() => {
     fakeCurrencyFileServer = sinon.fakeServer.create();
   });

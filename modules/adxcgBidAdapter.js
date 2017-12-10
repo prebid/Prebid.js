@@ -102,7 +102,6 @@ export const spec = {
           bid.ad = serverResponseOneItem.ad;
         } else if (serverResponseOneItem.vastUrl) {
           bid.vastUrl = serverResponseOneItem.vastUrl;
-          bid.descriptionUrl = serverResponseOneItem.vastUrl;
           bid.mediaType = 'video';
         } else if (serverResponseOneItem.nativeResponse) {
           bid.mediaType = 'native';

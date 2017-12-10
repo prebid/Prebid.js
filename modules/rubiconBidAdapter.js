@@ -63,7 +63,10 @@ var sizeMap = {
   125: '800x250',
   126: '200x600',
   144: '980x600',
-  195: '600x300'
+  195: '600x300',
+  199: '640x200',
+  213: '1030x590',
+  214: '980x360',
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -115,6 +118,7 @@ export const spec = {
           resolution: _getScreenResolution(),
           account_id: params.accountId,
           integration: INTEGRATION,
+          'x_source.tid': bidRequest.transactionId,
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
@@ -189,7 +193,7 @@ export const spec = {
         'rp_floor', floor,
         'rp_secure', isSecure() ? '1' : '0',
         'tk_flint', INTEGRATION,
-        'tid', bidRequest.transactionId,
+        'x_source.tid', bidRequest.transactionId,
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
         'tk_user_key', userId
@@ -270,7 +274,6 @@ export const spec = {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
-        bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);

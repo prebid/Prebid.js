@@ -61,12 +61,18 @@ let showCpmAdjustmentWarning = (function () {
   };
 })();
 
+function isInteger(value) {
+  return typeof value === 'number' &&
+    isFinite(value) &&
+    Math.floor(value) === value;
+}
+
 function template(strings, ...keys) {
   return function(...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = Number.isInteger(key) ? values[key] : dict[key];
+      let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
