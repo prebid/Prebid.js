@@ -91,8 +91,6 @@ describe('AdmixerAdapter', () => {
       let expectedResponse = [
         {
           'requestId': body[0].bidId,
-          'id': body[0].bidId,
-          'bidderCode': BIDDER_CODE,
           'cpm': body[0].cpm,
           'creativeId': body[0].creativeId,
           'width': body[0].width,
