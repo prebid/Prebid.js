@@ -14,8 +14,9 @@ export const spec = {
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
-      const width = bidRequest.sizes[0];
-      const height = bidRequest.sizes[1];
+      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
+      const width = sizes.split('x')[0];
+      const height = sizes.split('x')[1];
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
       const referrer = encodeURIComponent(utils.getTopWindowUrl());

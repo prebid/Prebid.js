@@ -16,7 +16,7 @@ THE YIELDONE adapter requires setup and approval from the Rubicon Project team. 
 ```
   var adUnits = [{
     code: 'banner-ad-div',
-    sizes: [300, 250],
+    sizes: [[300, 250]],
     bids: [{
     bidder: 'yieldone',
       params: { 
