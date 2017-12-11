@@ -75,7 +75,7 @@ describe('PubMatic adapter', () => {
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
-          expect(request.url).to.equal('//openbid.pubmatic.com/translator?source=prebid-server');
+          expect(request.url).to.equal('//openbid.pubmatic.com/translator?source=prebid-client');
           expect(request.method).to.equal('POST');
   		});
 
@@ -98,7 +98,7 @@ describe('PubMatic adapter', () => {
   		  expect(data.ext.wrapper.version).to.equal(bidRequests[0].params.verId); // OpenWrap: Wrapper Profile Version ID
 
   		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id 		  
-  		  expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.kadfloor); // kadfloor
+  		  expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
   		  expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
