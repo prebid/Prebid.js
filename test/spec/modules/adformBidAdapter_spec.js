@@ -28,34 +28,31 @@ describe('Adform adapter', () => {
   describe('buildRequests', () => {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
-      let parsedUrl = parseUrl(request[0].url);
-
-      assert.lengthOf(request, 1);
+      let parsedUrl = parseUrl(request.url);
       assert.lengthOf(parsedUrl.items, 3);
     });
 
     it('should handle global request parameters', () => {
-      let parsedUrl = parseUrl(spec.buildRequests([bids[0]])[0].url);
+      let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
       assert.equal(parsedUrl.path, '//newDomain/adx');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
-      assert.equal(query.auctionId, '1ab8d9');
+      assert.equal(query.auctionId, '7aefb970-2045');
       assert.equal(query.url, encodeURIComponent('some// there'));
     });
 
     it('should set correct request method', () => {
-      let request = spec.buildRequests([bids[0]])[0];
+      let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'GET');
     });
 
     it('should correctly form bid items', () => {
       let bidList = bids;
-      let request = spec.buildRequests(bidList)[0];
+      let request = spec.buildRequests(bidList);
       let parsedUrl = parseUrl(request.url);
-
       assert.deepEqual(parsedUrl.items, [
         {
           mid: '1',
@@ -64,7 +61,8 @@ describe('Adform adapter', () => {
         {
           mid: '2',
           someVar: 'someValue',
-          transactionId: '5f33781f-9552-4iuy'
+          transactionId: '5f33781f-9552-4iuy',
+          priceType: 'gross'
         },
         {
           mid: '3',
@@ -114,22 +112,32 @@ describe('Adform adapter', () => {
       assert.equal(result.dealId, '123abc');
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
-      assert.equal(result.ttl, 3000);
+      assert.equal(result.ttl, 360);
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.bidderCode, 'adform');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');
     });
-    
+
+    it('should set correct netRevenue', () => {
+      serverResponse.body = [serverResponse.body[0]];
+      bidRequest.bids = [bidRequest.bids[1]];
+      bidRequest.netRevenue = 'gross';
+      let result = spec.interpretResponse(serverResponse, bidRequest)[0];
+
+      assert.equal(result.netRevenue, false);
+    });
+
     it('should create bid response item for every requested item', () => {
       let result = spec.interpretResponse(serverResponse, bidRequest);
       assert.lengthOf(result, 3);
     });
   });
-  beforeEach( ()=> {
+
+  beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let adUnitCode = ['div-01', 'div-02', 'div-03'];
     let placementCode = adUnitCode;
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue'}, { adxDomain: null, mid: 3, pdom: 'home' }];
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', priceType: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
     bids = [
       {
         adUnitCode: placementCode[0],

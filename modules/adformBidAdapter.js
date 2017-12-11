@@ -1,6 +1,5 @@
 'use strict';
 
-import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adform';
@@ -12,11 +11,14 @@ export const spec = {
   },
   buildRequests: function (validBidRequests) {
     var i, l, j, k, bid, _key, _value, reqParams;
-    var bidRequests = [];
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
+    var netRevenue = 'net';
     for (i = 0, l = validBidRequests.length; i < l; i++) {
       bid = validBidRequests[i];
+      if (bid.params.priceType === 'gross') {
+        netRevenue = 'gross';
+      }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
         _value = bid[_key] || bid.params[_key];
@@ -30,9 +32,10 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
-    request.push('auctionId=' + encodeURIComponent(validBidRequests[0].bidderRequestId));
-
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+
+    request.push('auctionId=' + validBidRequests[0].requestId);
+
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
       _value = globalParams[i][1];
@@ -41,14 +44,13 @@ export const spec = {
       }
     }
 
-    bidRequests.push({
+    return {
       method: 'GET',
       url: request.join('&'),
       bids: validBidRequests,
+      netRevenue: netRevenue,
       bidder: 'adform'
-    });
-
-    return bidRequests;
+    };
 
     function formRequestUrl(reqData) {
       var key;
@@ -124,7 +126,6 @@ export const spec = {
     var bidObject, response, bid;
     var bidRespones = [];
     var bids = bidRequest.bids;
-    var bidder = bidRequest.bidder;
     var responses = serverResponse.body;
     for (var i = 0; i < responses.length; i++) {
       response = responses[i];
@@ -138,10 +139,10 @@ export const spec = {
           creativeId: bid.bidId,
           dealId: response.deal_id,
           currency: response.win_cur,
-          netRevenue: response.netRevenue || true,
-          ttl: config.getConfig('_bidderTimeout'),
+          netRevenue: bidRequest.netRevenue !== 'gross',
+          ttl: 360,
           ad: response.banner,
-          bidderCode: bidder,
+          bidderCode: bidRequest.bidder,
           transactionId: bid.transactionId
         };
         bidRespones.push(bidObject);
