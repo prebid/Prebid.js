@@ -59,7 +59,9 @@ export const spec = {
   interpretResponse: (response, request) => {
     if (typeof Criteo !== 'undefined') {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
-      return adapter.interpretResponse(response.body, request);
+      if (adapter) {
+        return adapter.interpretResponse(response.body, request);
+      }
     }
 
     const bids = [];
