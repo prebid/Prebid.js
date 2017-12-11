@@ -148,10 +148,7 @@ describe('gjirafaAdapterTest', () => {
       ];
 
       let resultKeys = Object.keys(result[0]);
-      console.log(resultKeys);
       resultKeys.forEach(function(key) {
-        console.log(key);
-        console.log(keys.indexOf(key));
         expect(keys.indexOf(key) !== -1).to.equal(true);
       });
     })
