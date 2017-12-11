@@ -3,21 +3,21 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
-const ENDPOINT = '//openbid.pubmatic.com/translator?source=prebid-server';
+const ENDPOINT = '//openbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 2; //todo ?? is auction type correct ? second price auction
 //todo: now what is significance of value ? 
 const CUSTOM_PARAMS = {
   'kadpageurl': 'kadpageurl',
-  'gender': 'gender',
-  'yob': 'yob',
-  'dctr': 'dctr', // Custom Targeting
-  'lat': 'lat', // Location - Latitude
-  'lon': 'lon', // Location - Longitude
-  'wiid': 'wiid', // Wrapper Impression ID
-  'profId': 'profId', // Legacy: Profile ID
-  'verId': 'verId' // Legacy: version ID  
+  'gender': 'gender', // User gender
+  'yob': 'yob', // User year of birth
+  'dctr': 'dctr', // Custom Targeting //todo : remove ????
+  'lat': 'lat', // User location - Latitude
+  'lon': 'lon', // User Location - Longitude
+  'wiid': 'wiid', // OpenWrap Wrapper Impression ID
+  'profId': 'profId', // OpenWrap Legacy: Profile ID
+  'verId': 'verId' // OpenWrap Legacy: version ID  
 };
 
 let publisherId = 0;
@@ -149,8 +149,7 @@ function _createOrtbTemplate(conf){
       dnt: (navigator.doNotTrack == "yes" || navigator.doNotTrack == "1" || navigator.msDoNotTrack == "1") ? 1 : 0,
       h: screen.height,
       w: screen.width,
-      language: navigator.language,
-      ip: "123.4.12.34" //todo : REMOVE :: Mandatory w/o this we are not getting bids, isnt it retrieved from header ?
+      language: navigator.language
     },
     user: {},
     ext: {}
@@ -258,7 +257,7 @@ export const spec = {
             creativeId: bid.crid || bid.id,
             dealId: bid.dealid,
             currency: CURRENCY,
-            netRevenue: true, // todo: mandatory: Mike to confirm
+            netRevenue: true,
             ttl: 300,
             referrer: utils.getTopWindowUrl(),
             ad: bid.adm
