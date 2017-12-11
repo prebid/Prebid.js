@@ -237,5 +237,11 @@ adaptermanager.aliasBidAdapter('appnexus', 'oftmedia');
 // added by meme:
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media');
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve1');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve2');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve3');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve4');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve5');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve6');
 
 module.exports = AppNexusAdapter;
