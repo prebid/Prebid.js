@@ -49,11 +49,10 @@ export const spec = {
     const bidResponses = [];
     // loop through serverResponses {
     try {
+      serverResponse = serverResponse.body;
       serverResponse.forEach((bidResponse) => {
         const bidResp = {
           requestId: bidResponse.bidId,
-          id: bidResponse.bidId,
-          bidderCode: BIDDER_CODE,
           cpm: bidResponse.cpm,
           width: bidResponse.width,
           height: bidResponse.height,
@@ -67,10 +66,9 @@ export const spec = {
         bidResponses.push(bidResp);
       });
     } catch (e) {
+      utils.logError(e);
     }
     return bidResponses;
-  },
-  getUserSyncs: function (syncOptions) {
   }
 };
 registerBidder(spec);

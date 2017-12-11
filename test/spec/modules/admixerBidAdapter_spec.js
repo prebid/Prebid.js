@@ -72,33 +72,36 @@ describe('AdmixerAdapter', () => {
   });
 
   describe('interpretResponse', () => {
-    let response = [{
-      'currency': 'USD',
-      'cpm': 6.210000,
-      'ad': '<div>ad</div>',
-      'width': 300,
-      'height': 600,
-      'creativeId': 'ccca3e5e-0c54-4761-9667-771322fbdffc',
-      'ttl': 360,
-      'netRevenue': false,
-      'bidId': '5e4e763b6bc60b'
-    }];
+    let response = {
+      body: [{
+        'currency': 'USD',
+        'cpm': 6.210000,
+        'ad': '<div>ad</div>',
+        'width': 300,
+        'height': 600,
+        'creativeId': 'ccca3e5e-0c54-4761-9667-771322fbdffc',
+        'ttl': 360,
+        'netRevenue': false,
+        'bidId': '5e4e763b6bc60b'
+      }]
+    };
 
     it('should get correct bid response', () => {
+      const body = response.body;
       let expectedResponse = [
         {
-          'requestId': response[0].bidId,
-          'id': response[0].bidId,
+          'requestId': body[0].bidId,
+          'id': body[0].bidId,
           'bidderCode': BIDDER_CODE,
-          'cpm': response[0].cpm,
-          'creativeId': response[0].creativeId,
-          'width': response[0].width,
-          'height': response[0].height,
-          'ad': response[0].ad,
+          'cpm': body[0].cpm,
+          'creativeId': body[0].creativeId,
+          'width': body[0].width,
+          'height': body[0].height,
+          'ad': body[0].ad,
           'vastUrl': undefined,
-          'currency': response[0].currency,
-          'netRevenue': response[0].netRevenue,
-          'ttl': response[0].ttl,
+          'currency': body[0].currency,
+          'netRevenue': body[0].netRevenue,
+          'ttl': body[0].ttl,
         }
       ];
 
