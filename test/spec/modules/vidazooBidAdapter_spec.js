@@ -175,7 +175,7 @@ describe('VidazooBidAdapter', () => {
     });
 
     it('should take default TTL', () => {
-      const serverResponse = utils.cloneJson(SERVER_RESPONSE);
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
       delete serverResponse.body.exp;
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
