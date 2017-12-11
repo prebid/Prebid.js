@@ -20,7 +20,8 @@ Banner formats are supported.
                        bidder: "adform",
                        params: {
                            adxDomain: 'adx.adform.net', //optional
-                           mid: '292063'
+                           mid: '292063',
+                           priceType: 'gross' // default is 'net'
                        }
                    }
                ]
