@@ -7,7 +7,7 @@ nav_section: reference
 hide: true
 biddercode: audienceNetwork
 biddercode_longer_than_12: true
-
+prebid_1_0_supported : true
 ---
 
 #### send all bids ad server keys

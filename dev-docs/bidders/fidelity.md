@@ -7,6 +7,7 @@ nav_section: reference
 hide: true
 biddercode: fidelity
 biddercode_longer_than_12: false
+prebid_1_0_supported : true
 ---
 
 ### bid params

@@ -7,6 +7,7 @@ nav_section: reference
 biddercode: prebidServer
 biddercode_longer_than_12: true
 hide: true
+prebid_1_0_supported : true
 ---
 
 ### Sign up
