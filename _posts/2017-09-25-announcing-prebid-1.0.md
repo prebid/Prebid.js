@@ -33,7 +33,7 @@ As a **publisher**, you can look forward to the following when adopting Prebid.j
 
 ## What's next
 
-We have already created the [1.0 branch](https://github.com/prebid/Prebid.js/tree/prebid-1.0). We expect to merge this to master once we have enough support from demand adapters. The tentative date to *release to master is October 23rd 2017.* 
+We've released [Prebid 1.0!](https://github.com/prebid/Prebid.js/releases/tag/1.0.0) Download or build it now from master!
 
 ## How to get involved
 
@@ -48,4 +48,4 @@ Prebid 1.0 Documentation:
 
 As always, we love PRs. Thanks for contributing. 
 
-By [Matt Kendall](https://github.com/mkendall07), PMC Chair, Prebid.js & Engineer Manager, AppNexus. 
+By [Matt Kendall](https://github.com/mkendall07), PMC Chair, Prebid.js & Engineering Manager, AppNexus. 
