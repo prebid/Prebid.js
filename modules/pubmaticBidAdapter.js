@@ -26,6 +26,16 @@ function _processPmZoneId(zoneId) {
   if (utils.isStr(zoneId)) {
     return zoneId.split(',').slice(0, 50).join();
   } else {
+    utils.logWarn('PubMatic: Ignoring param key: pmzoneid, expects string-value, found ' + typeof zoneId);
+    return undefined;
+  }
+}
+
+function _processFloor(floor){
+  if (utils.isStr(floor)) {
+    return parseFloat(floor) || undefined;
+  } else {
+    utils.logWarn('PubMatic: Ignoring param key: kadfloor, expects string-value, found ' + typeof floor);
     return undefined;
   }
 }
@@ -160,7 +170,7 @@ function _createImpressionObject(bid, conf){
   return {
     id: bid.bidId,
     tagid: bid.params.adUnit,
-    bidfloor: bid.params.kadfloor || undefined,
+    bidfloor: _processFloor(bid.params.kadfloor),
     secure: conf.sec,
     banner: {
       pos: 0,
