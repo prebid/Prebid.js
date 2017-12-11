@@ -239,18 +239,18 @@ describe('AdMedia', () => {
 
   describe('usersyncs', () => {
     beforeEach(() => {
+      sandbox.stub(userSync, 'registerSync');
       adapter = new Adapter();
       adapter.callBids(request_single_adunit);
-      sandbox.stub(userSync, 'triggerUserSyncs');
     });
 
     afterEach(() => {
     });
 
-    it('should call usersync after default 3000 seconds', () => {
-      window.setTimeout(function() {
-        sinon.assert.calledOnce(userSync.triggerUserSyncs);
-      }, 3000);
+    it('should register usersyncs', () => {
+      sinon.assert.called(userSync.registerSync);
+      expect(userSync.registerSync.getCall(0).args[1]).to.equal('admedia');
+      expect(userSync.registerSync.getCall(0).args[2]).to.include('//b.admedia.com/sync/');
     });
   });
 });
