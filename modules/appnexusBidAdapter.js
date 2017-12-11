@@ -123,7 +123,7 @@ export const spec = {
   }
 }
 
-function newRenderer(adUnitCode, rtbBid, rendererOptions) {
+function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
@@ -204,8 +204,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
-      // TODO get appnexus params properly
-      const rendererOptions = bidderRequest.bids[0].params.video.rendererOptions;
+      const rendererOptions = utils.deepAccess(
+        bidderRequest.bids[0],
+        'mediaTypes.video.rendererOptions'
+      );
+
       Object.assign(bid, {
         adResponse: serverBid,
         renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
