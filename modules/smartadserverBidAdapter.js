@@ -36,7 +36,7 @@ export const spec = {
       siteid: bid.params.siteId,
       pageid: bid.params.pageId,
       formatid: bid.params.formatId,
-      currencyCode: config.getConfig('currency').adServerCurrency,
+      currencyCode: config.getConfig('currency.adServerCurrency'),
       bidfloor: bid.params.bidfloor || 0.0,
       targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
       tagId: bid.adUnitCode,
