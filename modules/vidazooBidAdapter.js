@@ -64,7 +64,6 @@ function interpretResponse(serverResponse, request) {
   try {
     return [{
       requestId: bidId,
-      bidderCode: BIDDER_CODE,
       cpm: price,
       width: width,
       height: height,
