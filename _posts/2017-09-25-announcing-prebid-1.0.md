@@ -48,4 +48,4 @@ Prebid 1.0 Documentation:
 
 As always, we love PRs. Thanks for contributing. 
 
-By [Matt Kendall](https://github.com/mkendall07), Engineer Manager @ AppNexus. 
+By [Matt Kendall](https://github.com/mkendall07), PMC Chair, Prebid.js & Engineer Manager, AppNexus. 
