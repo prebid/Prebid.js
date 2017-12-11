@@ -76,19 +76,12 @@ function _parseAdSlot(bid){
   bid.params.height = parseInt(splits[1]);
 }
 
-//todo: remove commented code
 function _initConf() {
   var conf = {};
   var currTime = new Date();
-  conf.sec = 0;
-  //todo remove
-  let _protocol = (window.location.protocol === 'https:' ? (conf.sec = 1, 'https') : 'http') + '://';
+  conf.sec = window.location.protocol === 'https:' ? 1 : 0;
   conf.wp = 'PreBid';//todo : do we need to send this ?
   conf.wv = constants.REPO_AND_VERSION;
-  // istanbul ignore else
-  //if (window.navigator.cookieEnabled === false) {
-  //  conf.fpcd = '1';
-  //}
   try {
     conf.pageURL = window.top.location.href;
     conf.hostname = window.top.location.hostname;
@@ -98,14 +91,6 @@ function _initConf() {
     conf.hostname = window.location.hostname;
     conf.refurl = window.document.referrer;
   }
-  /*conf.kltstamp = currTime.getFullYear() +
-    '-' + (currTime.getMonth() + 1) +
-    '-' + currTime.getDate() +
-    ' ' + currTime.getHours() +
-    ':' + currTime.getMinutes() +
-    ':' + currTime.getSeconds();
-  */  
-  //conf.timezone = currTime.getTimezoneOffset() / 60 * -1;
   return conf;
 }
 
@@ -194,12 +179,6 @@ export const spec = {
   * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
-    //if(bid && bid.params && bid.params.publisherId){
-      //_parseAdSlot(bid);
-      //return !!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height);
-    //}else{
-    //  return false;
-    //}
     return !!(bid && bid.params && bid.params.publisherId && bid.params.adSlot);
   },
 
