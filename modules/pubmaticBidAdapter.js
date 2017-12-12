@@ -7,6 +7,7 @@ const ENDPOINT = '//openbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 2;
+const UNDEFINED = undefined;
 //todo: now what is significance of value ?
 const CUSTOM_PARAMS = {
   'kadpageurl': 'kadpageurl',
@@ -21,22 +22,19 @@ const CUSTOM_PARAMS = {
 
 let publisherId = 0;
 
-// todo write a generic function, switch case
-function _processPmZoneId(zoneId) {
-  if (utils.isStr(zoneId)) {
-    return zoneId.split(',').slice(0, 50).join();
-  } else {
-    utils.logWarn('PubMatic: Ignoring param key: pmzoneid, expects string-value, found ' + typeof zoneId);
-    return undefined;
+function _parseSlotParam(paramName, paramValue){
+  if (!utils.isStr(paramValue)) {    
+    utils.logWarn('PubMatic: Ignoring param key: '+paramName+', expects string-value, found ' + typeof paramValue);
+    return UNDEFINED;
   }
-}
 
-function _processFloor(floor){
-  if (utils.isStr(floor)) {
-    return parseFloat(floor) || undefined;
-  } else {
-    utils.logWarn('PubMatic: Ignoring param key: kadfloor, expects string-value, found ' + typeof floor);
-    return undefined;
+  switch(paramName){
+    case 'pmzoneid':
+      return paramValue.split(',').slice(0, 50).join();
+    case 'kadfloor':
+      return parseFloat(paramValue) || UNDEFINED;
+    default:
+      return paramValue;
   }
 }
 
@@ -156,7 +154,7 @@ function _createImpressionObject(bid, conf){
   return {
     id: bid.bidId,
     tagid: bid.params.adUnit,
-    bidfloor: _processFloor(bid.params.kadfloor),
+    bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: conf.sec,
     banner: {
       pos: 0,
@@ -165,7 +163,7 @@ function _createImpressionObject(bid, conf){
       topframe: 1, //todo: use api
     },
     ext: {
-        pmZoneId: _processPmZoneId(bid.params.pmzoneid)
+      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     }
   };
 }
@@ -211,16 +209,16 @@ export const spec = {
     payload.site.publisher.id = conf.pubId;
     publisherId = conf.pubId;
     payload.ext.wrapper = {};
-    payload.ext.wrapper.profile = conf.profId || undefined;
-    payload.ext.wrapper.version = conf.verId || undefined;
-    payload.ext.wrapper.wiid = conf.wiid || undefined;
-    payload.ext.wrapper.wv = conf.wv || undefined;
+    payload.ext.wrapper.profile = conf.profId || UNDEFINED;
+    payload.ext.wrapper.version = conf.verId || UNDEFINED;
+    payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    payload.ext.wrapper.wv = conf.wv || UNDEFINED;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = conf.wp;
-    payload.user.gender = conf.gender || undefined;
-    payload.user.lat = conf.lat || undefined;
-    payload.user.lon = conf.lon || undefined;
-    payload.user.yob = conf.yob || undefined;
+    payload.user.gender = conf.gender || UNDEFINED;
+    payload.user.lat = conf.lat || UNDEFINED;
+    payload.user.lon = conf.lon || UNDEFINED;
+    payload.user.yob = conf.yob || UNDEFINED;
     payload.site.page = conf.kadpageurl || payload.site.page;
     return {
       method: 'POST',
