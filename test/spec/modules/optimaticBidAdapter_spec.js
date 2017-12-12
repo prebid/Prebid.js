@@ -66,8 +66,8 @@ describe('OptimaticBidAdapter', () => {
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
-      expect(data.imp[0].video.width).to.equal(width);
-      expect(data.imp[0].video.height).to.equal(height);
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
     });
 
@@ -77,8 +77,8 @@ describe('OptimaticBidAdapter', () => {
       bidRequest.sizes = [[ width, height ]];
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
-      expect(data.imp[0].video.width).to.equal(width);
-      expect(data.imp[0].video.height).to.equal(height);
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
     });
 
     it('must parse bid size from a string', () => {
@@ -87,16 +87,16 @@ describe('OptimaticBidAdapter', () => {
       bidRequest.sizes = `${width}x${height}`;
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
-      expect(data.imp[0].video.width).to.equal(width);
-      expect(data.imp[0].video.height).to.equal(height);
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
     });
 
     it('must handle an empty bid size', () => {
       bidRequest.sizes = [];
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
-      expect(data.imp[0].video.width).to.equal(undefined);
-      expect(data.imp[0].video.height).to.equal(undefined);
+      expect(data.imp[0].video.w).to.equal(undefined);
+      expect(data.imp[0].video.h).to.equal(undefined);
     });
   });
 
