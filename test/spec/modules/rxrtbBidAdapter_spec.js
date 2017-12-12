@@ -62,12 +62,15 @@ describe('rxrtb adapater', () => {
         it('minimum request', () => {
             let bid = {
                 bidder: 'rxrtb',
+                sizes: [[728, 90]],
+                bidId: '4d0a6829338a07',
+                adUnitCode: 'div-gpt-ad-1460505748561-0',
+                auctionId: '20882439e3238c',
                 params: {
                     id: 89,
                     token: '658f11a5efbbce2f9be3f1f146fcbc22',
                     source: 'prebidtest'
                 },
-                sizes: [[728, 90]]
             };
 
             const req = JSON.parse(spec.buildRequests([bid])[0].data);
