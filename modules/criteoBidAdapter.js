@@ -33,9 +33,14 @@ export const spec = {
     let url;
     let data;
 
-    // If publisher tag not already loaded try to get it from fast bid else load it
-    if (typeof Criteo === 'undefined' && !tryGetCriteoFastBid()) {
-      loadScript(PUBLISHER_TAG_URL);
+    // If publisher tag not already loaded try to get it from fast bid
+    if (typeof Criteo === 'undefined') {
+      tryGetCriteoFastBid();
+
+      // Reload publisher tag after prebid timeout to ensure fast bid is up to date
+      setTimeout(() => {
+        loadScript(PUBLISHER_TAG_URL);
+      }, bidderRequest.timeout);
     }
 
     if (typeof Criteo !== 'undefined') {
