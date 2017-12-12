@@ -36,9 +36,8 @@ describe('PubMatic adapter', () => {
   describe('implementation', () => {
 
   	describe('Bid validations', () => {
-
   		it('valid bid case', () => {
-		  let validBid = {
+		    let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
 	          publisherId: '301',
@@ -49,19 +48,31 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(true);
   		});
 
-		it('invalid bid case: publisherId not passed', () => {
-		  let validBid = {
-	        bidder: 'pubmatic',
-	        params: {
-	          adSlot: '/15671365/DMDemo@300x250:0'
-	        }
-	      },
-	      isValid = spec.isBidRequestValid(validBid);
-	      expect(isValid).to.equal(false);
+  		it('invalid bid case: publisherId not passed', () => {
+  		  let validBid = {
+          bidder: 'pubmatic',
+          params: {
+            adSlot: '/15671365/DMDemo@300x250:0'
+          }
+        },
+        isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(false);
   		});
 
-		it('invalid bid case: adSlot not passed', () => {
-		  let validBid = {
+      it('invalid bid case: publisherId is not string', () => {
+        let validBid = {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: 301,
+            adSlot: '/15671365/DMDemo@300x250:0'
+          }
+        },
+        isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(false);
+      });
+
+  		it('invalid bid case: adSlot not passed', () => {
+  		  let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
 	          publisherId: '301'
@@ -69,8 +80,20 @@ describe('PubMatic adapter', () => {
 	      },
 	      isValid = spec.isBidRequestValid(validBid);
 	      expect(isValid).to.equal(false);
-  		});
-  	});
+    	});    	
+
+      it('invalid bid case: adSlot is not string', () => {
+        let validBid = {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: 15671365
+          }
+        },
+        isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(false);
+      });
+    });
 
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
@@ -114,6 +137,4 @@ describe('PubMatic adapter', () => {
 
   });
 
-
-
-});	
+});

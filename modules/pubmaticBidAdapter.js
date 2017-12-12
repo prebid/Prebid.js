@@ -176,7 +176,7 @@ export const spec = {
   * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
-    return !!(bid && bid.params && utils.isStr(bid.params.publisherId) && bid.params.adSlot);
+    return !!(bid && bid.params && utils.isStr(bid.params.publisherId) && utils.isStr(bid.params.adSlot));
   },
 
   /**
