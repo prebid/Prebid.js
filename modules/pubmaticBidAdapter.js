@@ -6,13 +6,12 @@ const BIDDER_CODE = 'pubmatic';
 const ENDPOINT = '//openbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
-const AUCTION_TYPE = 2; //todo ?? is auction type correct ? second price auction
-//todo: now what is significance of value ? 
+const AUCTION_TYPE = 2;
+//todo: now what is significance of value ?
 const CUSTOM_PARAMS = {
   'kadpageurl': 'kadpageurl',
   'gender': 'gender', // User gender
   'yob': 'yob', // User year of birth
-  'dctr': 'dctr', // Custom Targeting //todo : remove ????
   'lat': 'lat', // User location - Latitude
   'lon': 'lon', // User Location - Longitude
   'wiid': 'wiid', // OpenWrap Wrapper Impression ID
@@ -22,6 +21,7 @@ const CUSTOM_PARAMS = {
 
 let publisherId = 0;
 
+// todo write a generic function, switch case
 function _processPmZoneId(zoneId) {
   if (utils.isStr(zoneId)) {
     return zoneId.split(',').slice(0, 50).join();
@@ -80,11 +80,12 @@ function _initConf() {
   var conf = {};
   var currTime = new Date();
   conf.sec = window.location.protocol === 'https:' ? 1 : 0;
-  conf.wp = 'PreBid';//todo : do we need to send this ?
-  conf.wv = constants.REPO_AND_VERSION;
+  conf.wp = 'pbjs';
+  conf.wv = constants.REPO_AND_VERSION;// check later
+  //todo check available api, getOrigin
   try {
     conf.pageURL = window.top.location.href;
-    conf.hostname = window.top.location.hostname;
+    conf.hostname = window.top.location.hostname;// todo: domain w/o potocol
     conf.refurl = window.top.document.referrer;
   } catch (e) {
     conf.pageURL = window.location.href;
@@ -161,7 +162,7 @@ function _createImpressionObject(bid, conf){
       pos: 0,
       w: bid.params.width, 
       h: bid.params.height,
-      topframe: 1, //todo: may need to change for postbid : check with open bid 
+      topframe: 1, //todo: use api
     },
     ext: {
         pmZoneId: _processPmZoneId(bid.params.pmzoneid)
@@ -215,6 +216,7 @@ export const spec = {
     payload.ext.wrapper.wiid = conf.wiid || undefined;
     payload.ext.wrapper.wv = conf.wv || undefined;
     payload.ext.wrapper.transactionId = conf.transactionId;
+    payload.ext.wrapper.wp = conf.wp;
     payload.user.gender = conf.gender || undefined;
     payload.user.lat = conf.lat || undefined;
     payload.user.lon = conf.lon || undefined;
@@ -241,6 +243,7 @@ export const spec = {
           let newBid = {
             requestId: bid.impid,
             cpm: bid.price, // Can we round to min precision ?
+            //todo: keep it 2 decimal only
             width: bid.w,
             height: bid.h,
             creativeId: bid.crid || bid.id,
