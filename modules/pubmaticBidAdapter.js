@@ -8,16 +8,15 @@ const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 2;
 const UNDEFINED = undefined;
-//todo: now what is significance of value ?
 const CUSTOM_PARAMS = {
-  'kadpageurl': 'kadpageurl',
-  'gender': 'gender', // User gender
-  'yob': 'yob', // User year of birth
-  'lat': 'lat', // User location - Latitude
-  'lon': 'lon', // User Location - Longitude
-  'wiid': 'wiid', // OpenWrap Wrapper Impression ID
-  'profId': 'profId', // OpenWrap Legacy: Profile ID
-  'verId': 'verId' // OpenWrap Legacy: version ID  
+  'kadpageurl': '', // Custom page url
+  'gender': '', // User gender
+  'yob': '', // User year of birth
+  'lat': '', // User location - Latitude
+  'lon': '', // User Location - Longitude
+  'wiid': '', // OpenWrap Wrapper Impression ID
+  'profId': '', // OpenWrap Legacy: Profile ID
+  'verId': '' // OpenWrap Legacy: version ID  
 };
 
 let publisherId = 0;
@@ -109,8 +108,9 @@ function _handleCustomParams(params, conf) {
         entry = CUSTOM_PARAMS[key];
 
         if (typeof entry === 'object') {
-          value = entry.m(value, conf);
-          key = entry.n;
+          // will be used in future when we want to process a custom param before using
+          // 'keyname': {f: function(){}}
+          value = entry.f(value, conf);
         } else {
           key = CUSTOM_PARAMS[key];
         }
@@ -270,6 +270,8 @@ export const spec = {
         type: 'iframe',
         url: USYNCURL + publisherId
       }];
+    }else{
+      utils.logWarn('PubMatic: Please enable iframe based user sync.');
     }
   }
 };
