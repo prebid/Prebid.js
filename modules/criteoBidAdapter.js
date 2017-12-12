@@ -191,7 +191,7 @@ function createNativeAd(id, payload, callback) {
   // from the parent window (doesn't work with safeframes)
   return `<script type="text/javascript">
     var win = window;
-    for (const i = 0; i < 10; ++i) {
+    for (var i = 0; i < 10; ++i) {
       win = win.parent;
       if (win.criteo_prebid_native_slots) {
         var responseSlot = win.criteo_prebid_native_slots["${id}"];
