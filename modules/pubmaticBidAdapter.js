@@ -21,6 +21,12 @@ const CUSTOM_PARAMS = {
 
 let publisherId = 0;
 
+function _getDomainFromURL(url){
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
+}
+
 function _parseSlotParam(paramName, paramValue){
   if (!utils.isStr(paramValue)) {    
     utils.logWarn('PubMatic: Ignoring param key: '+paramName+', expects string-value, found ' + typeof paramValue);
@@ -75,20 +81,8 @@ function _parseAdSlot(bid){
 
 function _initConf() {
   var conf = {};
-  var currTime = new Date();
-  conf.sec = window.location.protocol === 'https:' ? 1 : 0;
-  conf.wp = 'pbjs';
-  conf.wv = constants.REPO_AND_VERSION;// check later
-  //todo check available api, getOrigin
-  try {
-    conf.pageURL = window.top.location.href;
-    conf.hostname = window.top.location.hostname;// todo: domain w/o potocol
-    conf.refurl = window.top.document.referrer;
-  } catch (e) {
-    conf.pageURL = window.location.href;
-    conf.hostname = window.location.hostname;
-    conf.refurl = window.document.referrer;
-  }
+  conf.pageURL = utils.getTopWindowUrl();  
+  conf.refURL = utils.getTopWindowReferrer();
   return conf;
 }
 
@@ -131,8 +125,8 @@ function _createOrtbTemplate(conf){
     cur: [CURRENCY],
     imp: [],
     site: {
-      domain: conf.hostname,
       page: conf.pageURL,
+      ref: conf.refURL,
       publisher: {}
     },
     device: {
@@ -153,12 +147,12 @@ function _createImpressionObject(bid, conf){
     id: bid.bidId,
     tagid: bid.params.adUnit,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
-    secure: conf.sec,
+    secure: window.location.protocol === 'https:' ? 1 : 0,
     banner: {
       pos: 0,
       w: bid.params.width, 
       h: bid.params.height,
-      topframe: 1, //todo: use api
+      topframe: utils.inIframe() ? 0 : 1,
     },
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
@@ -210,14 +204,15 @@ export const spec = {
     payload.ext.wrapper.profile = conf.profId || UNDEFINED;
     payload.ext.wrapper.version = conf.verId || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
-    payload.ext.wrapper.wv = conf.wv || UNDEFINED;
+    payload.ext.wrapper.wv = constants.REPO_AND_VERSION;
     payload.ext.wrapper.transactionId = conf.transactionId;
-    payload.ext.wrapper.wp = conf.wp;
+    payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = conf.gender || UNDEFINED;
     payload.user.lat = conf.lat || UNDEFINED;
     payload.user.lon = conf.lon || UNDEFINED;
     payload.user.yob = conf.yob || UNDEFINED;
     payload.site.page = conf.kadpageurl || payload.site.page;
+    payload.site.domain = _getDomainFromURL(payload.site.page);
     return {
       method: 'POST',
       url: ENDPOINT,
