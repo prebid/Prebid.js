@@ -62,7 +62,11 @@ var sizeMap = {
   117: '320x100',
   125: '800x250',
   126: '200x600',
-  195: '600x300'
+  144: '980x600',
+  195: '600x300',
+  199: '640x200',
+  213: '1030x590',
+  214: '980x360',
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -269,7 +273,6 @@ export const spec = {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
-        bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);

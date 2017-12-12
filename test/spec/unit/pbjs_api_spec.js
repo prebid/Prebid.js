@@ -1608,7 +1608,6 @@ describe('Unit: Prebid Module', function () {
           'creative_id': 29681110,
           'cpm': 10,
           'vastUrl': 'http://www.simplevideoad.com/',
-          'descriptionUrl': 'http://www.simplevideoad.com/',
           'responseTimestamp': 1462919239340,
           'requestTimestamp': 1462919238919,
           'bidder': 'appnexus',

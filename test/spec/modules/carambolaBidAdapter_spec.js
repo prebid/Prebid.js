@@ -41,7 +41,7 @@ describe('carambolaAdapter', function () {
   beforeEach(() => adapter = new CarambolaAdapter());
 
   function createBidderRequest({bids, params} = {}) {
-    var bidderRequest = utils.cloneJson(DEFAULT_BIDDER_REQUEST);
+    var bidderRequest = utils.deepClone(DEFAULT_BIDDER_REQUEST);
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
     }
