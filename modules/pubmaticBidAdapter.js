@@ -111,8 +111,6 @@ function _handleCustomParams(params, conf) {
           // will be used in future when we want to process a custom param before using
           // 'keyname': {f: function(){}}
           value = entry.f(value, conf);
-        } else {
-          key = CUSTOM_PARAMS[key];
         }
 
         if (utils.isStr(value)) {
