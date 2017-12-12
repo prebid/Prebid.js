@@ -233,8 +233,7 @@ export const spec = {
         response.body.seatbid[0].bid.forEach(bid => {
           let newBid = {
             requestId: bid.impid,
-            cpm: bid.price, // Can we round to min precision ?
-            //todo: keep it 2 decimal only
+            cpm: (parseFloat(bid.price)||0).toFixed(2),
             width: bid.w,
             height: bid.h,
             creativeId: bid.crid || bid.id,
