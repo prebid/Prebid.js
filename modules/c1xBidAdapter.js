@@ -1,4 +1,3 @@
-// import CONSTANTS from 'src/constants.json';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 import { userSync } from 'src/userSync';
