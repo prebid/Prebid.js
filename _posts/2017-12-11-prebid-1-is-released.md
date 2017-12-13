@@ -14,7 +14,7 @@ As a publisher, you can look forward to the following improvements when adopting
 - Faster performance due to using fewer JS libraries and simplifying adapter code
 - Module integrations that support things like:
     - [*Multiple currencies*]({{site.baseurl}}/dev-docs/modules/currency.html)
-    - [*User syncing*]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.userSync)
+    - [*User syncing*]({{site.baseurl}}/dev-docs/publisher-api-reference.html#setConfig-Configure-User-Syncing)
     - [*Simplified config APIs*]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig)
 - Better support for single page applications/sites (concurrency)
 - Better [size mapping and responsive site support](http://prebid.org/dev-docs/publisher-api-reference.html#setConfig-Configure-Responsive-Ads)
