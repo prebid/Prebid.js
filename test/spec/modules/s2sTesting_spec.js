@@ -1,5 +1,6 @@
 import { getSourceBidderMap, calculateBidSources, getSource } from 'modules/s2sTesting';
 import { config } from 'src/config';
+import find from 'core-js/library/fn/array/find';
 
 var events = require('src/events');
 var CONSTANTS = require('src/constants.json');
@@ -326,7 +327,7 @@ describe('s2sTesting', function () {
         expect(targeting).to.be.undefined;
         return;
       }
-      expect(targeting.find((kvp) => {
+      expect(find(targeting, (kvp) => {
         return kvp.key === `hb_source_${bidder}`;
       })).to.be.undefined;
     }

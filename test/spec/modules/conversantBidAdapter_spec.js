@@ -3,7 +3,6 @@ import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
 var Adapter = require('modules/conversantBidAdapter');
-var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';

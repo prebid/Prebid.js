@@ -145,7 +145,7 @@ describe('the rubicon adapter', () => {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -451,6 +451,7 @@ describe('the rubicon adapter', () => {
           expect(post.resolution).to.match(/\d+x\d+/);
           expect(post.account_id).to.equal('14062');
           expect(post.integration).to.equal(INTEGRATION);
+          expect(post['x_source.tid']).to.equal('d45dd707-a418-42ec-b8a7-b70a6c6fab0b');
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
@@ -763,7 +764,6 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(false);
-          expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
