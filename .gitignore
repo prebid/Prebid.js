@@ -1,6 +1,5 @@
 # Built Files
 node_modules/
-build
 
 # Test Files
 test/app
