@@ -63,7 +63,8 @@ export const spec = {
 
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(bid.sizes),
+        eventIds: [40, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295]
       }, bid.params);
 
       if (placement.networkId && placement.siteId) {
@@ -90,6 +91,7 @@ export const spec = {
     let bidId;
     let bidObj;
     let bidResponses = [];
+    let bidsMap = {};
 
     bids = bidRequest.bidRequest;
 
@@ -98,6 +100,8 @@ export const spec = {
       bid = {};
       bidObj = bids[i];
       bidId = bidObj.bidId;
+
+      bidsMap[bidId] = bidObj;
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];
@@ -108,7 +112,7 @@ export const spec = {
           bid.cpm = price;
           bid.width = decision.width;
           bid.height = decision.height;
-          bid.ad = retrieveAd(decision);
+          bid.ad = retrieveAd(bidId, decision);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
@@ -118,6 +122,28 @@ export const spec = {
           bidResponses.push(bid);
         }
       }
+    }
+
+    if (bidResponses.length) {
+      window.addEventListener('message', function(e) {
+        if (!e.data || e.data.from !== 'ism-bid') {
+          return;
+        }
+
+        const decision = serverResponse.decisions && serverResponse.decisions[e.data.bidId];
+        if (!decision) {
+          return;
+        }
+
+        const id = "ism_tag_" + Math.floor((Math.random() * 10e16));
+        window[id] = {
+          bidId: e.data.bidId,
+          serverResponse
+        };
+        const script = document.createElement('script');
+        script.src = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
+        document.getElementsByTagName('head')[0].appendChild(script);
+      });
     }
 
     return bidResponses;
@@ -175,8 +201,8 @@ function getSize(sizes) {
   return result;
 }
 
-function retrieveAd(decision) {
-  return decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
+function retrieveAd(bidId, decision) {
+  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + utils.createTrackPixelHtml(decision.impressionUrl);
 }
 
 registerBidder(spec);
