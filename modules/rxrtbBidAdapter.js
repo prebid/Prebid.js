@@ -27,29 +27,29 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     let rtbResp = serverResponse.body;
-      if ((!rtbResp) || (!rtbResp.seatbid)) {
-         return [];
+    if ((!rtbResp) || (!rtbResp.seatbid)) {
+      return [];
+    }
+    let bidResponses = [];
+    for (let i = 0; i < rtbResp.seatbid.length; i++) {
+      let seatbid = rtbResp.seatbid[i];
+      for (let j = 0; j < seatbid.bid.length; j++) {
+        let bid = seatbid.bid[j];
+        let bidResponse = {
+          requestId: bid.impid,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          mediaType: BANNER,
+          creativeId: bid.crid,
+          currency: rtbResp.cur || 'USD',
+          netRevenue: true,
+          ttl: bid.exp || RESPONSE_TTL,
+          ad: bid.adm
+        };
+        bidResponses.push(bidResponse);
       }
-      let bidResponses = [];
-      for (let i = 0; i < rtbResp.seatbid.length; i++) {
-        let seatbid = rtbResp.seatbid[i];
-        for (let j = 0; j < seatbid.bid.length; j++) {
-          let bid = seatbid.bid[j],
-              bidResponse = {
-                requestId: bid.impid,
-                cpm: bid.price,
-                width: bid.w,
-                height: bid.h,
-                mediaType: BANNER,
-                creativeId: bid.crid,
-                currency: rtbResp.cur || 'USD',
-                netRevenue: true,
-                ttl: bid.exp || RESPONSE_TTL,
-                ad: bid.adm
-              };
-          bidResponses.push(bidResponse);
-        }
-      }
+    }
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
@@ -67,9 +67,9 @@ function getDomain(url) {
 }
 
 function makePrebidRequest(req) {
-  let host= req.params.host || DEFAULT_HOST,
-      url = window.location.protocol + '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token,
-      reqData = makeRtbRequest(req);
+  let host = req.params.host || DEFAULT_HOST;
+  let url = window.location.protocol + '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token;
+  let reqData = makeRtbRequest(req);
   return {
     method: 'POST',
     url: url,
@@ -108,8 +108,8 @@ function makeImp(req) {
 }
 
 function makeBanner(req) {
- let format = [],
-     banner = {};
+  let format = [];
+  let banner = {};
   for (let i = 0; i < req.sizes.length; i++) {
     format.push({
       w: req.sizes[i][0],
