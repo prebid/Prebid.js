@@ -2,7 +2,6 @@ import {expect} from 'chai';
 import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
 import * as utils from 'src/utils';
 const BID = {
-  'bidder': 'vidazoo',
   'bidId': '2d52001cabd527',
   'params': {
     'cId': '59db6b3b4ffaa70004f45cdc',
@@ -162,7 +161,6 @@ describe('VidazooBidAdapter', () => {
       expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
         requestId: '2d52001cabd527',
-        bidderCode: 'vidazoo',
         cpm: 0.8,
         width: 300,
         height: 250,
