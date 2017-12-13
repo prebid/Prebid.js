@@ -7,7 +7,7 @@ const BIDDER_CODE = 'vertamediadis';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function (bid) {
-    return Boolean(bid && bid.params && bid.params.aid);
+    return bid && bid.params && bid.params.aid;
   },
 
   /**

@@ -20,7 +20,7 @@ This adapter provides a solution for accessing display demand
         bids: [{
             bidder: 'vertamediadis', // adapter name
             params: {
-                aid: 332842
+                aid: 324758
             }
         }]
     }];

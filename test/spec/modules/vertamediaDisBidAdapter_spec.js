@@ -40,13 +40,13 @@ describe('vertamediaDisBidAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(REQUEST)).to.equal(true);
+      expect(spec.isBidRequestValid(REQUEST)).to.equal(12345);
     });
 
     it('should return false when required params are not passed', () => {
       let bid = Object.assign({}, REQUEST);
       delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(undefined);
     });
   });
 
