@@ -10,7 +10,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   isBidRequestValid: function (bid) {
-    return Boolean(bid && bid.params && bid.params.aid);
+    return bid && bid.params && bid.params.aid;
   },
 
   /**
