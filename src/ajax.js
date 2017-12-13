@@ -98,7 +98,11 @@ export function ajaxBuilder(timeout = 3000) {
         }
         x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
       }
-      x.send(method === 'POST' && data);
+      if (method === 'POST' && data) {
+        x.send(data);
+      } else {
+        x.send();
+      }
     } catch (error) {
       utils.logError('xhr construction', error);
     }
