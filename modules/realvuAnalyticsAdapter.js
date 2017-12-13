@@ -155,9 +155,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         z.log(' ' + bk.a.rr + ' ' + bk.a.unit_id +/* " "+pin.mode+ */' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
-          if (bk.a.w > 9 && bk.a.h > 9) { // report only w>9 and h>9
-            z.scr(bk.s1, bk.a);
-          }
+          z.scr(bk.s1, bk.a);
         }
         bk = z.beacons.shift();
       }
@@ -797,10 +795,6 @@ var options = { };
 realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
-  var msg = document.getElementById('msg_an');
-  if (msg) {
-    msg.innerHTML += 'config:<br>' + JSON.stringify(config) + '<br>';
-  }
   options = config.options;
   realvuAnalyticsAdapter.originEnableAnalytics(config);
 };
