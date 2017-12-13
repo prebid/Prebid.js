@@ -9,7 +9,7 @@ We take PR review seriously. Please read https://medium.com/@mrjoelkemp/giving-b
 - Verify no code quality violations are present from linting (should be reported in terminal)
 - Review for obvious errors or bad coding practice / use best judgement here.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
-- If the change results in needing updates to docs, add a label for "docs needed" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
+- If the change results in needing updates to docs, add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
