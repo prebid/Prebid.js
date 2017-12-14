@@ -808,7 +808,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
       var hb = $$PREBID_GLOBAL$$;
       for (var i = 0; i < hb.adUnits.length; i++) {
         var code = hb.adUnits[i].code;
-        var b = options.allIn;
+        var b = options.regAllUnits;
         if (!b && options.unitIds) {
           for (var j = 0; j < options.unitIds.length; j++) {
             if (code === options.unitIds[j]) {
