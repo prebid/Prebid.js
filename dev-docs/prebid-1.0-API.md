@@ -151,7 +151,7 @@ pbjs.setConfig({
 ### Labels
 {:.no_toc}
 
-Labels can be specified as a property on either an `adUnit` or on `adUnit.bids[]`.  The presence of a label will disable the ad unit or bidder unless a `sizeConfig` rule has matched and enabled the label or the label has been enabled manually through `pbjs.setConfig({labels:[]})`.  Defining labels on the ad unit looks like the following:
+Labels can now be specified as a property on either an `adUnit` or on `adUnit.bids[]`.  The presence of a label will disable the adUnit or bidder unless a sizeConfig rule has matched and enabled the label or the label has been enabled manually by passing them into through requestBids: `pbjs.requestBids({labels:[]})`.  Defining labels on the adUnit looks like the following:
 
 {% highlight js %}
 
@@ -205,14 +205,14 @@ pbjs.addAdUnits([{
 ### Manual Label Configuration
 {:.no_toc}
 
-If an ad unit and/or `adUnit.bids[]` bidder has labels defined, they will be disabled by default.  Manually setting active labels using `pbjs.setConfig` will re-enable the selected ad units and/or bidders.
+If an adUnit and/or adUnit.bids[] bidder has labels defined, they will be disabled by default.  Manually setting active labels through `pbjs.requestBids()` will enable the selected adUnits and/or bidders.
 
 You can manually turn on labels using the following code:
 
 {% highlight js %}
 
-pbjs.setConfig({
-    labels: ['visitor-uk']
+pbjs.requestBids({
+  labels: ['visitor-uk']
 });
 
 {% endhighlight %}

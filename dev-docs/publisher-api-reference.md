@@ -541,6 +541,7 @@ Request bids. When `adUnits` or `adUnitCodes` are not specified, request bids fo
 | requestObj.adUnits | Optional | `Array of objects` | AdUnitObjects to request. Use this or `requestObj.adUnitCodes`. Default to all `adUnits` if empty. |
 | requestObj.timeout | Optional | `Integer` | Timeout for requesting the bids specified in milliseconds |
 | requestObj.bidsBackHandler | Optional | `function` | Callback to execute when all the bid responses are back or the timeout hits. |
+| requestObj.labels | Optional | `Array of strings` | Defines [labels](#labels) that may be matched on ad unit targeting conditions. |
 
 <hr class="full-rule">
 
@@ -565,7 +566,8 @@ Define ad units and their corresponding header bidding bidders' tag IDs.  For us
 | `code`   | required  | string        | A unique identifier that you create and assign to this ad unit.  This identifier will be used to set query string targeting on the ad. If you're using GPT, we recommend setting this to the slot element ID. |
 | `sizes`  | required  | array         | All the sizes that this ad unit can accept.                                                                                                                                                                   |
 | `bids`   | required  | array         | An array of bid objects. Find the [complete reference here](bidders.html).                                                                                                                                    |
-| `labels` | optional  | array<string> | An array of string labels, used for showing responsive ads.  Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig).  |
+| `labelAny` | optional  | array<string> | An array of string labels, used for showing responsive ads.  With the `labelAny` operator, just one label has to match for the condition to be true. Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig).  |
+| `labelAll` | optional  | array<string> | An array of string labels, used for showing responsive and conditional ads. With the `labelAll` conditional, every element of the target array must match an element of the label array in order for the condition to be true. Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig).  |
 
 **bid**
 
@@ -574,7 +576,8 @@ Define ad units and their corresponding header bidding bidders' tag IDs.  For us
 | :----    | :-------- | :-------      | :-----------                                                                                                                                                                                                 |
 | `bidder` | required  | string        | The bidder code. Find the [complete list here](bidders.html).                                                                                                                                                |
 | `params` | required  | object        | The bidder's preferred way of identifying a bid request. Find the [complete reference here](bidders.html).                                                                                                   |
-| `labels` | optional  | array<string> | An array of string labels, used for showing responsive ads.  Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig). |
+| `labelAny` | optional  | array<string> | An array of string labels, used for showing responsive ads.  With the `labelAny` operator, just one label has to match for the condition to be true. Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig).  |
+| `labelAll` | optional  | array<string> | An array of string labels, used for showing responsive and conditional ads. With the `labelAll` conditional, every element of the target array must match an element of the label array in order for the condition to be true. Works with the `sizeConfig` object passed in to [pbjs.setConfig]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig).  |
 
 <hr class="full-rule">
 
@@ -1300,15 +1303,15 @@ The `sizeConfig` object passed to `pbjs.setConfig` provides a powerful way to de
 
 + [How it works](#sizeConfig-How-it-Works)
 + [Example](#sizeConfig-Example)
-+ [Labels](#sizeConfig-Labels)
++ [Labels](#labels)
 
 <a name="sizeConfig-How-it-Works" />
 
 ##### How it Works
 
-- Before `requestBids` sends bid requests to adapters, it will evaluate and pick the appropriate label(s) based on the `sizeConfig.mediaQuery` and device properties and then filter the `adUnit.bids` array based on the `labels` defined (by dropping those ad units that don't match the label definition).
+- Before `requestBids` sends bid requests to adapters, it will evaluate and pick the appropriate label(s) based on the `sizeConfig.mediaQuery` and device properties and then filter the `adUnit.bids` array based on the `labels` defined. Ad units that don't match the label definition are dropped.
 - The `sizeConfig.mediaQuery` property allows [CSS media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries).  The queries are tested using the [`window.matchMedia`](https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia) API.
-- If a label doesn't exist on an ad unit, it is automatically included in all requests for bids.
+- If a label conditional (e.g. `labelAny`) doesn't exist on an ad unit, it is automatically included in all requests for bids.
 - If multiple rules match, the sizes will be filtered to the intersection of all matching rules' `sizeConfig.sizesSupported` arrays.
 - The `adUnit.sizes` selected will be filtered based on the `sizesSupported` of the matched `sizeConfig`. So the `adUnit.sizes` is a subset of the sizes defined from the resulting intersection of `sizesSupported` sizes and `adUnit.sizes`.
 
@@ -1335,7 +1338,7 @@ pbjs.setConfig({
             [728, 90],
             [300, 250]
         ],
-        'labels': ['tablet', 'phone']
+        'labels': ['tablet']
     }, {
         'mediaQuery': '(min-width: 0px)',
         'sizesSupported': [
@@ -1348,65 +1351,84 @@ pbjs.setConfig({
 
 {% endhighlight %}
 
-<a name="sizeConfig-Labels" />
+<a name="labels" />
 
 ##### Labels
 
-Labels can now be specified as a property on either an `adUnit` or on `adUnit.bids[]`.  The presence of a label will disable the ad unit or bidder unless either:
+There are two parts to defining responsive and conditional ad units with labels:
 
-+ A `sizeConfig` rule has matched and enabled the label, or
+1. Defining the labels
+2. Defining the conditional ad unit targeting for the labels
 
-+ The label has been enabled manually, e.g.,
-    ```javascript
-    pbjs.setConfig({
-        labels: [labels: ['visitor-uk']]
-    })
-    ```
+Labels may be defined in two ways:
 
-Defining labels on the ad unit looks like the following:
+1. Through [`sizeConfig`](#setConfig-Configure-Responsive-Ads)
+2. As an argument to [`pbjs.requestBids`](#module_pbjs.requestBids)
+
+{% highlight js %}
+pbjs.requestBids({labels: []});
+{% endhighlight %}
+
+Labels may be targeted in the AdUnit structure by two conditional operators: `labelAny` and `labelAll`.
+
+With the `labelAny` operator, just one label has to match for the condition to be true. In the example below, either A or B can be defined in the label array to activate the bid or ad unit:
+{% highlight bash %}
+labelAny: ["A", "B"]
+{% endhighlight %}
+
+With the `labelAll` conditional, every element of the target array must match an element of the label array in
+order for the condition to be true. In the example below, both A and B must be defined in the label array to activate the bid or ad unit:
+{% highlight bash %}
+labelAll: ["A", "B"]
+{% endhighlight %}
+
+{: .alert.alert-warning :}
+Only one conditional may be specified on a given AdUnit or bid -- if both `labelAny` and `labelAll` are specified, only the first one will be utilized and an error will be logged to the console. It is allowable for an AdUnit to have one condition and a bid to have another.
+
+Label targeting on the ad unit looks like the following:
 
 {% highlight js %}
 
 pbjs.addAdUnits([{
-    "code": "ad-slot-1",
-    "sizes": [
+    code: "ad-slot-1",
+    sizes: [
         [970, 90],
         [728, 90],
         [300, 250],
         [300, 100]
     ],
-    "labels": ["visitor-uk"]
+    labelAny: ["visitor-uk"]
     /* The full set of bids, not all of which are relevant on all devices */
-    "bids": [{
-            "bidder": "pulsepoint",
+    bids: [{
+            bidder: "pulsepoint",
             /* Labels flag this bid as relevant only on these screen sizes. */
-            "labels": ["desktop", "tablet"],
-            "params": {
+            labelAny: ["desktop", "tablet"],
+            params: {
                 "cf": "728X90",
                 "cp": 123456,
                 "ct": 123456
             }
         },
         {
-            "bidder": "pulsepoint",
-            "labels": ["desktop", "phone"],
-            "params": {
+            bidder: "pulsepoint",
+            labelAny: ["desktop", "phone"],
+            params: {
                 "cf": "300x250",
                 "cp": 123456,
                 "ct": 123456
             }
         },
         {
-            "bidder": "sovrn",
-            "labels": ["desktop", "tablet"],
-            "params": {
+            bidder: "sovrn",
+            labelAny: ["desktop", "tablet"],
+            params: {
                 "tagid": "123456"
             }
         },
         {
-            "bidder": "sovrn",
-            "labels": ["phone"],
-            "params": {
+            bidder: "sovrn",
+            labelAny: ["phone"],
+            params: {
                 "tagid": "111111"
             }
         }
@@ -1415,21 +1437,11 @@ pbjs.addAdUnits([{
 
 {% endhighlight %}
 
-{: .alert.alert-warning :}
-**Manual Label Configuration**  
-If an ad unit and/or a bidder in `adUnit.bids[]` already has `labels` defined, they will be disabled by default.  Manually setting active labels as shown below will re-enable the selected ad units and/or bidders.
-
-{% highlight js %}
-
-pbjs.setConfig({
-    labels: ['visitor-uk']
-});
-
-{% endhighlight %}
+See [Conditional Ad Units]({{site.baseurl}}/dev-docs/conditional-ad-units.html) for additional use cases around labels.
 
 <a name="setConfig-Generic-Configuration" />
 
-#### Generic Configuration
+#### Generic setConfig Configuration
 
 Set arbitrary configuration values:
 
