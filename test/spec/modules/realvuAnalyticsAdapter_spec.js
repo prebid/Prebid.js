@@ -123,33 +123,24 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(vst).to.equal('yes');
     document.body.removeChild(ad_div);
   });
-  /*
+  
   it('test boost exp', () => {
     var boost = window.top1.realvu_boost;
     var partner_id = '1Y';
-    var unit_id = 'ad1';
-    var callback = null;
-    var delay = null;
     var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
+    ad_div.id = 'ad7';
+    ad_div.style = 'width:300px; height:250px;';
     document.body.appendChild(ad_div);
-    boost.addUnitById(partner_id, unit_id, callback, delay);
-    var a = boost;
-    var w = 728;
-    var h = 90;
-    a.wnd = window;
-    a.frm = boost.newf(boost, w, h);
-    a.frm.height = 90;
-    a.frm.width = 728;
-    a.ads[a.num] = a;
-    a.div = ad_div;
+    boost.addUnitById(partner_id, 'ad7');
+    var a = boost.ads[boost.ads.length-1];
+    a.frm = boost.newf(a, 300, 250);
     a.div.appendChild(a.frm);
-    // var e = boost.exp(a);
-    var t = typeof document.div;
-    expect(t).to.equal('undefined');
+    boost.exp(a);
+    var t = a.frm.tagName;
+    expect(t).to.equal('IFRAME');
     document.body.removeChild(ad_div);
   });
-  */
+  
   /*
   it('test boost brd', () => {
     var ad_div = document.createElement('div');
