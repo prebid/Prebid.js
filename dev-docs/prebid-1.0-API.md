@@ -40,21 +40,17 @@ For a complete list of methods that will be removed, see the [Publisher API Refe
 
 <a name="pbjs.setConfig" />
 
-## New API - `pbjs.setConfig`
+## Legacy APIs replaced by `pbjs.setConfig`
 
 For 1.0, the following APIs will be removed in favor of a generic "options" param object passed to [`pbjs.setConfig`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig):
 
-- `pbjs.bidderTimeout`
-- `pbjs.logging` (renamed to `debug`)
-- `pbjs.publisherDomain`
-- `pbjs.cookieSyncDelay`
-- `pbjs.setPriceGranularity`
-- `pbjs.enableSendAllBids` (behavior will default to `true`)
-- `pbjs.setBidderSequence`
-- `pbjs.setS2SConfig`
-- `pbjs.timeoutBuffer`
-
-Mapping will be straightforward with the name of the param being the same, except dropping the `set` prefix where appropriate.
+- `pbjs.bidderTimeout` - use `pbjs.setConfig({bidderTimeout})` instead
+- `pbjs.logging` - use `pbjs.setConfig({debug})` instead
+- `pbjs.publisherDomain` - use `pbjs.setConfig({publisherDomain})` instead
+- `pbjs.setPriceGranularity` - use `pbjs.setConfig({priceGranularity})` instead
+- `pbjs.enableSendAllBids`- use `pbjs.setConfig({enableSendAllBids})` instead. Now defaults to `true`.
+- `pbjs.setBidderSequence` - use `pbjs.setConfig({bidderSequence})` instead
+- `pbjs.setS2SConfig` - use `pbjs.setConfig({s2sConfig})` instead
 
 ### `pbjs.setConfig` Example
 {:.no_toc}
@@ -65,21 +61,37 @@ The input to `pbjs.setConfig` must be JSON (no JavaScript functions are allowed)
 {% highlight js %}
 
 pbjs.setConfig({
-    "currency": {
-        // Enables currency feature -- loads the rate file
+    currency: {
         "adServerCurrency": "JPY",
-        // Allows the publisher to override the default rate file
-        "conversionRateFile": "url"
+        "conversionRateFile": "<url>"
     },
-    "debug": true, // Previously `logging`
-    "s2sConfig": { ... },
-    "priceGranularity": "medium",
-    "enableSendAllBids": false, // Default will be `true` as of 1.0
-    "bidderSequence": "random",
-    "bidderTimeout": 700, // Default for all requests.
-    "publisherDomain": "abc.com", // Used for SafeFrame creative.
-    "pageOptions": { ... },
-    "sizeConfig": { ... }
+    debug: true, // Previously `logging`
+    s2sConfig: { ... },
+    priceGranularity: "medium",
+    enableSendAllBids: false, // Default will be `true` as of 1.0
+    bidderSequence: "random", // Default is random
+    bidderTimeout: 700, // Default for all requests.
+    publisherDomain: "abc.com", // Used for SafeFrame creative.
+    pageOptions: { ... },
+    cache: {url: "<prebid cache url>"}
+});
+
+{% endhighlight %}
+
+## No More Default Endpoints
+
+In Prebid 0.x there were defaults for the Prebid Server endpoints and the video cache URL. With 1.0, these defaults have been removed to be vendor neutral, so all publisher pages must define them via pbjs.setConfig(). The same functionality as 0.x may be achieved as shown below: 
+
+{% highlight js %}
+
+pbjs.setConfig({
+    cache: {url: "https://prebid.adnxs.com/pbc/v1/cache"},
+    s2sConfig: {
+        ...
+        endpoint: "https://prebid.adnxs.com/pbs/v1/auction",
+        syncEndpoint: "https://prebid.adnxs.com/pbs/v1/cookie_sync",
+        ...
+    }
 });
 
 {% endhighlight %}
