@@ -71,6 +71,12 @@ describe('Adform adapter', () => {
         }
       ]);
     });
+
+    it('should not change original validBidRequests object', () => {
+      var resultBids = JSON.parse(JSON.stringify(bids[0]));
+      let request = spec.buildRequests([bids[0]]);
+      assert.deepEqual(resultBids, bids[0]);
+    });
   });
 
   describe('interpretResponse', () => {

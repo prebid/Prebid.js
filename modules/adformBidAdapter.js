@@ -14,8 +14,9 @@ export const spec = {
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var netRevenue = 'net';
-    for (i = 0, l = validBidRequests.length; i < l; i++) {
-      bid = validBidRequests[i];
+    var bids = JSON.parse(JSON.stringify(validBidRequests));
+    for (i = 0, l = bids.length; i < l; i++) {
+      bid = bids[i];
       if (bid.params.priceType === 'gross') {
         netRevenue = 'gross';
       }
