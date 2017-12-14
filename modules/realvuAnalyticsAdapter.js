@@ -1,16 +1,17 @@
 // RealVu Analytics Adapter
 import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
+import CONSTANTS from 'src/constants.json';
 
 var realvuAnalyticsAdapter = adapter({
   global: 'realvu',
   handler: 'on',
   analyticsType: 'bundle'
 });
-/* 
+/*
   Copyright(C) 2001-2017, RealVu Inc., All rights reserved. Use of RealVu’s patented, patent pending,
   copyrighted and proprietary code is not being made available under an Apache or other open source license,
-  but is available only under a proprietary license of RealVu Inc. 
+  but is available only under a proprietary license of RealVu Inc.
 */
 window.top1 = window;
 try {
@@ -803,14 +804,14 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
     msg.innerHTML += 'track: eventType=' + eventType + ', args=' + JSON.stringify(args) + '<br>';
   }
   if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-    if (options && options.partner_id) {
+    if (options && options.partnerId) {
       var hb = $$PREBID_GLOBAL$$;
       for (var i = 0; i < hb.adUnits.length; i++) {
         var code = hb.adUnits[i].code;
-        var b = options.all_in;
-        if (!b && options.unit_ids) {
-          for (var j = 0; j < options.unit_ids.length; j++) {
-            if (code === options.unit_ids[j]) {
+        var b = options.allIn;
+        if (!b && options.unitIds) {
+          for (var j = 0; j < options.unitIds.length; j++) {
+            if (code === options.unitIds[j]) {
               b = true;
               break;
             }
@@ -819,7 +820,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
         if (b) {
           // register the unit in realvu_boost
           var sizes = hb.adUnits[i].sizes;
-          var ui = {partner_id: options.partner_id, unit_id: code, size: sizes};
+          var ui = {partner_id: options.partnerId, unit_id: code, size: sizes};
           window.top1.realvu_boost.check(ui);
         }
       }
