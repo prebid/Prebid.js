@@ -24,7 +24,7 @@
                 s1 += "hb_adid=" + hb_adid + ". "
                   + " "+key+"  bids.length=" + bids.length + "<br>";
                 for (var j=0;j<bids.length;j++){ 
-                  s1 +=  j + ") "+ bids[j].bidderCode +" "+bids[j].statusMessage+"<br>";
+                  s1 +=  j + ") "+ bids[j].bidderCode + " cpm="+bids[j].cpm + " "+bids[j].statusMessage+"<br>";
                 }
 //  + JSON.stringify(bids).replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/},/g, ',<br><br>').replace(/,/g, ', ') + "</p>";
             }
@@ -32,7 +32,10 @@
         };
 
         docf = function (f) {
-            return f.contentDocument ? f.contentDocument : (f.contentWindow ? f.contentWindow.document : null);
+            if(f){
+              return f.contentDocument ? f.contentDocument : (f.contentWindow ? f.contentWindow.document : null);
+            }
+            return null;
         };
 
         pbjs.que.push(function () {
@@ -40,8 +43,8 @@
             pbjs.enableAnalytics({
               provider: 'realvuAnalytics',
               options: {
-                  partner_id: 'K1E',
-                  all_in: true,
+                  partnerId: 'K1E',
+                  regAllUnits: false,
                   unit_ids:['ad_container_2']
               }
             });
@@ -49,7 +52,7 @@
                 code: 'ad_container_1',
                 sizes: [[300, 250]],
                 bids: [{
-                    bidder: 'appnexus', params: {
+                    bidder: 'realvu', params: {
                         partnerId: '1Y',
                         placementId: '9339508'
                     }},
@@ -64,7 +67,7 @@
                 code: 'ad_container_2',
                 sizes: [[300, 250]],
                 bids: [{
-                    bidder: 'appnexus', params: {
+                    bidder: 'realvu', params: {
                         partnerId: '1Y',
                         placementId: '9339508'
                     }},
@@ -84,6 +87,11 @@
             });
         });
         /*End*/
+  function zz(){
+    var d = document.getElementById('no_container_1');
+    d.id = 'ad_container_1';
+  }
+  window.setTimeout(zz, 300);
 </script>
 </head>
 <body>
@@ -113,20 +121,20 @@
 </script>
 
     <div class='content'>
-        <div style='margin-left: 10px;'>
+        <div style='margin-top: 100px;'>
             <h2 style='font-family:Impact;'>realvu-prebid.js demo</h2>
 <table>
 <tr valign='top'><td>
-            <iframe id="ad_container_1" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
+            <iframe id="no_container_1" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
     width="300" height="250" scrolling="no" style='border:gray 2px dashed;'></iframe>    
 </td><td>
-            <div id="msg_an" style='margin-left:12px;padding:12px;min-height:40px;background-color:Chocolate;'></div>
+            <div id="msg" style='margin-left:12px;padding:12px;min-height:40px;background-color:Chocolate;'></div>
 </td></tr>
 <tr valign='top'><td>
             <iframe id="ad_container_2" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
     width="300" height="250" scrolling="no" style='border:gray 2px dashed;'></iframe>    
 </td><td>
-            <div id="msg" style='margin-left:12px;padding:12px;min-height:40px;background-color:cadetblue;'></div>
+            <div id="msg_an" style='margin-left:12px;padding:12px;min-height:40px;background-color:cadetblue;'></div>
 </td></tr>
 
 

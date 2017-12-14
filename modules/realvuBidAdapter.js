@@ -7,49 +7,29 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
+const rvaa = require('modules/realvuAnalyticsAdapter.js');
 
 var RealVuAdapter = function RealVuAdapter() {
   var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
     var pbids = params.bids;
-    var boost_back = function() {
-      var top1 = window;
-      try {
-        var wnd = window;
-        while ((top1 != top) && (typeof (wnd.document) != 'undefined')) {
-          top1 = wnd;
-          wnd = wnd.parent;
-        }
-      } catch (e) { };
-      for (var i = 0; i < pbids.length; i++) {
-        var bid_rq = pbids[i];
-        var sizes = utils.parseSizesInput(bid_rq.sizes);
-        top1.realvu_boost.addUnitById({
-          partner_id: bid_rq.params.partnerId,
-          unit_id: bid_rq.placementCode,
-          callback: baseAdapter.boostCall,
-          pbjs_bid: bid_rq,
-          size: sizes[0],
-          mode: 'kvp'
-        });
-      }
-    };
-    adloader.loadScript('//ac.realvu.net/realvu_boost.js', boost_back, 1);
-  };
+    for (var i = 0; i < pbids.length; i++) {
+      var bid_rq = pbids[i];
+      var inview = rvaa.checkIn(bid_rq.placementCode, bid_rq.sizes, bid_rq.params.partnerId);
 
-  baseAdapter.boostCall = function(rez) {
-    var bid_request = rez.pin.pbjs_bid;
-    var callbackId = bid_request.bidId;
-    if (rez.realvu === 'yes') {
-      var adap = new RvAppNexusAdapter();
-      adloader.loadScript(adap.buildJPTCall(bid_request, callbackId));
-    } else { // not in view - respond with no bid.
-      var adResponse = bidfactory.createBid(2);
-      adResponse.bidderCode = 'realvu';
-      bidmanager.addBidResponse(bid_request.placementCode, adResponse);
+      utils.logMessage('realvuBidAdapter: i=' + i + ', inview= ' + inview);
+
+      if (inview === 'yes') {
+        var adap = new RvAppNexusAdapter();
+        var callbackId = bid_rq.bidId;
+        adloader.loadScript(adap.buildJPTCall(bid_rq, callbackId));
+      } else { // not in view - respond with no bid.
+        var adResponse = bidfactory.createBid(2);
+        adResponse.bidderCode = 'realvu';
+        bidmanager.addBidResponse(bid_rq.placementCode, adResponse);
+      }
     }
   };
-
   // +copy/pasted appnexusBidAdapter, "handleAnCB" replaced with "handleRvAnCB"
   var RvAppNexusAdapter = function RvAppNexusAdapter() {
     var usersync = false;
@@ -182,7 +162,8 @@ var RealVuAdapter = function RealVuAdapter() {
 
         // @endif
         var bid = [];
-        if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
+        var inview = rvaa.isInView(placementCode);
+        if (inview === 'yes' && jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
           responseCPM = parseInt(jptResponseObj.result.cpm, 10);
 
           // CPM response from /jpt is dollar/cent multiplied by 10000
@@ -228,8 +209,7 @@ var RealVuAdapter = function RealVuAdapter() {
   // -copy/pasted appnexusBidAdapter
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    boostCall: baseAdapter.boostCall
+    setBidderCode: baseAdapter.setBidderCode
   });
 };
 
