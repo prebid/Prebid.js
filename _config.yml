@@ -88,6 +88,9 @@ nav_sections:
     code: reference
     name: REFERENCE
   - top_nav: dev_docs
+    code: features
+    name: FEATURES
+  - top_nav: dev_docs
     code: adapters
     name: ADAPTERS
 
