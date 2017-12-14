@@ -1,12 +1,23 @@
 import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 import { STATUS, S2S } from 'src/constants';
+import { config } from 'src/config';
 
 const TYPE = S2S.SRC;
+const getConfig = config.getConfig;
+const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders', 'endpoint'];
+
+let _s2sConfig;
+config.setDefaults({
+  's2sConfig': {
+    enabled: false,
+    timeout: 1000,
+    adapter: 'serverbidServer'
+  }
+});
 
 var ServerBidServerAdapter;
 ServerBidServerAdapter = function ServerBidServerAdapter() {
@@ -50,14 +61,25 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
   sizeMap[123] = '970x250';
   sizeMap[43] = '300x600';
 
-  let s2sConfig;
-  baseAdapter.setConfig = function(s2sconfig) {
-    s2sConfig = s2sconfig || {};
-  };
-
-  function getConfig() {
-    return (s2sConfig || {});
+  function getLocalConfig() {
+    return (_s2sConfig || {});
   }
+
+  let _s2sConfig;
+  function setS2sConfig(options) {
+    let contains = (xs, x) => xs.indexOf(x) > -1;
+    let userConfig = Object.keys(options);
+
+    REQUIRED_S2S_CONFIG_KEYS.forEach(key => {
+      if (!contains(userConfig, key)) {
+        utils.logError(key + ' missing in server to server config');
+        return;
+      }
+    })
+
+    _s2sConfig = options;
+  }
+  getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
   function _convertFields(bid) {
     let safeBid = bid || {};
@@ -67,7 +89,8 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
     return converted;
   }
 
-  baseAdapter.callBids = function(params) {
+  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    let params = s2sBidRequest;
     let shouldDoWorkFn = function(bidRequest) {
       return bidRequest &&
         bidRequest.ad_units &&
@@ -75,16 +98,18 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         bidRequest.ad_units.length;
     }
     if (shouldDoWorkFn(params)) {
-      _callBids(params);
+      _callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
     }
   };
 
-  function _callBids(bidRequest) {
+  function _callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    let bidRequest = s2sBidRequest;
+
     // one request per ad unit
     for (let i = 0; i < bidRequest.ad_units.length; i++) {
       let adunit = bidRequest.ad_units[i];
-      let siteId = getConfig().siteId;
-      let networkId = getConfig().networkId;
+      let siteId = getLocalConfig().siteId;
+      let networkId = getLocalConfig().networkId;
       let sizes = adunit.sizes;
 
       const data = {
@@ -105,7 +130,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         const bid = bids[i];
         bid.code = adunit.code;
 
-        const placement = Object.assign({
+        const placement = Object.assign({},{
           divName: bid.bid_id,
           networkId: networkId,
           siteId: siteId,
@@ -120,12 +145,12 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
       }
 
       if (data.placements.length) {
-        ajax(BASE_URI, _responseCallback(bids), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+        ajax(BASE_URI, _responseCallback(addBidResponse, bids), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
       }
     }
   }
 
-  function _responseCallback(bids) {
+  function _responseCallback(addBidResponse, bids) {
     return function (resp) {
       let bid;
       let bidId;
@@ -172,7 +197,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         } else {
           bid = noBid(bidObj);
         }
-        bidmanager.addBidResponse(placementCode, bid);
+        addBidResponse(placementCode, bid);
       }
     }
   };
@@ -198,7 +223,6 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
   // this function when the page asks to send out bid requests.
   return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
-    setConfig: baseAdapter.setConfig,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
