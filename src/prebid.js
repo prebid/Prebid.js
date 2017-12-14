@@ -128,11 +128,11 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last requested id to get responses for most recent auction only
-  const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
+  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
 
   return responses.map(bid => bid.adUnitCode)
     .filter(uniques).map(adUnitCode => responses
-      .filter(bid => bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode))
+      .filter(bid => bid.auctionId === currentAuctionId && bid.adUnitCode === adUnitCode))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {

@@ -794,7 +794,7 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
   return find(bidRequests, request => {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, requestId: null };
+  }) || { start: null, auctionId: null };
 }
 
 /**

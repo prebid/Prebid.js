@@ -310,7 +310,7 @@ export function getBidResponses() {
       'pbHg': '0.11',
       'pbAg': '0.10',
       'size': '0x0',
-      'requestId': 123456,
+      'auctionId': 123456,
       'adserverTargeting': {
         'hb_bidder': 'triplelift',
         'hb_adid': '222bb26f9e8bd',
@@ -342,7 +342,7 @@ export function getBidResponses() {
       'pbAg': '10.00',
       'size': '300x250',
       'alwaysUseBid': true,
-      'requestId': 123456,
+      'auctionId': 123456,
       'adserverTargeting': {
         'hb_bidder': 'appnexus',
         'hb_adid': '233bcbee889d46d',
@@ -374,7 +374,7 @@ export function getBidResponses() {
       'pbAg': '10.00',
       'size': '728x90',
       'alwaysUseBid': true,
-      'requestId': 123456,
+      'auctionId': 123456,
       'adserverTargeting': {
         'hb_bidder': 'appnexus',
         'hb_adid': '24bd938435ec3fc',
@@ -405,7 +405,7 @@ export function getBidResponses() {
       'pbHg': '0.50',
       'pbAg': '0.50',
       'size': '300x250',
-      'requestId': 123456,
+      'auctionId': 123456,
       'adserverTargeting': {
         'hb_bidder': 'pagescience',
         'hb_adid': '25bedd4813632d7',
@@ -435,7 +435,7 @@ export function getBidResponses() {
       'pbHg': '0.17',
       'pbAg': '0.15',
       'size': '300x250',
-      'requestId': 654321,
+      'auctionId': 654321,
       'adserverTargeting': {
         'hb_bidder': 'brightcom',
         'hb_adid': '26e0795ab963896',
@@ -466,7 +466,7 @@ export function getBidResponses() {
       'pbHg': '0.50',
       'pbAg': '0.50',
       'size': '300x250',
-      'requestId': 654321,
+      'auctionId': 654321,
       'adserverTargeting': {
         'hb_bidder': 'brealtime',
         'hb_adid': '275bd666f5a5a5d',
@@ -498,7 +498,7 @@ export function getBidResponses() {
       'pbHg': '5.93',
       'pbAg': '5.90',
       'size': '300x250',
-      'requestId': 654321,
+      'auctionId': 654321,
       'adserverTargeting': {
         'hb_bidder': 'pubmatic',
         'hb_adid': '28f4039c636b6a7',
@@ -528,7 +528,7 @@ export function getBidResponses() {
       'pbHg': '2.74',
       'pbAg': '2.70',
       'size': '300x600',
-      'requestId': 654321,
+      'auctionId': 654321,
       'adserverTargeting': {
         'hb_bidder': 'rubicon',
         'hb_adid': '29019e2ab586a5a',
@@ -1032,7 +1032,7 @@ export function getBidResponsesFromAPI() {
           'pbHg': '0.17',
           'pbAg': '0.15',
           'size': '300x250',
-          'requestId': 654321,
+          'auctionId': 654321,
           'adserverTargeting': {
             'hb_bidder': 'brightcom',
             'hb_adid': '26e0795ab963896',
@@ -1063,7 +1063,7 @@ export function getBidResponsesFromAPI() {
           'pbHg': '0.50',
           'pbAg': '0.50',
           'size': '300x250',
-          'requestId': 654321,
+          'auctionId': 654321,
           'adserverTargeting': {
             'hb_bidder': 'brealtime',
             'hb_adid': '275bd666f5a5a5d',
@@ -1095,7 +1095,7 @@ export function getBidResponsesFromAPI() {
           'pbHg': '5.93',
           'pbAg': '5.90',
           'size': '300x250',
-          'requestId': 654321,
+          'auctionId': 654321,
           'adserverTargeting': {
             'hb_bidder': 'pubmatic',
             'hb_adid': '28f4039c636b6a7',
@@ -1125,7 +1125,7 @@ export function getBidResponsesFromAPI() {
           'pbHg': '2.74',
           'pbAg': '2.70',
           'size': '300x600',
-          'requestId': 654321,
+          'auctionId': 654321,
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '29019e2ab586a5a',
