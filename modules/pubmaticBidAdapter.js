@@ -29,7 +29,7 @@ function _getDomainFromURL(url){
 
 function _parseSlotParam(paramName, paramValue){
   if (!utils.isStr(paramValue)) {    
-    utils.logWarn('PubMatic: Ignoring param key: '+paramName+', expects string-value, found ' + typeof paramValue);
+    paramValue && utils.logWarn('PubMatic: Ignoring param key: '+paramName+', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
 
