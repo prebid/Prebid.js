@@ -1,6 +1,6 @@
 ---
 layout: bidder
-title: undertone
+title: Undertone
 description: Prebid undertone Bidder Adaptor
 top_nav_section: dev_docs
 nav_section: reference
