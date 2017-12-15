@@ -28,7 +28,7 @@ describe('33acrossBidAdapter:', function () {
           productId: PRODUCT_ID
         },
         adUnitCode: 'div-id',
-        requestId: 'r1',
+        auctionId: 'r1',
         sizes: [
           [ 300, 250 ],
           [ 728, 90 ]

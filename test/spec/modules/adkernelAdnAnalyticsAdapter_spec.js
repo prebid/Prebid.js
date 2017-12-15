@@ -147,7 +147,7 @@ describe('', () => {
 
   const REQUEST = {
     bidderCode: 'adapter',
-    requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     bidderRequestId: '1a6fc81528d0f6',
     bids: [{
       bidder: 'adapter',
@@ -157,7 +157,7 @@ describe('', () => {
       sizes: [[300, 250]],
       bidId: '208750227436c1',
       bidderRequestId: '1a6fc81528d0f6',
-      requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
     }],
     auctionStart: 1509369418387,
     timeout: 3000,
@@ -173,7 +173,7 @@ describe('', () => {
     mediaType: 'banner',
     cpm: 0.015,
     ad: '<!-- tag goes here -->',
-    requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     responseTimestamp: 1509369418832,
     requestTimestamp: 1509369418389,
     bidder: 'adapter',

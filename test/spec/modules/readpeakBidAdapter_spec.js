@@ -24,7 +24,7 @@ describe('ReadPeakAdapter', () => {
       auctionId: '1d1a030790a475',
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
-      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
     }
     serverResponse = {

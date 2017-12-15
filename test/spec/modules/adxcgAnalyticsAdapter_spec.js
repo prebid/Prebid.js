@@ -25,7 +25,7 @@ describe('adxcg analytics adapter', () => {
         publisherId: '42'
       };
       let bidRequest = {
-        requestId: 'requestIdData'
+        auctionId: 'requestIdData'
       };
       let bidResponse = {
         adId: 'adIdData',
