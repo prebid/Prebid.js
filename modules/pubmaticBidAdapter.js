@@ -221,10 +221,10 @@ export const spec = {
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
-    payload.user.lat =  conf.lat || UNDEFINED;
-    payload.user.lon =  conf.lon || UNDEFINED;
-    payload.user.yob =  conf.yob || UNDEFINED;
-    payload.site.page = (conf.kadpageurl && conf.kadpageurl || (payload.site.page && payload.site.page);
+    payload.user.lat = conf.lat || UNDEFINED;
+    payload.user.lon = conf.lon || UNDEFINED;
+    payload.user.yob = conf.yob || UNDEFINED;
+    payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = _getDomainFromURL(payload.site.page);
     return {
       method: 'POST',
