@@ -16,24 +16,24 @@ const CUSTOM_PARAMS = {
   'lon': '', // User Location - Longitude
   'wiid': '', // OpenWrap Wrapper Impression ID
   'profId': '', // OpenWrap Legacy: Profile ID
-  'verId': '' // OpenWrap Legacy: version ID  
+  'verId': '' // OpenWrap Legacy: version ID
 };
 
 let publisherId = 0;
 
-function _getDomainFromURL(url){
+function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
 
-function _parseSlotParam(paramName, paramValue){
-  if (!utils.isStr(paramValue)) {    
-    paramValue && utils.logWarn('PubMatic: Ignoring param key: '+paramName+', expects string-value, found ' + typeof paramValue);
+function _parseSlotParam(paramName, paramValue) {
+  if (!utils.isStr(paramValue)) {
+    paramValue && utils.logWarn('PubMatic: Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
 
-  switch(paramName){
+  switch (paramName) {
     case 'pmzoneid':
       return paramValue.split(',').slice(0, 50).join();
     case 'kadfloor':
@@ -50,8 +50,7 @@ function _cleanSlot(slotName) {
   return '';
 }
 
-function _parseAdSlot(bid){
-  
+function _parseAdSlot(bid) {
   bid.params.adUnit = '';
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
@@ -63,16 +62,18 @@ function _parseAdSlot(bid){
   var splits = slot.split(':');
 
   slot = splits[0];
-  if(splits.length == 2){
+  if (splits.length == 2) {
     bid.params.adUnitIndex = splits[1];
   }
   splits = slot.split('@');
-  if(splits.length != 2){
+  if (splits.length != 2) {
+    utils.logWarn('AdSlot Error: adSlot not in required format');
     return;
-  }       
+  }
   bid.params.adUnit = splits[0];
   splits = splits[1].split('x');
-  if(splits.length != 2){
+  if (splits.length != 2) {
+    utils.logWarn('AdSlot Error: adSlot not in required format');
     return;
   }
   bid.params.width = parseInt(splits[0]);
@@ -81,7 +82,7 @@ function _parseAdSlot(bid){
 
 function _initConf() {
   var conf = {};
-  conf.pageURL = utils.getTopWindowUrl();  
+  conf.pageURL = utils.getTopWindowUrl();
   conf.refURL = utils.getTopWindowReferrer();
   return conf;
 }
@@ -103,14 +104,14 @@ function _handleCustomParams(params, conf) {
 
         if (typeof entry === 'object') {
           // will be used in future when we want to process a custom param before using
-          // 'keyname': {f: function(){}}
+          // 'keyname': {f: function() {}}
           value = entry.f(value, conf);
         }
 
         if (utils.isStr(value)) {
           conf[key] = value;
         } else {
-          utils.logWarn('PubMatic: Ignoring param key: ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
+          utils.logWarn('PubMatic: Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
         }
       }
     }
@@ -118,9 +119,9 @@ function _handleCustomParams(params, conf) {
   return conf;
 }
 
-function _createOrtbTemplate(conf){
+function _createOrtbTemplate(conf) {
   return {
-    id : '' + new Date().getTime(),
+    id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
     cur: [CURRENCY],
     imp: [],
@@ -132,7 +133,7 @@ function _createOrtbTemplate(conf){
     device: {
       ua: navigator.userAgent,
       js: 1,
-      dnt: (navigator.doNotTrack == "yes" || navigator.doNotTrack == "1" || navigator.msDoNotTrack == "1") ? 1 : 0,
+      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: navigator.language
@@ -142,7 +143,7 @@ function _createOrtbTemplate(conf){
   };
 }
 
-function _createImpressionObject(bid, conf){
+function _createImpressionObject(bid, conf) {
   return {
     id: bid.bidId,
     tagid: bid.params.adUnit,
@@ -150,7 +151,7 @@ function _createImpressionObject(bid, conf){
     secure: window.location.protocol === 'https:' ? 1 : 0,
     banner: {
       pos: 0,
-      w: bid.params.width, 
+      w: bid.params.width,
       h: bid.params.height,
       topframe: utils.inIframe() ? 0 : 1,
     },
@@ -170,7 +171,19 @@ export const spec = {
   * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
-    return !!(bid && bid.params && utils.isStr(bid.params.publisherId) && utils.isStr(bid.params.adSlot));
+    if (bid && bid.params) {
+      if (!utils.isStr(bid.params.publisherId)) {
+        utils.logWarn('PubMatic Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        return false;
+      }
+      if (!utils.isStr(bid.params.adSlot)) {
+        utils.logWarn('PubMatic: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        return false;
+      }
+      return true;
+    }
+    return false;
+    // return !!(bid && bid.params && utils.isStr(bid.params.publisherId) && utils.isStr(bid.params.adSlot));
   },
 
   /**
@@ -184,7 +197,7 @@ export const spec = {
     var payload = _createOrtbTemplate(conf);
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
-      if(! (bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)){
+      if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
         utils.logWarn('PubMatic: Skipping the non-standard adslot:', bid.params.adSlot, bid);
         return;
       }
@@ -193,13 +206,13 @@ export const spec = {
       conf.transactionId = bid.transactionId;
       payload.imp.push(_createImpressionObject(bid, conf));
     });
-    
-    if(payload.imp.length == 0){
+
+    if (payload.imp.length == 0) {
       return;
     }
 
-    payload.site.publisher.id = conf.pubId;
-    publisherId = conf.pubId;
+    payload.site.publisher.id = conf.pubId.trim();
+    publisherId = conf.pubId.trim();
     payload.ext.wrapper = {};
     payload.ext.wrapper.profile = conf.profId || UNDEFINED;
     payload.ext.wrapper.version = conf.verId || UNDEFINED;
@@ -207,11 +220,11 @@ export const spec = {
     payload.ext.wrapper.wv = constants.REPO_AND_VERSION;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
-    payload.user.gender = conf.gender || UNDEFINED;
-    payload.user.lat = conf.lat || UNDEFINED;
-    payload.user.lon = conf.lon || UNDEFINED;
-    payload.user.yob = conf.yob || UNDEFINED;
-    payload.site.page = conf.kadpageurl || payload.site.page;
+    payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
+    payload.user.lat =  conf.lat || UNDEFINED;
+    payload.user.lon =  conf.lon || UNDEFINED;
+    payload.user.yob =  conf.yob || UNDEFINED;
+    payload.site.page = (conf.kadpageurl && conf.kadpageurl || (payload.site.page && payload.site.page);
     payload.site.domain = _getDomainFromURL(payload.site.page);
     return {
       method: 'POST',
@@ -233,7 +246,7 @@ export const spec = {
         response.body.seatbid[0].bid.forEach(bid => {
           let newBid = {
             requestId: bid.impid,
-            cpm: (parseFloat(bid.price)||0).toFixed(2),
+            cpm: (parseFloat(bid.price) || 0).toFixed(2),
             width: bid.w,
             height: bid.h,
             creativeId: bid.crid || bid.id,
@@ -262,7 +275,7 @@ export const spec = {
         type: 'iframe',
         url: USYNCURL + publisherId
       }];
-    }else{
+    } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
     }
   }
