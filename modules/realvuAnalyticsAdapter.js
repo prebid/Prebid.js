@@ -38,7 +38,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   c: '', // owner id
   sr: '', //
   beacons: [], // array of beacons to collect while 'conf' is not responded
-  init: function() {
+  init: function () {
     var z = this;
     var u = navigator.userAgent;
     z.device = u.match(/iPad|Tablet/gi) ? 'tablet' : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
@@ -55,21 +55,20 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         z.fr = 1;
       }
     }
-    z.add_evt(window.top1, 'focus', function() {
+    z.add_evt(window.top1, 'focus', function () {
       window.top1.realvu_boost.foc = 1; /* window.top1.realvu_boost.log('focus',-1); */
     });
     // z.add_evt(window.top1, "scroll", function(){window.top1.realvu_boost.foc=1;window.top1.realvu_boost.log('scroll focus',-1);});
-    z.add_evt(window.top1, 'blur', function() {
+    z.add_evt(window.top1, 'blur', function () {
       window.top1.realvu_boost.foc = 0; /* window.top1.realvu_boost.log('blur',-1); */
     });
     // + http://www.w3.org/TR/page-visibility/
-    z.add_evt(window.top1.document, 'blur', function() {
+    z.add_evt(window.top1.document, 'blur', function () {
       window.top1.realvu_boost.foc = 0; /* window.top1.realvu_boost.log('blur',-1); */
     });
-    z.add_evt(window.top1, 'visibilitychange'
-      , function() {
-        window.top1.realvu_boost.foc = !window.top1.document.hidden; /* window.top1.realvu_boost.log('vis-ch '+window.top1.realvu_boost.foc,-1); */
-      });
+    z.add_evt(window.top1, 'visibilitychange', function () {
+      window.top1.realvu_boost.foc = !window.top1.document.hidden; /* window.top1.realvu_boost.log('vis-ch '+window.top1.realvu_boost.foc,-1); */
+    });
     // -
     z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
     if (z.doLog) {
@@ -87,7 +86,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  update: function() {
+  update: function () {
     var z = this;
     var de = window.top1.document.documentElement;
     z.x1 = window.top1.pageXOffset ? window.top1.pageXOffset : de.scrollLeft;
@@ -97,21 +96,21 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     z.x2 = z.x1 + w1;
     z.y2 = z.y1 + h1;
   },
-  brd: function(s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
+  brd: function (s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
     var u;
     if (window.getComputedStyle) u = window.getComputedStyle(s, null);
     else u = s.style;
     var a = u['border' + p + 'Width'];
     return parseInt(a.length > 2 ? a.slice(0, -2) : 0);
   },
-  padd: function(s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
+  padd: function (s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
     var u;
     if (window.getComputedStyle) u = window.getComputedStyle(s, null);
     else u = s.style;
     var a = u['padding' + p];
     return parseInt(a.length > 2 ? a.slice(0, -2) : 0);
   },
-  viz_area: function(x1, x2, y1, y2) { // coords of Ad
+  viz_area: function (x1, x2, y1, y2) { // coords of Ad
     if (this.fr == 1) {
       try {
         var iv = Math.round(100 * window.top1.$sf.ext.geom().self.iv);
@@ -128,30 +127,34 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return (A > 0) ? A : 0;
   },
 
-  viz_dist: function(x1, x2, y1, y2) { // coords of Ad
+  viz_dist: function (x1, x2, y1, y2) { // coords of Ad
     var d = Math.max(0, this.x1 - x2, x1 - this.x2) + Math.max(0, this.y1 - y2, y1 - this.y2);
     return d;
   },
 
-  track: function(a, pin, f) {
+  track: function (a, pin, f) {
     var z = this;
     var s1 = z.tru(a, pin, f);
     if (f == 'conf') {
       z.scr(s1, a);
       z.log(' <a href=\'' + s1 + '\'>' + f + '</a>', a.num);
     } else {
-      var bk = {s1: s1, a: a, f: f};
+      var bk = {
+        s1: s1,
+        a: a,
+        f: f
+      };
       z.beacons.push(bk);
     }
   },
 
-  send_track: function() {
+  send_track: function () {
     var z = this;
     if (z.sr >= 'a') { // conf, send beacons
       var bk = z.beacons.shift();
       while (typeof bk != 'undefined') {
         bk.s1 = bk.s1.replace(/_sr=0*_/, '_sr=' + z.sr + '_');
-        z.log(' ' + bk.a.rr + ' ' + bk.a.unit_id +/* " "+pin.mode+ */' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
+        z.log(' ' + bk.a.rr + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
           z.scr(bk.s1, bk.a);
@@ -161,11 +164,11 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  scr: function(s1, a) {
+  scr: function (s1, a) {
     var st = document.createElement('script');
     st.async = true;
     st.type = 'text/javascript';
-    st.src = s1;// +"&ds1="+document.readyState;
+    st.src = s1; // +"&ds1="+document.readyState;
     if (a && a.dv0 != null) {
       a.dv0.appendChild(st);
     } else {
@@ -174,10 +177,10 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  tru: function(a, pin, f) {
+  tru: function (a, pin, f) {
     var s2 = '//ac.realvu.net/flip/2/c=' + pin.partner_id +
-    '_f=' + f + '_r=' + a.rr +
-    '_s=' + a.w + 'x' + a.h;
+      '_f=' + f + '_r=' + a.rr +
+      '_s=' + a.w + 'x' + a.h;
     if (a.p) s2 += '_p=' + a.p;
     s2 += '_ps=' + this.enc(a.unit_id) + // 08-Jun-15 - _p= is replaced with _ps= - p-number, ps-string
       // + '_n=' + a.num  03-Mar-15 - we ignore order number for collection
@@ -189,13 +192,13 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return s2.replace(/%/g, '!');
   },
 
-  enc: function(s1) {
+  enc: function (s1) {
     // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, "%2A").replace(/_/g, "%5F").replace(/\+/g,
     return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
       '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
 
-  findPosG: function(adi, wnd) {
+  findPosG: function (adi, wnd) {
     var t = this;
     var ad = adi;
     var xp = 0;
@@ -204,8 +207,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       while (ad != null && typeof (ad) != 'undefined') {
         if (ad.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
           var r = ad.getBoundingClientRect();
-          xp += r.left;// +sL;
-          yp += r.top;// +sT;
+          xp += r.left; // +sL;
+          yp += r.top; // +sT;
           if (wnd == window.top1) {
             xp += this.x1;
             yp += this.y1;
@@ -269,11 +272,14 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     } catch (e) {
       // if(window.top1.RealVu_test)window.top1.RealVu_log.write("FindPosG Exception: "+e.message+ " xp="+xp+" yp="+yp );
     }
-    var q = {'x': Math.round(xp), 'y': Math.round(yp)};
+    var q = {
+      'x': Math.round(xp),
+      'y': Math.round(yp)
+    };
     return q;
   },
 
-  poll: function() {
+  poll: function () {
     while (window.top1 && window.top1.boost_fifo && window.top1.boost_fifo.length > 0) {
       (window.top1.boost_fifo.shift())();
     }
@@ -339,7 +345,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         // 25-Mar-17, a.x<0||a.y<0 --> a.y<0
       }
       if (a.vz > vtr && z.foc) {
-        a.vt += dvz;// real dt counter in milliseconds, because of poll() can be called irregularly
+        a.vt += dvz; // real dt counter in milliseconds, because of poll() can be called irregularly
         a.vtu += dvz;
       }
       // now process every pin
@@ -353,7 +359,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
           // apply "near" rule for ad call only
           // a.r = z.frm ? "frame" : ((((a.vz > vtr)||near) && z.foc) ? "yes" : "no");
           a.r = (z.fr > 1) ? 'frame' : (((a.vz > vtr) && z.foc) ? 'yes' : 'no');
-          if (/* this.device=='mobile' && */ near && a.r == 'no') {
+          if ( /* this.device=='mobile' && */ near && a.r == 'no') {
             a.r = 'yes';
           }
           if (doMem) {
@@ -386,7 +392,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         if (pin.state > 2) {
           var tmin = (pin.mode == 'video') ? 2E3 : 1E3; // mrc min view time
           if (a.vz > vtr) {
-            pin.vt += dvz;// real dt counter in milliseconds, because of poll() can be called irregularly
+            pin.vt += dvz; // real dt counter in milliseconds, because of poll() can be called irregularly
             if (pin.state == 3 && pin.vt >= tmin) {
               pin.state = 4;
               z.track(a, pin, 'view');
@@ -401,7 +407,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
           }
         }
         if (pin.state >= 2 && pin.mode === 'tx2' &&
-                      ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu > pin.delay && a.rr === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
+          ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu > pin.delay && a.rr === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
           // flip or rotate
           pin.tx2n--;
           pin.state = 1;
@@ -441,7 +447,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return null;
   },
 
-  newf: function(a, w, h) {
+  newf: function (a, w, h) {
     var f = a.wnd.document.createElement('iframe');
     f.src = 'about:blank';
     f.width = w;
@@ -452,7 +458,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return f;
   },
 
-  doc: function(f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
+  doc: function (f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
     var d = null;
     try {
       if (f.contentDocument) d = f.contentDocument; // DOM
@@ -465,19 +471,24 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   },
 
   // add is a local function - place a div and define visibility
-  bind_obj: function(a, adobj) {
+  bind_obj: function (a, adobj) {
     a.div = adobj;
     a.target = null; // initially null, found ad when served
     a.unit_id = adobj.id; // placement id or name
     a.w = adobj.offsetWidth || 1; // width, min 1
     a.h = adobj.offsetHeight || 1; // height, min 1
   },
-  add: function(wnd1, p) { // p - realvu unit id
+  add: function (wnd1, p) { // p - realvu unit id
     var a = {
       num: this.len,
       x: 0,
       y: 0,
-      box: {x: 0, y: 0, h: 1, w: 1}, // measured ad box
+      box: {
+        x: 0,
+        y: 0,
+        h: 1,
+        w: 1
+      }, // measured ad box
       p: p,
       state: 0, // 0-init, (1-loaded,2-rendered,3-viewed)
       delay: 0, // delay in msec to show ad after gets in view
@@ -499,11 +510,18 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return a;
   },
 
-  fmt: function(a, pin) {
-    return {'realvu': a.r, 'area': a.vz, 'ncall': a.ncall, 'n': a.num, 'id': a.unit_id, 'pin': pin};
+  fmt: function (a, pin) {
+    return {
+      'realvu': a.r,
+      'area': a.vz,
+      'ncall': a.ncall,
+      'n': a.num,
+      'id': a.unit_id,
+      'pin': pin
+    };
   },
 
-  show: function(a, pin) {
+  show: function (a, pin) {
     a.rr = a.r; // now report r when ad call, and report the rr same value if view happen
     pin.state = 2; // 2-published
     pin.vt = 0; // reset view time counter
@@ -530,8 +548,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       var d1 = this.doc(a.frm);
       d1.open();
       d1.write('<!DOCTYPE html><html><head></head><body style="margin:0px;">' +
-     pin.content.replace(/{realvu}/, a.r) +
-     '</body></html>');
+        pin.content.replace(/{realvu}/, a.r) +
+        '</body></html>');
       d1.close();
     }
     this.track(a, pin, 'show');
@@ -541,8 +559,12 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   // one without callback - doWatch
   // one with callback - doBoost
   // we send to server a=watch or a=boost accordingly
-  check: function(p1) {
-    var pin = {dist: 150, state: 0, tx2n: 7}; // if dist is set trigger ad when distance < pin.dist
+  check: function (p1) {
+    var pin = {
+      dist: 150,
+      state: 0,
+      tx2n: 7
+    }; // if dist is set trigger ad when distance < pin.dist
     for (var attr in p1) {
       if (p1.hasOwnProperty(attr)) {
         if ((attr == 'ad_sizes') && (typeof (p1[attr]) == 'string')) {
@@ -566,7 +588,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       for (var i = 0; i < z.len; i++) {
         //         if (z.ads[i].div == adobj) { a = z.ads[i]; break; }
         if (z.ads[i].unit_id == pin.unit_id) {
-          a = z.ads[i]; break;
+          a = z.ads[i];
+          break;
         }
       }
       pin.wnd = pin.wnd || window;
@@ -607,11 +630,13 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       return a;
     } catch (e) {
       z.log(e.message, -1);
-      return {r: 'err'};
+      return {
+        r: 'err'
+      };
     }
   },
 
-  setSize: function(sa) {
+  setSize: function (sa) {
     var sb = sa;
     try {
       if (typeof (sa) == 'string') sb = sa.split('x'); // pin.size is a string WWWxHHH or array
@@ -634,23 +659,26 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       }
       var w1 = parseInt(sb[0]);
       var h1 = parseInt(sb[1]);
-      return {w: w1, h: h1};
+      return {
+        w: w1,
+        h: h1
+      };
     } catch (e) {
       /* continue regardless of error */
     }
     return null;
   },
-  exp: function(a) {
+  exp: function (a) {
     a.frx = a.frm; // "old" iframe - to be replaced
     a.frm = this.newf(a, a.w, 0);
     a.frm.style.display = 'block';
     a.div.insertBefore(a.frm, a.div.firstChild);
     this.trans(a.num, 5);
   },
-  trans: function(i, h) {
+  trans: function (i, h) {
     var a = window.top1.realvu_boost.ads[i];
     h += 5 + h / 5;
-    if (h > a.h)h = a.h;
+    if (h > a.h) h = a.h;
     a.frm.height = h;
     a.frx.height = a.h - h;
     if (h < a.h) setTimeout(window.top1.realvu_boost.trans(i, h), 20);
@@ -662,10 +690,15 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
   // API functions
-  addUnitsByClassName: function(partner_id, class_name, callback, delay) {
+  addUnitsByClassName: function (partner_id, class_name, callback, delay) {
     var p1 = partner_id;
     if (typeof (p1) == 'string') {
-      p1 = {partner_id: partner_id, class_name: class_name, callback: callback, delay: delay};
+      p1 = {
+        partner_id: partner_id,
+        class_name: class_name,
+        callback: callback,
+        delay: delay
+      };
     }
     var ads = document.getElementsByClassName(p1.class_name);
     window.top1.realvu_boost.log('N=' + ads.length, -1);
@@ -676,16 +709,21 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     this.poll();
   },
 
-  addUnitById: function(partner_id, unit_id, callback, delay) {
+  addUnitById: function (partner_id, unit_id, callback, delay) {
     var p1 = partner_id;
     if (typeof (p1) == 'string') {
-      p1 = {partner_id: partner_id, unit_id: unit_id, callback: callback, delay: delay};
+      p1 = {
+        partner_id: partner_id,
+        unit_id: unit_id,
+        callback: callback,
+        delay: delay
+      };
     }
     var a = window.top1.realvu_boost.check(p1);
     return a.r;
   },
 
-  addUnit: function(u) {
+  addUnit: function (u) {
     var tgt = u.unit ? u.unit : document.body; // if delivered inside iframe
     var z = window.top1.realvu_boost;
     if (tgt) {
@@ -697,7 +735,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  getViewStatusById: function(unit_id) {
+  getViewStatusById: function (unit_id) {
     for (var i = 0; i < this.ads.length; i++) {
       var adi = this.ads[i];
       if (adi.unit_id == unit_id) return adi.r; // this.fmt(a); // return a.r temporary - to sync with WN
@@ -705,7 +743,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return 'nr';
   },
 
-  getStatusById: function(unit_id) { // Jun 1, 2015 - return status object
+  getStatusById: function (unit_id) { // Jun 1, 2015 - return status object
     for (var i = 0; i < this.ads.length; i++) {
       var adi = this.ads[i];
       if (adi.unit_id == unit_id) return this.fmt(adi);
@@ -713,7 +751,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return null;
   },
 
-  log: function(m1, i) {
+  log: function (m1, i) {
     if (this.doLog) {
       this.msg.push({
         dt: new Date() - this.t0,
@@ -722,17 +760,17 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  keyPos: function(a) {
+  keyPos: function (a) {
     if (a.pins[0].unit_id) {
       var level = 'L' + (window.top1.location.pathname.match(/\//g) || []).length;
       return 'realvu.' + level + '.' + a.pins[0].unit_id.replace(/[0-9]{5,}/gi, 'RANDOM');
     }
   },
-  writePos: function(a) {
+  writePos: function (a) {
     var v = a.x + ',' + a.y + ',' + a.w + ',' + a.h;
     if (localStorage) localStorage.setItem(this.keyPos(a), v);
   },
-  readPos: function(a) {
+  readPos: function (a) {
     if (localStorage) {
       var s = localStorage.getItem(this.keyPos(a));
       if (s) {
@@ -741,64 +779,76 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         a.y = parseInt(v[1], 10);
         a.w = parseInt(v[2], 10);
         a.h = parseInt(v[3], 10);
-        a.box = {x: a.x, y: a.y, w: a.w, h: a.h};
+        a.box = {
+          x: a.x,
+          y: a.y,
+          w: a.w,
+          h: a.h
+        };
         return true;
       }
     }
     return false;
   },
 
-  keyMem: function(num) {
+  keyMem: function (num) {
     return this.keyPos(this.ads[num]) + '.score';
   },
 
-  incrMem: function(num, v) {
+  incrMem: function (num, v) {
     var k1 = this.keyMem(num);
     var n = parseInt(this.getMem(k1), 10);
     if (isNaN(n)) {
       n = 0x57F57; // initial score 75, 20 bits, step 5
     }
-    if (v == 'r')n = n << 1;
-    if (v == 'v')n |= 1;
+    if (v == 'r') n = n << 1;
+    if (v == 'v') n |= 1;
     n &= 0xFFFFF;
     this.updateMem(k1, n);
   },
 
-  score: function(num) {
+  score: function (num) {
     var k1 = this.keyMem(num);
     var r = parseInt(this.getMem(k1));
-    if (isNaN(r))r = 0x57F57;
+    if (isNaN(r)) r = 0x57F57;
     var s = 0;
     for (r &= 0x3FF; r > 0; r >>>= 1) {
-      if (r & 0x1)s++;
+      if (r & 0x1) s++;
     }
     return s * 100.0 / 10;
   },
-  getMem: function(key) {
+  getMem: function (key) {
     return localStorage.getItem(key);
   },
-  updateMem: function(key, value) {
+  updateMem: function (key, value) {
     localStorage.setItem(key, value);
   }
 };
 
 if (typeof (window.top1.boost_poll) == 'undefined') {
   window.top1.realvu_boost.init();
-  window.top1.boost_poll = setInterval(function() {
+  window.top1.boost_poll = setInterval(function () {
     window.top1 && window.top1.realvu_boost && window.top1.realvu_boost.poll();
   }, 20);
 }
 
-var options = { };
+var options = {};
+
+realvuAnalyticsAdapter.getOptions = function () {
+  return options;
+}
 
 realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
   options = config.options;
-  realvuAnalyticsAdapter.originEnableAnalytics(config);
+  // realvuAnalyticsAdapter.originEnableAnalytics(config);
 };
 
-realvuAnalyticsAdapter.track = function ({eventType, args}) {
+realvuAnalyticsAdapter.track = function ({
+  eventType,
+  args
+}) {
   var msg = document.getElementById('msg_an');
   if (msg) {
     msg.innerHTML += 'track: eventType=' + eventType + ', args=' + JSON.stringify(args) + '<br>';
@@ -820,7 +870,11 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
         if (b) {
           // register the unit in realvu_boost
           var sizes = hb.adUnits[i].sizes;
-          var ui = {partner_id: options.partnerId, unit_id: code, size: sizes};
+          var ui = {
+            partner_id: options.partnerId,
+            unit_id: code,
+            size: sizes
+          };
           window.top1.realvu_boost.check(ui);
         }
       }
@@ -829,7 +883,11 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
 };
 
 realvuAnalyticsAdapter.checkIn = function (placementCode, sizes, partnerId) {
-  return top1.realvu_boost.addUnitById({unit_id: placementCode, size: sizes, partner_id: partnerId});
+  return top1.realvu_boost.addUnitById({
+    unit_id: placementCode,
+    size: sizes,
+    partner_id: partnerId
+  });
 };
 
 realvuAnalyticsAdapter.isInView = function (placementCode) {
