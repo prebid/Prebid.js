@@ -105,7 +105,6 @@ let getDevice = function () {
     h: screen.height,
     w: screen.width,
     dnt: _getDNT() ? 1 : 0,
-    geo: _getLocation(),
     language: navigator[language].split('-')[0],
     make: navigator.vendor ? navigator.vendor : '',
     ua: navigator.userAgent,
@@ -115,20 +114,6 @@ let getDevice = function () {
 
 let _getDNT = function () {
   return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
-};
-
-let _getLocation = function () {
-  if (navigator.geolocation) {
-    return navigator.geolocation.getCurrentPosition(_addLatLong);
-  }
-  return null;
-};
-
-let _addLatLong = function (position) {
-  return {
-    lat: position.coords.latitude,
-    long: position.coords.longitude
-  }
 };
 
 let getSize = function (sizes) {
