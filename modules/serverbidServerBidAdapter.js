@@ -1,7 +1,6 @@
 import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 import { STATUS, S2S } from 'src/constants';
 import { config } from 'src/config';
@@ -61,11 +60,6 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
   sizeMap[123] = '970x250';
   sizeMap[43] = '300x600';
 
-  function getLocalConfig() {
-    return (_s2sConfig || {});
-  }
-
-  let _s2sConfig;
   function setS2sConfig(options) {
     let contains = (xs, x) => xs.indexOf(x) > -1;
     let userConfig = Object.keys(options);
@@ -73,13 +67,17 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
     REQUIRED_S2S_CONFIG_KEYS.forEach(key => {
       if (!contains(userConfig, key)) {
         utils.logError(key + ' missing in server to server config');
-        return;
+        return void 0; // void 0 to beat the linter
       }
     })
 
     _s2sConfig = options;
   }
   getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
+
+  function getLocalConfig() {
+    return (_s2sConfig || {});
+  }
 
   function _convertFields(bid) {
     let safeBid = bid || {};
@@ -108,7 +106,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
     // one request per ad unit
     for (let i = 0; i < bidRequest.ad_units.length; i++) {
       let adunit = bidRequest.ad_units[i];
-      let siteId = getLocalConfig().siteId;
+      let siteId = _s2sConfig.siteId;
       let networkId = getLocalConfig().networkId;
       let sizes = adunit.sizes;
 
@@ -130,7 +128,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         const bid = bids[i];
         bid.code = adunit.code;
 
-        const placement = Object.assign({},{
+        const placement = Object.assign({}, {
           divName: bid.bid_id,
           networkId: networkId,
           siteId: siteId,
@@ -143,7 +141,6 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
           data.placements.push(placement);
         }
       }
-
       if (data.placements.length) {
         ajax(BASE_URI, _responseCallback(addBidResponse, bids), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
       }
@@ -199,6 +196,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         }
         addBidResponse(placementCode, bid);
       }
+      done()
     }
   };
 

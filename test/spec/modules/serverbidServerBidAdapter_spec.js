@@ -295,6 +295,5 @@ describe('ServerBid S2S Adapter', () => {
       expect(addBidResponse.secondCall.args[1])
         .to.have.property('statusMessage', 'Bid returned empty or error response');
     });
-
   });
 });
