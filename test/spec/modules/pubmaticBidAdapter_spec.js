@@ -15,15 +15,15 @@ describe('PubMatic adapter', () => {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
           kadfloor: '1.2',
-		  pmzoneid: 'aabc, ddef',
-		  kadpageurl: 'www.publisher.com',
-		  yob: '1986',
-		  gender: 'M',
-		  lat: '12.3',
-		  lon: '23.7',
-		  wiid: '1234567890',
-		  profId: '100',
-		  verId: '200'
+    		  pmzoneid: 'aabc, ddef',
+    		  kadpageurl: 'www.publisher.com',
+    		  yob: '1986',
+    		  gender: 'M',
+    		  lat: '12.3',
+    		  lon: '23.7',
+    		  wiid: '1234567890',
+    		  profId: '100',
+    		  verId: '200'
         },
         placementCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
@@ -78,13 +78,13 @@ describe('PubMatic adapter', () => {
 
       it('invalid bid case: publisherId is not string', () => {
         let validBid = {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: 301,
-            adSlot: '/15671365/DMDemo@300x250:0'
-          }
-        },
-        isValid = spec.isBidRequestValid(validBid);
+            bidder: 'pubmatic',
+            params: {
+              publisherId: 301,
+              adSlot: '/15671365/DMDemo@300x250:0'
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
 
@@ -97,17 +97,17 @@ describe('PubMatic adapter', () => {
 	      },
 	      isValid = spec.isBidRequestValid(validBid);
 	      expect(isValid).to.equal(false);
-    	});    	
+    	});
 
       it('invalid bid case: adSlot is not string', () => {
         let validBid = {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: 15671365
-          }
-        },
-        isValid = spec.isBidRequestValid(validBid);
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: 15671365
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
     });
@@ -115,8 +115,8 @@ describe('PubMatic adapter', () => {
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
-          expect(request.url).to.equal('//openbid.pubmatic.com/translator?source=prebid-client');
-          expect(request.method).to.equal('POST');
+        expect(request.url).to.equal('//openbid.pubmatic.com/translator?source=prebid-client');
+        expect(request.method).to.equal('POST');
   		});
 
   		it('Request params check', () => {
@@ -127,10 +127,12 @@ describe('PubMatic adapter', () => {
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
   		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-  		  expect(data.user.yob).to.equal(bidRequests[0].params.yob); // YOB
+  		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.user.lat).to.equal(bidRequests[0].params.lat); // Latitude
-  		  expect(data.user.lon).to.equal(bidRequests[0].params.lon); // Lognitude
+  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID

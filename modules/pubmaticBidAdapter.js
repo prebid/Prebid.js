@@ -38,6 +38,12 @@ function _parseSlotParam(paramName, paramValue) {
       return paramValue.split(',').slice(0, 50).join();
     case 'kadfloor':
       return parseFloat(paramValue) || UNDEFINED;
+    case 'lat':
+      return parseFloat(paramValue) || UNDEFINED;
+    case 'lon':
+      return parseFloat(paramValue) || UNDEFINED;
+    case 'yob':
+      return parseInt(paramValue) || UNDEFINED;
     default:
       return paramValue;
   }
@@ -221,9 +227,13 @@ export const spec = {
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
-    payload.user.lat = conf.lat || UNDEFINED;
-    payload.user.lon = conf.lon || UNDEFINED;
-    payload.user.yob = conf.yob || UNDEFINED;
+    payload.user.geo = {};
+    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.user.yob = _parseSlotParam('yob', conf.yob);
+    payload.device.geo = {};
+    payload.device.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.device.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = _getDomainFromURL(payload.site.page);
     return {
