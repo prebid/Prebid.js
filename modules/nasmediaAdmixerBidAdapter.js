@@ -1,7 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
-// const ADMIXER_ENDPOINT = '//adn2.admixer.co.kr:25846/prebid';
 const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid';
 const DEFAULT_BID_TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
@@ -10,15 +9,13 @@ const DEFAULT_REVENUE = false;
 export const spec = {
   code: 'nasmediaAdmixer',
 
-  aliases: ['nasmedia_admixer'],
-
   isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.ax_key);
   },
 
   buildRequests: function (validBidRequests) {
     return validBidRequests.map(bid => {
-      let adSizes = getSize(bid.sizes);
+      let adSize = getSize(bid.sizes);
 
       return {
         method: 'GET',
@@ -26,8 +23,8 @@ export const spec = {
         data: {
           ax_key: utils.getBidIdParameter('ax_key', bid.params),
           req_id: bid.bidId,
-          width: adSizes[0],
-          height: adSizes[1],
+          width: adSize.width,
+          height: adSize.height,
           referrer: utils.getTopWindowUrl(),
           os: getOsType()
         }
@@ -50,13 +47,11 @@ export const spec = {
         width: bidData.width,
         height: bidData.height,
         currency: bidData.currency ? bidData.currency : DEFAULT_CURRENCY,
-        netRevenue: bidData.revenue ? bidData.revenue : DEFAULT_REVENUE,
-        ttl: bidData.ttl ? bidData.ttl : DEFAULT_BID_TTL
+        netRevenue: DEFAULT_REVENUE,
+        ttl: DEFAULT_BID_TTL
       };
 
       bidResponses.push(bidResponse);
-    } else {
-      utils.logWarn('nasmediaAdmixer Error' + serverBody.error_msg, 'nasmediaAdmixer')
     }
     return bidResponses;
   }
@@ -64,32 +59,23 @@ export const spec = {
 
 function getOsType() {
   let ua = navigator.userAgent.toLowerCase();
+  let os = ['android', 'ios', 'mac', 'linux', 'window', 'etc'];
+  let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i, ''];
 
-  if (ua.match(/android/i)) {
-    return 'android';
-  } else if (ua.match(/iphone/i) || ua.match(/ipad/i)) {
-    return 'ios';
-  } else if (ua.match(/mac/i)) {
-    return 'mac';
-  } else if (ua.match(/linux/i)) {
-    return 'linux';
-  } else if (ua.match(/window/i)) {
-    return 'window';
-  } else {
-    return 'etc';
-  }
+  return regexp_os.some((tos, idx) => {
+    if (ua.match(tos)) {
+      return os[idx];
+    }
+  });
 }
 
 function getSize(sizes) {
-  let width = 0;
-  let height = 0;
-  if (sizes.length === 2 && typeof sizes[0] === 'number' && typeof sizes[1] === 'number') {
-    width = sizes[0];
-    height = sizes[1];
-  } else {
-    width = sizes[0][0];
-    height = sizes[0][1];
-  }
-  return [width, height];
+  let parsedSizes = utils.parseSizesInput(sizes);
+  let [width, height] = parsedSizes.length ? parsedSizes[0].split('x') : [];
+
+  return {
+    width: parseInt(width, 10),
+    height: parseInt(height, 10)
+  };
 }
 registerBidder(spec);

@@ -18,7 +18,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
         'ax_key': 'ax_key'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[320, 480]],
+      'sizes': [[300, 250]],
       'bidId': '3361d01e67dbd6',
       'bidderRequestId': '2b60dcd392628a',
       'auctionId': '124cb070528662',
@@ -46,7 +46,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
           'ax_key': 'ajj7jba3'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[320, 480]],
+        'sizes': [[300, 250]],
         'bidId': '3361d01e67dbd6',
         'bidderRequestId': '2b60dcd392628a',
         'auctionId': '124cb070528662',
@@ -56,7 +56,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     it('sends bid request to url via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`https://adn.admixer.co.kr:10443/prebid`));
+      expect(request.url).to.match(new RegExp(`https://adn.admixer.co.kr`));
     });
   });
 
@@ -69,8 +69,8 @@ describe('nasmediaAdmixerBidAdapter', () => {
         'error_msg': 'OK',
         'body': [{
           'ad_id': '20049',
-          'width': 320,
-          'height': 480,
+          'width': 300,
+          'height': 250,
           'currency': 'USD',
           'cpm': 1.769221,
           'ad': '<!-- Creative -->'
@@ -88,7 +88,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
         'ax_key': 'ajj7jba3',
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[320, 480], [300, 250]],
+      'sizes': [[300, 250], [320, 480]],
       'bidId': '31300c8b9697cd',
       'bidderRequestId': '2bf570adcf83fa',
       'auctionId': '169827a33f03cc',
@@ -100,8 +100,8 @@ describe('nasmediaAdmixerBidAdapter', () => {
           'requestId': '861a8e7952c82c',
           'cpm': 1.769221,
           'currency': 'USD',
-          'width': 320,
-          'height': 480,
+          'width': 300,
+          'height': 250,
           'ad': '<!-- Creative -->',
           'creativeId': '20049',
           'ttl': 360,
