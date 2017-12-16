@@ -150,7 +150,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
-  adUnits = isValidBidRequest(adUnits);
+  adUnits = exports.checkBidRequestSizes(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -214,59 +214,48 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   return bidRequests;
 };
 
-function isValidBidRequest(adUnits) {
-  adUnits.forEach(adUnit => {
+exports.checkBidRequestSizes = (adUnits) => {
+  Array.prototype.forEach.call(adUnits, adUnit => {
     if (adUnit.sizes) {
       utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
     }
 
-    if (adUnit.mediaTypes) {
-      if (adUnit.mediaTypes.banner) {
-        if (adUnit.mediaTypes.banner.sizes) {
-          adUnit.sizes = adUnit.mediaTypes.banner.sizes;
+    const mediaTypes = adUnit.mediaTypes;
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        adUnit.sizes = banner.sizes;
+      } else {
+        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && Number.isInteger(video.playerSize[0]) && Number.isInteger(video.playerSize[1])) {
+          adUnit.sizes = video.playerSize;
         } else {
-          utils.logError('Detected an adUnits.mediaTypes.banner object did not include sizes.  Removing adUnits.mediaTypes.banner object from bid request');
-          delete adUnit.mediaTypes.banner;
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
+          delete adUnit.mediaTypes.video.playerSize;
         }
       }
+    }
 
-      if (adUnit.mediaTypes.video) {
-        if (adUnit.mediaTypes.video.playerSize) {
-          if (
-            Array.isArray(adUnit.mediaTypes.video.playerSize) &&
-            adUnit.mediaTypes.video.playerSize.length === 2 &&
-            !isNaN(adUnit.mediaTypes.video.playerSize[0])) {
-            adUnit.sizes = adUnit.mediaTypes.video.playerSize;
-          } else {
-            utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]');
-            delete adUnit.mediaTypes.video;
-          }
-        }
+    if (mediaTypes && mediaTypes.native) {
+      const native = mediaTypes.native;
+      if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        delete adUnit.mediaTypes.native.image.sizes;
       }
-
-      if (adUnit.mediaTypes.native) {
-        if (adUnit.mediaTypes.native.image) {
-          if (adUnit.mediaTypes.native.image.sizes) {
-            if (!Array.isArray(adUnit.mediaTypes.native.image.sizes)) {
-              utils.logWarn('Please use an array of sizes for native.image.sizes field.');
-              delete adUnit.mediaTypes.native.image;
-            }
-          }
-          if (adUnit.mediaTypes.native.image.aspect_ratios) {
-            if (!Array.isArray(adUnit.mediaTypes.native.image.aspect_ratios)) {
-              utils.logWarn('Please use an array of sizes for native.image.aspect_ratios field.');
-              delete adUnit.mediaTypes.native.image;
-            }
-          }
-        }
-        if (adUnit.mediaTypes.native.icon) {
-          if (adUnit.mediaTypes.native.icon.sizes) {
-            if (!Array.isArray(adUnit.mediaTypes.native.image.sizes)) {
-              utils.logError('Please use an array of sizes for native.icon.sizes field.');
-              delete adUnit.mediaTypes.native.icon;
-            }
-          }
-        }
+      if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        delete adUnit.mediaTypes.native.image.aspect_ratios;
+      }
+      if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        delete adUnit.mediaTypes.native.icon.sizes;
       }
     }
   });
