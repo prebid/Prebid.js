@@ -51,7 +51,8 @@
     "hb_adid",
     "hb_pb",
     "hb_size",
-    "hb_deal"
+    "hb_deal",
+    "hb_source"
   ],
   "S2S" : {
     "SRC" : "s2s",
