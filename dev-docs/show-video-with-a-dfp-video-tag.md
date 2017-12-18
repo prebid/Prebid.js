@@ -92,16 +92,10 @@ In the example below, our callback builds the video URL the player needs using t
 
 For more information, see the API documentation for [pbjs.adServers.dfp.buildVideoUrl]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.adServers.dfp.buildVideoUrl).  Understanding the arguments to this method is *especially* important if you plan to pass any custom parameters to DFP.  The `params` key in the argument to `buildVideoUrl` supports all parameters from the [DFP API](https://support.google.com/dfp_premium/answer/1068325?hl=en).
 
-{: .alert.alert-warning :}
-**Prebid Cache must be enabled**  
-You must enable Prebid Cache as shown below in order for the DFP Ad Server Video module's call to `buildVideoUrl` to work.
-
 ```javascript
 pbjs.que.push(function() {
     pbjs.addAdUnits(videoAdUnit);
 
-    /* Required for the DFP video URL to be built correctly in the
-    `bidsBackHandler` */
     pbjs.setConfig({
         usePrebidCache: true
     });
@@ -119,6 +113,16 @@ pbjs.que.push(function() {
     });
 });
 ```
+
+#### Notes on Prebid Cache
+
+You can show video ads even if Prebid Cache is disabled.  However, there are some conditions:
+
++ In general, video-enabled bidders must supply either `bid.vastUrl` or `bid.vastXml` on their responses, and they may supply both.
++ If you have Prebid Cache disabled, and the bidder supplies only `bid.vastXml` in its bid response, [`pbjs.adServers.dfp.buildVideoUrl`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.adServers.dfp.buildVideoUrl) will not be able to generate a video ad tag URL from that response, and it will be dropped from the auction.
++ If `options.url` is passed as an argument to [`pbjs.adServers.dfp.buildVideoUrl`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.adServers.dfp.buildVideoUrl):
+    + If Prebid Cache is enabled, Prebid does not set the `description_url` field to the bid response's `bid.vastUrl`. It just attaches the bid's ad server targeting and builds the URL based on user input.
+    + If Prebid Cache is disabled, Prebid sets the `description_url` field to the bid response's `bid.vastUrl`.
 
 ### 4. Invoke video player on Prebid video URL
 
