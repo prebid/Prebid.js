@@ -97,7 +97,10 @@ pbjs.que.push(function() {
     pbjs.addAdUnits(videoAdUnit);
 
     pbjs.setConfig({
-        usePrebidCache: true
+        /* Or whatever your preferred video cache URL is */
+        cache: {
+            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
     });
 
     pbjs.requestBids({
