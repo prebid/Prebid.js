@@ -845,3 +845,24 @@ export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
     ${plural} won't fetch demand.
   `;
 }
+
+/**
+ * Delete property from object
+ * @param {Object} object 
+ * @param {string} prop
+ * @return {Object} object
+ */
+export function deletePropertyFromObject(object, prop) {
+  let result = Object.assign({}, object)
+  delete result[prop];
+  return result
+}
+
+/**
+ * Delete requestId from external bid object.
+ * @param {Object} bid
+ * @return {Object} bid
+ */
+export function removeRequestId(bid) {
+  return exports.deletePropertyFromObject(bid, 'requestId');
+}
