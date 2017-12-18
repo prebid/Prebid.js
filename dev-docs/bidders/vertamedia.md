@@ -13,7 +13,8 @@ prebid_1_0_supported : true
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name | Scope | Description | Example |
-|:-----------|:---------|:------------|:-----------------|
-| `aid` | required | | |
-| `placementId` | required | | |
+
+
+| Name | Scope    | Description        | Example  |
+| :--- | :----    | :----------        | :------  |
+| `aid`| required |                    |          |
