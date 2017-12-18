@@ -212,6 +212,24 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(valueTest1).to.equal('test1Value');
   });
 
+  it('test boost writePos/readPos', () => {
+    var boost = window.top1.realvu_boost;
+    var a = {
+      pins: [{
+        unit_id: 'ad1',
+        score: 10
+      }],
+      x: 150,
+      y: 275,
+      w: 300,
+      h: 250
+    };
+    boost.writePos(a);
+    var torf = boost.readPos(a);
+    expect(torf).to.equal(true);
+  });
+
+  /*
   it('test boost incrMem', () => {
     var boost = window.top1.realvu_boost;
     boost.ads = [{
@@ -229,7 +247,7 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(boost.ads[1].score).to.equal((boost.ads[0].score |= 1) & 0xFFFFF);
   });
 
-  /*
+
   it('test boost brd', () => {
     var ad_div = document.createElement('div');
     ad_div.id = 'ad1';
