@@ -217,7 +217,9 @@ describe('RealVu Analytics Adapter Test.', () => {
     var a = {
       pins: [{
         unit_id: 'ad1',
-        score: 10
+        score: 10,
+        state: 1,
+        mode: 'tx2'
       }],
       x: 150,
       y: 275,
@@ -229,6 +231,58 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(torf).to.equal(true);
   });
 
+  it('test boost questA param is null', () => {
+    var boost = window.top1.realvu_boost;
+    var rtn = boost.questA(null);
+    expect(rtn).to.equal(null);
+  });
+
+  it('test boost doc exception', () => {
+    var boost = window.top1.realvu_boost;
+    var rtn = boost.doc(null);
+    expect(rtn).to.equal(null);
+  });
+
+  it('test boost setSize', () => {
+    var boost = window.top1.realvu_boost;
+    var a = [320, 50];
+    var b = [970, 90];
+    var c = [
+      [320, 50]
+    ];
+    var d = [
+      [970, 90]
+    ];
+    var rtn = boost.setSize(a);
+    expect(rtn.w).to.equal(320);
+    expect(rtn.h).to.equal(50);
+    rtn = boost.setSize(b);
+    expect(rtn.w).to.equal(970);
+    expect(rtn.h).to.equal(90);
+    rtn = boost.setSize('300x250');
+    expect(rtn.w).to.equal(300);
+    expect(rtn.h).to.equal(250);
+    rtn = boost.setSize(c);
+    expect(rtn.w).to.equal(320);
+    expect(rtn.h).to.equal(50);
+    rtn = boost.setSize(d);
+    expect(rtn.w).to.equal(970);
+    expect(rtn.h).to.equal(90);
+    rtn = boost.setSize(null);
+    expect(rtn).to.equal(null);
+  });
+
+  it('test boost brd', () => {
+    var ad_div = document.createElement('div');
+    ad_div.id = 'ad1';
+    document.body.appendChild(ad_div);
+    var boost = window.top1.realvu_boost;
+    var s = ad_div;
+    var p = 'Left';
+    var f = boost.brd(s, p);
+    expect(f).to.be.greaterThan(-1);
+    document.body.removeChild(ad_div);
+  });
   /*
   it('test boost incrMem', () => {
     var boost = window.top1.realvu_boost;
@@ -247,18 +301,6 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(boost.ads[1].score).to.equal((boost.ads[0].score |= 1) & 0xFFFFF);
   });
 
-
-  it('test boost brd', () => {
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var boost = window.top1.realvu_boost;
-    var s = ad_div;
-    var p = 'Left';
-    var f = boost.brd(s, p);
-    expect(f).to.be.greaterThan(-1);
-    document.body.removeChild(ad_div);
-  });
   */
   /*
   it('test track regAllUnits', () => {
