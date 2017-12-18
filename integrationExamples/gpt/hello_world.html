@@ -41,11 +41,11 @@
 		}
 	  
 		var passbacks = {
-			"hb-rectangle": "",
-			"hb-leaderboard": "",
+			// "hb-rectangle": "",
+			// "hb-leaderboard": "",
 			"hb-inarticle": "",
 			"hb-mob1": "",
-			"hb-mob2": ""
+			// "hb-mob2": ""
 		};
 	  
 		var useSSL = 'https:' == document.location.protocol;
@@ -62,104 +62,49 @@
 			code: 'hb-inarticle',
 			sizes: [[300, 250]],
 			bids: [
-				{ bidder: 'pulsepointLite', params: { cf: '300X250', cp: 561265, ct: 590114 } },
-				{ bidder: "brealtime", params: { placementId: "11487527" } },
-				{ bidder: "sovrn", params: { tagid: "488122", sizes: [300, 250] } },
-				{ bidder: 'districtmDMX', params: { id: 160239 } },
-				{ bidder: "springserve", params: { placementId: "11601317" } },
-				{ bidder: 'smartadserver', params: { domain: 'https://prg.smartadserver.com', siteId: '165417', pageId: '829663', formatId:'57916' } },
-				{ bidder: "criteo", params: { zoneId: "812302" } },
 				{ bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } }
 			]
 		};
 
-		var rectangle1 = {
-			code: 'hb-rectangle',
-			sizes: [[300, 250], [300, 600], [300, 400]],
-			bids: [
-				{ bidder: 'pulsepointLite', params: { cf: '300X250', cp: 561265, ct: 584223 } },
-				{ bidder: 'pulsepointLite', params: { cf: '300X600', cp: 561265, ct: 588174 } },
-				{ bidder: "brealtime", params: { placementId: "11487524" } },
-				{ bidder: "brealtime", params: { placementId: "11487530" } },
-				{ bidder: "sovrn", params: { tagid: "486079", sizes: [300, 250] } },
-				{ bidder: 'districtmDMX', params: { id: 160240 } },
-				{ bidder: 'districtmDMX', params: { id: 160237 } },
-				{ bidder: "springserve", params: {  placementId: "11601313" }  },
-				{ bidder: "springserve", params: { placementId: "11601323" } },
-				{ bidder: 'smartadserver', params: { domain: 'https://prg.smartadserver.com', siteId: '165417', pageId: '829663', formatId:'57916' } },
-				{ bidder: "criteo", params: { zoneId: "812300" } },
-				{ bidder: "criteo", params: { zoneId: "812306" } },
-				{ bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } }
-			]
-		};
+		<!-- var rectangle1 = { -->
+			<!-- code: 'hb-rectangle', -->
+			<!-- sizes: [[300, 250], [300, 600], [300, 400]], -->
+			<!-- bids: [ -->
+				<!-- { bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } } -->
+			<!-- ] -->
+		<!-- }; -->
 
-		var leaderboard = {
-			code: 'hb-leaderboard',
-			sizes: [[728, 90], [980, 200], [980, 150], [970, 90], [970, 250]],
-			bids: [
-				{ bidder: 'pulsepointLite', params: { cf: '728X90', cp: 561265, ct: 588175 } },
-				{ bidder: 'pulsepointLite', params: { cf: '970X90', cp: 561265, ct: 588176 } },
-				{ bidder: "brealtime", params: { placementId: "11487489" } },
-				{ bidder: "sovrn", params: { tagid: "486653", sizes: [728, 90] } },
-				{ bidder: 'districtmDMX', params: { id: 160236 } },
-				{ bidder: "springserve", params: { placementId: "11601311" } },
-				{ bidder: 'smartadserver', params: { domain: 'https://prg.smartadserver.com', siteId: '165417', pageId: '829663', formatId:'57917' } },
-				{ bidder: "criteo", params: { zoneId: "812286" } },
-				{ bidder: "gjirafa", params: { placementId: '71-3' } }
-			]
-		};
+		<!-- var leaderboard = { -->
+			<!-- code: 'hb-leaderboard', -->
+			<!-- sizes: [[728, 90], [980, 200], [980, 150], [970, 90], [970, 250]], -->
+			<!-- bids: [ -->
+				<!-- { bidder: "gjirafa", params: { placementId: '71-3' } } -->
+			<!-- ] -->
+		<!-- }; -->
 
 		var mob1 = {
 			code: 'hb-mob1',
 			sizes: [[320, 50], [300, 100], [300, 70], [300, 50], [300, 250]],
 			bids: [
-				{ bidder: "brealtime", params: { placementId: "11487548" } },
-				{ bidder: 'pulsepointLite', params: { cf: '320X50', cp: 561265, ct: 594703 } },
-				{ bidder: "sovrn", params: { tagid: "494632", sizes: [300, 250] } },
-				{ bidder: 'districtmDMX', params: { id: 160242 } },
-				{ bidder: "springserve", params: { placementId: "11601325" } },
-				{ bidder: 'smartadserver', params: { domain: 'https://prg.smartadserver.com', siteId: '165417', pageId: '829663', formatId:'57918' } },
-				{ bidder: "criteo", params: { zoneId: "812318" } },
 				{ bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } }
 			]
 		};
 
-		var mob2 = {
-			code: 'hb-mob2',
-			sizes: [[320, 50], [300, 100], [300, 70], [300, 50], [300, 250]],
-			bids: [
-				{ bidder: "brealtime", params: { placementId: "11487544" } },
-				{ bidder: 'pulsepointLite', params: { cf: '300X250', cp: 561265, ct: 589420 } },
-				{ bidder: 'pulsepointLite', params: { cf: '320X50', cp: 561265, ct: 589422 } },
-				{ bidder: "sovrn", params: { tagid: "486893", sizes: [300, 250] } },
-				{ bidder: "sovrn", params: { tagid: "488144", sizes: [320, 50] } },
-				{ bidder: 'districtmDMX', params: { id: 160241 } },
-				{ bidder: "springserve", params: { placementId: "11601324" } },
-				{ bidder: 'smartadserver', params: { domain: 'https://prg.smartadserver.com', siteId: '165417', pageId: '829663', formatId:'57916' } },
-				{ bidder: "criteo", params: { zoneId: "812303" } },
-				{ bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } }
-			]
-		};
+		<!-- var mob2 = { -->
+			<!-- code: 'hb-mob2', -->
+			<!-- sizes: [[320, 50], [300, 100], [300, 70], [300, 50], [300, 250]], -->
+			<!-- bids: [ -->
+				<!-- { bidder: "gjirafa", params: { minCPM: 0.0001, minCPC: 0.001, explicit: true } } -->
+			<!-- ] -->
+		<!-- }; -->
 	  
 	  var adUnits = [];
 	  var loadedAdUnits = [];
 	  if(!isMobile()){
-		adUnits.push(inarticle, rectangle1, leaderboard);
+		adUnits.push(inarticle);//, rectangle1, leaderboard);
 	  } else {
-		adUnits.push(mob1, mob2);
+		adUnits.push(mob1);//, mob2);
 	  }
-	  
-      //var adUnits = [{
-      //  code: 'div-gpt-ad-1460505748561-0',
-      //  sizes: [[170, 600], [300,600]],
-      //  // Replace this object to test a new Adapter!
-      //  bids: [{
-      //    bidder: 'gjirafa',
-      //    params: {
-      //      // placementId: '10433394'
-      //    }
-      //  }]
-      //}];
 	  
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
@@ -202,11 +147,6 @@
 
     <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
     <script>
-      //var googletag = googletag || {};
-      //googletag.cmd = googletag.cmd || [];
-      //googletag.cmd.push(function() {
-      //  googletag.pubads().disableInitialLoad();
-      //});
       pbjs.que.push(function() {
         pbjs.addAdUnits(adUnits);
 		//pbjs.setBidderSequence('random');
@@ -220,12 +160,6 @@
       function sendAdserverRequest() {
         if (pbjs.adserverRequestSent) return;
         pbjs.adserverRequestSent = true;
-        //googletag.cmd.push(function() {
-        //  pbjs.que.push(function() {
-        //    pbjs.setTargetingForGPTAsync();
-        //    googletag.pubads().refresh();
-        //  });
-        //});
       }
       setTimeout(function() {
         sendAdserverRequest();
@@ -244,47 +178,21 @@
         node.parentNode.insertBefore(gads, node);
       })();
     </script>
-
-    <script>
-      //googletag.cmd.push(function () {
-      //  googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'hb-inarticle').addService(googletag.pubads());
-      //  googletag.defineSlot('/19968337/header-bid-tag-1', [[300, 250], [300, 600]], 'hb-rectangle').addService(googletag.pubads());
-      //  googletag.defineSlot('/19968338/header-bid-tag-2', [[728, 90], [300, 600]], 'hb-leaderboard').addService(googletag.pubads());
-      //  googletag.defineSlot('/19968339/header-bid-tag-3', [[300, 250], [300, 600]], 'hb-mob1').addService(googletag.pubads());
-      //  googletag.defineSlot('/19968335/header-bid-tag-4', [[300, 250], [300, 600]], 'hb-mob2').addService(googletag.pubads());
-      //  googletag.pubads().enableSingleRequest();
-      //  googletag.enableServices();
-      //});
-    </script>
 </head>
 
 <body>
 <h2>Prebid.js Test</h2>
 <h5>Div-1</h5>
+
 <iframe id='hb-inarticle' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;">
-    <script type='text/javascript'>
-      //googletag.cmd.push(function() { googletag.display('hb-inarticle'); });
-    </script>
 </iframe>
-<iframe id='hb-rectangle' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;">
-    <script type='text/javascript'>
-      //googletag.cmd.push(function() { googletag.display('hb-rectangle'); });
-    </script>
-</iframe>
-<iframe id='hb-leaderboard' width="728" height="90" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;">
-    <script type='text/javascript'>
-      //googletag.cmd.push(function() { googletag.display('hb-leaderboard'); });
-    </script>
-</iframe>
+<!-- <iframe id='hb-rectangle' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;"> -->
+<!-- </iframe> -->
+<!-- <iframe id='hb-leaderboard' width="728" height="90" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;"> -->
+<!-- </iframe> -->
 <iframe id='hb-mob1' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;">
-    <script type='text/javascript'>
-      //googletag.cmd.push(function() { googletag.display('hb-mob1'); });
-    </script>
 </iframe>
-<iframe id='hb-mob2' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;">
-    <script type='text/javascript'>
-      //googletag.cmd.push(function() { googletag.display('hb-mob2'); });
-    </script>
-</iframe>
+<!-- <iframe id='hb-mob2' width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" srcdoc="" style="border: 0px; vertical-align: bottom;"> -->
+<!-- </iframe> -->
 </body>
 </html>
