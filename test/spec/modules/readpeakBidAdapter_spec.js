@@ -21,7 +21,6 @@ describe('ReadPeakAdapter', () => {
         bidfloor: 5.00,
         publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
       },
-      auctionId: '1d1a030790a475',
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
