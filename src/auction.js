@@ -361,6 +361,12 @@ export function getStandardBidderSettings() {
         val: function (bidResponse) {
           return bidResponse.dealId;
         }
+      },
+      {
+        key: 'hb_source',
+        val: function (bidResponse) {
+          return bidResponse.source;
+        }
       }
     ]
   }
