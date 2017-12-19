@@ -73,29 +73,29 @@ The following parameters in the `bidResponse` object are common across all bidde
 {: .no_toc }
 
 {: .table .table-bordered .table-striped }
-| Bidder          | Supported Media Types |
-|-----------------+-----------------------|
-| adkernelAdn     | 'video'               |
-| adkernel        | 'video'               |
-| admixer         | 'video'               |
-| adxcg           | 'video', 'native'     |
-| aerserv         | 'video'               |
-| appnexusAst     | 'video', 'native'     |
-| audienceNetwork | 'video'               |
-| beachfront      | 'video'               |
-| conversant      | 'video'               |
-| getintent       | 'video'               |
-| indexExchange   | 'video'               |
-| optimatic       | 'video'               |
-| pulsepointLite  | 'native'              |
-| readpeak        | 'native'              |
-| rhythmone       | 'video'               |
-| rubicon         | 'video'               |
-| sekindoUM       | 'video'               |
-| spotx           | 'video'               |
-| tremor          | 'video'               |
-| unruly          | 'video'               |
-| vertamedia      | 'video'               |
+| Bidder          | Supported Media Types | Prebid 1.0 Support? |
+|-----------------+-----------------------+---------------------|
+| adkernel        | video                 | X                   |
+| adkernelAdn     | video                 |                     |
+| adxcg           | video,native          | X                   |
+| aol             | video                 |                     |
+| appnexus        | video,native          | X                   |
+| audienceNetwork | video,native          | X                   |
+| beachfront      | video                 | X                   |
+| conversant      | video                 | X                   |
+| getintent       | video                 | X                   |
+| mobfox          | video                 | X                   |
+| openx           | video                 | X                   |
+| optimatic       | video                 | X                   |
+| prebidServer    | video                 | X                   |
+| pulsepoint      | native                | X                   |
+| quantcast       | video                 | X                   |
+| readpeak        | native                | X                   |
+| rhythmone       | video                 | X                   |
+| rubicon         | video                 | X                   |
+| sekindoUM       | video                 |                     |
+| sharethrough    | native                | X                   |
+| vertamedia      | video                 | X                   |
 
 <a name="prebid-server-bidders"></a>
 
