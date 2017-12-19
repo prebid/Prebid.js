@@ -33,7 +33,7 @@ describe('Adomik Prebid Analytic', function () {
         height: 10,
         statusMessage: 'Bid available',
         adId: '1234',
-        requestId: '',
+        auctionId: '',
         responseTimestamp: 1496410856397,
         requestTimestamp: 1496410856295,
         cpm: 0.1,
@@ -58,7 +58,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 1: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, requestId: 'test-test-test', timeout: 3000});
+      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test', timeout: 3000});
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
