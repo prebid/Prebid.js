@@ -285,7 +285,7 @@ describe('AudienceNetwork adapter', () => {
       }, {
         adformats: ['native', '300x250'],
         requestIds: [requestId, requestId],
-        sizes: [[300, 250], [300, 250]]
+        sizes: ['300x250', [300, 250]]
       });
 
       expect(bidResponseNative.cpm).to.equal(1.23);

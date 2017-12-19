@@ -1,5 +1,6 @@
 import { getSourceBidderMap, calculateBidSources, getSource } from 'modules/s2sTesting';
 import { config } from 'src/config';
+import find from 'core-js/library/fn/array/find';
 
 var events = require('src/events');
 var CONSTANTS = require('src/constants.json');
@@ -312,42 +313,42 @@ describe('s2sTesting', function () {
     const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 
     function checkTargeting(bidder) {
-      var targeting = window.pbjs.bidderSettings[bidder][AST];
+      var targeting = window.$$PREBID_GLOBAL$$.bidderSettings[bidder][AST];
       var srcTargeting = targeting[targeting.length - 1];
       expect(srcTargeting.key).to.equal(`hb_source_${bidder}`);
       expect(srcTargeting.val).to.be.a('function');
-      expect(window.pbjs.bidderSettings[bidder].alwaysUseBid).to.be.true;
+      expect(window.$$PREBID_GLOBAL$$.bidderSettings[bidder].alwaysUseBid).to.be.true;
     }
 
     function checkNoTargeting(bidder) {
-      var bs = window.pbjs.bidderSettings;
+      var bs = window.$$PREBID_GLOBAL$$.bidderSettings;
       var targeting = bs[bidder] && bs[bidder][AST];
       if (!targeting) {
         expect(targeting).to.be.undefined;
         return;
       }
-      expect(targeting.find((kvp) => {
+      expect(find(targeting, (kvp) => {
         return kvp.key === `hb_source_${bidder}`;
       })).to.be.undefined;
     }
 
     function checkTargetingVal(bidResponse, expectedVal) {
-      var targeting = window.pbjs.bidderSettings[bidResponse.bidderCode][AST];
+      var targeting = window.$$PREBID_GLOBAL$$.bidderSettings[bidResponse.bidderCode][AST];
       var targetingFunc = targeting[targeting.length - 1].val;
       expect(targetingFunc(bidResponse)).to.equal(expectedVal);
     }
 
     beforeEach(() => {
       // set bidderSettings
-      window.pbjs.bidderSettings = {};
+      window.$$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('should not set hb_source_<bidder> unless testing is on and includeSourceKvp is set', () => {
       config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus']}});
-      expect(window.pbjs.bidderSettings).to.eql({});
+      expect(window.$$PREBID_GLOBAL$$.bidderSettings).to.eql({});
 
       config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true}});
-      expect(window.pbjs.bidderSettings).to.eql({});
+      expect(window.$$PREBID_GLOBAL$$.bidderSettings).to.eql({});
 
       config.setConfig({s2sConfig: {
         bidders: ['rubicon', 'appnexus'],
@@ -357,7 +358,7 @@ describe('s2sTesting', function () {
           appnexus: {bidSource: {server: 1}}
         }
       }});
-      expect(window.pbjs.bidderSettings).to.eql({});
+      expect(window.$$PREBID_GLOBAL$$.bidderSettings).to.eql({});
 
       config.setConfig({s2sConfig: {
         bidders: ['rubicon', 'appnexus'],
@@ -367,7 +368,7 @@ describe('s2sTesting', function () {
           appnexus: {includeSourceKvp: true}
         }
       }});
-      expect(window.pbjs.bidderSettings).to.eql({});
+      expect(window.$$PREBID_GLOBAL$$.bidderSettings).to.eql({});
     });
 
     it('should set hb_source_<bidder> if includeSourceKvp is set', () => {
