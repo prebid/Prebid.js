@@ -32,7 +32,7 @@ describe('nanointeractive adapter tests', function () {
       sizes: SIZES,
       bidId: '24a1c9ec270973',
       bidderRequestId: '189135372acd55',
-      requestId: 'ac15bb68-4ef0-477f-93f4-de91c47f00a9'
+      auctionId: 'ac15bb68-4ef0-477f-93f4-de91c47f00a9'
     }
   }
 

@@ -54,14 +54,14 @@ let getNexagePostBidParams = () => {
 let getDefaultBidRequest = () => {
   return {
     bidderCode: 'aol',
-    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+    auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
     bidderRequestId: '7101db09af0db2',
     start: new Date().getTime(),
     bids: [{
       bidder: 'aol',
       bidId: '84ab500420319d',
       bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+      auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
       placementCode: 'foo',
       params: getMarketplaceBidParams()
     }]
