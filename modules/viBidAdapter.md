@@ -3,7 +3,7 @@
 ```
 Module Name: VI Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: kd@vi.ai
+Maintainer: support@vi.ai
 ```
 
 # Description
