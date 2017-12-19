@@ -6,7 +6,7 @@ const BIDDER_CODE = 'vi';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 
 function isBidRequestValid(bid) {
-  return !!(bid.params.pubid);
+  return !!(bid.params.pubId);
 }
 
 function buildRequests(bidReqs) {
