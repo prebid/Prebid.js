@@ -268,7 +268,6 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId}) {
 
   let bidObject = Object.assign({}, bid, {
     auctionId,
-    requestId: bidRequest.requestId,
     responseTimestamp: timestamp(),
     requestTimestamp: start,
     cpm: parseFloat(bid.cpm) || 0,
