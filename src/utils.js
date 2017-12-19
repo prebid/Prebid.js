@@ -848,7 +848,7 @@ export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
 
 /**
  * Delete property from object
- * @param {Object} object 
+ * @param {Object} object
  * @param {string} prop
  * @return {Object} object
  */
