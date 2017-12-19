@@ -1,8 +1,6 @@
 import { config } from 'src/config';
 import { setS2STestingModule } from 'src/adaptermanager';
 
-var CONSTANTS = require('src/constants.json');
-const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 export const SERVER = 'server';
 export const CLIENT = 'client';
 
