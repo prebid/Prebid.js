@@ -20,7 +20,7 @@ let adomikAdapter = Object.assign(adapter({}),
     track({ eventType, args }) {
       switch (eventType) {
         case auctionInit:
-          adomikAdapter.currentContext.id = args.requestId
+          adomikAdapter.currentContext.id = args.auctionId
           adomikAdapter.currentContext.timeout = args.timeout
           if (args.config.bidwonTimeout !== undefined && typeof args.config.bidwonTimeout === 'number') {
             bidwonTimeout = args.config.bidwonTimeout;
