@@ -1,10 +1,8 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
-// use deferred function call since version isn't defined yet at this point
-function getIntegration() {
-  return 'pbjs_lite_' + $$PREBID_GLOBAL$$.version;
-}
+const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
 function isSecure() {
   return location.protocol === 'https:';
@@ -20,6 +18,7 @@ const TIMEOUT_BUFFER = 500;
 var sizeMap = {
   1: '468x60',
   2: '728x90',
+  5: '120x90',
   8: '120x600',
   9: '160x600',
   10: '300x600',
@@ -58,11 +57,16 @@ var sizeMap = {
   101: '480x320',
   102: '768x1024',
   103: '480x280',
+  108: '320x240',
   113: '1000x300',
   117: '320x100',
   125: '800x250',
   126: '200x600',
-  195: '600x300'
+  144: '980x600',
+  195: '600x300',
+  199: '640x200',
+  213: '1030x590',
+  214: '980x360',
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -113,7 +117,8 @@ export const spec = {
           page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
-          integration: getIntegration(),
+          integration: INTEGRATION,
+          'x_source.tid': bidRequest.transactionId,
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
@@ -126,8 +131,8 @@ export const spec = {
           zone_id: params.zoneId,
           position: params.position || 'btf',
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-          element_id: bidRequest.placementCode,
-          name: bidRequest.placementCode,
+          element_id: bidRequest.adUnitCode,
+          name: bidRequest.adUnitCode,
           language: params.video.language,
           width: size[0],
           height: size[1],
@@ -187,8 +192,8 @@ export const spec = {
         'p_pos', position,
         'rp_floor', floor,
         'rp_secure', isSecure() ? '1' : '0',
-        'tk_flint', getIntegration(),
-        'tid', bidRequest.transactionId,
+        'tk_flint', INTEGRATION,
+        'x_source.tid', bidRequest.transactionId,
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
         'tk_user_key', userId
@@ -226,12 +231,12 @@ export const spec = {
   },
   /**
    * @param {*} responseObj
-   * @param {bidRequest} bidRequest
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
+    responseObj = responseObj.body
     let ads = responseObj.ads;
-    const adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
@@ -239,8 +244,8 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (bidRequest.mediaType === 'video' && typeof ads === 'object') {
-      ads = ads[adResponseKey];
+    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+      ads = ads[bidRequest.adUnitCode];
     }
 
     // check the ad response
@@ -251,24 +256,24 @@ export const spec = {
     // if there are multiple ads, sort by CPM
     ads = ads.sort(_adCpmSort);
 
-    let bids = ads.reduce((bids, ad) => {
+    return ads.reduce((bids, ad) => {
       if (ad.status !== 'ok') {
-        return;
+        return [];
       }
 
       let bid = {
         requestId: bidRequest.bidId,
         currency: 'USD',
-        creative_id: ad.creative_id,
-        bidderCode: spec.code,
+        creativeId: ad.creative_id,
         cpm: ad.cpm || 0,
-        dealId: ad.deal
+        dealId: ad.deal,
+        ttl: 300, // 5 minutes
+        netRevenue: config.getConfig('rubicon.netRevenue') || false
       };
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
-        bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
@@ -280,17 +285,15 @@ export const spec = {
         .reduce((memo, item) => {
           memo[item.key] = item.values[0];
           return memo;
-        }, {'rpfl_elemid': bidRequest.placementCode});
+        }, {'rpfl_elemid': bidRequest.adUnitCode});
 
       bids.push(bid);
 
       return bids;
     }, []);
-
-    return bids;
   },
-  getUserSyncs: function() {
-    if (!hasSynced) {
+  getUserSyncs: function(syncOptions) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
         type: 'iframe',
@@ -310,7 +313,7 @@ function _getScreenResolution() {
 
 function _getDigiTrustQueryParams() {
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && ($$PREBID_GLOBAL$$.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId();
@@ -354,14 +357,13 @@ function parseSizes(bid) {
     }
     return size;
   }
-  return masSizeOrdering(Array.isArray(params.sizes)
-    ? params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
-  );
+
+  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+
+  return masSizeOrdering(sizes);
 }
 
-export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
-
+function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
     // map sizes while excluding non-matches
     .reduce((result, size) => {
@@ -370,25 +372,30 @@ export function masSizeOrdering(sizes) {
         result.push(mappedSize);
       }
       return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    }, []);
+}
 
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
+export function masSizeOrdering(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return sizes.sort((first, second) => {
+    // sort by MAS_SIZE_PRIORITY priority order
+    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+    if (firstPriority > -1 || secondPriority > -1) {
+      if (firstPriority === -1) {
+        return 1;
       }
+      if (secondPriority === -1) {
+        return -1;
+      }
+      return firstPriority - secondPriority;
+    }
 
-      // and finally ascending order
-      return first - second;
-    });
+    // and finally ascending order
+    return first - second;
+  });
 }
 
 var hasSynced = false;

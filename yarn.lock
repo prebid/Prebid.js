@@ -3819,6 +3819,12 @@ gulp-if@^2.0.2:
     ternary-stream "^2.0.1"
     through2 "^2.0.1"
 
+gulp-js-escape@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/gulp-js-escape/-/gulp-js-escape-1.0.1.tgz#1cd445fbd009e0da76959a03a7f49b3566aff868"
+  dependencies:
+    through2 "^0.6.3"
+
 gulp-match@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/gulp-match/-/gulp-match-1.0.3.tgz#91c7c0d7f29becd6606d57d80a7f8776a87aba8e"
@@ -4248,6 +4254,10 @@ iconv-lite@0.4.18, iconv-lite@^0.4.17:
 ieee754@^1.1.4:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.1.8.tgz#be33d40ac10ef1926701f6f08a2d86fbfd1ad3e4"
+
+ignore-loader@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/ignore-loader/-/ignore-loader-0.1.2.tgz#d81f240376d0ba4f0d778972c3ad25874117a463"
 
 ignore@^3.3.3:
   version "3.3.5"
@@ -4832,6 +4842,10 @@ jsprim@^1.2.2:
     extsprintf "1.3.0"
     json-schema "0.2.3"
     verror "1.10.0"
+
+just-clone@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/just-clone/-/just-clone-1.0.2.tgz#bfb3faef65aa12a316058712945c326fd8f01434"
 
 karma-babel-preprocessor@^6.0.1:
   version "6.0.1"
@@ -8025,7 +8039,7 @@ through2@^0.5.0:
     readable-stream "~1.0.17"
     xtend "~3.0.0"
 
-through2@^0.6.0, through2@^0.6.1, through2@^0.6.5:
+through2@^0.6.0, through2@^0.6.1, through2@^0.6.3, through2@^0.6.5:
   version "0.6.5"
   resolved "https://registry.yarnpkg.com/through2/-/through2-0.6.5.tgz#41ab9c67b29d57209071410e1d7a7a968cd3ad48"
   dependencies:

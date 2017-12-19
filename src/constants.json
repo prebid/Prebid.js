@@ -32,7 +32,8 @@
     "BID_RESPONSE": "bidResponse",
     "BID_WON": "bidWon",
     "SET_TARGETING": "setTargeting",
-    "REQUEST_BIDS": "requestBids"
+    "REQUEST_BIDS": "requestBids",
+    "ADD_AD_UNITS": "addAdUnits"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
@@ -53,10 +54,7 @@
     "hb_deal"
   ],
   "S2S" : {
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction",
     "SRC" : "s2s",
-    "ADAPTER" : "prebidServer",
-    "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   }
 }

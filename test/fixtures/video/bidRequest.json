@@ -1,10 +1,10 @@
 {
   "auctionStart": 1462918897459,
-  "bidderCode": "appnexusAst",
+  "bidderCode": "appnexus",
   "bidderRequestId": "2946b569352ef2",
   "bids": [
     {
-      "bidder": "appnexusAst",
+      "bidder": "appnexus",
       "params": {
         "placementId": "9333431",
         "video": {
