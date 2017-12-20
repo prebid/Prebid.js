@@ -35,7 +35,7 @@ function _parseSlotParam(paramName, paramValue) {
 
   switch (paramName) {
     case 'pmzoneid':
-      return paramValue.split(',').slice(0, 50).join();
+      return paramValue.split(',').slice(0, 50).map(id => id.trim()).join();
     case 'kadfloor':
       return parseFloat(paramValue) || UNDEFINED;
     case 'lat':

@@ -144,7 +144,7 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
-  		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid); // pmzoneid
+  		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
   		it('invalid adslot', () => {
