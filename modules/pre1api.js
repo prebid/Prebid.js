@@ -20,11 +20,11 @@ let auctionPropMap = {
   _bidsReceived: auction => auction.getBidsReceived(),
   _bidsRequested: auction => auction.getBidRequests(),
   _adUnitCodes: auction => auction.getAdUnitCodes(),
-  cbTimeout: auction => auction.getTimeout(),
   allBidsAvailable: auction => auction.getBidRequests().every((bidRequest) => bidRequest.doneCbCallCount >= 1)
 };
 
 let configPropMap = {
+  cbTimeout: 'bidderTimeout',
   bidderTimeout: 'bidderTimeout',
   logging: 'debug',
   publisherDomain: 'publisherDomain',
