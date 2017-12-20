@@ -236,6 +236,12 @@ adaptermanager.aliasBidAdapter('appnexus', 'oftmedia');
 
 // added by meme:
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media1');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media2');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media3');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media4');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media5');
+adaptermanager.aliasBidAdapter('appnexus', 'appnexus_152media6');
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve');
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve1');
 adaptermanager.aliasBidAdapter('appnexus', 'appnexus_springserve2');
