@@ -16,7 +16,7 @@ import {
 import * as utils from 'src/utils';
 
 describe('Smart ad server bid adapter tests', () => {
-  var DEFAULT_PARAMS = {
+  var DEFAULT_PARAMS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
     sizes: [
@@ -34,9 +34,9 @@ describe('Smart ad server bid adapter tests', () => {
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg'
-  };
+  }];
 
-  var DEFAULT_PARAMS_WO_OPTIONAL = {
+  var DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
     sizes: [
@@ -51,22 +51,26 @@ describe('Smart ad server bid adapter tests', () => {
       formatId: '90'
     },
     requestId: 'efgh5678'
-  };
+  }];
 
   var BID_RESPONSE = {
-    cpm: 12,
-    width: 300,
-    height: 250,
-    creativeId: 'zioeufg',
-    currency: 'GBP',
-    isNetCpm: true,
-    ttl: 300,
-    ad: '< --- awesome script --- >'
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      ad: '< --- awesome script --- >'
+    }
   };
 
   it('Verify build request', () => {
     config.setConfig({
-      'currency': 'EUR'
+      'currency': {
+        'adServerCurrency': 'EUR'
+      }
     });
     const request = spec.buildRequests(DEFAULT_PARAMS);
     expect(request).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
@@ -116,8 +120,8 @@ describe('Smart ad server bid adapter tests', () => {
   });
 
   it('Verifies if bid request valid', () => {
-    expect(spec.isBidRequestValid(DEFAULT_PARAMS)).to.equal(true);
-    expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL)).to.equal(true);
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL[0])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {}
@@ -147,12 +151,6 @@ describe('Smart ad server bid adapter tests', () => {
   });
 
   it('Verifies sync options', () => {
-    expect(spec.getUserSyncs({})).to.be.undefined;
-    expect(spec.getUserSyncs({
-      iframeEnabled: false
-    })).to.be.undefined;
-    expect(spec.getUserSyncs({
-      iframeEnabled: true
-    })).to.be.undefined;
+    expect(spec.getUserSyncs).to.be.undefined;
   });
 });
