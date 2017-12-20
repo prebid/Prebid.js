@@ -10,13 +10,8 @@ const getConfig = config.getConfig;
 const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders', 'endpoint'];
 
 let _s2sConfig;
-config.setDefaults({
-  's2sConfig': {
-    enabled: false,
-    timeout: 1000,
-    adapter: 'serverbidServer'
-  }
-});
+
+const bidder = 'serverbidServer';
 
 var ServerBidServerAdapter;
 ServerBidServerAdapter = function ServerBidServerAdapter() {
@@ -61,6 +56,8 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
   sizeMap[43] = '300x600';
 
   function setS2sConfig(options) {
+    if (options.adapter != bidder) return;
+
     let contains = (xs, x) => xs.indexOf(x) > -1;
     let userConfig = Object.keys(options);
 
@@ -231,6 +228,6 @@ ServerBidServerAdapter.createNew = function() {
   return new ServerBidServerAdapter();
 };
 
-adaptermanager.registerBidAdapter(new ServerBidServerAdapter(), 'serverbidServer');
+adaptermanager.registerBidAdapter(new ServerBidServerAdapter(), bidder);
 
 module.exports = ServerBidServerAdapter;
