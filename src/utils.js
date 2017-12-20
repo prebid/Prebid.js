@@ -866,3 +866,16 @@ export function deletePropertyFromObject(object, prop) {
 export function removeRequestId(bid) {
   return exports.deletePropertyFromObject(bid, 'requestId');
 }
+
+/**
+ * Checks input is integer or not
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
+ * @param {*} value
+ */
+export function isInteger(value) {
+  if (Number.isInteger) {
+    return Number.isInteger(value);
+  } else {
+    return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+  }
+}
