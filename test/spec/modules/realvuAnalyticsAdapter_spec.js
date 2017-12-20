@@ -118,11 +118,11 @@ describe('RealVu Analytics Adapter Test.', () => {
   });
 
   it('test boost adUnit', () => {
-    var boost = window.top1.realvu_boost;
-    var ad_div = document.createElement('div');
+    let boost = window.top1.realvu_boost;
+    let ad_div = document.createElement('div');
     ad_div.id = 'ad5';
     document.body.appendChild(ad_div);
-    var u = {
+    let u = {
       partnerId: '1Y',
       unit: ad_div
     };
@@ -132,47 +132,47 @@ describe('RealVu Analytics Adapter Test.', () => {
   });
 
   it('test boost getViewStatusById', () => {
-    var boost = window.top1.realvu_boost;
-    var ad_div = document.createElement('div');
+    let boost = window.top1.realvu_boost;
+    let ad_div = document.createElement('div');
     ad_div.id = 'ad1';
     document.body.appendChild(ad_div);
-    var u = {
+    let u = {
       partnerId: '1Y',
       unit: ad_div
     };
     boost.addUnit(u);
-    var vst = boost.getViewStatusById('ad1');
+    let vst = boost.getViewStatusById('ad1');
     expect(vst).to.equal('yes');
     document.body.removeChild(ad_div);
   });
 
   it('test boost exp', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var ad_div = document.createElement('div');
+    let boost = window.top1.realvu_boost;
+    let partnerId = '1Y';
+    let ad_div = document.createElement('div');
     ad_div.id = 'ad7';
     ad_div.style = 'width:300px; height:250px;';
     document.body.appendChild(ad_div);
     boost.addUnitById(partnerId, 'ad7');
-    var a = boost.ads[boost.ads.length - 1];
+    let a = boost.ads[boost.ads.length - 1];
     a.frm = boost.newf(a, 300, 250);
     a.div.appendChild(a.frm);
     boost.exp(a);
-    var t = a.frm.tagName;
+    let t = a.frm.tagName;
     expect(t).to.equal('IFRAME');
     document.body.removeChild(ad_div);
   });
 
   it('test boost updateMem', () => {
-    var boost = window.top1.realvu_boost;
+    let boost = window.top1.realvu_boost;
     boost.updateMem('test1', 'test1Value');
-    var valueTest1 = boost.getMem('test1');
+    let valueTest1 = boost.getMem('test1');
     expect(valueTest1).to.equal('test1Value');
   });
 
   it('test boost writePos/readPos', () => {
-    var boost = window.top1.realvu_boost;
-    var a = {
+    let boost = window.top1.realvu_boost;
+    let a = {
       pins: [{
         unit_id: 'ad1',
         score: 10,
@@ -185,33 +185,33 @@ describe('RealVu Analytics Adapter Test.', () => {
       h: 250
     };
     boost.writePos(a);
-    var torf = boost.readPos(a);
+    let torf = boost.readPos(a);
     expect(torf).to.equal(true);
   });
 
   it('test boost questA param is null', () => {
-    var boost = window.top1.realvu_boost;
-    var rtn = boost.questA(null);
+    let boost = window.top1.realvu_boost;
+    let rtn = boost.questA(null);
     expect(rtn).to.equal(null);
   });
 
   it('test boost doc exception', () => {
-    var boost = window.top1.realvu_boost;
-    var rtn = boost.doc(null);
+    let boost = window.top1.realvu_boost;
+    let rtn = boost.doc(null);
     expect(rtn).to.equal(null);
   });
 
   it('test boost setSize', () => {
-    var boost = window.top1.realvu_boost;
-    var a = [320, 50];
-    var b = [970, 90];
-    var c = [
+    let boost = window.top1.realvu_boost;
+    let a = [320, 50];
+    let b = [970, 90];
+    let c = [
       [320, 50]
     ];
-    var d = [
+    let d = [
       [970, 90]
     ];
-    var rtn = boost.setSize(a);
+    let rtn = boost.setSize(a);
     expect(rtn.w).to.equal(320);
     expect(rtn.h).to.equal(50);
     rtn = boost.setSize(b);
@@ -231,25 +231,38 @@ describe('RealVu Analytics Adapter Test.', () => {
   });
 
   it('test boost brd', () => {
-    var ad_div = document.createElement('div');
+    let ad_div = document.createElement('div');
     ad_div.id = 'ad1';
     document.body.appendChild(ad_div);
-    var boost = window.top1.realvu_boost;
-    var s = ad_div;
-    var p = 'Left';
-    var f = boost.brd(s, p);
+    let boost = window.top1.realvu_boost;
+    let s = ad_div;
+    let p = 'Left';
+    let f = boost.brd(s, p);
     expect(f).to.be.greaterThan(-1);
     document.body.removeChild(ad_div);
   });
+
   /*
   it('test boost incrMem', () => {
-    var boost = window.top1.realvu_boost;
+    let boost = window.top1.realvu_boost;
     boost.ads = [{
       score: 10,
-      pins: { unit_id: 'ad1', score: 10 }
+      pins: {
+        unit_id: 'ad1',
+        score: 10,
+        state: 1,
+        mode: 'tx2',
+        size: '300x250'
+      }
     }, {
       score: 17,
-      pins: { unit_id: 'ad2', score: 17 }
+      pins: {
+        unit_id: 'ad2',
+        score: 17,
+        state: 1,
+        mode: 'tx2',
+        size: '300x250'
+      }
     }];
 
     boost.incrMem(0, 'r');
@@ -257,42 +270,5 @@ describe('RealVu Analytics Adapter Test.', () => {
 
     boost.incrMem(1, 'v');
     expect(boost.ads[1].score).to.equal((boost.ads[0].score |= 1) & 0xFFFFF);
-  });
-
-  */
-  /*
-  it('test track regAllUnits', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var callback = null;
-    var delay = null;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var ad_div2 = document.createElement('div');
-    ad_div2.id = 'ad2';
-    document.body.appendChild(ad_div2);
-    boost.addUnitById(partnerId, 'ad1', callback, delay);
-    boost.addUnitById(partnerId, 'ad2', callback, delay);
-    var ad_msg_div = document.createElement('div');
-    ad_msg_div.id = 'msg_an';
-    document.body.appendChild(ad_msg_div);
-    var config = {
-      options: {
-        partnerId: '1Y',
-        regAllUnits: true,
-        unitIds: ['ad1', 'ad2']
-      }
-    };
-    realvuAnalyticsAdapter.enableAnalytics(config);
-    realvuAnalyticsAdapter.track({
-      eventType: 'auctionInit',
-      args: null
-    });
-
-    document.body.removeChild(ad_div);
-    document.body.removeChild(ad_div2);
-    document.body.removeChild(ad_msg_div);
-  });
-  */
+  }); */
 });
