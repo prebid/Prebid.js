@@ -195,6 +195,7 @@ A native `image` ad unit can be set up in the manner below:
 ## Working Examples
 
 + [Prebid Native with two slots]({{site.github.url}}/examples/native/native-demo.html)
++ [Prebid Native Examples]({{site.github.url}}/examples/native)
 
 ## Related Topics
 

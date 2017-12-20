@@ -166,6 +166,7 @@ Below, find links to end-to-end "working examples" demonstrating Prebid Outstrea
 
 + [Outstream with two adapters]({{site.github.url}}/examples/video/outstream/outstream-dfp-two-adapters-demo.html)
 + [Outstream without an Ad Server]({{site.github.url}}/examples/video/outstream/outstream-no-adserver-demo.html)
++ [Prebid Video Examples]({{site.github.url}}/examples/video)
 
 ## Related Topics
 

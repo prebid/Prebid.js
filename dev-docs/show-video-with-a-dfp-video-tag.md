@@ -173,6 +173,7 @@ Below, find links to end-to-end "working examples" integrating Prebid.js demand 
 + [Brightcove]({{site.github.url}}/examples/video/bc-demo.html)
 + [Kaltura]({{site.github.url}}/examples/video/klt-demo.html)
 + [Ooyala]({{site.github.url}}/examples/video/ooyala-demo.html)
++ [Prebid Video Examples]({{site.github.url}}/examples/video)
 
 ## Related Topics
 
