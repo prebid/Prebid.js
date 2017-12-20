@@ -139,12 +139,12 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         }
       }
       if (data.placements.length) {
-        ajax(BASE_URI, _responseCallback(addBidResponse, bids), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+        ajax(BASE_URI, _responseCallback(addBidResponse, bids, done), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
       }
     }
   }
 
-  function _responseCallback(addBidResponse, bids) {
+  function _responseCallback(addBidResponse, bids, done) {
     return function (resp) {
       let bid;
       let bidId;
