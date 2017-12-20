@@ -127,7 +127,7 @@ describe('Trion adapter tests', () => {
 
     it('when place bid is returned as false', () => {
       TRION_BID_RESPONSE.result.placeBid = false;
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
 
       expect(response).to.deep.equal([]);
 
@@ -136,14 +136,14 @@ describe('Trion adapter tests', () => {
 
     it('when no cpm is in the response', () => {
       TRION_BID_RESPONSE.result.cpm = 0;
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.cpm = 1;
     });
 
     it('when no ad is in the response', () => {
       TRION_BID_RESPONSE.result.ad = null;
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.ad = 'test';
     });
@@ -153,7 +153,7 @@ describe('Trion adapter tests', () => {
       let bidHeight = '2';
       TRION_BID_RESPONSE.result.width = bidWidth;
       TRION_BID_RESPONSE.result.height = bidHeight;
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
       expect(response[0].width).to.equal(bidWidth);
       expect(response[0].height).to.equal(bidHeight);
       TRION_BID_RESPONSE.result.width = '300';
@@ -163,7 +163,7 @@ describe('Trion adapter tests', () => {
     it('cpm is properly set and transformed to cents', () => {
       let bidCpm = 2;
       TRION_BID_RESPONSE.result.cpm = bidCpm * 100;
-      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
       expect(response[0].cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
     });

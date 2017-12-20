@@ -1,4 +1,4 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource} from 'modules/adkernelAdnAnalyticsAdapter';
+import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
 import * as events from 'src/events';
@@ -48,8 +48,8 @@ describe('', () => {
     let stubGetItem;
 
     before(() => {
-      stubSetItem = sandbox.stub(localStorage, 'setItem');
-      stubGetItem = sandbox.stub(localStorage, 'getItem');
+      stubSetItem = sandbox.stub(storage, 'setItem');
+      stubGetItem = sandbox.stub(storage, 'getItem');
     });
 
     afterEach(() => {
@@ -114,33 +114,40 @@ describe('', () => {
   });
 
   describe('ExpiringQueue', () => {
-    let start;
+    let timer;
     before(() => {
-      start = Date.now();
+      timer = sandbox.useFakeTimers(0);
     });
+    after(() => {
+      timer.restore();
+    });
+
     it('should notify after timeout period', (done) => {
       let queue = new ExpiringQueue(() => {
         let elements = queue.popAll();
         expect(elements).to.be.eql([1, 2, 3, 4]);
         elements = queue.popAll();
         expect(elements).to.have.lengthOf(0);
-        expect(Date.now() - start).to.be.at.least(200).and.below(250);
+        expect(Date.now()).to.be.equal(200);
         done();
       }, 100);
 
       queue.push(1);
       setTimeout(() => {
         queue.push([2, 3]);
+        timer.tick(50);
       }, 50);
       setTimeout(() => {
         queue.push([4]);
+        timer.tick(100);
       }, 100);
+      timer.tick(50);
     });
   });
 
   const REQUEST = {
     bidderCode: 'adapter',
-    requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     bidderRequestId: '1a6fc81528d0f6',
     bids: [{
       bidder: 'adapter',
@@ -150,7 +157,7 @@ describe('', () => {
       sizes: [[300, 250]],
       bidId: '208750227436c1',
       bidderRequestId: '1a6fc81528d0f6',
-      requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
     }],
     auctionStart: 1509369418387,
     timeout: 3000,
@@ -166,7 +173,7 @@ describe('', () => {
     mediaType: 'banner',
     cpm: 0.015,
     ad: '<!-- tag goes here -->',
-    requestId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     responseTimestamp: 1509369418832,
     requestTimestamp: 1509369418389,
     bidder: 'adapter',

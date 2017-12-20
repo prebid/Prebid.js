@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx';
@@ -58,8 +59,8 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = serverResponse.body.find(function(res) {
-        return !!res && !res.consumed && req.sizes.find(function(size) {
+      let matchedResponse = find(serverResponse.body, function(res) {
+        return !!res && !res.consumed && find(req.sizes, function(size) {
           return res.width === size[0] && res.height === size[1];
         });
       });

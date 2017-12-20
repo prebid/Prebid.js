@@ -3,7 +3,6 @@ import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
 var Adapter = require('modules/conversantBidAdapter');
-var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -23,7 +22,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 250]],
       bidId: 'bid000',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -35,7 +34,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[468, 60]],
       bidId: 'bid001',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -49,7 +48,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 600], [160, 600]],
       bidId: 'bid002',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -69,7 +68,7 @@ describe('Conversant adapter tests', function() {
       sizes: [640, 480],
       bidId: 'bid003',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }];
 
   const bidResponses = {
