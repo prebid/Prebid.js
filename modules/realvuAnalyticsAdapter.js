@@ -359,7 +359,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
           // apply "near" rule for ad call only
           // a.r = z.frm ? "frame" : ((((a.vz > vtr)||near) && z.foc) ? "yes" : "no");
           a.r = (z.fr > 1) ? 'frame' : (((a.vz > vtr) && z.foc) ? 'yes' : 'no');
-          if ( /* this.device=='mobile' && */ near && a.r == 'no') {
+          if (near && a.r == 'no') {
             a.r = 'yes';
           }
           if (doMem) {
