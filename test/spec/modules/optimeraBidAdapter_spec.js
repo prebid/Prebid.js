@@ -57,7 +57,7 @@ describe('OptimeraAdapter', () => {
 
   describe('interpretResponse', () => {
     let serverResponse = {};
-    serverResponse.body = 'window.oVa = {"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"]};';
+    serverResponse.body = JSON.parse('{"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"]}');
     var bidRequest = {
       'method': 'get',
       'payload': [
