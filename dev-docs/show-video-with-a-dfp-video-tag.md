@@ -168,11 +168,23 @@ If you have [set up your ad server line items and creatives correctly]({{site.ba
 
 Below, find links to end-to-end "working examples" integrating Prebid.js demand with various video players:
 
+### Using client-side adapters
+
 + [video.js]({{site.github.url}}/examples/video/videojs-demo.html)
 + [JWPlayer]({{site.github.url}}/examples/video/jwPlayerPrebid.html)
 + [Brightcove]({{site.github.url}}/examples/video/bc-demo.html)
 + [Kaltura]({{site.github.url}}/examples/video/klt-demo.html)
 + [Ooyala]({{site.github.url}}/examples/video/ooyala-demo.html)
+
+### Using Prebid Server Video
+
++ [JW Player]({{site.baseurl}}/examples/video/jwplayer-pbserver-demo.html)
++ [Kaltura]({{site.baseurl}}/examples/video/kaltura-pbserver-demo.html)
++ [VideoJS]({{site.baseurl}}/examples/video/videojs-pbserver-demo.html)
++ [Ooyala]({{site.baseurl}}/examples/video/ooyala-pbserver-demo.html)
+
+### All examples in one place
+
 + [Prebid Video Examples]({{site.github.url}}/examples/video)
 
 ## Related Topics
