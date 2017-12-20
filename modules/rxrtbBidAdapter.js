@@ -12,7 +12,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bidRequest) {
-    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && Number.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
+    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
   },
   buildRequests: function (validBidRequests) {
     var requests = [];
@@ -100,7 +100,7 @@ function makeImp(req) {
     'banner': makeBanner(req)
   };
 
-  if (req.params.bidfloor && Number.isInteger(req.params.bidfloor)) {
+  if (req.params.bidfloor && utils.isInteger(req.params.bidfloor)) {
     imp.bidfloor = req.params.bidfloor
   }
 
@@ -117,7 +117,7 @@ function makeBanner(req) {
     });
   }
   banner.format = format;
-  if (req.params.pos && Number.isInteger(req.params.pos)) {
+  if (req.params.pos && utils.isInteger(req.params.pos)) {
     banner.pos = req.params.pos;
   }
   return banner;
