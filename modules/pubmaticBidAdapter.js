@@ -162,7 +162,7 @@ function _createImpressionObject(bid, conf) {
       topframe: utils.inIframe() ? 0 : 1,
     },
     ext: {
-      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
+      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid).trim()
     }
   };
 }
@@ -234,7 +234,7 @@ export const spec = {
     payload.device.geo = {};
     payload.device.geo.lat = _parseSlotParam('lat', conf.lat);
     payload.device.geo.lon = _parseSlotParam('lon', conf.lon);
-    payload.site.page = conf.kadpageurl || payload.site.page;
+    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
     return {
       method: 'POST',
