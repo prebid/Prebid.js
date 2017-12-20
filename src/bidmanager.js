@@ -198,7 +198,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   function doCallbacksIfNeeded() {
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
-      exports.executeCallback(timedOut);
+      exports.executeCallback(bid.requestId, timedOut);
     }
   }
 
@@ -213,7 +213,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     if (bidsBackAll()) {
-      exports.executeCallback();
+      exports.executeCallback(bid.requestId);
     }
   }
 
@@ -320,7 +320,7 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-exports.executeCallback = function (timedOut) {
+exports.executeCallback = function (requestId, timedOut) {
   // if there's still a timeout running, clear it now
   if (!timedOut && externalCallbacks.timer) {
     clearTimeout(externalCallbacks.timer);
@@ -341,7 +341,7 @@ exports.executeCallback = function (timedOut) {
 
   // execute one time callback
   if (externalCallbacks.oneTime) {
-    events.emit(AUCTION_END);
+    events.emit(AUCTION_END, { requestId, timedOut });
     try {
       processCallbacks([externalCallbacks.oneTime]);
     } catch (e) {
