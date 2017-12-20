@@ -1,4 +1,6 @@
 import { expect } from 'chai';
+import * as utils from 'src/utils';
+
 import {
   ALG,
   BIDDER_CODE, CATEGORY, DATA_PARTNER_ID, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME, SECURITY,
@@ -44,7 +46,7 @@ describe('nanointeractive adapter tests', function () {
     [NQ]: [SEARCH_QUERY, null],
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
-    cors: 'http://localhost:9876'
+    cors: 'http://localhost'
   };
 
   function getSingleBidResponse(isValid) {
@@ -84,10 +86,14 @@ describe('nanointeractive adapter tests', function () {
         expect(nanoBidAdapter.isBidRequestValid(getBid(false))).to.equal(false);
       });
       it('Test buildRequests()', function () {
+        let stub = sinon.stub(utils, 'getOrigin', () => 'http://localhost');
+
         let request = nanoBidAdapter.buildRequests([getBid(true)]);
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(ENGINE_BASE_URL);
         expect(request.data).to.equal(JSON.stringify([SINGlE_BID_REQUEST]));
+
+        stub.restore();
       });
       it('Test interpretResponse() length', function () {
         let bids = nanoBidAdapter.interpretResponse([getSingleBidResponse(true), getSingleBidResponse(false)]);
