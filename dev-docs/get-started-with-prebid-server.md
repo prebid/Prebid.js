@@ -62,7 +62,7 @@ The Prebid Server settings (defined by the [`pbjs.setConfig`]({{site.baseurl}}/d
 
 The code in your Prebid configuration block should look something like the following (unless you want to show video ads, in which case see [Using Prebid Server to show video ads](#prebid-server-video-openrtb) below).
 
-See [The `s2sConfig` object](#the-s2sconfig-object) below for definitions of the keys in the `setS2SConfig` object.
+See [The `s2sConfig` object]({{site.baseurl}}/dev-docs/publisher-api-reference.html#setConfig-Server-to-Server) for definitions of the keys in the `s2sConfig` object.
 
 {% highlight js %}
 var pbjs = pbjs || {};
@@ -78,6 +78,8 @@ pbjs.que.push(function() {
             adapter: 'prebidServer',
             endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
             syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'
+            cookieSet: true,
+            cookiesetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
         }
     });
 
@@ -91,18 +93,11 @@ pbjs.que.push(function() {
 });
 {% endhighlight %}
 
-<a name="the-s2sconfig-object" />
-
-### The `s2sConfig` object
-
-See the [Prebid Server adapter docs]({{site.baseurl}}/dev-docs/add-a-prebid-server-adapter.html) for a list of the fields in the `s2sConfig` object.
-
-
 {: .alert.alert-info :}
 **Additional `cookieSet` details**  
 We recommend that users leave `cookieSet` enabled since it's essential for server-to-server header bidding that we have a persistent cookie for improved cookie match rates.  If set to `false`:  
-&bull; Prebid.js will not overwrite all links on page to redirect through an AppNexus persistent cookie URL  
-&bull; Prebid.js will not display a footer message on Safari indicating that AppNexus will be placing cookies on browsers that block 3rd party cookies  
+&bull; Prebid.js will not overwrite all links on page to redirect through a persistent cookie URL  
+&bull; Prebid.js will not display a footer message on Safari indicating that cookies will be placed on browsers that block 3rd party cookies  
 
 <a name="prebid-server-video-openrtb" />
 
