@@ -47,13 +47,13 @@ function getPricing(xmlNode) {
   var princingData = {};
 
   var extensions = xmlNode.querySelectorAll('Extension');
-  // Nodelist.forEach is not supported in IE and Edge 
+  // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
   Array.prototype.forEach.call(extensions, function(node) {
     if (node.getAttribute('type') === 'StickyPricing') {
       pricingExtNode = node;
     }
-  })
+  });
 
   if (pricingExtNode) {
     var priceNode = pricingExtNode.querySelector('Price');
@@ -71,11 +71,11 @@ function getPricing(xmlNode) {
 function getCreativeId(xmlNode) {
   var creaId = '';
   var adNodes = xmlNode.querySelectorAll('Ad');
-  // Nodelist.forEach is not supported in IE and Edge 
+  // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
   Array.prototype.forEach.call(adNodes, function(el) {
     creaId += '[' + el.getAttribute('id') + ']';
-  })
+  });
 
   return creaId;
 }

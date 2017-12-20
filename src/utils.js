@@ -868,9 +868,9 @@ export function removeRequestId(bid) {
 }
 
 /**
- * Checks input is integer or not 
+ * Checks input is integer or not
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
- * @param {*} value 
+ * @param {*} value
  */
 export function isInteger(value) {
   if (Number.isInteger) {
