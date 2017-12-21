@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2017122101';
-const BID_REQUEST_BASE_URL = 'https://agent.aralego.com/header';
+const BID_REQUEST_BASE_URL = 'https://hb.aralego.com/header';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
 export const spec = {
@@ -75,9 +75,9 @@ function buildUrlParams(bid) {
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
 
   let queryString = [
-    'ifr', 0,
+    'ifr', '0',
     'bl', language,
-    'je', 1,
+    'je', '1',
     'dnt', dnt,
     'host', host,
     'u', page,
@@ -88,6 +88,6 @@ function buildUrlParams(bid) {
 
   return queryString.reduce(
     (memo, curr, index) =>
-      index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo
+      index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo, ''
   ).slice(0, -1);
 }
