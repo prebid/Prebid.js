@@ -78,8 +78,9 @@ pbjs.requestBids.addHook((config, next) => {
         oldHandler.apply(null, args);
       }
 
+      auctionQueue.shift();
       if (auctionQueue[0]) {
-        auctionQueue.shift()();
+        auctionQueue[0]();
       }
     };
 
@@ -87,7 +88,7 @@ pbjs.requestBids.addHook((config, next) => {
   });
 
   if (auctionQueue.length === 1) {
-    auctionQueue.shift()();
+    auctionQueue[0]();
   } else {
     logWarn(`${MODULE_NAME} module: concurrency has been disabled and "$$PREBID_GLOBAL$$.requestBids" call was queued`);
   }
