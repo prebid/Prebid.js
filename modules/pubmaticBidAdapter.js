@@ -162,7 +162,7 @@ function _createImpressionObject(bid, conf) {
       topframe: utils.inIframe() ? 0 : 1,
     },
     ext: {
-      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid).trim()
+      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     }
   };
 }
