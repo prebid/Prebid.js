@@ -16,7 +16,7 @@ describe('Adomik Prebid Analytic', function () {
       adomikAnalytics.sendTypedEvent.restore();
     });
 
-    it('should catch all events', function () {
+    it('should catch all events', function (done) {
       adaptermanager.registerAnalyticsAdapter({
         code: 'adomik',
         adapter: adomikAnalytics
@@ -33,7 +33,7 @@ describe('Adomik Prebid Analytic', function () {
         height: 10,
         statusMessage: 'Bid available',
         adId: '1234',
-        requestId: '',
+        auctionId: '',
         responseTimestamp: 1496410856397,
         requestTimestamp: 1496410856295,
         cpm: 0.1,
@@ -58,7 +58,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 1: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, requestId: 'test-test-test', timeout: 3000});
+      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test', timeout: 3000});
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
@@ -120,11 +120,16 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext.timeouted).to.equal(true);
 
       // Step 6: Send auction end event
+      var clock = sinon.useFakeTimers();
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
         sinon.assert.callCount(adomikAnalytics.sendTypedEvent, 1);
-      }, 3000)
+        done();
+      }, 3000);
+
+      clock.tick(5000);
+      clock.restore();
 
       sinon.assert.callCount(adomikAnalytics.track, 6);
     });

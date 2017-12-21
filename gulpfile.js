@@ -28,6 +28,7 @@ var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
+var jsEscape = require('gulp-js-escape');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -88,14 +89,22 @@ function bundle(dev, moduleArr) {
 
   var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
+  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+
+  // change output filename if argument --tag given
+  if (argv.tag && argv.tag.length) {
+    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+  }
+
   gutil.log('Concatenating files:\n', entries);
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
       entries
     )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
-    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
+    .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
@@ -142,11 +151,6 @@ gulp.task('devpack', ['clean'], function () {
 gulp.task('webpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
 
-  // change output filename if argument --tag given
-  if (argv.tag && argv.tag.length) {
-    cloned.output.filename = 'prebid.' + argv.tag + '.js';
-  }
-
   delete cloned.devtool;
 
   var externalModules = helpers.getArgModules();
@@ -170,10 +174,11 @@ gulp.task('webpack', ['clean'], function () {
 // By default, this runs in headless chrome.
 //
 // If --watch is given, the task will re-run unit tests whenever the source code changes
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 gulp.task('test', ['clean'], function (done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch);
+  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
   var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
   if (browserOverride.length > 0) {
@@ -183,8 +188,9 @@ gulp.task('test', ['clean'], function (done) {
   new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 });
 
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
+  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 });
 
 // View the code coverage report in the browser.
@@ -291,10 +297,21 @@ gulp.task('e2etest-report', function() {
   }, 5000);
 });
 
-gulp.task('build-postbid', function() {
+// This task creates postbid.js. Postbid setup is different from prebid.js
+// More info can be found here http://prebid.org/overview/what-is-post-bid.html
+gulp.task('build-postbid', ['escape-postbid-config'], function() {
+  var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
+
   return gulp.src('./integrationExamples/postbid/oas/postbid.js')
-    .pipe(uglify())
-    .pipe(gulp.dest('build/dist'));
+    .pipe(replace('\[%%postbid%%\]', fileContent))
+    .pipe(gulp.dest('build/postbid/'));
+});
+
+// Dependant task for building postbid. It escapes postbid-config file.
+gulp.task('escape-postbid-config', function() {
+  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
+    .pipe(jsEscape())
+    .pipe(gulp.dest('build/postbid/'));
 });
 
 module.exports = nodeBundle;
