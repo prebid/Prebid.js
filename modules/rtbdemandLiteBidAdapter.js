@@ -14,7 +14,7 @@ const NATIVE_DEFAULTS = {
 
 /**
  * Rtbdemand "Lite" Adapter.  This adapter implementation is lighter than the
- * alternative/original PulsePointAdapter because it has no external
+ * alternative/original RtbemandAdapter because it has no external
  * dependencies and relies on a single OpenRTB request to the Rtbdemand
  * bidder instead of separate requests per slot.
  */
@@ -79,7 +79,7 @@ export const spec = {
 };
 
 /**
- * Callback for bids, after the call to PulsePoint completes.
+ * Callback for bids, after the call to Rtbemand completes.
  */
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
