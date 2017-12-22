@@ -2,7 +2,7 @@
 import {logError, getTopWindowLocation} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
-const BIDDER_SERVER = '35.189.176.186';
+const BIDDER_SERVER = 'bidding.rtbdemand.com';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -14,7 +14,7 @@ const NATIVE_DEFAULTS = {
 
 /**
  * Rtbdemand "Lite" Adapter.  This adapter implementation is lighter than the
- * alternative/original PulsePointAdapter because it has no external
+ * alternative/original RtbdemandAdapter because it has no external
  * dependencies and relies on a single OpenRTB request to the Rtbdemand
  * bidder instead of separate requests per slot.
  */
@@ -79,7 +79,7 @@ export const spec = {
 };
 
 /**
- * Callback for bids, after the call to PulsePoint completes.
+ * Callback for bids, after the call to Rtbdemand completes.
  */
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
