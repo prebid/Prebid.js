@@ -50,7 +50,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const loc = utils.getTopWindowLocation();
-    const page = loc.pathname + loc.search + loc.hash;
+    const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
     let requestId = '';
@@ -60,7 +60,7 @@ export const spec = {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
-      requestId = bid.requestId;
+      requestId = bid.auctionId;
 
       const format = convertSizes(bid.sizes);
 
