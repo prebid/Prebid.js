@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/serverbidBidAdapter';
+import { spec } from 'modules/inskinBidAdapter';
 
 var bidFactory = require('src/bidfactory.js');
 
 const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
-const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
 const REQUEST = {
   'bidderCode': 'inskin',
@@ -13,7 +12,7 @@ const REQUEST = {
   'bidRequest': [{
     'bidder': 'inskin',
     'params': {
-      'networkId': 9969,
+      'networkId': 9874,
       'siteId': 730181
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
@@ -28,7 +27,7 @@ const REQUEST = {
   {
     'bidder': 'inskin',
     'params': {
-      'networkId': 9969,
+      'networkId': 9874,
       'siteId': 730181
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
@@ -100,7 +99,7 @@ const RESPONSE = {
   }
 };
 
-describe('Serverbid BidAdapter', () => {
+describe('InSkin BidAdapter', () => {
   let bidRequests;
   let adapter = spec;
 
@@ -177,7 +176,7 @@ describe('Serverbid BidAdapter', () => {
     it('request to inskin should contain a url', () => {
       let request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.have.string('inskin.com');
+      expect(request.url).to.have.string('inskinad.com');
     });
 
     it('requires valid bids to make request', () => {

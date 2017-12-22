@@ -11,7 +11,7 @@ const CONFIG = {
 
 export const spec = {
   code: BIDDER_CODE,
-  
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -137,7 +137,7 @@ export const spec = {
           return;
         }
 
-        const id = "ism_tag_" + Math.floor((Math.random() * 10e16));
+        const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
           bidId: e.data.bidId,
           serverResponse
