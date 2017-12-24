@@ -139,6 +139,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
   return {
     callBids: _callBids
   };
+
 };
 
 adaptermanager.registerBidAdapter(new MemeGenAdapter(), bidderName);
