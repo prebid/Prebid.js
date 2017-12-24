@@ -49,10 +49,8 @@ var MemeGenAdapter = function MemeGenAdapter() {
       adH = bidSizes[0][1];
     }
 
-    // build bid request with impressions
-    var bidRequest;
-    if (isInapp) {
-      bidRequest = {
+    function buildInappRequest() {
+      return {
         id: utils.getUniqueIdentifierStr(),
         imp: [{
           id: bidReq.bidId,
@@ -77,8 +75,10 @@ var MemeGenAdapter = function MemeGenAdapter() {
           ifa: utils.getBidIdParameter('deviceIfa', bidReq.params)
         }
       };
-    } else {
-      bidRequest = {
+    }
+
+    function buildWebRequst() {
+      return {
         id: utils.getUniqueIdentifierStr(),
         imp: [{
           id: bidReq.bidId,
@@ -100,6 +100,15 @@ var MemeGenAdapter = function MemeGenAdapter() {
           ua: ua,
         },
       };
+    }
+
+    // build bid request with impressions
+    var bidRequest;
+
+    if (isInapp) {
+      bidRequest = buildInappRequest();
+    } else {
+      bidRequest = buildWebRequst();
     }
 
     var pageUrl = utils.getBidIdParameter('pageUrl', bidReq.params);
