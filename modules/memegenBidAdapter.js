@@ -31,8 +31,11 @@ var MemeGenAdapter = function MemeGenAdapter() {
     var domain = window.location.host;
     var page = window.location.host + window.location.pathname + location.search + location.hash;
 
+    var isInapp = utils.getBidIdParameter('isInapp', bidReq.params);
     var publisherId = utils.getBidIdParameter('publisherId', bidReq.params);
     var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
+    var ua = utils.getBidIdParameter('ua', bidReq.params) || window.navigator.userAgent;
+
     var adW = 0;
     var adH = 0;
 
@@ -47,28 +50,61 @@ var MemeGenAdapter = function MemeGenAdapter() {
     }
 
     // build bid request with impressions
-    var bidRequest = {
-      id: utils.getUniqueIdentifierStr(),
-      imp: [{
-        id: bidReq.bidId,
-        banner: {
-          w: adW,
-          h: adH
+    var bidRequest;
+    if (isInapp) {
+      bidRequest = {
+        id: utils.getUniqueIdentifierStr(),
+        imp: [{
+          id: bidReq.bidId,
+          banner: {
+            w: adW,
+            h: adH
+          },
+          tagid: bidReq.placementCode,
+          bidfloor: bidFloor
+        }],
+        app: {
+          id: publisherId,
+          name: utils.getBidIdParameter('appName', bidReq.params),
+          bundle: utils.getBidIdParameter('appBundle', bidReq.params),
+          storeurl: utils.getBidIdParameter('appStoreurl', bidReq.params),
+          publisher: {
+            id: publisherId
+          }
         },
-        tagid: bidReq.placementCode,
-        bidfloor: bidFloor
-      }],
-      site: {
-        domain: domain,
-        page: page,
-        publisher: {
-          id: publisherId
+        device: {
+          ua: ua,
+          ifa: utils.getBidIdParameter('deviceIfa', bidReq.params)
         }
-      }
-    };
+      };
+    } else {
+      bidRequest = {
+        id: utils.getUniqueIdentifierStr(),
+        imp: [{
+          id: bidReq.bidId,
+          banner: {
+            w: adW,
+            h: adH
+          },
+          tagid: bidReq.placementCode,
+          bidfloor: bidFloor
+        }],
+        site: {
+          domain: domain,
+          page: page,
+          publisher: {
+            id: publisherId
+          }
+        },
+        device: {
+          ua: ua,
+        },
+      };
+    }
 
     var pageUrl = utils.getBidIdParameter('pageUrl', bidReq.params);
     var pageDomain = utils.getBidIdParameter('pageDomain', bidReq.params);
+    var ip = utils.getBidIdParameter('ip', bidReq.params);
 
     if (pageUrl) {
       bidRequest.site.page = pageUrl;
@@ -76,6 +112,10 @@ var MemeGenAdapter = function MemeGenAdapter() {
 
     if (pageDomain) {
       bidRequest.site.domain = pageDomain;
+    }
+
+    if (ip) {
+      bidRequest.device.ip = ip;
     }
 
     var tagId = utils.getBidIdParameter('tagId', bidReq.params);
