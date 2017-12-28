@@ -115,15 +115,15 @@ var MemeGenAdapter = function MemeGenAdapter() {
     var pageDomain = utils.getBidIdParameter('pageDomain', bidReq.params);
     var ip = utils.getBidIdParameter('ip', bidReq.params);
 
-    if (pageUrl) {
+    if (pageUrl && bidRequest.site) {
       bidRequest.site.page = pageUrl;
     }
 
-    if (pageDomain) {
+    if (pageDomain && bidRequest.site) {
       bidRequest.site.domain = pageDomain;
     }
 
-    if (ip) {
+    if (ip && bidRequest.device) {
       bidRequest.device.ip = ip;
     }
 
