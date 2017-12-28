@@ -264,6 +264,11 @@ describe('E-Planning Adapter', () => {
       const expectedUrl = '//' + TEST_ISV + '/layers/t_pbjs_2.json';
       expect(url).to.equal(expectedUrl);
     });
+
+    it('should return the parameter ncb with value 1', () => {
+      const ncb = spec.buildRequests(bidRequests).data.ncb;
+      expect(ncb).to.equal('1');
+    });
   });
 
   describe('interpretResponse', () => {

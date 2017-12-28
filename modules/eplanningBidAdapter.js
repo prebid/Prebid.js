@@ -38,6 +38,7 @@ export const spec = {
         ur: utils.getTopWindowUrl() || FILE,
         r: 'pbjs',
         pbv: '$prebid.version$',
+        ncb: '1'
       };
       if (referrerUrl) {
         params.fr = referrerUrl;
