@@ -1,8 +1,6 @@
-Home of the Prebid.js documentation and downloads at [Prebid.org](http://prebid.org).
+This repository contains the source files for the Prebid.js documentation site at [Prebid.org](http://prebid.org).
 
-Thanks in advance for any contributions!  All contributors are listed in the **Thanks** section below.
-
-Please see the sections below before submitting a PR.
+Please see the sections below for more information.
 
 + [Contributing](#contributing)
 + [License](#license)
@@ -16,7 +14,7 @@ Please see the sections below before submitting a PR.
 
 ## Contributing
 
-This is the repo that controls [Prebid.org](http://prebid.org).  We welcome any contributions.
+Thanks in advance for your contribution!  Contributors are listed in the **Thanks** section below.
 
 For smaller changes, such as fixing a typo or adding a new section to an existing page, submit a pull request.
 
