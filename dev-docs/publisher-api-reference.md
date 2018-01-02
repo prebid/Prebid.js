@@ -803,7 +803,7 @@ per adapter as needed. Both scenarios are described below.
 
 **Keyword targeting for all bidders**
 
-The below code snippet is the *default* setting for ad server targeting. For each bidder's bid, Prebid.js will set 4 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target these keys.
+The below code snippet is the *default* setting for ad server targeting. For each bidder's bid, Prebid.js will set 5 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`, `hb_source`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target these keys.
 
 If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. *Note* that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly. See the [Ad Ops](../adops.html) documentation for more information.
 
@@ -836,6 +836,11 @@ pbjs.bidderSettings = {
             key: 'hb_size',
             val: function (bidResponse) {
                 return bidResponse.size;
+            }
+        }, {
+            key: 'hb_source',
+            val: function (bidResponse) {
+                return bidResponse.source;
             }
         }]
     }

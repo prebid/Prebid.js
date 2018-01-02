@@ -64,6 +64,8 @@ Voila, you have dynamic allocation-like functionality for the major SSPs and exc
 | hb_bidder | Required | The bidder code. Useful for logging and reporting to learn about which bidder has higher fill rate/CPM. | `rubicon` |
 | hb_size | Optional | The width and height concatenated. | `300x250` |
 | hb_cpm | Optional | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
+| hb_source | Optional | Returns the source of the bid, either "client" or "s2S" for server bid responses | `client` |
+
 
 
 <a name="price-bucket-def"></a>
