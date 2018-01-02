@@ -3,13 +3,15 @@ import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
 import CONSTANTS from 'src/constants.json';
 
+const utils = require('src/utils.js');
+
 var realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
 });
 /*
-  Copyright(C) 2001-2017, RealVu Inc., All rights reserved. Use of RealVu’s patented, patent pending,
+  Copyright(C) 2001-2018, RealVu Inc., All rights reserved. Use of RealVu’s patented, patent pending,
   copyrighted and proprietary code is not being made available under an Apache or other open source license,
   but is available only under a proprietary license of RealVu Inc.
 */
@@ -67,7 +69,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       window.top1.realvu_boost.foc = 0; /* window.top1.realvu_boost.log('blur',-1); */
     });
     z.add_evt(window.top1, 'visibilitychange', function () {
-      window.top1.realvu_boost.foc = !window.top1.document.hidden; /* window.top1.realvu_boost.log('vis-ch '+window.top1.realvu_boost.foc,-1); */
+      window.top1.realvu_boost.foc = !window.top1.document.hidden;
+      /* window.top1.realvu_boost.log('vis-ch '+window.top1.realvu_boost.foc,-1); */
     });
     // -
     z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
@@ -132,9 +135,9 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return d;
   },
 
-  track: function (a, pin, f) {
+  track: function (a, f, params) {
     var z = this;
-    var s1 = z.tru(a, pin, f);
+    var s1 = z.tru(a, f) + params;
     if (f == 'conf') {
       z.scr(s1, a);
       z.log(' <a href=\'' + s1 + '\'>' + f + '</a>', a.num);
@@ -148,13 +151,33 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
+  track_bids: function(a) {
+    let rpt = '';
+    for (let i = 0; i < a.bids.length; i++) {
+      let g = a.bids[i];
+      rpt += '&bdr=' + g.bidder + '&cpm=' + g.cpm + '&vi=' + a.riff +
+        '&gw=' + g.winner + '&crt=' + g.creative_id + '&ttr=' + g.ttr;
+      // append bid partner_id if any
+      let pid = '';
+      for (let j = 0; j < a.rq_bids.length; j++) {
+        let rqb = a.rq_bids[j];
+        if (rqb.adId == g.adId) {
+          pid = rqb.partner_id;
+          break;
+        }
+      }
+      rpt += '&bc=' + pid;
+    }
+    this.track(a, 'mix', rpt);
+  },
+
   send_track: function () {
     var z = this;
     if (z.sr >= 'a') { // conf, send beacons
       var bk = z.beacons.shift();
       while (typeof bk != 'undefined') {
         bk.s1 = bk.s1.replace(/_sr=0*_/, '_sr=' + z.sr + '_');
-        z.log(' ' + bk.a.rr + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
+        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
           z.scr(bk.s1, bk.a);
@@ -168,7 +191,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     var st = document.createElement('script');
     st.async = true;
     st.type = 'text/javascript';
-    st.src = s1; // +"&ds1="+document.readyState;
+    st.src = s1;
     if (a && a.dv0 != null) {
       a.dv0.appendChild(st);
     } else {
@@ -177,13 +200,13 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
 
-  tru: function (a, pin, f) {
-    var s2 = '//ac.realvu.net/flip/2/c=' + pin.partner_id +
-      '_f=' + f + '_r=' + a.rr +
+  tru: function (a, f) {
+    let pin = a.pins[0];
+    var s2 = '//ac.realvu.net/flip/3/c=' + pin.partner_id +
+      '_f=' + f + '_r=' + a.riff +
       '_s=' + a.w + 'x' + a.h;
     if (a.p) s2 += '_p=' + a.p;
     s2 += '_ps=' + this.enc(a.unit_id) + // 08-Jun-15 - _p= is replaced with _ps= - p-number, ps-string
-      // + '_n=' + a.num  03-Mar-15 - we ignore order number for collection
       '_dv=' + this.device +
       // + '_a=' + this.enc(a.a)
       '_d=' + pin.mode +
@@ -198,11 +221,14 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
 
-  findPosG: function (adi, wnd) {
+  findPosG: function (adi) {
     var t = this;
     var ad = adi;
     var xp = 0;
     var yp = 0;
+    var dc = adi.ownerDocument;
+    var wnd = dc.defaultView || dc.parentWindow;
+
     try {
       while (ad != null && typeof (ad) != 'undefined') {
         if (ad.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
@@ -309,7 +335,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         var target = (a.target !== null) ? a.target : a.div;
         a.box.w = Math.max(target.offsetWidth, a.w);
         a.box.h = Math.max(target.offsetHeight, a.h);
-        var q = z.findPosG(target, a.wnd);
+        var q = z.findPosG(target);
         var pad = {};
         pad.t = z.padd(target, 'Top');
         pad.l = z.padd(target, 'Left');
@@ -352,7 +378,6 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       var plen = a.pins.length;
       for (var j = 0; j < plen; j++) {
         var pin = a.pins[j];
-        var doMem = (a.x > 0) && (a.y > 0);
         if (pin.state <= 1) {
           var dist = z.viz_dist(a.x, a.x + a.w, a.y, a.y + a.h);
           var near = (pin.dist != null && dist <= pin.dist);
@@ -362,17 +387,20 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
           if (near && a.r == 'no') {
             a.r = 'yes';
           }
-          if (doMem) {
-            var scr = z.score(a.num);
-            if (a.r == 'yes' && scr < (20 + 40 * Math.random())) {
-              a.r = 'no';
+          if (a.riff === '') {
+            a.riff = a.r;
+            var vr_score = z.score(a, 'v:r');
+            if (vr_score != null) {
+              if (a.r == 'no' && vr_score > 75) {
+                a.riff = 'yes';
+              }
             }
-            /* if (a.r=="no"&&scr>80){
-              a.r="yes";
-            } */
-          }
-          if (a.y < 0) {
-            a.r = 'out'; // 11-Mar-17, if the unit intentionaly moved out, count it as out.
+            var vv0_score = z.score(a, 'v:v0');
+            if (vv0_score != null) {
+              if (a.r == 'yes' && vv0_score < (30 + 25 * Math.random())) {
+                a.riff = 'no';
+              }
+            }
           }
           // f-frame, y-yes in view,n-not in view
           if ((pin.mode == 'kvp' || pin.mode == 'tx2') || (((a.vz > vtr) || near) && ((pin.mode == 'in-view' || pin.mode == 'video')))) {
@@ -385,29 +413,41 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
             pin.state = 3;
             dvz = 0;
             a.vt = 0;
-            z.track(a, pin, 'rend');
-            if (doMem) z.incrMem(a.num, 'r');
+
+            // @if NODE_ENV='debug'
+            let now = new Date();
+            let msg = (now.getTime() - time0) / 1000 + ' RENDERED ' + a.unit_id;
+            utils.logMessage(msg);
+            // @endif
+
+            z.track(a, 'rend');
+            z.incrMem(a, 'r', 'v:r');
           }
         }
         if (pin.state > 2) {
           var tmin = (pin.mode == 'video') ? 2E3 : 1E3; // mrc min view time
           if (a.vz > vtr) {
             pin.vt += dvz; // real dt counter in milliseconds, because of poll() can be called irregularly
-            if (pin.state == 3 && pin.vt >= tmin) {
+            if (pin.state == 3) {
               pin.state = 4;
-              z.track(a, pin, 'view');
-              if (doMem) z.incrMem(a.num, 'v');
+              z.incrMem(a, 'r', 'v:v0');
             }
-            if (pin.state == 4 && pin.vt >= 2 * tmin) {
+            if (pin.state == 4 && pin.vt >= tmin) {
               pin.state = 5;
-              z.track(a, pin, 'view2');
+              z.track(a, 'view');
+              z.incrMem(a, 'v', 'v:r');
+              z.incrMem(a, 'v', 'v:v0');
+            }
+            if (pin.state == 5 && pin.vt >= 5 * tmin) {
+              pin.state = 6;
+              z.track(a, 'view2');
             }
           } else if (pin.vt < tmin) {
             pin.vt = 0; // reset to track continuous 1 sec
           }
         }
         if (pin.state >= 2 && pin.mode === 'tx2' &&
-          ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu > pin.delay && a.rr === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
+          ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu > pin.delay && a.riff === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
           // flip or rotate
           pin.tx2n--;
           pin.state = 1;
@@ -422,19 +462,38 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   questA: function (a) { // look for the visible object of ad_sizes size
     // returns the object or null
     if (a == null) return a;
+    if (a.nodeType == Node.TEXT_NODE) {
+      var dc = adi.ownerDocument;
+      var wnd = dc.defaultView || dc.parentWindow;
+      var par = a.parentNode;
+      if (wnd == wnd.top) {
+        return par;
+      } else {
+        return par.offsetParent;
+      }
+    }
+    var not_friendly = false;
+    var ain = null;
     var tn = a.tagName;
-    if (tn == 'OBJECT' || tn == 'IMG' || tn == 'IFRAME' || tn == 'EMBED' || tn == 'SVG' || tn == 'A') {
+    if (tn == 'HEAD' || tn == 'SCRIPT') return null;
+    if (tn == 'IFRAME') {
+      try {
+        ain = this.doc(a); // a.contentDocument || a.contentWindow.document; // get inside iframe;
+      } catch (e) {
+        ain = null; // 2-can't get inside iframe of visible size (more then 99 sq.pixels)
+      }
+      if (ain == null) {
+        not_friendly = true;
+      } else {
+        a = ain;
+        tn = a.tagName;
+      }
+    }
+    if (not_friendly || tn == 'OBJECT' || tn == 'IMG' || tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
+      (tn == 'DIV' && a.style.backgroundImage)) {
       var w1 = a.offsetWidth;
       var h1 = a.offsetHeight;
-      if (w1 > 16 && h1 > 16 && a.style.display != 'none') return a;
-      if (tn == 'IFRAME') {
-        try {
-          a = this.doc(a); // a.contentDocument || a.contentWindow.document; // get inside iframe;
-          if (a == null) return null;
-        } catch (e) {
-          return null; // 2-can't get inside iframe of visible size (more then 99 sq.pixels)
-        }
-      }
+      if (w1 > 33 && h1 > 33 && a.style.display != 'none') return a;
     }
     if (a.hasChildNodes()) {
       var b = a.firstChild;
@@ -447,30 +506,6 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return null;
   },
 
-  newf: function (a, w, h) {
-    var f = a.wnd.document.createElement('iframe');
-    f.src = 'about:blank';
-    f.width = w;
-    f.height = h;
-    f.frameBorder = 0;
-    f.scrolling = 'no';
-    f.style['border'] = 'none';
-    return f;
-  },
-
-  doc: function (f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
-    var d = null;
-    try {
-      if (f.contentDocument) d = f.contentDocument; // DOM
-      else if (f.contentWindow) d = f.contentWindow.document; // IE
-      // //else if (f.document) d = f.document;
-    } catch (e) {
-      this.log(e.message, -1);
-    }
-    return d;
-  },
-
-  // add is a local function - place a div and define visibility
   bind_obj: function (a, adobj) {
     a.div = adobj;
     a.target = null; // initially null, found ad when served
@@ -499,11 +534,11 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       div: null,
       pins: [],
       frm: null, // it will be frame when "show"
-      rr: '', // r to report, value when ad call "show" event)
+      riff: '', // r to report
       rnd: Math.random(),
       ncall: 0, // a callback number
-      mem_xy: '',
-      mem_num: 0
+      rq_bids: [], // rq bids of registered partners
+      bids: [] // array of bids
     };
     a.ru = window.top1.location.hostname;
     window.top1.realvu_boost.ads[this.len++] = a;
@@ -513,6 +548,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   fmt: function (a, pin) {
     return {
       'realvu': a.r,
+      'riff': a.riff,
       'area': a.vz,
       'ncall': a.ncall,
       'n': a.num,
@@ -522,7 +558,6 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   },
 
   show: function (a, pin) {
-    a.rr = a.r; // now report r when ad call, and report the rr same value if view happen
     pin.state = 2; // 2-published
     pin.vt = 0; // reset view time counter
     if (pin.size) {
@@ -536,23 +571,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       pin.callback(this.fmt(a, pin));
     }
     a.ncall++;
-    if (typeof pin.content != 'undefined') {
-      if (a.frm == null) {
-        a.div.style.width = a.w + 'px';
-        a.div.style.height = a.h + 'px';
-        a.frm = this.newf(a, a.w, a.h);
-        a.div.appendChild(a.frm);
-      } else {
-        this.exp(a);
-      }
-      var d1 = this.doc(a.frm);
-      d1.open();
-      d1.write('<!DOCTYPE html><html><head></head><body style="margin:0px;">' +
-        pin.content.replace(/{realvu}/, a.r) +
-        '</body></html>');
-      d1.close();
-    }
-    this.track(a, pin, 'show');
+    this.track(a, 'show');
   },
   // publisher calls check() to get "RealVu" flag for the d element
   // check can be called 1 or 2 times
@@ -609,21 +628,23 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
             a.h = asz.h;
           }
         }
-      }
-      pin.delay = pin.delay || 0; // delay in msec
-      if (typeof pin.mode == 'undefined') {
-        if ((typeof pin.callback != 'undefined') || (typeof pin.content != 'undefined')) {
-          pin.mode = (pin.delay > 0) ? 'tx2' : 'in-view';
-        } else {
-          pin.mode = 'kvp';
+        pin.delay = pin.delay || 0; // delay in msec
+        if (typeof pin.mode == 'undefined') {
+          if ((typeof pin.callback != 'undefined') || (typeof pin.content != 'undefined')) {
+            pin.mode = (pin.delay > 0) ? 'tx2' : 'in-view';
+          } else {
+            pin.mode = 'kvp';
+          }
+          // delays are for views only
         }
-        // delays are for views only
+        pin.vt = 0; // view time
+        pin.state = 0;
+        a.pins.push(pin);
+      } else {
+        a.pins[0].partner_id = pin.partner_id;
       }
-      pin.vt = 0; // view time
-      pin.state = 0;
-      a.pins.push(pin);
       if (this.sr === '') {
-        z.track(a, pin, 'conf');
+        z.track(a, 'conf');
         this.sr = '0';
       }
       this.poll();
@@ -668,47 +689,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
     return null;
   },
-  exp: function (a) {
-    a.frx = a.frm; // "old" iframe - to be replaced
-    a.frm = this.newf(a, a.w, 0);
-    a.frm.style.display = 'block';
-    a.div.insertBefore(a.frm, a.div.firstChild);
-    this.trans(a.num, 5);
-  },
-  trans: function (i, h) {
-    var a = window.top1.realvu_boost.ads[i];
-    h += 5 + h / 5;
-    if (h > a.h) h = a.h;
-    a.frm.height = h;
-    a.frx.height = a.h - h;
-    if (h < a.h) setTimeout(window.top1.realvu_boost.trans(i, h), 20);
-    else { // if old content inside iframe - remove it
-      a.frx.height = 0;
-      a.frx.style.display = 'none';
-      a.div.removeChild(a.frx);
-      a.frx = null;
-    }
-  },
   // API functions
-  addUnitsByClassName: function (partner_id, class_name, callback, delay) {
-    var p1 = partner_id;
-    if (typeof (p1) == 'string') {
-      p1 = {
-        partner_id: partner_id,
-        class_name: class_name,
-        callback: callback,
-        delay: delay
-      };
-    }
-    var ads = document.getElementsByClassName(p1.class_name);
-    window.top1.realvu_boost.log('N=' + ads.length, -1);
-    for (var i = 0; i < ads.length; i++) {
-      p1.unit_id = ads[i].id;
-      window.top1.realvu_boost.check(p1);
-    }
-    this.poll();
-  },
-
   addUnitById: function (partner_id, unit_id, callback, delay) {
     var p1 = partner_id;
     if (typeof (p1) == 'string') {
@@ -723,24 +704,64 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     return a.r;
   },
 
-  addUnit: function (u) {
-    var tgt = u.unit ? u.unit : document.body; // if delivered inside iframe
-    var z = window.top1.realvu_boost;
-    if (tgt) {
-      u.unit = tgt;
-      var a = z.check(u);
-      return z.fmt(a); // return a.r temporary - to sync with WN
+  checkBidIn: function(partnerId, args, b) {
+    // b==true - add/update, b==false - update only
+    if (args.cpm == 0) return; // collect only bids submitted
+    const boost = window.top1.realvu_boost;
+    let push_bid = false;
+    let adi = null;
+    if (!b) { // update only if already checked in by xyzBidAdapter
+      for (var i = 0; i < boost.ads.length; i++) {
+        adi = boost.ads[i];
+        if (adi.unit_id == args.adUnitCode) {
+          // for (var j = 0; j < adi.rq_bids.length; j++) {
+          // if (adi.rq_bids.adId == args.adId) {
+          push_bid = true;
+          // break;
+          // }
+          // }
+          break;
+        }
+      }
     } else {
-      return null;
+      push_bid = true;
+      adi = window.top1.realvu_boost.check({
+        unit_id: args.adUnitCode,
+        size: args.size,
+        partner_id: partnerId
+      });
+    }
+    if (push_bid) {
+      adi.bids.push({
+        bidder: args.bidder,
+        cpm: args.cpm,
+        size: args.size,
+        adId: args.adId,
+        requestId: args.requestId,
+        creative_id: args.creative_id,
+        ttr: args.timeToRespond,
+        winner: false
+      });
     }
   },
 
-  getViewStatusById: function (unit_id) {
+  checkBidWon: function(partnerId, args, b) {
+    // b==true - add/update, b==false - update only
+    var unit_id = args.adUnitCode;
     for (var i = 0; i < this.ads.length; i++) {
       var adi = this.ads[i];
-      if (adi.unit_id == unit_id) return adi.r; // this.fmt(a); // return a.r temporary - to sync with WN
+      if (adi.unit_id == unit_id) {
+        for (var j = 0; j < adi.bids.length; j++) {
+          var bj = adi.bids[j];
+          if (bj.adId == args.adId) {
+            bj.winner = 1;
+            break;
+          }
+        }
+        this.track_bids(adi);
+        break;
+      }
     }
-    return 'nr';
   },
 
   getStatusById: function (unit_id) { // Jun 1, 2015 - return status object
@@ -767,11 +788,15 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     }
   },
   writePos: function (a) {
-    var v = a.x + ',' + a.y + ',' + a.w + ',' + a.h;
-    if (localStorage) localStorage.setItem(this.keyPos(a), v);
+    try {
+      var v = a.x + ',' + a.y + ',' + a.w + ',' + a.h;
+      localStorage.setItem(this.keyPos(a), v);
+    } catch (ex) {
+      /* do nothing */
+    }
   },
   readPos: function (a) {
-    if (localStorage) {
+    try {
       var s = localStorage.getItem(this.keyPos(a));
       if (s) {
         var v = s.split(',');
@@ -779,49 +804,55 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         a.y = parseInt(v[1], 10);
         a.w = parseInt(v[2], 10);
         a.h = parseInt(v[3], 10);
-        a.box = {
-          x: a.x,
-          y: a.y,
-          w: a.w,
-          h: a.h
-        };
+        a.box = {x: a.x, y: a.y, w: a.w, h: a.h};
         return true;
       }
+    } catch (ex) {
+      /* do nothing */
     }
     return false;
   },
-
-  keyMem: function (num) {
-    return this.keyPos(this.ads[num]) + '.score';
-  },
-
-  incrMem: function (num, v) {
-    var k1 = this.keyMem(num);
-    var n = parseInt(this.getMem(k1), 10);
-    if (isNaN(n)) {
-      n = 0x57F57; // initial score 75, 20 bits, step 5
+  incrMem: function(a, evt, name) {
+    try {
+      var k1 = this.keyPos(a) + '.' + name;
+      var vmem = localStorage.getItem(k1);
+      if (vmem == null) vmem = '1:3';
+      var vr = vmem.split(':');
+      var nv = parseInt(vr[0], 10);
+      var nr = parseInt(vr[1], 10);
+      if (evt == 'r') {
+        nr <<= 1;
+        nr |= 1;
+        nv <<= 1;
+      }
+      if (evt == 'v') {
+        nv |= 1;
+      }
+      localStorage.setItem(k1, nv + ':' + nr);
+    } catch (ex) {
+      /* do nothing */
     }
-    if (v == 'r') n = n << 1;
-    if (v == 'v') n |= 1;
-    n &= 0xFFFFF;
-    this.updateMem(k1, n);
   },
 
-  score: function (num) {
-    var k1 = this.keyMem(num);
-    var r = parseInt(this.getMem(k1));
-    if (isNaN(r)) r = 0x57F57;
-    var s = 0;
-    for (r &= 0x3FF; r > 0; r >>>= 1) {
-      if (r & 0x1) s++;
+  score: function (a, name) {
+    try {
+      var vstr = localStorage.getItem(this.keyPos(a) + '.' + name);
+      if (vstr != null) {
+        var vr = vstr.split(':');
+        var nv = parseInt(vr[0], 10);
+        var nr = parseInt(vr[1], 10);
+        var sv = 0;
+        var sr = 0;
+        for (nr &= 0x3FF; nr > 0; nr >>>= 1, nv >>>= 1) { // count 10 deliveries  
+          if (nr & 0x1) sr++;
+          if (nv & 0x1) sv++;
+        }
+        return Math.round(sv * 100 / sr);
+      }
+    } catch (ex) {
+      /* do nothing */
     }
-    return s * 100.0 / 10;
-  },
-  getMem: function (key) {
-    return localStorage.getItem(key);
-  },
-  updateMem: function (key, value) {
-    localStorage.setItem(key, value);
+    return null;
   }
 };
 
@@ -834,65 +865,79 @@ if (typeof (window.top1.boost_poll) == 'undefined') {
 
 var options = {};
 
-realvuAnalyticsAdapter.getOptions = function () {
-  return options;
-}
-
 realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
   options = config.options;
-  // realvuAnalyticsAdapter.originEnableAnalytics(config);
+  if (typeof (options.partnerId) == 'undefined' || options.partnerId == '') {
+    utils.logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
+  }
+  realvuAnalyticsAdapter.originEnableAnalytics(config);
+  return options.partnerId;
 };
 
-realvuAnalyticsAdapter.track = function ({
-  eventType,
-  args
-}) {
-  var msg = document.getElementById('msg_an');
-  if (msg) {
-    msg.innerHTML += 'track: eventType=' + eventType + ', args=' + JSON.stringify(args) + '<br>';
+const time0 = (new Date()).getTime();
+
+realvuAnalyticsAdapter.track = function ({eventType, args}) {
+  // @if NODE_ENV='debug'
+  let msg = '';
+  let now = new Date();
+  msg += (now.getTime() - time0) / 1000 + ' eventType=' + eventType;
+  if (typeof (args) != 'undefined') {
+    msg += ', args.bidder=' + args.bidder + ' args.adUnitCode=' + args.adUnitCode +
+      ' args.adId=' + args.adId +
+      ' args.cpm=' + args.cpm +
+      ' creativei_id=' + args.creative_id;
   }
-  if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-    if (options && options.partnerId) {
-      var hb = $$PREBID_GLOBAL$$;
-      for (var i = 0; i < hb.adUnits.length; i++) {
-        var code = hb.adUnits[i].code;
-        var b = options.regAllUnits;
-        if (!b && options.unitIds) {
-          for (var j = 0; j < options.unitIds.length; j++) {
-            if (code === options.unitIds[j]) {
-              b = true;
-              break;
-            }
-          }
-        }
-        if (b) {
-          // register the unit in realvu_boost
-          var sizes = hb.adUnits[i].sizes;
-          var ui = {
-            partner_id: options.partnerId,
-            unit_id: code,
-            size: sizes
-          };
-          window.top1.realvu_boost.check(ui);
+  // msg += '\nargs=' + JSON.stringify(args) + '<br>';
+  utils.logMessage(msg);
+  // @endif
+
+  const boost = window.top1.realvu_boost;
+  var b = false; // false - update only, true - add if not checked in yet
+  var partnerId = null;
+  if (options && options.partnerId && args) {
+    partnerId = options.partnerId;
+    var code = args.adUnitCode;
+    b = options.regAllUnits;
+    if (!b && options.unitIds) {
+      for (var j = 0; j < options.unitIds.length; j++) {
+        if (code === options.unitIds[j]) {
+          b = true;
+          break;
         }
       }
     }
   }
+  if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+    boost.checkBidIn(partnerId, args, b);
+  } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
+    boost.checkBidWon(partnerId, args, b);
+  }
 };
 
-realvuAnalyticsAdapter.checkIn = function (placementCode, sizes, partnerId) {
-  return top1.realvu_boost.addUnitById({
-    unit_id: placementCode,
-    size: sizes,
+// xyzBidAdapter calls checkin() to obtain "yes/no" viewability 
+realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
+  // find (or add if not registered yet) the unit in boost 
+  if (typeof (partnerId) == 'undefined' || partnerId == '') {
+    utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
+  }
+  var a = window.top1.realvu_boost.check({
+    unit_id: bid.placementCode,
+    size: bid.sizes,
     partner_id: partnerId
   });
+  a.rq_bids.push({
+    bidder: bid.bidder,
+    adId: bid.bidId,
+    partner_id: partnerId
+  });
+  return a.riff;
 };
 
 realvuAnalyticsAdapter.isInView = function (placementCode) {
   var r = 'NA';
-  var s = top1.realvu_boost.getStatusById(placementCode);
+  var s = window.top1.realvu_boost.getStatusById(placementCode);
   if (s) {
     r = s.realvu;
   }

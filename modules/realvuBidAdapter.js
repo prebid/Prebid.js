@@ -15,7 +15,7 @@ var RealVuAdapter = function RealVuAdapter() {
     var pbids = params.bids;
     for (var i = 0; i < pbids.length; i++) {
       var bid_rq = pbids[i];
-      var inview = rvaa.checkIn(bid_rq.placementCode, bid_rq.sizes, bid_rq.params.partnerId);
+      var inview = rvaa.checkIn(bid_rq, '1Y');
       if (inview === 'yes') {
         var adap = new RvAppNexusAdapter();
         var callbackId = bid_rq.bidId;
