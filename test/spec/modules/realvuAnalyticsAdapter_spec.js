@@ -1,5 +1,7 @@
 // jshint esversion: 6
-import {expect} from 'chai';
+import {
+  expect
+} from 'chai';
 import realvuAnalyticsAdapter from '../../../modules/realvuAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 
@@ -25,14 +27,24 @@ describe('RealVu Analytics Adapter.', () => {
     document.body.removeChild(a2);
   });
 
-  it('checkIn returns "yes"', () => {
-    const bid = {placementCode: 'ad1', sizes: [[728, 90], [970, 250], [970, 90]]};
+  it('checkIn', () => {
+    const bid = {
+      placementCode: 'ad1',
+      sizes: [
+        [728, 90],
+        [970, 250],
+        [970, 90]
+      ]
+    };
     let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
     const b = window.top1.realvu_boost;
     let a = b.ads[0];
     // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
     // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
     expect(result).to.equal('yes');
+
+    result = realvuAnalyticsAdapter.checkIn(bid); // test invalid partnerId 'undefined'
+    result = realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
   });
 
   it('isInView returns "yes"', () => {
@@ -84,5 +96,46 @@ describe('RealVu Analytics Adapter.', () => {
     });
     const boost = window.top1.realvu_boost;
     expect(boost.ads[0].bids.length).to.equal(1);
+
+    realvuAnalyticsAdapter.track({
+      eventType: CONSTANTS.EVENTS.BID_WON,
+      args: args
+    });
+    expect(boost.ads[0].bids.length).to.equal(1);
+  });
+});
+
+describe('RealVu Boost.', () => {
+  before(() => {
+    addDiv('ad1');
+    addDiv('ad2');
+  });
+  after(() => {
+    let a1 = document.getElementById('ad1');
+    document.body.removeChild(a1);
+    let a2 = document.getElementById('ad2');
+    document.body.removeChild(a2);
+  });
+
+  const boost = window.top1.realvu_boost;
+
+  it('brd', () => {
+    let a1 = document.getElementById('ad1');
+    let p = boost.brd(a1, 'Left');
+    expect(typeof p).to.not.equal('undefined');
+  });
+
+  it('addUnitById', () => {
+    let a1 = document.getElementById('ad1');
+    let p = boost.addUnitById('1Y', 'ad1');
+    expect(typeof p).to.not.equal('undefined');
+  });
+
+  it('incrMem', () => {
+    // tbd
+  });
+
+  it('readPos', () => {
+    // tbd
   });
 });
