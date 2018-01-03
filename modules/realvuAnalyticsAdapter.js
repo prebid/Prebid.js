@@ -477,11 +477,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     var tn = a.tagName;
     if (tn == 'HEAD' || tn == 'SCRIPT') return null;
     if (tn == 'IFRAME') {
-      try {
-        ain = this.doc(a); // a.contentDocument || a.contentWindow.document; // get inside iframe;
-      } catch (e) {
-        ain = null; // 2-can't get inside iframe of visible size (more then 99 sq.pixels)
-      }
+      ain = this.doc(a);
       if (ain == null) {
         not_friendly = true;
       } else {
@@ -504,6 +500,17 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       }
     }
     return null;
+  },
+
+  doc: function(f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
+    var d = null;
+    try {
+      if (f.contentDocument) d = f.contentDocument; // DOM
+      else if (f.contentWindow) d = f.contentWindow.document; // IE
+    } catch (e) {
+      /* continue regardless of error */
+    }
+    return d;
   },
 
   bind_obj: function (a, adobj) {

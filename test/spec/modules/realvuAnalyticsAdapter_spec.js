@@ -12,6 +12,16 @@ function addDiv(id) {
   dv.style.height = '90px';
   dv.style.display = 'block';
   document.body.appendChild(dv);
+  let f = document.createElement('iframe');
+  f.width = 728;
+  f.height = 90;
+  dv.appendChild(f);
+  let d = null;
+  if (f.contentDocument) d = f.contentDocument; // DOM
+  else if (f.contentWindow) d = f.contentWindow.document; // IE 
+  d.open()
+  d.write('<img width="728" height="90" />');
+  d.close();
   return dv;
 }
 
@@ -101,7 +111,7 @@ describe('RealVu Analytics Adapter.', () => {
       eventType: CONSTANTS.EVENTS.BID_WON,
       args: args
     });
-    expect(boost.ads[0].bids.length).to.equal(1);
+    expect(boost.ads[0].bids[0].winner).to.equal(1);
   });
 });
 
@@ -131,11 +141,26 @@ describe('RealVu Boost.', () => {
     expect(typeof p).to.not.equal('undefined');
   });
 
-  it('incrMem', () => {
-    // tbd
+  it('questA', () => {
+    const dv = document.getElementById('ad1');
+    let q = boost.questA(dv);
+    expect(q).to.not.equal(null);
+  });
+
+  it('render', () => {
+    let dv = document.getElementById('ad1');
+    // dv.style.width = '728px';
+    // dv.style.height = '90px';
+    // dv.style.display = 'block';
+    dv.getBoundingClientRect = false;
+    // document.body.appendChild(dv);
+    let q = boost.findPosG(dv);
+    expect(q).to.not.equal(null);
   });
 
   it('readPos', () => {
-    // tbd
+    const a = boost.ads[0];
+    let r = boost.readPos(a);
+    expect(r).to.equal(true);
   });
 });
