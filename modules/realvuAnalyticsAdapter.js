@@ -423,7 +423,18 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     // returns the object or null
     if (a == null) return a;
     var tn = a.tagName;
-    if (tn == 'OBJECT' || tn == 'IMG' || tn == 'IFRAME' || tn == 'EMBED' || tn == 'SVG' || tn == 'A') {
+    if (tn == 'HEAD' || tn == 'SCRIPT') return null;
+    if (tn == 'IFRAME') {
+      ain = this.doc(a);
+      if (ain == null) {
+        not_friendly = true;
+      } else {
+        a = ain;
+        tn = a.tagName;
+      }
+    }
+    if (not_friendly || tn == 'OBJECT' || tn == 'IMG' || tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
+      (tn == 'DIV' && a.style.backgroundImage)) {
       var w1 = a.offsetWidth;
       var h1 = a.offsetHeight;
       if (w1 > 16 && h1 > 16 && a.style.display != 'none') return a;
@@ -463,9 +474,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
     try {
       if (f.contentDocument) d = f.contentDocument; // DOM
       else if (f.contentWindow) d = f.contentWindow.document; // IE
-      // //else if (f.document) d = f.document;
     } catch (e) {
-      this.log(e.message, -1);
+      /* continue regardless of error */
     }
     return d;
   },

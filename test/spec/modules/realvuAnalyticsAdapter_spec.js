@@ -9,6 +9,16 @@ function addDiv(id) {
   let dv = document.createElement('div');
   dv.id = id;
   document.body.appendChild(dv);
+  let f = document.createElement('iframe');
+  f.width = 728;
+  f.height = 90;
+  dv.appendChild(f);
+  let d = null;
+  if (f.contentDocument) d = f.contentDocument; // DOM
+  else if (f.contentWindow) d = f.contentWindow.document; // IE 
+  d.open()
+  d.write('<img width="728" height="90" />');
+  d.close();
   return dv;
 }
 
@@ -107,30 +117,11 @@ describe('RealVu Analytics Adapter Test.', () => {
     document.body.removeChild(ad_div);
   });
 
-  it('test boost adUnitsByClassName', () => {
-    const boost = window.top1.realvu_boost;
-    const partnerId = '1Y';
-    const callback = null;
-    const delay = null;
-    let ad_div = addDiv('ad4');
-    ad_div.className = 'testClass';
-    boost.addUnitsByClassName(partnerId, 'testClass', callback, delay);
-    expect(boost.ads.length).to.equal(4);
-    document.body.removeChild(ad_div);
-  });
-
-  it('test boost adUnit', () => {
-    let boost = window.top1.realvu_boost;
-    let ad_div = document.createElement('div');
-    ad_div.id = 'ad5';
-    document.body.appendChild(ad_div);
-    let u = {
-      partnerId: '1Y',
-      unit: ad_div
-    };
-    boost.addUnit(u);
-    expect(boost.ads.length).to.equal(5);
-    document.body.removeChild(ad_div);
+    realvuAnalyticsAdapter.track({
+      eventType: CONSTANTS.EVENTS.BID_WON,
+      args: args
+    });
+    expect(boost.ads[0].bids[0].winner).to.equal(1);
   });
 
   it('test boost getViewStatusById', () => {
@@ -197,39 +188,27 @@ describe('RealVu Analytics Adapter Test.', () => {
     expect(rtn).to.equal(null);
   });
 
-  it('test boost doc exception', () => {
-    let boost = window.top1.realvu_boost;
-    let rtn = boost.doc(null);
-    expect(rtn).to.equal(null);
+  it('questA', () => {
+    const dv = document.getElementById('ad1');
+    let q = boost.questA(dv);
+    expect(q).to.not.equal(null);
   });
 
-  it('test boost setSize', () => {
-    let boost = window.top1.realvu_boost;
-    let a = [320, 50];
-    let b = [970, 90];
-    let c = [
-      [320, 50]
-    ];
-    let d = [
-      [970, 90]
-    ];
-    let rtn = boost.setSize(a);
-    expect(rtn.w).to.equal(320);
-    expect(rtn.h).to.equal(50);
-    rtn = boost.setSize(b);
-    expect(rtn.w).to.equal(970);
-    expect(rtn.h).to.equal(90);
-    rtn = boost.setSize('300x250');
-    expect(rtn.w).to.equal(300);
-    expect(rtn.h).to.equal(250);
-    rtn = boost.setSize(c);
-    expect(rtn.w).to.equal(320);
-    expect(rtn.h).to.equal(50);
-    rtn = boost.setSize(d);
-    expect(rtn.w).to.equal(970);
-    expect(rtn.h).to.equal(90);
-    rtn = boost.setSize(null);
-    expect(rtn).to.equal(null);
+  it('render', () => {
+    let dv = document.getElementById('ad1');
+    // dv.style.width = '728px';
+    // dv.style.height = '90px';
+    // dv.style.display = 'block';
+    dv.getBoundingClientRect = false;
+    // document.body.appendChild(dv);
+    let q = boost.findPosG(dv);
+    expect(q).to.not.equal(null);
+  });
+
+  it('readPos', () => {
+    const a = boost.ads[0];
+    let r = boost.readPos(a);
+    expect(r).to.equal(true);
   });
 
   it('test boost brd', () => {
