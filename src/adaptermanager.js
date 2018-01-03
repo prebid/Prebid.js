@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp } from './utils';
 import { resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -234,6 +234,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
+          bidRequest.start = timestamp();
           bidRequest.doneCbCallCount = 0;
           return doneCb(bidRequest.bidderRequestId)
         });
@@ -265,7 +266,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
 
   // handle client adapter requests
   clientBidRequests.forEach(bidRequest => {
-    bidRequest.start = new Date().getTime();
+    bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
     if (adapter) {

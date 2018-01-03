@@ -60,7 +60,7 @@ export const spec = {
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
-      requestId = bid.requestId;
+      requestId = bid.auctionId;
 
       const format = convertSizes(bid.sizes);
 
