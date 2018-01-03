@@ -3,8 +3,10 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {VIDEO} from 'src/mediaTypes';
 import {Renderer} from 'src/Renderer';
 
-const URL = '//rtb.vertamedia.com/hb/';
+const URL = '//hb2.vertamedia.com/auction/';
 const BIDDER_CODE = 'vertamedia';
+const OUTSTREAM = 'outstream';
+const DISPLAY = 'display';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,7 +42,7 @@ export const spec = {
     const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
     const videoMediaType = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video');
     const context = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video.context');
-    const isMediaTypeOutstream = (videoMediaType && context === 'outstream');
+    const mediaType = !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
 
     let bids = [];
 
@@ -55,7 +57,7 @@ export const spec = {
 
     serverResponse.bids.forEach(serverBid => {
       if (serverBid.cpm !== 0) {
-        const bid = createBid(isMediaTypeOutstream, serverBid);
+        const bid = createBid(mediaType, serverBid);
         bids.push(bid);
       }
     });
@@ -70,12 +72,14 @@ export const spec = {
  * @returns {object}
  */
 function prepareRTBRequestParams(bid) {
-  let size = getSize(bid.sizes);
+  const size = getSize(bid.sizes);
+  const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
 
   return {
     domain: utils.getTopWindowLocation().hostname,
     callbackId: bid.bidId,
     aid: bid.params.aid,
+    ad_type: mediaType,
     h: size.height,
     w: size.width
   };
@@ -104,26 +108,36 @@ function getSize(requestSizes) {
 
 /**
  * Configure new bid by response
- * @param isMediaTypeOutstream {boolean}
+ * @param mediaType {string}
  * @param bidResponse {object}
  * @returns {object}
  */
-function createBid(isMediaTypeOutstream, bidResponse) {
+function createBid(mediaType, bidResponse) {
   let bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
-    vastUrl: bidResponse.vastUrl,
     height: bidResponse.height,
     currency: bidResponse.cur,
     width: bidResponse.width,
     cpm: bidResponse.cpm,
-    mediaType: 'video',
     netRevenue: true,
+    mediaType,
     ttl: 3600
   };
 
-  if (isMediaTypeOutstream) {
+  if (mediaType === DISPLAY) {
+    return Object.assign(bid, {
+      ad: bidResponse.ad
+    });
+  }
+
+  Object.assign(bid, {
+    vastUrl: bidResponse.vastUrl
+  });
+
+  if (mediaType === OUTSTREAM) {
     Object.assign(bid, {
+      mediaType: 'video',
       adResponse: bidResponse,
       renderer: newRenderer(bidResponse.requestId)
     });
