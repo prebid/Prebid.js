@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {VIDEO} from 'src/mediaTypes';
+import {VIDEO, BANNER} from 'src/mediaTypes';
 import {Renderer} from 'src/Renderer';
 
 const URL = '//hb2.vertamedia.com/auction/';
@@ -10,7 +10,7 @@ const DISPLAY = 'display';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return bid && bid.params && bid.params.aid;
   },
