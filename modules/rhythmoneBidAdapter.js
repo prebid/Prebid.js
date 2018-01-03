@@ -44,9 +44,8 @@ function RhythmOneBidAdapter() {
     }
 
     try {
-      let prebid_instance = w.$$PREBID_GLOBAL$$;
-      data.prebid_version = prebid_instance.version;
-      data.prebid_timeout = prebid_instance.cbTimeout || config.getConfig('bidderTimeout');
+      data.prebid_version = '$prebid.version$';
+      data.prebid_timeout = config.getConfig('bidderTimeout');
     } catch (ex) { }
 
     data.response_ms = Date.now() - loadStart;
