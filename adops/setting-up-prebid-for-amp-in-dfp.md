@@ -14,6 +14,8 @@ nav_section: tutorials
 # Setting up Prebid for AMP in DFP
 {: .no_toc}
 
+{% include amp-deprecation-warning.md %}
+
 This page describes how to set up a line item and creative to serve on AMP pages with Prebid.js.
 
 * TOC

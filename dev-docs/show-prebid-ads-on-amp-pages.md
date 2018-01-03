@@ -13,6 +13,8 @@ nav_section: prebid-amp
 # Show Prebid Ads on AMP Pages (Alpha)
 {: .no_toc}
 
+{% include amp-deprecation-warning.md %}
+
 This page has instructions for showing ads on AMP pages using Prebid.js.
 
 These instructions assume you have read [How Prebid on AMP Works]({{site.github.url}}/dev-docs/how-prebid-on-amp-works.html).
