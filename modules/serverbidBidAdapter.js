@@ -176,6 +176,11 @@ const sizeMap = [
 sizeMap[77] = '970x90';
 sizeMap[123] = '970x250';
 sizeMap[43] = '300x600';
+sizeMap[286] = '970x66';
+sizeMap[3230] = '970x280';
+sizeMap[429] = '486x60';
+sizeMap[374] = '700x500';
+sizeMap[934] = '300x1050';
 
 function getSize(sizes) {
   const result = [];
