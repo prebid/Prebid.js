@@ -3,7 +3,7 @@
 ```
 Module Name:  PubMatic Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: UOEDev@pubmatic.com
+Maintainer: header-bidding@pubmatic.com
 ```
 
 # Description
