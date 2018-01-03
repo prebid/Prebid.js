@@ -47,7 +47,7 @@
     "gulp-babel": "^6.1.2",
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
-    "gulp-connect": "^5.0.0",
+    "gulp-connect": "5.0.0",
     "gulp-documentation": "^3.2.1",
     "gulp-eslint": "^4.0.0",
     "gulp-footer": "^1.0.5",
