@@ -48,7 +48,7 @@ Add the HTML and CSS that define your native ad template. Note that `%%PATTERN%%
 You must include the `postMessage` code snippet as shown in the screenshot and example code below so impression trackers will fire.
 
 {: .pb-img.pb-lg-img :}
-![]({{site.github.url}}/assets/images/ad-ops/dfp-native/native-content-ad.png)
+![Native ad content]({{site.github.url}}/assets/images/ad-ops/dfp-native/native-content-ad.png)
 
 Example HTML and CSS:
 
