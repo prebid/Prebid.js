@@ -115,7 +115,7 @@ describe('PubMatic adapter', () => {
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//openbid.pubmatic.com/translator?source=prebid-client');
+        expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
   		});
 
@@ -170,7 +170,7 @@ describe('PubMatic adapter', () => {
         }
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
-        expect(response[0].netRevenue).to.equal(true);
+        expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].referrer).to.include(utils.getTopWindowUrl());
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);

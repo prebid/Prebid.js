@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
-const ENDPOINT = '//openbid.pubmatic.com/translator?source=prebid-client';
+const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 2;
@@ -18,6 +18,7 @@ const CUSTOM_PARAMS = {
   'profId': '', // OpenWrap Legacy: Profile ID
   'verId': '' // OpenWrap Legacy: version ID
 };
+const NET_REVENUE = false;
 
 let publisherId = 0;
 
@@ -262,7 +263,7 @@ export const spec = {
             creativeId: bid.crid || bid.id,
             dealId: bid.dealid,
             currency: CURRENCY,
-            netRevenue: true,
+            netRevenue: NET_REVENUE,
             ttl: 300,
             referrer: utils.getTopWindowUrl(),
             ad: bid.adm
