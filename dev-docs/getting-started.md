@@ -34,10 +34,8 @@ For more information on how to setup your ad server, see the [Ad Ops Guide](/ado
 ### More Details
 
 + <a href="#register-bidder-tag-ids">Register bidder tag IDs</a>
-+ <a href="#set-ad-server-timeout">Set the ad server timeout</a>
++ <a href="#set-the-ad-server-timeout">Set the ad server timeout</a>
 + <a href="#set-bid-targeting">Set bid targeting</a>
-
-<a name="register-bidder-tag-ids"></a>
 
 #### 1. Register bidder tag IDs
 
@@ -50,8 +48,6 @@ In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad u
 {% highlight js %}
 {% include getting-started/register-bidder-tag-ids.js %}
 {% endhighlight %}
-
-<a name="set-ad-server-timeout"></a>
 
 #### 2. Set the ad server timeout
 
@@ -68,8 +64,6 @@ function sendAdserverRequest() {
 setTimeout(initAdserver, PREBID_TIMEOUT);
 
 {% endhighlight %}
-
-<a name="set-bid-targeting"></a>
 
 #### 3. Set bid targeting
 
