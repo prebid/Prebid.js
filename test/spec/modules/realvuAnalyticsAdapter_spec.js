@@ -1,176 +1,166 @@
 // jshint esversion: 6
-import {expect} from 'chai';
+import {
+  expect
+} from 'chai';
 import realvuAnalyticsAdapter from '../../../modules/realvuAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 
-describe('RealVu Analytics Adapter Test.', () => {
-  it('checkIn returns "yes"', () => {
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var sizes = [[728, 90], [970, 250], [970, 90]];
-    var result = realvuAnalyticsAdapter.checkIn('ad1', sizes, '1Y');
+function addDiv(id) {
+  let dv = document.createElement('div');
+  dv.id = id;
+  dv.style.width = '728px';
+  dv.style.height = '90px';
+  dv.style.display = 'block';
+  document.body.appendChild(dv);
+  let f = document.createElement('iframe');
+  f.width = 728;
+  f.height = 90;
+  dv.appendChild(f);
+  let d = null;
+  if (f.contentDocument) d = f.contentDocument; // DOM
+  else if (f.contentWindow) d = f.contentWindow.document; // IE 
+  d.open()
+  d.write('<img width="728" height="90" />');
+  d.close();
+  return dv;
+}
+
+describe('RealVu Analytics Adapter.', () => {
+  before(() => {
+    addDiv('ad1');
+    addDiv('ad2');
+  });
+  after(() => {
+    let a1 = document.getElementById('ad1');
+    document.body.removeChild(a1);
+    let a2 = document.getElementById('ad2');
+    document.body.removeChild(a2);
+  });
+
+  it('enableAnalytics', () => {
+    const config = {
+      options: {
+        partnerId: '1Y',
+        regAllUnits: true
+        // unitIds: ['ad1', 'ad2']
+      }
+    };
+    let p = realvuAnalyticsAdapter.enableAnalytics(config);
+    expect(p).to.equal('1Y');
+  });
+
+  it('checkIn', () => {
+    const bid = {
+      placementCode: 'ad1',
+      sizes: [
+        [728, 90],
+        [970, 250],
+        [970, 90]
+      ]
+    };
+    let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
+    const b = window.top1.realvu_aa;
+    let a = b.ads[0];
+    // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
+    // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
     expect(result).to.equal('yes');
-    document.body.removeChild(ad_div);
+
+    result = realvuAnalyticsAdapter.checkIn(bid); // test invalid partnerId 'undefined'
+    result = realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
   });
 
   it('isInView returns "yes"', () => {
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var sizes = [[728, 90], [970, 250], [970, 90]];
-    realvuAnalyticsAdapter.checkIn('ad1', sizes, '1Y');
-    var inview = realvuAnalyticsAdapter.isInView('ad1');
+    let inview = realvuAnalyticsAdapter.isInView('ad1');
     expect(inview).to.equal('yes');
-    document.body.removeChild(ad_div);
   });
 
   it('isInView return "NA"', () => {
-    var placementCode = '1234';
-    var result = realvuAnalyticsAdapter.isInView(placementCode);
+    const placementCode = '1234';
+    let result = realvuAnalyticsAdapter.isInView(placementCode);
     expect(result).to.equal('NA');
   });
 
-  it('test enableAnalytics', () => {
-    var boost = window.top1.realvu_boost;
-    var config = {
+  it('bid response event', () => {
+    const config = {
       options: {
         partnerId: '1Y',
-        allIn: true,
-        unitIds: ['ad1', 'ad2']
-      }
-    };
-    var hb = $$PREBID_GLOBAL$$;
-    var sz = [[728, 90], [970, 250], [970, 90]];
-    hb.adUnits = [{code: 'ad1', sizes: sz}, {code: 'ad2', sizes: sz}];
-    var ad_div1 = document.createElement('div');
-    ad_div1.id = 'ad1';
-    document.body.appendChild(ad_div1);
-    var ad_div2 = document.createElement('div');
-    ad_div2.id = 'ad2';
-    document.body.appendChild(ad_div2);
-
-    realvuAnalyticsAdapter.enableAnalytics(config);
-    realvuAnalyticsAdapter.track({eventType: CONSTANTS.EVENTS.AUCTION_INIT, args: null});
-
-    expect(boost.ads.length).to.equal(2);
-    document.body.removeChild(ad_div1);
-    document.body.removeChild(ad_div2);
-  });
-
-  it('test boost adUnitById', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var callback = null;
-    var delay = null;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad3';
-    document.body.appendChild(ad_div);
-    boost.addUnitById(partnerId, 'ad3', callback, delay);
-    expect(boost.ads.length).to.equal(3);
-    document.body.removeChild(ad_div);
-  });
-
-  it('test boost adUnitsByClassName', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var callback = null;
-    var delay = null;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad4';
-    ad_div.className = 'testClass';
-    document.body.appendChild(ad_div);
-    boost.addUnitsByClassName(partnerId, 'testClass', callback, delay);
-    expect(boost.ads.length).to.equal(4);
-    document.body.removeChild(ad_div);
-  });
-
-  it('test boost adUnit', () => {
-    var boost = window.top1.realvu_boost;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad5';
-    document.body.appendChild(ad_div);
-    var u = {partnerId: '1Y', unit: ad_div};
-    boost.addUnit(u);
-    expect(boost.ads.length).to.equal(5);
-    document.body.removeChild(ad_div);
-  });
-
-  it('test boost getViewStatusById', () => {
-    var boost = window.top1.realvu_boost;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var u = {partnerId: '1Y', unit: ad_div};
-    boost.addUnit(u);
-    var vst = boost.getViewStatusById('ad1');
-    expect(vst).to.equal('yes');
-    document.body.removeChild(ad_div);
-  });
-
-  it('test boost exp', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad7';
-    ad_div.style = 'width:300px; height:250px;';
-    document.body.appendChild(ad_div);
-    boost.addUnitById(partnerId, 'ad7');
-    var a = boost.ads[boost.ads.length - 1];
-    a.frm = boost.newf(a, 300, 250);
-    a.div.appendChild(a.frm);
-    boost.exp(a);
-    var t = a.frm.tagName;
-    expect(t).to.equal('IFRAME');
-    document.body.removeChild(ad_div);
-  });
-
-  /*
-  it('test boost brd', () => {
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var boost = window.top1.realvu_boost;
-    var s = ad_div;
-    var p = 'Left';
-    var f = boost.brd(s, p);
-    expect(f).to.be.greaterThan(-1);
-    document.body.removeChild(ad_div);
-  });
-  */
-  /*
-  it('test track allIn', () => {
-    var boost = window.top1.realvu_boost;
-    var partnerId = '1Y';
-    var callback = null;
-    var delay = null;
-    var ad_div = document.createElement('div');
-    ad_div.id = 'ad1';
-    document.body.appendChild(ad_div);
-    var ad_div2 = document.createElement('div');
-    ad_div2.id = 'ad2';
-    document.body.appendChild(ad_div2);
-    boost.addUnitById(partnerId, 'ad1', callback, delay);
-    boost.addUnitById(partnerId, 'ad2', callback, delay);
-    var ad_msg_div = document.createElement('div');
-    ad_msg_div.id = 'msg_an';
-    document.body.appendChild(ad_msg_div);
-    var config = {
-      options: {
-        partnerId: '1Y',
-        allIn: true,
-        unitIds: ['ad1', 'ad2']
+        regAllUnits: true
+        // unitIds: ['ad1', 'ad2']
       }
     };
     realvuAnalyticsAdapter.enableAnalytics(config);
+    const args = {
+      'biddercode': 'realvu',
+      'adUnitCode': 'ad1',
+      'width': 300,
+      'height': 250,
+      'statusMessage': 'Bid available',
+      'adId': '7ba299eba818c1',
+      'mediaType': 'banner',
+      'creative_id': 85792851,
+      'cpm': 0.4308
+    };
     realvuAnalyticsAdapter.track({
-      eventType: 'auctionInit',
-      args: null
+      eventType: CONSTANTS.EVENTS.BID_RESPONSE,
+      args: args
     });
+    const boost = window.top1.realvu_aa;
+    expect(boost.ads[0].bids.length).to.equal(1);
 
-    document.body.removeChild(ad_div);
-    document.body.removeChild(ad_div2);
-    document.body.removeChild(ad_msg_div);
+    realvuAnalyticsAdapter.track({
+      eventType: CONSTANTS.EVENTS.BID_WON,
+      args: args
+    });
+    expect(boost.ads[0].bids[0].winner).to.equal(1);
   });
-  */
+});
+
+describe('RealVu Boost.', () => {
+  before(() => {
+    addDiv('ad1');
+    addDiv('ad2');
+  });
+  after(() => {
+    let a1 = document.getElementById('ad1');
+    document.body.removeChild(a1);
+    let a2 = document.getElementById('ad2');
+    document.body.removeChild(a2);
+  });
+
+  const boost = window.top1.realvu_aa;
+
+  it('brd', () => {
+    let a1 = document.getElementById('ad1');
+    let p = boost.brd(a1, 'Left');
+    expect(typeof p).to.not.equal('undefined');
+  });
+
+  it('addUnitById', () => {
+    let a1 = document.getElementById('ad1');
+    let p = boost.addUnitById('1Y', 'ad1');
+    expect(typeof p).to.not.equal('undefined');
+  });
+
+  it('questA', () => {
+    const dv = document.getElementById('ad1');
+    let q = boost.questA(dv);
+    expect(q).to.not.equal(null);
+  });
+
+  it('render', () => {
+    let dv = document.getElementById('ad1');
+    // dv.style.width = '728px';
+    // dv.style.height = '90px';
+    // dv.style.display = 'block';
+    dv.getBoundingClientRect = false;
+    // document.body.appendChild(dv);
+    let q = boost.findPosG(dv);
+    expect(q).to.not.equal(null);
+  });
+
+  it('readPos', () => {
+    const a = boost.ads[0];
+    let r = boost.readPos(a);
+    expect(r).to.equal(true);
+  });
 });
