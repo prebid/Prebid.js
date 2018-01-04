@@ -62,6 +62,7 @@ describe('Smart ad server bid adapter tests', () => {
       currency: 'GBP',
       isNetCpm: true,
       ttl: 300,
+      adUrl: 'http://awesome.fake.url',
       ad: '< --- awesome script --- >'
     }
   };
@@ -98,6 +99,7 @@ describe('Smart ad server bid adapter tests', () => {
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(12);
+    expect(bid.adUrl).to.equal('http://awesome.fake.url');
     expect(bid.ad).to.equal('< --- awesome script --- >');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
@@ -106,7 +108,6 @@ describe('Smart ad server bid adapter tests', () => {
     expect(bid.netRevenue).to.equal(true);
     expect(bid.ttl).to.equal(300);
     expect(bid.requestId).to.equal(request.bidId);
-    expect(bid.bidderCode).to.equal('smartadserver');
     expect(bid.referrer).to.equal(utils.getTopWindowUrl());
   });
 

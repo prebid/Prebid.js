@@ -67,7 +67,6 @@ export const spec = {
     if (response) {
       const bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: spec.code,
         cpm: response.cpm,
         width: response.width,
         height: response.height,
@@ -77,6 +76,7 @@ export const spec = {
         netRevenue: response.isNetCpm,
         ttl: response.ttl,
         referrer: utils.getTopWindowUrl(),
+        adUrl: response.adUrl,
         ad: response.ad
       };
       bidResponses.push(bidResponse);
