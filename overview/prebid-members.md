@@ -18,10 +18,12 @@ Prebid.org was developed to bring together the oversight, guidance, and developm
 ## Founders
 
 ### [AppNexus](https://www.appnexus.com/en/publishers/header-bidding)
+
 * Michael Richardson, Chairman of the Board, mrichardson@prebid.org
 * Tom Shields, Director
 
-### [Rubicon Project](rubiconproject.com/headerbidding)
+### [Rubicon Project](http://rubiconproject.com/headerbidding)
+
 * Pieter de Zwart, President and Director, pdezwart@prebid.org
 * Tom Kershaw, Director
 
