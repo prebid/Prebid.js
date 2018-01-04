@@ -57,7 +57,7 @@ Here are a couple of alternative workarounds:
 
 - **Option 2:**
 
-	Use post-bid. The downsides are that post-bid no longer allows your header bidding partners to compete with DFP/AdX, but they can still compete with each other.  For more information, see [What is post-bid?](http://prebid.org/overview/what-is-post-bid.html).
+	Use post-bid. The downsides are that post-bid no longer allows your header bidding partners to compete with DFP/AdX, but they can still compete with each other.  For more information, see [What is post-bid?]({{site.baseurl}}/overview/what-is-post-bid.html).
 
 ## How do I use Prebid.js on secure (HTTPS) pages?
 
@@ -73,8 +73,8 @@ In other words, you shouldn't have to do anything other than make sure your own 
 
 ## Related Reading
 
-+ [Prebid Dev Tips]({{site.github.com}}/dev-docs/troubleshooting-tips.html)
-+ [Prebid Common Issues]({{site.github.com}}/dev-docs/common-issues.html)
++ [Prebid Dev Tips]({{site.baseurl}}/dev-docs/troubleshooting-tips.html)
++ [Prebid Common Issues]({{site.baseurl}}/dev-docs/common-issues.html)
 + [Prebid.js issues tagged 'question'](https://github.com/prebid/Prebid.js/issues?utf8=%E2%9C%93&q=is%3Aissue%20label%3Aquestion%20)
 
 </div>
