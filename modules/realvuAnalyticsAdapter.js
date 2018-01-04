@@ -134,7 +134,10 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
 
   track: function (a, pin, f) {
     var z = this;
-    var s1 = z.tru(a, pin, f);
+    var s1 = z.tru(a, f);
+    if (params) {
+      s1 += params;
+    }
     if (f == 'conf') {
       z.scr(s1, a);
       z.log(' <a href=\'' + s1 + '\'>' + f + '</a>', a.num);
@@ -842,7 +845,7 @@ if (typeof (window.top1.boost_poll) == 'undefined') {
   }, 20);
 }
 
-var options = {};
+let _options = {};
 
 realvuAnalyticsAdapter.getOptions = function () {
   return options;
@@ -851,8 +854,12 @@ realvuAnalyticsAdapter.getOptions = function () {
 realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
-  options = config.options;
-  // realvuAnalyticsAdapter.originEnableAnalytics(config);
+  _options = config.options;
+  if (typeof (_options.partnerId) == 'undefined' || _options.partnerId == '') {
+    utils.logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
+  }
+  realvuAnalyticsAdapter.originEnableAnalytics(config);
+  return _options.partnerId;
 };
 
 realvuAnalyticsAdapter.track = function ({
@@ -863,39 +870,52 @@ realvuAnalyticsAdapter.track = function ({
   if (msg) {
     msg.innerHTML += 'track: eventType=' + eventType + ', args=' + JSON.stringify(args) + '<br>';
   }
-  if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-    if (options && options.partnerId) {
-      var hb = $$PREBID_GLOBAL$$;
-      for (var i = 0; i < hb.adUnits.length; i++) {
-        var code = hb.adUnits[i].code;
-        var b = options.regAllUnits;
-        if (!b && options.unitIds) {
-          for (var j = 0; j < options.unitIds.length; j++) {
-            if (code === options.unitIds[j]) {
-              b = true;
-              break;
-            }
-          }
-        }
-        if (b) {
-          // register the unit in realvu_boost
-          var sizes = hb.adUnits[i].sizes;
-          var ui = {
-            partner_id: options.partnerId,
-            unit_id: code,
-            size: sizes
-          };
-          window.top1.realvu_boost.check(ui);
+  // msg += '\nargs=' + JSON.stringify(args) + '<br>';
+  utils.logMessage(msg);
+  // @endif
+
+  const boost = window.top1.realvu_boost;
+  var b = false; // false - update only, true - add if not checked in yet
+  var partnerId = null;
+  if (_options && _options.partnerId && args) {
+    partnerId = _options.partnerId;
+    var code = args.adUnitCode;
+    b = _options.regAllUnits;
+    if (!b && _options.unitIds) {
+      for (var j = 0; j < _options.unitIds.length; j++) {
+        if (code === _options.unitIds[j]) {
+          b = true;
+          break;
         }
       }
     }
   }
 };
 
-realvuAnalyticsAdapter.checkIn = function (placementCode, sizes, partnerId) {
-  return top1.realvu_boost.addUnitById({
-    unit_id: placementCode,
-    size: sizes,
+// xyzBidAdapter calls checkin() to obtain "yes/no" viewability 
+realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
+  // find (or add if not registered yet) the unit in boost 
+  if (typeof (partnerId) == 'undefined' || partnerId == '') {
+    utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
+  }
+  if (Object.keys(_options).length === 0) { // analytics is not enabled yet
+    adaptermanager.enableAnalytics({
+      provider: 'realvuAnalytics',
+      options: {
+        partnerId: partnerId,
+        regAllUnits: false,
+        unitIds: [bid.placementCode]
+      }
+    });
+  }
+  var a = window.top1.realvu_boost.check({
+    unit_id: bid.placementCode,
+    size: bid.sizes,
+    partner_id: partnerId
+  });
+  a.rq_bids.push({
+    bidder: bid.bidder,
+    adId: bid.bidId,
     partner_id: partnerId
   });
 };
