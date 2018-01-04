@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, ENDPOINT } from 'modules/beachfrontBidAdapter';
+import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
 
 describe('BeachfrontAdapter', () => {
@@ -51,54 +51,115 @@ describe('BeachfrontAdapter', () => {
   });
 
   describe('spec.buildRequests', () => {
-    it('should create a POST request for every bid', () => {
-      const requests = spec.buildRequests([ bidRequest ]);
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(ENDPOINT + bidRequest.params.appId);
-    });
-
     it('should attach the bid request object', () => {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].bidRequest).to.equal(bidRequest);
     });
 
-    it('should attach request data', () => {
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      const [ width, height ] = bidRequest.sizes;
-      expect(data.isPrebid).to.equal(true);
-      expect(data.appId).to.equal(bidRequest.params.appId);
-      expect(data.domain).to.equal(document.location.hostname);
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-      expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-      expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
-      expect(data.device).to.deep.contain({ ua: navigator.userAgent });
-      expect(data.cur).to.deep.equal(['USD']);
+    describe('for video bids', () => {
+      it('should create a POST request for every bid', () => {
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.equal(VIDEO_ENDPOINT + bidRequest.params.appId);
+      });
+
+      it('should attach request data', () => {
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        const [ width, height ] = bidRequest.sizes;
+        expect(data.isPrebid).to.equal(true);
+        expect(data.appId).to.equal(bidRequest.params.appId);
+        expect(data.domain).to.equal(document.location.hostname);
+        expect(data.id).to.be.a('string');
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+        expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
+        expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+        expect(data.cur).to.deep.equal(['USD']);
+      });
+
+      it('must parse bid size from a nested array', () => {
+        const width = 640;
+        const height = 480;
+        bidRequest.sizes = [[ width, height ]];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must parse bid size from a string', () => {
+        const width = 640;
+        const height = 480;
+        bidRequest.sizes = `${width}x${height}`;
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must handle an empty bid size', () => {
+        bidRequest.sizes = [];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: undefined, h: undefined });
+      });
     });
 
-    it('must parse bid size from a nested array', () => {
-      const width = 640;
-      const height = 480;
-      bidRequest.sizes = [[ width, height ]];
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-    });
+    describe('for banner bids', () => {
+      it('should create a POST request for every bid', () => {
+        bidRequest.mediaTypes = {};
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.equal(BANNER_ENDPOINT + bidRequest.params.appId);
+      });
 
-    it('must parse bid size from a string', () => {
-      const width = 640;
-      const height = 480;
-      bidRequest.sizes = `${width}x${height}`;
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-    });
+      it('should attach request data', () => {
+        bidRequest.mediaTypes = {};
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        const [ width, height ] = bidRequest.sizes;
+        expect(data.isPrebid).to.equal(true);
+        expect(data.appId).to.equal(bidRequest.params.appId);
+        expect(data.domain).to.equal(document.location.hostname);
+        expect(data.id).to.be.a('string');
+        expect(data.imp[0].banner).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+        expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
+        expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+        expect(data.cur).to.deep.equal(['USD']);
+      });
 
-    it('must handle an empty bid size', () => {
-      bidRequest.sizes = [];
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: undefined, h: undefined });
+      it('must parse bid size from a nested array', () => {
+        const width = 640;
+        const height = 480;
+        bidRequest.sizes = [[ width, height ]];
+        bidRequest.mediaTypes = {};
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].banner).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must parse bid size from a string', () => {
+        const width = 640;
+        const height = 480;
+        bidRequest.sizes = `${width}x${height}`;
+        bidRequest.mediaTypes = {};
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].banner).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must handle an empty bid size', () => {
+        bidRequest.sizes = [];
+        bidRequest.mediaTypes = {};
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].banner).to.deep.equal({ w: undefined, h: undefined });
+      });
     });
   });
 
@@ -124,7 +185,8 @@ describe('BeachfrontAdapter', () => {
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response', () => {
+    it('should return a valid video bid response', () => {
+      bidRequest.mediaTypes = { video: {} };
       const serverResponse = {
         bidPrice: 5.00,
         url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
