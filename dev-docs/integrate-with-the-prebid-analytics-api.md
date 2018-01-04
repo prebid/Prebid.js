@@ -175,8 +175,6 @@ Analytics adapter best practices:
 + listen only to the events required
 + batch up calls to the backend for post-auction logging rather than calling immediately after each event.
 
-<a name="build-the-package"></a>
-
 ### Build the package
 
 To add the new analyticsAdapter into a prebid package, use a command like this:
