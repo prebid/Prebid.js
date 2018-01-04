@@ -1458,7 +1458,7 @@ pbjs.triggerUserSyncs();
 
 ##### How User Syncing Works
 
-The [userSync.registerSync()]({{site.baseurl}}/dev-docs/bidder-adaptor.html#step-6-register-user-sync-pixels) function called by the adapter keeps a queue of valid userSync requests. It prevents unwanted sync entries from being placed on the queue:
+The [userSync.registerSync()]({{site.baseurl}}/dev-docs/bidder-adaptor.html#bidder-adaptor-Registering-User-Syncs) function called by the adapter keeps a queue of valid userSync requests. It prevents unwanted sync entries from being placed on the queue:
 
 * Removes undesired sync types. (i.e. enforces the iframeEnabled flag)
 * Removes undesired adapter registrations. (i.e. enforces the enabledBidders option)
@@ -1521,8 +1521,6 @@ pbjs.setConfig({
 });
 
 {% endhighlight %}
-
-<a name="labels" />
 
 ##### Labels
 
