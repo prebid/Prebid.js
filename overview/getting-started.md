@@ -47,8 +47,6 @@ Once you understand the basics, check out the implementation docs in the [Furthe
 
   + A small snippet of JavaScript is set up as a creative on each Prebid line item. When a programmatic line item is picked by your ad server, the creative JS tells Prebid.js which bidder to serve.
 
-<a name="further-reading" />
-
 ## Further Reading
 
 For more information, check out the implementation docs:
