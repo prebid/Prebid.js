@@ -127,8 +127,8 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 ### Option 1: Customize your download here
 
-{% assign bidder_pages = (site.pages | where: "layout", "bidder") %}
-{% assign module_pages = (site.pages | where: "nav_section", "modules") %}
+{% assign bidder_pages = site.pages | where: "layout", "bidder" %}
+{% assign module_pages = site.pages | where: "nav_section", "modules" %}
 
 <form>
 <div class="row">

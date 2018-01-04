@@ -25,7 +25,7 @@ In addition to the bidder-specific parameters, there are <a href="#common-bidres
 
 For information about which bidders support video and native demand, see <a href="#bidder-video-native">this list of bidders with video and native demand</a>.
 
-{% assign bidder_pages = (site.pages | where: "layout", "bidder") %}
+{% assign bidder_pages = site.pages | where: "layout", "bidder" %}
 
 - [Bidders](#bidders)
 - [Common Bid Response Parameters](#common-bid-response-parameters)
