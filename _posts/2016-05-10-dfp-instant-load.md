@@ -8,7 +8,7 @@ permalink: /blog/dfp-instant-load
 
 ---
 
-Prebid is introducing a new way of loading GPT and sending GPT requests. Compared to the [previous mechanism](/dev-docs/examples-old/basic-example.html), the new method has the below advantages.
+Prebid is introducing a new way of loading GPT and sending GPT requests. Compared to the previous mechanism, the new method has the below advantages.
 
 <br>
 
