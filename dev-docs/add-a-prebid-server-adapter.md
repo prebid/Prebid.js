@@ -12,6 +12,12 @@ nav_section: prebid-server
 # Add a Bidder Adapter to Prebid Server
 {:.no_toc}
 
+{: .alert.alert-danger :}
+These instructions are out of date with the latest versions of Prebid Server.  New bidder submissions must follow the steps documented in [Adding a New Bidder](https://github.com/prebid/prebid-server/blob/master/docs/developers/add-new-bidder.md).  
+Unfortunately Prebid.js will not be able to use bidders submitted using the above process until we update the `prebidServerBidAdapter`.  We estimate that this will happen by the end of January 2017.  
+If you need live server-side support before then, you can also follow the steps described on this page.  
+After the `prebidServerBidAdapter` has been updated, we'll stop accepting legacy adapter PRs completely. At that point this page's instructions will be deleted or replaced.
+
 This page describes how to write the code for a bidder adapter that integrates with [Prebid Server]({{site.baseurl}}/dev-docs/get-started-with-prebid-server.html).
 
 * TOC
@@ -60,7 +66,7 @@ body {"account_id":"","tid":"","cache_markup":0,"sort_bids":0,"max_key_length":0
 
 ## Step 3. Understand the adapter interface
 
-Now that you have the `godoc` output (and have [`adapter.go`](https://github.com/prebid/prebid-server/tree/master/adapters/adapter.go) available to read), you can see that the interface you need to implement is:
+Now that you have the `godoc` output (and have `adapter.go` available to read), you can see that the interface you need to implement is:
 
 {: .table .table-bordered .table-striped }
 | Name              | Description                                                                                                                                                                       |
