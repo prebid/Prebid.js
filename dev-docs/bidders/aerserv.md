@@ -20,10 +20,10 @@ Banner sizes will be derived from placement's configuration in the [AerServ UI](
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name    | Scope    | Description                                                                                                                                                                                           | Example |
-| :---    | :----    | :----------                                                                                                                                                                                           | :-----  |
-| `plc`   | required | The AerServ Placement ID.                                                                                                                                                                             | `480`   |
-| `coppa` | optional | COPPA override. Send `1` if the request's source falls under [COPPA regulations](://www.ftc.gov/enforcement/rules/rulemaking-regulatory-reform-proceedings/childrens-online-privacy-protection-rule). | `1`     |
+| Name    | Scope    | Description                                                                                                                                                                                                | Example |
+| :---    | :----    | :----------                                                                                                                                                                                                | :-----  |
+| `plc`   | required | The AerServ Placement ID.                                                                                                                                                                                  | `480`   |
+| `coppa` | optional | COPPA override. Send `1` if the request's source falls under [COPPA regulations](https://www.ftc.gov/enforcement/rules/rulemaking-regulatory-reform-proceedings/childrens-online-privacy-protection-rule). | `1`     |
 
 <a name="aerserv-video"></a>
 
