@@ -59,7 +59,7 @@ describe('RealVu Analytics Adapter.', () => {
       ]
     };
     let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
-    const b = window.top1.realvu_boost;
+    const b = window.top1.realvu_aa;
     let a = b.ads[0];
     // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
     // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
@@ -104,7 +104,7 @@ describe('RealVu Analytics Adapter.', () => {
       eventType: CONSTANTS.EVENTS.BID_RESPONSE,
       args: args
     });
-    const boost = window.top1.realvu_boost;
+    const boost = window.top1.realvu_aa;
     expect(boost.ads[0].bids.length).to.equal(1);
 
     realvuAnalyticsAdapter.track({
@@ -127,7 +127,7 @@ describe('RealVu Boost.', () => {
     document.body.removeChild(a2);
   });
 
-  const boost = window.top1.realvu_boost;
+  const boost = window.top1.realvu_aa;
 
   it('brd', () => {
     let a1 = document.getElementById('ad1');

@@ -25,8 +25,8 @@ try {
 } catch (e) {
   /* continue regardless of error */
 }
-window.top1.boost_fifo = window.top1.boost_fifo || [];
-window.top1.realvu_boost = window.top1.realvu_boost || {
+window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
+window.top1.realvu_aa = window.top1.realvu_aa || {
   ads: [],
   x1: 0,
   y1: 0,
@@ -58,24 +58,24 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       }
     }
     z.add_evt(window.top1, 'focus', function () {
-      window.top1.realvu_boost.foc = 1; /* window.top1.realvu_boost.log('focus',-1); */
+      window.top1.realvu_aa.foc = 1; /* window.top1.realvu_aa.log('focus',-1); */
     });
-    // z.add_evt(window.top1, "scroll", function(){window.top1.realvu_boost.foc=1;window.top1.realvu_boost.log('scroll focus',-1);});
+    // z.add_evt(window.top1, "scroll", function(){window.top1.realvu_aa.foc=1;window.top1.realvu_aa.log('scroll focus',-1);});
     z.add_evt(window.top1, 'blur', function () {
-      window.top1.realvu_boost.foc = 0; /* window.top1.realvu_boost.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
     });
     // + http://www.w3.org/TR/page-visibility/
     z.add_evt(window.top1.document, 'blur', function () {
-      window.top1.realvu_boost.foc = 0; /* window.top1.realvu_boost.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
     });
     z.add_evt(window.top1, 'visibilitychange', function () {
-      window.top1.realvu_boost.foc = !window.top1.document.hidden;
-      /* window.top1.realvu_boost.log('vis-ch '+window.top1.realvu_boost.foc,-1); */
+      window.top1.realvu_aa.foc = !window.top1.document.hidden;
+      /* window.top1.realvu_aa.log('vis-ch '+window.top1.realvu_aa.foc,-1); */
     });
     // -
     z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
     if (z.doLog) {
-      window.setTimeout(z.scr(window.top1.location.protocol + '//ac.realvu.net/realvu_boost_log.js'), 500);
+      window.setTimeout(z.scr(window.top1.location.protocol + '//ac.realvu.net/realvu_aa_viz.js'), 500);
     }
   },
 
@@ -137,10 +137,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
 
   track: function (a, f, params) {
     var z = this;
-    var s1 = z.tru(a, f);
-    if (params) {
-      s1 += params;
-    }
+    var s1 = z.tru(a, f) + params;
     if (f == 'conf') {
       z.scr(s1, a);
       z.log(' <a href=\'' + s1 + '\'>' + f + '</a>', a.num);
@@ -152,26 +149,6 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       };
       z.beacons.push(bk);
     }
-  },
-
-  track_bids: function(a) {
-    let rpt = '';
-    for (let i = 0; i < a.bids.length; i++) {
-      let g = a.bids[i];
-      rpt += '&bdr=' + g.bidder + '&cpm=' + g.cpm + '&vi=' + a.riff +
-        '&gw=' + g.winner + '&crt=' + g.creative_id + '&ttr=' + g.ttr;
-      // append bid partner_id if any
-      let pid = '';
-      for (let j = 0; j < a.rq_bids.length; j++) {
-        let rqb = a.rq_bids[j];
-        if (rqb.adId == g.adId) {
-          pid = rqb.partner_id;
-          break;
-        }
-      }
-      rpt += '&bc=' + pid;
-    }
-    this.track(a, 'mix', rpt);
   },
 
   send_track: function () {
@@ -239,8 +216,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
           xp += r.left; // +sL;
           yp += r.top; // +sT;
           if (wnd == window.top1) {
-            xp += this.x1;
-            yp += this.y1;
+            xp += t.x1;
+            yp += t.y1;
           }
           // w = rect.right - rect.left;
           // h = rect.bottom - rect.top;
@@ -309,8 +286,9 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
   },
 
   poll: function () {
-    while (window.top1 && window.top1.boost_fifo && window.top1.boost_fifo.length > 0) {
-      (window.top1.boost_fifo.shift())();
+    let fifo = window.top1.realvu_aa_fifo;
+    while (fifo.length > 0) {
+      (fifo.shift())();
     }
     var z = this;
     z.update();
@@ -422,8 +400,8 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
             let msg = (now.getTime() - time0) / 1000 + ' RENDERED ' + a.unit_id;
             utils.logMessage(msg);
             // @endif
-
-            z.track(a, 'rend');
+            let rpt = z.bids_rpt(a, true);
+            z.track(a, 'rend', rpt);
             z.incrMem(a, 'r', 'v:r');
           }
         }
@@ -437,13 +415,15 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
             }
             if (pin.state == 4 && pin.vt >= tmin) {
               pin.state = 5;
-              z.track(a, 'view');
+              let rpt = z.bids_rpt(a, true);
+              z.track(a, 'view', rpt);
               z.incrMem(a, 'v', 'v:r');
               z.incrMem(a, 'v', 'v:v0');
             }
             if (pin.state == 5 && pin.vt >= 5 * tmin) {
               pin.state = 6;
-              z.track(a, 'view2');
+              let rpt = z.bids_rpt(a, true);
+              z.track(a, 'view2', rpt);
             }
           } else if (pin.vt < tmin) {
             pin.vt = 0; // reset to track continuous 1 sec
@@ -551,7 +531,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       bids: [] // array of bids
     };
     a.ru = window.top1.location.hostname;
-    window.top1.realvu_boost.ads[this.len++] = a;
+    window.top1.realvu_aa.ads[this.len++] = a;
     return a;
   },
 
@@ -581,13 +561,9 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       pin.callback(this.fmt(a, pin));
     }
     a.ncall++;
-    this.track(a, 'show');
+    this.track(a, 'show', '');
   },
-  // publisher calls check() to get "RealVu" flag for the d element
-  // check can be called 1 or 2 times
-  // one without callback - doWatch
-  // one with callback - doBoost
-  // we send to server a=watch or a=boost accordingly
+
   check: function (p1) {
     var pin = {
       dist: 150,
@@ -654,7 +630,7 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         a.pins[0].partner_id = pin.partner_id;
       }
       if (this.sr === '') {
-        z.track(a, 'conf');
+        z.track(a, 'conf', '');
         this.sr = '0';
       }
       this.poll();
@@ -710,14 +686,14 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
         delay: delay
       };
     }
-    var a = window.top1.realvu_boost.check(p1);
+    var a = window.top1.realvu_aa.check(p1);
     return a.r;
   },
 
-  checkBidIn: function(partnerId, args, b) {
+  checkBidIn: function(partnerId, args, b) { // process a bid from hb
     // b==true - add/update, b==false - update only
     if (args.cpm == 0) return; // collect only bids submitted
-    const boost = window.top1.realvu_boost;
+    const boost = window.top1.realvu_aa;
     let push_bid = false;
     let adi = null;
     if (!b) { // update only if already checked in by xyzBidAdapter
@@ -735,43 +711,70 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
       }
     } else {
       push_bid = true;
-      adi = window.top1.realvu_boost.check({
+      adi = window.top1.realvu_aa.check({
         unit_id: args.adUnitCode,
         size: args.size,
         partner_id: partnerId
       });
     }
     if (push_bid) {
-      adi.bids.push({
+      let pb = {
         bidder: args.bidder,
         cpm: args.cpm,
         size: args.size,
         adId: args.adId,
         requestId: args.requestId,
-        creative_id: args.creative_id,
+        crid: '',
         ttr: args.timeToRespond,
-        winner: false
-      });
+        winner: 0
+      };
+      if (args.creative_id) {
+        pb.crid = args.creative_id;
+      }
+      adi.bids.push(pb);
     }
   },
 
   checkBidWon: function(partnerId, args, b) {
     // b==true - add/update, b==false - update only
-    var unit_id = args.adUnitCode;
-    for (var i = 0; i < this.ads.length; i++) {
-      var adi = this.ads[i];
+    const z = this;
+    const unit_id = args.adUnitCode;
+    for (let i = 0; i < z.ads.length; i++) {
+      let adi = z.ads[i];
       if (adi.unit_id == unit_id) {
-        for (var j = 0; j < adi.bids.length; j++) {
-          var bj = adi.bids[j];
+        for (let j = 0; j < adi.bids.length; j++) {
+          let bj = adi.bids[j];
           if (bj.adId == args.adId) {
             bj.winner = 1;
             break;
           }
         }
-        this.track_bids(adi);
+        let rpt = z.bids_rpt(adi, false);
+        z.track(adi, 'win', rpt);
         break;
       }
     }
+  },
+
+  bids_rpt: function(a, wo) { // a-unit, wo=true - WinnerOnly
+    let rpt = '';
+    for (let i = 0; i < a.bids.length; i++) {
+      let g = a.bids[i];
+      if (wo && !g.winner) continue;
+      rpt += '&bdr=' + g.bidder + '&cpm=' + g.cpm + '&vi=' + a.riff +
+        '&gw=' + g.winner + '&crt=' + g.crid + '&ttr=' + g.ttr;
+      // append bid partner_id if any
+      let pid = '';
+      for (let j = 0; j < a.rq_bids.length; j++) {
+        let rqb = a.rq_bids[j];
+        if (rqb.adId == g.adId) {
+          pid = rqb.partner_id;
+          break;
+        }
+      }
+      rpt += '&bc=' + pid;
+    }
+    return rpt;
   },
 
   getStatusById: function (unit_id) { // Jun 1, 2015 - return status object
@@ -867,9 +870,9 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
 };
 
 if (typeof (window.top1.boost_poll) == 'undefined') {
-  window.top1.realvu_boost.init();
+  window.top1.realvu_aa.init();
   window.top1.boost_poll = setInterval(function () {
-    window.top1 && window.top1.realvu_boost && window.top1.realvu_boost.poll();
+    window.top1 && window.top1.realvu_aa && window.top1.realvu_aa.poll();
   }, 20);
 }
 
@@ -903,7 +906,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
   utils.logMessage(msg);
   // @endif
 
-  const boost = window.top1.realvu_boost;
+  const boost = window.top1.realvu_aa;
   var b = false; // false - update only, true - add if not checked in yet
   var partnerId = null;
   if (_options && _options.partnerId && args) {
@@ -942,7 +945,7 @@ realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
       }
     });
   }
-  var a = window.top1.realvu_boost.check({
+  var a = window.top1.realvu_aa.check({
     unit_id: bid.placementCode,
     size: bid.sizes,
     partner_id: partnerId
@@ -957,7 +960,7 @@ realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
 
 realvuAnalyticsAdapter.isInView = function (placementCode) {
   var r = 'NA';
-  var s = window.top1.realvu_boost.getStatusById(placementCode);
+  var s = window.top1.realvu_aa.getStatusById(placementCode);
   if (s) {
     r = s.realvu;
   }
