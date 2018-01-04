@@ -22,13 +22,6 @@ function addDiv(id) {
   return dv;
 }
 
-<<<<<<< HEAD
-describe('RealVu Analytics Adapter Test.', () => {
-  it('checkIn returns "yes"', () => {
-    let ad_div = addDiv('ad1');
-    const sizes = [[728, 90], [970, 250], [970, 90]];
-    let result = realvuAnalyticsAdapter.checkIn('ad1', sizes, '1Y');
-=======
 describe('RealVu Analytics Adapter.', () => {
   before(() => {
     addDiv('ad1');
@@ -63,11 +56,10 @@ describe('RealVu Analytics Adapter.', () => {
       ]
     };
     let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
-    const b = window.top1.realvu_boost;
+    const b = window.top1.realvu_aa;
     let a = b.ads[0];
     // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
     // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
->>>>>>> 2ce915e... enable realvu_aa in checkIn
     expect(result).to.equal('yes');
     document.body.removeChild(ad_div);
   });
@@ -87,42 +79,7 @@ describe('RealVu Analytics Adapter.', () => {
     expect(result).to.equal('NA');
   });
 
-<<<<<<< HEAD
-  it('test enableAnalytics', () => {
-    const boost = window.top1.realvu_boost;
-    const config = {
-      options: {
-        partnerId: '1Y',
-        regAllUnits: true
-        // unitIds: ['ad1', 'ad2']
-      }
-    };
-    const hb = $$PREBID_GLOBAL$$;
-    const sz = [[728, 90], [970, 250], [970, 90]];
-    hb.adUnits = [{
-      code: 'ad1',
-      sizes: sz
-    }, {
-      code: 'ad2',
-      sizes: sz
-    }];
-    var ad_div1 = addDiv('ad1');
-    var ad_div2 = addDiv('ad2');
-    realvuAnalyticsAdapter.enableAnalytics(config);
-    realvuAnalyticsAdapter.track({
-      eventType: CONSTANTS.EVENTS.AUCTION_INIT,
-      args: null
-    });
-    expect(boost.ads.length).to.equal(2);
-    document.body.removeChild(ad_div1);
-    document.body.removeChild(ad_div2);
-  });
-
-  it('test enableAnalytics !regAllUnits', () => {
-    const boost = window.top1.realvu_boost;
-=======
   it('bid response event', () => {
->>>>>>> 2ce915e... enable realvu_aa in checkIn
     const config = {
       options: {
         partnerId: '1Y',
@@ -146,21 +103,8 @@ describe('RealVu Analytics Adapter.', () => {
       eventType: CONSTANTS.EVENTS.AUCTION_INIT,
       args: null
     });
-    expect(boost.ads.length).to.equal(2);
-    document.body.removeChild(ad_div1);
-    document.body.removeChild(ad_div2);
-  });
-
-  it('test boost adUnitById', () => {
-    const boost = window.top1.realvu_boost;
-    const partnerId = '1Y';
-    const callback = null;
-    const delay = null;
-    let ad_div = addDiv('ad3');
-    boost.addUnitById(partnerId, 'ad3', callback, delay);
-    expect(boost.ads.length).to.equal(3);
-    document.body.removeChild(ad_div);
-  });
+    const boost = window.top1.realvu_aa;
+    expect(boost.ads[0].bids.length).to.equal(1);
 
     realvuAnalyticsAdapter.track({
       eventType: CONSTANTS.EVENTS.BID_WON,

@@ -40,15 +40,15 @@
 
         pbjs.que.push(function () {
             pbjs.logging = true;
-/*            pbjs.enableAnalytics({
+            pbjs.enableAnalytics({
               provider: 'realvuAnalytics',
               options: {
                   partnerId: 'K1E',
-                  regAllUnits: false,
-                  unit_ids:['ad_container_2']
+                  regAllUnits: true //,
+                  //unitIds:['ad_container_2']
               }
             });
-*/
+
             var adUnits = [{
                 code: 'ad_container_1',
                 sizes: [[300, 250]],
@@ -132,8 +132,9 @@
             <div id="msg" style='margin-left:12px;padding:12px;min-height:40px;background-color:Chocolate;'></div>
 </td></tr>
 <tr valign='top'><td>
-            <iframe id="ad_container_2" src='about:blank;' marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true"
-    width="300" height="250" scrolling="no" style='border:gray 2px dashed;'></iframe>    
+            <iframe id="ad_container_2" src='about:blank;' marginheight="0" marginwidth="0" 
+              topmargin="0" leftmargin="0" allowtransparency="true"
+              width="300" height="250" scrolling="no" style='border:gray 2px dashed;'></iframe>    
 </td><td>
             <div id="msg_an" style='margin-left:12px;padding:12px;min-height:40px;background-color:cadetblue;'></div>
 </td></tr>
