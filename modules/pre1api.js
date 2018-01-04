@@ -1,6 +1,38 @@
 
-import { config } from 'src/config';
-import { logWarn, logInfo } from 'src/utils';
+/**
+ pre1api module
+
+ This module supports backwards compatibility for those who need extra time to re-code their pages to work with the
+ Prebid 1.0 API. Use of this backwards compatibility module is recommended only as an interim solution.
+
+ It provides equivalents for the following variables and functions that were deprecated in PBJS 1.0:
+ - pbjs._winningBids
+ - pbjs._bidsReceived
+ - pbjs._bidsRequested
+ - pbjs._adUnitCodes
+ - pbjs._adsReceived
+ - pbjs.cbTimeout
+ - pbjs.addCallback()
+ - pbjs.removeCallback()
+ - pbjs.allBidsAvailable()
+ - pbjs.bidderTimeout
+ - pbjs.logging
+ - pbjs.publisherDomain
+ - pbjs.setPriceGranularity()
+ - pbjs.enableSendAllBids() // and also defaults this value to `false` like pre-1.0
+ - pbjs.setBidderSequence()
+ - pbjs.setS2SConfig() // and makes endpoints optional again (defaulting to the appnexus endpoints)
+
+ This will not support the pre-1.0 sizeMapping feature.
+
+ The drawback is that this module disables concurrency for requestBids(), queueing them as was done in pre-1.0. Anytime
+ an auction request is queued or one of these APIs is accessed it will display a deprecation warning in the console if
+ logging is enabled. So while this is useful for those that need more time to migrate, it eliminates one of the best
+ features of PBJS 1.0 as is required to emulate the old API.
+ */
+
+import {config} from 'src/config';
+import {logWarn, logInfo} from 'src/utils';
 
 const MODULE_NAME = 'pre-1.0 API';
 
