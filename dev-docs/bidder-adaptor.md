@@ -381,7 +381,7 @@ However, if the publisher does not define a renderer, you will need to return a 
 
 The returned VAST URL or raw VAST XML should be added into `bid.vastUrl` or `bid.vastXml`, respectively.
 
-For example, here is some [code from the Tremor adapter](https://github.com/prebid/Prebid.js/blob/master/modules/tremorBidAdapter.js#L142) showing how it's done:
+For example:
 
 {% highlight js %}
 
