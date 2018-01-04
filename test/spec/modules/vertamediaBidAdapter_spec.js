@@ -128,6 +128,7 @@ describe('vertamediaBidAdapter', () => {
       expect(videoRequest[0].method).to.equal('GET');
       expect(displayRequest[0].method).to.equal('GET');
     });
+
     it('sends bid request to correct ENDPOINT', () => {
       expect(videoRequest[0].url).to.equal(ENDPOINT);
       expect(displayRequest[0].url).to.equal(ENDPOINT);
@@ -193,6 +194,7 @@ describe('vertamediaBidAdapter', () => {
 
     function bidServerResponseCheck() {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
+
       expect(result).to.deep.equal(eqResponse);
     }
 

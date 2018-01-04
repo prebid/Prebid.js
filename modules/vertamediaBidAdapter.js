@@ -146,6 +146,11 @@ function createBid(mediaType, bidResponse) {
   return bid;
 }
 
+/**
+ * Create Vertamedia renderer
+ * @param requestId
+ * @returns {*}
+ */
 function newRenderer(requestId) {
   const renderer = Renderer.install({
     id: requestId,
@@ -158,6 +163,10 @@ function newRenderer(requestId) {
   return renderer;
 }
 
+/**
+ * Initialise Vertamedia outstream
+ * @param bid
+ */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.VOutstreamAPI.initOutstreams([{
