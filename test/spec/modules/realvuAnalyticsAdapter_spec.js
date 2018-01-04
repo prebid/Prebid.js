@@ -37,6 +37,18 @@ describe('RealVu Analytics Adapter.', () => {
     document.body.removeChild(a2);
   });
 
+  it('enableAnalytics', () => {
+    const config = {
+      options: {
+        partnerId: '1Y',
+        regAllUnits: true
+        // unitIds: ['ad1', 'ad2']
+      }
+    };
+    let p = realvuAnalyticsAdapter.enableAnalytics(config);
+    expect(p).to.equal('1Y');
+  });
+
   it('checkIn', () => {
     const bid = {
       placementCode: 'ad1',
@@ -66,18 +78,6 @@ describe('RealVu Analytics Adapter.', () => {
     const placementCode = '1234';
     let result = realvuAnalyticsAdapter.isInView(placementCode);
     expect(result).to.equal('NA');
-  });
-
-  it('enableAnalytics', () => {
-    const config = {
-      options: {
-        partnerId: '1Y',
-        regAllUnits: true
-        // unitIds: ['ad1', 'ad2']
-      }
-    };
-    let p = realvuAnalyticsAdapter.enableAnalytics(config);
-    expect(p).to.equal('1Y');
   });
 
   it('bid response event', () => {

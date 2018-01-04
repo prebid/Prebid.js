@@ -137,7 +137,10 @@ window.top1.realvu_boost = window.top1.realvu_boost || {
 
   track: function (a, f, params) {
     var z = this;
-    var s1 = z.tru(a, f) + params;
+    var s1 = z.tru(a, f);
+    if (params) {
+      s1 += params;
+    }
     if (f == 'conf') {
       z.scr(s1, a);
       z.log(' <a href=\'' + s1 + '\'>' + f + '</a>', a.num);
@@ -870,17 +873,17 @@ if (typeof (window.top1.boost_poll) == 'undefined') {
   }, 20);
 }
 
-var options = {};
+let _options = {};
 
 realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
-  options = config.options;
-  if (typeof (options.partnerId) == 'undefined' || options.partnerId == '') {
+  _options = config.options;
+  if (typeof (_options.partnerId) == 'undefined' || _options.partnerId == '') {
     utils.logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
   }
   realvuAnalyticsAdapter.originEnableAnalytics(config);
-  return options.partnerId;
+  return _options.partnerId;
 };
 
 const time0 = (new Date()).getTime();
@@ -903,13 +906,13 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
   const boost = window.top1.realvu_boost;
   var b = false; // false - update only, true - add if not checked in yet
   var partnerId = null;
-  if (options && options.partnerId && args) {
-    partnerId = options.partnerId;
+  if (_options && _options.partnerId && args) {
+    partnerId = _options.partnerId;
     var code = args.adUnitCode;
-    b = options.regAllUnits;
-    if (!b && options.unitIds) {
-      for (var j = 0; j < options.unitIds.length; j++) {
-        if (code === options.unitIds[j]) {
+    b = _options.regAllUnits;
+    if (!b && _options.unitIds) {
+      for (var j = 0; j < _options.unitIds.length; j++) {
+        if (code === _options.unitIds[j]) {
           b = true;
           break;
         }
@@ -928,6 +931,16 @@ realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
   // find (or add if not registered yet) the unit in boost 
   if (typeof (partnerId) == 'undefined' || partnerId == '') {
     utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
+  }
+  if (Object.keys(_options).length === 0) { // analytics is not enabled yet
+    adaptermanager.enableAnalytics({
+      provider: 'realvuAnalytics',
+      options: {
+        partnerId: partnerId,
+        regAllUnits: false,
+        unitIds: [bid.placementCode]
+      }
+    });
   }
   var a = window.top1.realvu_boost.check({
     unit_id: bid.placementCode,
