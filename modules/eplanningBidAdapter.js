@@ -89,7 +89,7 @@ export const spec = {
         if (typeof sync === 'string' && syncOptions.pixelEnabled) {
           syncs.push({
             type: 'image',
-            url: 'sync',
+            url: sync,
           });
         } else if (typeof sync === 'object' && sync.ifr && syncOptions.iframeEnabled) {
           syncs.push({
