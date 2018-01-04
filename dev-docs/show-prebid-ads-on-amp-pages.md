@@ -241,8 +241,6 @@ In the page's body, implement the `draw3p` function as shown below.  This implem
 {: .alert.alert-danger :}
 Don't forget to add the required arrays at the end of the function showing the ad networks used and the domains allowed to load this file in an iFrame.  You **must** add all `amp-ad` types on page to the `draw3p` array, even if they are not being used with Prebid demand.
 
-For an example showing how `draw3p` is used, see [this AMP test](https://dfp-amp-testing-1185.appspot.com/amp_tests/dfp-3p-iframe.html).
-
 For more information about `draw3p`, see:
 
 + [Its implementation](https://github.com/ampproject/amphtml/blob/e5501a30adf15c8fef049729f5e0e3137dbb18ca/3p/integration.js#L252)
