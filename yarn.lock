@@ -3770,7 +3770,7 @@ gulp-concat@^2.6.0:
     through2 "^2.0.0"
     vinyl "^2.0.0"
 
-gulp-connect@^5.0.0:
+gulp-connect@5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/gulp-connect/-/gulp-connect-5.0.0.tgz#f2fdf306ae911468368c2285f2d782f13eddaf4e"
   dependencies:
