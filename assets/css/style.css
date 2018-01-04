@@ -194,6 +194,10 @@ img {
         font-size: large;
         margin-right: 10em;
     }
+
+    .container {
+        width: 88%;
+    }
 }
 
 .bs-docs-section h1 {
