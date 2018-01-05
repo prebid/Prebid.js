@@ -32,7 +32,7 @@ function buildRequests(bidReqs) {
   };
   return {
     method: 'POST',
-    url: `//smartbuy-dev-bidder.vidint.net/prebid/bid`,
+    url: `//pb.vi-serve.com/prebid/bid`,
     data: JSON.stringify(bidRequest),
     options: {contentType: 'application/json', withCredentials: false}
   };
