@@ -66,7 +66,7 @@ describe('YieldmoAdapter', () => {
       expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]]},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]]}]');
     });
 
-    it('should add placement id if given', () => {
+    it('should add placement id if given', () =>{
       bidArray[0].params.placementId = 'ym_1293871298';
       let placementInfo = spec.buildRequests(bidArray).data.p;
       expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"}');

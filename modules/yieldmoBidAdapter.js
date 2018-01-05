@@ -89,7 +89,11 @@ registerBidder(spec);
  * Adds placement information to array
  * @param request bid request
  */
+<<<<<<< HEAD
 function addPlacement(request) {
+=======
+export function addPlacement(request) {
+>>>>>>> added usersync and interpretresponse
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -207,6 +211,7 @@ function getEnvironment() {
   } else {
     return 90;
   }
+<<<<<<< HEAD
 }
 
 /**
@@ -234,6 +239,8 @@ function isDfp() {
       return frameElement.id.indexOf('google_ads_iframe') > -1 && parentElement.id.indexOf('google_ads_iframe') > -1;
     }
     return false;
+=======
+>>>>>>> added usersync and interpretresponse
   } catch (e) {
     return false;
   }
