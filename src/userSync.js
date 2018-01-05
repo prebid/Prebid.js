@@ -1,6 +1,16 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
+// Set userSync default values
+config.setDefaults({
+  'userSync': {
+    syncEnabled: true,
+    pixelEnabled: true,
+    syncsPerBidder: 5,
+    syncDelay: 3000
+  }
+});
+
 /**
  * Factory function which creates a new UserSyncPool.
  *

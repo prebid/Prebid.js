@@ -6,9 +6,10 @@ We take PR review seriously. Please read https://medium.com/@mrjoelkemp/giving-b
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.
 - Verify code under review has at least 80% unit test coverage. If legacy code has no unit test coverage, ask for unit tests to be included in the PR.
 - Verify tests are green in Travis-ci + local build by running `gulp serve` | `gulp test`
-- Verify no code quality violations are present from jscs (should be reported in terminal)
+- Verify no code quality violations are present from linting (should be reported in terminal)
 - Review for obvious errors or bad coding practice / use best judgement here.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
+- If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.

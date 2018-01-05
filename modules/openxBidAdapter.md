@@ -16,6 +16,7 @@ Module that connects to OpenX's demand sources
         {
             code: 'test-div',
             sizes: [[728, 90]],  // a display size
+            mediaType: 'banner',
             bids: [
                 {
                     bidder: "openx",
@@ -26,5 +27,22 @@ Module that connects to OpenX's demand sources
                 }
             ]
         },
+        {
+            code: 'video1',
+            sizes: [[640,480]],
+            mediaType: 'video',
+            bids: [
+              {
+                bidder: 'openx',
+                params: {
+                  unit: '539131525',
+                  delDomain: 'zdo.com',
+                  video: {
+                     url: 'abc.com'
+                  }
+                }
+              }
+            ]
+        }
     ];
 ```

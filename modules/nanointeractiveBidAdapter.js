@@ -55,7 +55,7 @@ function createSingleBidRequest(bid) {
     [NQ]: [createNqParam(bid), createCategoryParam(bid)],
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
-    cors: location.origin
+    cors: utils.getOrigin()
   };
 }
 
