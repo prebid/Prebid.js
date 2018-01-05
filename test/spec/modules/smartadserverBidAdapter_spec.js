@@ -107,7 +107,7 @@ describe('Smart ad server bid adapter tests', () => {
     expect(bid.currency).to.equal('GBP');
     expect(bid.netRevenue).to.equal(true);
     expect(bid.ttl).to.equal(300);
-    expect(bid.requestId).to.equal(request.bidId);
+    expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
     expect(bid.referrer).to.equal(utils.getTopWindowUrl());
   });
 

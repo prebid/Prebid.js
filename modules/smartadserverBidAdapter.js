@@ -46,7 +46,8 @@ export const spec = {
       })),
       pageDomain: utils.getTopWindowUrl(),
       transactionId: bid.transactionId,
-      timeout: config.getConfig('bidderTimeout')
+      timeout: config.getConfig('bidderTimeout'),
+      bidId: bid.bidId
     };
     const payloadString = JSON.stringify(payload);
     return {
@@ -66,7 +67,7 @@ export const spec = {
     var response = serverResponse.body;
     if (response) {
       const bidResponse = {
-        requestId: bidRequest.bidId,
+        requestId: JSON.parse(bidRequest.data).bidId,
         cpm: response.cpm,
         width: response.width,
         height: response.height,
