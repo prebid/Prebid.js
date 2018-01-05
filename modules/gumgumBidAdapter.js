@@ -139,17 +139,16 @@ function interpretResponse (serverResponse, bidRequest) {
     },
     cw: wrapper
   } = serverResponseBody
+  let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
   let [width, height] = bidRequest.sizes[0]
 
-  // we have to determine what product the request was for to know which loader to use.
-  // for now use inSlotLoader
   if (creativeId) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       bidderCode: spec.code,
-      cpm,
+      cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
       currency: 'USD',
       height,
@@ -162,21 +161,11 @@ function interpretResponse (serverResponse, bidRequest) {
   return bidResponses
 }
 
-function getUserSyncs (syncOptions) {
-  if (syncOptions.iframeEnabled) {
-    return [{
-      type: 'iframe',
-      url: 'ADAPTER_SYNC_URL'
-    }]
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse,
-  getUserSyncs
+  interpretResponse
 }
 registerBidder(spec)
