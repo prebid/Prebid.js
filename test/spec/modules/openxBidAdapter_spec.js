@@ -73,6 +73,18 @@ describe('OpenxAdapter', () => {
   });
 
   describe('buildRequests for banner ads', () => {
+    let bidRequestsWithNoMediaType = [{
+      'bidder': 'openx',
+      'params': {
+        'unit': '12345678',
+        'delDomain': 'test-del-domain'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    }];
     let bidRequests = [{
       'bidder': 'openx',
       'params': {
@@ -86,6 +98,12 @@ describe('OpenxAdapter', () => {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
     }];
+
+    it('should send bid request to openx url via GET, even without mediaType specified', () => {
+      const request = spec.buildRequests(bidRequestsWithNoMediaType);
+      expect(request[0].url).to.equal('//' + bidRequests[0].params.delDomain + URLBASE);
+      expect(request[0].method).to.equal('GET');
+    });
 
     it('should send bid request to openx url via GET', () => {
       const request = spec.buildRequests(bidRequests);

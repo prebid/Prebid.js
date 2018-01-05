@@ -39,7 +39,8 @@ const MP_SERVER_MAP = {
   as: 'adserver-as.adtech.advertising.com'
 };
 const NEXAGE_SERVER = 'hb.nexage.com';
-const BID_RESPONSE_TTL = 300;
+const ONE_DISPLAY_TTL = 60;
+const ONE_MOBILE_TTL = 3600;
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -61,12 +62,18 @@ let showCpmAdjustmentWarning = (function () {
   };
 })();
 
+function isInteger(value) {
+  return typeof value === 'number' &&
+    isFinite(value) &&
+    Math.floor(value) === value;
+}
+
 function template(strings, ...keys) {
   return function(...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = Number.isInteger(key) ? values[key] : dict[key];
+      let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -218,7 +225,7 @@ function _parseBidResponse(response, bidRequest) {
     currency: response.cur,
     dealId: bidData.dealid,
     netRevenue: true,
-    ttl: BID_RESPONSE_TTL
+    ttl: bidRequest.ttl
   };
 }
 
@@ -268,14 +275,16 @@ function formatBidRequest(endpointCode, bid) {
     case AOL_ENDPOINTS.DISPLAY.GET:
       bidRequest = {
         url: _buildMarketplaceUrl(bid),
-        method: 'GET'
+        method: 'GET',
+        ttl: ONE_DISPLAY_TTL
       };
       break;
 
     case AOL_ENDPOINTS.MOBILE.GET:
       bidRequest = {
         url: _buildOneMobileGetUrl(bid),
-        method: 'GET'
+        method: 'GET',
+        ttl: ONE_MOBILE_TTL
       };
       break;
 
@@ -283,6 +292,7 @@ function formatBidRequest(endpointCode, bid) {
       bidRequest = {
         url: _buildOneMobileBaseUrl(bid),
         method: 'POST',
+        ttl: ONE_MOBILE_TTL,
         data: bid.params,
         options: {
           contentType: 'application/json',

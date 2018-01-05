@@ -28,6 +28,7 @@ var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
+var jsEscape = require('gulp-js-escape');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -296,10 +297,21 @@ gulp.task('e2etest-report', function() {
   }, 5000);
 });
 
-gulp.task('build-postbid', function() {
+// This task creates postbid.js. Postbid setup is different from prebid.js
+// More info can be found here http://prebid.org/overview/what-is-post-bid.html
+gulp.task('build-postbid', ['escape-postbid-config'], function() {
+  var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
+
   return gulp.src('./integrationExamples/postbid/oas/postbid.js')
-    .pipe(uglify())
-    .pipe(gulp.dest('build/dist'));
+    .pipe(replace('\[%%postbid%%\]', fileContent))
+    .pipe(gulp.dest('build/postbid/'));
+});
+
+// Dependant task for building postbid. It escapes postbid-config file.
+gulp.task('escape-postbid-config', function() {
+  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
+    .pipe(jsEscape())
+    .pipe(gulp.dest('build/postbid/'));
 });
 
 module.exports = nodeBundle;
