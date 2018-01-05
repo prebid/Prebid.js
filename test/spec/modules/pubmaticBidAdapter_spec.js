@@ -122,7 +122,7 @@ describe('PubMatic adapter', () => {
   		it('Request params check', () => {
   		  let request = spec.buildRequests(bidRequests);
   		  let data = JSON.parse(request.data);
-  		  expect(data.at).to.equal(2); // auction type
+  		  expect(data.at).to.equal(1); // auction type
   		  expect(data.cur[0]).to.equal('USD'); // currency
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
   		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
