@@ -41,8 +41,8 @@ describe('RealVu Analytics Adapter.', () => {
     const config = {
       options: {
         partnerId: '1Y',
-        regAllUnits: true
-        // unitIds: ['ad1', 'ad2']
+        regAllUnits: false,
+        unitIds: ['ad1', 'ad2']
       }
     };
     let p = realvuAnalyticsAdapter.enableAnalytics(config);
