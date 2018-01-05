@@ -128,7 +128,7 @@ describe('Adkernel adapter', () => {
     let mock;
 
     before(() => {
-      mock = sinon.stub(utils, 'getTopWindowLocation', () => {
+      mock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
         return {
           protocol: 'https:',
           hostname: 'example.com',

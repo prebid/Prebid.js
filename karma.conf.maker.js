@@ -95,10 +95,12 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
-  var files = [
-    'test/helpers/prebidGlobal.js',
-    file ? file : 'test/**/*_spec.js'
-  ];
+  // var files = [
+  //   'test/helpers/prebidGlobal.js',
+  //   file ? file : 'test/**/*_spec.js'
+  // ];
+
+  var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {
@@ -122,9 +124,13 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+    // preprocessors: {
+    //   'test/**/*_spec.js': ['webpack', 'sourcemap'],
+    //   'test/helpers/prebidGlobal.js': ['webpack', 'sourcemap']
+    // },
+
     preprocessors: {
-      'test/**/*_spec.js': ['webpack', 'sourcemap'],
-      'test/helpers/prebidGlobal.js': ['webpack', 'sourcemap']
+      'test/test_index.js': ['webpack', 'sourcemap']
     },
 
     // web server port

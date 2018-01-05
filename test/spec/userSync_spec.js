@@ -27,9 +27,9 @@ describe('user sync', () => {
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
-    shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
-    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
-    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
+    timeoutStub = sinon.stub(window, 'setTimeout').callsFake((callbackFunc) => { callbackFunc(); });
   });
 
   afterEach(() => {

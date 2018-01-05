@@ -149,7 +149,7 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
   before(() => {
-    bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
+    bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').callsFake(() => true);
   });
 
   after(function() {
@@ -415,7 +415,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
-      sinon.stub(adaptermanager, 'makeBidRequests', () => ([{
+      sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
         'bidderCode': 'appnexus',
         'auctionId': '20882439e3238c',
         'bidderRequestId': '331f3cf3f1d9c8',
@@ -465,7 +465,7 @@ describe('Unit: Prebid Module', function () {
       }];
       let adUnitCodes = ['div-gpt-ad-1460505748561-0'];
       auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
         return function(url, callback) {
           const fakeResponse = sinon.stub();
           fakeResponse.returns('headerContent');
@@ -718,7 +718,7 @@ describe('Unit: Prebid Module', function () {
       spyLogMessage = sinon.spy(utils, 'logMessage');
 
       inIframe = true;
-      sinon.stub(utils, 'inIframe', () => inIframe);
+      sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
     });
 
     afterEach(function () {
@@ -829,7 +829,7 @@ describe('Unit: Prebid Module', function () {
     describe('part 1', () => {
       beforeEach(() => {
         adUnitsBackup = auction.getAdUnits
-        auctionManagerStub = sinon.stub(auctionManager, 'createAuction', function() {
+        auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
           return auction;
         });
         logMessageSpy = sinon.spy(utils, 'logMessage');
@@ -1372,7 +1372,7 @@ describe('Unit: Prebid Module', function () {
   describe('emit event', () => {
     let auctionManagerStub;
     beforeEach(() => {
-      auctionManagerStub = sinon.stub(auctionManager, 'createAuction', function() {
+      auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
         return auction;
       });
     });
@@ -1465,7 +1465,7 @@ describe('Unit: Prebid Module', function () {
   describe('setBidderSequence', () => {
     let auctionManagerStub;
     beforeEach(() => {
-      auctionManagerStub = sinon.stub(auctionManager, 'createAuction', function() {
+      auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
         return auction;
       });
     });
@@ -1527,10 +1527,10 @@ describe('Unit: Prebid Module', function () {
     beforeEach(() => {
       resetAuction();
       auctionManagerInstance = newAuctionManager();
-      sinon.stub(auctionManagerInstance, 'getBidsReceived', function() {
+      sinon.stub(auctionManagerInstance, 'getBidsReceived').callsFake(function() {
         return [getBidResponses()[1]];
       });
-      sinon.stub(auctionManagerInstance, 'getAdUnitCodes', function() {
+      sinon.stub(auctionManagerInstance, 'getAdUnitCodes').callsFake(function() {
         return ['/19968336/header-bid-tag-0'];
       });
       targeting = newTargeting(auctionManagerInstance);

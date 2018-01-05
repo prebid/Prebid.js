@@ -69,7 +69,7 @@ FEATURE: Analytics Adapters API
         adapter = new AnalyticsAdapter(config);
         spyTestGlobal = sinon.spy(window, config.global);
 
-        sinon.stub(events, 'getEvents', () => []); // these tests shouldn't be affected by previous tests
+        sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
       });
 
       afterEach(() => {
@@ -139,7 +139,7 @@ FEATURE: Analytics Adapters API
         const args = { more: 'info' };
 
         beforeEach(() => {
-          sinon.stub(Math, 'random', () => 0.5);
+          sinon.stub(Math, 'random').returns(0.5);
         });
 
         afterEach(() => {

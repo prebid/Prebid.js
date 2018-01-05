@@ -33,6 +33,21 @@ var appnexusAdapterMock = {
 };
 
 describe('adapterManager tests', () => {
+  let orgAppnexusAdapter;
+  let orgAdequantAdapter;
+  let orgPrebidServerAdapter;
+  before(() => {
+    orgAppnexusAdapter = AdapterManager.bidderRegistry['appnexus'];
+    orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
+    orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
+  });
+
+  after(() => {
+    AdapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
+    AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
+    AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
+  });
+
   describe('callBids', () => {
     beforeEach(() => {
       sinon.stub(utils, 'logError');
@@ -43,6 +58,26 @@ describe('adapterManager tests', () => {
     });
 
     it('should log an error if a bidder is used that does not exist', () => {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      sinon.assert.called(utils.logError);
+    });
+
+    it('should emit BID_REQUESTED event', () => {
+      // function to count BID_REQUESTED events
+      let cnt = 0;
+      let count = () => cnt++;
+      events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'requestId': '1863e370099523',
@@ -64,44 +99,16 @@ describe('adapterManager tests', () => {
             'status': 1,
             'transactionId': 'fsafsa'
           },
-          {
-            'bidder': 'fakeBidder',
-            'params': {
-              'placementId': '4799418'
-            },
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'sizes': [[300, 250], [300, 600]],
-            'bidId': '4dccdc37746135',
-            'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
-            'startTime': 1462918897463,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          }
         ],
         'start': 1462918897460
       }];
-      const adUnits = [{
+
+      let adUnits = [{
         code: 'adUnit-code',
         bids: [
           {bidder: 'appnexus', params: {placementId: 'id'}},
-          {bidder: 'fakeBidder', params: {placementId: 'id'}}
         ]
       }];
-
-      AdapterManager.callBids(adUnits, bidRequests);
-
-      sinon.assert.called(utils.logError);
-    });
-
-    it('should emit BID_REQUESTED event', () => {
-      // function to count BID_REQUESTED events
-      let cnt = 0;
-      let count = () => cnt++;
-      events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
-      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
-      let adUnits = getAdUnits();
-      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
       AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
@@ -443,7 +450,10 @@ describe('adapterManager tests', () => {
       });
 
       it('should fire for s2s requests', () => {
-        let adUnits = getAdUnits();
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus'], bid.bidder));
+          return adUnit;
+        })
         let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
         AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(1);
@@ -452,7 +462,10 @@ describe('adapterManager tests', () => {
 
       it('should fire for simultaneous s2s and client requests', () => {
         AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
-        let adUnits = getAdUnits();
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus'], bid.bidder));
+          return adUnit;
+        })
         let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
         AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(2);
@@ -467,7 +480,11 @@ describe('adapterManager tests', () => {
   describe('s2sTesting', () => {
     function getTestAdUnits() {
       // copy adUnits
-      return JSON.parse(JSON.stringify(getAdUnits()));
+      // return JSON.parse(JSON.stringify(getAdUnits()));
+      return utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus', 'rubicon'], bid.bidder));
+        return adUnit;
+      })
     }
 
     function callBids(adUnits = getTestAdUnits()) {
@@ -713,7 +730,7 @@ describe('adapterManager tests', () => {
 
       describe('sizeMapping', () => {
         beforeEach(() => {
-          sinon.stub(window, 'matchMedia', () => ({matches: true}));
+          sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
         });
 
         afterEach(() => {

@@ -9,11 +9,17 @@ describe('Adomik Prebid Analytic', function () {
     beforeEach(() => {
       sinon.spy(adomikAnalytics, 'track');
       sinon.spy(adomikAnalytics, 'sendTypedEvent');
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {
       adomikAnalytics.track.restore();
       adomikAnalytics.sendTypedEvent.restore();
+      events.getEvents.restore();
+    });
+
+    after(() => {
+      adomikAnalytics.disableAnalytics();
     });
 
     it('should catch all events', function (done) {

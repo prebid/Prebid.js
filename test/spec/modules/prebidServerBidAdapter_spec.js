@@ -358,7 +358,7 @@ describe('S2S Adapter', () => {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
-      sinon.stub(adapterManager, 'getBidAdapter', () => rubiconAdapter);
+      sinon.stub(adapterManager, 'getBidAdapter').callsFake(() => rubiconAdapter);
 
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 

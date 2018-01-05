@@ -4,7 +4,19 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
+  after(() => {
+    pubwiseAnalytics.disableAnalytics();
+  });
+
   describe('enableAnalytics', function () {
+    beforeEach(() => {
+      sinon.stub(events, 'getEvents').returns([]);
+    });
+
+    afterEach(() => {
+      events.getEvents.restore();
+    });
+
     it('should catch all events', function () {
       sinon.spy(pubwiseAnalytics, 'track');
 

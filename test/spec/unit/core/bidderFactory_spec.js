@@ -264,7 +264,7 @@ describe('bidders created by newBidder', () => {
     let logErrorSpy;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });
@@ -432,7 +432,7 @@ describe('bidders created by newBidder', () => {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         callbacks.error('ajax call failed.');
       });
       addBidResponseStub.reset();
@@ -592,7 +592,7 @@ describe('validate bid response: ', () => {
 
     addBidResponseStub = sinon.stub();
     doneStub = sinon.stub();
-    ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+    ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
       const fakeResponse = sinon.stub();
       fakeResponse.returns('headerContent');
       callbacks.success('response body', { getResponseHeader: fakeResponse });

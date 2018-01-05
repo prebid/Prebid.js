@@ -163,7 +163,7 @@ describe('33acrossBidAdapter:', function () {
     });
 
     it('returns corresponding test server requests for each valid bidRequest', function() {
-      this.sandbox.stub(config, 'getConfig', () => {
+      this.sandbox.stub(config, 'getConfig').callsFake(() => {
         return {
           'url': 'https://foo.com/hb/'
         }
@@ -398,7 +398,7 @@ describe('33acrossBidAdapter:', function () {
       it('via the test endpoint', function() {
         const spy = this.sandbox.spy(userSync, 'registerSync');
 
-        this.sandbox.stub(config, 'getConfig', () => {
+        this.sandbox.stub(config, 'getConfig').callsFake(() => {
           return {
             'syncUrl': 'https://foo.com/deb/v2?m=xch'
           }

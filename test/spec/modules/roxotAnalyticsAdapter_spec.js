@@ -5,13 +5,19 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
+  after(() => {
+    roxotAnalytic.disableAnalytics();
+  });
+
   describe('enableAnalytics', function () {
     beforeEach(() => {
       sinon.spy(roxotAnalytic, 'track');
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {
       roxotAnalytic.track.restore();
+      events.getEvents.restore();
     });
     it('should catch all events', function () {
       adaptermanager.registerAnalyticsAdapter({

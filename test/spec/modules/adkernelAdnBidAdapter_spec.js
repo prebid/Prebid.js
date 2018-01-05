@@ -130,7 +130,7 @@ describe('AdkernelAdn adapter', () => {
     let tagRequest;
 
     before(() => {
-      let mock = sinon.stub(utils, 'getTopWindowLocation', () => {
+      let mock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
         return {
           protocol: 'https:',
           hostname: 'example.com',
