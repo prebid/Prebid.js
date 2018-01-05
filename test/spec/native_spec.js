@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting } from 'src/native';
+import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
 const utils = require('src/utils');
 
 const bid = {
@@ -42,5 +42,115 @@ describe('native.js', () => {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
+  });
+});
+
+describe('validate native', () => {
+  let bidReq = [{
+    bids: [{
+      bidderCode: 'test_bidder',
+      bidId: 'test_bid_id',
+      mediaTypes: {
+        native: {
+          title: {
+            required: true,
+          },
+          body: {
+            required: true,
+          },
+          image: {
+            required: true,
+            sizes: [150, 50],
+            aspect_ratios: [150, 50]
+          },
+          icon: {
+            required: true,
+            sizes: [50, 50]
+          },
+        }
+      }
+    }]
+  }];
+
+  let validBid = {
+    adId: 'test_bid_id',
+    adUnitCode: '123/prebid_native_adunit',
+    bidder: 'test_bidder',
+    native: {
+      body: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+      clickTrackers: ['http://my.click.tracker/url'],
+      icon: {
+        url: 'http://my.image.file/ad_image.jpg',
+        height: 75,
+        width: 75
+      },
+      image: {
+        url: 'http://my.icon.file/ad_icon.jpg',
+        height: 2250,
+        width: 3000
+      },
+      clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
+      impressionTrackers: ['http://my.imp.tracker/url'],
+      title: 'This is an example Prebid Native creative'
+    }
+  };
+
+  let noIconDimBid = {
+    adId: 'test_bid_id',
+    adUnitCode: '123/prebid_native_adunit',
+    bidder: 'test_bidder',
+    native: {
+      body: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+      clickTrackers: ['http://my.click.tracker/url'],
+      icon: {
+        url: 'http://my.image.file/ad_image.jpg',
+        height: 0,
+        width: 0
+      },
+      image: {
+        url: 'http://my.icon.file/ad_icon.jpg',
+        height: 2250,
+        width: 3000
+      },
+      clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
+      impressionTrackers: ['http://my.imp.tracker/url'],
+      title: 'This is an example Prebid Native creative'
+    }
+  };
+
+  let noImgDimBid = {
+    adId: 'test_bid_id',
+    adUnitCode: '123/prebid_native_adunit',
+    bidder: 'test_bidder',
+    native: {
+      body: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+      clickTrackers: ['http://my.click.tracker/url'],
+      icon: {
+        url: 'http://my.image.file/ad_image.jpg',
+        height: 75,
+        width: 75
+      },
+      image: {
+        url: 'http://my.icon.file/ad_icon.jpg',
+        height: 0,
+        width: 0
+      },
+      clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
+      impressionTrackers: ['http://my.imp.tracker/url'],
+      title: 'This is an example Prebid Native creative'
+    }
+  };
+
+  beforeEach(() => {});
+
+  afterEach(() => {});
+
+  it('should reject bid if no image sizes are defined', () => {
+    let result = nativeBidIsValid(validBid, bidReq);
+    expect(result).to.be.true;
+    result = nativeBidIsValid(noIconDimBid, bidReq);
+    expect(result).to.be.false;
+    result = nativeBidIsValid(noImgDimBid, bidReq);
+    expect(result).to.be.false;
   });
 });

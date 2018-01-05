@@ -149,6 +149,9 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
+
+  adUnits = exports.checkBidRequestSizes(adUnits);
+
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
@@ -210,6 +213,54 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   });
   return bidRequests;
 };
+
+exports.checkBidRequestSizes = (adUnits) => {
+  Array.prototype.forEach.call(adUnits, adUnit => {
+    if (adUnit.sizes) {
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+    }
+
+    const mediaTypes = adUnit.mediaTypes;
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        adUnit.sizes = banner.sizes;
+      } else {
+        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && Number.isInteger(video.playerSize[0]) && Number.isInteger(video.playerSize[1])) {
+          adUnit.sizes = video.playerSize;
+        } else {
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
+          delete adUnit.mediaTypes.video.playerSize;
+        }
+      }
+    }
+
+    if (mediaTypes && mediaTypes.native) {
+      const native = mediaTypes.native;
+      if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        delete adUnit.mediaTypes.native.image.sizes;
+      }
+      if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        delete adUnit.mediaTypes.native.image.aspect_ratios;
+      }
+      if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        delete adUnit.mediaTypes.native.icon.sizes;
+      }
+    }
+  });
+  return adUnits;
+}
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   if (!bidRequests.length) {
