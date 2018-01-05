@@ -10,7 +10,7 @@ Maintainer: y1dev@platform-one.co.jp
 
 Connect to YIELDONE for bids.
 
-THE YIELDONE adapter requires setup and approval from the Rubicon Project team. Please reach out to your account team or y1s@platform-one.co.jp for more information.
+THE YIELDONE adapter requires setup and approval from the YIELDONE team. Please reach out to your account team or y1s@platform-one.co.jp for more information.
 
 # Test Parameters
 ```

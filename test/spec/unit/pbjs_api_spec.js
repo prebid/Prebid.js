@@ -1443,7 +1443,7 @@ describe('Unit: Prebid Module', function () {
           'pbAg': '10.00',
           'size': '300x250',
           'alwaysUseBid': true,
-          'requestId': 123456,
+          'auctionId': 123456,
           'adserverTargeting': {
             'hb_bidder': 'appnexus',
             'hb_adid': '233bcbee889d46d',

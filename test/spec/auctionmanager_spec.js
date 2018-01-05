@@ -34,6 +34,7 @@ describe('auctionmanager.js', function () {
     var bidderCode = 'appnexus';
     var size = '300x250';
     var adId = '1adId';
+    var source = 'client';
 
     before(function () {
       bid.cpm = bidPriceCpm;
@@ -50,6 +51,7 @@ describe('auctionmanager.js', function () {
       };
       bid.bidderCode = bidderCode;
       bid.adId = adId;
+      bid.source = source;
     });
 
     it('No bidder level configuration defined - default', function () {
@@ -57,7 +59,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -89,6 +92,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.size;
               }
+            },
+            {
+              key: 'hb_source',
+              val: function (bidResponse) {
+                return bidResponse.source;
+              }
             }
           ]
 
@@ -99,7 +108,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbHg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -141,7 +151,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbHg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -183,7 +194,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -347,7 +359,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': 5.57,
-        'hb_size': '300x250'
+        'hb_size': '300x250',
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
