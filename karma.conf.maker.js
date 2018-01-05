@@ -35,7 +35,7 @@ function newPluginsArray(browserstack) {
     'karma-expect',
     'karma-mocha',
     'karma-requirejs',
-    'karma-sinon-ie',
+    'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
@@ -95,10 +95,6 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
-  // var files = [
-  //   'test/helpers/prebidGlobal.js',
-  //   file ? file : 'test/**/*_spec.js'
-  // ];
 
   var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
@@ -124,11 +120,6 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    // preprocessors: {
-    //   'test/**/*_spec.js': ['webpack', 'sourcemap'],
-    //   'test/helpers/prebidGlobal.js': ['webpack', 'sourcemap']
-    // },
-
     preprocessors: {
       'test/test_index.js': ['webpack', 'sourcemap']
     },
