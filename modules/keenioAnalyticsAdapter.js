@@ -75,44 +75,161 @@ function getCpmDistribution(cpm) {
 }
 
 exports.enableAnalytics = function ({ provider, options }) {
+  if( typeof options.projectId === 'undefined' || typeof options.writeKey === 'undefined' ) {
+    return utils.logMessage('You have to define keen.oi projectId and writeKey');
+  }
   var client = new KeenTracking({
     projectId: options.projectId,
     writeKey: options.writeKey
   });
-
+  const helpers = KeenTracking.helpers;
+  // extend the model of data
+  client.extendEvents(() => {
+    return {
+      geo: {
+        info: {},
+        ip_address: '${keen.ip}'
+      },
+      page: {
+        info: {},
+        title: document.title,
+        url: document.location.href
+      },
+      referrer: {
+        info: {},
+        url: document.referrer
+      },
+      tech: {
+        browser: helpers.getBrowserProfile(),
+        info: {},
+        user_agent: '${keen.user_agent}'
+      },
+      keen: {
+        addons: [
+          {
+            name: 'keen:ip_to_geo',
+            input: {
+              ip: 'geo.ip_address'
+            },
+            output : 'geo.info'
+          },
+          {
+            name: 'keen:ua_parser',
+            input: {
+              ua_string: 'tech.user_agent'
+            },
+            output: 'tech.info'
+          },
+          {
+            name: 'keen:url_parser',
+            input: {
+              url: 'page.url'
+            },
+            output: 'page.info'
+          },
+          {
+            name: 'keen:referrer_parser',
+            input: {
+              referrer_url: 'referrer.url',
+              page_url: 'page.url'
+            },
+            output: 'referrer.info'
+          }
+        ]
+      }
+    }
+  });
   // bidRequests
   events.on(BID_REQUESTED, function (bidRequestObj) {
-    console.log('bids have been requested');
-    client.recordEvent('bid_requested', bidRequestObj, (err, res) => {
+    client.recordEvent('bid_requests', bidRequestObj, (err, res) => {
       if (err) {
-        console.log('data passed to keen.io');
+        utils.logMessage('Error of writing request to keen.io');
       }
       else {
-        console.log('error of loggin to keen.io');
+        utils.logMessage('A request has been written to keen.io');
       }
     });
   });
 
   // bidResponses
   events.on(BID_RESPONSE, function (bid) {
-    // do logic
-    console.log('responses have been received');
+    if (bid && bid.bidderCode) {
+      var cpmCents = convertToCents(bid.cpm);
+      var bidder = bid.bidderCode;
+      if (typeof bid.timeToRespond !== 'undefined') {
+        var timeDis = getLoadTimeDistribution(bid.timeToRespond);
+        // load time distribution
+        client.recordEvent('prebid_load_time_distribution', {bidder: bidder,time: timeDis}, (err, res) => {
+          if (err) {
+            utils.logMessage('Error of writing prebid time distribution to keen.io');
+          }
+          else {
+            utils.logMessage('Prebid time distribution has been written to keen.io');
+          }
+        });
+      }
+      if (bid.cpm > 0) {
+        var cpmDis = getCpmDistribution(bid.cpm);
+        // cpm distribution
+        client.recordEvent('prebid_cpm_distribution', {bidder: bidder,cpm: cpmDis}, (err, res) => {
+          if (err) {
+            utils.logMessage('Error of writing prebid CPM distribution to keen.io');
+          }
+          else {
+            utils.logMessage('Prebid CPM distribution has been written to keen.io');
+          }
+        });
+        // bid load time
+        client.recordEvent('bid_load_time', {bidder: bidder,time: bid.timeToRespond}, (err, res) => {
+          if (err) {
+            utils.logMessage('Error of writing bid load time to keen.io');
+          }
+          else {
+            utils.logMessage('Bid load time has been written to keen.io');
+          }
+        });
+        // bid CPM
+        client.recordEvent('bid_cpm', {bidder: bidder,cpm: cpmCents}, (err, res) => {
+          if (err) {
+            utils.logMessage('Error of writing bid CPM to keen.io');
+          }
+          else {
+            utils.logMessage('Bid CPM has been written to keen.io');
+          }
+        });
+      }
+    }
   });
 
   // bidTimeouts
   events.on(BID_TIMEOUT, function (bidderArray) {
-    // do logic
-    console.log('timeout analysis');
+    utils._each(bidderArray, function (bidderCode) {
+      client.recordEvent('bidder_timeout', {bidder: bidderCode}, (err, res) => {
+        if (err) {
+          utils.logMessage('Error of writing bidder timeout to keen.io');
+        }
+        else {
+          utils.logMessage('Bidder timeout has been written to keen.io');
+        }
+      });
+    });
   });
 
   // wins
   events.on(BID_WON, function (bid) {
-    // do logic
-    console.log('winners analysis');
+    var cpmCents = convertToCents(bid.cpm);
+    client.recordEvent('bid_wins', {bidder: bid.bidderCode,cpm: cpmCents}, (err, res) => {
+      if (err) {
+        utils.logMessage('Error of writing bid CPM to keen.io');
+      }
+      else {
+        utils.logMessage('Bid CPM has been written to keen.io');
+      }
+    });
   });
 
   this.enableAnalytics = function _enable() {
-    return utils.logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
+    return utils.logMessage('Analytics adapter already enabled');
   };
 };
 
