@@ -4,7 +4,7 @@ Module Name: InSkin Bid Adapter
 
 Module Type: Bid Adapter
 
-Maintainer: 
+Maintainer: jgrimes@adzerk.com
 
 # Description
 
