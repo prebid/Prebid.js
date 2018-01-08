@@ -446,7 +446,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     // returns the object or null
     if (a == null) return a;
     if (a.nodeType == Node.TEXT_NODE) {
-      var dc = adi.ownerDocument;
+      var dc = a.ownerDocument;
       var wnd = dc.defaultView || dc.parentWindow;
       var par = a.parentNode;
       if (wnd == wnd.top) {
@@ -728,8 +728,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         ttr: args.timeToRespond,
         winner: 0
       };
-      if (args.creative_id) {
-        pb.crid = args.creative_id;
+      if (args.creativeId) {
+        pb.crid = args.creativeId;
       }
       adi.bids.push(pb);
     }
