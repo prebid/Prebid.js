@@ -17,6 +17,7 @@ var SmartAdServer = function SmartAdServer() {
         bidObject.cpm = adUnit.cpm;
         bidObject.currency = adUnit.currency;
         bidObject.ad = adUnit.ad;
+        bidObject.adUrl = adUnit.adUrl;
         bidObject.width = adUnit.width;
         bidObject.height = adUnit.height;
         bidObject.dealId = adUnit.dealId;
