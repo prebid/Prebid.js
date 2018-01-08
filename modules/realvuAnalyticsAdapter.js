@@ -439,6 +439,18 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   questA: function (a) { // look for the visible object of ad_sizes size
     // returns the object or null
     if (a == null) return a;
+    if (a.nodeType == Node.TEXT_NODE) {
+      var dc = a.ownerDocument;
+      var wnd = dc.defaultView || dc.parentWindow;
+      var par = a.parentNode;
+      if (wnd == wnd.top) {
+        return par;
+      } else {
+        return par.offsetParent;
+      }
+    }
+    var not_friendly = false;
+    var ain = null;
     var tn = a.tagName;
     if (tn == 'HEAD' || tn == 'SCRIPT') return null;
     if (tn == 'IFRAME') {
@@ -768,8 +780,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         ttr: args.timeToRespond,
         winner: 0
       };
-      if (args.creative_id) {
-        pb.crid = args.creative_id;
+      if (args.creativeId) {
+        pb.crid = args.creativeId;
       }
       adi.bids.push(pb);
     }
