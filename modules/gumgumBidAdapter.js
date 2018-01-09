@@ -104,7 +104,7 @@ function buildRequests (validBidRequests) {
       data.pi = 2;
     }
     if (params.inSlot) {
-      data.si = params.inSlot;
+      data.si = parseInt(params.inSlot, 10);
       data.pi = 3;
     }
 
