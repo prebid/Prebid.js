@@ -2,6 +2,8 @@ import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
 import { logInfo } from 'src/utils';
+import find from 'core-js/library/fn/array/find';
+import findIndex from 'core-js/library/fn/array/find-index';
 
 // Events used in adomik analytics adapter
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -146,7 +148,7 @@ adomikAdapter.buildBidResponse = function (bid) {
 
 adomikAdapter.sizeUtils = {
   sizeAlreadyExists: (sizes, typedEventSize) => {
-    return sizes.find((size) => size.height === typedEventSize.height && size.width === typedEventSize.width);
+    return find(sizes, (size) => size.height === typedEventSize.height && size.width === typedEventSize.width);
   },
   formatSize: (typedEventSize) => {
     return {
@@ -167,7 +169,7 @@ adomikAdapter.buildTypedEvents = function () {
   const groupedTypedEvents = [];
   adomikAdapter.bucketEvents.forEach(function(typedEvent, i) {
     const [placementCode, type] = [typedEvent.event.placementCode, typedEvent.type];
-    let existTypedEvent = groupedTypedEvents.findIndex((groupedTypedEvent) => groupedTypedEvent.placementCode === placementCode);
+    let existTypedEvent = findIndex(groupedTypedEvents, (groupedTypedEvent) => groupedTypedEvent.placementCode === placementCode);
 
     if (existTypedEvent === -1) {
       groupedTypedEvents.push({
