@@ -58,7 +58,7 @@ function buildRequests(bidRequests) {
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
 
-  const queryString = queries.map(qs => qs.join('=')).join('&');
+  const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
   return {
     method: 'GET',
