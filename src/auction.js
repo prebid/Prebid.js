@@ -379,7 +379,13 @@ export function getStandardBidderSettings() {
         val: function (bidResponse) {
           return bidResponse.source;
         }
-      }
+      },
+      {
+        key: 'hb_mediatype',
+        val: function (bidResponse) {
+          return bidResponse.mediaType;
+        }
+      },
     ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
