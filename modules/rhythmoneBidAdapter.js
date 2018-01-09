@@ -63,12 +63,6 @@ function RhythmOneBidAdapter() {
         type: 'image',
         url: u + q.join('&')
       }];
-    } else {
-      if (typeof (Image) !== 'undefined') {
-        let i = new Image();
-        i.src = u + q.join('&');
-      }
-      return [];
     }
   };
 
