@@ -58,7 +58,7 @@ function interpretResponse(bids) {
   return responses;
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid,
@@ -67,5 +67,3 @@ const spec = {
 }
 
 registerBidder(spec);
-
-module.exports = spec;
