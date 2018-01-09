@@ -214,19 +214,19 @@ describe('ServerBid S2S Adapter', () => {
   });
 
   describe('response handler', () => {
-    let server;
+     let server;
 
-    beforeEach(() => {
-      server = sinon.fakeServer.create();
-      sinon.stub(utils, 'getBidRequest').returns({
-        bidId: '123'
-      });
-    });
+     beforeEach(() => {
+       server = sinon.fakeServer.create();
+       sinon.stub(utils, 'getBidRequest').returns({
+         bidId: '123'
+       });
+     });
 
-    afterEach(() => {
-      server.restore();
-      utils.getBidRequest.restore();
-    });
+     afterEach(() => {
+       server.restore();
+       utils.getBidRequest.restore();
+     });
 
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
