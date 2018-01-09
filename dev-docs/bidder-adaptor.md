@@ -251,7 +251,7 @@ The `interpretResponse` function will be called when the browser has received th
     // const headerValue = serverResponse.headers.get('some-response-header')
     const bidResponses = [];
     const bidResponse = {
-        requestId: bidRequest.bidId,
+        requestId: BID_ID,
         cpm: CPM,
         width: WIDTH,
         height: HEIGHT,
@@ -272,7 +272,7 @@ The parameters of the `bidObject` are:
 {: .table .table-bordered .table-striped }
 | Key          | Scope                                       | Description                                                                                                                                   | Example                              |
 |--------------+---------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------|
-| `requestId`  | Required                                    | The bid ID. Used to tie this bid back to the request.                                                                                         | 12345                                |
+| `requestId`  | Required                                    | The bid ID that was sent to `spec.buildRequests` as `bidRequests[].bidId`. Used to tie this bid back to the request.                          | 12345                                |
 | `cpm`        | Required                                    | The bid price. We recommend the most granular price a bidder can provide                                                                      | 3.5764                               |
 | `width`      | Required                                    | The width of the returned creative. For video, this is the player width.                                                                      | 300                                  |
 | `height`     | Required                                    | The height of the returned creative. For video, this is the player height.                                                                    | 250                                  |
