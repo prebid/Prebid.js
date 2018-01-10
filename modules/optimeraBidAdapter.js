@@ -11,7 +11,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
-    if (typeof bidRequest.params.custom != 'undefined' && typeof bidRequest.params.custom.clientID != 'undefined') {
+    if (typeof bidRequest.params !== 'undefined' && typeof bidRequest.params.clientID !== 'undefined') {
       return true;
     } else {
       return false;
@@ -27,12 +27,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests) {
-    var optimeraHost = window.location.host;
-    var optimeraPathName = window.location.pathname;
-    var timestamp = Math.round(new Date().getTime() / 1000);
-    if (typeof validBidRequests[0].params.custom.clientID != 'undefined') {
-      var clientID = validBidRequests[0].params.custom.clientID;
-      var scoresURL = SCORES_BASE_URL + clientID + '/' + optimeraHost + optimeraPathName + '.js';
+    let optimeraHost = window.location.host;
+    let optimeraPathName = window.location.pathname;
+    let timestamp = Math.round(new Date().getTime() / 1000);
+    if (typeof validBidRequests[0].params.clientID !== 'undefined') {
+      let clientID = validBidRequests[0].params.clientID;
+      let scoresURL = SCORES_BASE_URL + clientID + '/' + optimeraHost + optimeraPathName + '.js';
       return {
         method: 'GET',
         url: scoresURL,
@@ -51,17 +51,17 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    var validBids = bidRequest.payload;
-    var bidResponses = [];
-    var dealId = '';
-    if (typeof serverResponse.body != 'undefined') {
-      var scores = serverResponse.body;
-      for (var i = 0; i < validBids.length; i++) {
-        if (typeof validBids[i].params.custom.clientID != 'undefined') {
+    let validBids = bidRequest.payload;
+    let bidResponses = [];
+    let dealId = '';
+    if (typeof serverResponse.body !== 'undefined') {
+      let scores = serverResponse.body;
+      for (let i = 0; i < validBids.length; i++) {
+        if (typeof validBids[i].params.clientID !== 'undefined') {
           if (validBids[i].adUnitCode in scores) {
             dealId = scores[validBids[i].adUnitCode];
           }
-          var bidResponse = {
+          let bidResponse = {
             requestId: validBids[i].bidId,
             ad: '<div></div>',
             cpm: 0.01,

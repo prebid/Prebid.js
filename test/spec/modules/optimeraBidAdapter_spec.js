@@ -15,9 +15,7 @@ describe('OptimeraAdapter', () => {
     let bid = {
       'bidder': 'optimera',
       'params': {
-        'custom': {
-          'clientID': '0'
-        }
+        'clientID': '0'
       },
       'adUnitCode': 'div-0',
       'sizes': [[300, 250], [300, 600]],
@@ -40,9 +38,7 @@ describe('OptimeraAdapter', () => {
         'bidder': 'optimera',
         'bidderRequestId': '202be1ce3f6194',
         'params': {
-          'custom': {
-            'clientID': '0'
-          }
+          'clientID': '0'
         }
       }
     ];
@@ -64,9 +60,7 @@ describe('OptimeraAdapter', () => {
         {
           'bidder': 'optimera',
           'params': {
-            'custom': {
-              'clientID': '0'
-            }
+            'clientID': '0'
           },
           'adUnitCode': 'div-0',
           'bidId': '307440db8538ab'
@@ -74,7 +68,6 @@ describe('OptimeraAdapter', () => {
       ]
     }
     it('interpresResponse fires', () => {
-      window.oDv = window.oDv || [];
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses[0].dealId[0]).to.equal('RB_K');
       expect(bidResponses[0].dealId[1]).to.equal('728x90K');
