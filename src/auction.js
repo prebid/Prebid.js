@@ -147,14 +147,24 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 
   function done(bidRequestId) {
-    var innerBidRequestId = bidRequestId;
+    const innerBidRequestId = bidRequestId;
     return delayExecution(function() {
-      let request = find(_bidderRequests, (bidRequest) => {
+      const request = find(_bidderRequests, (bidRequest) => {
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
-      request.doneCbCallCount += 1;
-      // In case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
-      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('cache.url'))) {
+
+      const nonVideoBid = request.bids.filter(videoAdUnit).length === 0;
+      const videoBid = request.bids.filter(videoAdUnit).length > 0;
+      const videoBidNoCache = videoBid && !config.getConfig('cache.url');
+      const videoBidWithCache = videoBid && config.getConfig('cache.url');
+
+      // video bids with cache enabled need to be cached first before saying they are done
+      if (!videoBidWithCache) {
+        request.doneCbCallCount += 1;
+      }
+
+      // in case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
+      if (nonVideoBid || videoBidNoCache) {
         bidsBackAll()
       }
     }, 1);
@@ -216,7 +226,9 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   let bidRequests = auctionInstance.getBidRequests();
   let auctionId = auctionInstance.getAuctionId();
 
-  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId});
+  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
+
   if (bidResponse.mediaType === 'video') {
     tryAddVideoBid(bidResponse);
   } else {
@@ -247,6 +259,8 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
           if (!bid.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
+          // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
+          bidRequest.doneCbCallCount += 1;
           addBidToAuction(bidResponse);
           auctionInstance.bidsBackAll();
         }
@@ -261,9 +275,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
-function getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId}) {
-  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
-
+function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   const start = bidRequest.start;
 
   let bidObject = Object.assign({}, bid, {
