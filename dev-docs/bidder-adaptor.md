@@ -408,7 +408,7 @@ In order for your bidder to support the native media type:
 2. Your (client-side) bidder adapter needs to unpack the server's response into a Prebid-compatible bid response populated with the required native assets.
 3. Your bidder adapter must be capable of ingesting the required and optional native assets specified on the `adUnit.mediaTypes.native` object, as described in [Show Native Ads]({{site.baseurl}}/dev-docs/show-native-ads.html).
 
-The adapter code sample below fulfills requirement #2, unpacking the server's reponse and:
+The adapter code samples below fulfills requirement #2, unpacking the server's reponse and:
 
 1. Checking for native assets on the response.
 2. If present, filling in the `native` object with those assets.
@@ -420,21 +420,49 @@ else if (rtbBid.rtb.native) {
 
     /* If yes, let's populate our response with native assets */
 
-    const native = rtbBid.rtb.native;
+    const nativeResponse = rtbBid.rtb.native;
 
     bid.native = {
-        title: native.title,
-        body: native.desc,
-        cta: native.ctatext,
-        sponsoredBy: native.sponsored,
-        image: native.main_img && native.main_img.url,
-        icon: native.icon && native.icon.url,
-        clickUrl: native.link.url,
-        impressionTrackers: native.impression_trackers,
+        title: nativeResponse.title,
+        body: nativeResponse.desc,
+        cta: nativeResponse.ctatext,
+        sponsoredBy: nativeResponse.sponsored,
+        image: nativeResponse.main_img && nativeResponse.main_img.url,
+        icon: nativeResponse.icon && nativeResponse.icon.url,
+        clickUrl: nativeResponse.link.url,
+        impressionTrackers: nativeResponse.impression_trackers,
     };
 }
 
 {% endhighlight %}
+
+As of the [0.34.1 release](https://github.com/prebid/Prebid.js/releases/tag/0.34.1), a bidder may optionally return the height and width of a native `image` or `icon` asset.
+
+If your bidder does return the image size, you can expose the image dimensions on the bid response object as shown below.
+
+```javascript
+    /* Does the bidder respond with native assets? */
+    else if (rtbBid.rtb.native) {
+
+        const nativeResponse = rtbBid.rtb.native;
+
+        /* */
+
+        bid.native = {
+            title: nativeResponse.title,
+            image: {
+              url: nativeResponse.img.url,
+              height: nativeResponse.img.height,
+              width: nativeResponse.img.width,
+            },
+            icon: nativeResponse.icon.url,
+        };
+    }
+```
+
+The targeting key `hb_native_image` (about which more [here]({{site.baseurl}}/adops/setting-up-prebid-native-in-dfp.html) (ad ops setup) and [here]({{site.baseurl}}/dev-docs/show-native-ads.html) (engineering setup)) will be set with the value of `image.url` if `image` is an object.
+
+If `image` is a string, `hb_native_image` will be populated with that string (a URL).
 
 ## Adding Unit Tests
 
