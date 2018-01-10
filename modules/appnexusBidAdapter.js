@@ -216,20 +216,24 @@ function newBid(serverBid, rtbBid) {
       body: nativeAd.desc,
       cta: nativeAd.ctatext,
       sponsoredBy: nativeAd.sponsored,
-      image: {
-        url: nativeAd.main_img && nativeAd.main_img.url,
-        height: nativeAd.main_img && nativeAd.main_img.height,
-        width: nativeAd.main_img && nativeAd.main_img.width,
-      },
-      icon: {
-        url: nativeAd.icon && nativeAd.icon.url,
-        height: nativeAd.icon && nativeAd.icon.height,
-        width: nativeAd.icon && nativeAd.icon.width,
-      },
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
     };
+    if (nativeAd.main_img) {
+      bid['native'].image = {
+        url: nativeAd.main_img.url,
+        height: nativeAd.main_img.height,
+        width: nativeAd.main_img.width,
+      };
+    }
+    if (nativeAd.icon) {
+      bid['native'].icon = {
+        url: nativeAd.icon.url,
+        height: nativeAd.icon.height,
+        width: nativeAd.icon.width,
+      };
+    }
   } else {
     Object.assign(bid, {
       width: rtbBid.rtb.banner.width,
