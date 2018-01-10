@@ -4,6 +4,8 @@ import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
+import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 
 var assert = require('assert');
@@ -34,6 +36,7 @@ describe('auctionmanager.js', function () {
     var bidderCode = 'appnexus';
     var size = '300x250';
     var adId = '1adId';
+    var source = 'client';
 
     before(function () {
       bid.cpm = bidPriceCpm;
@@ -50,6 +53,7 @@ describe('auctionmanager.js', function () {
       };
       bid.bidderCode = bidderCode;
       bid.adId = adId;
+      bid.source = source;
     });
 
     it('No bidder level configuration defined - default', function () {
@@ -57,7 +61,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -89,6 +94,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.size;
               }
+            },
+            {
+              key: 'hb_source',
+              val: function (bidResponse) {
+                return bidResponse.source;
+              }
             }
           ]
 
@@ -99,7 +110,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbHg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -141,7 +153,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbHg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -183,7 +196,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -347,7 +361,8 @@ describe('auctionmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': 5.57,
-        'hb_size': '300x250'
+        'hb_size': '300x250',
+        'hb_source': source
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -856,6 +871,33 @@ describe('auctionmanager.js', function () {
       const addedBid2 = auction.getBidsReceived().pop();
       assert.notEqual(addedBid2.adId, bids1[0].requestId);
       assert.equal(length, 1);
+    });
+
+    it('should run auction after video bids have been cached', () => {
+      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123}]);
+      sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
+
+      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video'})];
+      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video'})];
+
+      registerBidder(spec);
+      registerBidder(spec1);
+
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.isBidRequestValid.returns(true);
+      spec.interpretResponse.returns(bidsCopy);
+
+      spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec1.isBidRequestValid.returns(true);
+      spec1.interpretResponse.returns(bids1Copy);
+
+      auction.callBids();
+
+      assert.equal(auction.getBidsReceived().length, 2);
+      assert.equal(auction.getAuctionStatus(), 'completed');
+
+      config.getConfig.restore();
+      store.store.restore();
     });
   });
 });
