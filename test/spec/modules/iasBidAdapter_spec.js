@@ -167,6 +167,9 @@ describe('iasBidAdapter is an adapter that', () => {
       it('has IAS keyword `dlm` as property', () => {
         expect(bidResponse[0]).to.deep.include({ dlm: 'dlmVal' });
       });
+      it('has IAS keyword `drg` as property', () => {
+        expect(bidResponse[0]).to.deep.include({ drg: 'drgVal' });
+      });
       it('has IAS keyword `hat` as property', () => {
         expect(bidResponse[0]).to.deep.include({ hat: 'hatVal' });
       });
