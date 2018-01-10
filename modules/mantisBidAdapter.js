@@ -17,9 +17,9 @@ function isDesktop(ignoreTouch) {
   return !supportsTouch && (!width || width >= (window.mantis_breakpoint || 768));
 }
 
-function storeUuid(uuid, sync) {
+function storeUuid(uuid) {
   if (window.mantis_uuid) {
-    return;
+    return false;
   }
   window.mantis_uuid = uuid;
   if (window.localStorage) {
@@ -27,20 +27,6 @@ function storeUuid(uuid, sync) {
       window.localStorage.setItem('mantis:uuid', uuid);
     } catch (ex) {
     }
-  }
-  if (!sync) {
-    postMessage('uuid', uuid);
-  }
-}
-
-function postMessage(type, data, scope, origin) {
-  var target = scope || window.top;
-  if (target.postMessage) {
-    target.postMessage({
-      mantis: true,
-      type: type,
-      data: data
-    }, origin || '*');
   }
 }
 
@@ -188,7 +174,6 @@ const spec = {
     return serverResponse.body.ads.map(function (ad) {
       return {
         requestId: ad.bid,
-        bidderCode: spec.code,
         cpm: ad.cpm,
         width: ad.width,
         height: ad.height,
