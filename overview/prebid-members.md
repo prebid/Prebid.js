@@ -12,11 +12,11 @@ nav_section: intro
 
 # Prebid.org Membership
 
-Prebid.org was developed to bring together the oversight, guidance, and development capabilities of the ad tech community to solve the industry’s common technical hurdles. By structuring the organization with a tiered membership system, we can ensure that the organization’s standards are upheld and appropriately funded, and that Prebid solutions continue to be built by, for, and made available to the Prebid community..
+Prebid.org was developed to bring together the oversight, guidance, and development capabilities of the ad tech community to solve the industry’s common technical hurdles. By structuring the organization with a tiered membership system, we can ensure that the organization’s standards are upheld and appropriately funded, and that Prebid solutions continue to be built by, for, and made available to the Prebid community.
 
 # Members
 
-## Founders
+## Founder Tier
 
 ### [AppNexus](https://www.appnexus.com/en/publishers/header-bidding)
 
@@ -27,6 +27,11 @@ Prebid.org was developed to bring together the oversight, guidance, and developm
 
 * Pieter de Zwart, President and Director, pdezwart@prebid.org
 * Tom Kershaw, Director
+
+## Standard Tier
+
+### [PubMatic](https://pubmatic.com/products/header-bidding/)
+
 
 ## Further Reading
 
