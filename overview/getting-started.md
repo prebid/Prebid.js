@@ -2,7 +2,7 @@
 redirect_from: "/getting-started.html"
 layout: page
 title: Getting Started
-head_title: Getting Started with Prebid for Header Bidding
+head_title: Getting started with Prebid.js for header bidding
 description: An overview of Prebid, how it works, basic templates and examples, and more.
 pid: 10
 top_nav_section: overview
@@ -14,44 +14,47 @@ nav_section: intro
 # Getting Started
 {:.no_toc}
 
-The high-level steps required to set up Prebid.js are listed below.
+This page has high-level instructions for getting started with Prebid.js.
 
 {: .alert.alert-success :}
-Once you understand the basics, check out the implementation docs in the [Further Reading](#further-reading) section below.
+If you're working on a mobile app, check out [Prebid Mobile]({{site.baseurl}}/prebid-mobile)!
 
 * TOC
 {:toc}
 
-## 1. Add Prebid code to the page
+## Overview
 
-+ Your developer has added Prebid to the page so it can be loaded on the next impression.
-+ You've configured Prebid.js and set up one or more supported demand adapters (SSP, exchanges, ad networks, etc.)
+At a high level, the way Prebid.js works is:
 
-## 2. Call bidders asynchronously
+- You add some code to your page (Prebid.js) that runs an auction among a few demand sources to show ads on the page
+- Prebid.js calls each demand source in (default random) order
+- The demand sources return bids to the page
+- Prebid.js forwards those bids along to your ad server
+- Your ad server chooses the winning bid to serve based on line items targeting keywords that match price ranges
+- The page serves the creative from the winning bid
 
-+ As the page loads, Prebid.js will asynchronously call all bidders to request how much they're willing to pay for the impression. The asynchronous calls mean the page's content continues to render without interruption.
+For a more in-depth explanation of how header bidding works, see [Header Bidding Explained Step-by-Step](http://www.adopsinsider.com/header-bidding/header-bidding-step-by-step/).
 
-## 3. Set a timer on the page
+## Step 1. Engineering adds Prebid code to the page
 
-+ To prevent bidders from taking too long, Prebid.js enables you to set a timer to control how long the ad server should wait for the bidders. If the auction exceeds the timeout, the auction is skipped and the impression is sent to the ad server.
+As mentioned above, your page has to be set up with Prebid.js to run an auction among several demand sources (bidders).
 
-## 4. Make ad server requests with key-value targeting
+Follow the instructions in [Getting Started for Developers]({{site.baseurl}}/dev-docs/getting-started.html).
 
-+ When bids are received, Prebid.js adds the price and creative ID to your ad server's call as a set of query string parameters.
+## Step 2. Ad ops configures your ad server
 
-## 5. Target the line items
+On the ad server side, you need to set up line items that can bid on each of the possible price ranges a bid could fall into.  These are usually referred to elsewhere on this site as "price buckets".
 
-+ Within your ad server, line items are set up to target various bid prices, allowing the bidders' programmatic demand to compete with other line items or integrated exchanges (like Google Ad Exchange) based on price.
+To simulate a dynamic auction using static line items, each line item targets a narrow portion of the entire range.
 
-## 6. Render the creative
-
-  + A small snippet of JavaScript is set up as a creative on each Prebid line item. When a programmatic line item is picked by your ad server, the creative JS tells Prebid.js which bidder to serve.
+To see how it works, follow the instructions in [Send all bids to the ad server - Ad Ops setup]({{site.baseurl}}/adops/send-all-bids-adops.html).  These instructions correspond with the code sample in the developer setup in the previous step.
 
 ## Further Reading
 
-For more information, check out the implementation docs:
+For more information, check out the following:
 
-+ [For Ad Ops]({{site.github.url}}/adops.html)
-+ [For Developers]({{site.github.url}}/dev-docs/getting-started.html)
++ [Before You Start]({{site.baseurl}}/adops.html): Learn about considerations of your Prebid.js setup such as price granularity, line item configuration, and more.
++ [Docs by Ad Server]({{site.baseurl}}/adops/docs-by-ad-server.html): Ad ops docs arranged by ad server.
++ [Docs by Format]({{site.baseurl}}/dev-docs/docs-by-format.html): Engineering and ad ops docs arranged by ad format (video, native, etc.).
 
 </div>
