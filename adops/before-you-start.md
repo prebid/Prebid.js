@@ -13,38 +13,43 @@ nav_section: tutorials
 <div class="bs-docs-section" markdown="1">
 
 # Before You Start
+{: .no_toc }
 
-> Here are a few things to understand and to decide before implementing Prebid.js. Make sure you understand [how Prebid.js works](/overview/intro.html) before moving on.
+There are a number of things you need to understand and to decide before implementing Prebid.js.
 
-### 1: Decide on price bucket granularity
+This page has information about considerations of your Prebid.js setup such as price granularity, line item configuration, and more.
 
-With pre-bid, you’ll need to setup line items to tell your ad server how much money the “bidder” demand is worth to you. This process is done via key-values.
+{: .alert.alert-info :}
+This page assumes you have read [Getting Started]({{site.baseurl}}/overview/getting-started.html).
+
+* TOC
+{: toc }
+
+### Step 1. Decide on price bucket granularity
+
+With pre-bid, you'll need to setup line items to tell your ad server how much money the “bidder” demand is worth to you. This process is done via key-values.
 
 Example:
 
-
 * Prebid.js is going to call your bidders for their price, then pass it into your ad server on the query-string. You want to target this bid price with a line item that earns you the same amount if it serves.
 
-* If you had 1-line item for every bid at a penny granularity of $0.01, $0.02, $0.03, ..., 1.23, ..., $4.56 you’d need 1,000 line items just to represent bids from $0-$10. We call this the “Exact” granularity option.
+* If you had 1-line item for every bid at a penny granularity of $0.01, $0.02, $0.03, ..., 1.23, ..., $4.56 you'd need 1,000 line items just to represent bids from $0-$10. We call this the “Exact” granularity option.
 
 * Creating 1,000 line items can be a hassle, so publishers typically use price buckets to represent price ranges that matter. For example, you could group bids into 10 cent increments, so bids of $1.06 or $1.02 would be rounded down into a single price bucket of $1.00.
 
-Our recommendation is to start with $1 or 10 cent granularity until you’re more comfortable with Prebid.js. At $1, you only need to setup 10-20 line items – easy. When you’re ready, get more granular with the price buckets to improve yield.
+Our recommendation is to start with $1 or 10 cent granularity until you're more comfortable with Prebid.js. At $1, you only need to setup 10-20 line items – easy. When you're ready, get more granular with the price buckets to improve yield.
 
 Note that DFP has an order [object limits](https://support.google.com/dfp_premium/answer/1628457?hl=en#Trafficking) of containing up to 450 line items (including archived line items). If you are designing your own granularity setup, make sure you do not exceed that amount. Or, you can find the recommended pre-configured granularities [here](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
 
 {: .alert.alert-success :}
 **Action Item:** Once you have decided the price granularity, review this [example page](/dev-docs/examples/simplified-price-bucket-setup.html) with your dev team to learn how to set price granularity on the page.
 
-
-<br>
-
-### 2: One set of line items for all bidders vs. for each bidder
+### Step 2. One set of line items for all bidders vs. a set of line items for each bidder
 
 + <a href="#all-bidders">A. One set of line items for all bidders</a>
 + <a href="#per-bidder">B. One set of line items per bidder</a>
 
-#### A. One set of line items for ALL bidders <a name="all-bidders"/>
+#### One set of line items for all bidders <a name="all-bidders"/>
 
 One set of line items for all bidders is the recommended way of setting up your line items.  Choose this option if you prefer an easier, low-maintenance setup:
 
@@ -59,12 +64,7 @@ One set of line items for all bidders is the recommended way of setting up your 
 {: .alert.alert-success :}
 **Action Item:** For instructions on setting up pre-bid with one set of line items for all bidders, see [Send Top Bid to Ad Server - Step by Step guide to DFP setup](/adops/step-by-step.html).
 
-
-
-
-<br>
-
-#### B. One set of line items for EACH bidder <a name="per-bidder"/>
+#### One set of line items for each bidder <a name="per-bidder"/>
 
 Choose one set of line items for each bidder if you:
 
@@ -79,13 +79,19 @@ Choose one set of line items for each bidder if you:
 {% include send-all-bids-keyword-targeting.md %} 
 
 {: .alert.alert-success :}
-**Action Item:** For instructions on setting up pre-bid with one set of line items for each bidder, see [Send All Bids to Ad Server - Step by Step guide to DFP setup](/adops/send-all-bids-adops.html).
+**Action Item:** For instructions on setting up pre-bid with one set of line items for each bidder, see [Send all bids to the ad server - Ad Ops setup](/adops/send-all-bids-adops.html).
 
-
-<br>
-
-### 3: Work together with your dev team
+### Step 3. Work together with your dev team
 
 Implementing header bidding requires much more collaboration with your dev team than normal Ad Ops setup. For example:
 
 - Setting up price granularity requires you and the dev team working together to ensure the price buckets match. We have seen cases when the code on page sends $0.10 increments, while the line item setup expects $0.50 increments. This results in the ad server not catching 80% of the bids.
+
+## Related Topics
+
+- [Getting Started]({{site.baseurl}}/overview/getting-started.html): How Prebid works at a high level, and how to get started on your implementation.
+- [What is Prebid?]({{site.baseurl}}/overview/intro.html): Overview and history of header bidding and Prebid.js.
++ [Docs by Ad Server]({{site.baseurl}}/adops/docs-by-ad-server.html): Ad ops docs arranged by ad server.
++ [Docs by Format]({{site.baseurl}}/dev-docs/docs-by-format.html): Engineering and ad ops docs arranged by ad format (video, native, etc.).
+
+</div>
