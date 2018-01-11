@@ -1,13 +1,12 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
 import * as url from 'src/url';
 import * as utils from 'src/utils';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const adxcgAnalyticsVersion = 'v1.05';
+const adxcgAnalyticsVersion = 'v1.04';
 
 let initOptions;
 let auctionTimestamp;
@@ -23,23 +22,23 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
   }), {
   track({eventType, args}) {
     if (typeof args !== 'undefined') {
-      if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
-        events.bidTimeout = args.map(item => item.bidder).filter(utils.uniques);
-      } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+      if (eventType === 'bidTimeout') {
+        events.bidTimeout = args;
+      } else if (eventType === 'auctionInit') {
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
-      } else if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
+      } else if (eventType === 'bidRequested') {
         events.bidRequests.push(args);
-      } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+      } else if (eventType === 'bidResponse') {
         events.bidResponses.push(mapBidResponse(args));
-      } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
+      } else if (eventType === 'bidWon') {
         send({
           bidWon: mapBidResponse(args)
         });
       }
     }
 
-    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+    if (eventType === 'auctionEnd') {
       send(events);
     }
   }

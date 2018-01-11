@@ -1,8 +1,7 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import find from 'core-js/library/fn/array/find';
-import findIndex from 'core-js/library/fn/array/find-index';
+// import utils from 'src/utils';
 
 // Events used in adomik analytics adapter
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -20,7 +19,7 @@ let adomikAdapter = Object.assign(adapter({}),
     track({ eventType, args }) {
       switch (eventType) {
         case auctionInit:
-          adomikAdapter.currentContext.id = args.auctionId
+          adomikAdapter.currentContext.id = args.requestId
           adomikAdapter.currentContext.timeout = args.timeout
           if (args.config.bidwonTimeout !== undefined && typeof args.config.bidwonTimeout === 'number') {
             bidwonTimeout = args.config.bidwonTimeout;
@@ -140,7 +139,7 @@ adomikAdapter.buildBidResponse = function (bid) {
 
 adomikAdapter.sizeUtils = {
   sizeAlreadyExists: (sizes, typedEventSize) => {
-    return find(sizes, (size) => size.height === typedEventSize.height && size.width === typedEventSize.width);
+    return sizes.find((size) => size.height === typedEventSize.height && size.width === typedEventSize.width);
   },
   formatSize: (typedEventSize) => {
     return {
@@ -161,7 +160,7 @@ adomikAdapter.buildTypedEvents = function () {
   const groupedTypedEvents = [];
   adomikAdapter.bucketEvents.forEach(function(typedEvent, i) {
     const [placementCode, type] = [typedEvent.event.placementCode, typedEvent.type];
-    let existTypedEvent = findIndex(groupedTypedEvents, (groupedTypedEvent) => groupedTypedEvent.placementCode === placementCode);
+    let existTypedEvent = groupedTypedEvents.findIndex((groupedTypedEvent) => groupedTypedEvent.placementCode === placementCode);
 
     if (existTypedEvent === -1) {
       groupedTypedEvents.push({

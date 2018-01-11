@@ -1,21 +1,12 @@
-const { userSync } = require('../../../src/userSync');
-const { config } = require('../../../src/config');
-
 const { expect } = require('chai');
-
-const {
-  isBidRequestValid,
-  buildRequests,
-  interpretResponse,
-  getUserSyncs
-} = require('../../../modules/33acrossBidAdapter');
+const utils = require('../../../src/utils');
+const { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } = require('../../../modules/33acrossBidAdapter');
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
   const SITE_ID = 'pub1234';
   const PRODUCT_ID = 'product1';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-  const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
 
   beforeEach(function() {
     this.bidRequests = [
@@ -28,14 +19,14 @@ describe('33acrossBidAdapter:', function () {
           productId: PRODUCT_ID
         },
         adUnitCode: 'div-id',
-        auctionId: 'r1',
+        requestId: 'r1',
         sizes: [
-          [ 300, 250 ],
-          [ 728, 90 ]
+          [300, 250],
+          [728, 90]
         ],
         transactionId: 't1'
       }
-    ];
+    ]
     this.sandbox = sinon.sandbox.create();
   });
 
@@ -122,7 +113,7 @@ describe('33acrossBidAdapter:', function () {
   describe('buildRequests:', function() {
     it('returns corresponding server requests for each valid bidRequest', function() {
       const ttxRequest = {
-        imp: [ {
+        imp: [{
           banner: {
             format: [
               {
@@ -142,7 +133,7 @@ describe('33acrossBidAdapter:', function () {
               prod: PRODUCT_ID
             }
           }
-        } ],
+        }],
         site: {
           id: SITE_ID
         },
@@ -158,19 +149,23 @@ describe('33acrossBidAdapter:', function () {
         }
       }
       const builtServerRequests = buildRequests(this.bidRequests);
-      expect(builtServerRequests).to.deep.equal([ serverRequest ]);
+      expect(builtServerRequests).to.deep.equal([serverRequest]);
       expect(builtServerRequests.length).to.equal(1);
     });
 
-    it('returns corresponding test server requests for each valid bidRequest', function() {
-      this.sandbox.stub(config, 'getConfig', () => {
-        return {
-          'url': 'https://foo.com/hb/'
-        }
-      });
+    it('returns corresponding server requests for each valid test bidRequest', function() {
+      delete this.bidRequests[0].params.siteId;
+      this.bidRequests[0].params.site = {
+        id: SITE_ID,
+        page: 'http://test-url.com'
+      }
+      this.bidRequests[0].params.customHeaders = {
+        foo: 'bar'
+      };
+      this.bidRequests[0].params.url = '//staging-ssc.33across.com/api/v1/hb';
 
       const ttxRequest = {
-        imp: [ {
+        imp: [{
           banner: {
             format: [
               {
@@ -190,24 +185,28 @@ describe('33acrossBidAdapter:', function () {
               prod: PRODUCT_ID
             }
           }
-        } ],
+        }],
         site: {
-          id: SITE_ID
+          id: SITE_ID,
+          page: 'http://test-url.com'
         },
         id: 'b1'
       };
       const serverRequest = {
         method: 'POST',
-        url: 'https://foo.com/hb/',
+        url: '//staging-ssc.33across.com/api/v1/hb',
         data: JSON.stringify(ttxRequest),
         options: {
           contentType: 'application/json',
-          withCredentials: false
+          withCredentials: false,
+          customHeaders: {
+            foo: 'bar'
+          }
         }
       };
 
       const builtServerRequests = buildRequests(this.bidRequests);
-      expect(builtServerRequests).to.deep.equal([ serverRequest ]);
+      expect(builtServerRequests).to.deep.equal([serverRequest]);
       expect(builtServerRequests.length).to.equal(1);
     });
 
@@ -217,46 +216,6 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('interpretResponse', function() {
-    beforeEach(function() {
-      this.ttxRequest = {
-        imp: [ {
-          banner: {
-            format: [
-              {
-                w: 300,
-                h: 250,
-                ext: {}
-              },
-              {
-                w: 728,
-                h: 90,
-                ext: {}
-              }
-            ]
-          },
-          ext: {
-            ttx: {
-              prod: PRODUCT_ID
-            }
-          }
-        } ],
-        site: {
-          id: SITE_ID,
-          page: 'http://test-url.com'
-        },
-        id: 'b1'
-      };
-      this.serverRequest = {
-        method: 'POST',
-        url: '//staging-ssc.33across.com/api/v1/hb',
-        data: JSON.stringify(this.ttxRequest),
-        options: {
-          contentType: 'application/json',
-          withCredentials: false
-        }
-      };
-    });
-
     context('when exactly one bid is returned', function() {
       it('interprets and returns the single bid response', function() {
         const serverResponse = {
@@ -265,7 +224,7 @@ describe('33acrossBidAdapter:', function () {
           id: 'b1',
           seatbid: [
             {
-              bid: [ {
+              bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 ext: {
@@ -276,7 +235,7 @@ describe('33acrossBidAdapter:', function () {
                 h: 250,
                 w: 300,
                 price: 0.0938
-              } ]
+              }]
             }
           ]
         };
@@ -294,7 +253,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         }
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
+        expect(interpretResponse({body: serverResponse})).to.deep.equal([bidResponse]);
       });
     });
 
@@ -307,7 +266,7 @@ describe('33acrossBidAdapter:', function () {
           seatbid: []
         };
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([]);
+        expect(interpretResponse({body: serverResponse})).to.deep.equal([]);
       });
     });
 
@@ -319,7 +278,7 @@ describe('33acrossBidAdapter:', function () {
           id: 'b1',
           seatbid: [
             {
-              bid: [ {
+              bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 ext: {
@@ -346,7 +305,7 @@ describe('33acrossBidAdapter:', function () {
               ]
             },
             {
-              bid: [ {
+              bid: [{
                 id: '3',
                 adm: '<html><h3>I am an ad</h3></html>',
                 ext: {
@@ -357,7 +316,7 @@ describe('33acrossBidAdapter:', function () {
                 h: 250,
                 w: 300,
                 price: 0.0938
-              } ]
+              }]
             }
           ]
         };
@@ -375,46 +334,109 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         }
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
+        expect(interpretResponse({body: serverResponse})).to.deep.equal([bidResponse]);
+      });
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    beforeEach(function() {
+      this.ttxBids = [
+        {
+          params: {
+            siteId: 'id1',
+            productId: 'p1'
+          }
+        },
+        {
+          params: {
+            siteId: 'id2',
+            productId: 'p1'
+          }
+        }
+      ];
+
+      this.testTTXBids = [
+        {
+          params: {
+            site: { id: 'id1' },
+            productId: 'p1',
+            syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch'
+          }
+        },
+        {
+          params: {
+            site: { id: 'id2' },
+            productId: 'p1',
+            syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch'
+          }
+        }
+      ];
+
+      this.syncs = [
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&id=id1'
+        },
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&id=id2'
+        },
+      ];
+
+      this.testSyncs = [
+        {
+          type: 'iframe',
+          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id1'
+        },
+        {
+          type: 'iframe',
+          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id2'
+        },
+      ];
+    });
+
+    context('when iframe is not enabled', function() {
+      it('returns empty sync array', function() {
+        this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', () => (
+          {
+            bids: this.ttxBids
+          }
+        ));
+        const syncOptions = {};
+        expect(getUserSyncs(syncOptions)).to.deep.equal([]);
       });
     });
 
-    context('and register user sync', function() {
-      it('via the production endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
-        }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `${SYNC_ENDPOINT}&id=${this.ttxRequest.site.id}`;
+    context('when iframe is enabled', function() {
+      it('returns sync array equal to number of bids for ttx', function() {
+        this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', () => (
+          {
+            bids: this.ttxBids
+          }
+        ));
 
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
+        const syncOptions = {
+          iframeEnabled: true
+        };
+        const syncs = getUserSyncs(syncOptions);
+        expect(syncs.length).to.equal(this.ttxBids.length);
+        expect(syncs).to.deep.equal(this.syncs);
       });
 
-      it('via the test endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-
-        this.sandbox.stub(config, 'getConfig', () => {
-          return {
-            'syncUrl': 'https://foo.com/deb/v2?m=xch'
+      it('returns sync array equal to number of test bids for ttx', function() {
+        this.sandbox.stub(utils, 'getBidderRequestAllAdUnits', () => (
+          {
+            bids: this.testTTXBids
           }
-        });
+        ));
 
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
-        }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `https://foo.com/deb/v2?m=xch&id=${this.ttxRequest.site.id}`;
-
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
+        const syncOptions = {
+          iframeEnabled: true
+        };
+        const syncs = getUserSyncs(syncOptions);
+        expect(syncs.length).to.equal(this.testTTXBids.length);
+        expect(syncs).to.deep.equal(this.testSyncs);
       });
     });
   });

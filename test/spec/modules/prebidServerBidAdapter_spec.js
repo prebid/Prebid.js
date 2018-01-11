@@ -1,18 +1,18 @@
 import { expect } from 'chai';
-import { PrebidServer as Adapter } from 'modules/prebidServerBidAdapter';
+import Adapter from 'modules/prebidServerBidAdapter';
 import adapterManager from 'src/adaptermanager';
+import bidmanager from 'src/bidmanager';
+import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
 
 let CONFIG = {
   accountId: '1',
   enabled: true,
   bidders: ['appnexus'],
   timeout: 1000,
-  endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT
 };
 
 const REQUEST = {
@@ -43,47 +43,16 @@ const REQUEST = {
           'bidder': 'appnexus',
           'params': {
             'placementId': '10433394',
-            'member': 123
+            'member': 123,
+            'randomKey': 123456789,
+            'single_test': null,
+            'myMultiVar': ['myValue', 124578]
           }
         }
       ]
     }
   ]
 };
-
-const BID_REQUESTS = [
-  {
-    'bidderCode': 'appnexus',
-    'auctionId': '173afb6d132ba3',
-    'bidderRequestId': '3d1063078dfcc8',
-    'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
-    'bids': [
-      {
-        'bidder': 'appnexus',
-        'params': {
-          'placementId': '10433394',
-          'member': 123
-        },
-        'bid_id': '123',
-        'adUnitCode': 'div-gpt-ad-1460505748561-0',
-        'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-        'sizes': [
-          {
-            'w': 300,
-            'h': 250
-          }
-        ],
-        'bidId': '259fb43aaa06c1',
-        'bidderRequestId': '3d1063078dfcc8',
-        'auctionId': '173afb6d132ba3'
-      }
-    ],
-    'auctionStart': 1510852447530,
-    'timeout': 5000,
-    'src': 's2s',
-    'doneCbCallCount': 0
-  }
-];
 
 const RESPONSE = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
@@ -209,16 +178,9 @@ const RESPONSE_NO_PBS_COOKIE_ERROR = {
 };
 
 describe('S2S Adapter', () => {
-  let adapter,
-    addBidResponse = sinon.spy(),
-    done = sinon.spy();
+  let adapter;
 
   beforeEach(() => adapter = new Adapter());
-
-  afterEach(() => {
-    addBidResponse.reset();
-    done.reset();
-  });
 
   describe('request function', () => {
     let xhr;
@@ -237,11 +199,13 @@ describe('S2S Adapter', () => {
     });
 
     it('exists converts types', () => {
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+      expect(requestBid.ad_units[0].bids[0].params.keywords).to.exist.and.to.be.an('array').and.to.have.lengthOf(3);
+      expect(requestBid.ad_units[0].bids[0].params.keywords[0]).to.be.an('object').that.has.all.keys('key', 'value');
     });
   });
 
@@ -254,6 +218,13 @@ describe('S2S Adapter', () => {
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(cookie, 'cookieSet');
+      sinon.stub(bidmanager, 'addBidResponse');
+      sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
+        bids: [{
+          bidId: '123',
+          placementCode: 'div-gpt-ad-1460505748561-0'
+        }]
+      });
       sinon.stub(utils, 'getBidRequest').returns({
         bidId: '123'
       });
@@ -261,6 +232,8 @@ describe('S2S Adapter', () => {
 
     afterEach(() => {
       server.restore();
+      bidmanager.addBidResponse.restore();
+      utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
@@ -272,85 +245,117 @@ describe('S2S Adapter', () => {
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledOnce(addBidResponse);
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-      const response = addBidResponse.firstCall.args[1];
+      const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.have.property('adId', '123');
     });
 
-    it('does not call addBidResponse and calls done when ad unit not set', () => {
+    it('registers no-bid response when ad unit not set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-      sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('does not call addBidResponse and calls done when server requests cookie sync', () => {
+    it('registers no-bid response when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-      sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('does not call addBidResponse and calls done  when ad unit is set', () => {
+    it('registers no-bid response when ad unit is set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-      sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
 
-    it('registers successful bids and calls done when there are less bids than requests', () => {
+    it('registers no-bid response when there are less bids than requests', () => {
+      utils.getBidderRequestAllAdUnits.restore();
+      sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
+        bids: [{
+          bidId: '123',
+          placementCode: 'div-gpt-ad-1460505748561-0'
+        }, {
+          bidId: '101111',
+          placementCode: 'div-gpt-ad-1460505748561-1'
+        }]
+      });
+
       server.respondWith(JSON.stringify(RESPONSE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
 
-      sinon.assert.calledOnce(addBidResponse);
-      sinon.assert.calledOnce(done);
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
 
-      expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
+      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
+      expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal('div-gpt-ad-1460505748561-1');
 
-      expect(addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
+      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
+      expect(bidmanager.addBidResponse.secondCall.args[1]).to.have.property('adId', '101111');
 
-      expect(addBidResponse.firstCall.args[1])
+      expect(bidmanager.addBidResponse.firstCall.args[1])
         .to.have.property('statusMessage', 'Bid available');
+      expect(bidmanager.addBidResponse.secondCall.args[1])
+        .to.have.property('statusMessage', 'Bid returned empty or error response');
     });
 
     it('should have dealId in bidObject', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
-      const response = addBidResponse.firstCall.args[1];
+      const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('dealId', 'test-dealid');
     });
 
     it('should pass through default adserverTargeting if present in bidObject', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
-      const response = addBidResponse.firstCall.args[1];
+      const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('adserverTargeting').that.deep.equals({'foo': 'bar'});
     });
 
@@ -362,8 +367,8 @@ describe('S2S Adapter', () => {
 
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
 
       sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
@@ -374,27 +379,27 @@ describe('S2S Adapter', () => {
     it('registers bid responses when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledOnce(addBidResponse);
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-      const ad_unit_code = addBidResponse.firstCall.args[0];
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
       expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
 
-      const response = addBidResponse.firstCall.args[1];
+      const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('source', 's2s');
 
-      const bid_request_passed = addBidResponse.firstCall.args[1];
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
     it('does cookie sync when no_cookie response', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
 
       sinon.assert.calledOnce(utils.triggerPixel);
@@ -406,8 +411,8 @@ describe('S2S Adapter', () => {
     it('logs error when no_cookie response is missing type or url', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE_ERROR));
 
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
 
       sinon.assert.notCalled(utils.triggerPixel);
@@ -418,62 +423,22 @@ describe('S2S Adapter', () => {
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
-      let myConfig = Object.assign({}, CONFIG);
-
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.notCalled(cookie.cookieSet);
     });
 
     it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-      let myConfig = Object.assign({
-        cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
+      let config = Object.assign({
+        cookieSet: true
       }, CONFIG);
 
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.setConfig(config);
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(cookie.cookieSet);
-    });
-  });
-
-  describe('s2sConfig', () => {
-    let logErrorSpy;
-
-    beforeEach(() => {
-      logErrorSpy = sinon.spy(utils, 'logError');
-    });
-
-    afterEach(() => {
-      utils.logError.restore();
-    });
-
-    it('should log error when accountId is missing', () => {
-      const options = {
-        enabled: true,
-        bidders: ['appnexus'],
-        timeout: 1000,
-        adapter: 'prebidServer',
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.calledOnce(logErrorSpy);
-    });
-
-    it('should log error when bidders is missing', () => {
-      const options = {
-        accountId: '1',
-        enabled: true,
-        timeout: 1000,
-        adapter: 's2s',
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.calledOnce(logErrorSpy);
     });
   });
 });

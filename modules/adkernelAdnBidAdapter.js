@@ -1,7 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const VIDEO_TARGETING = ['mimes', 'protocols', 'api'];
@@ -29,7 +28,7 @@ function buildImp(bidRequest) {
     };
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
+        .filter(param => VIDEO_TARGETING.includes(param))
         .forEach(param => imp.video[param] = bidRequest.params.video[param]);
     }
   } else {

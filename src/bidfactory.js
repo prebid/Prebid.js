@@ -16,7 +16,6 @@ var utils = require('./utils.js');
  */
 function Bid(statusCode, bidRequest) {
   var _bidId = (bidRequest && bidRequest.bidId) || utils.getUniqueIdentifierStr();
-  var _bidSrc = (bidRequest && bidRequest.src) || 'client';
   var _statusCode = statusCode || 0;
 
   this.bidderCode = (bidRequest && bidRequest.bidder) || '';
@@ -25,7 +24,6 @@ function Bid(statusCode, bidRequest) {
   this.statusMessage = _getStatus();
   this.adId = _bidId;
   this.mediaType = 'banner';
-  this.source = _bidSrc;
 
   function _getStatus() {
     switch (_statusCode) {

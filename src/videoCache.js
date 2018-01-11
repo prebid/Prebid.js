@@ -10,7 +10,8 @@
  */
 
 import { ajax } from './ajax';
-import { config } from '../src/config';
+
+const BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -118,12 +119,12 @@ export function store(bids, done) {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(BASE_URL, shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
 }
 
 export function getCacheUrl(id) {
-  return `${config.getConfig('cache.url')}?uuid=${id}`;
+  return `${BASE_URL}?uuid=${id}`;
 }

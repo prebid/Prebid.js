@@ -1,12 +1,12 @@
-import { formatQS } from './url';
-import { targeting } from './targeting';
+import {formatQS} from './url';
+import {getWinningBids} from './targeting';
 
 // Adserver parent class
 const AdServer = function(attr) {
   this.name = attr.adserver;
   this.code = attr.code;
   this.getWinningBidByCode = function() {
-    return targeting.getWinningBids(this.code)[0];
+    return getWinningBids(this.code)[0];
   };
 };
 

@@ -6,9 +6,6 @@
 import events from './events';
 import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode } from './utils';
-import { auctionManager } from './auctionManager';
-import find from 'core-js/library/fn/array/find';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -26,7 +23,7 @@ function receiveMessage(ev) {
   }
 
   if (data.adId) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
+    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
       return bid.adId === data.adId;
     });
 
@@ -34,7 +31,7 @@ function receiveMessage(ev) {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
-      auctionManager.addWinningBid(adObject);
+      $$PREBID_GLOBAL$$._winningBids.push(adObject);
 
       events.emit(BID_WON, adObject);
     }
@@ -46,7 +43,7 @@ function receiveMessage(ev) {
     // }), '*');
     if (data.message === 'Prebid Native') {
       fireNativeTrackers(data, adObject);
-      auctionManager.addWinningBid(adObject);
+      $$PREBID_GLOBAL$$._winningBids.push(adObject);
       events.emit(BID_WON, adObject);
     }
   }
@@ -69,9 +66,11 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(
-    find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
-      .getSlotElementId()).querySelector('iframe');
+  const iframe = document.getElementById(window.googletag.pubads()
+    .getSlots().find(slot => {
+      return slot.getAdUnitPath() === adUnitCode ||
+        slot.getSlotElementId() === adUnitCode;
+    }).getSlotElementId()).querySelector('iframe');
 
   iframe.width = '' + width;
   iframe.height = '' + height;

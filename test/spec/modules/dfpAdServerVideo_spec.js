@@ -4,6 +4,7 @@ import parse from 'url-parse';
 import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
 import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
+import { newConfig } from 'src/config';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -130,6 +131,9 @@ describe('The DFP video support module', () => {
   });
 
   it('should not overwrite an existing description_url for object input and cache disabled', () => {
+    const config = newConfig();
+    config.setConfig({ usePrebidCache: true });
+
     const bidCopy = Object.assign({}, bid);
     bidCopy.vastUrl = 'vastUrl.example';
 

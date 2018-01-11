@@ -37,13 +37,11 @@ export const spec = {
     const bidsMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
-    let reqId;
 
     bids.forEach(bid => {
       if (bid.params.priceType === 'gross') {
         priceType = 'gross';
       }
-      reqId = bid.bidderRequestId;
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
@@ -56,7 +54,6 @@ export const spec = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
-      r: reqId
     };
 
     return {
