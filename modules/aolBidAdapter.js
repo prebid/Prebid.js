@@ -39,7 +39,8 @@ const MP_SERVER_MAP = {
   as: 'adserver-as.adtech.advertising.com'
 };
 const NEXAGE_SERVER = 'hb.nexage.com';
-const BID_RESPONSE_TTL = 300;
+const ONE_DISPLAY_TTL = 60;
+const ONE_MOBILE_TTL = 3600;
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -224,7 +225,7 @@ function _parseBidResponse(response, bidRequest) {
     currency: response.cur,
     dealId: bidData.dealid,
     netRevenue: true,
-    ttl: BID_RESPONSE_TTL
+    ttl: bidRequest.ttl
   };
 }
 
@@ -274,14 +275,16 @@ function formatBidRequest(endpointCode, bid) {
     case AOL_ENDPOINTS.DISPLAY.GET:
       bidRequest = {
         url: _buildMarketplaceUrl(bid),
-        method: 'GET'
+        method: 'GET',
+        ttl: ONE_DISPLAY_TTL
       };
       break;
 
     case AOL_ENDPOINTS.MOBILE.GET:
       bidRequest = {
         url: _buildOneMobileGetUrl(bid),
-        method: 'GET'
+        method: 'GET',
+        ttl: ONE_MOBILE_TTL
       };
       break;
 
@@ -289,6 +292,7 @@ function formatBidRequest(endpointCode, bid) {
       bidRequest = {
         url: _buildOneMobileBaseUrl(bid),
         method: 'POST',
+        ttl: ONE_MOBILE_TTL,
         data: bid.params,
         options: {
           contentType: 'application/json',

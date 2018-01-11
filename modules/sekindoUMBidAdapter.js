@@ -47,6 +47,8 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'hbcb', '1');/// legasy
       queryString = utils.tryAppendQueryString(queryString, 'dcpmflr', bidfloor);
       queryString = utils.tryAppendQueryString(queryString, 'protocol', protocol);
+      queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.width);
+      queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.height);
       if (bidRequest.mediaType === 'video' || (typeof bidRequest.mediaTypes == 'object' && typeof bidRequest.mediaTypes.video == 'object')) {
         queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.playerWidth);
         queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.playerHeight);
