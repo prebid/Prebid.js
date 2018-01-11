@@ -68,7 +68,10 @@ PBBannerAdUnit *__nullable adUnit1 = [[PBBannerAdUnit alloc] initWithAdUnitIdent
 [[PBTargetingParams sharedInstance] setGender:PBTargetingParamsGenderFemale];
   
 // 3. Register the ad units with Prebid Mobile to start bid fetching process
-[PrebidMobile registerAdUnits:@[adUnit1] withAccountId:@"YOUR-ACCOUNT-ID-HERE"];
+// The following API is being deprecated
+//[PrebidMobile registerAdUnits:@[adUnit1] withAccountId:@"YOUR-ACCOUNT-ID-HERE"];
+// Use this instead:
+[PrebidMobile registerAdUnits:@[adUnit1, adUnit2] withAccountId:kAccountId andPrimaryAdServer:PBPrimaryAdServerDFP];
 ```
 
 ## Set bid keywords on ad object

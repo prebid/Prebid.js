@@ -68,12 +68,22 @@ adUnits.add(adUnit2);
 
 ### Initialize the SDK
 
-Once configuration is done, use the following API to initialize Prebid Mobile and start fetching Prebid ads for your list of ad units:
+Once configuration is done, use the following API to initialize Prebid Mobile and start fetching Prebid ads for your list of ad units.
 
+The following API is being deprecated:
 ```java
 // Register ad units for prebid.
 try {
     Prebid.init(getApplicationContext(), adUnits, "YOUR-ACCOUNT-ID-HERE");
+} catch (PrebidException e) {
+    e.printStackTrace();
+}
+```
+Please use the one below for initialization:
+```java
+// Register ad units for prebid.
+try {
+    Prebid.init(getApplicationContext(), adUnits, "YOUR-ACCOUNT-ID-HERE", Prebid.AdServer.DFP);
 } catch (PrebidException e) {
     e.printStackTrace();
 }
