@@ -1,17 +1,19 @@
 ---
 layout: page
-title: Send All Bids to Adserver
+title: Send all bids to the ad server
 head_title: Send all bids to the ad server
 description: Send all bids to the ad server for reporting and data analysis.
 pid: 2
-
 top_nav_section: adops
 nav_section: tutorials
 ---
 
 <div class="bs-docs-section" markdown="1">
 
-# Send all bids to the ad server
+# Send all bids to the ad server - Ad Ops setup
+{: .no_toc }
+
+This page shows how to set up your ad server so that you can send all bids and report on them.
 
 As a publisher, you may wish to have your ad server see **all** header bidding bids (instead of seeing only the winning bids in each auction).  Reasons you might want this behavior include:
 
@@ -19,23 +21,26 @@ As a publisher, you may wish to have your ad server see **all** header bidding b
 
 + You have a contractual agreement with your header bidding partner
 
+{: .alert.alert-success :}
+For instructions on how to set this up from the engineering side, see [this example]({{site.baseurl}}/dev-docs/examples/send-all-bids.html).
+
+* TOC
+{: toc }
+
+## Overview
+
 In order to send all bids to the ad server, the development and ad ops setup are slightly different from sending the top bid to the ad server.
 
 Specifically:
 
-+ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids).
++ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js]({{site.baseurl}}/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids).
 
-+ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Rubicon](/dev-docs/bidders.html#rubicon), you would use `hb_pb_rubicon` in your line item's key-value targeting, and `hb_adid_rubicon` in the creative.
++ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Rubicon]({{site.baseurl}}/dev-docs/bidders.html#rubicon), you would use `hb_pb_rubicon` in your line item's key-value targeting, and `hb_adid_rubicon` in the creative.
 
 {% include send-all-bids-keyword-targeting.md %} 
 
-This page shows how to set up your ad server so that you can send all bids and report on them.  For instructions on how to set this up from the engineering side, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html).
-
 {: .bg-info :}
 In this example we will use DFP setup to illustrate, but the steps are basically the same for any ad server.
-
-* TOC
-{:toc }
 
 ## Step 1. Add an order
 
@@ -74,7 +79,7 @@ Set **Rotate Creatives** to *Evenly*.
 
 Choose the inventory that you want to run header bidding on.
 
-This line item will target the bids in the range from $0.50 to $1.00 from the bidder you specify by targeting the keyword `hb_pb_BIDDERCODE` set to `0.50` in the **Key-values** section. For example, if this order and line item is for the bidder AppNexus, the keyword would be `hb_pb_appnexus`. The `BIDDERCODE` for other bidders can be found [here](/dev-docs/bidders.html).
+This line item will target the bids in the range from $0.50 to $1.00 from the bidder you specify by targeting the keyword `hb_pb_BIDDERCODE` set to `0.50` in the **Key-values** section. For example, if this order and line item is for the bidder AppNexus, the keyword would be `hb_pb_appnexus`. The `BIDDERCODE` for other bidders can be found [here]({{site.baseurl}}/dev-docs/bidders.html).
 
 **You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
@@ -176,3 +181,5 @@ Repeat for your other line items until you have the pricing granularity level yo
 ## Step 7. Create Orders for your other bidder partners
 
 Once you've created line items for `BIDDERCODE` targeting all the price buckets you want, start creating orders for each of your remaining bidder partners using the steps above.
+
+</div>
