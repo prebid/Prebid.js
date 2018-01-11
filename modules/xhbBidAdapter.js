@@ -183,7 +183,7 @@ function getKeywords(keywords) {
 function newBid(serverBid, rtbBid) {
   const bid = {
     requestId: serverBid.uuid,
-    cpm: 0.01,
+    cpm: 0.00,
     creativeId: rtbBid.creative_id,
     dealId: 99999999,
     currency: 'USD',
