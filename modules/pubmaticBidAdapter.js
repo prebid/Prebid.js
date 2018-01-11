@@ -95,17 +95,14 @@ function _initConf() {
 }
 
 function _handleCustomParams(params, conf) {
-  // istanbul ignore else
   if (!conf.kadpageurl) {
     conf.kadpageurl = conf.pageURL;
   }
 
   var key, value, entry;
   for (key in CUSTOM_PARAMS) {
-    // istanbul ignore else
     if (CUSTOM_PARAMS.hasOwnProperty(key)) {
       value = params[key];
-      // istanbul ignore else
       if (value) {
         entry = CUSTOM_PARAMS[key];
 
@@ -190,7 +187,6 @@ export const spec = {
       return true;
     }
     return false;
-    // return !!(bid && bid.params && utils.isStr(bid.params.publisherId) && utils.isStr(bid.params.adSlot));
   },
 
   /**
