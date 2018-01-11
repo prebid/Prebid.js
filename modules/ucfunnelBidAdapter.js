@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2017122101';
-const BID_REQUEST_BASE_URL = 'https://hb.aralego.com/header';
+const BID_REQUEST_BASE_URL = '//hb.aralego.com/header';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
 export const spec = {
@@ -15,7 +15,7 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.adid);
+    return !!(bid && bid.params && bid.params.adid && typeof bid.params.adid === 'string');
   },
 
   /**
@@ -23,18 +23,20 @@ export const spec = {
    * @param {BidRequest[]} bidRequests Array of ucfunnel bidders
    * @return object of parameters for Prebid AJAX request
    */
-  buildRequests: function(bidReqs) {
+  buildRequests: function(validBidRequests) {
     var bidRequests = [];
-    utils._each(bidReqs, function (bid) {
+    for (var i = 0; i < validBidRequests.length; i++) {
+      var bid = validBidRequests[i];
+
       var ucfunnelUrlParams = buildUrlParams(bid);
+
       bidRequests.push({
         method: 'GET',
         url: BID_REQUEST_BASE_URL,
-        data: ucfunnelUrlParams,
-        bidRequest: bid
+        bidRequest: bid,
+        data: ucfunnelUrlParams
       });
-    });
-
+    }
     return bidRequests;
   },
 
