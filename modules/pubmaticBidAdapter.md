@@ -24,8 +24,8 @@ var adUnits = [
     bids: [{
       bidder: 'pubmatic',
       params: {
-        publisherId: '301',                  // required
-        adSlot: '/15671365/DMDemo@728x90',   // required
+        publisherId: '156209',               // required
+        adSlot: 'pubmatic_test2@300x250',    // required
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
