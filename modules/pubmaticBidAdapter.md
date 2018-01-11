@@ -37,3 +37,17 @@ var adUnits = [
     }]
 }
 ```
+
+### Configuration
+
+PubMatic recommends the UserSync configuration below.  Without it, the PubMatic adapter will not able to perform user syncs, which lowers match rate and reduces monetization.
+
+```javascript
+pbjs.setConfig({
+   userSync: {
+    iframeEnabled: true,
+    enabledBidders: ['pubmatic'],
+    syncDelay: 6000
+ }});
+```
+Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect.
