@@ -96,13 +96,13 @@ describe('ucfunnel Adapter', () => {
   describe('interpretResponse', () => {
     it('should build bid array', () => {
       const request = spec.buildRequests(bidReq);
-      const result = spec.interpretResponse({body: bidResponse},  request[0]);
+      const result = spec.interpretResponse({body: bidResponse}, request[0]);
       expect(result.length).to.equal(1);
     });
 
     it('should have all relevant fields', () => {
       const request = spec.buildRequests(bidReq);
-      const result = spec.interpretResponse({body: bidResponse},  request[0]);
+      const result = spec.interpretResponse({body: bidResponse}, request[0]);
       const bid = result[0];
 
       expect(bid.requestId).to.equal('263be71e91dd9d');
