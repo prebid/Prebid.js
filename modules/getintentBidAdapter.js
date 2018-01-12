@@ -49,7 +49,7 @@ export const spec = {
    * Callback for bids, after the call to DSP completes.
    * Parse the response from the server into a list of bids.
    *
-   * @param {object} serverResponse A response from the server.
+   * @param {object} serverResponse A response from the GetIntent's server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
@@ -127,14 +127,22 @@ function addOptional(params, request, props) {
   }
 }
 
+/**
+ * @param {String} s The string representing a size (e.g. "300x250").
+ * @return {Number[]} An array with two elements: [width, height] (e.g.: [300, 250]).
+ * */
 function parseSize(s) {
   return s.split('x').map(Number);
 }
 
-function produceSize(sizes) {
-  // TODO: add support for multiple sizes
+/**
+ * @param {Array} sizes An array of sizes/numbers to be joined into single string.
+ *                      May be an array (e.g. [300, 250]) or array of arrays (e.g. [[300, 250], [640, 480]].
+ * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
+ * */
+function produceSize (sizes) {
   if (Array.isArray(sizes[0])) {
-    return sizes[0].join('x');
+    return sizes.map(s => s.join('x')).join(',');
   } else {
     return sizes.join('x');
   }
