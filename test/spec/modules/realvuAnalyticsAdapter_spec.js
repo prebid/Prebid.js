@@ -19,8 +19,12 @@ function addDiv(id) {
   let d = null;
   if (f.contentDocument) d = f.contentDocument; // DOM
   else if (f.contentWindow) d = f.contentWindow.document; // IE
-  d.open()
-  d.write('<img width="728" height="90" />');
+  d.open();
+  if (id === 'ad1') {
+    d.write('<img width="728" height="90" />');
+  } else {
+    d.write('<h1>Ad Text</h1>');
+  }
   d.close();
   return dv;
 }
@@ -41,7 +45,7 @@ describe('RealVu Analytics Adapter.', () => {
     const config = {
       options: {
         partnerId: '1Y',
-        regAllUnits: false,
+        regAllUnits: true,
         unitIds: ['ad1', 'ad2']
       }
     };
@@ -141,8 +145,14 @@ describe('RealVu Boost.', () => {
     expect(typeof p).to.not.equal('undefined');
   });
 
-  it('questA', () => {
+  it('questA 1', () => {
     const dv = document.getElementById('ad1');
+    let q = boost.questA(dv);
+    expect(q).to.not.equal(null);
+  });
+
+  it('questA 2', () => {
+    const dv = document.getElementById('ad2');
     let q = boost.questA(dv);
     expect(q).to.not.equal(null);
   });
