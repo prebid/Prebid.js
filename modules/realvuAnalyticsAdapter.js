@@ -856,7 +856,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         var nr = parseInt(vr[1], 10);
         var sv = 0;
         var sr = 0;
-        for (nr &= 0x3FF; nr > 0; nr >>>= 1, nv >>>= 1) { // count 10 deliveries  
+        for (nr &= 0x3FF; nr > 0; nr >>>= 1, nv >>>= 1) { // count 10 deliveries
           if (nr & 0x1) sr++;
           if (nv & 0x1) sv++;
         }
@@ -929,9 +929,9 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
   }
 };
 
-// xyzBidAdapter calls checkin() to obtain "yes/no" viewability 
+// xyzBidAdapter calls checkin() to obtain "yes/no" viewability
 realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
-  // find (or add if not registered yet) the unit in boost 
+  // find (or add if not registered yet) the unit in boost
   if (typeof (partnerId) == 'undefined' || partnerId == '') {
     utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
   }

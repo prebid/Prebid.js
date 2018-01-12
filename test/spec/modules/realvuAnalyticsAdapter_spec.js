@@ -18,7 +18,7 @@ function addDiv(id) {
   dv.appendChild(f);
   let d = null;
   if (f.contentDocument) d = f.contentDocument; // DOM
-  else if (f.contentWindow) d = f.contentWindow.document; // IE 
+  else if (f.contentWindow) d = f.contentWindow.document; // IE
   d.open()
   d.write('<img width="728" height="90" />');
   d.close();
