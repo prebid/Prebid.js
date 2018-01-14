@@ -22,7 +22,7 @@ export const spec = {
     };
     const location = utils.getTopWindowLocation();
     let domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(location.host);
-     if (domain == null || domain.length == 0) {
+    if (domain == null || domain.length == 0) {
       domain = null;
     }
     else {
