@@ -150,7 +150,6 @@ describe('RealVu Boost.', () => {
 
   it('addUnitById', () => {
     let p = boost.addUnitById('1Y', 'no_ad');
-    console.log('p='+p);
     expect(p).to.be.undefined;
   });
 
