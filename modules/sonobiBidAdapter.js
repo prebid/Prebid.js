@@ -13,7 +13,9 @@ var SonobiAdapter = function SonobiAdapter() {
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
+    const appNexusTargeting =
+      adSlots[0] && adSlots[0].params && adSlots[0].params.appNexusTargeting ? '&gmgt=' + encodeURI(adSlots[0].params.appNexusTargeting) : '';
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + appNexusTargeting);
   }
 
   function _keymaker(adSlots) {
