@@ -8,23 +8,27 @@ import CONSTANTS from 'src/constants.json';
 function addDiv(id) {
   let dv = document.createElement('div');
   dv.id = id;
-  dv.style.width = '728px';
-  dv.style.height = '90px';
-  dv.style.display = 'block';
   document.body.appendChild(dv);
+  dv.style.border = '10px';
   let f = document.createElement('iframe');
-  f.width = 728;
-  f.height = 90;
+  f.id = id + 'f';
+  f.width = 300;
+  f.height = 250;
+  f.frameborder = 1;
+  f.style.borderWidth = '4px';
   dv.appendChild(f);
   let d = null;
   if (f.contentDocument) d = f.contentDocument; // DOM
   else if (f.contentWindow) d = f.contentWindow.document; // IE
   d.open();
+  let s1 = '<body style="margin:0px;">';
   if (id === 'ad1') {
-    d.write('<img width="728" height="90" />');
+    s1 += '<img width="300" height="250" />';
   } else {
-    d.write('<h1>Ad Text</h1>');
+    s1 += '<div>AD TEXT</div>';
   }
+  s1 += '</body>';
+  d.write(s1);
   d.close();
   return dv;
 }
@@ -134,38 +138,41 @@ describe('RealVu Boost.', () => {
   const boost = window.top1.realvu_aa;
 
   it('brd', () => {
-    let a1 = document.getElementById('ad1');
+    let a1 = document.getElementById('ad1f');
     let p = boost.brd(a1, 'Left');
-    expect(typeof p).to.not.equal('undefined');
+    expect(p).to.equal(4);
   });
 
   it('addUnitById', () => {
-    let a1 = document.getElementById('ad1');
     let p = boost.addUnitById('1Y', 'ad1');
-    expect(typeof p).to.not.equal('undefined');
+    expect(p).to.equal('yes');
   });
 
-  it('questA 1', () => {
+  it('addUnitById', () => {
+    let p = boost.addUnitById('1Y', 'no_ad');
+    console.log('p='+p);
+    expect(p).to.be.undefined;
+  });
+
+  it('questA IMG', () => {
     const dv = document.getElementById('ad1');
     let q = boost.questA(dv);
-    expect(q).to.not.equal(null);
+    expect(q.tagName).to.equal('IMG');
   });
 
-  it('questA 2', () => {
+  it('questA text', () => {
     const dv = document.getElementById('ad2');
     let q = boost.questA(dv);
-    expect(q).to.not.equal(null);
+    expect(q.tagName).to.equal('BODY');
   });
 
-  it('render', () => {
-    let dv = document.getElementById('ad1');
-    // dv.style.width = '728px';
-    // dv.style.height = '90px';
-    // dv.style.display = 'block';
+  it('find position', () => {
+    let dv = document.getElementById('ad2');
     dv.getBoundingClientRect = false;
-    // document.body.appendChild(dv);
     let q = boost.findPosG(dv);
-    expect(q).to.not.equal(null);
+    // console.log('render: ' + q.x + ', ' + q.y);
+    expect(q.x).to.be.above(0);
+    expect(q.y).to.be.above(300);
   });
 
   it('readPos', () => {
