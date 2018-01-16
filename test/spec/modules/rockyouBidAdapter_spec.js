@@ -1,7 +1,5 @@
 import { expect } from 'chai';
-import chai from 'chai';
 import { spec, internals } from 'modules/rockyouBidAdapter';
-import { ROTATION_ZONE } from 'modules/rockyouBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('RockYouAdapter', () => {
@@ -364,9 +362,9 @@ describe('RockYouAdapter', () => {
 
       let validCallbacks = ['LOAD', 'IMPRESSION', 'COMPLETE', 'ERROR'];
 
-      for (event in validCallbacks) {
-        callbacks('n/a', validCallbacks[event]);
-      }
+      validCallbacks.forEach(event => {
+        callbacks('n/a', event);
+      });
 
       let callbackKeys = Object.keys(tally);
       expect(callbackKeys.length).to.equal(3);
