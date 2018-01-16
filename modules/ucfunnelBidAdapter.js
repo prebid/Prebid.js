@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
-const VER = 'ADGENT_PREBID-2017122101';
+const VER = 'ADGENT_PREBID-2018011501';
 const BID_REQUEST_BASE_URL = '//hb.aralego.com/header';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
