@@ -1,12 +1,11 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import {BANNER} from 'src/mediaTypes';
 
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 export const URL = '//prebid.cliipa.com';
-// export const URL = '//localhost:8067';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
@@ -24,18 +23,20 @@ function isBidRequestValid(bid) {
 function buildRequest(bid, topWindowUrl, size) {
   const {params, bidId} = bid;
   const {bidFloor, cId, pId} = params;
+  // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
+  const [width, height] = size.split('x');
 
   return {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
-      width: size[0],
-      height: size[1],
       url: topWindowUrl,
       cb: Date.now(),
       bidFloor: bidFloor,
       bidId: bidId,
-      publisherId: pId
+      publisherId: pId,
+      width,
+      height
     }
   }
 }
@@ -44,7 +45,8 @@ function buildRequests(validBidRequests) {
   const topWindowUrl = utils.getTopWindowUrl();
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-    validBidRequest.sizes.forEach(size => {
+    const sizes = utils.parseSizesInput(validBidRequest.sizes);
+    sizes.forEach(size => {
       const request = buildRequest(validBidRequest, topWindowUrl, size);
       requests.push(request);
     });
@@ -80,28 +82,33 @@ function interpretResponse(serverResponse, request) {
 
 function getUserSyncs(syncOptions, responses) {
   const {iframeEnabled, pixelEnabled} = syncOptions;
-  const syncs = {};
+  const lookup = {};
+  const syncs = [];
   responses.forEach(response => {
     const {body} = response;
     const cookies = body ? body.cookies || [] : [];
     cookies.forEach(cookie => {
       switch (cookie.type) {
         case INTERNAL_SYNC_TYPE.IFRAME:
-          iframeEnabled && (syncs[cookie.src] = {
-            type: EXTERNAL_SYNC_TYPE.IFRAME,
-            url: cookie.src
-          });
+          if (iframeEnabled && !lookup[cookie.src]) {
+            syncs.push({
+              type: EXTERNAL_SYNC_TYPE.IFRAME,
+              url: cookie.src
+            });
+          }
           break;
         case INTERNAL_SYNC_TYPE.IMAGE:
-          pixelEnabled && (syncs[cookie.src] = {
-            type: EXTERNAL_SYNC_TYPE.IMAGE,
-            url: cookie.src
-          });
+          if (pixelEnabled && !lookup[cookie.src]) {
+            syncs.push({
+              type: EXTERNAL_SYNC_TYPE.IMAGE,
+              url: cookie.src
+            });
+          }
           break;
       }
     });
   });
-  return Object.values(syncs);
+  return syncs;
 }
 
 export const spec = {
