@@ -106,13 +106,14 @@ describe('VidazooBidAdapter', () => {
 
     it('should build request for each size', () => {
       const requests = adapter.buildRequests([BID]);
+      console.log(JSON.stringify(requests));
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
-          width: 300,
-          height: 250,
+          width: '300',
+          height: '250',
           url: 'http://www.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
@@ -124,8 +125,8 @@ describe('VidazooBidAdapter', () => {
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
-          width: 300,
-          height: 600,
+          width: '300',
+          height: '600',
           url: 'http://www.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
@@ -179,8 +180,5 @@ describe('VidazooBidAdapter', () => {
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
     });
-  });
-
-  describe('get user syncs', () => {
   });
 });
