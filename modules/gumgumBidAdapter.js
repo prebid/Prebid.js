@@ -140,14 +140,13 @@ function interpretResponse (serverResponse, bidRequest) {
     cw: wrapper
   } = serverResponseBody
   let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
-  let [width, height] = bidRequest.sizes[0]
+  let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
 
   if (creativeId) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
-      bidderCode: spec.code,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
       currency: 'USD',

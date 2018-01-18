@@ -106,14 +106,13 @@ describe('gumgumAdapter', () => {
     it('should get correct bid response', () => {
       let expectedResponse = {
         'ad': '<html><h3>I am an ad</h3></html>',
-        'bidderCode': 'gumgum',
         'cpm': 0,
         'creativeId': 29593,
         'currency': 'USD',
-        'height': 250,
+        'height': '250',
         'netRevenue': true,
         'requestId': 12345,
-        'width': 300,
+        'width': '300',
         // dealId: DEAL_ID,
         // referrer: REFERER,
         ttl: 60
