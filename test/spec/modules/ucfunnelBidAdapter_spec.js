@@ -79,16 +79,10 @@ describe('ucfunnel Adapter', () => {
     });
   });
   describe('build request', () => {
-    it('bidRequest method', () => {
+    it('Verify bid request', () => {
       const request = spec.buildRequests(bidReq);
       expect(request[0].method).to.equal('GET');
-    });
-    it('bidRequest url', () => {
-      const request = spec.buildRequests(bidReq);
       expect(request[0].url).to.equal(URL);
-    });
-    it('bidRequest data', () => {
-      const request = spec.buildRequests(bidReq);
       expect(request[0].data).to.match(new RegExp(`${bidReq[0].params.adid}`));
     });
   });
