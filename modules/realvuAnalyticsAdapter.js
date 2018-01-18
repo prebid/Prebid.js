@@ -941,12 +941,12 @@ realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
       options: {
         partnerId: partnerId,
         regAllUnits: false,
-        unitIds: [bid.placementCode]
+        unitIds: [bid.adUnitCode]
       }
     });
   }
   var a = window.top1.realvu_aa.check({
-    unit_id: bid.placementCode,
+    unit_id: bid.adUnitCode,
     size: bid.sizes,
     partner_id: partnerId
   });
@@ -958,9 +958,9 @@ realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
   return a.riff;
 };
 
-realvuAnalyticsAdapter.isInView = function (placementCode) {
+realvuAnalyticsAdapter.isInView = function (adUnitCode) {
   var r = 'NA';
-  var s = window.top1.realvu_aa.getStatusById(placementCode);
+  var s = window.top1.realvu_aa.getStatusById(adUnitCode);
   if (s) {
     r = s.realvu;
   }
