@@ -1,142 +1,138 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link rel="icon" 
-          type="image/png" 
-          href="/favicon.png">
+<head>
 
     <!-- LOAD THE IMA3 CSS
 
          Load the ima3 css file to ensure the ad displays correctly in
          the player. -->
 
-    <link href="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.css" rel="stylesheet">
+  <link href="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.css" rel="stylesheet">
 
-    <title>Prebid Video -- Brightcove Player</title>
-    <script type="text/javascript" src="https://acdn.adnxs.com/prebid/not-for-prod/prebid.js"></script>
-    <script>
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
-    iosDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+  <title>Prebid Server Video -- Brightcove</title>
+  <script type="text/javascript" src="https://acdn.origin.appnexus.net/prebid/not-for-prod/1/prebid.js"></script>
+  <script>
+  var pbjs = pbjs || {};
+  pbjs.que = pbjs.que || [];
+  iosDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
 
-    /* PRE-DEFINE `invokeVideoPlayer`
+  /* PRE-DEFINE `invokeVideoPlayer`
 
-      Because we have no way of knowing when all the bids will be
-      returned from Prebid we can't be sure that the browser will
-      reach the point where `invokeVideoPlayer` is defined before
-      `bidsBackHandler` fires and tries to call it.
+  Because we have no way of knowing when all the bids will be
+  returned from Prebid we can't be sure that the browser will
+  reach the point where `invokeVideoPlayer` is defined before
+  `bidsBackHandler` fires and tries to call it.
 
-      To prevent an "`invokeVideoPlayer` not defined" error, we
-      pre-define it before we make the call to Prebid, and redefine
-      it later on with the code to create the player and play the
-      ad.
+  To prevent an "`invokeVideoPlayer` not defined" error, we
+  pre-define it before we make the call to Prebid, and redefine
+  it later on with the code to create the player and play the
+  ad.
 
-      In this first version, it simply stores the winning VAST to
-      use later. */
+  In this first version, it simply stores the winning VAST to
+  use later. */
+  
+  var tempTag = false;
+  var invokeVideoPlayer = function(url){
+    tempTag = url;
+  };
 
-      var tempTag = false;
-      var invokeVideoPlayer = function(url){
-        tempTag = url;
+  /* Prebid video ad unit */
+
+  var videoAdUnit = {
+    code: 'video1',
+    sizes: [640,480],
+    mediaTypes: {
+      video: {
+          context: "instream",
+          mimes: ['video/mp4'],
+          protocols : [1,2,3,4,5,6],
+          playbackmethod : [2]
       }
-
-     /* Prebid video ad unit */
-
-      var videoAdUnit = {
-        code: 'video1',
-        sizes: [640,480],
-        mediaTypes: {
+    },
+    bids: [
+      {
+        bidder: 'appnexus',
+        params: {
+          placementId:  iosDevice ? '12349520':'9333431', // Add your own placement id here. Note, skippable video is not supported on iOS 
           video: {
-              context: "instream"
+            skippable: true,
+            playback_method: ['auto_play_sound_off']
           }
+        }
+      }
+    ]
+  };
+
+  pbjs.que.push(function() {
+      // configure prebid to use prebid cache and prebid server
+      // make sure to add your own accountId to your s2sConfig object
+      pbjs.setConfig({
+        cache: {
+          url : "https://prebid.adnxs.com/pbc/v1/cache"
         },
-        bids: [
-          {
-            bidder: 'appnexusAst',
-            params: {
-              placementId:  iosDevice ? '12349520':'9333431', // Add your own placement id here. Note, skippable video is not supported on iOS 
-              video: {
-                skipppable: true,
-                playback_method: ['auto_play_sound_off']
-              }
-            }
-          }
-        ]
-      };
-
-      var logBids = function(bids) {
-        console.log('MESSAGE: got bids back: ');
-        console.log(bids);
-        if (!bids.video1) {
-          console.log('MESSAGE: no video demand');
-        } else {
-          console.log('MESSAGE: we got video demand!');
+        debug: true,
+        s2sConfig: {
+          endpoint : 'http://prebid.adnxs.com/pbs/v1/auction',
+          accountId : 'c9d412ee-3cc6-4b66-9326-9f49d528f13e',
+          enabled : true,
+          bidders : ['appnexus'],
+          timeout : 1000,
+          secure : 0
         }
-        try {
-          url = bids.video1.bids[0].vastUrl;
-          console.log('MESSAGE: VAST URL: ');
-          console.log('MESSAGE: ' + url);
-        } catch (e) {
-          console.log("MESSAGE: There was an error logging the vast url: " + e);
-        }
-      };
-
-      pbjs.que.push(function() {
-        pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
-
-        pbjs.setConfig({
-          usePrebidCache: true
-        });
-
-        pbjs.requestBids({
-          bidsBackHandler: function(bids) {
-            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-              adUnit: videoAdUnit,
-              params: {
-                iu: '/19968336/prebid_cache_video_adunit',
-                cust_params: {
-                  section: "blog",
-                  anotherKey: "anotherValue"
-                },
-                output: "vast"
-              }
-            });
-            invokeVideoPlayer(videoUrl);
-          }
-        });
       });
 
-      pbjs.bidderSettings = {
-        standard: {
-          adserverTargeting: [
-            {
-              key: "hb_bidder",
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
-              }
-            }, {
-              key: "hb_adid",
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: "hb_pb",
-              val: function (bidResponse) {
-                return "10.00";
-              }
-            }, {
-              key: "hb_size",
-              val: function (bidResponse) {
-                return bidResponse.size;
-              }
-            }
-          ]
+      pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+
+      pbjs.requestBids({
+          bidsBackHandler: function(bids) {
+              var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                  adUnit: videoAdUnit,
+                  params: {
+                      iu: '/19968336/prebid_cache_video_adunit',
+                      cust_params: {
+                          section: "blog",
+                          anotherKey: "anotherValue"
+                      },
+                      output: "vast"
+                  }
+              });
+              invokeVideoPlayer(videoUrl);
+          }
+      });
+  });
+
+  pbjs.bidderSettings = 
+  {
+    standard: {
+      adserverTargeting: [
+      {
+        key: "hb_bidder",
+        val: function (bidResponse) {
+          return bidResponse.bidderCode;
         }
-      };
-    </script>
-  </head>
+      }, {
+        key: "hb_adid",
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      }, {
+        key: "hb_pb",
+        val: function (bidResponse) {
+          return "10.00";
+        }
+      }, {
+        key: "hb_size",
+        val: function (bidResponse) {
+          return bidResponse.size;
+        }
+      }
+      ]
+    }
+  };
+  </script>
+</head>
 <body>
   <h1>Prebid Video -- Brightcove Player</h1>
-
 
 <!--  CREATE VIDEO ELEMENT
 
@@ -144,11 +140,11 @@
         Cloud. Add an ID tag to the player element - this is what
         we'll use to reference the player later. 
       
-        If you're playing a preroll ad, do not include a videoId
-        in the video element. We will load that dynamically after
+        If you're playing a preroll ad, do not include a videoId 
+        in the video element. We will load that dynamically after 
         the prebid ad has loaded. -->
 
-  <video id="myVideo"
+<video id="myVideo"
         data-account="5229431809001"
         data-player="rJVmLwTBx"
         data-embed="default"
@@ -205,7 +201,7 @@
           ],
         });
 
-        /* ADD A `ready` LISTENER AND INTERACT WITH THE PLAYER
+        /* ADD a `ready` LISTENER AND INTERACT WITH THE PLAYER
 
           Call `videojs()` and pass in the ID of the video element to
           get a reference to the player. Call `.ready` on the player
@@ -218,8 +214,8 @@
 
           /* LOAD THE MEDIA FILE
 
-            Once we know the player is ready and we have our prebid ad
-            ready, load the content video from Brightcove Studio.
+            Once we know the player is ready and we have our prebid ad 
+            ready, load the content video from Brightcove Studio. 
 
             Replace this ID with the ID with one of your own media file IDs
             which can be found in your Brightcove Studio account. */
