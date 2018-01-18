@@ -7,7 +7,7 @@ import { config } from 'src/config';
 
 const TYPE = S2S.SRC;
 const getConfig = config.getConfig;
-const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders', 'endpoint'];
+const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders'];
 
 let _s2sConfig;
 
