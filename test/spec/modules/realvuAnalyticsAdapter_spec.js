@@ -59,7 +59,7 @@ describe('RealVu Analytics Adapter.', () => {
 
   it('checkIn', () => {
     const bid = {
-      placementCode: 'ad1',
+      adUnitCode: 'ad1',
       sizes: [
         [728, 90],
         [970, 250],
@@ -83,8 +83,8 @@ describe('RealVu Analytics Adapter.', () => {
   });
 
   it('isInView return "NA"', () => {
-    const placementCode = '1234';
-    let result = realvuAnalyticsAdapter.isInView(placementCode);
+    const adUnitCode = '1234';
+    let result = realvuAnalyticsAdapter.isInView(adUnitCode);
     expect(result).to.equal('NA');
   });
 
