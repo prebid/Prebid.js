@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import { spec } from 'modules/viBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import { REPO_AND_VERSION } from 'src/constants';
 
 const ENDPOINT = `//pb.vi-serve.com/prebid/bid`;
 
 describe('viBidAdapter', function() {
-  const adapter = newBidder(spec);
+  newBidder(spec);
 
   describe('isBidRequestValid', () => {
     let bid = {

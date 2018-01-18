@@ -44,8 +44,8 @@ function interpretResponse(bids) {
     responses.push({
       requestId: bid.id,
       cpm: parseFloat(bid.price),
-      width: parseInt(bid.width),
-      height: parseInt(bid.height),
+      width: parseInt(bid.width, 10),
+      height: parseInt(bid.height, 10),
       creativeId: bid.creativeId,
       dealId: bid.dealId || null,
       currency: 'USD',
