@@ -7,9 +7,6 @@ var channel = "%%PATTERN:hb_channel%%";
 var mediaType = "%%PATTERN:hb_mediaType%%";
 var pubUrl = "%%PATTERN:url%%";
 
-
-// var adId = '3672546a-bfec-4a62-b03d-20babb77d8e3';
-// var base = "prebid.adnxs.com/pbc/v1/cache";
 try{    
     pbjs.renderAd(document, adId, {host: host, uuid: uuid, channel: channel, mediaType: mediaType, pubUrl: pubUrl});
 }catch(e){
