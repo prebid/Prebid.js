@@ -390,5 +390,43 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseNative.height).to.equal(250);
       expect(bidResponseNative.ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
     });
+
+    it('mixture of valid native bid and error in response', () => {
+      const [bidResponse] = interpretResponse({
+        body: {
+          errors: ['test-error-message'],
+          bids: {
+            [placementId]: [{
+              placement_id: placementId,
+              bid_id: 'test-bid-id',
+              bid_price_cents: 123,
+              bid_price_currency: 'usd',
+              bid_price_model: 'cpm'
+            }]
+          }
+        }
+      }, {
+        adformats: ['native'],
+        requestIds: [requestId],
+        sizes: [[300, 250]]
+      });
+
+      expect(bidResponse.cpm).to.equal(1.23);
+      expect(bidResponse.requestId).to.equal(requestId);
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse.ad)
+        .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
+        .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
+        .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.creativeId).to.equal(placementId);
+      expect(bidResponse.netRevenue).to.equal(true);
+      expect(bidResponse.currency).to.equal('USD');
+
+      expect(bidResponse.hb_bidder).to.equal('fan');
+      expect(bidResponse.fb_bidid).to.equal('test-bid-id');
+      expect(bidResponse.fb_format).to.equal('native');
+      expect(bidResponse.fb_placementid).to.equal(placementId);
+    });
   });
 });
