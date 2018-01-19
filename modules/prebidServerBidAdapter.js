@@ -217,7 +217,9 @@ export function PrebidServer() {
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits.filter(hasSizes),
-      is_debug: isDebug
+      is_debug: isDebug,
+      device: device,
+      app: app
     };
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for.
