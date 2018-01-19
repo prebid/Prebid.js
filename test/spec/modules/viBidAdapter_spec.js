@@ -68,6 +68,35 @@ describe('viBidAdapter', function() {
     });
   });
 
+  describe('buildRequests can handle size in 1-dim array', () => {
+    let bidRequests = [{
+      'bidder': 'vi',
+      'params': {
+        'pubId': 'sb_test',
+        'lang': 'en-US',
+        'cat': 'IAB1',
+        'bidFloor': 0.05
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [320, 480],
+      'bidId': '29b891ad542377',
+      'bidderRequestId': '1dc9a08206a57b',
+      'requestId': '24176695-e3f0-44db-815b-ed97cf5ad49b',
+      'placementCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': '474da635-9cf0-4188-a3d9-58961be8f905'
+    }];
+
+    const request = spec.buildRequests(bidRequests);
+
+    it('POST bid request to vi', () => {
+      expect(request.method).to.equal('POST');
+    });
+
+    it('check endpoint URL', () => {
+      expect(request.url).to.equal(ENDPOINT)
+    });
+  });
+
   describe('interpretResponse', () => {
     let response = {
       body: [{

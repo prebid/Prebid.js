@@ -14,7 +14,7 @@ function buildRequests(bidReqs) {
   utils._each(bidReqs, function (bid) {
     imps.push({
       id: bid.bidId,
-      sizes: bid.sizes,
+      sizes: utils.parseSizesInput(bid.sizes).map(size => size.split('x')),
       bidFloor: parseFloat(bid.params.bidFloor) > 0 ? bid.params.bidFloor : 0
     });
   });
