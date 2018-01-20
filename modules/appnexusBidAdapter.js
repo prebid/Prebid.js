@@ -206,7 +206,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     if (rtbBid.renderer_url) {
       const rendererOptions = utils.deepAccess(
         bidderRequest.bids[0],
-        'mediaTypes.video.rendererOptions'
+        'renderer.options'
       );
 
       Object.assign(bid, {

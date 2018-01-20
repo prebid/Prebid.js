@@ -287,7 +287,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   const adUnitRenderer =
     bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
 
-  if (adUnitRenderer) {
+  if (adUnitRenderer && adUnitRenderer.url) {
     bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
