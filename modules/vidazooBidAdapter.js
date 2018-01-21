@@ -1,11 +1,10 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER} from 'src/mediaTypes';
-
+export const URL = '//prebid.cliipa.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-export const URL = '//prebid.cliipa.com';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
