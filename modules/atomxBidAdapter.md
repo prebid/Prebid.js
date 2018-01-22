@@ -7,6 +7,7 @@ Maintainer: erik@atomx.com
 Atomx Bidder Adapter for Prebid.js.
 
 # Test Parameters
+```
 var adUnits = [
 {
     code: 'test-div',
@@ -21,3 +22,4 @@ var adUnits = [
     ]
 }
 ];
+```
