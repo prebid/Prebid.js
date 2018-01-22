@@ -37,6 +37,11 @@ export const spec = {
       data = utils.tryAppendQueryString(data, 't', 'json3');
       data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
 
+      // native以外にvideo等の対応が入った場合は要修正
+      if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
+        data = utils.tryAppendQueryString(data, 'imark', '1');
+      }
+
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);

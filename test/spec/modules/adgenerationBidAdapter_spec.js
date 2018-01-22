@@ -40,22 +40,62 @@ describe('AdgenerationAdapter', () => {
 
   describe('buildRequests', () => {
     const bidRequests = [
-      {
-        'bidder': 'adg',
-        'params': {
-          id: '58278', // banner
+      { // banner
+        bidder: 'adg',
+        params: {
+          id: '58278',
           width: '300',
           height: '250'
         },
-        'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
-        'bidId': '2f6ac468a9c15e',
-        'bidderRequestId': '14a9f773e30243',
-        'auctionId': '4aae9f05-18c6-4fcd-80cf-282708cd584a',
-        'transactionTd': 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '2f6ac468a9c15e',
+        bidderRequestId: '14a9f773e30243',
+        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
+        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
+      },
+      { // native
+        bidder: 'adg',
+        params: {
+          id: '58278',
+          width: '300',
+          height: '250'
+        },
+        mediaTypes: {
+          native: {
+            image: {
+              required: true
+            },
+            title: {
+              required: true,
+              len: 80
+            },
+            sponsoredBy: {
+              required: true
+            },
+            clickUrl: {
+              required: true
+            },
+            body: {
+              required: true
+            },
+            icon: {
+              required: true
+            }
+          },
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[1, 1]],
+        bidId: '2f6ac468a9c15e',
+        bidderRequestId: '14a9f773e30243',
+        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
+        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
       }
     ];
-    const data = 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3';
+    const data = {
+      banner :'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
+      native :'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
+    };
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT[1]);
@@ -69,9 +109,14 @@ describe('AdgenerationAdapter', () => {
       expect(request.method).to.equal('GET');
     });
 
-    it('should attache params to the request', () => {
+    it('should attache params to the banner request', () => {
       const request = spec.buildRequests(bidRequests)[0];
-      expect(request.data).to.equal(data);
+      expect(request.data).to.equal(data.banner);
+    });
+
+    it('should attache params to the native request', () => {
+      const request = spec.buildRequests(bidRequests)[1];
+      expect(request.data).to.equal(data.native);
     });
   });
 
