@@ -53,7 +53,7 @@
     "hb_size",
     "hb_deal",
     "hb_source",
-    "hb_mediatype"
+    "hb_format"
   ],
   "S2S" : {
     "SRC" : "s2s",

@@ -65,7 +65,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size,
         'hb_source': source,
-        'hb_mediatype': mediatype,
+        'hb_format': mediatype,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -105,7 +105,7 @@ describe('auctionmanager.js', function () {
               }
             },
             {
-              key: 'hb_mediatype',
+              key: 'hb_format',
               val: function (bidResponse) {
                 return bidResponse.mediaType;
               }
@@ -121,7 +121,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbHg,
         'hb_size': size,
         'hb_source': source,
-        'hb_mediatype': mediatype,
+        'hb_format': mediatype,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -165,7 +165,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbHg,
         'hb_size': size,
         'hb_source': source,
-        'hb_mediatype': mediatype,
+        'hb_format': mediatype,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -209,7 +209,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size,
         'hb_source': source,
-        'hb_mediatype': mediatype,
+        'hb_format': mediatype,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -375,7 +375,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': 5.57,
         'hb_size': '300x250',
         'hb_source': source,
-        'hb_mediatype': mediatype,
+        'hb_format': mediatype,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);

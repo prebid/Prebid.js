@@ -369,7 +369,7 @@ export function getStandardBidderSettings() {
         }
       },
       {
-        key: 'hb_mediatype',
+        key: 'hb_format',
         val: function (bidResponse) {
           return bidResponse.mediaType;
         }
