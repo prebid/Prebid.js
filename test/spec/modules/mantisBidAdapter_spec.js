@@ -147,7 +147,6 @@ describe('MantisAdapter', () => {
       let expectedResponse = [
         {
           requestId: 'bid',
-          bidderCode: 'mantis',
           cpm: 1,
           width: 300,
           height: 250,
