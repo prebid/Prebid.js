@@ -89,7 +89,7 @@ registerBidder(spec);
  * Adds placement information to array
  * @param request bid request
  */
-export function addPlacement(request) {
+function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -207,6 +207,33 @@ function getEnvironment() {
   } else {
     return 90;
   }
+}
+
+/**
+  * @returns true if we are running on the top window at dispatch time
+  */
+function isCodeOnPage() {
+  return window === window.parent;
+}
+
+/**
+  * @returns true if the environment is both DFP and AMP
+  */
+function isDfpInAmp() {
+  return isDfp() && isAmp();
+}
+
+/**
+  * @returns true if the window is in an iframe whose id and parent element id match DFP
+  */
+function isDfp() {
+  try {
+    const frameElement = window.frameElement;
+    const parentElement = window.frameElement.parentNode;
+    if (frameElement && parentElement) {
+      return frameElement.id.indexOf('google_ads_iframe') > -1 && parentElement.id.indexOf('google_ads_iframe') > -1;
+    }
+    return false;
   } catch (e) {
     return false;
   }
