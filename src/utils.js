@@ -836,7 +836,7 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || []).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
