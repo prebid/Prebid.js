@@ -37,11 +37,11 @@ function stringifySlot(bidRequest) {
 }
 
 function stringifyWindowSize() {
-  return [ window.innerWidth || -1, window.innerHeight || -1].join('.');
+  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
 }
 
 function stringifyScreenSize() {
-  return [ (window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
+  return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
 function buildRequests(bidRequests) {
@@ -104,7 +104,6 @@ function interpretResponse(serverResponse, request) {
   commonBidResponse.slots = iasResponse.slots;
   bidResponses.push(commonBidResponse);
   return bidResponses;
-
 }
 
 export const spec = {
