@@ -90,10 +90,14 @@ registerBidder(spec);
  * @param request bid request
  */
 <<<<<<< HEAD
+<<<<<<< HEAD
 function addPlacement(request) {
 =======
 export function addPlacement(request) {
 >>>>>>> added usersync and interpretresponse
+=======
+function addPlacement(request) {
+>>>>>>> fixed rebase and updated markdown file
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -212,6 +216,9 @@ function getEnvironment() {
     return 90;
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fixed rebase and updated markdown file
 }
 
 /**
@@ -239,8 +246,11 @@ function isDfp() {
       return frameElement.id.indexOf('google_ads_iframe') > -1 && parentElement.id.indexOf('google_ads_iframe') > -1;
     }
     return false;
+<<<<<<< HEAD
 =======
 >>>>>>> added usersync and interpretresponse
+=======
+>>>>>>> fixed rebase and updated markdown file
   } catch (e) {
     return false;
   }

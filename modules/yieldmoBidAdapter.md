@@ -5,9 +5,13 @@ Module Name:  Yieldmo Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: melody@yieldmo.com
 <<<<<<< HEAD
+<<<<<<< HEAD
 Note: Our ads will only render in mobile
 =======
 >>>>>>> added usersync and interpretresponse
+=======
+Note: Our ads will only render in mobile
+>>>>>>> fixed rebase and updated markdown file
 ```
 
 # Description
