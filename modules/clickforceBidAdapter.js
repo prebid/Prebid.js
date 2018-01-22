@@ -10,7 +10,8 @@ var ClickforceAdapter = function ClickforceAdapter() {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidServer = window.location.protocol + '//ad.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&';
-      var bid = bids[i], bidParams = {};
+      var bid = bids[i];
+      var bidParams = {};
       if (typeof (bid.params.bidServer) !== 'undefined') {
         bidServer = bid.params.bidServer;
       }
