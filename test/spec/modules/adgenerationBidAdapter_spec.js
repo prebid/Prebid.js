@@ -93,8 +93,8 @@ describe('AdgenerationAdapter', () => {
       }
     ];
     const data = {
-      banner :'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
-      native :'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
+      banner: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
     };
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
