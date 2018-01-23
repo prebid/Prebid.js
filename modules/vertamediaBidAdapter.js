@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {VIDEO, BANNER} from 'src/mediaTypes';
 import {Renderer} from 'src/Renderer';
+import findIndex from 'core-js/library/fn/array/find-index';
 
 const URL = '//hb2.vertamedia.com/auction/';
 const BIDDER_CODE = 'vertamedia';
@@ -27,7 +28,7 @@ export const spec = {
         bidderRequest,
         method: 'GET',
         url: URL
-      }
+      };
     });
   },
 
@@ -40,9 +41,6 @@ export const spec = {
   interpretResponse: function (serverResponse, {bidderRequest}) {
     serverResponse = serverResponse.body;
     const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
-    const videoMediaType = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video');
-    const context = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video.context');
-    const mediaType = !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
 
     let bids = [];
 
@@ -56,18 +54,23 @@ export const spec = {
     }
 
     serverResponse.bids.forEach(serverBid => {
-      if (serverBid.cpm !== 0) {
-        const bid = createBid(mediaType, serverBid);
+      const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
+        return bidRequest.bidId === serverBid.requestId;
+      });
+
+      if (serverBid.cpm !== 0 && requestId !== -1) {
+        const bid = createBid(serverBid, getMediaType(bidderRequest.bids[requestId]));
+
         bids.push(bid);
       }
     });
 
     return bids;
-  },
+  }
 };
 
 /**
- * Prepare all parameters for request
+ * Parse mediaType
  * @param bid {object}
  * @returns {object}
  */
@@ -83,6 +86,18 @@ function prepareRTBRequestParams(bid) {
     h: size.height,
     w: size.width
   };
+}
+
+/**
+ * Prepare all parameters for request
+ * @param bidderRequest {object}
+ * @returns {object}
+ */
+function getMediaType(bidderRequest) {
+  const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+  const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
+
+  return !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
 }
 
 /**
@@ -108,11 +123,11 @@ function getSize(requestSizes) {
 
 /**
  * Configure new bid by response
- * @param mediaType {string}
  * @param bidResponse {object}
+ * @param mediaType {Object}
  * @returns {object}
  */
-function createBid(mediaType, bidResponse) {
+function createBid(bidResponse, mediaType) {
   let bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
@@ -155,7 +170,7 @@ function newRenderer(requestId) {
   const renderer = Renderer.install({
     id: requestId,
     url: '//player.vertamedia.com/outstream-unit/2.01/outstream.min.js',
-    loaded: false,
+    loaded: false
   });
 
   renderer.setRender(outstreamRender);

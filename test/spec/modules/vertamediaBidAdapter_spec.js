@@ -62,12 +62,12 @@ const SERVER_DISPLAY_RESPONSE = {
 
 const videoBidderRequest = {
   bidderCode: 'bidderCode',
-  bids: [{mediaTypes: {video: {}}}]
+  bids: [{mediaTypes: {video: {}}, bidId: '2e41f65424c87c'}]
 };
 
 const displayBidderRequest = {
   bidderCode: 'bidderCode',
-  bids: [{}]
+  bids: [{bidId: '2e41f65424c87c'}]
 };
 
 const videoEqResponse = [{
@@ -194,7 +194,8 @@ describe('vertamediaBidAdapter', () => {
 
     function bidServerResponseCheck() {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
-
+      console.log(result);
+      console.log(eqResponse);
       expect(result).to.deep.equal(eqResponse);
     }
 
