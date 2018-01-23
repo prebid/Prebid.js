@@ -56,7 +56,6 @@ import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
-import { videoAdUnit } from 'src/video';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -153,20 +152,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
 
-      const nonVideoBid = request.bids.filter(videoAdUnit).length === 0;
-      const videoBid = request.bids.filter(videoAdUnit).length > 0;
-      const videoBidNoCache = videoBid && !config.getConfig('cache.url');
-      const videoBidWithCache = videoBid && config.getConfig('cache.url');
-
-      // video bids with cache enabled need to be cached first before saying they are done
-      if (!videoBidWithCache) {
-        request.doneCbCallCount += 1;
-      }
-
-      // in case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
-      if (nonVideoBid || videoBidNoCache) {
-        bidsBackAll()
-      }
+      // this is done for cache-enabled video bids in tryAddVideoBids, after the cache is stored
+      request.doneCbCallCount += 1;
+      bidsBackAll();
     }, 1);
   }
 
@@ -379,7 +367,13 @@ export function getStandardBidderSettings() {
         val: function (bidResponse) {
           return bidResponse.source;
         }
-      }
+      },
+      {
+        key: 'hb_format',
+        val: function (bidResponse) {
+          return bidResponse.mediaType;
+        }
+      },
     ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];

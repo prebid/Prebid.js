@@ -897,54 +897,22 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe.skip('#video', () => {
+    describe('multiformat requests', () => {
       let spyCallBids;
       let createAuctionStub;
       let adUnits;
 
-      before(() => {
+      beforeEach(() => {
         adUnits = [{
           code: 'adUnit-code',
-          mediaType: 'video',
+          mediaTypes: {
+            banner: {},
+            native: {},
+          },
           sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}},
-            {bidder: 'sampleBidder', params: {placementId: 'id'}}
-          ]
-        }];
-        adUnitCodes = ['adUnit-code'];
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adaptermanager, 'callBids');
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
-      });
-
-      after(() => {
-        auctionModule.newAuction.restore();
-        adaptermanager.callBids.restore();
-      });
-
-      it('should not callBids if a video adUnit has non-video bidders', () => {
-        const videoAdaptersBackup = adaptermanager.videoAdapters;
-        adaptermanager.videoAdapters = ['appnexus'];
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.notCalled(adaptermanager.callBids);
-        adaptermanager.videoAdapters = videoAdaptersBackup;
-      });
-    });
-
-    describe('#video', () => {
-      let spyCallBids;
-      let createAuctionStub;
-      let adUnits;
-
-      before(() => {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaType: 'video',
-          sizes: [[300, 250], [300, 600]],
-          bids: [
-            {bidder: 'appnexus', params: {placementId: 'id'}}
+            {bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}
           ]
         }];
         adUnitCodes = ['adUnit-code'];
@@ -954,53 +922,32 @@ describe('Unit: Prebid Module', function () {
         createAuctionStub.returns(auction);
       })
 
-      after(() => {
+      afterEach(() => {
         auctionModule.newAuction.restore();
         adaptermanager.callBids.restore();
       });
 
-      it('should callBids if a video adUnit has all video bidders', () => {
-        const videoAdaptersBackup = adaptermanager.videoAdapters;
-        adaptermanager.videoAdapters = ['appnexus'];
+      it('bidders that support one of the declared formats are allowed to participate', () => {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         sinon.assert.calledOnce(adaptermanager.callBids);
-        adaptermanager.videoAdapters = videoAdaptersBackup;
-      });
-    });
 
-    describe('#native', () => {
-      let spyCallBids;
-      let createAuctionStub;
-      let adUnits;
-
-      before(() => {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaType: 'native',
-          sizes: [[300, 250], [300, 600]],
-          bids: [
-            {bidder: 'appnexus', params: {placementId: 'id'}},
-            {bidder: 'sampleBidder', params: {placementId: 'id'}}
-          ]
-        }];
-        adUnitCodes = ['adUnit-code'];
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adaptermanager, 'callBids');
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
-      });
-
-      after(() => {
-        auctionModule.newAuction.restore();
-        adaptermanager.callBids.restore();
-      });
-
-      it('should only request native bidders on native adunits', () => {
-        // appnexus is a native bidder, appnexus is not
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledOnce(adaptermanager.callBids);
         const spyArgs = adaptermanager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
+
+        // appnexus and sampleBidder both support banner
+        expect(biddersCalled.length).to.equal(2);
+      });
+
+      it('bidders that do not support one of the declared formats are dropped', () => {
+        delete adUnits[0].mediaTypes.banner;
+
+        $$PREBID_GLOBAL$$.requestBids({adUnits});
+        sinon.assert.calledOnce(adaptermanager.callBids);
+
+        const spyArgs = adaptermanager.callBids.getCall(0);
+        const biddersCalled = spyArgs.args[0][0].bids;
+
+        // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });
     });
