@@ -9,7 +9,15 @@ describe('GetIntent Adapter Tests:', () => {
       tid: 't1000'
     },
     sizes: [[300, 250]]
-  }];
+  },
+  {
+    bidId: 'bid54321',
+    params: {
+      pid: 'p1000',
+      tid: 't1000'
+    },
+    sizes: [[50, 50], [100, 100]]
+  }]
   const videoBidRequest = {
     bidId: 'bid789',
     params: {
@@ -123,6 +131,7 @@ describe('GetIntent Adapter Tests:', () => {
 
   it('Verify if bid request valid', () => {
     expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
+    expect(spec.isBidRequestValid(bidRequests[1])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { test: 123 } })).to.equal(false);
