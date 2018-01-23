@@ -53,10 +53,16 @@ let extractValidSize = (bidRequest) => {
   let height = null;
 
   if (!utils.isEmpty(bidRequest.sizes)) {
-    // Currently only the first size is utilized
-    let firstSize = bidRequest.sizes[0];
-    width = firstSize[0];
-    height = firstSize[1];
+    // Ensure the size array is normalized
+    let conformingSize = utils.parseSizesInput(bidRequest.sizes);
+
+    if (!utils.isEmpty(conformingSize) && conformingSize[0] != null) {
+      // Currently only the first size is utilized
+      let splitSizes = conformingSize[0].split('x');
+
+      width = parseInt(splitSizes[0]);
+      height = parseInt(splitSizes[1]);
+    }
   }
 
   return {

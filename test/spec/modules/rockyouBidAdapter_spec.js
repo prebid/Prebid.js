@@ -140,6 +140,60 @@ describe('RockYouAdapter', () => {
       expect(bannerData.h).to.equal(50);
     });
 
+    it('generates a banner request using a singular adSize instead of an array', () => {
+      // clone the sample for stability
+      let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+      localBidRequest.sizes = [320, 50];
+      localBidRequest.mediaTypes = { banner: {} };
+
+      let result = spec.buildRequests([localBidRequest], {
+        bidderRequestId: 'sample'
+      });
+
+      // Double encoded JSON
+      let payload = JSON.parse(result.data);
+
+      expect(payload).to.not.be.null;
+
+      let imps = payload.imp;
+
+      let firstImp = imps[0];
+
+      expect(firstImp.banner).to.not.be.null;
+
+      let bannerData = firstImp.banner;
+
+      expect(bannerData.w).to.equal(320);
+      expect(bannerData.h).to.equal(50);
+    });
+
+    it('fails gracefully on an invalid size', () => {
+      // clone the sample for stability
+      let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+      localBidRequest.sizes = ['x', 'w'];
+      localBidRequest.mediaTypes = { banner: {} };
+
+      let result = spec.buildRequests([localBidRequest], {
+        bidderRequestId: 'sample'
+      });
+
+      // Double encoded JSON
+      let payload = JSON.parse(result.data);
+
+      expect(payload).to.not.be.null;
+
+      let imps = payload.imp;
+
+      let firstImp = imps[0];
+
+      expect(firstImp.banner).to.not.be.null;
+
+      let bannerData = firstImp.banner;
+
+      expect(bannerData.w).to.equal(null);
+      expect(bannerData.h).to.equal(null);
+    });
+
     it('generates a video request as expected', () => {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
