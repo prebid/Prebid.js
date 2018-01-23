@@ -10,6 +10,7 @@ import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting } from './targeting';
+import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -283,7 +284,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit('requestBids');
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -333,7 +334,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
-};
+  return auction;
+});
 
 /**
  *
