@@ -65,22 +65,26 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     var response = serverResponse.body;
-    if (response) {
-      const bidResponse = {
-        requestId: JSON.parse(bidRequest.data).bidId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creativeId,
-        dealId: response.dealId,
-        currency: response.currency,
-        netRevenue: response.isNetCpm,
-        ttl: response.ttl,
-        referrer: utils.getTopWindowUrl(),
-        adUrl: response.adUrl,
-        ad: response.ad
-      };
-      bidResponses.push(bidResponse);
+    try {
+      if (response) {
+        const bidResponse = {
+          requestId: JSON.parse(bidRequest.data).bidId,
+          cpm: response.cpm,
+          width: response.width,
+          height: response.height,
+          creativeId: response.creativeId,
+          dealId: response.dealId,
+          currency: response.currency,
+          netRevenue: response.isNetCpm,
+          ttl: response.ttl,
+          referrer: utils.getTopWindowUrl(),
+          adUrl: response.adUrl,
+          ad: response.ad
+        };
+        bidResponses.push(bidResponse);
+      }
+    } catch (error) {
+      console.log('Error while parsing smart server response');
     }
     return bidResponses;
   }
