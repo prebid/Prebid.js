@@ -74,8 +74,10 @@ let getPixels = () => {
 };
 
 describe('AolAdapter', () => {
-  const MARKETPLACE_URL = 'adserver-us.adtech.advertising.com/pubapi/3.0/';
-  const NEXAGE_URL = 'hb.nexage.com/bidRequest?';
+  const MARKETPLACE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';
+  const NEXAGE_URL = '//hb.nexage.com/bidRequest?';
+  const ONE_DISPLAY_TTL = 60;
+  const ONE_MOBILE_TTL = 3600;
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -98,7 +100,8 @@ describe('AolAdapter', () => {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
       bidRequest = {
         bidderCode: 'test-bidder-code',
-        bidId: 'bid-id'
+        bidId: 'bid-id',
+        ttl: 1234
       };
       bidResponse = {
         body: getDefaultBidResponse()
@@ -125,7 +128,7 @@ describe('AolAdapter', () => {
         currency: 'USD',
         dealId: 'deal-id',
         netRevenue: true,
-        ttl: 300
+        ttl: bidRequest.ttl
       });
     });
 
@@ -355,6 +358,13 @@ describe('AolAdapter', () => {
         let [request] = spec.buildRequests(bidRequest.bids);
         expect(request.url).to.contain('kvage=25;kvheight=3.42;kvtest=key');
       });
+
+      it('should return request object for One Display when configuration is present', () => {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.method).to.equal('GET');
+        expect(request.ttl).to.equal(ONE_DISPLAY_TTL);
+      });
     });
 
     describe('One Mobile', () => {
@@ -454,6 +464,7 @@ describe('AolAdapter', () => {
         let [request] = spec.buildRequests(bidRequest.bids);
         expect(request.url).to.contain(NEXAGE_URL);
         expect(request.method).to.equal('POST');
+        expect(request.ttl).to.equal(ONE_MOBILE_TTL);
         expect(request.data).to.deep.equal(bidConfig);
         expect(request.options).to.deep.equal({
           contentType: 'application/json',

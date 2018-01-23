@@ -4,6 +4,8 @@ import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
+import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 
 var assert = require('assert');
@@ -869,6 +871,33 @@ describe('auctionmanager.js', function () {
       const addedBid2 = auction.getBidsReceived().pop();
       assert.notEqual(addedBid2.adId, bids1[0].requestId);
       assert.equal(length, 1);
+    });
+
+    it('should run auction after video bids have been cached', () => {
+      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123}]);
+      sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
+
+      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video'})];
+      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video'})];
+
+      registerBidder(spec);
+      registerBidder(spec1);
+
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.isBidRequestValid.returns(true);
+      spec.interpretResponse.returns(bidsCopy);
+
+      spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec1.isBidRequestValid.returns(true);
+      spec1.interpretResponse.returns(bids1Copy);
+
+      auction.callBids();
+
+      assert.equal(auction.getBidsReceived().length, 2);
+      assert.equal(auction.getAuctionStatus(), 'completed');
+
+      config.getConfig.restore();
+      store.store.restore();
     });
   });
 });
