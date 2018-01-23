@@ -15,7 +15,7 @@ Module that connects to Yieldlab's demand sources
     var adUnits = [
            {
                code: "test1",
-               sizes: [[]]
+               sizes: [[800, 250]]
                bids: [{
                    bidder: "yieldlab",
                    params: {
@@ -26,7 +26,7 @@ Module that connects to Yieldlab's demand sources
                }]
            }, {
                code: "test2",
-               sizes: [[]],
+               sizes: [[1, 1]],
                mediaTypes: {
                    video: {
                        context: "instream"

@@ -13,7 +13,7 @@ const REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '2d925f27f5079f',
-  'sizes': []
+  'sizes': [1, 1]
 }
 
 const RESPONSE = {
