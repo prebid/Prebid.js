@@ -19,7 +19,7 @@ let getDefaultBidRequest = () => {
       placementCode: 'test-div',
       params: {
         placementId: '1234567',
-        customEndpoint: '//static.videostepstage.com/scripts/testPrebidEndpoint.js'
+        customEndpoint: 'https://static.r66net.com/bid/testEndpoint.js'
       }
     }]
   };
