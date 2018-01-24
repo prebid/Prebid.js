@@ -44,6 +44,8 @@ describe('GetIntent Adapter Tests:', () => {
     expect(serverRequest.data.tid).to.equal('t1000');
     expect(serverRequest.data.size).to.equal('300x250');
     expect(serverRequest.data.is_video).to.equal(false);
+    serverRequest = serverRequests[1];
+    expect(serverRequest.data.size).to.equal('50x50,100x100');
   });
 
   it('Verify build video request', () => {

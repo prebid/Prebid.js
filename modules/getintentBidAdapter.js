@@ -141,10 +141,17 @@ function parseSize(s) {
  * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
  * */
 function produceSize (sizes) {
-  if (Array.isArray(sizes[0])) {
-    return sizes.map(s => s.join('x')).join(',');
+  function sizeToStr(s) {
+    if (Array.isArray(s) && s.length === 2 && Number.isInteger(s[0]) && Number.isInteger(s[1])) {
+      return s.join('x');
+    } else {
+      throw "Malformed parameter 'sizes'";
+    }
+  }
+  if (Array.isArray(sizes) && Array.isArray(sizes[0])) {
+    return sizes.map(sizeToStr).join(',');
   } else {
-    return sizes.join('x');
+    return sizeToStr(sizes);
   }
 }
 
