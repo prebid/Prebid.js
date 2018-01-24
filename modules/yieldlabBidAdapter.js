@@ -1,7 +1,7 @@
 import * as utils from 'src/utils'
 import { registerBidder } from 'src/adapters/bidderFactory'
 import find from 'core-js/library/fn/array/find'
-import { VIDEO } from 'src/mediaTypes'
+import { VIDEO, BANNER } from 'src/mediaTypes'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -10,7 +10,7 @@ const CURRENCY_CODE = 'EUR'
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.placementId && bid.params.adSize) {
