@@ -28,7 +28,7 @@ const VIDEO_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'sizes': [640, 480]
+  'sizes': [[480, 360], [640, 480]]
 };
 
 const SERVER_VIDEO_RESPONSE = {
@@ -142,8 +142,7 @@ describe('vertamediaBidAdapter', () => {
         callbackId: '84ab500420319d',
         ad_type: 'video',
         aid: 12345,
-        w: 640,
-        h: 480
+        sizes: '480x360,640x480'
       };
 
       expect(bid).to.deep.equal(eq);
@@ -157,8 +156,7 @@ describe('vertamediaBidAdapter', () => {
         callbackId: '84ab500420319d',
         ad_type: 'display',
         aid: 12345,
-        w: 300,
-        h: 250
+        sizes: '300x250'
       };
 
       expect(bid).to.deep.equal(eq);

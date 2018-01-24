@@ -75,7 +75,6 @@ export const spec = {
  * @returns {object}
  */
 function prepareRTBRequestParams(bid) {
-  const size = getSize(bid.sizes);
   const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
 
   return {
@@ -83,8 +82,7 @@ function prepareRTBRequestParams(bid) {
     callbackId: bid.bidId,
     aid: bid.params.aid,
     ad_type: mediaType,
-    h: size.height,
-    w: size.width
+    sizes: utils.parseSizesInput(bid.sizes).join()
   };
 }
 
@@ -98,27 +96,6 @@ function getMediaType(bidderRequest) {
   const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
 
   return !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
-}
-
-/**
- * Prepare size for request
- * @param requestSizes {array}
- * @returns {object} bid The bid to validate
- */
-function getSize(requestSizes) {
-  const size = utils.parseSizesInput(requestSizes)[0];
-  const parsed = {};
-
-  if (typeof size !== 'string') {
-    return parsed;
-  }
-
-  let parsedSize = size.toUpperCase().split('X');
-
-  return {
-    height: parseInt(parsedSize[1], 10) || undefined,
-    width: parseInt(parsedSize[0], 10) || undefined
-  };
 }
 
 /**
