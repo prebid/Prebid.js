@@ -613,40 +613,43 @@ See the table below for the list of properties in the `mediaTypes` object of the
 For an example of a native ad unit, see below.  For more detailed instructions, see [Show Native Ads]({{site.baseurl}}/dev-docs/show-native-ads.html).
 
 ```javascript
-pbjs.addAdUnits({
-    code: slot.code,
-    sizes: slot.size,
-    mediaTypes: {
-        native: {
-            image: {
-                required: true
+    pbjs.addAdUnits({
+        code: slot.code,
+        mediaTypes: {
+            native: {
+                image: {
+                    required: true,
+                    sizes: [150, 50]
+                },
+                title: {
+                    required: true,
+                    len: 80
+                },
+                sponsoredBy: {
+                    required: true
+                },
+                clickUrl: {
+                    required: true
+                },
+                body: {
+                    required: true
+                },
+                icon: {
+                    required: true,
+                    sizes: [50, 50]
+                },
             },
-            title: {
-                required: true,
-                len: 80
-            },
-            sponsoredBy: {
-                required: true
-            },
-            clickUrl: {
-                required: true
-            },
-            body: {
-                required: true
-            },
-            icon: {
-                required: true
-            },
-        },
-        bids: [{
-            bidder: 'appnexusAst',
-            params: {
-                placementId: '9880618'
-            }
-        }, ]
-    }
-})
+            bids: [{
+                bidder: 'appnexus',
+                params: {
+                    placementId: '9880618'
+                }
+            }, ]
+        }
+    })
 ```
+
+{% include dev-docs/native-image-asset-sizes.md %}
 
 <a name="adUnit-video">
 
@@ -664,7 +667,7 @@ pbjs.addAdUnits({
         },
     },
     bids: [{
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         params: {
             placementId: '9333431',
             video: {
@@ -709,13 +712,12 @@ For an example of a banner ad unit, see below.  For more detailed instructions, 
 ```javascript
 pbjs.addAdUnits({
     code: slot.code,
-    sizes: slot.size,
     mediaTypes: {
         banner: {
             sizes: [[300, 250], [300, 600]]
         },
         bids: [{
-            bidder: 'appnexusAst',
+            bidder: 'appnexus',
             params: {
                 placementId: '9880618'
             }
@@ -1168,11 +1170,11 @@ To define an alias for a bidder adapter, call this method at runtime:
 
 {% highlight js %}
 
-pbjs.aliasBidder('appnexusAst', 'newAlias');
+pbjs.aliasBidder('appnexus', 'newAlias');
 
 {% endhighlight %}
 
-Defining an alias can help avoid user confusion since it's possible to send parameters to the same adapter but in different contexts (e.g, The publisher uses `"appnexusAst"` for demand and also uses `"newAlias"` which is an SSP partner that uses the `"appnexusAst"` adapter to serve their own unique demand).
+Defining an alias can help avoid user confusion since it's possible to send parameters to the same adapter but in different contexts (e.g, The publisher uses `"appnexus"` for demand and also uses `"newAlias"` which is an SSP partner that uses the `"appnexus"` adapter to serve their own unique demand).
 
 It's not technically necessary to define an alias, since each copy of an adapter with the same name gets a different ID in the internal bidder registry so Prebid.js can still tell them apart.
 
