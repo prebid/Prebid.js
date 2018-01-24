@@ -52,7 +52,8 @@
     "hb_pb",
     "hb_size",
     "hb_deal",
-    "hb_source"
+    "hb_source",
+    "hb_format"
   ],
   "S2S" : {
     "SRC" : "s2s",

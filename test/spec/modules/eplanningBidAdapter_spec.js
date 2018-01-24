@@ -182,9 +182,9 @@ describe('E-Planning Adapter', () => {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
-    it('should return true when bid does not have ci parameter but is a test bid'), () => {
-      expect(spec.isBidRequestValid(testBid).to.equal(true));
-    }
+    it('should return true when bid does not have ci parameter but is a test bid', () => {
+      expect(spec.isBidRequestValid(testBid)).to.equal(true);
+    });
   });
 
   describe('buildRequests', () => {
