@@ -27,13 +27,13 @@ export const spec = {
 
   interpretResponse(response, { bidRequest }) {
     response = response.body;
-    if (!response || !response.url || !response.bidPrice) {
-      utils.logWarn(`No valid bids from ${spec.code} bidder`);
-      return [];
-    }
     let size = getSize(bidRequest.sizes);
     let isVideo = bidRequest.mediaTypes && bidRequest.mediaTypes.video;
     if (isVideo) {
+      if (!response || !response.url || !response.bidPrice) {
+        utils.logWarn(`No valid bids from ${spec.code} bidder`);
+        return [];
+      }
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
@@ -105,7 +105,8 @@ function createRequestParams(bid) {
     },
     device: {
       ua: global.navigator.userAgent,
-      devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2
+      devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
+      geo: {}
     },
     cur: ['USD']
   };
