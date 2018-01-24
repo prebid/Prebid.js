@@ -97,7 +97,6 @@ describe('xendizBidAdapter', () => {
       const result = spec.interpretResponse(bidResponse);
       const validResponse = [{
         requestId: '30b31c1838de1e',
-        bidderCode: 'xendiz',
         cpm: 3,
         width: 300,
         height: 250,
