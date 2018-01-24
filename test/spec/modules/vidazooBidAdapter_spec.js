@@ -106,7 +106,6 @@ describe('VidazooBidAdapter', () => {
 
     it('should build request for each size', () => {
       const requests = adapter.buildRequests([BID]);
-      console.log(JSON.stringify(requests));
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
         method: 'GET',
