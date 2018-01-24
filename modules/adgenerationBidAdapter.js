@@ -1,13 +1,13 @@
 import * as utils from 'src/utils';
 // import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { NATIVE } from 'src/mediaTypes';
+import { BANNER, NATIVE } from 'src/mediaTypes';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
   code: ADG_BIDDER_CODE,
   aliases: ['adg'], // short code
-  supportedMediaTypes: [NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -27,7 +27,9 @@ export const spec = {
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
-      const url = validReq.params.debug ? 'http://api-test.scaleout.jp/adsv/v1' : 'https://d.socdm.com/adsv/v1';
+      const DEBUG_URL = 'http://api-test.scaleout.jp/adsv/v1';
+      const URL = 'https://d.socdm.com/adsv/v1';
+      const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;
       data = utils.tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = utils.getBidIdParameter('id', validReq.params);
