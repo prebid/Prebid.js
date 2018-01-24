@@ -268,7 +268,7 @@ export const spec = {
         mediaType: ad.creative_type,
         cpm: ad.cpm || 0,
         dealId: ad.deal,
-        ttl: 300, // 5 minutess
+        ttl: 300, // 5 minutes
         netRevenue: config.getConfig('rubicon.netRevenue') || false
       };
       if (bidRequest.mediaType === 'video') {
