@@ -221,7 +221,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 }
 
-function doCallbacksIfNeeded(auctionInstance, bidResponse) {
+function doCallbacksIfTimedout(auctionInstance, bidResponse) {
   if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
     auctionInstance.executeCallback(true);
   }
@@ -231,6 +231,8 @@ function doCallbacksIfNeeded(auctionInstance, bidResponse) {
 function addBidToAuction(auctionInstance, bidResponse) {
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
+
+  doCallbacksIfTimedout(auctionInstance, bidResponse);
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -239,6 +241,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest, vastUrl) {
     store([bidResponse], function(error, cacheIds) {
       if (error) {
         utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+
+        doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         bidResponse.videoCacheKey = cacheIds[0].uuid;
         if (!vastUrl) {
@@ -249,11 +253,9 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest, vastUrl) {
         addBidToAuction(auctionInstance, bidResponse);
         auctionInstance.bidsBackAll();
       }
-      doCallbacksIfNeeded(auctionInstance, bidResponse);
     });
   } else {
     addBidToAuction(auctionInstance, bidResponse);
-    doCallbacksIfNeeded(auctionInstance, bidResponse);
   }
 }
 
@@ -268,7 +270,6 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   if (bidResponse.mediaType === 'video') {
     tryAddVideoBid(auctionInstance, bidResponse, bidRequest, bid.vastUrl);
   } else {
-    doCallbacksIfNeeded(auctionInstance, bidResponse);
     addBidToAuction(auctionInstance, bidResponse);
   }
 }, 'addBidResponse');
