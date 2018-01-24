@@ -157,12 +157,16 @@ Labels can now be specified as a property on either an `adUnit` or on `adUnit.bi
 
 pbjs.addAdUnits([{
     "code": "ad-slot-1",
-    "sizes": [
-        [970, 90],
-        [728, 90],
-        [300, 250],
-        [300, 100]
-    ],
+    "mediaTypes": {
+        "banner": {
+            "sizes": [
+                [970, 90],
+                [728, 90],
+                [300, 250],
+                [300, 100]
+            ],
+        }
+    }
     "labels": ["visitor-uk"]
     "bids": [ // the full set of bids, not all of which are relevant on all devices
         {
@@ -225,14 +229,15 @@ The `mediaType` attribute is being removed in favor of a `mediaTypes` object. Th
 
 adUnit = {
     "code": "unique_code_for_placement"
-    "sizes": [
-        [300, 250]
-    ],
     "mediaTypes": { // New field to replace `mediaType`. Defaults to `banner` if not specified.
         video: {
-            context: "outstream"
+            context: "outstream",
+            playerSize: [600, 480]
         },
-        banner: { ...options },
+        banner: { 
+            sizes: [300, 250],
+            ...options 
+        },
         native: { ...options }
     },
     labels: ["desktop", "mobile"]

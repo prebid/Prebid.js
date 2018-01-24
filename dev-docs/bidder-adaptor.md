@@ -74,30 +74,38 @@ Module that connects to Example's demand sources
 # Test Parameters
 ```
     var adUnits = [
-           {
-               code: 'test-div',
-               sizes: [[300, 250]],  // a display size
-               bids: [
-                   {
-                       bidder: "example",
-                       params: {
-                           placement: '12345'
-                       }
-                   }
-               ]
-           },{
-               code: 'test-div',
-               sizes: [[300, 50]],   // a mobile size
-               bids: [
-                   {
-                       bidder: "example",
-                       params: {
-                           placement: 67890
-                       }
-                   }
-               ]
-           }
-       ];
+        {
+            code: 'test-div',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],  // a display size
+                }
+            },
+            bids: [
+                {
+                    bidder: "example",
+                    params: {
+                        placement: '12345'
+                    }
+                }
+            ]
+        },{
+            code: 'test-div',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 50]],   // a mobile size
+                }
+            },
+            bids: [
+                {
+                    bidder: "example",
+                    params: {
+                        placement: 67890
+                    }
+                }
+            ]
+        }
+    ];
 ```
 
 {% endhighlight %}
@@ -115,10 +123,14 @@ For more information about the kinds of information that can be passed using the
 {
     var adUnits = [{
         code: "top-med-rect",
-        sizes: [
-            [300, 250],
-            [300, 600]
-        ]
+        mediaTypes: {
+            banner: {
+                sizes: [
+                    [300, 250],
+                    [300, 600]
+                ]
+            }
+        },
         bids: [{
             bidder: "example",
             // params is custom to the bidder adapter and will be

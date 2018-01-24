@@ -111,11 +111,11 @@ The `mimes` parameter is required by OpenRTB.  For all other parameters, check w
 ```javascript
 var adUnit1 = {
     code: 'videoAdUnit',
-    sizes: [400, 600],
     mediaTypes: {
         video: {
             context: "instream",
             mimes: ['video/mp4'],
+            playerSize: [400, 600],
             minduration: 1,
             maxduration: 2,
             protocols: [1, 2],

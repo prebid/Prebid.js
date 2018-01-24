@@ -38,10 +38,10 @@ The fields supported in a given `bid.params.video` object will vary based on the
 var videoAdUnits = [
   {
     code: 'video1',
-    sizes: [ 640, 480 ],
     mediaTypes: {
       video: {
-        context: 'outstream'
+        context: 'outstream',
+        playerSize: [640, 480]
       }
     },
     bids: [
@@ -85,10 +85,10 @@ Renderers are associated with adUnits through the `adUnit.renderer` object.  Thi
 
 pbjs.addAdUnit({
     code: 'video1',
-    sizes: [640, 480],
     mediaTypes: {
       video: {
-        context: 'outstream'
+        context: 'outstream',
+        playerSize: [640, 480]
       }
     },
     renderer: {

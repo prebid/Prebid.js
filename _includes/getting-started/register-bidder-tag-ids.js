@@ -1,9 +1,13 @@
 pbjs.que.push(function() {
   var adUnits = [{
 	code: "div-gpt-ad-1438287399331-0",
-	sizes: [[300, 250], [300, 600]],
+	mediaTypes: {
+		banner: {
+			sizes: [[300, 250], [300, 600]]
+		}
+	},
 	bids: [{
-	  bidder: "rubicon",
+		bidder: "rubicon",
 	  params: {
 		accountId: "4934",
 		siteId: "13945",

@@ -59,10 +59,10 @@ Don't forget to add your own valid placement ID.
 ```javascript
 var videoAdUnit = {
     code: 'video',
-    sizes: [640, 480],
     mediaTypes: {
         video: {
-            context: "instream"
+            context: "instream",
+            playerSize: [640, 480]
         },
     },
     bids: [{

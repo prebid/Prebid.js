@@ -638,7 +638,7 @@ For an example of a native ad unit, see below.  For more detailed instructions, 
                 icon: {
                     required: true,
                     sizes: [50, 50]
-                },
+                }
             },
             bids: [{
                 bidder: 'appnexus',
@@ -661,10 +661,10 @@ For an example of an instream video ad unit, see below.  For more detailed instr
 ```javascript
 pbjs.addAdUnits({
     code: 'video',
-    sizes: [640, 480],
     mediaTypes: {
         video: {
-            context: "instream"
+            context: "instream",
+            playerSize: [640, 480]
         },
     },
     bids: [{
@@ -685,10 +685,10 @@ For an example of an outstream video ad unit, see below.  For more detailed inst
 ```javascript
 pbjs.addAdUnit({
     code: 'video1',
-    sizes: [640, 480],
     mediaTypes: {
         video: {
-            context: 'outstream'
+            context: 'outstream',
+            playerSize: [640, 480]
         }
     },
     renderer: {
@@ -1634,12 +1634,16 @@ Label targeting on the ad unit looks like the following:
 
 pbjs.addAdUnits([{
     code: "ad-slot-1",
-    sizes: [
-        [970, 90],
-        [728, 90],
-        [300, 250],
-        [300, 100]
-    ],
+    mediaTypes: {
+        banner: {
+            sizes: [
+                [970, 90],
+                [728, 90],
+                [300, 250],
+                [300, 100]
+            ]
+        }
+    },
     labelAny: ["visitor-uk"]
     /* The full set of bids, not all of which are relevant on all devices */
     bids: [{
