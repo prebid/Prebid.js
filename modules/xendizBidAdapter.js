@@ -74,7 +74,6 @@ export const spec = {
     const bids = serverResponse.body.bids.map(bid => {
       return {
         requestId: bid.id,
-        bidderCode: BIDDER_CODE,
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
