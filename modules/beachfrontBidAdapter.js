@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 
 export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
-export const BANNER_ENDPOINT = '//display.beachrtb.com/bid_display?exchange_id=';
+export const BANNER_ENDPOINT = '//display.bfmio.com/bid_display?exchange_id=';
 
 export const spec = {
   code: 'beachfront',
