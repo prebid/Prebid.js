@@ -208,9 +208,9 @@ Sample array entry for `validBidRequests[]`:
 {% endhighlight %}
 
 {: .alert.alert-success :}
-There are several IDs present in the bidRequest object:  
-- **Bid ID** is unique across ad units and bidders.  
-- **Auction ID** is unique per call to `requestBids()`, but is the same across ad units.  
+There are several IDs present in the bidRequest object:
+- **Bid ID** is unique across ad units and bidders.
+- **Auction ID** is unique per call to `requestBids()`, but is the same across ad units.
 - **Transaction ID** is unique for each ad unit with a call to `requestBids`, but same across bidders. This is the ID that DSPs need to recognize the same impression coming in from different supply sources.
 
 The ServerRequest objects returned from your adapter have this structure:
@@ -335,6 +335,9 @@ export const spec = {
 }
 
 {% endhighlight %}
+
+{: .alert.alert-info :}
+If your adapter supports banner and video media types, make sure to include `'banner'` in the `supportedMediaTypes` array as well
 
 ### Step 2: Accept video parameters and pass them to your server
 
