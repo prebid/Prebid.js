@@ -4,7 +4,7 @@ import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'xendiz';
 const PREBID_ENDPOINT = 'prebid.xendiz.com';
-const SYNC_ENDPOINT = 'https://advsync.com/sync/xendiz';
+const SYNC_ENDPOINT = 'https://advsync.com/xendiz/ssp/?pixel=1';
 
 const buildURI = () => {
   return `//${PREBID_ENDPOINT}/request`;
