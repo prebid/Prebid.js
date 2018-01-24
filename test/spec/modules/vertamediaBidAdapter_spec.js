@@ -194,8 +194,7 @@ describe('vertamediaBidAdapter', () => {
 
     function bidServerResponseCheck() {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
-      console.log(result);
-      console.log(eqResponse);
+
       expect(result).to.deep.equal(eqResponse);
     }
 
