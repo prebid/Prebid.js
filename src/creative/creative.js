@@ -9,6 +9,33 @@
  * - All safeFrame creatives
  */
 
+const pbjs = {};
+
+/**
+ * @param  {object} doc
+ * @param  {string} adId
+ * @param  {object} dataObject
+ */
+pbjs.renderAd = function(doc, adId, dataObject) {
+  if (isAMP(dataObject)) {
+    console.log('render AMP path');
+    renderAmpAd(dataObject.host, dataObject.uuid);
+  } else if (typeof dataObject !== 'object' || dataObject.mediaType === '') {
+    // legacy render
+    if (isCrossDomain()) {
+      console.log('cross domain render');
+      // render via postMessage
+      renderCrossDomain(adId, dataObject.pubUrl);
+    } else {
+      console.log('legacy banner render');
+      renderLegacy(doc, adId);
+    }
+  } else {
+    // assume legacy?
+    renderLegacy(doc, adId);
+  }
+};
+
 function getEmptyIframe(height, width) {
   var frame = document.createElement('iframe');
   frame.setAttribute('FRAMEBORDER', 0);
@@ -108,57 +135,31 @@ function renderCrossDomain(adId, pubUrl) {
   requestAdFromPrebid();
 }
 
-const pbjs = {};
-
-/**
- * @param  {object} doc
- * @param  {string} adId
- * @param  {object} dataObject
- */
-pbjs.renderAd = function(doc, adId, dataObject) {
-  if (isAMP(dataObject)) {
-    console.log('render AMP path');
-    renderAmpAd(dataObject.host, dataObject.uuid);
-  } else if (typeof dataObject !== 'object' || dataObject.mediaType === '') {
-    // legacy render
-    if (isCrossDomain()) {
-      console.log('cross domain render');
-      // render via postMessage
-      renderCrossDomain(adId, dataObject.pubUrl);
-    } else {
-      console.log('legacy banner render');
-      renderLegacy(doc, adId);
-    }
-  } else {
-  }
-  // const adUrl = 'https://' + base + '?uuid=' + adId;
-};
-
 function renderAmpAd(cacheHost, uuid) {
   if (cacheHost === '') {
     cacheHost = 'prebid.adnxs.com';
   }
+  // TODO pass in /path from creative since it might change
   var adUrl = 'https://' + cacheHost + '/pbc/v1/cache?uuid=' + uuid;
 
   var handler = function(json) {
     // this effectively writes out the ad content to the existing iframe without destroying the document.
     var content = JSON.parse(json);
+    // TODO change format to ORTB banner response.
+    // Fire Imps URLS as required
     if (content.ad) {
       writeAdHtml(content.ad);
     } else if (content.adUrl) {
       writeAdUrl(content.adUrl, content.height, content.width);
     }
-    // result = result.substring(1, result.length - 1);
-    // console.log(result);
   };
   sendRequest(adUrl, handler);
 }
 
 function writeAdUrl(adUrl, height, width) {
-  document.body.insertAdjacentHTML('afterbegin', '<IFRAME SRC="' + adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
-  // var iframe = getEmptyIframe(height, width);
-  // iframe.src = adUrl;
-  // document.body.appendChild(iframe);
+  var iframe = getEmptyIframe(height, width);
+  iframe.src = adUrl;
+  document.body.appendChild(iframe);
 }
 
 function writeAdHtml(markup) {
@@ -175,6 +176,7 @@ function writeAdHtml(markup) {
 }
 
 function isAMP(dataObject) {
+  // TODO update this check when AMP provides the `context` object into the DFP safeframe
   // currently we consider cross domain + uuid enough for AMP case
   return typeof dataObject.uuid === 'string' && isCrossDomain();
 }
@@ -213,26 +215,26 @@ function sendRequest(url, callback) {
   oReq.send();
 }
 
-function render() {
-  const { height, width, ad, mediaType, adUrl, renderer } = bid;
+// function render() {
+//   const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
-  if (renderer && renderer.url) {
-    renderer.render(bid);
-  } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
-    utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
-  } else if (ad) {
-    doc.write(ad);
-    doc.close();
-    setRenderSize(doc, width, height);
-  } else if (adUrl) {
-    const iframe = utils.createInvisibleIframe();
-    iframe.height = height;
-    iframe.width = width;
-    iframe.style.display = 'inline';
-    iframe.style.overflow = 'hidden';
-    iframe.src = adUrl;
+//   if (renderer && renderer.url) {
+//     renderer.render(bid);
+//   } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
+//     utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
+//   } else if (ad) {
+//     doc.write(ad);
+//     doc.close();
+//     setRenderSize(doc, width, height);
+//   } else if (adUrl) {
+//     const iframe = utils.createInvisibleIframe();
+//     iframe.height = height;
+//     iframe.width = width;
+//     iframe.style.display = 'inline';
+//     iframe.style.overflow = 'hidden';
+//     iframe.src = adUrl;
 
-    utils.insertElement(iframe, doc, 'body');
-    setRenderSize(doc, width, height);
-  }
-}
+//     utils.insertElement(iframe, doc, 'body');
+//     setRenderSize(doc, width, height);
+//   }
+// }
