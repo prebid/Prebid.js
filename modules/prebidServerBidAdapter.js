@@ -19,14 +19,31 @@ const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
+
+const s2sDefaultConfig = {
+  enabled: false,
+  timeout: 1000,
+  maxBids: 1,
+  adapter: 'prebidServer'
+};
+
 config.setDefaults({
-  's2sConfig': {
-    enabled: false,
-    timeout: 1000,
-    maxBids: 1,
-    adapter: 'prebidServer'
-  }
+  's2sConfig': s2sDefaultConfig
 });
+
+// accountId and bidders params are not included here, should be configured by end-user
+const avail_vendor_defaults = {
+  'appnexus': {
+    adapter: 'prebidServer',
+    cookieSet: true,
+    cookieSetUrl: '//acdn.adnxs.com/cookieset/cs.js',
+    enabled: true,
+    endpoint: '//prebid.adnxs.com/pbs/v1/auction',
+    syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
+    timeout: 1000
+  },
+  'rubicon': {}
+};
 
 /**
  * Set config for server to server header bidding
@@ -42,6 +59,21 @@ config.setDefaults({
  * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
+  if (options.default_vendor) {
+    let vendor = options.default_vendor
+
+    if (avail_vendor_defaults.hasOwnProperty(vendor)) {
+      Object.keys(avail_vendor_defaults[vendor]).forEach(function(vendor_key) {
+        if (s2sDefaultConfig[vendor_key] === options[vendor_key]) {
+          options[vendor_key] = avail_vendor_defaults[vendor][vendor_key]
+        }
+      });
+    } else {
+      utils.logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
+      return false;
+    }
+  }
+
   let keys = Object.keys(options);
 
   if (['accountId', 'bidders', 'endpoint'].filter(key => {

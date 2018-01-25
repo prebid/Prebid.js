@@ -475,5 +475,39 @@ describe('S2S Adapter', () => {
       config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
     });
+
+    it('should log error when vendor does not exist', () => {
+      const options = {
+        accountId: '1',
+        bidders: ['appnexus'],
+        vendor_default: 'mytest'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should configure the s2sConfig object with vendor defaults unless specified by user', () => {
+      const options = {
+        accountId: '123',
+        bidders: ['appnexus'],
+        default_vendor: 'appnexus',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '123');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
+      expect(vendorConfig.cookieSet).to.be.true;
+      expect(vendorConfig).to.have.property('cookieSetUrl', '//acdn.adnxs.com/cookieset/cs.js');
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
+      expect(vendorConfig).to.have.property('timeout', 750);
+    });
   });
 });
