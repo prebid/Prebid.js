@@ -1119,7 +1119,7 @@ For an example showing how to use this method, see [Show Video Ads with a DFP Vi
 This method is deprecated as of version 0.27.0 and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`setConfig`](#module_pbjs.setConfig) instead.
 
 {: .alert.alert-danger :}
-**BREAKING CHANGE**
+**BREAKING CHANGE**  
 As of version 0.27.0, To encourage fairer auctions, Prebid will randomize the order bidders are called by default. To replicate legacy behavior, call `pbjs.setBidderSequence('fixed')`.
 
 This method shuffles the order in which bidders are called.
@@ -1307,9 +1307,9 @@ pbjs.setConfig({ bidderTimeout: 3000 });
 {% endhighlight %}
 
 {: .alert.alert-warning :}
-**Bid Timeouts and JavaScript Timers**
-Note that it's possible for the timeout to be triggered later than expected, leading to a bid participating in the auction later than expected.  This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that *should* execute after this time but *it is not guaranteed*.
-With a busy page load, bids can be included in the auction even if the time to respond is greater than the timeout set by Prebid.js.  However, we do close the auction immediately if the threshold is greater than 200ms, so you should see a drop off after that period.
+**Bid Timeouts and JavaScript Timers**  
+Note that it's possible for the timeout to be triggered later than expected, leading to a bid participating in the auction later than expected.  This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that *should* execute after this time but *it is not guaranteed*.  
+With a busy page load, bids can be included in the auction even if the time to respond is greater than the timeout set by Prebid.js.  However, we do close the auction immediately if the threshold is greater than 200ms, so you should see a drop off after that period.  
 For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
 
 <a name="setConfig-Send-All-Bids" />
@@ -1435,7 +1435,7 @@ However, there are also good reasons why publishers may want to control the use 
 - *Security*: Publishers may want to control which bidders are trusted to inject images and JavaScript into their pages.
 
 {: .alert.alert-info :}
-**User syncing default behavior**
+**User syncing default behavior**  
 If you don't tweak any of the settings described in this section, the default behavior of Prebid.js is to wait 3 seconds after the auction ends, and then allow every adapter to drop up to 5 image-based user syncs.
 
 For more information, see the sections below.
@@ -1818,7 +1818,7 @@ var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?'
 + 'sz=640x480&iu=/19968336/prebid_cache_video_adunit&impl=s&gdfp_req=1'
 + '&env=vp&output=xml_vast2&unviewed_position_start=1&hl=en&url=http://www.example.com'
 + '&cust_params=section%3Dblog%26anotherKey%3DanotherValue';
-
+  
 var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
     adUnit: videoAdUnit,
     url: adserverTag
