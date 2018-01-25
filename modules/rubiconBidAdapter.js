@@ -265,6 +265,7 @@ export const spec = {
         requestId: bidRequest.bidId,
         currency: 'USD',
         creativeId: ad.creative_id,
+        mediaType: ad.creative_type,
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
@@ -275,6 +276,7 @@ export const spec = {
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
         bid.impression_id = ad.impression_id;
+        bid.videoCacheKey = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
