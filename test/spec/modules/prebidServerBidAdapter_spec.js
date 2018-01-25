@@ -480,7 +480,7 @@ describe('S2S Adapter', () => {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
-        vendor_default: 'mytest'
+        default_vendor: 'mytest'
       };
 
       config.setConfig({ s2sConfig: options });
