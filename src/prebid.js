@@ -1,15 +1,14 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
-import { videoAdUnit, videoBidder, hasNonVideoBidder } from './video';
-import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting } from './targeting';
+import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -113,7 +112,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode);
+  return targeting.getAllTargeting(adUnitCode, auctionManager.getBidsReceived());
 };
 
 /**
@@ -127,16 +126,17 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
   const responses = auctionManager.getBidsReceived()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
-  // find the last requested id to get responses for most recent auction only
-  const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
+  // find the last auction id to get responses for most recent auction only
+  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
 
-  return responses.map(bid => bid.adUnitCode)
+  return responses
+    .map(bid => bid.adUnitCode)
     .filter(uniques).map(adUnitCode => responses
-      .filter(bid => bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode))
+      .filter(bid => bid.auctionId === currentAuctionId && bid.adUnitCode === adUnitCode))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids }
+        [bids[0].adUnitCode]: { bids: bids.map(removeRequestId) }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -152,7 +152,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
   return {
-    bids: bids
+    bids: bids.map(removeRequestId)
   };
 };
 
@@ -282,7 +282,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit('requestBids');
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -297,24 +297,34 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // for video-enabled adUnits, only request bids for bidders that support video
-  adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
-    const nonVideoBidders = adUnit.bids
-      .filter(bid => !videoBidder(bid))
-      .map(bid => bid.bidder);
+  /*
+   * for a given adunit which supports a set of mediaTypes
+   * and a given bidder which supports a set of mediaTypes
+   * a bidder is eligible to participate on the adunit
+   * if it supports at least one of the mediaTypes on the adunit
+   */
+  adUnits.forEach(adUnit => {
+    // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonVideoBidders));
-    adUnit.bids = adUnit.bids.filter(videoBidder);
-  });
+    // get the bidder's mediaTypes
+    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const bidderRegistry = adaptermanager.bidderRegistry;
 
-  // for native-enabled adUnits, only request bids for bidders that support native
-  adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
-    const nonNativeBidders = adUnit.bids
-      .filter(bid => !nativeBidder(bid))
-      .map(bid => bid.bidder);
+    bidders.forEach(bidder => {
+      const adapter = bidderRegistry[bidder];
+      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      // banner is default if not specified in spec
+      const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonNativeBidders));
-    adUnit.bids = adUnit.bids.filter(nativeBidder);
+      // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
+      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      if (!bidderEligible) {
+        // drop the bidder from the ad unit if it's not compatible
+        utils.logWarn(utils.unsupportedBidderMessage(adUnit, bidder));
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+      }
+    });
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -332,7 +342,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
-};
+  return auction;
+});
 
 /**
  *
@@ -528,7 +539,8 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids();
+  return auctionManager.getAllWinningBids()
+    .map(removeRequestId);
 };
 
 /**
@@ -539,7 +551,8 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode);
+  return targeting.getWinningBids(adUnitCode, auctionManager.getBidsReceived())
+    .map(removeRequestId);
 };
 
 /**

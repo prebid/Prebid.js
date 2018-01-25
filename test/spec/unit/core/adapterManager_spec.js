@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import AdapterManager from 'src/adaptermanager';
+import { checkBidRequestSizes } from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -45,7 +46,7 @@ describe('adapterManager tests', () => {
     it('should log an error if a bidder is used that does not exist', () => {
       let bidRequests = [{
         'bidderCode': 'appnexus',
-        'requestId': '1863e370099523',
+        'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'bids': [
@@ -59,7 +60,7 @@ describe('adapterManager tests', () => {
             'sizes': [[728, 90], [970, 70]],
             'bidId': '392b5a6b05d648',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897462,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -73,7 +74,7 @@ describe('adapterManager tests', () => {
             'sizes': [[300, 250], [300, 600]],
             'bidId': '4dccdc37746135',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897463,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -122,7 +123,7 @@ describe('adapterManager tests', () => {
     it('invokes callBids on the S2S adapter', () => {
       let bidRequests = [{
         'bidderCode': 'appnexus',
-        'requestId': '1863e370099523',
+        'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
@@ -159,7 +160,7 @@ describe('adapterManager tests', () => {
                 ],
                 'bidId': '68136e1c47023d',
                 'bidderRequestId': '55e24a66bed717',
-                'requestId': '1ff753bd4ae5cb',
+                'auctionId': '1ff753bd4ae5cb',
                 'startTime': 1463510220995,
                 'status': 1,
                 'bid_id': '378a8914450b334'
@@ -197,7 +198,7 @@ describe('adapterManager tests', () => {
                 ],
                 'bidId': '7e5d6af25ed188',
                 'bidderRequestId': '55e24a66bed717',
-                'requestId': '1ff753bd4ae5cb',
+                'auctionId': '1ff753bd4ae5cb',
                 'startTime': 1463510220996,
                 'bid_id': '387d9d9c32ca47c'
               }
@@ -224,7 +225,7 @@ describe('adapterManager tests', () => {
             ],
             'bidId': '392b5a6b05d648',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897462,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -247,7 +248,7 @@ describe('adapterManager tests', () => {
             ],
             'bidId': '4dccdc37746135',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897463,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -285,7 +286,7 @@ describe('adapterManager tests', () => {
 
       let bidRequests = [{
         'bidderCode': 'appnexus',
-        'requestId': '1863e370099523',
+        'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
@@ -322,7 +323,7 @@ describe('adapterManager tests', () => {
                 ],
                 'bidId': '68136e1c47023d',
                 'bidderRequestId': '55e24a66bed717',
-                'requestId': '1ff753bd4ae5cb',
+                'auctionId': '1ff753bd4ae5cb',
                 'startTime': 1463510220995,
                 'status': 1,
                 'bid_id': '378a8914450b334'
@@ -360,7 +361,7 @@ describe('adapterManager tests', () => {
                 ],
                 'bidId': '7e5d6af25ed188',
                 'bidderRequestId': '55e24a66bed717',
-                'requestId': '1ff753bd4ae5cb',
+                'auctionId': '1ff753bd4ae5cb',
                 'startTime': 1463510220996,
                 'bid_id': '387d9d9c32ca47c'
               }
@@ -387,7 +388,7 @@ describe('adapterManager tests', () => {
             ],
             'bidId': '392b5a6b05d648',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897462,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -410,7 +411,7 @@ describe('adapterManager tests', () => {
             ],
             'bidId': '4dccdc37746135',
             'bidderRequestId': '2946b569352ef2',
-            'requestId': '1863e370099523',
+            'auctionId': '1863e370099523',
             'startTime': 1462918897463,
             'status': 1,
             'transactionId': 'fsafsa'
@@ -814,6 +815,193 @@ describe('adapterManager tests', () => {
           expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
         });
       })
+    });
+  });
+
+  describe('isValidBidRequest', () => {
+    describe('positive tests for validating bid request', () => {
+      beforeEach(() => {});
+
+      afterEach(() => {});
+      it('should main adUnit structure and adUnits.sizes is replaced', () => {
+        let fullAdUnit = [{
+          sizes: [[300, 250], [300, 600]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              playerSize: [640, 480]
+            },
+            native: {
+              image: {
+                sizes: [150, 150],
+                aspect_ratios: [140, 140]
+              },
+              icon: {
+                sizes: [75, 75]
+              }
+            }
+          }
+        }];
+        let result = checkBidRequestSizes(fullAdUnit);
+        expect(result[0].sizes).to.deep.equal([640, 480]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([640, 480]);
+        expect(result[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
+        expect(result[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
+        expect(result[0].mediaTypes.native.image.aspect_ratios).to.deep.equal([140, 140]);
+
+        let noOptnlFieldAdUnit = [{
+          sizes: [[300, 250], [300, 600]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              context: 'outstream'
+            },
+            native: {
+              image: {
+                required: true
+              },
+              icon: {
+                required: true
+              }
+            }
+          }
+        }];
+        result = checkBidRequestSizes(noOptnlFieldAdUnit);
+        expect(result[0].sizes).to.deep.equal([[300, 250]]);
+        expect(result[0].mediaTypes.video).to.exist;
+
+        let mixedAdUnit = [{
+          sizes: [[300, 250], [300, 600]],
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [400, 350]
+            },
+            native: {
+              image: {
+                aspect_ratios: [200, 150],
+                required: true
+              }
+            }
+          }
+        }];
+        result = checkBidRequestSizes(mixedAdUnit);
+        expect(result[0].sizes).to.deep.equal([400, 350]);
+        expect(result[0].mediaTypes.video).to.exist;
+      });
+    });
+
+    describe('negative tests for validating bid requests', () => {
+      beforeEach(() => {
+        sinon.stub(utils, 'logError');
+      });
+
+      afterEach(() => {
+        utils.logError.restore();
+      });
+
+      it('should throw error message and delete an object/property', () => {
+        let badBanner = [{
+          sizes: [[300, 250], [300, 600]],
+          mediaTypes: {
+            banner: {
+              name: 'test'
+            }
+          }
+        }];
+        let result = checkBidRequestSizes(badBanner);
+        expect(result[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
+        expect(result[0].mediaTypes.banner).to.be.undefined;
+        sinon.assert.called(utils.logError);
+
+        let badVideo1 = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: '600x400'
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badVideo1);
+        expect(result[0].sizes).to.deep.equal([[600, 600]]);
+        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.called(utils.logError);
+
+        let badVideo2 = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: ['300', '200']
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badVideo2);
+        expect(result[0].sizes).to.deep.equal([[600, 600]]);
+        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.called(utils.logError);
+
+        let badVideo3 = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]]
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badVideo3);
+        expect(result[0].sizes).to.deep.equal([[600, 600]]);
+        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.called(utils.logError);
+
+        let badNativeImgSize = [{
+          mediaTypes: {
+            native: {
+              image: {
+                sizes: '300x250'
+              }
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badNativeImgSize);
+        expect(result[0].mediaTypes.native.image.sizes).to.be.undefined;
+        expect(result[0].mediaTypes.native.image).to.exist;
+        sinon.assert.called(utils.logError);
+
+        let badNativeImgAspRat = [{
+          mediaTypes: {
+            native: {
+              image: {
+                aspect_ratios: '300x250'
+              }
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badNativeImgAspRat);
+        expect(result[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
+        expect(result[0].mediaTypes.native.image).to.exist;
+        sinon.assert.called(utils.logError);
+
+        let badNativeIcon = [{
+          mediaTypes: {
+            native: {
+              icon: {
+                sizes: '300x250'
+              }
+            }
+          }
+        }];
+        result = checkBidRequestSizes(badNativeIcon);
+        expect(result[0].mediaTypes.native.icon.sizes).to.be.undefined;
+        expect(result[0].mediaTypes.native.icon).to.exist;
+        sinon.assert.called(utils.logError);
+      });
     });
   });
 });

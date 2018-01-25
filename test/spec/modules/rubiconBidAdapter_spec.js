@@ -57,7 +57,7 @@ describe('the rubicon adapter', () => {
 
     bidderRequest = {
       bidderCode: 'rubicon',
-      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
       bids: [
         {
@@ -83,7 +83,7 @@ describe('the rubicon adapter', () => {
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
-          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
@@ -760,6 +760,8 @@ describe('the rubicon adapter', () => {
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].videoCacheKey).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
     });

@@ -76,6 +76,30 @@ describe('AppNexusAdapter', () => {
       });
     });
 
+    it('should populate the ad_types array on all requests', () => {
+      ['banner', 'video', 'native'].forEach(type => {
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        bidRequest.mediaTypes = {};
+        bidRequest.mediaTypes[type] = {};
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].ad_types).to.deep.equal([type]);
+      });
+    });
+
+    it('should populate the ad_types array on outstream requests', () => {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
@@ -364,7 +388,6 @@ describe('AppNexusAdapter', () => {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
-      expect(result[0]).to.have.property('descriptionUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
