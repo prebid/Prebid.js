@@ -397,7 +397,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   // set native key value targeting
-  if (custBidObj.native) {
+  if (custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
