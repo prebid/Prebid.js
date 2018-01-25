@@ -17,6 +17,7 @@ let _synced = false;
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
+const OPEN_RTB_PATH = 'openrtb2/auction';
 
 let _s2sConfig;
 
@@ -228,7 +229,7 @@ function _getDigiTrustQueryParams() {
  * Bidder adapter for Prebid Server
  */
 export function PrebidServer() {
-  let baseAdapter = new Adapter('prebidServer');
+  const baseAdapter = new Adapter('prebidServer');
 
   function convertTypes(adUnits) {
     adUnits.forEach(adUnit => {
@@ -250,10 +251,11 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    const isDebug = !!getConfig('debug');
+    const isOpenRtb = _s2sConfig.endpoint.includes(OPEN_RTB_PATH);
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
+
     adUnits.forEach(adUnit => {
-      let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
         // pbs expects a ad_unit.video attribute if the imp is video
         adUnit.video = Object.assign({}, videoMediaType);
@@ -262,8 +264,28 @@ export function PrebidServer() {
         adUnit.media_types = [VIDEO];
       }
     });
+
     convertTypes(adUnits);
-    let requestJson = {
+    const ad_units = adUnits.filter(hasSizes);
+
+    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
+    const requestedBidders = ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
+    const requestJson = isOpenRtb
+      ? buildOpenRtbRequest(s2sBidRequest, ad_units)
+      : buildLegacyRequest(s2sBidRequest, ad_units);
+
+    ajax(
+      _s2sConfig.endpoint,
+      response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, isOpenRtb),
+      JSON.stringify(requestJson),
+      { contentType: 'text/plain', withCredentials: true }
+    );
+  };
+
+  function buildLegacyRequest(s2sBidRequest, ad_units) {
+    const isDebug = !!getConfig('debug');
+
+    const request = {
       account_id: _s2sConfig.accountId,
       tid: s2sBidRequest.tid,
       max_bids: _s2sConfig.maxBids,
@@ -272,8 +294,8 @@ export function PrebidServer() {
       cache_markup: _s2sConfig.cacheMarkup,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
-      ad_units: adUnits.filter(hasSizes),
-      is_debug: isDebug
+      ad_units: ad_units,
+      is_debug: isDebug,
     };
 
     let digiTrust = _getDigiTrustQueryParams();
@@ -287,20 +309,49 @@ export function PrebidServer() {
     });
 
     if (digiTrust) {
-      requestJson.digiTrust = digiTrust;
+      request.digiTrust = digiTrust;
     }
 
-    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
-    const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
-    function processResponse(response) {
-      handleResponse(response, requestedBidders, bidRequests, addBidResponse, done);
-    }
-    const payload = JSON.stringify(requestJson);
-    ajax(_s2sConfig.endpoint, processResponse, payload, {
-      contentType: 'text/plain',
-      withCredentials: true
+    return request;
+  }
+
+  function buildOpenRtbRequest(s2sBidRequest, ad_units) {
+    let imps = [];
+
+    // transform ad unit into array of OpenRTB impression objects
+    ad_units.forEach(adUnit => {
+      let banner;
+
+      const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
+      if (bannerParams && bannerParams.sizes) {
+        // get banner sizes in form [{ w: <int>, h: <int> }, ...]
+        const format = bannerParams.sizes.reduce((acc, size) =>
+          [...acc, { w: size[0], h: size[1] }], []);
+
+        banner = {format};
+      }
+
+      // get bidder params in form { <bidder code>: {...params} }
+      const ext = adUnit.bids.reduce((acc, bid) =>
+        Object.assign({}, acc, { [bid.bidder]: bid.params }), {});
+
+      const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
+      if (banner) { imp.banner = banner; }
+
+      imps.push(imp);
     });
-  };
+
+    const request = {
+      id: s2sBidRequest.tid,
+      site: {publisher: {id: _s2sConfig.accountId}},
+      source: {tid: s2sBidRequest.tid},
+      tmax: _s2sConfig.timeout,
+      imp: imps,
+      test: getConfig('debug') ? 1 : 0,
+    };
+
+    return request;
+  }
 
   // at this point ad units should have a size array either directly or mapped so filter for that
   function hasSizes(unit) {
@@ -308,83 +359,99 @@ export function PrebidServer() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
+  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, isOpenRtb) {
     let result;
+
     try {
       result = JSON.parse(response);
 
-      if (result.status === 'OK' || result.status === 'no_cookie') {
-        if (result.bidder_status) {
-          result.bidder_status.forEach(bidder => {
-            if (bidder.no_cookie) {
-              doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
-            }
-          });
-        }
+      isOpenRtb
+        ? handleOpenRtbResponse(result, addBidResponse, bidRequests)
+        : handleLegacyResponse(result, requestedBidders, addBidResponse, bidRequests);
+    } catch (error) {
+      utils.logError(error);
+    }
 
-        // do client-side syncs if available
-        requestedBidders.forEach(bidder => {
-          let clientAdapter = adaptermanager.getBidAdapter(bidder);
-          if (clientAdapter && clientAdapter.registerSyncs) {
-            clientAdapter.registerSyncs([]);
+    if (!result || (result.status && includes(result.status, 'Error'))) {
+      utils.logError('error parsing response: ', result.status);
+    }
+
+    done();
+  }
+
+  function handleLegacyResponse(result, requestedBidders, addBidResponse, bidRequests) {
+    if (result.status === 'OK' || result.status === 'no_cookie') {
+      if (result.bidder_status) {
+        result.bidder_status.forEach(bidder => {
+          if (bidder.no_cookie) {
+            doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
           }
         });
+      }
 
-        if (result.bids) {
-          result.bids.forEach(bidObj => {
-            let bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
-            let cpm = bidObj.price;
-            let status;
-            if (cpm !== 0) {
-              status = STATUS.GOOD;
-            } else {
-              status = STATUS.NO_BID;
-            }
+      // do client-side syncs if available
+      requestedBidders.forEach(bidder => {
+        let clientAdapter = adaptermanager.getBidAdapter(bidder);
+        if (clientAdapter && clientAdapter.registerSyncs) {
+          clientAdapter.registerSyncs([]);
+        }
+      });
 
-            let bidObject = bidfactory.createBid(status, bidRequest);
-            bidObject.source = TYPE;
-            bidObject.creative_id = bidObj.creative_id;
-            bidObject.bidderCode = bidObj.bidder;
-            bidObject.cpm = cpm;
-            if (bidObj.cache_id) {
-              bidObject.cache_id = bidObj.cache_id;
-            }
-            if (bidObj.cache_url) {
-              bidObject.cache_url = bidObj.cache_url;
-            }
-            // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
-            if (bidObj.media_type === VIDEO) {
-              bidObject.mediaType = VIDEO;
-              if (bidObj.adm) {
-                bidObject.vastXml = bidObj.adm;
-              }
-              if (bidObj.nurl) {
-                bidObject.vastUrl = bidObj.nurl;
-              }
-            } else {
-              if (bidObj.adm && bidObj.nurl) {
-                bidObject.ad = bidObj.adm;
-                bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
-              } else if (bidObj.adm) {
-                bidObject.ad = bidObj.adm;
-              } else if (bidObj.nurl) {
-                bidObject.adUrl = bidObj.nurl
-              }
-            }
+      if (result.bids) {
+        result.bids.forEach(bidObj => {
+          let bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
+          let cpm = bidObj.price;
+          let status;
+          if (cpm !== 0) {
+            status = STATUS.GOOD;
+          } else {
+            status = STATUS.NO_BID;
+          }
 
-            bidObject.width = bidObj.width;
-            bidObject.height = bidObj.height;
-            bidObject.adserverTargeting = bidObj.ad_server_targeting;
-            if (bidObj.deal_id) {
-              bidObject.dealId = bidObj.deal_id;
+          let bidObject = bidfactory.createBid(status, bidRequest);
+          bidObject.source = TYPE;
+          bidObject.creative_id = bidObj.creative_id;
+          bidObject.bidderCode = bidObj.bidder;
+          bidObject.cpm = cpm;
+          if (bidObj.cache_id) {
+            bidObject.cache_id = bidObj.cache_id;
+          }
+          if (bidObj.cache_url) {
+            bidObject.cache_url = bidObj.cache_url;
+          }
+          // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
+          if (bidObj.media_type === VIDEO) {
+            bidObject.mediaType = VIDEO;
+            if (bidObj.adm) {
+              bidObject.vastXml = bidObj.adm;
             }
-            bidObject.requestId = bidObj.bid_id;
-            bidObject.creativeId = bidObj.creative_id;
+            if (bidObj.nurl) {
+              bidObject.vastUrl = bidObj.nurl;
+            }
+          } else {
+            if (bidObj.adm && bidObj.nurl) {
+              bidObject.ad = bidObj.adm;
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            } else if (bidObj.adm) {
+              bidObject.ad = bidObj.adm;
+            } else if (bidObj.nurl) {
+              bidObject.adUrl = bidObj.nurl
+            }
+          }
 
-            // TODO: Remove when prebid-server returns ttl, currency and netRevenue
-            bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
-            bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
-            bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
+          bidObject.width = bidObj.width;
+          bidObject.height = bidObj.height;
+          bidObject.adserverTargeting = bidObj.ad_server_targeting;
+          if (bidObj.deal_id) {
+            bidObject.dealId = bidObj.deal_id;
+          }
+          bidObject.requestId = bidObj.bid_id;
+          bidObject.creativeId = bidObj.creative_id;
+
+          // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+          bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
+          bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
+          bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
 
             if (isValid(bidObj.code, bidObject, bidRequests)) {
               addBidResponse(bidObj.code, bidObject);
@@ -396,15 +463,43 @@ export function PrebidServer() {
         // cookie sync
         cookieSet(_s2sConfig.cookieSetUrl);
       }
-    } catch (error) {
-      utils.logError(error);
     }
+  }
 
-    if (!result || (result.status && includes(result.status, 'Error'))) {
-      utils.logError('error parsing response: ', result.status);
+  function handleOpenRtbResponse(response, addBidResponse, bidRequests) {
+    if (response.seatbid) {
+      response.seatbid.forEach(bidObj => {
+        let cpm = bidObj.bid[0].price;
+        let status;
+        if (cpm !== 0) {
+          status = STATUS.GOOD;
+        } else {
+          status = STATUS.NO_BID;
+        }
+
+        let bidObject = bidfactory.createBid(status);
+
+        bidObject.source = TYPE;
+        bidObject.creative_id = bidObj.crid;
+        bidObject.bidderCode = bidObj.seat;
+        bidObject.cpm = cpm;
+        bidObject.ad = bidObj.bid[0].adm;
+
+        bidObject.width = bidObj.bid[0].w;
+        bidObject.height = bidObj.bid[0].h;
+        bidObject.requestId = bidObj.bid[0].id;
+        bidObject.creativeId = bidObj.bid[0].crid;
+
+        // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+        bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
+        bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
+        bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
+
+        if (isValid(bidObj.bid[0].impid, bidObject, bidRequests)) {
+          addBidResponse(bidObj.bid[0].impid, bidObject);
+        }
+      });
     }
-
-    done();
   }
 
   return Object.assign(this, {
