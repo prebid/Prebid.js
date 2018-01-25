@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
 
-const ADAPTER_VERSION = 2;
+const ADAPTER_VERSION = 3;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const INTEGRATION_MODES = {
@@ -34,7 +34,9 @@ export const spec = {
     let data;
 
     // If publisher tag not already loaded try to get it from fast bid
-    if (typeof Criteo === 'undefined') {
+    if (typeof Criteo === 'undefined' || !Criteo.PubTag) {
+      window.Criteo = { usePrebidEvents: false };
+
       tryGetCriteoFastBid();
 
       // Reload publisher tag after prebid timeout to ensure fast bid is up to date
@@ -43,7 +45,7 @@ export const spec = {
       }, bidderRequest.timeout);
     }
 
-    if (typeof Criteo !== 'undefined') {
+    if (typeof Criteo !== 'undefined' && Criteo.PubTag) {
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
@@ -62,7 +64,7 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    if (typeof Criteo !== 'undefined') {
+    if (typeof Criteo !== 'undefined' && Criteo.PubTag) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
       if (adapter) {
         return adapter.interpretResponse(response.body, request);
