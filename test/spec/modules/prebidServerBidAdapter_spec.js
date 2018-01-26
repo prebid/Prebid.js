@@ -244,7 +244,7 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
-    it('adds digitrust id if present and not optout', () => {
+    it('adds digitrust id is present and user is not optout', () => {
       let digiTrustObj = {
         success: true,
         identity: {
