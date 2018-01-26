@@ -44,6 +44,9 @@ In order to provide a fast and safe header bidding environment for publishers, t
 {: .alert.alert-danger :}
 Failure to follow any of the above conventions could lead to delays in approving your adapter for inclusion in Prebid.js.
 
+{: .alert.alert-danger :}
+Pull requests for non-1.0 compatible adapters will not be reviewed or accepted on the legacy branch.
+
 <a name="bidder-adaptor-Required-Files" />
 
 ### Required Files
@@ -220,9 +223,9 @@ Sample array entry for `validBidRequests[]`:
 {% endhighlight %}
 
 {: .alert.alert-success :}
-There are several IDs present in the bidRequest object:
-- **Bid ID** is unique across ad units and bidders.
-- **Auction ID** is unique per call to `requestBids()`, but is the same across ad units.
+There are several IDs present in the bidRequest object:  
+- **Bid ID** is unique across ad units and bidders.  
+- **Auction ID** is unique per call to `requestBids()`, but is the same across ad units.  
 - **Transaction ID** is unique for each ad unit with a call to `requestBids`, but same across bidders. This is the ID that DSPs need to recognize the same impression coming in from different supply sources.
 
 The ServerRequest objects returned from your adapter have this structure:
