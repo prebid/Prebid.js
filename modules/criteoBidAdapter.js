@@ -64,17 +64,19 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
+    const body = response.body || response;
+
     if (typeof Criteo !== 'undefined' && Criteo.PubTag) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
       if (adapter) {
-        return adapter.interpretResponse(response.body, request);
+        return adapter.interpretResponse(body, request);
       }
     }
 
     const bids = [];
 
-    if (response.body && response.body.slots && utils.isArray(response.body.slots)) {
-      response.body.slots.forEach(slot => {
+    if (body && body.slots && utils.isArray(body.slots)) {
+      body.slots.forEach(slot => {
         const bid = {
           requestId: slot.impid,
           cpm: slot.cpm,
