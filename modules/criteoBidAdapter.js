@@ -34,7 +34,7 @@ export const spec = {
     let data;
 
     // If publisher tag not already loaded try to get it from fast bid
-    if (typeof Criteo === 'undefined' || !Criteo.PubTag) {
+    if (!publisherTagAvailable()) {
       window.Criteo = { usePrebidEvents: false };
 
       tryGetCriteoFastBid();
@@ -45,7 +45,7 @@ export const spec = {
       }, bidderRequest.timeout);
     }
 
-    if (typeof Criteo !== 'undefined' && Criteo.PubTag) {
+    if (publisherTagAvailable()) {
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
@@ -66,7 +66,7 @@ export const spec = {
   interpretResponse: (response, request) => {
     const body = response.body || response;
 
-    if (typeof Criteo !== 'undefined' && Criteo.PubTag) {
+    if (publisherTagAvailable()) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
       if (adapter) {
         return adapter.interpretResponse(body, request);
@@ -100,6 +100,13 @@ export const spec = {
     return bids;
   },
 };
+
+/**
+ * @return {boolean}
+ */
+function publisherTagAvailable() {
+  return typeof Criteo !== 'undefined' && Criteo.PubTag && Criteo.PubTag.Adapters && Criteo.PubTag.Adapters.Prebid;
+}
 
 /**
  * @param {BidRequest[]} bidRequests
