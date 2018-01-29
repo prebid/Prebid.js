@@ -222,17 +222,16 @@ function createNativeAd(id, payload, callback) {
  * @return {boolean}
  */
 function tryGetCriteoFastBid() {
-  let success = false;
   try {
     const fastBid = localStorage.getItem('criteo_fast_bid');
     if (fastBid !== null) {
       eval(fastBid); // eslint-disable-line no-eval
-      success = true;
+      return true;
     }
   } catch (e) {
     // Unable to get fast bid
   }
-  return success;
+  return false;
 }
 
 registerBidder(spec);
