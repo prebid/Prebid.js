@@ -195,6 +195,7 @@ function prepareBidForAuction(bid, adUnitCode) {
 function doCallbacksIfNeeded(bid) {
   if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
     const timedOut = true;
+    bid.timeToRespond = -1; // timed out
     exports.executeCallback(timedOut);
   }
 }
@@ -495,6 +496,11 @@ function getStandardBidderSettings() {
         key: 'hb_deal',
         val: function (bidResponse) {
           return bidResponse.dealId;
+        }
+      }, {
+        key: 'hb_ttr',
+        val: function (bidResponse) {
+          return bidResponse.timeToRespond;
         }
       }
     ];

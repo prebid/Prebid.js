@@ -43,6 +43,7 @@ describe('bidmanager.js', function () {
     var bidderCode = 'appnexus';
     var size = '300x250';
     var adId = '1adId';
+    var timeToRespond = 321;
 
     before(function () {
       bid.cpm = bidPriceCpm;
@@ -59,6 +60,7 @@ describe('bidmanager.js', function () {
       };
       bid.bidderCode = bidderCode;
       bid.adId = adId;
+      bid.timeToRespond = timeToRespond;
     });
 
     it('No bidder level configuration defined - default', function () {
@@ -66,7 +68,8 @@ describe('bidmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_ttr': timeToRespond
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -150,7 +153,8 @@ describe('bidmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbHg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_ttr': timeToRespond
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -192,7 +196,8 @@ describe('bidmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': bidPbMg,
-        'hb_size': size
+        'hb_size': size,
+        'hb_ttr': timeToRespond
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -357,7 +362,8 @@ describe('bidmanager.js', function () {
         'hb_bidder': bidderCode,
         'hb_adid': adId,
         'hb_pb': 5.57,
-        'hb_size': '300x250'
+        'hb_size': '300x250',
+        'hb_ttr': timeToRespond
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
