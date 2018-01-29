@@ -15,7 +15,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.id && (bid.params.width && bid.params.height));
+    return !!(bid.params.id);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -73,8 +73,8 @@ export const spec = {
       const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: body.cpm || 0,
-        width: bidRequest.params.width,
-        height: bidRequest.params.height,
+        width: bidRequest.sizes[0][0],
+        height: bidRequest.sizes[0][1],
         creativeId: body.creativeid || '',
         dealId: body.dealid || '',
         currency: 'JPY',

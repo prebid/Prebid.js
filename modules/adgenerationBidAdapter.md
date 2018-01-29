@@ -24,8 +24,6 @@ var adUnits = [
                    bidder: 'adg',
                    params: {
                      id: '58278', // banner
-                     width: '300',
-                     height: '250'
                    }
                  },
                ]
@@ -62,8 +60,6 @@ var adUnits = [
                   bidder: 'adg',
                   params: {
                     id: '58279', //native
-                    width: '1',
-                    height: '1'
                   }
                 },
               ]

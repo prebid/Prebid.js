@@ -19,8 +19,6 @@ describe('AdgenerationAdapter', () => {
       'bidder': 'adg',
       'params': {
         id: '58278', // banner
-        width: '300',
-        height: '250'
       }
     };
     it('should return true when required params found', () => {
@@ -30,10 +28,7 @@ describe('AdgenerationAdapter', () => {
     it('should return false when required params are not passed', () => {
       let bid = Object.assign({}, bid);
       delete bid.params;
-      bid.params = {
-        id: '58278',
-        width: '300'
-      };
+      bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -126,8 +121,6 @@ describe('AdgenerationAdapter', () => {
         bidder: 'adg',
         params: {
           id: '58278', // banner
-          width: '300',
-          height: '250'
         },
         mediaTypes: {
           native: {
@@ -153,7 +146,7 @@ describe('AdgenerationAdapter', () => {
           }
         },
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
+        sizes: [[1, 1]],
         bidId: '2f6ac468a9c15e',
         bidderRequestId: '14a9f773e30243',
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
@@ -254,8 +247,8 @@ describe('AdgenerationAdapter', () => {
       {
         requestId: '2f6ac468a9c15e',
         cpm: 36.0008,
-        width: '300',
-        height: '250',
+        width: 1,
+        height: 1,
         creativeId: '1k2kv35vsa5r',
         dealId: 'fd5sa5fa7f',
         currency: 'JPY',
