@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 export const spec = {
   code: 'sekindoUM',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *

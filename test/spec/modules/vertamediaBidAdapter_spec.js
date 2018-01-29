@@ -2,8 +2,9 @@ import {expect} from 'chai';
 import {spec} from 'modules/vertamediaBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//rtb.vertamedia.com/hb/';
-const REQUEST = {
+const ENDPOINT = '//hb2.vertamedia.com/auction/';
+
+const DISPLAY_REQUEST = {
   'bidder': 'vertamedia',
   'params': {
     'aid': 12345
@@ -12,10 +13,25 @@ const REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'sizes': [640, 480]
+  'sizes': [300, 250]
 };
 
-const serverResponse = {
+const VIDEO_REQUEST = {
+  'bidder': 'vertamedia',
+  'mediaTypes': {
+    'video': {}
+  },
+  'params': {
+    'aid': 12345
+  },
+  'bidderRequestId': '7101db09af0db2',
+  'auctionId': '2e41f65424c87c',
+  'adUnitCode': 'adunit-code',
+  'bidId': '84ab500420319d',
+  'sizes': [[480, 360], [640, 480]]
+};
+
+const SERVER_VIDEO_RESPONSE = {
   'source': {'aid': 12345, 'pubId': 54321},
   'bids': [{
     'vastUrl': 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
@@ -30,6 +46,55 @@ const serverResponse = {
   }
   ]
 };
+const SERVER_DISPLAY_RESPONSE = {
+  'source': {'aid': 12345, 'pubId': 54321},
+  'bids': [{
+    'ad': '<!-- Creative -->',
+    'requestId': '2e41f65424c87c',
+    'creative_id': 342516,
+    'cmpId': 342516,
+    'height': 250,
+    'cur': 'USD',
+    'width': 300,
+    'cpm': 0.9
+  }]
+};
+
+const videoBidderRequest = {
+  bidderCode: 'bidderCode',
+  bids: [{mediaTypes: {video: {}}, bidId: '2e41f65424c87c'}]
+};
+
+const displayBidderRequest = {
+  bidderCode: 'bidderCode',
+  bids: [{bidId: '2e41f65424c87c'}]
+};
+
+const videoEqResponse = [{
+  vastUrl: 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
+  requestId: '2e41f65424c87c',
+  creativeId: 342516,
+  mediaType: 'video',
+  netRevenue: true,
+  currency: 'USD',
+  height: 480,
+  width: 640,
+  ttl: 3600,
+  cpm: 0.9
+}];
+
+const displayEqResponse = [{
+  requestId: '2e41f65424c87c',
+  creativeId: 342516,
+  mediaType: 'display',
+  netRevenue: true,
+  currency: 'USD',
+  ad: '<!-- Creative -->',
+  height: 250,
+  width: 300,
+  ttl: 3600,
+  cpm: 0.9
+}];
 
 describe('vertamediaBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -42,37 +107,56 @@ describe('vertamediaBidAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(REQUEST)).to.equal(true);
+      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, REQUEST);
+      let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(undefined);
     });
   });
 
   describe('buildRequests', () => {
-    let bidRequests = [REQUEST];
+    let videoBidRequests = [VIDEO_REQUEST];
+    let dispalyBidRequests = [DISPLAY_REQUEST];
 
-    const request = spec.buildRequests(bidRequests, {});
+    const displayRequest = spec.buildRequests(dispalyBidRequests, {});
+    const videoRequest = spec.buildRequests(videoBidRequests, {});
 
     it('sends bid request to ENDPOINT via GET', () => {
-      expect(request[0].method).to.equal('GET');
-    });
-    it('sends bid request to correct ENDPOINT', () => {
-      expect(request[0].url).to.equal(ENDPOINT);
+      expect(videoRequest[0].method).to.equal('GET');
+      expect(displayRequest[0].method).to.equal('GET');
     });
 
-    it('sends correct bid parameters', () => {
-      const bid = Object.assign({}, request[0].data);
+    it('sends bid request to correct ENDPOINT', () => {
+      expect(videoRequest[0].url).to.equal(ENDPOINT);
+      expect(displayRequest[0].url).to.equal(ENDPOINT);
+    });
+
+    it('sends correct video bid parameters', () => {
+      const bid = Object.assign({}, videoRequest[0].data);
       delete bid.domain;
 
       const eq = {
         callbackId: '84ab500420319d',
+        ad_type: 'video',
         aid: 12345,
-        w: 640,
-        h: 480
+        sizes: '480x360,640x480'
+      };
+
+      expect(bid).to.deep.equal(eq);
+    });
+
+    it('sends correct display bid parameters', () => {
+      const bid = Object.assign({}, displayRequest[0].data);
+      delete bid.domain;
+
+      const eq = {
+        callbackId: '84ab500420319d',
+        ad_type: 'display',
+        aid: 12345,
+        sizes: '300x250'
       };
 
       expect(bid).to.deep.equal(eq);
@@ -80,34 +164,55 @@ describe('vertamediaBidAdapter', () => {
   });
 
   describe('interpretResponse', () => {
-    let bidderRequest = {
-      bidderCode: 'bidderCode',
-      bids: [{mediaTypes: {video: {}}}]
-    };
+    let serverResponse;
+    let bidderRequest;
+    let eqResponse;
 
-    it('should get correct bid response', () => {
-      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
-      const eq = [{
-        vastUrl: 'http://rtb.vertamedia.com/vast/?adid=44F2AEB9BFC881B3',
-        requestId: '2e41f65424c87c',
-        creativeId: 342516,
-        mediaType: 'video',
-        netRevenue: true,
-        currency: 'USD',
-        height: 480,
-        width: 640,
-        ttl: 3600,
-        cpm: 0.9
-      }];
-
-      expect(result).to.deep.equal(eq);
+    afterEach(() => {
+      serverResponse = null;
+      bidderRequest = null;
+      eqResponse = null;
     });
 
-    it('handles nobid responses', () => {
-      const nobidServerResponse = {bids: []};
-      const nobidResult = spec.interpretResponse({body: nobidServerResponse}, {bidderRequest});
+    it('should get correct video bid response', () => {
+      serverResponse = SERVER_VIDEO_RESPONSE;
+      bidderRequest = videoBidderRequest;
+      eqResponse = videoEqResponse;
 
-      expect(nobidResult.length).to.equal(0);
+      bidServerResponseCheck();
+    });
+
+    it('should get correct display bid response', () => {
+      serverResponse = SERVER_DISPLAY_RESPONSE;
+      bidderRequest = displayBidderRequest;
+      eqResponse = displayEqResponse;
+
+      bidServerResponseCheck();
+    });
+
+    function bidServerResponseCheck() {
+      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
+
+      expect(result).to.deep.equal(eqResponse);
+    }
+
+    function nobidServerResponseCheck() {
+      const noBidServerResponse = {bids: []};
+      const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {bidderRequest});
+
+      expect(noBidResult.length).to.equal(0);
+    }
+
+    it('handles video nobid responses', () => {
+      bidderRequest = videoBidderRequest;
+
+      nobidServerResponseCheck();
+    });
+
+    it('handles display nobid responses', () => {
+      bidderRequest = displayBidderRequest;
+
+      nobidServerResponseCheck();
     });
   });
 });

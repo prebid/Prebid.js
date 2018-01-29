@@ -25,7 +25,7 @@ describe('AudienceNetwork adapter', () => {
       expect(code).to.equal(bidder);
     });
     it('supportedMediaTypes', () => {
-      expect(supportedMediaTypes).to.deep.equal(['video']);
+      expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
     it('isBidRequestValid', () => {
       expect(isBidRequestValid).to.be.a('function');

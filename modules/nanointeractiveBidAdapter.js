@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
 export const BIDDER_CODE = 'nanointeractive';
-export const ENGINE_BASE_URL = 'http://tmp.audiencemanager.de/hb';
+export const ENGINE_BASE_URL = 'https://www.audiencemanager.de/hb';
 
 export const SECURITY = 'sec';
 export const DATA_PARTNER_ID = 'dpid';

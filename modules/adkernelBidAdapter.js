@@ -16,7 +16,7 @@ export const spec = {
 
   code: 'adkernel',
   aliases: ['headbidding'],
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && typeof bidRequest.params.host !== 'undefined' &&
       'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
