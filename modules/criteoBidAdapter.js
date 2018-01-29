@@ -35,7 +35,8 @@ export const spec = {
 
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
-      window.Criteo = { usePrebidEvents: false };
+      window.Criteo = window.Criteo || {};
+      window.Criteo.usePrebidEvents = false;
 
       tryGetCriteoFastBid();
 
