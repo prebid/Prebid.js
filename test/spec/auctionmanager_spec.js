@@ -6,6 +6,7 @@ import * as auctionModule from 'src/auction';
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 import * as ajaxLib from 'src/ajax';
 
+const adloader = require('../../src/adloader');
 var assert = require('assert');
 
 /* use this method to test individual files instead of the whole prebid.js project */
@@ -22,6 +23,16 @@ function timestamp() {
 }
 
 describe('auctionmanager.js', function () {
+  let xhr;
+
+  before(() => {
+    xhr = sinon.useFakeXMLHttpRequest();
+  });
+
+  after(() => {
+    xhr.restore();
+  });
+
   describe('getKeyValueTargetingPairs', function () {
     var bid = {};
     var bidPriceCpm = 5.578;
@@ -505,6 +516,7 @@ describe('auctionmanager.js', function () {
     });
 
     describe('when auction timeout is 3000', () => {
+      let loadScriptStub;
       beforeEach(() => {
         adUnits = [{
           code: 'adUnit-code',
@@ -524,10 +536,14 @@ describe('auctionmanager.js', function () {
           interpretResponse: sinon.stub(),
           getUserSyncs: sinon.stub()
         };
+        loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+          args[1]();
+        });
       });
 
       afterEach(() => {
         auctionModule.newAuction.restore();
+        loadScriptStub.restore();
       });
 
       it('should return proper price bucket increments for dense mode when cpm is in range 0-3', () => {

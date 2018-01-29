@@ -216,8 +216,8 @@ describe('S2S Adapter', () => {
   beforeEach(() => adapter = new Adapter());
 
   afterEach(() => {
-    addBidResponse.reset();
-    done.reset();
+    addBidResponse.resetHistory();
+    done.resetHistory();
   });
 
   describe('request function', () => {

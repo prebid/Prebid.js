@@ -5,16 +5,18 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('Adomik Prebid Analytic', function () {
+  let sendEventStub;
+
   describe('enableAnalytics', function () {
     beforeEach(() => {
       sinon.spy(adomikAnalytics, 'track');
-      sinon.spy(adomikAnalytics, 'sendTypedEvent');
+      sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
       sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {
       adomikAnalytics.track.restore();
-      adomikAnalytics.sendTypedEvent.restore();
+      sendEventStub.restore();
       events.getEvents.restore();
     });
 
@@ -130,7 +132,7 @@ describe('Adomik Prebid Analytic', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
-        sinon.assert.callCount(adomikAnalytics.sendTypedEvent, 1);
+        sinon.assert.callCount(sendEventStub, 1);
         done();
       }, 3000);
 

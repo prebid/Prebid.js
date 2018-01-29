@@ -142,7 +142,7 @@ describe('Improve Digital Adapter Tests', function () {
   describe('interpretResponse', () => {
     let registerSyncSpy;
     beforeEach(() => {
-      registerSyncSpy = sinon.spy(userSync, 'registerSync');
+      registerSyncSpy = sinon.stub(userSync, 'registerSync');
     });
 
     afterEach(() => {

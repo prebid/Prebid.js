@@ -39,6 +39,7 @@ function newPluginsArray(browserstack) {
     'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
+    'karma-mocha-reporter'
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
@@ -58,6 +59,8 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
   if (browserstack) {
     karmaConf.reporters = ['spec'];
     karmaConf.specReporter = {
+      maxLogLines: 100,
+      suppressErrorSummary: false,
       suppressSkipped: false,
       suppressPassed: true
     };
@@ -111,7 +114,6 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     webpackMiddleware: {
       noInfo: true
     },
-
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
@@ -138,6 +140,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['progress'],
+    client: {
+      mocha: {
+        timeout: 0
+      }
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

@@ -3,7 +3,7 @@
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "13.0",
+    "browser_version": "14.0",
     "device": null,
     "os": "Windows"
   },
@@ -55,14 +55,6 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_10_windows_8": {
-    "base": "BrowserStack",
-    "os_version": "8",
-    "browser": "ie",
-    "browser_version": "10.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_firefox_46_windows_8": {
     "base": "BrowserStack",
     "os_version": "8",
@@ -84,14 +76,6 @@
     "os_version": "7",
     "browser": "ie",
     "browser_version": "11.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_ie_10_windows_7": {
-    "base": "BrowserStack",
-    "os_version": "7",
-    "browser": "ie",
-    "browser_version": "10.0",
     "device": null,
     "os": "Windows"
   },
@@ -197,22 +181,6 @@
     "os_version": "7.0",
     "browser": "iphone",
     "device": "iPhone 5S",
-    "browser_version": null
-  },
-  "bs_ios_8": {
-    "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "8.3",
-    "browser": "iphone",
-    "device": "iPhone 6",
-    "browser_version": null
-  },
-  "bs_ios_9": {
-    "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "9.1",
-    "browser": "iphone",
-    "device": "iPhone 6S",
     "browser_version": null
   }
 }

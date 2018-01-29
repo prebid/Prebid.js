@@ -5,8 +5,13 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
+  let xhr;
+  before(() => {
+    xhr = sinon.useFakeXMLHttpRequest();
+  })
   after(() => {
     roxotAnalytic.disableAnalytics();
+    xhr.restore();
   });
 
   describe('enableAnalytics', function () {

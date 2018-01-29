@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -66,7 +67,7 @@ describe('bidders created by newBidder', () => {
       spec.getUserSyncs.returns([]);
 
       bidder.callBids({});
-      bidder.callBids({ bids: 'nothing useful' });
+      bidder.callBids({ bids: 'nothing useful' }, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.called).to.equal(false);
@@ -270,7 +271,7 @@ describe('bidders created by newBidder', () => {
         callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
       addBidResponseStub.reset();
-      doneStub.reset();
+      doneStub.resetBehavior();
       userSyncStub = sinon.stub(userSync, 'registerSync')
       logErrorSpy = sinon.spy(utils, 'logError');
     });

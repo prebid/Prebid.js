@@ -10,6 +10,7 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 var s2sTesting = require('../../../../modules/s2sTesting');
 var events = require('../../../../src/events');
+const adloader = require('../../../../src/adloader');
 
 const CONFIG = {
   enabled: true,
@@ -32,29 +33,50 @@ var appnexusAdapterMock = {
   callBids: sinon.stub()
 };
 
+var rubiconAdapterMock = {
+  bidder: 'rubicon',
+  callBids: sinon.stub()
+};
+let loadScriptStub;
+
 describe('adapterManager tests', () => {
   let orgAppnexusAdapter;
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
+  let orgRubiconAdapter;
   before(() => {
     orgAppnexusAdapter = AdapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
+    orgRubiconAdapter = AdapterManager.bidderRegistry['rubicon'];
+    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+      args[1]();
+    });
   });
 
   after(() => {
     AdapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
     AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
+    AdapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
+    loadScriptStub.restore();
+    config.setConfig({s2sConfig: { enabled: false }});
   });
 
   describe('callBids', () => {
+    before(() => {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
     beforeEach(() => {
       sinon.stub(utils, 'logError');
+      appnexusAdapterMock.callBids.reset();
+      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
     });
 
     afterEach(() => {
       utils.logError.restore();
+      delete AdapterManager.bidderRegistry['appnexus'];
     });
 
     it('should log an error if a bidder is used that does not exist', () => {
@@ -77,7 +99,6 @@ describe('adapterManager tests', () => {
       let cnt = 0;
       let count = () => cnt++;
       events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
-      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'auctionId': '1863e370099523',
@@ -112,8 +133,6 @@ describe('adapterManager tests', () => {
       AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
-      appnexusAdapterMock.callBids.reset();
-      delete AdapterManager.bidderRegistry['appnexus'];
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
     });
   });
@@ -122,7 +141,6 @@ describe('adapterManager tests', () => {
     beforeEach(() => {
       config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-
       prebidServerAdapterMock.callBids.reset();
     });
 
@@ -441,6 +459,7 @@ describe('adapterManager tests', () => {
       let cnt, count = () => cnt++;
 
       beforeEach(() => {
+        prebidServerAdapterMock.callBids.reset();
         cnt = 0;
         events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
       });
@@ -478,6 +497,9 @@ describe('adapterManager tests', () => {
   }); // end s2s tests
 
   describe('s2sTesting', () => {
+    let doneStub = sinon.stub();
+    let ajaxStub = sinon.stub();
+
     function getTestAdUnits() {
       // copy adUnits
       // return JSON.parse(JSON.stringify(getAdUnits()));
@@ -489,7 +511,7 @@ describe('adapterManager tests', () => {
 
     function callBids(adUnits = getTestAdUnits()) {
       let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      AdapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
     }
 
     function checkServerCalled(numAdUnits, numBids) {
@@ -520,12 +542,14 @@ describe('adapterManager tests', () => {
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
       AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      AdapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
 
       stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
 
       prebidServerAdapterMock.callBids.reset();
       adequantAdapterMock.callBids.reset();
       appnexusAdapterMock.callBids.reset();
+      rubiconAdapterMock.callBids.reset();
     });
 
     afterEach(() => {
@@ -669,33 +693,6 @@ describe('adapterManager tests', () => {
   describe('aliasBidderAdaptor', function() {
     const CODE = 'sampleBidder';
 
-    // Note: remove this describe once Prebid is 1.0
-    describe('old way', function() {
-      let originalRegistry;
-
-      function SampleAdapter() {
-        return Object.assign(this, {
-          callBids: sinon.stub(),
-          setBidderCode: sinon.stub()
-        });
-      }
-
-      before(() => {
-        originalRegistry = AdapterManager.bidderRegistry;
-        AdapterManager.bidderRegistry[CODE] = new SampleAdapter();
-      });
-
-      after(() => {
-        AdapterManager.bidderRegistry = originalRegistry;
-      });
-
-      it('should add alias to registry', () => {
-        const alias = 'testalias';
-        AdapterManager.aliasBidAdapter(CODE, alias);
-        expect(AdapterManager.bidderRegistry).to.have.property(alias);
-      });
-    });
-
     describe('using bidderFactory', function() {
       let spec;
 
@@ -726,6 +723,31 @@ describe('adapterManager tests', () => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
           return adUnit;
         })
+      });
+
+      describe('setBidderSequence', () => {
+        let orgBidderSequence;
+        beforeEach(() => {
+          orgBidderSequence = config.getConfig('bidderSequence');
+          sinon.spy(utils, 'shuffle');
+        });
+
+        afterEach(() => {
+          config.setConfig({ bidderSequence: orgBidderSequence });
+          utils.shuffle.restore();
+        });
+
+        it('setting to `random` uses shuffled order of adUnits', () => {
+          config.setConfig({ bidderSequence: 'random' });
+          let bidRequests = AdapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+          sinon.assert.calledOnce(utils.shuffle);
+        });
       });
 
       describe('sizeMapping', () => {
