@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { userSync } from 'src/userSync';
 
 const BIDDER_CODE = 'c1x';
-const URL = 'http://18.217.214.190:8080/ht';
+const URL = 'https://ht.c1exchange.com/ht';
 const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
 const LOG_MSG = {
   invalidBid: 'C1X: [ERROR] bidder returns an invalid bid',
