@@ -18,12 +18,15 @@ const CONFIG = {
   },
   'adsparc': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'automatadx': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad'],
 
   /**
    * Determines whether or not the given bid request is valid.
