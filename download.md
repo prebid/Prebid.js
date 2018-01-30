@@ -28,7 +28,7 @@ $(function(){
   });
 
   $( ".selectpicker" ).change(function() {
-    if(this.value === '1.0.0') {
+    if(this.value.match(/1\.\d+\.\d+/i)) {
       $('.adapters .col-md-4').hide();
       $('.prebid_1_0').show();
     }
@@ -135,8 +135,8 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <h4>Select Prebid Version</h4>
 <select class="selectpicker">
   <!-- empty value indicates legacy --> 
-  <option value="">0.34.0</option>
-  <option>1.0.0</option>
+  <option value="">0.34.2</option>
+  <option>1.2.0</option>
 </select>
 
 
