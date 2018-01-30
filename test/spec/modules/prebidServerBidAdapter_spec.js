@@ -480,18 +480,18 @@ describe('S2S Adapter', () => {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
-        default_vendor: 'mytest'
+        defaultVendor: 'mytest'
       };
 
       config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should configure the s2sConfig object with vendor defaults unless specified by user', () => {
+    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', () => {
       const options = {
         accountId: '123',
         bidders: ['appnexus'],
-        default_vendor: 'appnexus',
+        defaultVendor: 'appnexus',
         timeout: 750
       };
 
@@ -507,6 +507,29 @@ describe('S2S Adapter', () => {
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
+      expect(vendorConfig).to.have.property('timeout', 750);
+    });
+
+    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', () => {
+      const options = {
+        accountId: 'abc',
+        bidders: ['rubicon'],
+        defaultVendor: 'rubicon',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', 'abc');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
+      expect(vendorConfig.cookieSet).to.be.true;
+      expect(vendorConfig).to.have.property('cookieSetUrl', 'https://secure-assets.rubiconproject.com/utils/cookieset/cs.js');
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig).to.have.property('endpoint', 'https://prebid-server.rubiconproject.com/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', 'https://prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
   });

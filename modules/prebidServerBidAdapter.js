@@ -32,7 +32,7 @@ config.setDefaults({
 });
 
 // accountId and bidders params are not included here, should be configured by end-user
-const avail_vendor_defaults = {
+const availVendorDefaults = {
   'appnexus': {
     adapter: 'prebidServer',
     cookieSet: true,
@@ -42,7 +42,15 @@ const avail_vendor_defaults = {
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
     timeout: 1000
   },
-  'rubicon': {}
+  'rubicon': {
+    adapter: 'prebidServer',
+    cookieSet: true,
+    cookieSetUrl: 'https://secure-assets.rubiconproject.com/utils/cookieset/cs.js',
+    enabled: true,
+    endpoint: 'https://prebid-server.rubiconproject.com/auction',
+    syncEndpoint: 'https://prebid-server.rubiconproject.com/cookie_sync',
+    timeout: 500
+  }
 };
 
 /**
@@ -59,13 +67,13 @@ const avail_vendor_defaults = {
  * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
-  if (options.default_vendor) {
-    let vendor = options.default_vendor
+  if (options.defaultVendor) {
+    let vendor = options.defaultVendor
 
-    if (avail_vendor_defaults.hasOwnProperty(vendor)) {
-      Object.keys(avail_vendor_defaults[vendor]).forEach(function(vendor_key) {
-        if (s2sDefaultConfig[vendor_key] === options[vendor_key]) {
-          options[vendor_key] = avail_vendor_defaults[vendor][vendor_key]
+    if (availVendorDefaults.hasOwnProperty(vendor)) {
+      Object.keys(availVendorDefaults[vendor]).forEach(function(vendorKey) {
+        if (s2sDefaultConfig[vendorKey] === options[vendorKey]) {
+          options[vendorKey] = availVendorDefaults[vendor][vendorKey]
         }
       });
     } else {
