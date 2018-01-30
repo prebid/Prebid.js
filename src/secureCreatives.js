@@ -22,7 +22,7 @@ function receiveMessage(ev) {
     return;
   }
 
-  if (data.adId) {
+  if (!!data && data.adId) {
     const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
       return bid.adId === data.adId;
     });
