@@ -30,7 +30,7 @@ var adUnits = [
     bids: [{
           bidder: 'rockyou',
           params: {
-            placementId: '4322'
+            placementId: '4954'
           }
         }]
   },
@@ -49,7 +49,7 @@ var adUnits = [
     bids: [{
       bidder: 'rockyou',
       params: {
-        placementId: '4307'
+        placementId: '4957'
       }
     }]
   }
