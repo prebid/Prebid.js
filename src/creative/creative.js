@@ -163,7 +163,7 @@ function writeAdUrl(adUrl, height, width) {
 }
 
 function writeAdHtml(markup) {
-  var parsed = parseHtml(markup.replace("><", "> <"));
+  var parsed = parseHtml(markup.replace('><', '> <'));
   const givenNodes = parsed.body.childNodes;
   for (let j = 0; j < givenNodes.length; j++) {
     document.body.appendChild(givenNodes[j]);
@@ -172,7 +172,7 @@ function writeAdHtml(markup) {
   for (let i = 0; i < scripts.length; i++) {
     domEval(scripts[i].innerHTML);
     scripts[i].parentNode.removeChild(scripts[i]);
-  }  
+  }
 }
 
 function isAMP(dataObject) {
