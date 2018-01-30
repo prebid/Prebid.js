@@ -4,14 +4,7 @@
 Module Name:  Yieldmo Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: melody@yieldmo.com
-<<<<<<< HEAD
-<<<<<<< HEAD
 Note: Our ads will only render in mobile
-=======
->>>>>>> added usersync and interpretresponse
-=======
-Note: Our ads will only render in mobile
->>>>>>> fixed rebase and updated markdown file
 ```
 
 # Description
@@ -30,7 +23,7 @@ var adUnits = [
        bids: [{
          bidder: 'yieldmo',
          params: {
-           placementId: 'ym_034857038475' // 'ym_' + string with at most 19 characters (may include numbers and letters only) 
+           placementId: '1779781193098233305' // string with at most 19 characters (may include numbers only) 
          }
        }]
    }
