@@ -89,7 +89,6 @@ registerBidder(spec);
  * Adds placement information to array
  * @param request bid request
  */
-
 function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
