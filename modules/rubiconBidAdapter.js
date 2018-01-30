@@ -269,8 +269,11 @@ export const spec = {
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
-        netRevenue: config.getConfig('rubicon.netRevenue') || false
+        netRevenue: config.getConfig('rubicon.netRevenue') || false,
+        advertiserId: ad.advertiser,
+        networkId: ad.network
       };
+
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
