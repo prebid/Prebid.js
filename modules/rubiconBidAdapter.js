@@ -115,7 +115,7 @@ export const spec = {
         let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
 
         let data = {
-          page_url: bid.param.secure ? page_rf.replace(/^http:/i, 'https:') : page_rf,
+          page_url: params.secure ? page_rf.replace(/^http:/i, 'https:') : page_rf,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
           integration: INTEGRATION,
