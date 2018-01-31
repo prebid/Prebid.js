@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import { deepClone } from 'src/utils';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
@@ -392,7 +393,7 @@ describe('AppNexusAdapter', () => {
     });
 
     it('handles native responses', () => {
-      let response1 = Object.assign({}, response);
+      let response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';
       response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
@@ -423,6 +424,27 @@ describe('AppNexusAdapter', () => {
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
       expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
+    });
+
+    it('supports configuring outstream renderers', () => {
+      const outstreamResponse = deepClone(response);
+      outstreamResponse.tags[0].ads[0].rtb.video = {};
+      outstreamResponse.tags[0].ads[0].renderer_url = 'renderer.js';
+
+      const bidderRequest = {
+        bids: [{
+          renderer: {
+            options: {
+              adText: 'configured'
+            }
+          }
+        }]
+      };
+
+      const result = spec.interpretResponse({ body: outstreamResponse }, {bidderRequest});
+      expect(result[0].renderer.config).to.deep.equal(
+        bidderRequest.bids[0].renderer.options
+      );
     });
   });
 });
