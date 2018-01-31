@@ -35,8 +35,7 @@ config.setDefaults({
 const availVendorDefaults = {
   'appnexus': {
     adapter: 'prebidServer',
-    cookieSet: true,
-    cookieSetUrl: '//acdn.adnxs.com/cookieset/cs.js',
+    cookieSet: false,
     enabled: true,
     endpoint: '//prebid.adnxs.com/pbs/v1/auction',
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
@@ -360,7 +359,7 @@ export function PrebidServer() {
           });
         }
       }
-      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
+      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync
         cookieSet(_s2sConfig.cookieSetUrl);
       }

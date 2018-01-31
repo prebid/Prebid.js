@@ -429,6 +429,7 @@ describe('S2S Adapter', () => {
     it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
       let myConfig = Object.assign({
+        cookieSet: true,
         cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
       }, CONFIG);
 
@@ -450,7 +451,7 @@ describe('S2S Adapter', () => {
       utils.logError.restore();
     });
 
-    it('should log error when accountId is missing', () => {
+    it('should log an error when accountId is missing', () => {
       const options = {
         enabled: true,
         bidders: ['appnexus'],
@@ -463,7 +464,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log error when bidders is missing', () => {
+    it('should log an error when bidders is missing', () => {
       const options = {
         accountId: '1',
         enabled: true,
@@ -476,7 +477,20 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log error when vendor does not exist', () => {
+    it('should log an error when endpoint is missing', () => {
+      const options = {
+        accountId: '1',
+        bidders: ['appnexus'],
+        timeout: 1000,
+        enabled: true,
+        adapter: 'prebidServer'
+      };
+
+      config.setConfig({ s2sConfig: options});
+      sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should log an error when using an unknown vendor', () => {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
@@ -502,8 +516,8 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('accountId', '123');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.cookieSet).to.be.true;
-      expect(vendorConfig).to.have.property('cookieSetUrl', '//acdn.adnxs.com/cookieset/cs.js');
+      expect(vendorConfig.cookieSet).to.be.false;
+      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
