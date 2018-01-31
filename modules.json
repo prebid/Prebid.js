@@ -9,6 +9,7 @@
     "districtmDMXBidAdapter",
     "gumgumBidAdapter",
     "indexExchangeBidAdapter",
+    "justpremiumBidAdapter",
     "komoonaBidAdapter",
     "memeglobalBidAdapter",
     "openxBidAdapter",
