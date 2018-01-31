@@ -90,7 +90,7 @@ function interpretResponse(serverResponse, request) {
   // Necessary to get around with prebid's common bid response check
   const commonBidResponse = {
     requestId: request.bidRequest.bidId,
-    cpm: 1,
+    cpm: 0.01,
     width: 100,
     height: 200,
     creativeId: 434,
