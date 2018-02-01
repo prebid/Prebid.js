@@ -56,7 +56,6 @@ import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
-import { videoAdUnit } from 'src/video';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -147,16 +146,15 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 
   function done(bidRequestId) {
-    var innerBidRequestId = bidRequestId;
+    const innerBidRequestId = bidRequestId;
     return delayExecution(function() {
-      let request = find(_bidderRequests, (bidRequest) => {
+      const request = find(_bidderRequests, (bidRequest) => {
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
+
+      // this is done for cache-enabled video bids in tryAddVideoBids, after the cache is stored
       request.doneCbCallCount += 1;
-      // In case of mediaType video and prebidCache enabled, call bidsBackHandler after cache is stored.
-      if ((request.bids.filter(videoAdUnit).length == 0) || (request.bids.filter(videoAdUnit).length > 0 && !config.getConfig('cache.url'))) {
-        bidsBackAll()
-      }
+      bidsBackAll();
     }, 1);
   }
 
@@ -216,7 +214,9 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   let bidRequests = auctionInstance.getBidRequests();
   let auctionId = auctionInstance.getAuctionId();
 
-  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId});
+  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
+
   if (bidResponse.mediaType === 'video') {
     tryAddVideoBid(bidResponse);
   } else {
@@ -247,6 +247,8 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
           if (!bid.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
+          // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
+          bidRequest.doneCbCallCount += 1;
           addBidToAuction(bidResponse);
           auctionInstance.bidsBackAll();
         }
@@ -261,9 +263,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
-function getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId}) {
-  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
-
+function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   const start = bidRequest.start;
 
   let bidObject = Object.assign({}, bid, {
@@ -287,7 +287,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequests, auctionId}) {
   const adUnitRenderer =
     bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
 
-  if (adUnitRenderer) {
+  if (adUnitRenderer && adUnitRenderer.url) {
     bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
@@ -367,7 +367,13 @@ export function getStandardBidderSettings() {
         val: function (bidResponse) {
           return bidResponse.source;
         }
-      }
+      },
+      {
+        key: 'hb_format',
+        val: function (bidResponse) {
+          return bidResponse.mediaType;
+        }
+      },
     ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
@@ -391,7 +397,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   // set native key value targeting
-  if (custBidObj.native) {
+  if (custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
