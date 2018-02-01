@@ -40,7 +40,7 @@ export const spec = {
 
       tryGetCriteoFastBid();
 
-      // Reload publisher tag after prebid timeout to ensure fast bid is up to date
+      // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
       setTimeout(() => {
         loadScript(PUBLISHER_TAG_URL);
       }, bidderRequest.timeout);
