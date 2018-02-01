@@ -176,7 +176,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.setTargetingForGPT(targetingSet);
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targetingSet);
 };
 
 /**
@@ -193,7 +193,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   targeting.setTargetingForAst();
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
 /**
