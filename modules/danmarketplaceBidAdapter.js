@@ -119,7 +119,6 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
       awaitingBids.forEach(bid => {
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
-          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
