@@ -100,7 +100,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Smart AdServer</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>AdButler</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Sharethrough</h3></div>
-    <div class="col-xs-6 col-sm-4"><h3>Mantis Ad Network</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>MANTIS Ad Network</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>AdMixer</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Twenga</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Lifestreet</h3></div>
