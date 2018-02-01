@@ -15,7 +15,10 @@ const CONFIG = {
   },
   'insticator': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
-  }
+  },
+  'adsparc': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
   'automatad': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
