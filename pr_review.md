@@ -1,7 +1,7 @@
 ## Summary
 We take PR review seriously. Please read https://medium.com/@mrjoelkemp/giving-better-code-reviews-16109e0fdd36#.xa8lc4i23 to understand how a PR review should be conducted. Be rational and strict in your review, make sure you understand exactly what the submitter's intent is. Anyone in the community can review a PR, but a Prebid Org member is also required. A Prebid Org member should take ownership of a PR and do the initial review.
 
-If the PR is for a standard bid adapter or a standard analytics adapter, just the one review is sufficient. The reviewer will check against [required conventions](http://prebid.org/dev-docs/bidder-adaptor.html#required-adapter-conventions) and may merge the PR after approving and confirming that the documentation PR against prebid.org is open and linked to the issue.
+If the PR is for a standard bid adapter or a standard analytics adapter, just the one review from a core member is sufficient. The reviewer will check against [required conventions](http://prebid.org/dev-docs/bidder-adaptor.html#required-adapter-conventions) and may merge the PR after approving and confirming that the documentation PR against prebid.org is open and linked to the issue.
 
 For modules and core platform updates, the initial reviewer should request an additional team member to review as a sanity check. Merge should only happen when the PR has 2 `LGTM` from the core team and a documentation PR if required.
 
@@ -27,8 +27,8 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - If the adapter is triggering any user syncs make sure they are using the user sync module in the Prebid.js core.
-- Requests to the bidder should be in HTTPS
-- Responses from the bidder should be compressed
+- Requests to the bidder should support HTTPS
+- Responses from the bidder should be compressed (such as gzip, compress, deflate)
 - Bid responses may not use JSONP: All requests must be AJAX with JSON responses
 - All user-sync (aka pixel) activity must be registered via the provided functions
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
