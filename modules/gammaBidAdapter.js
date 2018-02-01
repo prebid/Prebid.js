@@ -25,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests) {
-	const gaxObjParams = find(bidRequests, hasParamInfo);
+    const gaxObjParams = find(bidRequests, hasParamInfo);
     return {
       method: 'GET',
       url: '//' + gaxObjParams.params.gaxDomain + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
@@ -39,18 +39,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-	serverResponse = serverResponse.body;
+    serverResponse = serverResponse.body;
 
-	const bids = [];
-	
-	if (!serverResponse) {
+    const bids = [];
+
+    if (!serverResponse) {
       return bids;
     }
-	
-	const bid = newBid(serverResponse);
-	bids.push(bid);
-	
-	return bids;
+
+    const bid = newBid(serverResponse);
+    bids.push(bid);
+
+    return bids;
   }
 }
 
@@ -62,17 +62,17 @@ export const spec = {
 function newBid(serverBid) {
   const bid = {
     ad: serverBid.seatbid[0].bid[0].adm,
-	cpm: serverBid.seatbid[0].bid[0].price,
-	creativeId: serverBid.seatbid[0].bid[0].adid,
-	currency: serverBid.cur,
-	dealId: serverBid.seatbid[0].bid[0].dealid,
-	width: serverBid.seatbid[0].bid[0].w,
+    cpm: serverBid.seatbid[0].bid[0].price,
+    creativeId: serverBid.seatbid[0].bid[0].adid,
+    currency: serverBid.cur,
+    dealId: serverBid.seatbid[0].bid[0].dealid,
+    width: serverBid.seatbid[0].bid[0].w,
     height: serverBid.seatbid[0].bid[0].h,
-	mediaType: serverBid.type,
-	netRevenue: true,
-	requestId: serverBid.id,
-	ttl: serverBid.seatbid[0].bid[0].ttl || 300,
-	vastXml: serverBid.seatbid[0].bid[0].vastXml
+    mediaType: serverBid.type,
+    netRevenue: true,
+    requestId: serverBid.id,
+    ttl: serverBid.seatbid[0].bid[0].ttl || 300,
+    vastXml: serverBid.seatbid[0].bid[0].vastXml
   };
 
   return bid;
