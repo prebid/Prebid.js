@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { VIDEO } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
@@ -10,7 +10,7 @@ const VERSION = '2.2.1';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['cnvr'], // short code
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.

@@ -18,12 +18,15 @@ const CONFIG = {
   },
   'adsparc': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'automatadx': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -176,6 +179,12 @@ const sizeMap = [
 sizeMap[77] = '970x90';
 sizeMap[123] = '970x250';
 sizeMap[43] = '300x600';
+sizeMap[286] = '970x66';
+sizeMap[3230] = '970x280';
+sizeMap[429] = '486x60';
+sizeMap[374] = '700x500';
+sizeMap[934] = '300x1050';
+sizeMap[1578] = '320x100';
 
 function getSize(sizes) {
   const result = [];

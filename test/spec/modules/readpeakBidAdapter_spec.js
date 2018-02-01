@@ -99,7 +99,7 @@ describe('ReadPeakAdapter', () => {
           },
           'id': '11bc5dd5-7421-4dd8-c926-40fa653bec76',
           'ref': '',
-          'page': 'http://localhost:9876/?id=48509002',
+          'page': 'http://localhost',
           'domain': 'localhost'
         },
         'app': null,

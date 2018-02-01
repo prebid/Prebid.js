@@ -47,7 +47,9 @@ function getPricing(xmlNode) {
   var princingData = {};
 
   var extensions = xmlNode.querySelectorAll('Extension');
-  extensions.forEach(function(node) {
+  // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+  Array.prototype.forEach.call(extensions, function(node) {
     if (node.getAttribute('type') === 'StickyPricing') {
       pricingExtNode = node;
     }
@@ -69,8 +71,9 @@ function getPricing(xmlNode) {
 function getCreativeId(xmlNode) {
   var creaId = '';
   var adNodes = xmlNode.querySelectorAll('Ad');
-
-  adNodes.forEach(function(el) {
+  // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+  Array.prototype.forEach.call(adNodes, function(el) {
     creaId += '[' + el.getAttribute('id') + ']';
   });
 
@@ -187,7 +190,7 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   aliases: ['stickyadstv'], //  former name for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.

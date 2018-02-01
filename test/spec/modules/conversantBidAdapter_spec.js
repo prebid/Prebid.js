@@ -116,8 +116,8 @@ describe('Conversant adapter tests', function() {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(1);
     expect(spec.aliases[0]).to.equal('cnvr');
-    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('video');
+    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(2);
+    expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
   it('Verify user syncs', function() {
