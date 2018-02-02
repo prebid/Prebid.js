@@ -109,7 +109,7 @@ const RESPONSE = {
       'ad_server_targeting': {
         'foo': 'bar'
       },
-      'cache_id' : '7654321'
+      'cache_id': '7654321'
     }
   ]
 };
