@@ -276,6 +276,8 @@ export function PrebidServer() {
             bidObject.cpm = cpm;
             if (bidObj.cache_id) {
               bidObject.cache_id = bidObj.cache_id;
+              //video cache key will be overwritten if 'cache.url' is available
+              bidObject.videoCacheKey = bidObj.cache_id;
             }
             if (bidObj.cache_url) {
               bidObject.cache_url = bidObj.cache_url;
