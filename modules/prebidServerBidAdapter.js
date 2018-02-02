@@ -254,7 +254,7 @@ export function PrebidServer() {
         requestedBidders.forEach(bidder => {
           let clientAdapter = adaptermanager.getBidAdapter(bidder);
           if (clientAdapter && clientAdapter.registerSyncs) {
-            clientAdapter.registerSyncs();
+            clientAdapter.registerSyncs([]);
           }
         });
 
