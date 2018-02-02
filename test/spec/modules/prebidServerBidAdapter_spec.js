@@ -108,7 +108,8 @@ const RESPONSE = {
       'deal_id': 'test-dealid',
       'ad_server_targeting': {
         'foo': 'bar'
-      }
+      },
+      'cache_id' : '7654321'
     }
   ]
 };
@@ -281,6 +282,8 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('videoCacheKey', '7654321');
+      expect(response).to.have.property('cache_id', '7654321');
     });
 
     it('does not call addBidResponse and calls done when ad unit not set', () => {
