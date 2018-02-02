@@ -140,12 +140,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['progress'],
-    // client: {
-    //   mocha: {
-    //     timeout: 0
-    //   }
-    // },
-
+    
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
