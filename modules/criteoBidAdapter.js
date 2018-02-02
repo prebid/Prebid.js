@@ -78,19 +78,20 @@ export const spec = {
 
     if (body && body.slots && utils.isArray(body.slots)) {
       body.slots.forEach(slot => {
+        const bidRequest = request.bidRequests.find(b => b.adUnitCode === slot.impid);
+        const bidId = bidRequest.bidId;
         const bid = {
-          requestId: slot.impid,
+          requestId: bidId,
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
           ttl: slot.ttl || 60,
-          creativeId: slot.impid,
+          creativeId: bidId,
           width: slot.width,
           height: slot.height,
         }
         if (slot.native) {
-          const bidRequest = request.bidRequests.find(b => b.bidId === slot.impid);
-          bid.ad = createNativeAd(slot.impid, slot.native, bidRequest.params.nativeCallback);
+          bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
         } else {
           bid.ad = slot.creative;
         }
@@ -170,7 +171,7 @@ function buildCdbRequest(context, bidRequests) {
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
       const slot = {
-        impid: bidRequest.bidId,
+        impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
         auctionId: bidRequest.auctionId,
         sizes: bidRequest.sizes.map(size => size[0] + 'x' + size[1]),
