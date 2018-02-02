@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter';
+import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 
 describe('Improve Digital Adapter Tests', function () {
@@ -127,6 +128,15 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest])[0];
       const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
+    });
+
+    it('should add currency', () => {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      expect(params.bid_request.imp[0].currency).to.equal('JPY');
+      getConfigStub.restore();
     });
 
     it('should return 2 requests', () => {

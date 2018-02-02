@@ -832,17 +832,16 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
  * @param {Object} adUnit ad unit from which the bidder is being dropped
- * @param {Array} unSupportedBidders arrary of bidder codes that are not compatible with the adUnit
+ * @param {string} bidder bidder code that is not compatible with the adUnit
  * @return {string} warning message to display when condition is met
  */
-export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
-  const mediaType = adUnit.mediaType || Object.keys(adUnit.mediaTypes).join(', ');
-  const plural = unSupportedBidders.length === 1 ? 'This bidder' : 'These bidders';
+export function unsupportedBidderMessage(adUnit, bidder) {
+  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
-    containing bidders that don't support ${mediaType}: ${unSupportedBidders.join(', ')}.
-    ${plural} won't fetch demand.
+    containing bidders that don't support ${mediaType}: ${bidder}.
+    This bidder won't fetch demand.
   `;
 }
 
