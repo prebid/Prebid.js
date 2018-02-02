@@ -166,6 +166,23 @@ const paramTypes = {
   },
 };
 
+function _getDigiTrustQueryParams() {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return {
+    id: digiTrustId.id,
+    keyv: digiTrustId.keyv,
+    pref: 0
+  };
+}
+
 /**
  * Bidder adapter for Prebid Server
  */
@@ -217,6 +234,12 @@ export function PrebidServer() {
       ad_units: adUnits.filter(hasSizes),
       is_debug: isDebug
     };
+
+    let digiTrust = _getDigiTrustQueryParams();
+
+    if (digiTrust) {
+      requestJson.digiTrust = digiTrust;
+    }
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for.
     const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
