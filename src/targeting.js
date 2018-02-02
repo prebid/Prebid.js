@@ -45,6 +45,11 @@ targeting.getAllTargeting = function(adUnitCode) {
       });
     });
   });
+
+  if (targeting.length === 0) {
+    targeting = getTimedOutBids(adUnitCodes);
+  }
+
   return targeting;
 };
 
@@ -78,6 +83,17 @@ function getAdUnitCodes(adUnitCode) {
     return adUnitCode;
   }
   return $$PREBID_GLOBAL$$._adUnitCodes || [];
+}
+
+function getTimedOutBids(adUnitCodes) {
+  return $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+    .filter(bid => bid.timeToRespond === -1)
+    .map(function (bid) {
+      const timeout = {};
+      timeout[bid.adUnitCode] = [{'hb_ttr': [-1]}];
+      return timeout;
+    });
 }
 
 /**
