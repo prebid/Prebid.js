@@ -147,7 +147,7 @@ window.apntag = {
 };
 
 describe('Unit: Prebid Module', function () {
-  this.timeout(0);
+  // this.timeout(0);
   let bidExpiryStub;
   before(() => {
     bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').callsFake(() => true);
