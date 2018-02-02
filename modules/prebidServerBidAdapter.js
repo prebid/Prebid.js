@@ -68,10 +68,12 @@ const availVendorDefaults = {
 function setS2sConfig(options) {
   if (options.defaultVendor) {
     let vendor = options.defaultVendor
-
+    let optionKeys = Object.keys(options)
     if (availVendorDefaults.hasOwnProperty(vendor)) {
+      // vendor keys will be set if either: the key was not specified by user
+      // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(availVendorDefaults[vendor]).forEach(function(vendorKey) {
-        if (s2sDefaultConfig[vendorKey] === options[vendorKey]) {
+        if (s2sDefaultConfig[vendorKey] === options[vendorKey] || !includes(optionKeys, vendorKey)) {
           options[vendorKey] = availVendorDefaults[vendor][vendorKey]
         }
       });
