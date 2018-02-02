@@ -345,7 +345,7 @@ export const spec = {
     let bidResponse = bidResponses[0];
 
     if (config.getConfig('aol.userSyncOn') === constants.EVENTS.BID_RESPONSE) {
-      if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped && bidResponse.ext && bidResponse.ext.pixels) {
+      if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped && bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
         $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
 
         return parsePixelItems(bidResponse.ext.pixels);

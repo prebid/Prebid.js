@@ -2,8 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils';
 
 import {
-  ALG,
-  BIDDER_CODE, CATEGORY, DATA_PARTNER_ID, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME, SECURITY,
+  BIDDER_CODE, CATEGORY, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME,
   spec
 } from '../../../modules/nanointeractiveBidAdapter';
 
@@ -20,10 +19,7 @@ describe('nanointeractive adapter tests', function () {
       bidder: BIDDER_CODE,
       params: (function () {
         return {
-          [SECURITY]: isValid === true ? 'sec1' : null,
-          [DATA_PARTNER_ID]: 'dpid1',
-          [DATA_PARTNER_PIXEL_ID]: 'pid1',
-          [ALG]: 'ihr',
+          [DATA_PARTNER_PIXEL_ID]: isValid === true ? 'pid1' : null,
           [NQ]: SEARCH_QUERY,
           [NQ_NAME]: null,
           [CATEGORY]: null,
@@ -38,11 +34,8 @@ describe('nanointeractive adapter tests', function () {
     }
   }
 
-  const SINGlE_BID_REQUEST = {
-    [SECURITY]: 'sec1',
-    [DATA_PARTNER_ID]: 'dpid1',
+  const SINGLE_BID_REQUEST = {
     [DATA_PARTNER_PIXEL_ID]: 'pid1',
-    [ALG]: 'ihr',
     [NQ]: [SEARCH_QUERY, null],
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
@@ -91,16 +84,16 @@ describe('nanointeractive adapter tests', function () {
         let request = nanoBidAdapter.buildRequests([getBid(true)]);
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(ENGINE_BASE_URL);
-        expect(request.data).to.equal(JSON.stringify([SINGlE_BID_REQUEST]));
+        expect(request.data).to.equal(JSON.stringify([SINGLE_BID_REQUEST]));
 
         stub.restore();
       });
       it('Test interpretResponse() length', function () {
-        let bids = nanoBidAdapter.interpretResponse([getSingleBidResponse(true), getSingleBidResponse(false)]);
+        let bids = nanoBidAdapter.interpretResponse({body: [getSingleBidResponse(true), getSingleBidResponse(false)]});
         expect(bids.length).to.equal(1);
       });
       it('Test interpretResponse() bids', function () {
-        let bid = nanoBidAdapter.interpretResponse([getSingleBidResponse(true), getSingleBidResponse(false)])[0];
+        let bid = nanoBidAdapter.interpretResponse({body: [getSingleBidResponse(true), getSingleBidResponse(false)]})[0];
         expect(bid.requestId).to.equal(VALID_BID.requestId);
         expect(bid.cpm).to.equal(VALID_BID.cpm);
         expect(bid.width).to.equal(VALID_BID.width);
