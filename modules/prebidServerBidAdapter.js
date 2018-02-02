@@ -44,10 +44,10 @@ const availVendorDefaults = {
   'rubicon': {
     adapter: 'prebidServer',
     cookieSet: true,
-    cookieSetUrl: 'https://secure-assets.rubiconproject.com/utils/cookieset/cs.js',
+    cookieSetUrl: '//secure-assets.rubiconproject.com/utils/cookieset/cs.js',
     enabled: true,
-    endpoint: 'https://prebid-server.rubiconproject.com/auction',
-    syncEndpoint: 'https://prebid-server.rubiconproject.com/cookie_sync',
+    endpoint: '//prebid-server.rubiconproject.com/auction',
+    syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
     timeout: 500
   }
 };
@@ -67,14 +67,21 @@ const availVendorDefaults = {
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
-    let vendor = options.defaultVendor
-    let optionKeys = Object.keys(options)
+    let vendor = options.defaultVendor;
+    let optionKeys = Object.keys(options);
+
+    // adding these values to default config after the fact to mimic how they're added automatically via the setConfig code in pre1api.js
+    Object.assign(s2sDefaultConfig, {
+      endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
+      syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'
+    });
+
     if (availVendorDefaults.hasOwnProperty(vendor)) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(availVendorDefaults[vendor]).forEach(function(vendorKey) {
         if (s2sDefaultConfig[vendorKey] === options[vendorKey] || !includes(optionKeys, vendorKey)) {
-          options[vendorKey] = availVendorDefaults[vendor][vendorKey]
+          options[vendorKey] = availVendorDefaults[vendor][vendorKey];
         }
       });
     } else {

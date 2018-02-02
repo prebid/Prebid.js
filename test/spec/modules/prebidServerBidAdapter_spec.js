@@ -540,10 +540,10 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
       expect(vendorConfig.cookieSet).to.be.true;
-      expect(vendorConfig).to.have.property('cookieSetUrl', 'https://secure-assets.rubiconproject.com/utils/cookieset/cs.js');
+      expect(vendorConfig).to.have.property('cookieSetUrl', '//secure-assets.rubiconproject.com/utils/cookieset/cs.js');
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', 'https://prebid-server.rubiconproject.com/auction');
-      expect(vendorConfig).to.have.property('syncEndpoint', 'https://prebid-server.rubiconproject.com/cookie_sync');
+      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
   });
