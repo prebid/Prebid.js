@@ -145,8 +145,18 @@ describe('YieldmoAdapter', () => {
     };
 
     it('should return a tracker with type and url as parameters', () => {
-      // not ios, so tracker will fail
-      expect(spec.getUserSync(options)).to.deep.equal([]);
+      if (/iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
+        expect(spec.getUserSync(options)).to.deep.equal([{
+          type: 'iframe',
+          url: SYNC_ENDPOINT + utils.getOrigin()
+        }]);
+
+        options.iframeEnabled = false;
+        expect(spec.getUserSync(options)).to.deep.equal([]);
+      } else {
+        // not ios, so tracker will fail
+        expect(spec.getUserSync(options)).to.deep.equal([]);
+      }
     });
   });
 });
