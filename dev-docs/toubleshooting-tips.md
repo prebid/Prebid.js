@@ -74,31 +74,39 @@ Right-click to add a **New** snippet:
 Paste in the following code using Control-V (or Command-V on Mac), and give the snippet a name, such as 'show-all-bids':
 
 ```javascript
-var responses = pbjs.getBidResponses();
-var output = [];
-for (var adunit in responses) {
-    if (responses.hasOwnProperty(adunit)) {
-        var bids = responses[adunit].bids;
-        for (var i = 0; i < bids.length; i++) {
-            var b = bids[i];
-            output.push({
-                'adunit': adunit, 'adId': b.adId, 'bidder': b.bidder,
-                'time': b.timeToRespond, 'cpm': b.cpm, 'msg': b.statusMessage
-            });
-        }
-    }
-}
-if (output.length) {
+(function() {
+  var responses = pbjs.getBidResponses();
+  var winners = pbjs.getAllWinningBids();
+  var output = [];
+  Object.keys(responses).forEach(function(adUnitCode) {
+    var response = responses[adUnitCode];
+    response.bids.forEach(function(bid) {
+      output.push({
+        bid: bid,
+        adunit: adUnitCode,
+        adId: bid.adId,
+        bidder: bid.bidder,
+        time: bid.timeToRespond,
+        cpm: bid.cpm,
+        msg: bid.statusMessage,
+        rendered: !!winners.find(function(winner) {
+          return winner.adId==bid.adId;
+        })
+      });
+    });
+  });
+  if (output.length) {
     if (console.table) {
-        console.table(output);
+      console.table(output);
     } else {
-        for (var j = 0; j < output.length; j++) {
-            console.log(output[j]);
-        }
+      for (var j = 0; j < output.length; j++) {
+        console.log(output[j]);
+      }
     }
-} else {
+  } else {
     console.warn('NO prebid responses');
-}
+  }
+})();
 ```
 
 <br />
