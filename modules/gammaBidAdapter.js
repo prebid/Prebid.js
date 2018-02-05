@@ -43,12 +43,10 @@ export const spec = {
 
     const bids = [];
 
-    if (!serverResponse || JSON.stringify(serverResponse) == '[]') {
-      return bids;
-    }
-
-    const bid = newBid(serverResponse);
-    bids.push(bid);
+    if (serverResponse.id) {
+        const bid = newBid(serverResponse);
+        bids.push(bid);
+    }    
 
     return bids;
   }
@@ -71,9 +69,15 @@ function newBid(serverBid) {
     mediaType: serverBid.type,
     netRevenue: true,
     requestId: serverBid.id,
-    ttl: serverBid.seatbid[0].bid[0].ttl || 300,
-    vastXml: serverBid.seatbid[0].bid[0].vastXml
+    ttl: serverBid.seatbid[0].bid[0].ttl || 300
   };
+  
+  if (serverBid.type == 'video') {
+    Object.assign(bid, {
+      vastXml: serverBid.seatbid[0].bid[0].vastXml,
+      ttl: 3600
+    });
+  }
 
   return bid;
 }
