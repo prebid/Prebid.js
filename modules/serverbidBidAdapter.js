@@ -19,7 +19,7 @@ const CONFIG = {
   'adsparc': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
   },
-  'automatadx': {
+  'automatad': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
