@@ -156,7 +156,7 @@ export const spec = {
       } else {
         return [{
           type: 'iframe',
-          url: '//s.zkcdn.net/ss/' + siteId + '.js'
+          url: '//s.zkcdn.net/ss/' + siteId + '.html'
         }];
       }
     } else {
