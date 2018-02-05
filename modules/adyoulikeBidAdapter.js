@@ -38,8 +38,8 @@ export const spec = {
         accumulator[bid.bidId] = {};
         accumulator[bid.bidId].PlacementID = bid.params.placement;
         accumulator[bid.bidId].TransactionID = bid.transactionId;
-        accumulator[bid.bidId].width = size.width;
-        accumulator[bid.bidId].height = size.height;
+        accumulator[bid.bidId].Width = size.width;
+        accumulator[bid.bidId].Height = size.height;
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
