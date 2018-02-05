@@ -63,13 +63,12 @@ describe('gammaBidAdapter', function() {
     const request = spec.buildRequests(bidRequests);
 
     it('sends bid request to our endpoint via GET', () => {
-      expect(request[0].method).to.equal('GET');
-      expect(request[0].url).to.match(new RegExp(`//${request[0].params.gaxDomain}/adx/request`));
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.match(new RegExp(`//${request[0].params.gaxDomain}/adx/request`));
     });
 
     it('attaches source to endpoint URL as query params', () => {
-      
-      expect(request[0].url).to.include('wid=' + request[0].params.siteId + '&zid=' + request[0].params.zoneId + '&hb=pbjs&bidid=' + request[0].bidId + '&urf=' + utils.getTopWindowUrl());
+      expect(request.url).to.include('wid=' + request.params.siteId + '&zid=' + request.params.zoneId + '&hb=pbjs&bidid=' + request.bidId + '&urf=' + utils.getTopWindowUrl());
     });
   });
 
