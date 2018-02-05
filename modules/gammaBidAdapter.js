@@ -44,9 +44,9 @@ export const spec = {
     const bids = [];
 
     if (serverResponse.id) {
-        const bid = newBid(serverResponse);
-        bids.push(bid);
-    }    
+      const bid = newBid(serverResponse);
+      bids.push(bid);
+    }
 
     return bids;
   }
@@ -71,7 +71,7 @@ function newBid(serverBid) {
     requestId: serverBid.id,
     ttl: serverBid.seatbid[0].bid[0].ttl || 300
   };
-  
+
   if (serverBid.type == 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
