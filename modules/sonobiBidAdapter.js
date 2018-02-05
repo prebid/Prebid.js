@@ -13,9 +13,13 @@ var SonobiAdapter = function SonobiAdapter() {
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
-    const appNexusTargeting =
-      adSlots[0] && adSlots[0].params && adSlots[0].params.appNexusTargeting ? '&gmgt=' + encodeURI(adSlots[0].params.appNexusTargeting) : '';
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + appNexusTargeting);
+    const appNexusTargeting = _buildTargetingIfPresent(adSlots[0], 'gmgt', 'appNexusTargeting');
+    const pageViewId = _buildTargetingIfPresent(adSlots[0], 'pv', 'pageViewId');
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + appNexusTargeting + pageViewId);
+  }
+
+  function _buildTargetingIfPresent(bid, targetingKey, paramKey) {
+    return bid && bid.params && bid.params[paramKey] ? '&' + targetingKey + '=' + encodeURI(bid.params[paramKey]) : '';
   }
 
   function _keymaker(adSlots) {
