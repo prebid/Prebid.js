@@ -130,11 +130,25 @@ describe('SonobiBidAdapter', () => {
 
     it('should return a properly formatted request', () => {
       const bidRequests = spec.buildRequests(bidRequest)
+      const bidRequestsPageViewID = spec.buildRequests(bidRequest)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
       expect(bidRequests.method).to.equal('GET')
       expect(bidRequests.data.key_maker).to.deep.equal(JSON.stringify(keyMakerData))
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
+      expect(bidRequests.data.hfa).to.not.exist
+    })
+
+    it('should return a properly formatted request with hfa', () => {
+      bidRequest[0].params.hfa = 'hfakey'
+      bidRequest[1].params.hfa = 'hfakey'
+      const bidRequests = spec.buildRequests(bidRequest)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.ref).not.to.be.empty
+      expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.hfa).to.equal('hfakey')
     })
   })
 
