@@ -7,7 +7,7 @@ describe('gammaBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', () => {
-    const bid = {
+    let bid = {
       'bidder': 'gamma',
       'params': {
         siteId: '1465446377',
@@ -28,29 +28,21 @@ describe('gammaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', () => {
-      const bid = Object.assign({}, bid);
+      let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when siteId not passed correctly', () => {
+    it('should return false when params not passed correctly', () => {
       bid.params.siteId = '';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when zoneId not passed correctly', () => {
       bid.params.zoneId = '';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when gaxDomain not passed correctly', () => {
       bid.params.gaxDomain = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'gamma',
         'params': {
@@ -68,15 +60,16 @@ describe('gammaBidAdapter', function() {
       }
     ];
 
+    const request = spec.buildRequests(bidRequests);
+
     it('sends bid request to our endpoint via GET', () => {
-      const request = spec.buildRequests(bidRequests)[0];
-      expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`//${bidRequests[0].params.gaxDomain}/adx/request`));
+      expect(request[0].method).to.equal('GET');
+      expect(request[0].url).to.match(new RegExp(`//${request[0].params.gaxDomain}/adx/request`));
     });
 
     it('attaches source to endpoint URL as query params', () => {
-      const request = spec.buildRequests(bidRequests)[0];
-      expect(request.url).to.include('wid=' + bidRequests[0].params.siteId + '&zid=' + bidRequests[0].params.zoneId + '&hb=pbjs&bidid=' + bidRequests[0].bidId + '&urf=' + utils.getTopWindowUrl());
+      
+      expect(request[0].url).to.include('wid=' + request[0].params.siteId + '&zid=' + request[0].params.zoneId + '&hb=pbjs&bidid=' + request[0].bidId + '&urf=' + utils.getTopWindowUrl());
     });
   });
 
