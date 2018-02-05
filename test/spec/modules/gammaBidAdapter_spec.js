@@ -65,8 +65,8 @@ describe('gammaBidAdapter', function() {
     it('sends bid request to our endpoint via GET', () => {
       expect(request.method).to.equal('GET');
     });
-	
-	it('bidRequest url', () => {
+
+    it('bidRequest url', () => {
       expect(request.url).to.match(new RegExp(`${bidRequests[0].params.gaxDomain}`));
     });
   });
@@ -75,12 +75,18 @@ describe('gammaBidAdapter', function() {
     let serverResponse = {
       body: {
         'id': '23beaa6af6cdde',
+        'bid': '5611802021800040585',
+        'type': 'banner',
+        'cur': 'USD',
         'seatbid': [{
+          'seat': '5611802021800040585',
           'bid': [{
-            'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
-            'impid': '263c448586f5a1',
+            'id': '1515999070',
+            'impid': '1',
             'price': 0.45,
             'adm': '<!-- Creative -->',
+            'adid': '1515999070',
+            'dealid': 'gax-paj2qarjf2g',
             'h': 250,
             'w': 300
           }]
