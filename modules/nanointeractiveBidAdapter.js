@@ -5,15 +5,10 @@ import { BANNER } from '../src/mediaTypes';
 export const BIDDER_CODE = 'nanointeractive';
 export const ENGINE_BASE_URL = 'https://www.audiencemanager.de/hb';
 
-export const SECURITY = 'sec';
-export const DATA_PARTNER_ID = 'dpid';
 export const DATA_PARTNER_PIXEL_ID = 'pid';
-export const ALG = 'alg';
 export const NQ = 'nq';
 export const NQ_NAME = 'name';
 export const CATEGORY = 'category';
-
-const DEFAULT_ALG = 'ihr';
 
 export const spec = {
 
@@ -21,10 +16,8 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid(bid) {
-    const sec = bid.params[SECURITY];
-    const dpid = bid.params[DATA_PARTNER_ID];
     const pid = bid.params[DATA_PARTNER_PIXEL_ID];
-    return !!(sec && dpid && pid);
+    return !!(pid);
   },
   buildRequests(bidRequests) {
     let payload = [];
@@ -37,7 +30,7 @@ export const spec = {
   },
   interpretResponse(serverResponse) {
     const bids = [];
-    serverResponse.forEach(serverBid => {
+    serverResponse.body.forEach(serverBid => {
       if (isEngineResponseValid(serverBid)) {
         bids.push(createSingleBidResponse(serverBid));
       }
@@ -48,10 +41,7 @@ export const spec = {
 
 function createSingleBidRequest(bid) {
   return {
-    [SECURITY]: bid.params[SECURITY],
-    [DATA_PARTNER_ID]: bid.params[DATA_PARTNER_ID],
     [DATA_PARTNER_PIXEL_ID]: bid.params[DATA_PARTNER_PIXEL_ID],
-    [ALG]: bid.params[ALG] || DEFAULT_ALG,
     [NQ]: [createNqParam(bid), createCategoryParam(bid)],
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,

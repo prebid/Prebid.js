@@ -81,33 +81,39 @@ function interpretResponse(serverResponse, request) {
 
 function getUserSyncs(syncOptions, responses) {
   const {iframeEnabled, pixelEnabled} = syncOptions;
-  const lookup = {};
-  const syncs = [];
-  responses.forEach(response => {
-    const {body} = response;
-    const cookies = body ? body.cookies || [] : [];
-    cookies.forEach(cookie => {
-      switch (cookie.type) {
-        case INTERNAL_SYNC_TYPE.IFRAME:
-          if (iframeEnabled && !lookup[cookie.src]) {
-            syncs.push({
-              type: EXTERNAL_SYNC_TYPE.IFRAME,
-              url: cookie.src
-            });
-          }
-          break;
-        case INTERNAL_SYNC_TYPE.IMAGE:
-          if (pixelEnabled && !lookup[cookie.src]) {
-            syncs.push({
-              type: EXTERNAL_SYNC_TYPE.IMAGE,
-              url: cookie.src
-            });
-          }
-          break;
-      }
+
+  if (iframeEnabled) {
+    return [{
+      type: 'iframe',
+      url: '//static.cliipa.com/basev/sync/user_sync.html'
+    }];
+  }
+
+  if (pixelEnabled) {
+    const lookup = {};
+    const syncs = [];
+    responses.forEach(response => {
+      const {body} = response;
+      const cookies = body ? body.cookies || [] : [];
+      cookies.forEach(cookie => {
+        switch (cookie.type) {
+          case INTERNAL_SYNC_TYPE.IFRAME:
+            break;
+          case INTERNAL_SYNC_TYPE.IMAGE:
+            if (pixelEnabled && !lookup[cookie.src]) {
+              syncs.push({
+                type: EXTERNAL_SYNC_TYPE.IMAGE,
+                url: cookie.src
+              });
+            }
+            break;
+        }
+      });
     });
-  });
-  return syncs;
+    return syncs;
+  }
+
+  return [];
 }
 
 export const spec = {
