@@ -64,11 +64,10 @@ describe('gammaBidAdapter', function() {
 
     it('sends bid request to our endpoint via GET', () => {
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`//${request[0].params.gaxDomain}/adx/request`));
     });
-
-    it('attaches source to endpoint URL as query params', () => {
-      expect(request.url).to.include('wid=' + request.params.siteId + '&zid=' + request.params.zoneId + '&hb=pbjs&bidid=' + request.bidId + '&urf=' + utils.getTopWindowUrl());
+	
+	it('bidRequest url', () => {
+      expect(request.url).to.match(new RegExp(`${bidRequests[0].params.gaxDomain}`));
     });
   });
 
@@ -82,8 +81,8 @@ describe('gammaBidAdapter', function() {
             'impid': '263c448586f5a1',
             'price': 0.45,
             'adm': '<!-- Creative -->',
-            'h': 90,
-            'w': 728
+            'h': 250,
+            'w': 300
           }]
         }]
       }
