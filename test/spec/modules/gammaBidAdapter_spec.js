@@ -7,7 +7,7 @@ describe('gammaBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', () => {
-    let bid = {
+    const bid = {
       'bidder': 'gamma',
       'params': {
         siteId: '1465446377',
@@ -28,7 +28,7 @@ describe('gammaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', () => {
-      let bid = Object.assign({}, bid);
+      const bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -50,7 +50,7 @@ describe('gammaBidAdapter', function() {
   });
 
   describe('buildRequests', () => {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'gamma',
         'params': {
@@ -67,8 +67,6 @@ describe('gammaBidAdapter', function() {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-
-    const request = spec.buildRequests(bidRequests);
 
     it('sends bid request to our endpoint via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
