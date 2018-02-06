@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
-const VERSION = '1.0';
+const VERSION = '1.1';
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -76,8 +76,8 @@ export const spec = {
       };
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
-        prBid.width = imp.banner.w;
-        prBid.height = imp.banner.h;
+        prBid.width = rtbBid.w;
+        prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
       }
       if ('video' in imp) {
@@ -96,12 +96,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => {
-        return {
-          type: 'iframe',
-          url: sync_url
-        }
-      });
+      .map(sync_url => ({type: 'iframe', url: sync_url}));
   }
 };
 
@@ -111,21 +106,24 @@ registerBidder(spec);
  *  Builds parameters object for single impression
  */
 function buildImp(bid) {
-  const size = getAdUnitSize(bid);
+  const sizes = bid.sizes;
   const imp = {
     'id': bid.bidId,
     'tagid': bid.placementCode
   };
 
   if (bid.mediaType === 'video') {
-    imp.video = {w: size[0], h: size[1]};
+    imp.video = {w: sizes[0], h: sizes[1]};
     if (bid.params.video) {
       Object.keys(bid.params.video)
         .filter(param => includes(VIDEO_TARGETING, param))
         .forEach(param => imp.video[param] = bid.params.video[param]);
     }
   } else {
-    imp.banner = {w: size[0], h: size[1]};
+    imp.banner = {
+      format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
+      topframe: 0
+    };
   }
   if (utils.getTopWindowLocation().protocol === 'https:') {
     imp.secure = 1;
@@ -134,33 +132,35 @@ function buildImp(bid) {
 }
 
 /**
- * Return ad unit single size
- * @param bid adunit size definition
- * @return {*}
- */
-function getAdUnitSize(bid) {
-  if (bid.mediaType === 'video') {
-    return bid.sizes;
-  }
-  return bid.sizes[0];
-}
-
-/**
  * Builds complete rtb request
  * @param imps collection of impressions
  * @param auctionId
  */
 function buildRtbRequest(imps, auctionId) {
-  return {
+  let req = {
     'id': auctionId,
     'imp': imps,
     'site': createSite(),
     'at': 1,
     'device': {
       'ip': 'caller',
-      'ua': 'caller'
+      'ua': 'caller',
+      'js': 1,
+      'language': getLanguage()
+    },
+    'ext': {
+      'adk_usersync': 1
     }
   };
+  if (utils.getDNT()) {
+    req.device.dnt = 1;
+  }
+  return req;
+}
+
+function getLanguage() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return navigator[language].split('-')[0];
 }
 
 /**
