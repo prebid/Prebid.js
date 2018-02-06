@@ -812,7 +812,38 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('temp', () => {
+  describe('requestBids', () => {
+    let logMessageSpy;
+    let makeRequestsStub;
+    let xhr;
+    let adUnits
+
+    beforeEach(() => {
+      logMessageSpy = sinon.spy(utils, 'logMessage');
+      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+      xhr = sinon.useFakeXMLHttpRequest();
+
+      adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }];
+      let adUnitCodes = ['adUnit-code'];
+      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+      let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+      createAuctionStub.returns(auction);
+    });
+
+    afterEach(() => {
+      clock.restore();
+      adaptermanager.makeBidRequests.restore();
+      auctionModule.newAuction.restore();
+      utils.logMessage.restore();
+      xhr.restore();
+    });
+
     it('should execute callback after timeout', () => {
       const BIDDER_CODE = 'sampleBidder';
       let bids = [{
@@ -848,29 +879,6 @@ describe('Unit: Prebid Module', function () {
         'timeout': 3000,
         'start': 1000
       }];
-      let logMessageSpy = sinon.spy(utils, 'logMessage');
-      let makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
-      makeRequestsStub.returns(bidRequests);
-      let xhr = sinon.useFakeXMLHttpRequest();
-
-      // let ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
-      //   return function(url, callback) {
-      //     const fakeResponse = sinon.stub();
-      //     fakeResponse.returns('headerContent');
-      //     callback.success('response body', { getResponseHeader: fakeResponse });
-      //   }
-      // });
-
-      let adUnits = [{
-        code: 'adUnit-code',
-        bids: [
-          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
-        ]
-      }];
-      let adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
-      let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-      createAuctionStub.returns(auction);
 
       let spec = {
         code: BIDDER_CODE,
@@ -899,13 +907,6 @@ describe('Unit: Prebid Module', function () {
 
       clock.tick(1);
       assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
-
-      clock.restore();
-      // ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
-      auctionModule.newAuction.restore();
-      utils.logMessage.restore();
-      xhr.restore();
     });
   })
 

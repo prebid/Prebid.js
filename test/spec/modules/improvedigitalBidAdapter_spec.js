@@ -150,13 +150,13 @@ describe('Improve Digital Adapter Tests', function () {
   });
 
   describe('interpretResponse', () => {
-    let registerSyncSpy;
+    let registerSyncStub;
     beforeEach(() => {
-      registerSyncSpy = sinon.stub(userSync, 'registerSync');
+      registerSyncStub = sinon.stub(userSync, 'registerSync');
     });
 
     afterEach(() => {
-      registerSyncSpy.restore();
+      registerSyncStub.restore();
     });
     const serverResponse = {
       'body': {
@@ -255,8 +255,8 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should register user syncs', () => {
       const bids = spec.interpretResponse(serverResponse);
-      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
-      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
+      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
+      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
     });
 
     it('should set dealId correctly', () => {
