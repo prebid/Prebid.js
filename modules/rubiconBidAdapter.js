@@ -270,8 +270,10 @@ export const spec = {
         dealId: ad.deal,
         ttl: 300, // 5 minutes
         netRevenue: config.getConfig('rubicon.netRevenue') || false,
-        advertiserId: ad.advertiser,
-        networkId: ad.network
+        rubicon: {
+          advertiserId: ad.advertiser,
+          networkId: ad.network
+        }
       };
 
       if (bidRequest.mediaType === 'video') {
