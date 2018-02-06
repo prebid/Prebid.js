@@ -1,0 +1,277 @@
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
+
+// use protocol relative urls for http or https
+const BID_ENDPOINT = '//localhost/KWEB.Website/Bid/VideoAdContent';
+const SYNC_ENDPOINT = 'https://www.invibes.com';
+
+const TIME_TO_LIVE = 300;
+
+export const spec = {
+  code: 'invibes',
+  aliases: ['invibes'],
+  /**
+   * @param {object} bid
+   * @return boolean
+   */
+  isBidRequestValid: function(bid) {
+    if (typeof bid.params !== 'object') {
+      return false;
+    }
+    let params = bid.params;
+
+    if (params.placementId == null) {
+      return false;
+    }
+    
+    return true;
+  },
+  /**
+   * @param {BidRequest[]} bidRequests
+   * @param bidderRequest
+   * @return ServerRequest[]
+   */
+  buildRequests: function (bidRequests, bidderRequest) {
+
+    // invibes only responds to 1 bid request for each user visit
+    var placementIds = [];
+    bidRequests.forEach(function (bidRequest) {
+      bidRequest.startTime = new Date().getTime();
+      placementIds.push(bidRequest.params.placementId);
+    });    
+
+    var invibes = window.invibes = window.invibes || {};
+    invibes.visitId = invibes.visitId || generateRandomId();
+
+    var sessionIdCookieName = 'ivbss';
+    var currentQueryStringParams = parseQueryStringParams();
+
+    let data = {
+      location: getDocumentLocation(),
+      videoAdHtmlId: randomStringGenerator(),
+      showFallback: currentQueryStringParams['advs'] === '0',
+      ivbsCampIdsLocal: getCookie('IvbsCampIdsLocal'),
+
+      bidParamsJson: JSON.stringify({ placementIds: placementIds }),
+      capCounts: getCappedCampaignsAsString(),
+
+      // no cross domain possible (user sync is done after bid)
+      // userCookieId: invibes.id,
+
+      vId: invibes.visitId,
+      width: top.window.innerWidth,
+      height: top.window.innerHeight,
+    };
+
+    var parametersToPassForward = 'videoAdDebug,ADVS,BVCI,BVID,istop,trybvid,trybvci'.toLowerCase().split(',');
+    for (var key in currentQueryStringParams) {
+      if (currentQueryStringParams.hasOwnProperty(key)) {
+        var value = currentQueryStringParams[key];
+        if (parametersToPassForward.indexOf(key) > -1 || /^vs|^invib/i.test(key)) {
+          data[key] = value;
+        }
+      }
+    }
+
+    return {
+      method: 'GET',
+      url: BID_ENDPOINT,
+      data: data,
+      bidRequests
+    };
+  },
+  /**
+   * @param {*} responseObj
+   * @param {requestParams} bidRequests
+   * @return {Bid[]} An array of bids which
+   */
+  interpretResponse: function (responseObj, requestParams) {
+    responseObj = responseObj.body;
+    let bidRequests = requestParams.bidRequests;
+    
+    if (typeof responseObj !== 'object') {
+      return [];
+    }
+    
+    if (typeof responseObj.videoAdContentResult === 'object') {
+      responseObj = responseObj.videoAdContentResult;
+    }
+
+    let ads = responseObj.Ads;
+    
+    if (!Array.isArray(ads) || ads.length < 1) {
+      return [];
+    }
+
+    let ad = ads[0];
+
+    let bidModel = responseObj.BidModel;
+    if (typeof bidModel !== 'object' || bidModel.PlacementId == null) {
+      return [];
+    }
+
+    const bidResponses = [];
+    const topWin = getTopMostWindow();
+    const invibes = topWin.invibes = topWin.invibes || {};
+    if (typeof invibes.bidResponse !== 'object') {
+
+      for (var i = 0; i < bidRequests.length; i++) {
+        var bidRequest = bidRequests[i];
+
+        if (bidModel.PlacementId === bidRequest.params.placementId) {
+          invibes.bidResponse = responseObj;
+          var size = getBiggerSize(bidRequest.sizes);
+
+          bidResponses.push({
+            requestId: bidRequest.bidId,
+            cpm: ad.BidPrice,
+            width: size[0],
+            height: size[1],
+            creativeId: ad.VideoExposedId,
+            currency: 'EUR',
+            netRevenue: true,
+            ttl: TIME_TO_LIVE,
+            ad: renderCreative(bidModel)
+          });
+        }
+      }
+    }
+
+    return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return {
+        type: 'iframe',
+        url: SYNC_ENDPOINT
+      };
+    }
+  }
+};
+
+function generateRandomId() {
+  return (Math.random() * 1e32).toString(36).substring(0, 10);
+}
+
+function getDocumentLocation() {
+  return top.window.location.href.substring(0, 300).split(/[?#]/)[0];
+}
+
+function parseQueryStringParams() {
+  var params = {};
+  try { params = JSON.parse(localStorage.ivbs); } catch (e) { }
+  var re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
+  var m;
+  while ((m = re.exec(window.location.href)) != null) {
+    if (m.index === re.lastIndex) {
+      re.lastIndex++;
+    }
+    params[m[1].toLowerCase()] = m[2];
+  }
+  return params;
+}
+
+function randomStringGenerator() {
+  return Math.ceil(Math.random() * 1e9);
+}
+
+function getBiggerSize(array) {
+  var result = [0, 0];
+  for (var i = 0; i < array.length; i++) {
+    if (array[i][0] * array[i][1] > result[0] * result[1]) {
+      result = array[i];
+    }
+  }
+  return result;
+}
+
+function getTopMostWindow() {
+  var res = window;
+
+  try {
+    while (top !== res) {
+      if (res.parent.location.href.length) { res = res.parent; }
+    }
+  } catch (e) { }
+
+  return res;
+}
+
+function renderCreative(bidModel) {
+  return `<html>
+      <head><script type='text/javascript'>inDapIF=true;</script></head>
+        <body style='margin : 0; padding: 0;'>
+        <div id='invibesContainerId'>
+        </div>
+        <script type='text/javascript' src='getlinkUrl'/>
+      </body>
+    </html>`
+    .replace('getlinkUrl', bidModel.GetlinkUrl)
+    .replace('invibesContainerId', bidModel.InvibesContainerId);
+}
+
+function setCookie(name, value, exdays) {
+  if (exdays > 365) { exdays = 365; }
+  var exdate = new Date();
+  exdate.setTime(exdate.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  var cookieValue = value + ((!exdays) ? "" : "; expires=" + exdate.toUTCString());
+  cookieValue += "; path=/";
+  document.cookie = name + "=" + cookieValue;
+};
+
+function getCookie(name) {
+  var i, x, y, cookies = document.cookie.split(";");
+  for (i = 0; i < cookies.length; i++) {
+    x = cookies[i].substr(0, cookies[i].indexOf("="));
+    y = cookies[i].substr(cookies[i].indexOf("=") + 1);
+    x = x.replace(/^\s+|\s+$/g, "");
+    if (x === name) {
+      return unescape(y);
+    }
+  }
+};
+
+function getCappedCampaignsAsString() {
+  var key = 'ivvcap';
+
+  var loadData = function () {
+    return JSON.parse(localStorage.getItem(key)) || {};
+  };
+
+  var saveData = function (data) {
+    localStorage.setItem(key, JSON.stringify(data));
+  };
+
+  var clearExpired = function () {
+    var now = new Date().getTime();
+    var data = loadData();
+    var dirty = false;
+    Object.keys(data).forEach(function (k) {
+      var exp = data[k][1];
+      if (exp <= now) {
+        delete data[k];
+        dirty = true;
+      }
+    });
+    if (dirty) {
+      saveData(data);
+    }
+  };
+
+  var getCappedCampaigns = function () {
+    clearExpired();
+    var data = loadData();
+    return Object.keys(data)
+      .filter(function (k) { return data.hasOwnProperty(k); })
+      .sort()
+      .map(function (k) { return [k, data[k][0]]; });
+  };
+
+  return getCappedCampaigns()
+    .map(function (record) { return record.join('='); })
+    .join(',');
+
+}
+
+registerBidder(spec);
