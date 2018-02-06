@@ -40,8 +40,11 @@ export const spec = {
       }
     });
 
+    let data = {}
+    bids.forEach((bid) => { Object.assign(data, bid); });
+
     const payload = {
-      'key_maker': JSON.stringify(Object.assign({}, ...bids)),
+      'key_maker': JSON.stringify(data),
       'ref': getTopWindowLocation().host,
       's': utils.generateUUID(),
       'pv': PAGEVIEW_ID,
