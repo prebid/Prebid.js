@@ -208,6 +208,27 @@ const paramTypes = {
   },
 };
 
+/*
+ * Modify an adunit's bidder parameters to match the expected parameter types
+ */
+function convertTypes(adUnits) {
+  adUnits.forEach(adUnit => {
+    adUnit.bids.forEach(bid => {
+      const types = paramTypes[bid.bidder] || [];
+      Object.keys(types).forEach(key => {
+        if (bid.params[key]) {
+          bid.params[key] = types[key](bid.params[key]);
+
+          // don't send invalid values
+          if (isNaN(bid.params[key])) {
+            delete bid.params.key;
+          }
+        }
+      });
+    });
+  });
+}
+
 function _getDigiTrustQueryParams() {
   function getDigiTrustId() {
     let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
@@ -225,64 +246,13 @@ function _getDigiTrustQueryParams() {
   };
 }
 
-/**
- * Bidder adapter for Prebid Server
+/*
+ * Protocol spec for legacy endpoint
+ * e.g., https://prebid.adnxs.com/pbs/v1/auction
  */
-export function PrebidServer() {
-  const baseAdapter = new Adapter('prebidServer');
-
-  function convertTypes(adUnits) {
-    adUnits.forEach(adUnit => {
-      adUnit.bids.forEach(bid => {
-        const types = paramTypes[bid.bidder] || [];
-        Object.keys(types).forEach(key => {
-          if (bid.params[key]) {
-            bid.params[key] = types[key](bid.params[key]);
-
-            // don't send invalid values
-            if (isNaN(bid.params[key])) {
-              delete bid.params.key;
-            }
-          }
-        });
-      });
-    });
-  }
-
-  /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    const isOpenRtb = _s2sConfig.endpoint.includes(OPEN_RTB_PATH);
-    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
-
-    adUnits.forEach(adUnit => {
-      const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
-      if (videoMediaType) {
-        // pbs expects a ad_unit.video attribute if the imp is video
-        adUnit.video = Object.assign({}, videoMediaType);
-        delete adUnit.mediaTypes;
-        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
-        adUnit.media_types = [VIDEO];
-      }
-    });
-
-    convertTypes(adUnits);
-    const ad_units = adUnits.filter(hasSizes);
-
-    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
-    const requestedBidders = ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
-    const requestJson = isOpenRtb
-      ? buildOpenRtbRequest(s2sBidRequest, ad_units)
-      : buildLegacyRequest(s2sBidRequest, ad_units);
-
-    ajax(
-      _s2sConfig.endpoint,
-      response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, isOpenRtb),
-      JSON.stringify(requestJson),
-      { contentType: 'text/plain', withCredentials: true }
-    );
-  };
-
-  function buildLegacyRequest(s2sBidRequest, ad_units) {
+const legacy = {
+  // build payload for endpoint
+  buildRequest(s2sBidRequest, ad_units) {
     const isDebug = !!getConfig('debug');
 
     const request = {
@@ -313,73 +283,10 @@ export function PrebidServer() {
     }
 
     return request;
-  }
+  },
 
-  function buildOpenRtbRequest(s2sBidRequest, ad_units) {
-    let imps = [];
-
-    // transform ad unit into array of OpenRTB impression objects
-    ad_units.forEach(adUnit => {
-      let banner;
-
-      const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
-      if (bannerParams && bannerParams.sizes) {
-        // get banner sizes in form [{ w: <int>, h: <int> }, ...]
-        const format = bannerParams.sizes.reduce((acc, size) =>
-          [...acc, { w: size[0], h: size[1] }], []);
-
-        banner = {format};
-      }
-
-      // get bidder params in form { <bidder code>: {...params} }
-      const ext = adUnit.bids.reduce((acc, bid) =>
-        Object.assign({}, acc, { [bid.bidder]: bid.params }), {});
-
-      const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
-      if (banner) { imp.banner = banner; }
-
-      imps.push(imp);
-    });
-
-    const request = {
-      id: s2sBidRequest.tid,
-      site: {publisher: {id: _s2sConfig.accountId}},
-      source: {tid: s2sBidRequest.tid},
-      tmax: _s2sConfig.timeout,
-      imp: imps,
-      test: getConfig('debug') ? 1 : 0,
-    };
-
-    return request;
-  }
-
-  // at this point ad units should have a size array either directly or mapped so filter for that
-  function hasSizes(unit) {
-    return unit.sizes && unit.sizes.length;
-  }
-
-  /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, isOpenRtb) {
-    let result;
-
-    try {
-      result = JSON.parse(response);
-
-      isOpenRtb
-        ? handleOpenRtbResponse(result, addBidResponse, bidRequests)
-        : handleLegacyResponse(result, requestedBidders, addBidResponse, bidRequests);
-    } catch (error) {
-      utils.logError(error);
-    }
-
-    if (!result || (result.status && includes(result.status, 'Error'))) {
-      utils.logError('error parsing response: ', result.status);
-    }
-
-    done();
-  }
-
-  function handleLegacyResponse(result, requestedBidders, addBidResponse, bidRequests) {
+  // handler for endpoint response
+  interpretResponse(result, addBidResponse, bidRequests, requestedBidders) {
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
         result.bidder_status.forEach(bidder => {
@@ -465,8 +372,54 @@ export function PrebidServer() {
       }
     }
   }
+};
 
-  function handleOpenRtbResponse(response, addBidResponse, bidRequests) {
+/*
+ * Protocol spec for openrtb endpoint
+ * e.g., https://prebid.adnxs.com/pbs/v1/openrtb2/auction
+ */
+const openRtb = {
+  // build payload for endpoint
+  buildRequest(s2sBidRequest, ad_units) {
+    let imps = [];
+
+    // transform ad unit into array of OpenRTB impression objects
+    ad_units.forEach(adUnit => {
+      let banner;
+
+      const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
+      if (bannerParams && bannerParams.sizes) {
+        // get banner sizes in form [{ w: <int>, h: <int> }, ...]
+        const format = bannerParams.sizes.reduce((acc, size) =>
+          [...acc, { w: size[0], h: size[1] }], []);
+
+        banner = {format};
+      }
+
+      // get bidder params in form { <bidder code>: {...params} }
+      const ext = adUnit.bids.reduce((acc, bid) =>
+        Object.assign({}, acc, { [bid.bidder]: bid.params }), {});
+
+      const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
+      if (banner) { imp.banner = banner; }
+
+      imps.push(imp);
+    });
+
+    const request = {
+      id: s2sBidRequest.tid,
+      site: {publisher: {id: _s2sConfig.accountId}},
+      source: {tid: s2sBidRequest.tid},
+      tmax: _s2sConfig.timeout,
+      imp: imps,
+      test: getConfig('debug') ? 1 : 0,
+    };
+
+    return request;
+  },
+
+  // handler for endpoint response
+  interpretResponse(response, addBidResponse, bidRequests, requestedBidders) {
     if (response.seatbid) {
       response.seatbid.forEach(bidObj => {
         let cpm = bidObj.bid[0].price;
@@ -500,6 +453,82 @@ export function PrebidServer() {
         }
       });
     }
+  }
+};
+
+/*
+ * Select and return the protocol specification object to communicate
+ * with the configured endpoint. Returns an object containing `buildRequest`
+ * and `interpretResponse` functions.
+ *
+ * Usage:
+ *   // build JSON payload to send to server, e.g. in `callBids`
+ *   const request = protocol().buildRequest(s2sBidRequest, ad_units);
+ *
+ *   // handle server response with using given parameters, e.g. in `handleResponse`
+ *   protocol().interpretResponse(response, addBidResponse, bidRequests, requestedBidders);
+ */
+const protocol = () => {
+  const isOpenRtb = _s2sConfig.endpoint.includes(OPEN_RTB_PATH);
+  return isOpenRtb ? openRtb : legacy;
+};
+
+/**
+ * Bidder adapter for Prebid Server
+ */
+export function PrebidServer() {
+  const baseAdapter = new Adapter('prebidServer');
+
+  /* Prebid executes this function when the page asks to send out bid requests */
+  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
+
+    adUnits.forEach(adUnit => {
+      const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (videoMediaType) {
+        // pbs expects a ad_unit.video attribute if the imp is video
+        adUnit.video = Object.assign({}, videoMediaType);
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
+        adUnit.media_types = [VIDEO];
+      }
+    });
+
+    convertTypes(adUnits);
+
+    // at this point ad units should have a size array either directly or mapped so filter for that
+    const ad_units = adUnits.filter(unit => unit.sizes && unit.sizes.length);
+
+    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
+    const requestedBidders = ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
+
+    const request = protocol().buildRequest(s2sBidRequest, ad_units);
+    const requestJson = JSON.stringify(request);
+
+    ajax(
+      _s2sConfig.endpoint,
+      response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+      requestJson,
+      { contentType: 'text/plain', withCredentials: true }
+    );
+  };
+
+  /* Notify Prebid of bid responses so bids can get in the auction */
+  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
+    let result;
+
+    try {
+      result = JSON.parse(response);
+      protocol().interpretResponse(result, addBidResponse, bidRequests, requestedBidders);
+    } catch (error) {
+      utils.logError(error);
+    }
+
+    if (!result || (result.status && includes(result.status, 'Error'))) {
+      utils.logError('error parsing response: ', result.status);
+    }
+
+    done();
   }
 
   return Object.assign(this, {
