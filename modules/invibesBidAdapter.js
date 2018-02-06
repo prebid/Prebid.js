@@ -21,9 +21,11 @@ const InvibesAdapter = function InvibesAdapter() {
   var _iv_bid_adContainerId;
   var _iv_custom_endpoint;
   var _iv_login_id;
+  var _iv_auction_start;
 
   function _callBids(params) {
     bids = params.bids;
+    _iv_auction_start = params.auctionStart || Date.now();
 
     if (!bids || bids.length == 0) {
       utils.logInfo('Invibes Adapter - no bids requested');
@@ -65,18 +67,20 @@ const InvibesAdapter = function InvibesAdapter() {
       'window.invibes.iv_bidParams = "%%IV_BID_PARAMS%%";' +
       'window.invibes.iv_adContainerId = "%%IV_AD_CONTAINER_ID%%";' +
       'window.invibes.iv_loginId = "%%IV_LOGIN_ID%%";' +
+      'window.invibes.iv_auctionStart = "%%IV_AUCTION_START%%";' +
       'window.invibes.iv_async_callback_fn = window.parent.$$PREBID_GLOBAL$$.handleInvibesCallback;';
     var map = {};
     map.IV_BID_PARAMS = bidParams;
     map.IV_AD_CONTAINER_ID = _iv_bid_adContainerId;
     map.IV_LOGIN_ID = _iv_login_id;
+    map.IV_AUCTION_START = _iv_auction_start;
     scripts = utils.replaceTokenInString(scripts, map, '%%');
     content = content.replace('<!--PRE_SCRIPT_TAG_MACRO-->', '<script>' + scripts + '</script>');
 
     return content;
   }
 
-  $$PREBID_GLOBAL$$.handleInvibesCallback = function(biddingResponse) {
+  $$PREBID_GLOBAL$$.handleInvibesCallback = function (biddingResponse) {
     if (!biddingResponse) {
       utils.logInfo('Invibes Adapter - Bid response is empty');
       return;
