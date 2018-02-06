@@ -4,6 +4,7 @@ import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
+const PAGEVIEW_ID = utils.generateUUID();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -43,7 +44,12 @@ export const spec = {
       'key_maker': JSON.stringify(Object.assign({}, ...bids)),
       'ref': getTopWindowLocation().host,
       's': utils.generateUUID(),
+      'pv': PAGEVIEW_ID,
     };
+
+    if (validBidRequests[0].params.hfa) {
+      payload.hfa = validBidRequests[0].params.hfa;
+    }
 
     return {
       method: 'GET',
