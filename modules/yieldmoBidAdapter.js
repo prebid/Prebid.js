@@ -40,9 +40,9 @@ export const spec = {
       w: localWindow.innerWidth,
       h: localWindow.innerHeight
     };
-    for (var request of bidRequests) {
+    bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
-    }
+    });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
       method: 'GET',
@@ -60,11 +60,11 @@ export const spec = {
     let bids = [];
     let data = serverResponse.body;
     if (data.length > 0) {
-      for (var response of data) {
+      data.forEach((response) => {
         if (response.cpm && response.cpm > 0) {
           bids.push(createNewBid(response));
         }
-      }
+      });
     }
     return bids;
   },
