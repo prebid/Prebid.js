@@ -443,18 +443,35 @@ describe('the rubicon adapter', () => {
             bidCopy3.params.siteId = '32001';
             bidderRequest.bids.push(bidCopy3);
 
-            // const bidCopy4 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
-            // bidCopy4.mediaType = 'video';
-            // bidderRequest.bids.push(bidCopy4);
-
             let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-            // serverRequests should have 4 items, 2 grouped by site id and 2 for videos
-
+            expect(serverRequests).that.is.an('array').of.length(2);
           });
 
           it('should not group video requests', () => {
-            console.log('--- do not group bid requests for video');
+            sandbox.stub(config, 'getConfig', (key) => {
+              const config = {
+                'rubicon.singleRequest': true
+              };
+              return config[key];
+            });
+
+            const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidderRequest.bids.push(bidCopy);
+
+            const bidCopy2 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy2.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy2);
+
+            const bidCopy3 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy3.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy3);
+
+            const bidCopy4 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy4.mediaType = 'video';
+            bidderRequest.bids.push(bidCopy4);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(serverRequests).that.is.an('array').of.length(3);
           });
         });
       });
