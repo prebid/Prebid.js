@@ -21,9 +21,6 @@ export const spec = {
     let requests = [];
     let videoBids = bids.filter(bid => isVideoBid(bid));
     let bannerBids = bids.filter(bid => !isVideoBid(bid));
-
-    console.log('BIDS', bids);
-
     videoBids.forEach(bid => {
       requests.push({
         method: 'POST',
