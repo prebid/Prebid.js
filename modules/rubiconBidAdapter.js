@@ -110,7 +110,7 @@ export const spec = {
 
     const bidCount = bidRequests.length;
 
-    // -- required --
+    // -- required params --
 
     // build account_id
 
