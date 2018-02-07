@@ -696,6 +696,47 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(0);
         });
+
+        it('should have multiple ad units returned if single request mode is enabled', () => {
+          sandbox.stub(config, 'getConfig', (key) => {
+            const config = {
+              'rubicon.singleRequest': true
+            };
+            return config[key];
+          });
+
+          const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+          bidderRequest.bids.push(bidCopy);
+
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+              'status': 'ok',
+              'cpm': 0.10,
+              'size_id': 15
+            },
+            {
+              'status': 'ok',
+              'cpm': 0.25,
+              'size_id': 15
+            }]
+          };
+
+          let bids = spec.interpretResponse({ body: response }, {
+            bidRequest: bidderRequest.bids
+          });
+
+          expect(bids).to.be.lengthOf(2);
+        });
       });
 
       describe('for video', () => {
