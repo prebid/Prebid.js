@@ -104,11 +104,15 @@ function getFirstSize(bid) {
 }
 
 function isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent);
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+}
+
+function getDoNotTrack() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
 function isVideoBid(bid) {
@@ -134,7 +138,7 @@ function createVideoRequestData(bid) {
       page: topLocation.host
     },
     device: {
-      ua: global.navigator.userAgent,
+      ua: navigator.userAgent,
       devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
       geo: {}
     },
@@ -159,9 +163,9 @@ function createBannerRequestData(bids) {
     domain: topLocation.hostname,
     search: topLocation.search,
     referrer: referrer,
-    ua: global.navigator.userAgent,
+    ua: navigator.userAgent,
     isMobile: isMobile() ? 1 : 0,
-    dnt: 0,
+    dnt: getDoNotTrack() ? 1 : 0,
     adapterVersion: ADAPTER_VERSION,
     adapterName: ADAPTER_NAME
   };
