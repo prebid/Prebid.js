@@ -423,7 +423,8 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        describe('singleRequest mode', () => {
+        describe('FEATURE: singleRequest mode\n' +
+          'SCENARIO: singleRequest is enabled in config', () => {
           it('should group all bid requests with the same site id', () => {
             sandbox.stub(config, 'getConfig', (key) => {
               const config = {
