@@ -234,12 +234,18 @@ export function PrebidServer() {
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits.filter(hasSizes),
-      is_debug: isDebug,
-      device: device,
-      app: app
+      is_debug: isDebug
     };
 
     let digiTrust = _getDigiTrustQueryParams();
+
+    if (device) {
+      requestJson.device = device;
+    }
+
+    if (app) {
+      requestJson.app = app;
+    }
 
     if (digiTrust) {
       requestJson.digiTrust = digiTrust;
