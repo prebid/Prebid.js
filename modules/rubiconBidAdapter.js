@@ -141,7 +141,7 @@ export const spec = {
     return bidRequests;
   },
 
-  createVideoBid: function(bidRequest) {
+  createVideoBid: function(bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
     let params = bidRequest.params;
     let size = parseSizes(bidRequest);
@@ -213,7 +213,10 @@ export const spec = {
         .map(spec.createSingleRequestBid);
 
       // separate video bids
-      const videoBids = bidRequests.filter(bidRequest => (bidRequest.mediaType === 'video')).map(spec.createVideoBid);
+      // const videoBids = bidRequests.filter(bidRequest => (bidRequest.mediaType === 'video')).map(spec.createVideoBid);
+      const videoBids = bidRequests.filter(bidRequest => (bidRequest.mediaType === 'video')).map((item) => {
+        return spec.createVideoBid(item, bidderRequest);
+      });
 
       return videoBids.concat(groupedBids);
     }

@@ -423,8 +423,9 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        describe('FEATURE: singleRequest mode\n' +
-          'SCENARIO: singleRequest is enabled in config', () => {
+        describe('\nFEATURE: singleRequest mode\n' +
+          'SCENARIO: singleRequest is enabled in config\n', () => {
+
           it('should group all bid requests with the same site id', () => {
             sandbox.stub(config, 'getConfig', (key) => {
               const config = {
@@ -492,6 +493,18 @@ describe('the rubicon adapter', () => {
 
             const bidCopy4 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
             bidCopy4.mediaType = 'video';
+            bidCopy4.params.video = {
+              'language': 'en',
+              'p_aso.video.ext.skip': true,
+              'p_aso.video.ext.skipdelay': 15,
+              'playerHeight': 320,
+              'playerWidth': 640,
+              'size_id': 201,
+              'aeParams': {
+                'p_aso.video.ext.skip': '1',
+                'p_aso.video.ext.skipdelay': '15'
+              }
+            };
             bidderRequest.bids.push(bidCopy4);
 
             let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
