@@ -210,8 +210,6 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const isDebug = !!getConfig('debug');
-    const app = !!getConfig('app');
-    const device = !!getConfig('device');
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
     adUnits.forEach(adUnit => {
       let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
@@ -234,12 +232,18 @@ export function PrebidServer() {
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits.filter(hasSizes),
-      is_debug: isDebug,
-      device: device,
-      app: app
+      is_debug: isDebug
     };
 
     let digiTrust = _getDigiTrustQueryParams();
+
+    // grab some global config and pass it along
+    ['app', 'device'].forEach(setting => {
+      let value = getConfig(setting);
+      if (typeof value === 'object') {
+        requestJson[setting] = value;
+      }
+    });
 
     if (digiTrust) {
       requestJson.digiTrust = digiTrust;
