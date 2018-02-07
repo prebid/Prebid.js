@@ -2,7 +2,6 @@ const { userSync } = require('../../../src/userSync');
 const { config } = require('../../../src/config');
 
 const { expect } = require('chai');
-
 const {
   isBidRequestValid,
   buildRequests,
@@ -44,78 +43,71 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('isBidRequestValid:', function () {
-    context('valid bid request:', function () {
-      it('returns true when bidder, params.siteId, params.productId are set', function() {
-        const validBid = {
-          bidder: BIDDER_CODE,
-          params: {
-            siteId: SITE_ID,
-            productId: PRODUCT_ID
-          }
+    it('returns true when valid bid request is sent', function() {
+      const validBid = {
+        bidder: BIDDER_CODE,
+        params: {
+          siteId: SITE_ID,
+          productId: PRODUCT_ID
         }
+      }
 
-        expect(isBidRequestValid(validBid)).to.be.true;
-      })
+      expect(isBidRequestValid(validBid)).to.be.true;
     });
 
-    context('valid test bid request:', function () {
-      it('returns true when bidder, params.site.id, params.productId are set', function() {
-        const validBid = {
-          bidder: BIDDER_CODE,
-          params: {
-            site: {
-              id: SITE_ID
-            },
-            productId: PRODUCT_ID
-          }
+    it('returns true when valid test bid request is sent', function() {
+      const validBid = {
+        bidder: BIDDER_CODE,
+        params: {
+          siteId: SITE_ID,
+          productId: PRODUCT_ID,
+          test: 1
         }
+      }
 
-        expect(isBidRequestValid(validBid)).to.be.true;
-      });
+      expect(isBidRequestValid(validBid)).to.be.true;
     });
 
-    context('invalid bid request:', function () {
-      it('returns false when bidder not set to "33across"', function () {
-        const invalidBid = {
-          bidder: 'foo',
-          params: {
-            siteId: SITE_ID,
-            productId: PRODUCT_ID
-          }
+    it('returns false when bidder not set to "33across"', function () {
+      const invalidBid = {
+        bidder: 'foo',
+        params: {
+          siteId: SITE_ID,
+          productId: PRODUCT_ID
         }
+      }
 
-        expect(isBidRequestValid(invalidBid)).to.be.false;
-      });
+      expect(isBidRequestValid(invalidBid)).to.be.false;
+    });
 
-      it('returns false when params not set', function() {
-        const invalidBid = {
-          bidder: 'foo'
+    it('returns false when params not set', function() {
+      const invalidBid = {
+        bidder: 'foo'
+      }
+
+      expect(isBidRequestValid(invalidBid)).to.be.false;
+    });
+
+    it('returns false when site ID is not set in params', function() {
+      const invalidBid = {
+        bidder: 'foo',
+        params: {
+          productId: PRODUCT_ID
         }
+      }
 
-        expect(isBidRequestValid(invalidBid)).to.be.false;
-      });
+      expect(isBidRequestValid(invalidBid)).to.be.false;
+    });
 
-      it('returns false when params.siteId or params.site.id not set', function() {
-        const invalidBid = {
-          bidder: 'foo',
-          params: {
-            productId: PRODUCT_ID
-          }
+    it('returns false when product ID not set in params', function() {
+      const invalidBid = {
+        bidder: 'foo',
+        params: {
+          siteId: SITE_ID
         }
+      }
 
-        expect(isBidRequestValid(invalidBid)).to.be.false;
-      });
-
-      it('returns false when params.productId not set', function() {
-        const invalidBid = {
-          bidder: 'foo',
-          params: {
-            siteId: SITE_ID
-          }
-        }
-
-        expect(isBidRequestValid(invalidBid)).to.be.false;
-      });
+      expect(isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 
@@ -149,12 +141,12 @@ describe('33acrossBidAdapter:', function () {
         id: 'b1'
       };
       const serverRequest = {
-        method: 'POST',
-        url: END_POINT,
-        data: JSON.stringify(ttxRequest),
-        options: {
-          contentType: 'application/json',
-          withCredentials: false
+        'method': 'POST',
+        'url': END_POINT,
+        'data': JSON.stringify(ttxRequest),
+        'options': {
+          'contentType': 'application/json',
+          'withCredentials': false
         }
       }
       const builtServerRequests = buildRequests(this.bidRequests);
@@ -176,12 +168,12 @@ describe('33acrossBidAdapter:', function () {
               {
                 w: 300,
                 h: 250,
-                ext: {}
+                ext: { }
               },
               {
                 w: 728,
                 h: 90,
-                ext: {}
+                ext: { }
               }
             ]
           },
@@ -195,6 +187,56 @@ describe('33acrossBidAdapter:', function () {
           id: SITE_ID
         },
         id: 'b1'
+      };
+      const serverRequest = {
+        method: 'POST',
+        url: 'https://foo.com/hb/',
+        data: JSON.stringify(ttxRequest),
+        options: {
+          contentType: 'application/json',
+          withCredentials: false
+        }
+      };
+
+      const builtServerRequests = buildRequests(this.bidRequests);
+      expect(builtServerRequests).to.deep.equal([ serverRequest ]);
+      expect(builtServerRequests.length).to.equal(1);
+    });
+
+    it('returns corresponding test server requests for each valid test bidRequest', function() {
+      this.sandbox.stub(config, 'getConfig', () => {
+        return {
+          'url': 'https://foo.com/hb/'
+        }
+      });
+      this.bidRequests[0].params.test = 1;
+      const ttxRequest = {
+        imp: [ {
+          banner: {
+            format: [
+              {
+                w: 300,
+                h: 250,
+                ext: { }
+              },
+              {
+                w: 728,
+                h: 90,
+                ext: { }
+              }
+            ]
+          },
+          ext: {
+            ttx: {
+              prod: PRODUCT_ID
+            }
+          }
+        } ],
+        site: {
+          id: SITE_ID
+        },
+        id: 'b1',
+        test: 1
       };
       const serverRequest = {
         method: 'POST',
@@ -268,11 +310,7 @@ describe('33acrossBidAdapter:', function () {
               bid: [ {
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
+                crid: 1,
                 h: 250,
                 w: 300,
                 price: 0.0938
@@ -322,11 +360,7 @@ describe('33acrossBidAdapter:', function () {
               bid: [ {
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
+                crid: 1,
                 h: 250,
                 w: 300,
                 price: 0.0940
@@ -334,11 +368,7 @@ describe('33acrossBidAdapter:', function () {
               {
                 id: '2',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 2
-                  }
-                },
+                crid: 2,
                 h: 250,
                 w: 300,
                 price: 0.0938
@@ -349,11 +379,7 @@ describe('33acrossBidAdapter:', function () {
               bid: [ {
                 id: '3',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 3
-                  }
-                },
+                crid: 3,
                 h: 250,
                 w: 300,
                 price: 0.0938
@@ -373,7 +399,7 @@ describe('33acrossBidAdapter:', function () {
           creativeId: 1,
           currency: 'USD',
           netRevenue: true
-        }
+        };
 
         expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
       });
