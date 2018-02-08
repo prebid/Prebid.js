@@ -116,7 +116,7 @@ export const spec = {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
         let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
-//test2
+
         let data = {
           page_url: params.secure ? page_rf.replace(/^http:/i, 'https:') : page_rf,
           resolution: _getScreenResolution(),
