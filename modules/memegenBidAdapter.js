@@ -152,6 +152,13 @@ var MemeGenAdapter = function MemeGenAdapter() {
     return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
   }
 
+  function fillAuctionPricePLaceholder(str, auctionPrice) {
+    if (typeof str != 'string') {
+      return str;
+    }
+    return str.replace(/\${AUCTION_PRICE}/, auctionPrice);
+  }
+
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.mgres = function (bidRespWrapper) {
     // valid object?
@@ -173,7 +180,12 @@ var MemeGenAdapter = function MemeGenAdapter() {
         var bidResponse = bidfactory.createBid(1);
         placementCode = bidRequested.placementCode;
         bidRequested.status = CONSTANTS.STATUS.GOOD;
+
         responseCPM = parseFloat(bidderBid.price);
+
+        bidderBid.nurl = fillAuctionPricePLaceholder(bidderBid.nurl, responseCPM);
+        bidderBid.adm = fillAuctionPricePLaceholder(bidderBid.adm, responseCPM);
+
         if (responseCPM === 0) {
           var bid = bidfactory.createBid(2);
           bid.bidderCode = bidderName;
