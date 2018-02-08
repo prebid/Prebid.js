@@ -28,9 +28,11 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ cd Prebid.js
     $ yarn install
 
-Prebid also supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
 
 For more info, see [the Yarn documentation](https://yarnpkg.com).
+
+*Note:* You need to have `NodeJS` 4.x or greater installed.
 
 <a name="Build"></a>
 
@@ -47,21 +49,13 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 + `./build/dist/prebid.js` - Minified production code
 + `./prebid.js_<version>.zip` - Distributable zip archive
 
-*Note:* You need to have `node.js` 4.x or greater installed to be able to run the `gulp build` commands.
-
 ### Build Optimization
 
-The standard build output contains all the available bidder adapters listed in `adapters.json`.
+The standard build output contains all the available modules from within the `modules` folder.
 
-You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the adapters you want, you can make your own adapters file.
+You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
-For example, in `path/to/your/list-of-adapters.json`, write:
-
-        [
-            "openx",
-            "rubicon",
-            "sovrn"
-        ]
+For example, when running the serve command: `gulp serve --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter`
 
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
@@ -71,26 +65,35 @@ Prebid now supports the `yarn` npm client. This is an alternative to using `npm`
 For more info about yarn see https://yarnpkg.com
 
 - Clone the repo, run `yarn install`
-- Duplicate `adapters.json` to e.g. `list-of-adapters.json`
-- Remove the unnecessary adapters from `list-of-adapters.json`
 - Then run the build:
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
+        
+Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
+
+    $ gulp build --modules=modules.json
+        
+With `modules.json` containing the following
+```json modules.json
+[
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "sovrnBidAdapter"
+]
+```
 
 **Build prebid.js using Yarn for bundling**
 
 In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
 
 - Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
-- Duplicate `node_modules/prebid.js/adapters.json` to under your project path, e.g. `path/to/your/list-of-adapters.json`
-- Remove the unnecessary adapters
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=path/to/your/list-of-modules.json
 
 Most likely your custom `prebid.js` will only change when there's:
 
-- A change in your list of adapters
+- A change in your list of modules
 - A new release of `prebid.js`
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
@@ -99,7 +102,31 @@ Having said that, you are probably safe to check your custom bundle into your pr
 
 ## Test locally
 
-To configure Prebid.js to run locally, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+To lint the code:
+
+```bash
+gulp lint
+```
+
+To run the unit tests:
+
+```bash
+gulp test
+```
+To run tests for a single file:
+
+```bash
+gulp test --file "path/to/spec/file.js"
+```
+
+To generate and view the code coverage reports:
+
+```bash
+gulp test-coverage
+gulp view-coverage
+```
+
+For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
 
 1. Change `{id}` values appropriately to set up ad units and bidders
 2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
@@ -128,21 +155,21 @@ For deployment:
 })();
 ```
 
-To run the project locally, use:
+Build and run the project locally with:
 
-    $ gulp serve
+```bash
+gulp serve
+```
 
-This runs code quality checks, generates all the necessary files and starts a web server at `http://localhost:9999` serving from the project root. Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev` directory you will have sourcemaps available in your browser's developer tools.
+This runs `lint` and `test`, then starts a web server at `http://localhost:9999` serving from the project root.
+Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev`
+directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
 + `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
 
-To view a test coverage report, go to:
-
-+ `http://localhost:9999/build/coverage/karma_html/report`
-
-A watch is also in place that will run continuous tests in the terminal as you edit code and tests.
+As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 
 <a name="Contribute"></a>
 
@@ -156,7 +183,7 @@ Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tr
 
 ### Add a Bidder Adapter
 
-To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
 Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
 
@@ -168,7 +195,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
 ### Unit Testing with Karma
 
-        $ gulp test --watch
+        $ gulp test --watch --browsers=chrome
 
 This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
 
@@ -192,7 +219,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE9+ and modern browsers.
+Prebid.js is supported on IE10+ and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
