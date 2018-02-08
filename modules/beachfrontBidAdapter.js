@@ -69,15 +69,14 @@ export const spec = {
       }
       return response.map((bid) => {
         let request = find(bidRequest, req => req.adUnitCode === bid.slot);
-        let size = getFirstSize(request);
         return {
           requestId: request.bidId,
           bidderCode: spec.code,
           ad: bid.adm,
           creativeId: bid.crid,
           cpm: bid.price,
-          width: size.w,
-          height: size.h,
+          width: bid.w,
+          height: bid.h,
           mediaType: BANNER,
           currency: 'USD',
           netRevenue: true,

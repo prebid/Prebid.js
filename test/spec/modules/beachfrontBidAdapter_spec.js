@@ -281,30 +281,35 @@ describe('BeachfrontAdapter', () => {
 
       it('should return valid banner bid responses', () => {
         bidRequests[0].mediaTypes = { banner: {} };
+        bidRequests[0].sizes = [[ 300, 250 ], [ 728, 90 ]];
         bidRequests[1].mediaTypes = { banner: {} };
+        bidRequests[1].sizes = [[ 300, 600 ], [ 200, 200 ]];
         const serverResponse = [{
           slot: bidRequests[0].adUnitCode,
           adm: '<div id="44851937"></div>',
           crid: 'crid_1',
-          price: 3.02
+          price: 3.02,
+          w: 728,
+          h: 90
         }, {
           slot: bidRequests[1].adUnitCode,
           adm: '<div id="44860506"></div>',
           crid: 'crid_2',
-          price: 3.06
+          price: 3.06,
+          w: 300,
+          h: 600
         }];
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest: bidRequests });
         expect(bidResponse.length).to.equal(2);
         for (let i = 0; i < bidRequests.length; i++) {
-          const [ width, height ] = bidRequests[ i ].sizes;
           expect(bidResponse[ i ]).to.deep.equal({
             requestId: bidRequests[ i ].bidId,
             bidderCode: spec.code,
             ad: serverResponse[ i ].adm,
             creativeId: serverResponse[ i ].crid,
             cpm: serverResponse[ i ].price,
-            width: width,
-            height: height,
+            width: serverResponse[ i ].w,
+            height: serverResponse[ i ].h,
             mediaType: 'banner',
             currency: 'USD',
             netRevenue: true,
