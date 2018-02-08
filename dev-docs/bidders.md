@@ -113,6 +113,7 @@ The following parameters in the `bidResponse` object are common across all bidde
 | stickyadstv     | native                |                     |
 | tremor          | video                 |                     |
 | unruly          | video,native          |                     |
+| rockyou         | video                 | X                   |
 
 <a name="prebid-server-bidders"></a>
 

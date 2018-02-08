@@ -100,6 +100,9 @@ Each key's value is an object with several fields.  Most important is the `requi
       <li>
        However, Prebid.js does not do any additional checking of a required asset beyond ensuring that it's included in the response; for example, it doesn't validate that the asset has a certain length or file size, just that that key exists in the response JSON
       </li>
+      <li>
+       Finally, the response is checked to make sure it defines a landing page URL.
+      </li>
     </ul>
   </p>
 </div>
