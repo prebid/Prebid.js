@@ -105,6 +105,25 @@ pbjs.addAdUnit({
 
 {% endhighlight %}
 
+Some demand partners that return a renderer with their video bid responses may support renderer configuration with the `adUnit.renderer.options` object. These configurations are bidder specific and may include options for skippability, player size, and ad text, for example. An example renderer configuration follows:
+
+{% highlight js %}
+
+pbjs.addAdUnit({
+    code: 'video1',
+    mediaTypes: {
+      video: { context: 'outstream', playerSize: [640, 480] }
+    },
+    renderer: {
+      options: {
+        adText: 'This text was configured in the ad unit',
+      }
+    },
+    ...
+});
+
+{% endhighlight %}
+
 For more technical information about renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082)
 
 ## Step 2: Show ads in the page body
