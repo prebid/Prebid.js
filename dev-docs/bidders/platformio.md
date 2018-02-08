@@ -20,3 +20,42 @@ prebid_1_0_supported : true
 | `size`         | required | Ad size identifier                  | `300X250` |
 | `placementId`  | optional | The publisher placement ID          | `17394` |
 | `bidFloor`     | optional | The bid floor                       | `0.001` |
+
+### test params
+
+```
+    var adUnits = [{
+      code: 'banner-ad-div',
+      sizes: [[300, 250]],
+      bids: [{
+          bidder: 'platformio',
+          params: { 
+              pubId: '29521',
+              siteId: '26047',
+              size: '300X250',
+              placementId: '123',
+              bidFloor: '0.001'
+          }
+      }]
+    },{
+      code: 'native-ad-div',
+      sizes: [[1, 1]],
+      nativeParams: {
+          title: { required: true, len: 75  },
+          image: { required: true  },
+          body: { len: 200  },
+          sponsoredBy: { len: 20 },
+          icon: { required: false }
+      },
+      bids: [{
+          bidder: 'platformio',
+          params: { 
+              pubId: '29521',
+              siteId: '26047',
+              placementId: '123',
+              bidFloor: '0.001'
+          }
+      }]
+    }];
+
+```
