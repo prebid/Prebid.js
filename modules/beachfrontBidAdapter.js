@@ -182,6 +182,7 @@ function createBannerRequestData(bids) {
     page: topLocation.href,
     domain: topLocation.hostname,
     search: topLocation.search,
+    secure: topLocation.protocol === 'https:' ? 1 : 0,
     referrer: referrer,
     ua: navigator.userAgent,
     deviceOs: getOsVersion(),
