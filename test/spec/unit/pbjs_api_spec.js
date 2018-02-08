@@ -816,7 +816,43 @@ describe('Unit: Prebid Module', function () {
     let logMessageSpy;
     let makeRequestsStub;
     let xhr;
-    let adUnits
+    let adUnits;
+    let clock;
+
+    const BIDDER_CODE = 'sampleBidder';
+    let bids = [{
+      'ad': 'creative',
+      'cpm': '1.99',
+      'width': 300,
+      'height': 250,
+      'bidderCode': BIDDER_CODE,
+      'requestId': '4d0a6829338a07',
+      'creativeId': 'id',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 360
+    }];
+    let bidRequests = [{
+      'bidderCode': BIDDER_CODE,
+      'auctionId': '20882439e3238c',
+      'bidderRequestId': '331f3cf3f1d9c8',
+      'bids': [
+        {
+          'bidder': BIDDER_CODE,
+          'params': {
+            'placementId': 'id'
+          },
+          'adUnitCode': 'adUnit-code',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '4d0a6829338a07',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'auctionId': '20882439e3238c'
+        }
+      ],
+      'auctionStart': 1505250713622,
+      'timeout': 3000,
+      'start': 1000
+    }];
 
     beforeEach(() => {
       logMessageSpy = sinon.spy(utils, 'logMessage');
@@ -845,41 +881,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should execute callback after timeout', () => {
-      const BIDDER_CODE = 'sampleBidder';
-      let bids = [{
-        'ad': 'creative',
-        'cpm': '1.99',
-        'width': 300,
-        'height': 250,
-        'bidderCode': BIDDER_CODE,
-        'requestId': '4d0a6829338a07',
-        'creativeId': 'id',
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 360
-      }];
-      let bidRequests = [{
-        'bidderCode': BIDDER_CODE,
-        'auctionId': '20882439e3238c',
-        'bidderRequestId': '331f3cf3f1d9c8',
-        'bids': [
-          {
-            'bidder': BIDDER_CODE,
-            'params': {
-              'placementId': 'id'
-            },
-            'adUnitCode': 'adUnit-code',
-            'sizes': [[300, 250], [300, 600]],
-            'bidId': '4d0a6829338a07',
-            'bidderRequestId': '331f3cf3f1d9c8',
-            'auctionId': '20882439e3238c'
-          }
-        ],
-        'auctionStart': 1505250713622,
-        'timeout': 3000,
-        'start': 1000
-      }];
-
       let spec = {
         code: BIDDER_CODE,
         isBidRequestValid: sinon.stub(),
@@ -893,7 +894,7 @@ describe('Unit: Prebid Module', function () {
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
-      let clock = sinon.useFakeTimers();
+      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
         timeout: 2000,

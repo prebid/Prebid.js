@@ -727,14 +727,12 @@ describe('adapterManager tests', () => {
       });
 
       describe('setBidderSequence', () => {
-        let orgBidderSequence;
         beforeEach(() => {
-          orgBidderSequence = config.getConfig('bidderSequence');
           sinon.spy(utils, 'shuffle');
         });
 
         afterEach(() => {
-          config.setConfig({ bidderSequence: orgBidderSequence });
+          config.resetConfig();
           utils.shuffle.restore();
         });
 
