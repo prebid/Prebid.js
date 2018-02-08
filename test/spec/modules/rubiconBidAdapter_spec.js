@@ -423,7 +423,7 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        describe('\nFEATURE: singleRequest mode\n' +
+        /*describe('\nFEATURE: singleRequest mode\n' +
           'SCENARIO: singleRequest is enabled in config\n', () => {
 
           it('should group all bid requests with the same site id', () => {
@@ -510,7 +510,7 @@ describe('the rubicon adapter', () => {
             let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
             expect(serverRequests).that.is.an('array').of.length(3);
           });
-        });
+        });*/
       });
 
       describe('for video requests', () => {
@@ -710,46 +710,46 @@ describe('the rubicon adapter', () => {
           expect(bids).to.be.lengthOf(0);
         });
 
-        it('should have multiple ad units returned if single request mode is enabled', () => {
-          sandbox.stub(config, 'getConfig', (key) => {
-            const config = {
-              'rubicon.singleRequest': true
-            };
-            return config[key];
-          });
-
-          const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
-          bidderRequest.bids.push(bidCopy);
-
-          let response = {
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0.10,
-              'size_id': 15
-            },
-            {
-              'status': 'ok',
-              'cpm': 0.25,
-              'size_id': 15
-            }]
-          };
-
-          let bids = spec.interpretResponse({ body: response }, {
-            bidRequest: bidderRequest.bids
-          });
-
-          expect(bids).to.be.lengthOf(2);
-        });
+        // it('should have multiple ad units returned if single request mode is enabled', () => {
+        //   sandbox.stub(config, 'getConfig', (key) => {
+        //     const config = {
+        //       'rubicon.singleRequest': true
+        //     };
+        //     return config[key];
+        //   });
+        //
+        //   const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+        //   bidderRequest.bids.push(bidCopy);
+        //
+        //   let response = {
+        //     'status': 'ok',
+        //     'account_id': 14062,
+        //     'site_id': 70608,
+        //     'zone_id': 530022,
+        //     'size_id': 15,
+        //     'alt_size_ids': [
+        //       43
+        //     ],
+        //     'tracking': '',
+        //     'inventory': {},
+        //     'ads': [{
+        //       'status': 'ok',
+        //       'cpm': 0.10,
+        //       'size_id': 15
+        //     },
+        //     {
+        //       'status': 'ok',
+        //       'cpm': 0.25,
+        //       'size_id': 15
+        //     }]
+        //   };
+        //
+        //   let bids = spec.interpretResponse({ body: response }, {
+        //     bidRequest: bidderRequest.bids
+        //   });
+        //
+        //   expect(bids).to.be.lengthOf(2);
+        // });
       });
 
       describe('for video', () => {
@@ -803,6 +803,32 @@ describe('the rubicon adapter', () => {
           expect(bids[0].videoCacheKey).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
+    });
+  });
+
+  describe('combineSlotUrlParams', () => {
+    it('should combine an array of slot url params', () => {
+      expect(spec.combineSlotUrlParams([])).to.deep.equal({});
+
+      expect(spec.combineSlotUrlParams([{p1: 'foo', p2: 'test', p3: ''}])).to.deep.equal({p1: 'foo', p2: 'test', p3: ''});
+
+      expect(spec.combineSlotUrlParams([{}, {p1: 'foo', p2: 'test'}])).to.deep.equal({p1: ';foo', p2: ';test'});
+
+      expect(spec.combineSlotUrlParams([{}, {}, {p1: 'foo', p2: ''}, {}])).to.deep.equal({p1: ';;foo;', p2: ''});
+
+      expect(spec.combineSlotUrlParams([{}, {p1: 'foo'}, {p1: ''}])).to.deep.equal({p1: ';foo;'});
+
+      expect(spec.combineSlotUrlParams([
+        {p1: 'foo', p2: 'test'},
+        {p2: 'test', p3: 'bar'},
+        {p1: 'bar', p2: 'test', p4: 'bar'}
+      ])).to.deep.equal({p1: 'foo;;bar', p2: 'test', p3: ';bar;', p4: ';;bar'});
+
+      expect(spec.combineSlotUrlParams([
+        {p1: 'foo', p2: 'test', p3: 'baz'},
+        {p1: 'foo', p2: 'bar'},
+        {p2: 'test'}
+      ])).to.deep.equal({p1: 'foo;foo;', p2: 'test;bar;test', p3: 'baz;;'});
     });
   });
 
