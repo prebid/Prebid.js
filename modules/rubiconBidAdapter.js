@@ -103,57 +103,9 @@ export const spec = {
 
   createRequestBid: function(bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
+
     if (bidRequest.mediaType === 'video') {
-      let params = bidRequest.params;
-      let size = parseSizes(bidRequest);
-      let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
-
-      let data = {
-        page_url: params.secure ? page_rf.replace(/^http:/i, 'https:') : page_rf,
-        resolution: _getScreenResolution(),
-        account_id: params.accountId,
-        integration: INTEGRATION,
-        'x_source.tid': bidRequest.transactionId,
-        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-        stash_creatives: true,
-        ae_pass_through_parameters: params.video.aeParams,
-        slots: []
-      };
-
-      // Define the slot object
-      let slotData = {
-        site_id: params.siteId,
-        zone_id: params.zoneId,
-        position: params.position || 'btf',
-        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-        element_id: bidRequest.adUnitCode,
-        name: bidRequest.adUnitCode,
-        language: params.video.language,
-        width: size[0],
-        height: size[1],
-        size_id: params.video.size_id
-      };
-
-      if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
-      }
-
-      if (params.keywords && Array.isArray(params.keywords)) {
-        slotData.keywords = params.keywords;
-      }
-
-      if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
-      }
-
-      data.slots.push(slotData);
-
-      return {
-        method: 'POST',
-        url: VIDEO_ENDPOINT,
-        data,
-        bidRequest
-      }
+      return spec.createVideoBid(bidRequest, bidderRequest);
     }
 
     // non-video request builder
@@ -225,7 +177,6 @@ export const spec = {
   },
 
   createVideoBid: function(bidRequest, bidderRequest) {
-    bidRequest.startTime = new Date().getTime();
     let params = bidRequest.params;
     let size = parseSizes(bidRequest);
     let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
