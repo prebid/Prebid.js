@@ -3,7 +3,6 @@ import { cookiesAreEnabled } from '../../src/utils';
 
 var assert = require('assert');
 var utils = require('../../src/utils');
-var cookies = require('browser-cookies');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -524,35 +523,6 @@ describe('Utils', function () {
         count++;
       }
       assert.equal(arr.length, count, 'Polyfill test fails');
-    });
-  });
-
-  describe('cookie support', function () {
-    let checkCookieEnabledStub;
-    let cookieSetStub;
-    let cookieGetStub;
-
-    beforeEach(() => {
-      checkCookieEnabledStub = sinon.stub(utils, 'checkCookieSupport');
-      cookieSetStub = sinon.stub(cookies, 'set');
-      cookieGetStub = sinon.stub(cookies, 'get');
-    });
-
-    afterEach(() => {
-      checkCookieEnabledStub.restore();
-      cookieSetStub.restore();
-      cookieGetStub.restore();
-    });
-
-    it('should be detected', function() {
-      checkCookieEnabledStub.returns(true);
-      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
-    });
-
-    it('should be not available', function() {
-      checkCookieEnabledStub.returns(false);
-      cookieGetStub.returns(null);
-      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
     });
   });
 

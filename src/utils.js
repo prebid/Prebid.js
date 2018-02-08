@@ -3,7 +3,6 @@ import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 var CONSTANTS = require('./constants');
-var cookies = require('browser-cookies');
 
 var _loggingChecked = false;
 
@@ -681,8 +680,8 @@ export function cookiesAreEnabled() {
   if (exports.checkCookieSupport()) {
     return true;
   }
-  cookies.set('prebid.cookieTest');
-  return cookies.get('prebid.cookieTest') != null;
+  window.document.cookie = 'prebid.cookieTest';
+  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
 }
 
 /**
