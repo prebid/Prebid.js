@@ -243,6 +243,41 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
+
+    it('adds digitrust id is present and user is not optout', () => {
+      let digiTrustObj = {
+        success: true,
+        identity: {
+          privacy: {
+            optout: false
+          },
+          id: 'testId',
+          keyv: 'testKeyV'
+        }
+      };
+
+      window.DigiTrust = {
+        getUser: () => digiTrustObj
+      };
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.digiTrust).to.deep.equal({
+        id: digiTrustObj.identity.id,
+        keyv: digiTrustObj.identity.keyv,
+        pref: 0
+      });
+
+      digiTrustObj.identity.privacy.optout = true;
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid.digiTrust).to.not.exist;
+
+      delete window.DigiTrust;
+    });
   });
 
   describe('response handler', () => {

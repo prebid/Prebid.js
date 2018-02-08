@@ -104,14 +104,6 @@ export const spec = {
 
     bidResponses.push(bidResponse);
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
-    }
   }
 }
 registerBidder(spec);

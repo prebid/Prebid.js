@@ -11,7 +11,7 @@ const buildURI = () => {
 }
 
 const getDevice = () => {
-  const lang = navigator.language;
+  const lang = navigator.language || '';
   const width = window.screen.width;
   const height = window.screen.height;
 

@@ -40,7 +40,6 @@ export const spec = {
       w: localWindow.innerWidth,
       h: localWindow.innerHeight
     };
-
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
     });
