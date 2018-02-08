@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import { EVENTS, STATUS } from 'src/constants.json';
+import { EVENTS } from 'src/constants.json';
 
 const AOL_BIDDERS_CODES = {
   AOL: 'aol',
