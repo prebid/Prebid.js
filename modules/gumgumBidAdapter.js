@@ -14,6 +14,7 @@ let browserParams = {};
 function _getBrowserParams() {
   let topWindow
   let topScreen
+  let topUrl
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -22,6 +23,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
+    topUrl = utils.getTopWindowUrl()
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -32,9 +34,10 @@ function _getBrowserParams() {
     vh: topWindow.innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
-    pu: utils.getTopWindowUrl(),
+    pu: topUrl,
     ce: utils.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1
+    dpr: topWindow.devicePixelRatio || 1,
+    adBuyId: (topUrl.match(/#ggad=(.+)$/) || [null, null])[1]
   }
   return browserParams
 }
