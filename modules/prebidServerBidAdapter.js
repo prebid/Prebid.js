@@ -418,34 +418,30 @@ const openRtb = {
     const bids = [];
 
     if (response.seatbid) {
-      response.seatbid.forEach(bidObj => {
-        let cpm = bidObj.bid[0].price;
-        let status;
-        if (cpm !== 0) {
-          status = STATUS.GOOD;
-        } else {
-          status = STATUS.NO_BID;
-        }
+      // a seatbid object contains a `bid` array and a `seat` string
+      response.seatbid.forEach(seatbid => {
+        (seatbid.bid || []).forEach(bid => {
+          const cpm = bid.price;
+          const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
+          let bidObject = bidfactory.createBid(status);
 
-        let bidObject = bidfactory.createBid(status);
+          bidObject.source = TYPE;
+          bidObject.creative_id = bid.crid;
+          bidObject.bidderCode = seatbid.seat;
+          bidObject.cpm = cpm;
+          bidObject.ad = bid.adm;
+          bidObject.width = bid.w;
+          bidObject.height = bid.h;
+          bidObject.requestId = bid.id;
+          bidObject.creativeId = bid.crid;
 
-        bidObject.source = TYPE;
-        bidObject.creative_id = bidObj.crid;
-        bidObject.bidderCode = bidObj.seat;
-        bidObject.cpm = cpm;
-        bidObject.ad = bidObj.bid[0].adm;
+          // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+          bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
+          bidObject.currency = (bid.currency) ? bid.currency : DEFAULT_S2S_CURRENCY;
+          bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
-        bidObject.width = bidObj.bid[0].w;
-        bidObject.height = bidObj.bid[0].h;
-        bidObject.requestId = bidObj.bid[0].id;
-        bidObject.creativeId = bidObj.bid[0].crid;
-
-        // TODO: Remove when prebid-server returns ttl, currency and netRevenue
-        bidObject.ttl = (bidObj.ttl) ? bidObj.ttl : DEFAULT_S2S_TTL;
-        bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
-        bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
-
-        bids.push({ adUnit: bidObj.bid[0].impid, bid: bidObject });
+          bids.push({ adUnit: bid.impid, bid: bidObject });
+        });
       });
     }
 
