@@ -17,7 +17,6 @@ let _synced = false;
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
-const OPEN_RTB_PATH = 'openrtb2/auction';
 
 let _s2sConfig;
 
@@ -248,9 +247,10 @@ function _getDigiTrustQueryParams() {
 
 /*
  * Protocol spec for legacy endpoint
- * e.g., https://prebid.adnxs.com/pbs/v1/auction
+ * e.g., https://<prebid-server-url>/v1/auction
  */
-const legacy = {
+const LEGACY_PROTOCOL = {
+
   buildRequest(s2sBidRequest, adUnits) {
     const request = {
       account_id: _s2sConfig.accountId,
@@ -303,16 +303,11 @@ const legacy = {
 
       if (result.bids) {
         result.bids.forEach(bidObj => {
-          let bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
-          let cpm = bidObj.price;
-          let status;
-          if (cpm !== 0) {
-            status = STATUS.GOOD;
-          } else {
-            status = STATUS.NO_BID;
-          }
-
+          const bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
+          const cpm = bidObj.price;
+          const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
           let bidObject = bidfactory.createBid(status, bidRequest);
+
           bidObject.source = TYPE;
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
@@ -372,10 +367,11 @@ const legacy = {
 };
 
 /*
- * Protocol spec for openrtb endpoint
- * e.g., https://prebid.adnxs.com/pbs/v1/openrtb2/auction
+ * Protocol spec for OpenRTB endpoint
+ * e.g., https://<prebid-server-url>/v1/openrtb2/auction
  */
-const openRtb = {
+const OPEN_RTB_PROTOCOL = {
+
   buildRequest(s2sBidRequest, adUnits) {
     let imps = [];
 
@@ -450,9 +446,9 @@ const openRtb = {
 };
 
 /*
- * Select and return the protocol specification object to communicate
- * with the configured endpoint. Returns an object containing `buildRequest`
- * and `interpretResponse` functions.
+ * Returns the required protocol adapter to communicate with the configured
+ * endpoint. The adapter is an object containing `buildRequest` and
+ * `interpretResponse` functions.
  *
  * Usage:
  * // build JSON payload to send to server
@@ -461,9 +457,10 @@ const openRtb = {
  * // turn server response into bid object array
  * const bids = protocol().interpretResponse(response, bidRequests, requestedBidders);
  */
-const protocol = () => {
+const protocolAdapter = () => {
+  const OPEN_RTB_PATH = 'openrtb2/auction';
   const isOpenRtb = _s2sConfig.endpoint.includes(OPEN_RTB_PATH);
-  return isOpenRtb ? openRtb : legacy;
+  return isOpenRtb ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
 };
 
 /**
@@ -498,7 +495,7 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
-    const request = protocol().buildRequest(s2sBidRequest, adUnitsWithSizes);
+    const request = protocolAdapter().buildRequest(s2sBidRequest, adUnitsWithSizes);
     const requestJson = JSON.stringify(request);
 
     ajax(
@@ -516,12 +513,22 @@ export function PrebidServer() {
     try {
       result = JSON.parse(response);
 
-      const bids = protocol().interpretResponse(result, bidRequests, requestedBidders);
-      (bids || []).forEach(({adUnit, bid}) => {
+      const bids = protocolAdapter().interpretResponse(
+        result,
+        bidRequests,
+        requestedBidders
+      );
+
+      bids.forEach(({adUnit, bid}) => {
         if (isValid(adUnit, bid, bidRequests)) {
           addBidResponse(adUnit, bid);
         }
       });
+
+      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
+        // cookie sync
+        cookieSet(_s2sConfig.cookieSetUrl);
+      }
     } catch (error) {
       utils.logError(error);
     }
