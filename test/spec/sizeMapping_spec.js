@@ -2,6 +2,9 @@ import { expect } from 'chai';
 import { resolveStatus, setSizeConfig } from 'src/sizeMapping';
 import includes from 'core-js/library/fn/array/includes';
 
+let utils = require('src/utils');
+let deepClone = utils.deepClone;
+
 describe('sizeMapping', () => {
   var testSizes = [[970, 90], [728, 90], [300, 250], [300, 100], [80, 80]];
 
@@ -68,6 +71,17 @@ describe('sizeMapping', () => {
   });
 
   describe('when handling sizes', () => {
+    it('should log a warning when mediaQuery property missing from sizeConfig', () => {
+      let errorConfig = deepClone(sizeConfig);
+
+      delete errorConfig[0].mediaQuery;
+
+      sandbox.stub(utils, 'logWarn');
+
+      resolveStatus(undefined, testSizes, errorConfig);
+      expect(utils.logWarn.firstCall.args[0]).to.match(/missing.+?mediaQuery/);
+    });
+
     it('when one mediaQuery block matches, it should filter the adUnit.sizes passed in', () => {
       matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
