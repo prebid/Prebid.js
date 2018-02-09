@@ -334,7 +334,7 @@ const LEGACY_PROTOCOL = {
             } else if (bidObj.adm) {
               bidObject.ad = bidObj.adm;
             } else if (bidObj.nurl) {
-              bidObject.adUrl = bidObj.nurl
+              bidObject.adUrl = bidObj.nurl;
             }
           }
 
@@ -354,11 +354,6 @@ const LEGACY_PROTOCOL = {
 
           bids.push({ adUnit: bidObj.code, bid: bidObject });
         });
-      }
-
-      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
-        // cookie sync
-        cookieSet(_s2sConfig.cookieSetUrl);
       }
     }
 
@@ -422,13 +417,23 @@ const OPEN_RTB_PROTOCOL = {
           let bidObject = bidfactory.createBid(status);
 
           bidObject.source = TYPE;
-          bidObject.creative_id = bid.crid;
           bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
-          bidObject.ad = bid.adm;
+
+          if (bid.adm && bid.nurl) {
+            bidObject.ad = bid.adm;
+            bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
+          } else if (bid.adm) {
+            bidObject.ad = bid.adm;
+          } else if (bid.nurl) {
+            bidObject.adUrl = bid.nurl;
+          }
+
           bidObject.width = bid.w;
           bidObject.height = bid.h;
+          if (bid.dealid) { bidObject.dealId = bid.dealid; }
           bidObject.requestId = bid.id;
+          bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
 
           // TODO: Remove when prebid-server returns ttl, currency and netRevenue
@@ -525,7 +530,7 @@ export function PrebidServer() {
         }
       });
 
-      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
+      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync
         cookieSet(_s2sConfig.cookieSetUrl);
       }
