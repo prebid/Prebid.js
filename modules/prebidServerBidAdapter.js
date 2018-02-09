@@ -43,8 +43,7 @@ const availVendorDefaults = {
   },
   'rubicon': {
     adapter: 'prebidServer',
-    cookieSet: true,
-    cookieSetUrl: '//secure-assets.rubiconproject.com/utils/cookieset/cs.js',
+    cookieSet: false,
     enabled: true,
     endpoint: '//prebid-server.rubiconproject.com/auction',
     syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',

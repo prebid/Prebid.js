@@ -539,8 +539,8 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('accountId', 'abc');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
-      expect(vendorConfig.cookieSet).to.be.true;
-      expect(vendorConfig).to.have.property('cookieSetUrl', '//secure-assets.rubiconproject.com/utils/cookieset/cs.js');
+      expect(vendorConfig.cookieSet).to.be.false;
+      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
