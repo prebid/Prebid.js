@@ -17,6 +17,7 @@ prebid_1_0_supported : true
 - [Banner Ads](#appnexus-Banner)
 - [Video Ads](#appnexus-Video)
 - [Native Ads](#appnexus-Native)
++ [Multi-Format Ads](#appnexus-Multi-Format)
 
 <a name="appnexus-bid-params" />
 
@@ -64,7 +65,7 @@ Sizes set in the `adUnit` object will also apply to the AppNexus bid requests.
 
 AppNexus supports the banner features described in:
 
-- [the `adUnit` banner documentation]({{site.baseurl}}/dev-docs/publisher-api-reference.html#adUnit-banner)
+- [The `adUnit` banner documentation]({{site.baseurl}}/dev-docs/adunit-reference.html#adUnit-banner-example)
 - [Getting Started for Developers]({{site.baseurl}}/dev-docs/getting-started.html)
 
 <a name="appnexus-Video" />
@@ -73,7 +74,7 @@ AppNexus supports the banner features described in:
 
 AppNexus supports the video features described in:
 
-- [the `adUnit` video documentation]({{site.baseurl}}/dev-docs/publisher-api-reference.html#adUnit-video).
+- [The `adUnit` video documentation]({{site.baseurl}}/dev-docs/adunit-reference.html#adUnit-video-example)
 - [Show Video Ads]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html)
 - [Show Outstream Video Ads]({{site.baseurl}}/dev-docs/show-outstream-video-ads.html)
 
@@ -83,5 +84,14 @@ AppNexus supports the video features described in:
 
 AppNexus supports the native features described in:
 
-- [the `adUnit` native documentation]({{site.baseurl}}/dev-docs/publisher-api-reference.html#adUnit-native).
+- [The `adUnit` native documentation]({{site.baseurl}}/dev-docs/adunit-reference.html#adUnit-native-example)
 - [Show Native Ads]({{site.baseurl}}/dev-docs/show-native-ads.html)
+
+<a name="appnexus-Multi-Format" />
+
+### Multi-Format
+
+AppNexus supports the multi-format ad unit features described in:
+
+- [The `adUnit` multi-format documentation]({{site.baseurl}}/dev-docs/adunit-reference.html#adUnit-multi-format-example)
+- [Show Multi-Format Ads]({{site.baseurl}}/dev-docs/show-multi-format-ads.html)
