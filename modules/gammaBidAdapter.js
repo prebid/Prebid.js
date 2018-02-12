@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
+const ENDPOINT = 'hb.gammaplatform.com';
 const BIDDER_CODE = 'gamma';
 
 export const spec = {
@@ -28,7 +29,7 @@ export const spec = {
     const gaxObjParams = find(bidRequests, hasParamInfo);
     return {
       method: 'GET',
-      url: '//' + gaxObjParams.params.gaxDomain + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
+      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
     };
   },
 
