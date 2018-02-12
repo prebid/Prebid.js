@@ -11,8 +11,7 @@ describe('gammaBidAdapter', function() {
       'bidder': 'gamma',
       'params': {
         siteId: '1465446377',
-        zoneId: '1515999290',
-        gaxDomain: 'hb.gammaplatform.com'
+        zoneId: '1515999290'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
@@ -36,7 +35,6 @@ describe('gammaBidAdapter', function() {
     it('should return false when params not passed correctly', () => {
       bid.params.siteId = '';
       bid.params.zoneId = '';
-      bid.params.gaxDomain = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -47,8 +45,7 @@ describe('gammaBidAdapter', function() {
         'bidder': 'gamma',
         'params': {
           siteId: '1465446377',
-          zoneId: '1515999290',
-          gaxDomain: 'hb.gammaplatform.com'
+          zoneId: '1515999290'
         },
         'adUnitCode': 'adunit-code',
         'sizes': [
@@ -56,7 +53,7 @@ describe('gammaBidAdapter', function() {
         ],
         'bidId': '23beaa6af6cdde',
         'bidderRequestId': '19c0c1efdf37e7',
-        'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+        'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1'
       }
     ];
 
@@ -67,7 +64,7 @@ describe('gammaBidAdapter', function() {
     });
 
     it('bidRequest url', () => {
-      expect(request.url).to.match(new RegExp(`${bidRequests[0].params.gaxDomain}`));
+      expect(request.url).to.match(new RegExp(`hb.gammaplatform.com`));
     });
   });
 
