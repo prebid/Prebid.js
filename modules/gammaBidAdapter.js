@@ -16,7 +16,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.siteId || bid.params.zoneId || bid.params.gaxDomain);
+    return !!(bid.params.siteId || bid.params.zoneId);
   },
 
   /**
