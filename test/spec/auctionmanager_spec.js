@@ -466,6 +466,7 @@ describe('auctionmanager.js', function () {
     let auction;
     let ajaxStub;
     const BIDDER_CODE = 'sampleBidder';
+    const BIDDER_CODE1 = 'sampleBidder1';
     let makeRequestsStub;
     let bids = [{
       'ad': 'creative',
@@ -654,57 +655,6 @@ describe('auctionmanager.js', function () {
         auction.callBids();
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, 'renderer.js');
-      });
-    });
-
-    describe('with auction timeout 20', () => {
-      let auction;
-      let adUnits;
-      let adUnitCodes;
-      let createAuctionStub;
-      let spec;
-      let getBidderRequestStub;
-      let eventsEmitSpy;
-
-      beforeEach(() => {
-        adUnits = [{
-          code: 'adUnit-code',
-          bids: [
-            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
-          ]
-        }];
-        adUnitCodes = ['adUnit-code'];
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 20});
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
-        getBidderRequestStub = sinon.stub(utils, 'getBidderRequest');
-
-        let newBidRequest = Object.assign({}, bidRequests[0], {'start': 1000});
-        getBidderRequestStub.returns(newBidRequest);
-
-        spec = {
-          code: BIDDER_CODE,
-          isBidRequestValid: sinon.stub(),
-          buildRequests: sinon.stub(),
-          interpretResponse: sinon.stub(),
-          getUserSyncs: sinon.stub()
-        };
-        eventsEmitSpy = sinon.spy(events, 'emit');
-      });
-
-      afterEach(() => {
-        auctionModule.newAuction.restore();
-        utils.getBidderRequest.restore();
-        events.emit.restore();
-      });
-
-      it('should emit BID_TIMEOUT for timed out bids', () => {
-        registerBidder(spec);
-        spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-        spec.isBidRequestValid.returns(true);
-        spec.interpretResponse.returns(bids);
-        auction.callBids();
-        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
       });
     });
   });

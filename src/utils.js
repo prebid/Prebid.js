@@ -809,6 +809,13 @@ export function getOrigin() {
   }
 }
 
+/**
+ * Returns Do Not Track state
+ */
+export function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
+}
+
 const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**

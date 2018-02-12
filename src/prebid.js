@@ -13,7 +13,7 @@ import includes from 'core-js/library/fn/array/includes';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 
-var CONSTANTS = require('./constants.json');
+const CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
@@ -23,9 +23,7 @@ const { triggerUserSyncs } = userSync;
 /* private variables */
 
 const RENDERED = 'rendered';
-var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
-var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -283,7 +281,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
-  events.emit('requestBids');
+  events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
