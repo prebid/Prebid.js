@@ -422,6 +422,95 @@ describe('the rubicon adapter', () => {
             expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
           });
         });
+
+        /*describe('\nFEATURE: singleRequest mode\n' +
+          'SCENARIO: singleRequest is enabled in config\n', () => {
+
+          it('should group all bid requests with the same site id', () => {
+            sandbox.stub(config, 'getConfig', (key) => {
+              const config = {
+                'rubicon.singleRequest': true
+              };
+              return config[key];
+            });
+
+            const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidderRequest.bids.push(bidCopy);
+
+            const bidCopy2 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy2.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy2);
+
+            const bidCopy3 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy3.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy3);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(serverRequests).that.is.an('array').of.length(2);
+          });
+
+          it('should not group all bid requests with the same site id is singleRequest does not equal true', () => {
+            sandbox.stub(config, 'getConfig', (key) => {
+              const config = {
+                'rubicon.singleRequest': false
+              };
+              return config[key];
+            });
+
+            const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidderRequest.bids.push(bidCopy);
+
+            const bidCopy2 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy2.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy2);
+
+            const bidCopy3 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy3.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy3);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(serverRequests).that.is.an('array').of.length(4);
+          });
+
+          it('should not group video requests', () => {
+            sandbox.stub(config, 'getConfig', (key) => {
+              const config = {
+                'rubicon.singleRequest': true
+              };
+              return config[key];
+            });
+
+            const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidderRequest.bids.push(bidCopy);
+
+            const bidCopy2 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy2.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy2);
+
+            const bidCopy3 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy3.params.siteId = '32001';
+            bidderRequest.bids.push(bidCopy3);
+
+            const bidCopy4 = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+            bidCopy4.mediaType = 'video';
+            bidCopy4.params.video = {
+              'language': 'en',
+              'p_aso.video.ext.skip': true,
+              'p_aso.video.ext.skipdelay': 15,
+              'playerHeight': 320,
+              'playerWidth': 640,
+              'size_id': 201,
+              'aeParams': {
+                'p_aso.video.ext.skip': '1',
+                'p_aso.video.ext.skipdelay': '15'
+              }
+            };
+            bidderRequest.bids.push(bidCopy4);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(serverRequests).that.is.an('array').of.length(3);
+          });
+        });*/
       });
 
       describe('for video requests', () => {
@@ -538,97 +627,6 @@ describe('the rubicon adapter', () => {
 
     describe('interpretResponse', () => {
       describe('for fastlane', () => {
-        it('should handle a success response and sort by cpm', () => {
-          let response = {
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [
-              {
-                'status': 'ok',
-                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
-                'size_id': '15',
-                'ad_id': '6',
-                'advertiser': 7,
-                'network': 8,
-                'creative_id': 'crid-9',
-                'type': 'script',
-                'script': 'alert(\'foo\')',
-                'campaign_id': 10,
-                'cpm': 0.811,
-                'targeting': [
-                  {
-                    'key': 'rpfl_14062',
-                    'values': [
-                      '15_tier_all_test'
-                    ]
-                  }
-                ]
-              },
-              {
-                'status': 'ok',
-                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
-                'size_id': '43',
-                'ad_id': '7',
-                'advertiser': 7,
-                'network': 8,
-                'creative_id': 'crid-9',
-                'type': 'script',
-                'script': 'alert(\'foo\')',
-                'campaign_id': 10,
-                'cpm': 0.911,
-                'targeting': [
-                  {
-                    'key': 'rpfl_14062',
-                    'values': [
-                      '43_tier_all_test'
-                    ]
-                  }
-                ]
-              }
-            ]
-          };
-
-          let bids = spec.interpretResponse({ body: response }, {
-            bidRequest: bidderRequest.bids[0]
-          });
-
-          expect(bids).to.be.lengthOf(2);
-
-          expect(bids[0].width).to.equal(320);
-          expect(bids[0].height).to.equal(50);
-          expect(bids[0].cpm).to.equal(0.911);
-          expect(bids[0].ttl).to.equal(300);
-          expect(bids[0].netRevenue).to.equal(false);
-          expect(bids[0].creativeId).to.equal('crid-9');
-          expect(bids[0].currency).to.equal('USD');
-          expect(bids[0].ad).to.contain(`alert('foo')`)
-            .and.to.contain(`<html>`)
-            .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
-          expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
-          expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
-
-          expect(bids[1].width).to.equal(300);
-          expect(bids[1].height).to.equal(250);
-          expect(bids[1].cpm).to.equal(0.811);
-          expect(bids[1].ttl).to.equal(300);
-          expect(bids[1].netRevenue).to.equal(false);
-          expect(bids[1].creativeId).to.equal('crid-9');
-          expect(bids[1].currency).to.equal('USD');
-          expect(bids[1].ad).to.contain(`alert('foo')`)
-            .and.to.contain(`<html>`)
-            .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
-          expect(bids[1].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
-          expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
-        });
-
         it('should be fine with a CPM of 0', () => {
           let response = {
             'status': 'ok',
@@ -711,6 +709,47 @@ describe('the rubicon adapter', () => {
 
           expect(bids).to.be.lengthOf(0);
         });
+
+        // it('should have multiple ad units returned if single request mode is enabled', () => {
+        //   sandbox.stub(config, 'getConfig', (key) => {
+        //     const config = {
+        //       'rubicon.singleRequest': true
+        //     };
+        //     return config[key];
+        //   });
+        //
+        //   const bidCopy = JSON.parse(JSON.stringify(bidderRequest.bids[0]));
+        //   bidderRequest.bids.push(bidCopy);
+        //
+        //   let response = {
+        //     'status': 'ok',
+        //     'account_id': 14062,
+        //     'site_id': 70608,
+        //     'zone_id': 530022,
+        //     'size_id': 15,
+        //     'alt_size_ids': [
+        //       43
+        //     ],
+        //     'tracking': '',
+        //     'inventory': {},
+        //     'ads': [{
+        //       'status': 'ok',
+        //       'cpm': 0.10,
+        //       'size_id': 15
+        //     },
+        //     {
+        //       'status': 'ok',
+        //       'cpm': 0.25,
+        //       'size_id': 15
+        //     }]
+        //   };
+        //
+        //   let bids = spec.interpretResponse({ body: response }, {
+        //     bidRequest: bidderRequest.bids
+        //   });
+        //
+        //   expect(bids).to.be.lengthOf(2);
+        // });
       });
 
       describe('for video', () => {
@@ -764,6 +803,32 @@ describe('the rubicon adapter', () => {
           expect(bids[0].videoCacheKey).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
+    });
+  });
+
+  describe('combineSlotUrlParams', () => {
+    it('should combine an array of slot url params', () => {
+      expect(spec.combineSlotUrlParams([])).to.deep.equal({});
+
+      expect(spec.combineSlotUrlParams([{p1: 'foo', p2: 'test', p3: ''}])).to.deep.equal({p1: 'foo', p2: 'test', p3: ''});
+
+      expect(spec.combineSlotUrlParams([{}, {p1: 'foo', p2: 'test'}])).to.deep.equal({p1: ';foo', p2: ';test'});
+
+      expect(spec.combineSlotUrlParams([{}, {}, {p1: 'foo', p2: ''}, {}])).to.deep.equal({p1: ';;foo;', p2: ''});
+
+      expect(spec.combineSlotUrlParams([{}, {p1: 'foo'}, {p1: ''}])).to.deep.equal({p1: ';foo;'});
+
+      expect(spec.combineSlotUrlParams([
+        {p1: 'foo', p2: 'test'},
+        {p2: 'test', p3: 'bar'},
+        {p1: 'bar', p2: 'test', p4: 'bar'}
+      ])).to.deep.equal({p1: 'foo;;bar', p2: 'test', p3: ';bar;', p4: ';;bar'});
+
+      expect(spec.combineSlotUrlParams([
+        {p1: 'foo', p2: 'test', p3: 'baz'},
+        {p1: 'foo', p2: 'bar'},
+        {p2: 'test'}
+      ])).to.deep.equal({p1: 'foo;foo;', p2: 'test;bar;test', p3: 'baz;;'});
     });
   });
 
