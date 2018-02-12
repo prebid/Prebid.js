@@ -13,7 +13,7 @@ about:
 player_notes:
 - Make sure to incude at least one advertising plugin you want to use on the page. For this demo, we're using the <a href="https://github.com/MailOnline/videojs-vast-vpaid">Mail Online VAST/VPAID plugin</a>.
 - A guide to the options the <code>vastClient</code> accepts can be found <a href="https://github.com/MailOnline/videojs-vast-vpaid#options">here</a>.
-jsfiddle_link: jsfiddle.net/prebid/vfzo8ofu/13/embedded/html/
+jsfiddle_link: jsfiddle.net/vfzo8ofu/19/embedded/html/
 demo_link: prebid.org/examples/video/videojs-demo.html
 code_lines: 159
 code_height: 4000

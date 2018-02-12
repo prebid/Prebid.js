@@ -14,7 +14,7 @@ about:
 player_notes:
 - This guide uses the V4 Ooyala player. To get the embed code for the V4 player, select <b>New Ooyala Player (V4) Embed Code</b> in the embed options instead of HTML Embed Code. 
 - Do not select an ad set in the 'Monetize' tab. We'll control that setting on the page (see example code below).
-jsfiddle_link: jsfiddle.net/prebid/hxzue5eu/9/embedded/html/
+jsfiddle_link: jsfiddle.net/hxzue5eu/12/embedded/html/
 demo_link: prebid.org/examples/video/ooyala-demo.html
 code_lines: 154
 code_height: 5000

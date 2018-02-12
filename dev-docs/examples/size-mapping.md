@@ -11,7 +11,7 @@ hide: true
 about:
 - Example showing how to configure ad units to resize dynamically based on screen size
 
-jsfiddle_link: jsfiddle.net/prebid/58udrja1/31/embedded/html,result
+jsfiddle_link: jsfiddle.net/58udrja1/61/embedded/html,result
 
 code_height: 3000
 code_lines: 118
@@ -21,7 +21,7 @@ pid: 102
 
 <div markdown="1">
 
-#### Line 8: Add size mapping to the ad unit
+#### Line 13: Add size mapping to the ad unit
 
 You can use the ad unit's new `sizeMapping` property to declaratively specify the ad sizes that should be shown when the device screen is greater than or equal to a given size.
 

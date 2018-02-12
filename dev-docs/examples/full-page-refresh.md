@@ -15,7 +15,7 @@ about:
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>)
 - Standard price granularity
 
-jsfiddle_link: jsfiddle.net/prebid/amg49spy/18/embedded/html,result
+jsfiddle_link: jsfiddle.net/amg49spy/21/embedded/html,result
 code_height: 2662
 code_lines: 122
 
@@ -29,7 +29,7 @@ pid: 35
 <br><br><br><br>
 
 <div markdown="1">
-#### Line 31 to 41: Refresh bids listener
+#### Line 92 to 102: Refresh bids listener
 
 The refresh button triggers this function call. `pbjs.requestBids` will set keyword targeting and refresh the DFP ad units when:
 

@@ -12,7 +12,7 @@ about:
 - Standard keyword targeting setup
 - Standard price granularity
 - See a <a href="/examples/adunit_refresh_example.html">Prebid.org-hosted version of the example code here</a>
-jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/75/embedded/html,result
+jsfiddle_link: jsfiddle.net/dzrs3gfL/92/embedded/html,result
 code_height: 2600
 code_lines: 140
 pid: 20

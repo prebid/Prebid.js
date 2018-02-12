@@ -12,7 +12,7 @@ about:
 - Integration with DFP's GPT single request asynchronous mode
 - One set of line items for all bidders
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/100/embedded/html,result
+jsfiddle_link: jsfiddle.net/qhdnvdhj/2/embedded/html,result
 code_height: 3166
 code_lines: 146
 pid: 101
@@ -30,7 +30,7 @@ pid: 101
 
 <div markdown="1">
 
-#### Line 32 to 63: Set Custom Price Granularity
+#### Line 40 to 71: Set Custom Price Granularity
 
 In this example, we customize the bid price to use our own custom logic.  The logic is:
 
@@ -50,10 +50,10 @@ To see the effect of this customization, click into the **Result** tab of this J
 <br /><br /><br /><br /><br /><br />
 
 <div markdown="1">
-#### Line 87 to 90: Set targeting with custom keywords
+#### Line 97 to 100: Set targeting with custom keywords
 
 `pbjs.setTargetingForGPTAsync()` will now use your custom keywords for targeting.
 
-The keywords can be retrieved by calling `pbjs.getAdserverTargeting()` as shown on line 91.
+The keywords can be retrieved by calling `pbjs.getAdserverTargeting()` as shown on line 100.
 
 </div>

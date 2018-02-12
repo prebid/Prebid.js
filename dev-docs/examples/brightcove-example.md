@@ -16,7 +16,7 @@ player_notes:
 - For this demo we'll be configuring the player's ima3 settings on the page instead of in Video Cloud. Make sure you load the ima3 script and CSS file in addition to your player script.
 - On the publish page for the player, choose the <b>Advanced</b> embed code (not <b>Standard</b>).
 - If you're playing a preroll ad, do not include the videoID in the video element.
-jsfiddle_link: jsfiddle.net/prebid/dd4wd8z7/32/embedded/html/
+jsfiddle_link: jsfiddle.net/dd4wd8z7/36/embedded/html/
 demo_link: prebid.org/examples/video/bc-demo.html
 code_lines: 154
 code_height: 4600

@@ -11,7 +11,7 @@ hide: true
 about:
 - Simplified price bucket setup with one function call to <a href="/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity"><code>pbjs.setPriceGranularity()</code></a>
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/98/embedded/html,result
+jsfiddle_link: jsfiddle.net/bp9magow/129/embedded/html,result
 code_height: 2641
 code_lines: 121
 
@@ -47,7 +47,7 @@ pid: 25
 <br />
 
 <div markdown="1">
-#### Line 32: Set price granularity
+#### Line 41: Set price granularity
 
 The simplest way to set price granularity is to use the helper method [`pbjs.setPriceGranularity`](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).  For more information about this method, see [its documentation](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
 

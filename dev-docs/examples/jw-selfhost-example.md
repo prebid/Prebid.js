@@ -16,7 +16,7 @@ player_notes:
 - For this example we will be using <a href="https://support.jwplayer.com/customer/portal/articles/1406723-mp4-video-embed#fndtn-method-3">method 3</a>, a self-hosted player with JW Platform hosted content.
 - To see an example using the cloud-hosted player, see <a href="/dev-docs/examples/jw-cloud-example.html">Show a Video Ad in a Cloud Hosted JW Player</a>.
 - No matter what embedding method you choose to use, you must follow the <b>custom embed</b> instructions. You cannot use the single-line embed.
-jsfiddle_link: jsfiddle.net/prebid/357yaqgc/29/embedded/html/
+jsfiddle_link: jsfiddle.net/357yaqgc/32/embedded/html/
 demo_link: prebid.org/examples/video/jwPlayerPrebid.html
 code_lines: 141
 code_height: 3600

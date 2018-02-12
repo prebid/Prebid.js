@@ -22,7 +22,7 @@ The easiest way to get started with Prebid.js is to use the example code below.
 
 {% include dev-docs/build-from-source-warning.md %}
 
-<iframe width="100%" height="680" src="//jsfiddle.net/prebid/qu68xoz5/66/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="680" src="//jsfiddle.net/prebid/e48yrvby/1/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 ### Next Steps
 
