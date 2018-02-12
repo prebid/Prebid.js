@@ -37,9 +37,9 @@ See the table below for the list of properties on the ad unit.  For example ad u
 | `code`       | Required | String                                | Unique identifier you create and assign to this ad unit.  Used to set query string targeting on the ad. If using GPT, we recommend setting this to slot element ID.                        |
 | `sizes`      | Required | Array[Number] or Array[Array[Number]] | All sizes this ad unit can accept.  Examples: `[400, 600]`, `[[300, 250], [300, 600]]`.  For 1.0 and later, define sizes within the appropriate `mediaTypes.{banner,native,video}` object. |
 | `bids`       | Required | Array[Object]                         | Array of bid objects representing demand partners and associated parameters for a given ad unit.  See [Bids](#adUnit.bids) below.                                                          |
-| `mediaTypes` | Optional | Object                                | Defines one or more media types that can serve into the ad unit.  For a list of properties, see [`adUnit.mediaTypes`](#adUnit.mediaTypes) below.                                                   |
-| `labelAny`   | Optional | Array[String]                         | Used for [conditional ads][conditionalAds].  Works with `sizeConfig` argument to [pbjs.setConfig][setConfig].                                                                              |
-| `labelAll`   | Optional | Array[String]                         | Used for [conditional ads][conditionalAds]. Works with `sizeConfig` argument to [pbjs.setConfig][setConfig].                                                                               |
+| `mediaTypes` | Optional | Object                                | Defines one or more media types that can serve into the ad unit.  For a list of properties, see [`adUnit.mediaTypes`](#adUnit.mediaTypes) below.                                           |
+| `labelAny`   | Optional | Array[String]                         | Used for [conditional ads][conditionalAds].  Works with `sizeConfig` argument to [pbjs.setConfig][configureResponsive].                                                                    |
+| `labelAll`   | Optional | Array[String]                         | Used for [conditional ads][conditionalAds]. Works with `sizeConfig` argument to [pbjs.setConfig][configureResponsive].                                                                     |
 
 <a name="adUnit.bids" />
 
@@ -52,8 +52,8 @@ See the table below for the list of properties in the `bids` array of the ad uni
 |------------+----------+---------------+------------------------------------------------------------------------------------------------------------------------------------------|
 | `bidder`   | Required | String        | Unique code identifying the bidder. For bidder codes, see the [bidder param reference]({{site.baseurl}}/dev-docs/bidders.html).          |
 | `params`   | Required | Object        | Bid request parameters for a given bidder. For allowed params, see the [bidder param reference]({{site.baseurl}}/dev-docs/bidders.html). |
-| `labelAny` | Optional | Array[String] | Used for [conditional ads][conditionalAds].  Works with `sizeConfig` argument to [pbjs.setConfig][setConfig].                            |
-| `labelAll` | Optional | Array[String] | Used for [conditional ads][conditionalAds]. Works with `sizeConfig` argument to [pbjs.setConfig][setConfig].                             |
+| `labelAny` | Optional | Array[String] | Used for [conditional ads][conditionalAds].  Works with `sizeConfig` argument to [pbjs.setConfig][configureResponsive].                  |
+| `labelAll` | Optional | Array[String] | Used for [conditional ads][conditionalAds]. Works with `sizeConfig` argument to [pbjs.setConfig][configureResponsive].                   |
 
 <a name="adUnit.mediaTypes" />
 
@@ -410,5 +410,6 @@ For an example of a multi-format ad unit, see below.  For more detailed instruct
 
 [conditionalAds]: {{site.baseurl}}/dev-docs/conditional-ad-units.html
 [setConfig]: {{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig
+[configureResponsive]: {{site.baseurl}}/dev-docs/publisher-api-reference.html#setConfig-Configure-Responsive-Ads
 [openRTB]: https://www.iab.com/wp-content/uploads/2015/05/OpenRTB_API_Specification_Version_2_3_1.pdf
 [pbServer]: {{site.baseurl}}/dev-docs/get-started-with-prebid-server.html
