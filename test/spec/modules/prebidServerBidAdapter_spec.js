@@ -530,8 +530,9 @@ describe('S2S Adapter', () => {
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
     });
   });

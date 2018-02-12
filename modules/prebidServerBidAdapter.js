@@ -367,12 +367,21 @@ const LEGACY_PROTOCOL = {
  */
 const OPEN_RTB_PROTOCOL = {
 
+  bidMap: {},
+
   buildRequest(s2sBidRequest, adUnits) {
     let imps = [];
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
       let banner;
+
+      adUnit.bids.forEach(bid => {
+        // OpenRTB response contains the adunit code and bidder name. These are
+        // combined to create a unique key for each bid since an id isn't returned
+        const key = `${adUnit.code}${bid.bidder}`;
+        this.bidMap[key] = bid;
+      });
 
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
       if (bannerParams && bannerParams.sizes) {
@@ -412,9 +421,14 @@ const OPEN_RTB_PROTOCOL = {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
+          const bidRequest = utils.getBidRequest(
+            this.bidMap[`${bid.impid}${seatbid.seat}`],
+            bidRequests
+          );
+
           const cpm = bid.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status);
+          let bidObject = bidfactory.createBid(status, bidRequest);
 
           bidObject.source = TYPE;
           bidObject.bidderCode = seatbid.seat;
