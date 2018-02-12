@@ -6,7 +6,7 @@
 
 # Description
 
-Get access to multiple demand partners across Adtelligent AdExchange and maximize your yield with Adtelligent header bidding adapter.
+Get access to multiple demand partners across Adtelligent Marketplace and maximize your yield with Adtelligent header bidding adapter.
 
 Adtelligent header bidding adapter connects with Adtelligent demand sources in order to fetch bids.
 This adapter provides a solution for accessing Video demand and display demand
