@@ -23,8 +23,7 @@ var adUnits = [{
 			bidder: 'gamma',
             params: {
 				siteId: '1465446377',
-				zoneId: '1515999290',
-				gaxDomain: 'hb.gammaplatform.com'
+				zoneId: '1515999290'
             }
           }]
   
@@ -44,8 +43,7 @@ In order to receive bids please map localhost to (any) test domain.
 		bidder: 'gamma',
             params: {
 		siteId: '1465446377',
-		zoneId: '1515999290',
-		gaxDomain: 'hb.gammaplatform.com'
+		zoneId: '1515999290'
             }
           }]
     }];
