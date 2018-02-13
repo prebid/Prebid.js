@@ -224,25 +224,32 @@ function addBidToAuction(auctionInstance, bidResponse) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, bidRequest, vastUrl) {
+function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
+  let willAdd = false;
   if (config.getConfig('cache.url')) {
-    store([bidResponse], function(error, cacheIds) {
-      if (error) {
-        utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+    if (!bidResponse.videoCacheKey) {
+      willAdd = true;
+      store([bidResponse], function (error, cacheIds) {
+        if (error) {
+          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
-        doCallbacksIfTimedout(auctionInstance, bidResponse);
-      } else {
-        bidResponse.videoCacheKey = cacheIds[0].uuid;
-        if (!vastUrl) {
-          bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          doCallbacksIfTimedout(auctionInstance, bidResponse);
+        } else {
+          bidResponse.videoCacheKey = cacheIds[0].uuid;
+          if (!bidResponse.vastUrl) {
+            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          }
+          // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
+          bidRequest.doneCbCallCount += 1;
+          addBidToAuction(auctionInstance, bidResponse);
+          auctionInstance.bidsBackAll();
         }
-        // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
-        bidRequest.doneCbCallCount += 1;
-        addBidToAuction(auctionInstance, bidResponse);
-        auctionInstance.bidsBackAll();
-      }
-    });
-  } else {
+      });
+    } else if (!bidResponse.vastUrl) {
+      bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+    }
+  }
+  if (!willAdd) {
     addBidToAuction(auctionInstance, bidResponse);
   }
 }
@@ -256,7 +263,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
 
   if (bidResponse.mediaType === 'video') {
-    tryAddVideoBid(auctionInstance, bidResponse, bidRequest, bid.vastUrl);
+    tryAddVideoBid(auctionInstance, bidResponse, bidRequest);
   } else {
     addBidToAuction(auctionInstance, bidResponse);
   }
