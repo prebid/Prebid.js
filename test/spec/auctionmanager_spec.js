@@ -853,11 +853,11 @@ describe('auctionmanager.js', function () {
     });
 
     it('should run auction after video bids have been cached', () => {
-      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123}]);
+      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 
-      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video'})];
-      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video'})];
+      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video' })];
+      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video' })];
 
       registerBidder(spec);
       registerBidder(spec1);
