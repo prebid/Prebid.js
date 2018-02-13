@@ -67,6 +67,24 @@ describe('AppNexusAdapter', () => {
       }
     ];
 
+    it('should parse out private sizes', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            privateSizes: [300, 250]
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].private_sizes).to.exist;
+      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
+    });
+
     it('should add source and verison to the tag', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
