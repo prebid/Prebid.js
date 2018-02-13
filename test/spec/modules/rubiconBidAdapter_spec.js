@@ -119,7 +119,7 @@ describe('the rubicon adapter', () => {
     describe('for requests', () => {
       describe('to fastlane', () => {
         it('should make a well-formed request objects', () => {
-          sandbox.stub(Math, 'random', () => 0.1);
+          sandbox.stub(Math, 'random').returns(0.1);
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
@@ -202,7 +202,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -247,7 +247,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -275,7 +275,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: false,
               identity: {
@@ -312,7 +312,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should send digiTrustId config params', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -345,7 +345,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -374,7 +374,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -403,7 +403,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {};
               return config[key];
             });
@@ -428,7 +428,7 @@ describe('the rubicon adapter', () => {
         it('should make a well-formed video request', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -489,7 +489,7 @@ describe('the rubicon adapter', () => {
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -508,7 +508,7 @@ describe('the rubicon adapter', () => {
 
         it('should not validate bid request when no video object is passed in', () => {
           createVideoBidderRequestNoVideo();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -521,7 +521,7 @@ describe('the rubicon adapter', () => {
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 

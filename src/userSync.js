@@ -165,7 +165,7 @@ export function newUserSync(userSyncDependencies) {
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {
-      return window.setTimeout(fireSyncs, Number(timeout));
+      return setTimeout(fireSyncs, Number(timeout));
     }
     fireSyncs();
   };

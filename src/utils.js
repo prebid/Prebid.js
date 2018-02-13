@@ -671,8 +671,13 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function cookiesAreEnabled() {
+export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+}
+export function cookiesAreEnabled() {
+  if (exports.checkCookieSupport()) {
     return true;
   }
   window.document.cookie = 'prebid.cookieTest';

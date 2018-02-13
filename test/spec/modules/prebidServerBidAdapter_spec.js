@@ -216,8 +216,8 @@ describe('S2S Adapter', () => {
   beforeEach(() => adapter = new Adapter());
 
   afterEach(() => {
-    addBidResponse.reset();
-    done.reset();
+    addBidResponse.resetHistory();
+    done.resetHistory();
   });
 
   describe('request function', () => {
@@ -393,7 +393,7 @@ describe('S2S Adapter', () => {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
-      sinon.stub(adapterManager, 'getBidAdapter', () => rubiconAdapter);
+      sinon.stub(adapterManager, 'getBidAdapter').callsFake(() => rubiconAdapter);
 
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 

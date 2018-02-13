@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -66,7 +67,7 @@ describe('bidders created by newBidder', () => {
       spec.getUserSyncs.returns([]);
 
       bidder.callBids({});
-      bidder.callBids({ bids: 'nothing useful' });
+      bidder.callBids({ bids: 'nothing useful' }, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.called).to.equal(false);
@@ -264,13 +265,13 @@ describe('bidders created by newBidder', () => {
     let logErrorSpy;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
       addBidResponseStub.reset();
-      doneStub.reset();
+      doneStub.resetBehavior();
       userSyncStub = sinon.stub(userSync, 'registerSync')
       logErrorSpy = sinon.spy(utils, 'logError');
     });
@@ -432,7 +433,7 @@ describe('bidders created by newBidder', () => {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         callbacks.error('ajax call failed.');
       });
       addBidResponseStub.reset();
@@ -592,7 +593,7 @@ describe('validate bid response: ', () => {
 
     addBidResponseStub = sinon.stub();
     doneStub = sinon.stub();
-    ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+    ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
       const fakeResponse = sinon.stub();
       fakeResponse.returns('headerContent');
       callbacks.success('response body', { getResponseHeader: fakeResponse });
