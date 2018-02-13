@@ -66,7 +66,7 @@ export const spec = {
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
           creativeId: sovrnBid.id,
-          dealId: sovrnBid.dealId || null,
+          dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,

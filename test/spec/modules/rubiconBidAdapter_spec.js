@@ -607,6 +607,8 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].rubicon.advertiserId).to.equal(7);
+          expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].ad).to.contain(`alert('foo')`)
@@ -620,6 +622,8 @@ describe('the rubicon adapter', () => {
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].ttl).to.equal(300);
           expect(bids[1].netRevenue).to.equal(false);
+          expect(bids[1].rubicon.advertiserId).to.equal(7);
+          expect(bids[1].rubicon.networkId).to.equal(8);
           expect(bids[1].creativeId).to.equal('crid-9');
           expect(bids[1].currency).to.equal('USD');
           expect(bids[1].ad).to.contain(`alert('foo')`)
