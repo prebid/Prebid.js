@@ -135,8 +135,8 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <h4>Select Prebid Version</h4>
 <select class="selectpicker">
   <!-- empty value indicates legacy --> 
-  <option value="">0.34.2</option>
-  <option>1.2.0</option>
+  <option value="">0.34.3</option>
+  <option>1.3.1</option>
 </select>
 
 
