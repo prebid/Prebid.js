@@ -24,8 +24,7 @@ export const spec = {
     let domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(location.host);
     if (domain == null || domain.length == 0) {
       domain = null;
-    }
-    else {
+    } else {
       domain = domain[0];
     }
 
