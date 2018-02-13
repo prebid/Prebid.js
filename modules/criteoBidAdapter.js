@@ -53,8 +53,22 @@ var CriteoAdapter = function CriteoAdapter() {
             sizes.map((sizeString) => {
               var xIndex = sizeString.indexOf('x');
               var w = parseInt(sizeString.substring(0, xIndex));
-              var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length))
-              return new Criteo.PubTag.DirectBidding.Size(w, h);
+              var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length));
+              try {
+                return new Criteo.PubTag.DirectBidding.Size(w, h);
+              } catch(err) {
+                var stringify = function(obj) {
+                  var a = {};
+                  Object.keys(obj).forEach(function(key) {
+                    if (typeof obj[key] == 'object') {
+                      a[key] = stringify(obj[key]);
+                    } else if(obj[key] != undefined) {
+                      a[key] = obj[key].toString();}
+                  });
+                  return a;
+                };
+                throw stringify(Criteo);
+              }
             }
             )
           )
