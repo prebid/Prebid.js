@@ -36,7 +36,7 @@ export const spec = {
         devEnpoint = '//sdev.sspqns.com/hb';
       }
       let renderMode = 'native';
-      for (let i = 0; i < bid.sizes.length - 1; i++) {
+      for (let i = 0; i < bid.sizes.length; i++) {
         if (bid.sizes[i][0] > 0 && bid.sizes[i][1] > 0) {
           renderMode = 'banner';
           break;
@@ -78,7 +78,7 @@ export const spec = {
     if (serverBody.price && serverBody.price !== 0) {
       responseCPM = parseFloat(serverBody.price);
 
-      bid.creativeId = serverBody.creative_id || '';
+      bid.creativeId = serverBody.creative_id || '0';
       bid.cpm = responseCPM;
       bid.requestId = bidRequest.bidId;
       bid.width = 0;

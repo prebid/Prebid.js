@@ -51,7 +51,7 @@ var adUnits = [{
         pbjsEl.type = "text/javascript";
         pbjsEl.async = true;
         var isHttps = 'https:' === document.location.protocol;
-        pbjsEl.src = "//cdn.elasticad.net/native/serve/js/quantx/_dev/prebid.js";
+        pbjsEl.src = "//cdn.elasticad.net/native/serve/js/quantx/quantumPrebidAdapter/prebid.js";
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
       })();
