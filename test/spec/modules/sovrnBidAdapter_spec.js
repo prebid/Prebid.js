@@ -40,7 +40,7 @@ describe('sovrnBidAdapter', function() {
   });
 
   describe('buildRequests', () => {
-    let bidRequests = [{
+    const bidRequests = [{
       'bidder': 'sovrn',
       'params': {
         'tagid': '403370'
@@ -63,6 +63,26 @@ describe('sovrnBidAdapter', function() {
     it('attaches source and version to endpoint URL as query params', () => {
       expect(request.url).to.equal(ENDPOINT)
     });
+
+    it('sends \'iv\' as query param if present', () => {
+      const ivBidRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': '403370',
+          'iv': 'vet'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(ivBidRequests);
+
+      expect(request.data).to.contain('"iv":"vet"')
+    })
   });
 
   describe('interpretResponse', () => {
