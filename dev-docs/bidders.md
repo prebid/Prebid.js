@@ -86,11 +86,14 @@ The following parameters in the `bidResponse` object are common across all bidde
 | beachfront      | video                 | X                   |
 | conversant      | video                 | X                   |
 | freewheelSSP    | video                 | X                   |
+| gamma           | video                 | X                   |
 | getintent       | video                 | X                   |
+| gumgum          | native                | X                   |
 | mantis          | video,native          | X                   |
 | mobfox          | video                 | X                   |
 | openx           | video                 | X                   |
 | optimatic       | video                 | X                   |
+| platformio      | native                | X                   |
 | prebidServer    | video                 | X                   |
 | pulsepoint      | native                | X                   |
 | quantcast       | video                 | X                   |
@@ -106,14 +109,12 @@ The following parameters in the `bidResponse` object are common across all bidde
 | aerserv         | video                 |                     |
 | appnexusAst     | video,native          |                     |
 | criteo          | native                |                     |
-| gumgum          | native                |                     |
 | indexExchange   | video                 |                     |
 | pulsepointLite  | native                |                     |
 | spotx           | video                 |                     |
 | stickyadstv     | native                |                     |
 | tremor          | video                 |                     |
 | unruly          | video,native          |                     |
-| rockyou         | video                 | X                   |
 
 <a name="prebid-server-bidders"></a>
 
