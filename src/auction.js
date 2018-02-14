@@ -225,10 +225,10 @@ function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
-  let willAdd = false;
+  let addBid = true;
   if (config.getConfig('cache.url')) {
     if (!bidResponse.videoCacheKey) {
-      willAdd = true;
+      addBid = false;
       store([bidResponse], function (error, cacheIds) {
         if (error) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
@@ -246,10 +246,11 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
         }
       });
     } else if (!bidResponse.vastUrl) {
-      bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+      utils.logError('videoCacheKey specified but not required vastUrl for video bid');
+      addBid = false;
     }
   }
-  if (!willAdd) {
+  if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
   }
 }
