@@ -11,9 +11,10 @@ prebid_1_0_supported : true
 ---
 
 ### bid params
+
 {: .table .table-bordered .table-striped }
-| Name           | Scope    | Description                                                                               | Example                                     |
-|----------------+----------+-------------------------------------------------------------------------------------------+---------------------------------------------|
-| `cId`          | required | The connection ID from Vidazoo.                                                           | `"5a3a543645ea6b0004869360"`                |
-| `pId`          | required | The publisher ID from Vidazoo.                                                            | `"59ac17c192832d0011283fe3"`                |
-| `bidFloor`     | required | The minimum bid value desired. Vidazoo will not respond with bids lower than this value.  | `"abc123"`                                  |                                                                                                                                               | `0.90`            |
+| Name             | Scope    | Description                                                                               | Example                      |
+|------------------+----------+-------------------------------------------------------------------------------------------+------------------------------|
+| `cId`            | required | The connection ID from Vidazoo.                                                           | `"5a3a543645ea6b0004869360"` |
+| `pId`            | required | The publisher ID from Vidazoo.                                                            | `"59ac17c192832d0011283fe3"` |
+| `bidFloor`       | required | The minimum bid value desired. Vidazoo will not respond with bids lower than this value.  | `0.90`                       |
