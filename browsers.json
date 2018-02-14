@@ -1,9 +1,9 @@
 {
-  "bs_ie_13_windows_10": {
+  "bs_ie_14_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "13.0",
+    "browser_version": "14.0",
     "device": null,
     "os": "Windows"
   },
@@ -15,15 +15,15 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_46_windows_10": {
+  "bs_firefox_56_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_51_windows_10": {
+  "bs_chrome_62_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
@@ -39,43 +39,35 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_46_windows_8.1": {
+  "bs_firefox_56_windows_8.1": {
     "base": "BrowserStack",
     "os_version": "8.1",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_51_windows_8.1": {
+  "bs_chrome_62_windows_8.1": {
     "base": "BrowserStack",
     "os_version": "8.1",
     "browser": "chrome",
-    "browser_version": "51.0",
+    "browser_version": "62.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_10_windows_8": {
-    "base": "BrowserStack",
-    "os_version": "8",
-    "browser": "ie",
-    "browser_version": "10.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_firefox_46_windows_8": {
+  "bs_firefox_56_windows_8": {
     "base": "BrowserStack",
     "os_version": "8",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_51_windows_8": {
+  "bs_chrome_62_windows_8": {
     "base": "BrowserStack",
     "os_version": "8",
     "browser": "chrome",
-    "browser_version": "51.0",
+    "browser_version": "62.0",
     "device": null,
     "os": "Windows"
   },
@@ -87,27 +79,19 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_10_windows_7": {
-    "base": "BrowserStack",
-    "os_version": "7",
-    "browser": "ie",
-    "browser_version": "10.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_firefox_46_windows_7": {
+  "bs_firefox_56_windows_7": {
     "base": "BrowserStack",
     "os_version": "7",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_51_windows_7": {
+  "bs_chrome_62_windows_7": {
     "base": "BrowserStack",
     "os_version": "7",
     "browser": "chrome",
-    "browser_version": "51.0",
+    "browser_version": "62.0",
     "device": null,
     "os": "Windows"
   },
@@ -127,19 +111,19 @@
     "device": null,
     "os": "OS X"
   },
-  "bs_firefox_46_mac_elcapitan": {
+  "bs_firefox_56_mac_elcapitan": {
     "base": "BrowserStack",
     "os_version": "El Capitan",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "OS X"
   },
-  "bs_chrome_51_mac_elcapitan": {
+  "bs_chrome_62_mac_elcapitan": {
     "base": "BrowserStack",
     "os_version": "El Capitan",
     "browser": "chrome",
-    "browser_version": "51.0",
+    "browser_version": "62.0",
     "device": null,
     "os": "OS X"
   },
@@ -151,15 +135,15 @@
     "device": null,
     "os": "OS X"
   },
-  "bs_firefox_46_mac_yosemite": {
+  "bs_firefox_56_mac_yosemite": {
     "base": "BrowserStack",
     "os_version": "Yosemite",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "OS X"
   },
-  "bs_chrome_51_mac_yosemite": {
+  "bs_chrome_62_mac_yosemite": {
     "base": "BrowserStack",
     "os_version": "Yosemite",
     "browser": "chrome",
@@ -175,11 +159,11 @@
     "device": null,
     "os": "OS X"
   },
-  "bs_firefox_46_mac_mavericks": {
+  "bs_firefox_56_mac_mavericks": {
     "base": "BrowserStack",
     "os_version": "Mavericks",
     "browser": "firefox",
-    "browser_version": "46.0",
+    "browser_version": "56.0",
     "device": null,
     "os": "OS X"
   },
