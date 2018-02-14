@@ -281,7 +281,7 @@ function bidToTag(bid) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = getSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes);
   }
   if (bid.params.supplyType) {
     tag.supply_type = bid.params.supplyType;

@@ -19,14 +19,37 @@ const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
+
+const s2sDefaultConfig = {
+  enabled: false,
+  timeout: 1000,
+  maxBids: 1,
+  adapter: 'prebidServer'
+};
+
 config.setDefaults({
-  's2sConfig': {
-    enabled: false,
-    timeout: 1000,
-    maxBids: 1,
-    adapter: 'prebidServer'
-  }
+  's2sConfig': s2sDefaultConfig
 });
+
+// accountId and bidders params are not included here, should be configured by end-user
+const availVendorDefaults = {
+  'appnexus': {
+    adapter: 'prebidServer',
+    cookieSet: false,
+    enabled: true,
+    endpoint: '//prebid.adnxs.com/pbs/v1/auction',
+    syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
+    timeout: 1000
+  },
+  'rubicon': {
+    adapter: 'prebidServer',
+    cookieSet: false,
+    enabled: true,
+    endpoint: '//prebid-server.rubiconproject.com/auction',
+    syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
+    timeout: 500
+  }
+};
 
 /**
  * Set config for server to server header bidding
@@ -42,6 +65,24 @@ config.setDefaults({
  * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
+  if (options.defaultVendor) {
+    let vendor = options.defaultVendor;
+    let optionKeys = Object.keys(options);
+
+    if (availVendorDefaults.hasOwnProperty(vendor)) {
+      // vendor keys will be set if either: the key was not specified by user
+      // or if the user did not set their own distinct value (ie using the system default) to override the vendor
+      Object.keys(availVendorDefaults[vendor]).forEach(function(vendorKey) {
+        if (s2sDefaultConfig[vendorKey] === options[vendorKey] || !includes(optionKeys, vendorKey)) {
+          options[vendorKey] = availVendorDefaults[vendor][vendorKey];
+        }
+      });
+    } else {
+      utils.logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
+      return false;
+    }
+  }
+
   let keys = Object.keys(options);
 
   if (['accountId', 'bidders', 'endpoint'].filter(key => {
@@ -351,7 +392,7 @@ export function PrebidServer() {
           });
         }
       }
-      if (result.status === 'no_cookie' && typeof _s2sConfig.cookieSetUrl === 'string') {
+      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync
         cookieSet(_s2sConfig.cookieSetUrl);
       }
