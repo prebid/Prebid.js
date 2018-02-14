@@ -3,10 +3,10 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 
 // use protocol relative urls for http or https
-const BID_ENDPOINT = '//localhost/KWEB.Website/Bid/VideoAdContent';
-const SYNC_ENDPOINT = 'https://www.invibes.com';
-
+const BID_ENDPOINT = '//bid.videostep.com/Bid/VideoAdContent';
+const SYNC_ENDPOINT = '//k.r66net.com/Bid/UserSync';
 const TIME_TO_LIVE = 300;
+const DEFAULT_CURRENCY = 'EUR';
 
 export const spec = {
   code: 'invibes',
@@ -35,36 +35,47 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
 
     // invibes only responds to 1 bid request for each user visit
-    var placementIds = [];
+    const _placementIds = [];
+    let _loginId, _customEndpoint, _syncEndpoint, _adContainerId;
+
     bidRequests.forEach(function (bidRequest) {
       bidRequest.startTime = new Date().getTime();
-      placementIds.push(bidRequest.params.placementId);
+      _placementIds.push(bidRequest.params.placementId);
+      _loginId = _loginId || bidRequest.params.loginId;
+      _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
+      _syncEndpoint = _syncEndpoint || bidRequest.params.syncEndpoint;
+      _adContainerId = _adContainerId || bidRequest.params.adContainerId;
     });    
 
-    var invibes = window.invibes = window.invibes || {};
+    const topWin = getTopMostWindow();
+    var invibes = topWin.invibes = topWin.invibes || {};
     invibes.visitId = invibes.visitId || generateRandomId();
+    initDomainId(invibes);
 
-    var sessionIdCookieName = 'ivbss';
     var currentQueryStringParams = parseQueryStringParams();
 
     let data = {
-      location: getDocumentLocation(),
+      location: getDocumentLocation(topWin),
       videoAdHtmlId: randomStringGenerator(),
       showFallback: currentQueryStringParams['advs'] === '0',
       ivbsCampIdsLocal: getCookie('IvbsCampIdsLocal'),
+      lId: invibes.dom.id,
 
-      bidParamsJson: JSON.stringify({ placementIds: placementIds }),
+      bidParamsJson: JSON.stringify({
+        placementIds: _placementIds,
+        loginId: _loginId,
+        adContainerId: _adContainerId
+      }),
       capCounts: getCappedCampaignsAsString(),
 
-      // no cross domain possible (user sync is done after bid)
-      // userCookieId: invibes.id,
-
       vId: invibes.visitId,
-      width: top.window.innerWidth,
-      height: top.window.innerHeight,
+      width: topWin.innerWidth,
+      height: topWin.innerHeight,
+
+      rfc: encodeURIComponent(document.cookie).substring(0, 4000)
     };
 
-    var parametersToPassForward = 'videoAdDebug,ADVS,BVCI,BVID,istop,trybvid,trybvci'.toLowerCase().split(',');
+    var parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
     for (var key in currentQueryStringParams) {
       if (currentQueryStringParams.hasOwnProperty(key)) {
         var value = currentQueryStringParams[key];
@@ -73,11 +84,12 @@ export const spec = {
         }
       }
     }
-
+    
     return {
-      method: 'GET',
-      url: BID_ENDPOINT,
+      method: 'POST',
+      url: _customEndpoint || BID_ENDPOINT,
       data: data,
+      options: { contentType: 'application/json' },
       bidRequests
     };
   },
@@ -101,6 +113,10 @@ export const spec = {
     let ads = responseObj.Ads;
     
     if (!Array.isArray(ads) || ads.length < 1) {
+      if (responseObj.AdReason != null) {
+        utils.logError(responseObj.AdReason);
+      }
+
       return [];
     }
 
@@ -129,7 +145,7 @@ export const spec = {
             width: size[0],
             height: size[1],
             creativeId: ad.VideoExposedId,
-            currency: 'EUR',
+            currency: bidModel.Currency || DEFAULT_CURRENCY,
             netRevenue: true,
             ttl: TIME_TO_LIVE,
             ad: renderCreative(bidModel)
@@ -151,11 +167,11 @@ export const spec = {
 };
 
 function generateRandomId() {
-  return (Math.random() * 1e32).toString(36).substring(0, 10);
+  return (Math.round(Math.random() * 1e12)).toString(36).substring(0, 10);
 }
 
-function getDocumentLocation() {
-  return top.window.location.href.substring(0, 300).split(/[?#]/)[0];
+function getDocumentLocation(topWin) {
+  return topWin.location.href.substring(0, 300).split(/[?#]/)[0];
 }
 
 function parseQueryStringParams() {
@@ -202,35 +218,11 @@ function renderCreative(bidModel) {
   return `<html>
       <head><script type='text/javascript'>inDapIF=true;</script></head>
         <body style='margin : 0; padding: 0;'>
-        <div id='invibesContainerId'>
-        </div>
-        <script type='text/javascript' src='getlinkUrl'/>
-      </body>
-    </html>`
-    .replace('getlinkUrl', bidModel.GetlinkUrl)
-    .replace('invibesContainerId', bidModel.InvibesContainerId);
+        creativeHtml
+        </body>
+      </html>`
+    .replace('creativeHtml', bidModel.CreativeHtml);
 }
-
-function setCookie(name, value, exdays) {
-  if (exdays > 365) { exdays = 365; }
-  var exdate = new Date();
-  exdate.setTime(exdate.getTime() + (exdays * 24 * 60 * 60 * 1000));
-  var cookieValue = value + ((!exdays) ? "" : "; expires=" + exdate.toUTCString());
-  cookieValue += "; path=/";
-  document.cookie = name + "=" + cookieValue;
-};
-
-function getCookie(name) {
-  var i, x, y, cookies = document.cookie.split(";");
-  for (i = 0; i < cookies.length; i++) {
-    x = cookies[i].substr(0, cookies[i].indexOf("="));
-    y = cookies[i].substr(cookies[i].indexOf("=") + 1);
-    x = x.replace(/^\s+|\s+$/g, "");
-    if (x === name) {
-      return unescape(y);
-    }
-  }
-};
 
 function getCappedCampaignsAsString() {
   var key = 'ivvcap';
@@ -273,5 +265,130 @@ function getCappedCampaignsAsString() {
     .join(',');
 
 }
+
+/// Local domain cookie management =====================
+var Uid = {
+  generate: function () {
+    var date = new Date().getTime();
+    if (date > 151 * 10e9) {
+      var datePart = Math.floor(date / 1000).toString(36);
+      var maxRand = parseInt('zzzzzz', 36)
+      var randPart = Math.floor(Math.random() * maxRand).toString(36);
+      return datePart + '.' + randPart;
+    }
+  },
+  getCrTime: function (s) {
+    var toks = s.split('.');
+    return parseInt(toks[0] || 0, 36) * 1e3;
+  }
+};
+
+var cookieDomain;
+function getCookie(name) {
+  var i, x, y, cookies = document.cookie.split(";");
+  for (i = 0; i < cookies.length; i++) {
+    x = cookies[i].substr(0, cookies[i].indexOf("="));
+    y = cookies[i].substr(cookies[i].indexOf("=") + 1);
+    x = x.replace(/^\s+|\s+$/g, "");
+    if (x === name) {
+      return unescape(y);
+    }
+  }
+};
+
+function setCookie(name, value, exdays, domain) {
+  if (exdays > 365) { exdays = 365; }
+  domain = domain || cookieDomain;
+  var exdate = new Date();
+  var exms = exdays * 24 * 60 * 60 * 1000;
+  exdate.setTime(exdate.getTime() + exms);
+  var cookieValue = value + ((!exdays) ? "" : "; expires=" + exdate.toUTCString());
+  cookieValue += ";domain=" + domain + ";path=/";
+  document.cookie = name + "=" + cookieValue;
+};
+
+var detectTopmostCookieDomain = function () {
+  var testCookie = Uid.generate();
+  var hostParts = location.host.split('.');
+  if (hostParts.length === 1) {
+    return location.host;
+  }
+  for (var i = hostParts.length - 1; i >= 0; i--) {
+    var domain = '.' + hostParts.slice(i).join('.');
+    setCookie(testCookie, testCookie, 1, domain);
+    var val = getCookie(testCookie);
+    if (val === testCookie) {
+      setCookie(testCookie, testCookie, -1, domain);
+      return domain;
+    }
+  }
+};
+cookieDomain = detectTopmostCookieDomain();
+
+function initDomainId(invibes, persistence) {
+  if (typeof invibes.dom === 'object') {
+    return;
+  }
+
+  var cookiePersistence = {
+    cname: 'ivbsdid',
+    load: function () {
+      var str = getCookie(this.cname) || '';
+      try {
+        return JSON.parse(str);
+      } catch (e) { }
+    },
+    save: function (obj) {
+      setCookie(this.cname, JSON.stringify(obj), 365);
+    }
+  };
+
+  persistence = persistence || cookiePersistence;
+  var state;
+  var minHC = 5;
+
+  var validGradTime = function (d) {
+    var min = 151 * 10e9;
+    var yesterday = new Date().getTime() - 864 * 10e4
+    return d > min && d < yesterday;
+  };
+
+  state = persistence.load() || {
+    id: Uid.generate(),
+    hc: 1,
+    temp: 1
+  };
+
+  var graduate;
+
+  var setId = function () {
+    invibes.dom = {
+      id: state.temp ? undefined : state.id,
+      tempId: state.id,
+      graduate: graduate
+    };
+  };
+
+  graduate = function () {
+    if (!state.temp) { return; }
+    delete state.temp;
+    delete state.hc;
+    persistence.save(state);
+    setId();
+  }
+
+  if (state.temp) {
+    if (state.hc < minHC) {
+      state.hc++;
+    }
+    if (state.hc >= minHC && validGradTime(Uid.getCrTime(state.id))) {
+      graduate();
+    }
+  }
+
+  persistence.save(state);
+  setId();
+};
+// =====================
 
 registerBidder(spec);

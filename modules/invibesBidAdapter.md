@@ -20,7 +20,8 @@ Connect to Invibes for bids.
                    {
                        bidder: "invibes",
                        params: {
-                           placementId: 21331243
+                           placementId: 123456789,
+						   customEndpoint: '//content.videostep.com/Bid/VideoAdContent'
                        }
                    }
                ]
