@@ -386,15 +386,18 @@ const OPEN_RTB_PROTOCOL = {
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
       if (bannerParams && bannerParams.sizes) {
         // get banner sizes in form [{ w: <int>, h: <int> }, ...]
-        const format = bannerParams.sizes.reduce((acc, size) =>
-          [...acc, { w: size[0], h: size[1] }], []);
+        const format = bannerParams.sizes.map(size => {
+          return { w: size[0], h: size[1] };
+        });
 
         banner = {format};
       }
 
       // get bidder params in form { <bidder code>: {...params} }
-      const ext = adUnit.bids.reduce((acc, bid) =>
-        Object.assign({}, acc, { [bid.bidder]: bid.params }), {});
+      const ext = adUnit.bids.reduce((acc, bid) => {
+        acc[bid.bidder] = bid.params;
+        return acc;
+      }, {});
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
       if (banner) { imp.banner = banner; }
@@ -478,7 +481,10 @@ const OPEN_RTB_PROTOCOL = {
  */
 const protocolAdapter = () => {
   const OPEN_RTB_PATH = 'openrtb2/auction';
-  const isOpenRtb = _s2sConfig.endpoint.includes(OPEN_RTB_PATH);
+
+  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
+  const isOpenRtb = ~endpoint.indexOf(OPEN_RTB_PATH);
+
   return isOpenRtb ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
 };
 
