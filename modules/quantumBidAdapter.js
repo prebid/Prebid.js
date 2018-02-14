@@ -1,5 +1,4 @@
 import * as utils from 'src/utils';
-
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
@@ -36,8 +35,12 @@ export const spec = {
       if (params.useDev && params.useDev === '1') {
         devEnpoint = '//sdev.sspqns.com/hb';
       }
-      if (params.bannerFormat === 'true') {
-        qtxRequest.type = 'banner';
+      let renderMode = 'native';
+      for (let i = 0; i < bid.sizes.length - 1; i++) {
+        if (bid.sizes[i][0] > 0 && bid.sizes[i][1] > 0) {
+          renderMode = 'banner';
+          break;
+        }
       }
 
       let mediaType = (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) ? 'native' : 'banner';
@@ -51,7 +54,9 @@ export const spec = {
       return {
         method: 'GET',
         bidId: bidId,
+        sizes: bid.sizes,
         mediaType: mediaType,
+        renderMode: renderMode,
         url: url,
         'data': qtxRequest
       };
@@ -65,21 +70,15 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    // const headerValue = serverResponse.headers.get('some-response-header');
     const bidResponses = [];
-    // console.log('interpretResponse:',serverResponse, bidRequest);
     let responseCPM;
-
     let bid = {};
-    // const bid = newBid(serverBid, rtbBid);
-
     let id = bidRequest.bidId;
 
     if (serverBody.price && serverBody.price !== 0) {
       responseCPM = parseFloat(serverBody.price);
 
-      bid.creativeId = serverBody.creative_id || '123d341';
-      // bid.bidderCode = bidCode;
+      bid.creativeId = serverBody.creative_id || '';
       bid.cpm = responseCPM;
       bid.requestId = bidRequest.bidId;
       bid.width = 0;
@@ -97,8 +96,7 @@ export const spec = {
 
       bid.nurl = serverBody.nurl;
       bid.sync = serverBody.sync;
-
-      if (serverBody.request_type && serverBody.request_type === 'banner') {
+      if (bidRequest.renderMode && bidRequest.renderMode === 'banner') {
         bid.width = 300;
         bid.height = 225;
         if (serverBody.native) {
@@ -181,7 +179,7 @@ export const spec = {
           ad['action_url'] = link.url;
 
           if (!ad['sponsor_url']) {
-            ad['sponsor_url'] = action_url;
+            ad['sponsor_url'] = ad['action_url'];
           }
 
           ad['clicktrackers'] = [];
@@ -214,7 +212,6 @@ export const spec = {
         // native
         if (bidRequest.mediaType === 'native') {
           if (serverBody.native) {
-            // console.log('native:', serverBody.native);
             let assets = serverBody.native.assets;
             let link = serverBody.native.link;
 
@@ -244,10 +241,6 @@ export const spec = {
                 case 4:
                   native.image = '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(asset['img']['url']) + '/external';
                   break;
-                case 6: // teaser as vast
-                  // ad['teaser_type'] = 'vast';
-                  // ad['video_url'] = asset['video']['vasttag'];
-                  break;
                 case 10:
                   native.sponsoredBy = asset['data']['value'];
                   break;
@@ -265,7 +258,6 @@ export const spec = {
           }
         }
       }
-      // console.log('_bid:',bid);
       bidResponses.push(bid);
     }
 

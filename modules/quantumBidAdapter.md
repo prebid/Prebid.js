@@ -18,8 +18,17 @@ var adUnits = [{
           bids: [{
               bidder: 'quantum',
               params: {
-                placementId: 21546, //quantum adUnit id
-                bannerFormat:'true' //use this for enabling banner type response
+                placementId: 21546 //quantum adUnit id
+              }      
+            }]
+        },{
+          code: 'quantum-native-adUnit-id-1',
+          sizes: [[0, 0]],
+          mediaTypes: 'native',
+          bids: [{
+              bidder: 'quantum',
+              params: {
+                placementId: 21546 //quantum adUnit id
               }      
             }]
         }];
@@ -42,13 +51,12 @@ var adUnits = [{
         pbjsEl.type = "text/javascript";
         pbjsEl.async = true;
         var isHttps = 'https:' === document.location.protocol;
-        //pbjsEl.src = "//cdn.elasticad.net/native/serve/js/quantx/prebid.gz.js";
         pbjsEl.src = "//cdn.elasticad.net/native/serve/js/quantx/_dev/prebid.js";
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
       })();
 
-      var adUnitID = 'pl-100';	
+      var adUnitID = 'pl-100';
 
       pbjs.que.push(function() {
         var adUnits = [{
@@ -57,8 +65,7 @@ var adUnits = [{
           bids: [{
               bidder: 'quantum',
               params: {
-                placementId: 21546, //quantum adUnit id
-                bannerFormat:'true' //use this for enabling banner type response
+                placementId: 21546 //quantum adUnit id
               }      
             }]
         }];

@@ -6,9 +6,9 @@ const ENDPOINT = '//s.sspqns.com/hb'
 const REQUEST = {
   'bidder': 'quantum',
   'sizes': [[300, 225]],
+  'renderMode': 'banner',
   'params': {
-    placementId: 21546,
-    bannerFormat: 'true'
+    placementId: 21546
   }
 }
 
@@ -30,7 +30,8 @@ const serverResponse = {
   'nurl': 'http://s.sspqns.com/imp/KpQ1WNMHV-9a3HqWL_0JnujJFGo1Hnx9RS3FT_Yy8jW-Z6t_PJYmP2otidJsxE3qcY2EozzcBjRzGM7HEQcxVnjOzq0Th1cxb6A5bSp5BizTwY5SRaxx_0PgF6--8LqaF4LMUgMmhfF5k3gOOzzK6gKdavia4_w3LJ1CRWkMEwABr8bPzeovy1y4MOZsOXv7vXjPGMKJSTgphuZR57fL4u4ZFF4XY70K_TaH5bfXHMRAzE0Q38tfpTvbdFV_u2g-FoF0gjzKjiS88VnetT-Jo3qtrMphWzr52jsg5tH3L7hbymUOm1YkuJP9xrXLoZNVgC5sTMYolKLMSu6dqhS2FXcdfaGAcHweaaAAwJq-pB7DuiVcdnZQphUymhIia_KG2AYweWp6TYEpJbJjf2BcLpm_-KGw4gLh6L3DtEvUZwXZe-JpUJ4/',
   'native': {
     'link': {
-      'url': 'http://s.sspqns.com/click/KpQ1WNMHV-9a3HqWL_0JnujJFGo1Hnx9RS3FT_Yy8jW-Z6t_PJYmP2otidJsxE3qcY2EozzcBjRzGM7HEQcxVnjOzq0Th1cxb6A5bSp5BizTwY5SRaxx_0PgF6--8LqaF4LMUgMmhfF5k3gOOzzK6gKdavia4_w3LJ1CRWkMEwABr8bPzeovy1y4MOZsOXv7vXjPGMKJSTgphuZR57fL4u4ZFF4XY70K_TaH5bfXHMRAzE0Q38tfpTvbdFV_u2g-FoF0gjzKjiS88VnetT-Jo3qtrMphWzr52jsg5tH3L7hbymUOm1YkuJP9xrXLoZNVgC5sTMYolKLMSu6dqhS2FXcdfaGAcHweaaAAwJq-pB7DuiVcdnZQphUymhIia_KG2AYweWp6TYEpJbJjf2BcLpm_-KGw4gLh6L3DtEvUZwXZe-JpUJ4///'
+      'url': 'http://s.sspqns.com/click/KpQ1WNMHV-9a3HqWL_0JnujJFGo1Hnx9RS3FT_Yy8jW-Z6t_PJYmP2otidJsxE3qcY2EozzcBjRzGM7HEQcxVnjOzq0Th1cxb6A5bSp5BizTwY5SRaxx_0PgF6--8LqaF4LMUgMmhfF5k3gOOzzK6gKdavia4_w3LJ1CRWkMEwABr8bPzeovy1y4MOZsOXv7vXjPGMKJSTgphuZR57fL4u4ZFF4XY70K_TaH5bfXHMRAzE0Q38tfpTvbdFV_u2g-FoF0gjzKjiS88VnetT-Jo3qtrMphWzr52jsg5tH3L7hbymUOm1YkuJP9xrXLoZNVgC5sTMYolKLMSu6dqhS2FXcdfaGAcHweaaAAwJq-pB7DuiVcdnZQphUymhIia_KG2AYweWp6TYEpJbJjf2BcLpm_-KGw4gLh6L3DtEvUZwXZe-JpUJ4///',
+      'clicktrackers': ['https://elasticad.net']
     },
     'assets': [
       {
@@ -64,6 +65,24 @@ const serverResponse = {
         }
       },
       {
+        'id': 6,
+        'video': {
+          'vasttag': 'http://elasticad.net/vast.xml'
+        }
+      },
+      {
+        'id': 2001,
+        'data': {
+          'value': 'http://elasticad.net'
+        }
+      },
+      {
+        'id': 2002,
+        'data': {
+          'value': 'vast'
+        }
+      },
+      {
         'id': 2007,
         'data': {
           'value': 'click'
@@ -80,12 +99,35 @@ const serverResponse = {
         'data': {
           'value': 'http://elasticad.net'
         }
+      },
+      {
+        'id': 2004,
+        'data': {
+          'value': 'prism'
+        }
+      },
+      {
+        'id': 2005,
+        'data': {
+          'value': '/home'
+        }
+      },
+      {
+        'id': 2006,
+        'data': {
+          'value': 'http://elasticad.net/vast.xml'
+        }
+      },
+      {
+        'id': 2022,
+        'data': {
+          'value': 'Lorem ipsum....'
+        }
       }
     ],
     'imptrackers': [],
     'ver': '1.1'
   },
-  'request_type': 'banner',
   'sync': [
     'http://match.adsrvr.org/track/cmb/generic?ttd_pid=s6e8ued&ttd_tpi=1'
   ]
@@ -145,6 +187,7 @@ const nativeServerResponse = {
           'value': 'ad.SSP.1x1 sponsor'
         }
       },
+
       {
         'id': 2003,
         'data': {
@@ -197,14 +240,8 @@ describe('quantumBidAdapter', () => {
       bids: []
     }
 
-    let nativeBidderRequest = {
-      bidderCode: 'bidderCode',
-      mediaType: 'native',
-      bids: []
-    }
-
     it('handles native request : should get correct bid response', () => {
-      const result = spec.interpretResponse({body: nativeServerResponse}, {nativeBidderRequest})
+      const result = spec.interpretResponse({body: nativeServerResponse}, NATIVE_REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').equal(0)
       expect(result[0]).to.have.property('height').equal(0)
@@ -212,7 +249,7 @@ describe('quantumBidAdapter', () => {
     })
 
     it('should get correct bid response', () => {
-      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest})
+      const result = spec.interpretResponse({body: serverResponse}, REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').equal(300)
       expect(result[0]).to.have.property('height').equal(225)
@@ -222,8 +259,8 @@ describe('quantumBidAdapter', () => {
 
     it('handles nobid responses', () => {
       const nobidServerResponse = {bids: []}
-      const nobidResult = spec.interpretResponse({body: nobidServerResponse}, {bidderRequest})
-      console.log(nobidResult)
+      const nobidResult = spec.interpretResponse({body: nobidServerResponse}, bidderRequest)
+      // console.log(nobidResult)
       expect(nobidResult.length).to.equal(0)
     })
   })
