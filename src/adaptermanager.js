@@ -6,6 +6,7 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
+import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
 var utils = require('./utils.js');
@@ -147,7 +148,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -205,14 +206,15 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidderRequestId,
       bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
-      timeout: cbTimeout
+      timeout: cbTimeout,
+      gdpr: adUnits[0].gdpr
     };
     if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
   return bidRequests;
-};
+}, 'makeBidRequests');
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
