@@ -119,7 +119,7 @@ describe('the rubicon adapter', () => {
     describe('for requests', () => {
       describe('to fastlane', () => {
         it('should make a well-formed request objects', () => {
-          sandbox.stub(Math, 'random', () => 0.1);
+          sandbox.stub(Math, 'random').returns(0.1);
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
@@ -202,7 +202,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -247,7 +247,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -275,7 +275,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: false,
               identity: {
@@ -312,7 +312,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should send digiTrustId config params', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -345,7 +345,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -374,7 +374,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -403,7 +403,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {};
               return config[key];
             });
@@ -428,7 +428,7 @@ describe('the rubicon adapter', () => {
         it('should make a well-formed video request', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -489,7 +489,7 @@ describe('the rubicon adapter', () => {
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -508,7 +508,7 @@ describe('the rubicon adapter', () => {
 
         it('should not validate bid request when no video object is passed in', () => {
           createVideoBidderRequestNoVideo();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -521,7 +521,7 @@ describe('the rubicon adapter', () => {
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -607,6 +607,8 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].rubicon.advertiserId).to.equal(7);
+          expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].ad).to.contain(`alert('foo')`)
@@ -620,6 +622,8 @@ describe('the rubicon adapter', () => {
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].ttl).to.equal(300);
           expect(bids[1].netRevenue).to.equal(false);
+          expect(bids[1].rubicon.advertiserId).to.equal(7);
+          expect(bids[1].rubicon.networkId).to.equal(8);
           expect(bids[1].creativeId).to.equal('crid-9');
           expect(bids[1].currency).to.equal('USD');
           expect(bids[1].ad).to.contain(`alert('foo')`)
@@ -760,6 +764,8 @@ describe('the rubicon adapter', () => {
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].videoCacheKey).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
     });

@@ -2,19 +2,18 @@
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
-import { videoAdUnit, videoBidder, hasNonVideoBidder } from './video';
-import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting } from './targeting';
+import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 
-var CONSTANTS = require('./constants.json');
+const CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
@@ -24,9 +23,7 @@ const { triggerUserSyncs } = userSync;
 /* private variables */
 
 const RENDERED = 'rendered';
-var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
-var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -283,8 +280,8 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
-  events.emit('requestBids');
+$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+  events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
@@ -298,24 +295,34 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // for video-enabled adUnits, only request bids for bidders that support video
-  adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
-    const nonVideoBidders = adUnit.bids
-      .filter(bid => !videoBidder(bid))
-      .map(bid => bid.bidder);
+  /*
+   * for a given adunit which supports a set of mediaTypes
+   * and a given bidder which supports a set of mediaTypes
+   * a bidder is eligible to participate on the adunit
+   * if it supports at least one of the mediaTypes on the adunit
+   */
+  adUnits.forEach(adUnit => {
+    // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonVideoBidders));
-    adUnit.bids = adUnit.bids.filter(videoBidder);
-  });
+    // get the bidder's mediaTypes
+    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const bidderRegistry = adaptermanager.bidderRegistry;
 
-  // for native-enabled adUnits, only request bids for bidders that support native
-  adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
-    const nonNativeBidders = adUnit.bids
-      .filter(bid => !nativeBidder(bid))
-      .map(bid => bid.bidder);
+    bidders.forEach(bidder => {
+      const adapter = bidderRegistry[bidder];
+      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      // banner is default if not specified in spec
+      const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonNativeBidders));
-    adUnit.bids = adUnit.bids.filter(nativeBidder);
+      // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
+      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      if (!bidderEligible) {
+        // drop the bidder from the ad unit if it's not compatible
+        utils.logWarn(utils.unsupportedBidderMessage(adUnit, bidder));
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+      }
+    });
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -333,7 +340,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
-};
+  return auction;
+});
 
 /**
  *

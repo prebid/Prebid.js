@@ -5,7 +5,6 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'adform';
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [],
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
@@ -35,7 +34,7 @@ export const spec = {
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
-    request.push('stid=' + validBidRequests[0].requestId);
+    request.push('stid=' + validBidRequests[0].auctionId);
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];

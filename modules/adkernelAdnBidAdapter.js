@@ -80,7 +80,7 @@ export const spec = {
 
   code: 'adkernelAdn',
 
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&

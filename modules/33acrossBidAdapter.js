@@ -16,7 +16,7 @@ function _createBidResponse(response) {
     height: response.seatbid[0].bid[0].h,
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
-    creativeId: response.seatbid[0].bid[0].ext.rp.advid,
+    creativeId: response.seatbid[0].bid[0].crid,
     currency: response.cur,
     netRevenue: true
   }
@@ -27,6 +27,9 @@ function _createServerRequest(bidRequest) {
   const ttxRequest = {};
   const params = bidRequest.params;
 
+  /*
+   * Infer data for the request payload
+   */
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
     banner: {
@@ -38,22 +41,27 @@ function _createServerRequest(bidRequest) {
       }
     }
   }
-
   ttxRequest.site = { id: params.siteId };
-
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
+  // Finally, set the openRTB 'test' param if this is to be a test bid
+  if (params.test === 1) {
+    ttxRequest.test = 1;
+  }
 
+  /*
+   * Now construt the full server request
+   */
   const options = {
     contentType: 'application/json',
     withCredentials: false
   };
-
   // Allow the ability to configure the HB endpoint for testing purposes.
   const ttxSettings = config.getConfig('ttxSettings');
   const url = (ttxSettings && ttxSettings.url) || END_POINT;
 
+  // Return the server request
   return {
     'method': 'POST',
     'url': url,
@@ -93,12 +101,7 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if ((typeof bid.params.site === 'undefined' || typeof bid.params.site.id === 'undefined') &&
-  (typeof bid.params.siteId === 'undefined')) {
-    return false;
-  }
-
-  if (typeof bid.params.productId === 'undefined') {
+  if (typeof bid.params.siteId === 'undefined' || typeof bid.params.productId === 'undefined') {
     return false;
   }
 

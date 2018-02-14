@@ -103,7 +103,7 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should get correct bid response when dealId is passed', () => {
-      response.body.dealId = 'baking';
+      response.body.dealid = 'baking';
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',

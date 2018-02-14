@@ -228,8 +228,8 @@ describe('PulsePoint Adapter Tests', () => {
   });
 
   it('Verifies supported media types', () => {
-    expect(spec.supportedMediaTypes).to.have.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('native');
+    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes[1]).to.equal('native');
   });
 
   it('Verifies if bid request valid', () => {

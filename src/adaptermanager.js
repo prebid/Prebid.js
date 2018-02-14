@@ -234,7 +234,7 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && Number.isInteger(video.playerSize[0]) && Number.isInteger(video.playerSize[1])) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && utils.isInteger(video.playerSize[0]) && utils.isInteger(video.playerSize[1])) {
           adUnit.sizes = video.playerSize;
         } else {
           utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
