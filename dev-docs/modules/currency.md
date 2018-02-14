@@ -240,6 +240,7 @@ a currency object that may contain several parameters:
 | granularityMultiplier | `decimal` | How much to scale the price granularity calculations. Defaults to 1. | 108 |
 | conversionRateFile | `URL` | Optional path to a file containing currency conversion data. See below for the format. Prebid.org hosts a file as described in the next section. | `http://example.com/rates.json` |
 | rates | object | This optional argument allows you to specify the rates with a JSON object, subverting the need for the conversionRateFile parameter.  If this argument is specified, the conversion rate file will not be loaded. | { 'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 } } |
+| defaultRates | object | This optional argument is similar to `rates` above, however it is only used if the currency conversion rate file fails to load.  Use this instead of `rates` if you want to use the currency rate file's conversion rates with a fallback. | { 'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 } } |
 | bidderCurrencyDefault | `object` | This is an optional argument to provide publishers a way to define bid currency. This option is provided as a transition until such a time that most bidder adapters define currency on bid response. | { "bidderXYZ": "GBP" } |
 
 ## Currency Rate Conversion File
