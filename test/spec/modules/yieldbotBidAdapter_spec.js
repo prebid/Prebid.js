@@ -699,6 +699,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
   describe('urlPrefix', function() {
     const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.URL_PREFIX;
+    const protocol = document.location.protocol;
     afterEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
       expect(YieldbotAdapter.getCookie(cookieName)).to.equal(null);
@@ -711,20 +712,37 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should return prefix if cookie exists', function() {
-      YieldbotAdapter.setCookie(cookieName, 'somePrefixUrl', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, protocol + '//closest.az.com/path/', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
       const urlPrefix = YieldbotAdapter.urlPrefix();
-      expect(urlPrefix).to.equal('somePrefixUrl');
+      expect(urlPrefix).to.equal(protocol + '//closest.az.com/path/');
     });
 
     it('should reset prefix if default already set', function() {
       const defaultUrlPrefix = YieldbotAdapter.urlPrefix();
+      const url = protocol + '//close.az.com/path/';
       expect(defaultUrlPrefix).to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
 
-      let urlPrefix = YieldbotAdapter.urlPrefix('somePrefixUrl');
-      expect(urlPrefix, 'reset prefix').to.equal('somePrefixUrl');
+      let urlPrefix = YieldbotAdapter.urlPrefix(url);
+      expect(urlPrefix, 'reset prefix').to.equal(url);
 
       urlPrefix = YieldbotAdapter.urlPrefix();
-      expect(urlPrefix, 'subsequent request').to.equal('somePrefixUrl');
+      expect(urlPrefix, 'subsequent request').to.equal(url);
+    });
+
+    it('should set containing document protocol', function() {
+      let urlPrefix = YieldbotAdapter.urlPrefix('http://close.az.com/path/');
+      expect(urlPrefix, 'http - use: ' + protocol).to.equal(protocol + '//close.az.com/path/');
+
+      urlPrefix = YieldbotAdapter.urlPrefix('https://close.az.com/path/');
+      expect(urlPrefix, 'https - use: ' + protocol).to.equal(protocol + '//close.az.com/path/');
+    });
+
+    it('should fallback to default for invalid argument', function() {
+      let urlPrefix = YieldbotAdapter.urlPrefix('//close.az.com/path/');
+      expect(urlPrefix, 'Url w/o protocol').to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
+
+      urlPrefix = YieldbotAdapter.urlPrefix('mumble');
+      expect(urlPrefix, 'Invalid Url').to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
     });
   });
 
@@ -1023,8 +1041,12 @@ describe('Yieldbot Adapter Unit Tests', function() {
         FIXTURE_BID_REQUEST
       );
       const edgeServerUrlPrefix = YieldbotAdapter.getCookie(YieldbotAdapter.CONSTANTS.COOKIES.URL_PREFIX);
-      expect(edgeServerUrlPrefix).to.match(/^http:\/\/close\.edge\.adserver\.com\//);
-      expect(responses[0].ad).to.match(/http:\/\/close\.edge\.adserver\.com\//);
+
+      const protocol = document.location.protocol;
+      const beginsRegex = new RegExp('^' + protocol + '\/\/close\.edge\.adserver\.com\/');
+      const containsRegex = new RegExp(protocol + '\/\/close\.edge\.adserver\.com\/');
+      expect(edgeServerUrlPrefix).to.match(beginsRegex);
+      expect(responses[0].ad).to.match(containsRegex);
     });
   });
 

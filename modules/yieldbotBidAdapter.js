@@ -238,7 +238,9 @@ export const YieldbotAdapter = {
    */
   urlPrefix: function(prefix) {
     const cookieName = this.CONSTANTS.COOKIES.URL_PREFIX;
-    let cookieValue = prefix || this.getCookie(cookieName);
+    const pIdx = prefix ? prefix.indexOf(':') : -1;
+    const url = pIdx !== -1 ? document.location.protocol + prefix.substr(pIdx + 1) : null;
+    let cookieValue = url || this.getCookie(cookieName);
     if (!cookieValue) {
       cookieValue = this.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX;
     }
