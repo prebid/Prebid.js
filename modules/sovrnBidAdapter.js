@@ -38,7 +38,7 @@ export const spec = {
       imp: sovrnImps,
       site: {
         domain: window.location.host,
-        page: window.location.pathname + location.search + location.hash
+        page: window.location.host + window.location.pathname + location.search + location.hash
       }
     };
     if (iv) sovrnBidReq.iv = iv;
