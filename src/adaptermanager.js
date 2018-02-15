@@ -149,9 +149,11 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 }
 
 exports.makeBidRequestsN = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
-  return callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
+  let response = callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
+  return response;
 }, 'makeBidRequests');
 
+// exports.makeBidRequests = createHook('asyncSeries', async function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
@@ -219,6 +221,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   });
   return bidRequests;
 }
+// }, 'makeBidRequests');
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {

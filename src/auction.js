@@ -182,18 +182,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     };
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-    // const myPromise = new Promise(function(resolve, reject) {
-    //   if (something) {
-    //     resolve('good')
-    //   } else {
-    //     reject(error);
-    //   }
-    // });
-    // let bidRequests = myPromise.then(adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels))
-    //   .catch(function failed(err) {
-    //     utils.logError(err)
-    //   });
     let bidRequests = adaptermanager.makeBidRequestsN(_adUnits, _auctionStart, _auctionId, _timeout, _labels, adaptermanager.makeBidRequests)
+    // adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels).then(bidRequests => {
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
@@ -201,6 +191,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     _auctionStatus = AUCTION_IN_PROGRESS;
     adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
+    // });
   };
 
   return {

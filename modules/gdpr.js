@@ -33,6 +33,8 @@ function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels
 
   makeBidRequestsQueue.push(wrapFunction(fn, this, arguments));
   processMakeBidRequestsQueue();
+
+  // note this is wrong - it's meant to return bidRequests not adUnits
   return arguments[0];
 }
 
