@@ -542,10 +542,7 @@ describe('auctionmanager.js', function () {
     let makeRequestsStub;
 
     before(() => {
-      let bidRequests = TEST_BID_REQS;
-
       makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
-      makeRequestsStub.returns(bidRequests);
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
@@ -557,6 +554,9 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 3000', () => {
       let loadScriptStub;
+      before(() => {
+        makeRequestsStub.returns(TEST_BID_REQS);
+      });
       beforeEach(() => {
         adUnits = [{
           code: ADUNIT_CODE,
@@ -642,6 +642,66 @@ describe('auctionmanager.js', function () {
         auction.callBids();
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+    });
+
+    describe('when auction timeout is 20', () => {
+      let loadScriptStub;
+      let eventsEmitSpy;
+      let getBidderRequestStub;
+
+      before(() => {
+        bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
+        let bidRequests = bids.map(bid => mockBidRequest(bid));
+
+        makeRequestsStub.returns(bidRequests);
+      });
+
+      beforeEach(() => {
+        adUnits = [{
+          code: ADUNIT_CODE,
+          bids: [
+            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          ]
+        }];
+        adUnitCodes = [ADUNIT_CODE];
+
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 20});
+        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+        createAuctionStub.returns(auction);
+
+        loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+          args[1]();
+        });
+
+        spec = mockBidder(BIDDER_CODE, [bids[0]]);
+        registerBidder(spec);
+
+        // Timeout is checked when bid is received. If that bid is the only one
+        // auction is waiting for, timeout is not emitted, so we need to add a
+        // second bidder to get timeout event.
+        let spec1 = mockBidder(BIDDER_CODE1, [bids[1]]);
+        registerBidder(spec1);
+
+        eventsEmitSpy = sinon.spy(events, 'emit');
+
+        let origGBR = utils.getBidderRequest;
+        getBidderRequestStub = sinon.stub(utils, 'getBidderRequest');
+        getBidderRequestStub.callsFake((bidRequests, bidder, adUnitCode) => {
+          let req = origGBR(bidRequests, bidder, adUnitCode);
+          req.start = 1000;
+          return req;
+        });
+      });
+      afterEach(() => {
+        auctionModule.newAuction.restore();
+        loadScriptStub.restore();
+        events.emit.restore();
+        getBidderRequestStub.restore();
+      });
+      it('should emit BID_TIMEOUT for timed out bids', () => {
+        auction.callBids();
+        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
       });
     });
   });
