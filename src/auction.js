@@ -480,7 +480,7 @@ function groupByPlacement(bidsByPlacement, bid) {
 }
 
 /**
- * Returns a list of bids that we haven't received a response yet
+ * Returns a list of bids that we haven't received a response yet where the bidder did not call done
  * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
  * @param {BidReceived[]} bidsReceived List of bids received for auction instance
  *
@@ -493,7 +493,8 @@ function groupByPlacement(bidsByPlacement, bid) {
  * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
  */
 function getTimedOutBids(bidderRequests, bidsReceived) {
-  const bidRequestedCodes = bidderRequests
+  const bidRequestedWithoutDoneCodes = bidderRequests
+    .filter(bidderRequest => !bidderRequest.doneCbCallCount)
     .map(bid => bid.bidderCode)
     .filter(uniques);
 
@@ -501,7 +502,7 @@ function getTimedOutBids(bidderRequests, bidsReceived) {
     .map(bid => bid.bidder)
     .filter(uniques);
 
-  const timedOutBidderCodes = bidRequestedCodes
+  const timedOutBidderCodes = bidRequestedWithoutDoneCodes
     .filter(bidder => !includes(bidReceivedCodes, bidder));
 
   const timedOutBids = bidderRequests
