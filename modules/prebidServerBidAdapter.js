@@ -252,6 +252,18 @@ function _getDigiTrustQueryParams() {
 const LEGACY_PROTOCOL = {
 
   buildRequest(s2sBidRequest, adUnits) {
+    // pbs expects an ad_unit.video attribute if the imp is video
+    adUnits.forEach(adUnit => {
+      const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (videoMediaType) {
+        adUnit.video = Object.assign({}, videoMediaType);
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type
+        // we assume video only until PBS can support multi-format auction
+        adUnit.media_types = [VIDEO];
+      }
+    });
+
     const request = {
       account_id: _s2sConfig.accountId,
       tid: s2sBidRequest.tid,
@@ -497,17 +509,6 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
-
-    adUnits.forEach(adUnit => {
-      const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
-      if (videoMediaType) {
-        // pbs expects a ad_unit.video attribute if the imp is video
-        adUnit.video = Object.assign({}, videoMediaType);
-        delete adUnit.mediaTypes;
-        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
-        adUnit.media_types = [VIDEO];
-      }
-    });
 
     convertTypes(adUnits);
 
