@@ -155,6 +155,9 @@ function createNativeAd(body) {
     native.clickUrl = body.native_ad.link.url;
     native.clickTrackers = body.native_ad.link.clicktrackers || [];
     native.impressionTrackers = body.native_ad.imptrackers || [];
+    if (body.beaconurl && body.beaconurl != '') {
+      native.impressionTrackers.push(body.beaconurl)
+    }
   }
   return native;
 }
