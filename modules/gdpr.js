@@ -28,11 +28,12 @@ function initGDPR() {
   hooks['makeBidRequests'].addHook(makeBidRequestsHook, 100);
 }
 
-function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels, fn) {
+function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels, callback, fn) {
   // do logic checks here?
 
   makeBidRequestsQueue.push(wrapFunction(fn, this, arguments));
   processMakeBidRequestsQueue();
+  return arguments[0];
 }
 
 function processMakeBidRequestsQueue() {
