@@ -161,7 +161,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', () => {
-          sandbox.stub(utils, 'getTopWindowUrl', () => 'http://www.prebid.org');
+          sandbox.stub(utils, 'getTopWindowUrl').callsFake(() => 'http://www.prebid.org');
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
@@ -171,7 +171,7 @@ describe('the rubicon adapter', () => {
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
 
           let origGetConfig = config.getConfig;
-          sandbox.stub(config, 'getConfig', function(key) {
+          sandbox.stub(config, 'getConfig').callsFake(function(key) {
             if (key === 'pageUrl') {
               return 'http://www.rubiconproject.com';
             }
