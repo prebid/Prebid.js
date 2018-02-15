@@ -1132,22 +1132,15 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     const AUCTIONS = { FIRST: 0, SECOND: 1 };
     it('should build auction bids', function(done) {
-      const auctionBids = [];
+      let bidCount = 0;
       const bidResponseHandler = (event) => {
-        auctionBids.push(event);
-      };
-      const auctionEndHandler = (event) => {
-        try {
+        bidCount++;
+        if (bidCount === 4) {
           events.off('bidResponse', bidResponseHandler);
-          events.off('auctionEnd', auctionEndHandler);
-          expect(auctionBids.length, 'Auction bids').to.equal(4);
           done();
-        } catch (err) {
-          done(err);
         }
       };
       events.on('bidResponse', bidResponseHandler);
-      events.on('auctionEnd', auctionEndHandler);
 
       const firstAdUnits = FIXTURE_AD_UNITS;
       const firstAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
@@ -1167,8 +1160,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should provide multiple auctions with correct bid cpms', function(done) {
-      const auctionBids = [];
-      let auctionCount = 0;
+      let bidCount = 0;
       let firstAuctionId = '';
       let secondAuctionId = '';
       /*
@@ -1176,44 +1168,34 @@ describe('Yieldbot Adapter Unit Tests', function() {
        */
       const bidResponseHandler = (event) => {
         try {
-          const expr = `${event.adUnitCode}`;
           switch (true) {
-            case expr === '/00000000/leaderboard' && event.auctionId === firstAuctionId:
+            case event.adUnitCode === '/00000000/leaderboard' && event.auctionId === firstAuctionId:
               expect(event.cpm, 'leaderboard, first auction cpm').to.equal(8);
               break;
-            case expr === '/00000000/medrec' && event.auctionId === firstAuctionId:
+            case event.adUnitCode === '/00000000/medrec' && event.auctionId === firstAuctionId:
               expect(event.cpm, 'medrec, first auction cpm').to.equal(3);
               break;
-            case expr === '/00000000/multi-size' && event.auctionId === firstAuctionId:
+            case event.adUnitCode === '/00000000/multi-size' && event.auctionId === firstAuctionId:
               expect(event.cpm, 'multi-size, first auction cpm').to.equal(8);
               break;
-            case expr === '/00000000/skyscraper' && event.auctionId === firstAuctionId:
+            case event.adUnitCode === '/00000000/skyscraper' && event.auctionId === firstAuctionId:
               expect(event.cpm, 'skyscraper, first auction cpm').to.equal(3);
               break;
-            case expr === '/00000000/medrec' && event.auctionId === secondAuctionId:
+            case event.adUnitCode === '/00000000/medrec' && event.auctionId === secondAuctionId:
               expect(event.cpm, 'medrec, second auction cpm').to.equal(1.11);
               break;
-            case expr === '/00000000/multi-size' && event.auctionId === secondAuctionId:
+            case event.adUnitCode === '/00000000/multi-size' && event.auctionId === secondAuctionId:
               expect(event.cpm, 'multi-size, second auction cpm').to.equal(2.22);
               break;
-            case expr === '/00000000/skyscraper' && event.auctionId === secondAuctionId:
+            case event.adUnitCode === '/00000000/skyscraper' && event.auctionId === secondAuctionId:
               expect(event.cpm, 'skyscraper, second auction cpm').to.equal(3.33);
               break;
             default:
-              done(new Error(`Bid response to assert not found: ${expr}:${event.size}:${event.auctionId}, [${firstAuctionId}, ${secondAuctionId}]`));
+              done(new Error(`Bid response to assert not found: ${event.adUnitCode}:${event.size}:${event.auctionId}, [${firstAuctionId}, ${secondAuctionId}]`));
           }
-        } catch (err) {
-          done(err);
-        }
-        auctionBids.push(event);
-      };
-      const auctionEndHandler = (event) => {
-        try {
-          auctionCount++;
-          if (auctionCount === 2) {
+          bidCount++;
+          if (bidCount === 7) {
             events.off('bidResponse', bidResponseHandler);
-            events.off('auctionEnd', auctionEndHandler);
-            expect(auctionBids.length, 'Auction bids').to.equal(7);
             done();
           }
         } catch (err) {
@@ -1221,7 +1203,6 @@ describe('Yieldbot Adapter Unit Tests', function() {
         }
       };
       events.on('bidResponse', bidResponseHandler);
-      events.on('auctionEnd', auctionEndHandler);
 
       /*
        * First auction
