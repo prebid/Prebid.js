@@ -23,9 +23,18 @@ function initGDPR() {
     // hardcoded value for now
     gdprId = 'BOJHqu8OJHwzZABABsAAABJGABgAACSI';
   }
-
+  hooks['foobar'].addHook(foobarHook, 100);
   utils.logInfo('adding makeBidRequest hook for gdpr module', arguments);
   hooks['makeBidRequests'].addHook(makeBidRequestsHook, 100);
+}
+
+function foobarHook(input, callback, fn) {
+  // do something async.
+  // when done:
+  input.param2 = 'value2';
+  // we don't call callback - because the original function will
+  // call original function fn
+  fn.apply(this, arguments);
 }
 
 function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels, callback, fn) {

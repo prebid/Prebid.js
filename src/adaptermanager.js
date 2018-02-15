@@ -148,6 +148,14 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
+exports.foobar = createHook('asyncSeries', (input, callback) => {
+  // do something that you'd normally do with the given input.
+  // at this point input = {param1: "value1", param2: "value2"}
+
+  // when we are done, return whatever is needed, here it's just the same input + extra thing to represent the processed data
+  callback(input, 'generated content');
+}, 'foobar');
+
 exports.makeBidRequestsN = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
   let response = callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
   return response;
