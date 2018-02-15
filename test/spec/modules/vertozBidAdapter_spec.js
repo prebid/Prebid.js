@@ -61,4 +61,52 @@ describe('VertozAdapter', () => {
       expect(request.method).to.equal('POST');
     });
   });
+
+  describe('interpretResponse', () => {
+    let response = {
+      'vzhPlacementId': 'VZ-HB-B784382V6C6G3C',
+      'bid': '76021e56-adaf-4114-b68d-ccacd1b3e551_1',
+      'adWidth': '300',
+      'adHeight': '250',
+      'cpm': '0.16312590000000002',
+      'ad': '<!-- Creative -->',
+      'slotBidId': '44b3fcfd24aa93',
+      'nurl': '<!-- Pixelurl -->',
+      'statusText': 'Vertoz:Success'
+    };
+
+    it('should get correct bid response', () => {
+      let expectedResponse = [
+        {
+          'requestId': '44b3fcfd24aa93',
+          'cpm': 0.16312590000000002,
+          'width': 300,
+          'height': 250,
+          'netRevenue': true,
+          'mediaType': 'banner',
+          'currency': 'USD',
+          'dealId': null,
+          'creativeId': null,
+          'ttl': 300,
+          'ad': '<!-- Creative -->'
+        }
+      ];
+      let bidderRequest;
+      let result = spec.interpretResponse({body: response});
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].cpm).to.not.equal(null);
+    });
+
+    it('handles nobid responses', () => {
+      let response = {
+        'vzhPlacementId': 'VZ-HB-I617046VBGE3EH',
+        'slotBidId': 'f00412ac86b79',
+        'statusText': 'NO_BIDS'
+      };
+      let bidderRequest;
+
+      let result = spec.interpretResponse({body: response});
+      expect(result.length).to.equal(0);
+    });
+  });
 });

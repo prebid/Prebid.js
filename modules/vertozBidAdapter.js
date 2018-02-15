@@ -5,7 +5,6 @@ const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [], // short code
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -21,7 +20,7 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: function(bidRequestsArr, bidderRequest) {
+  buildRequests: function(bidRequestsArr) {
     var bidRequests = bidRequestsArr || [];
     return bidRequests.map(bid => {
       let slotBidId = utils.getValue(bid, 'bidId');
@@ -82,9 +81,6 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
     return bidResponses;
-  },
-  getUserSyncs: function (syncOptions, serverResponses) {
-    return [];
   }
 }
 registerBidder(spec);
