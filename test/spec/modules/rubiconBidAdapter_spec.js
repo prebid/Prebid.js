@@ -5,6 +5,7 @@ import { parse as parseQuery } from 'querystring';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { userSync } from 'src/userSync';
 import { config } from 'src/config';
+import * as utils from 'src/utils';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -157,6 +158,31 @@ describe('the rubicon adapter', () => {
               expect(data[key]).to.equal(value);
             }
           });
+        });
+
+        it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', () => {
+          sandbox.stub(utils, 'getTopWindowUrl', () => 'http://www.prebid.org');
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('localhost');
+
+          delete bidderRequest.bids[0].params.referrer;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+
+          let origGetConfig = config.getConfig;
+          sandbox.stub(config, 'getConfig', function(key) {
+            if (key === 'pageUrl') {
+              return 'http://www.rubiconproject.com';
+            }
+            return origGetConfig.apply(config, arguments);
+          });
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
+
+          bidderRequest.bids[0].params.secure = true;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', () => {
