@@ -156,13 +156,13 @@ exports.foobar = createHook('asyncSeries', (input, callback) => {
   callback(input, 'generated content');
 }, 'foobar');
 
-exports.makeBidRequestsN = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
-  let response = callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
-  return response;
-}, 'makeBidRequests');
+// exports.makeBidRequestsN = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+//   let response = callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
+//   return response;
+// }, 'makeBidRequests');
 
 // exports.makeBidRequests = createHook('asyncSeries', async function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -202,7 +202,8 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC
+        src: CONSTANTS.S2S.SRC,
+        gdpr: adUnits[0].gdpr
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -227,9 +228,10 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidRequests.push(bidderRequest);
     }
   });
-  return bidRequests;
-}
-// }, 'makeBidRequests');
+  // return bidRequests;
+  callback(adUnits, auctionId, bidRequests);
+// }
+}, 'makeBidRequests');
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
