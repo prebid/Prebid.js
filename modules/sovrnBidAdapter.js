@@ -22,6 +22,7 @@ export const spec = {
    * @return object of parameters for Prebid AJAX request
    */
   buildRequests: function(bidReqs) {
+    const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
     let iv;
     utils._each(bidReqs, function (bid) {
@@ -37,8 +38,8 @@ export const spec = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
-        domain: window.location.host,
-        page: window.location.host + window.location.pathname + location.search + location.hash
+        domain: loc.host,
+        page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
     if (iv) sovrnBidReq.iv = iv;
