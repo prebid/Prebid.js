@@ -28,7 +28,7 @@ export const spec = {
 
   aliases: ['pulseLite', 'pulsepointLite'],
 
-  supportedMediaTypes: ['native'],
+  supportedMediaTypes: ['banner', 'native'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.cp && bid.params.ct)

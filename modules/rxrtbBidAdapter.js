@@ -12,7 +12,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bidRequest) {
-    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && Number.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
+    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
   },
   buildRequests: function (validBidRequests) {
     var requests = [];

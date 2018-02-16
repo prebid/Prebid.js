@@ -30,15 +30,21 @@ export const spec = {
     let requests = [];
     let bannerRequests = [];
     let videoRequests = [];
-    let bannerBids = [];
-    let videoBids = [];
-    bids.forEach(function (bid) {
-      if (bid.mediaType === VIDEO) {
-        videoBids.push(bid);
-      } else {
-        bannerBids.push(bid);
+    const {bannerBids, videoBids} = bids.reduce(function(acc, curBid) {
+      // Fallback to banner ads if nothing specified
+      if (!curBid.mediaTypes || utils.isEmpty(curBid.mediaTypes)) {
+        if (curBid.mediaType && curBid.mediaType == VIDEO) {
+          acc.videoBids.push(curBid);
+        } else {
+          acc.bannerBids.push(curBid);
+        }
+      } else if (curBid.mediaTypes.video) {
+        acc.videoBids.push(curBid);
+      } else if (curBid.mediaTypes.banner) {
+        acc.bannerBids.push(curBid);
       }
-    });
+      return acc;
+    }, {bannerBids: [], videoBids: []});
 
     // build banner requests
     if (bannerBids.length !== 0) {
