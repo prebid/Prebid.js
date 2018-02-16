@@ -223,6 +223,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
+        const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+        utils.insertElement(creativeComment, doc, 'body');
+
         if (renderer && renderer.url) {
           renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
