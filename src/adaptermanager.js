@@ -6,8 +6,9 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
-import { createHook } from 'src/hook';
+// import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
+import { createHook } from './hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -148,21 +149,9 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-exports.foobar = createHook('asyncSeries', (input, callback) => {
-  // do something that you'd normally do with the given input.
-  // at this point input = {param1: "value1", param2: "value2"}
-
-  // when we are done, return whatever is needed, here it's just the same input + extra thing to represent the processed data
-  callback(input, 'generated content');
-}, 'foobar');
-
-// exports.makeBidRequestsN = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
-//   let response = callback(adUnits, auctionStart, auctionId, cbTimeout, labels);
-//   return response;
-// }, 'makeBidRequests');
-
-// exports.makeBidRequests = createHook('asyncSeries', async function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
-exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+// exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+// exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -203,7 +192,7 @@ exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionSta
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
-        gdpr: adUnits[0].gdpr
+        // gdpr: adUnits[0].gdpr
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -222,7 +211,7 @@ exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionSta
       bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
-      gdpr: adUnits[0].gdpr
+      // gdpr: adUnits[0].gdpr
     };
     if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
@@ -230,8 +219,8 @@ exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionSta
   });
   // return bidRequests;
   callback(adUnits, auctionId, bidRequests);
-// }
-}, 'makeBidRequests');
+}
+// }, 'makeBidRequests');
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
@@ -281,7 +270,8 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+exports.callBids = createHook('asyncSeries', function (adUnits, bidRequests, addBidResponse, doneCb) {
+// exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -349,7 +339,8 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
     }
   });
-}
+// }
+}, 'callBids');
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;

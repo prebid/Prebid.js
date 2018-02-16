@@ -182,24 +182,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     };
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-    function handleFoobar(result, extraThing) {
-      console.log('handled result: ');
-      console.log(result);
-      console.log(extraThing);
-      // continue logic here for the next thing
-    }
-    let input = {
-      param1: 'value1'
-    }
-    adaptermanager.foobar(input, handleFoobar);
-
-    adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, finishCallBids);
-    // let bidRequests = adaptermanager.makeBidRequestsN(_adUnits, _auctionStart, _auctionId, _timeout, _labels, adaptermanager.makeBidRequests)
-    // adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels).then(bidRequests => {
-    // });
+    adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, finishCallBids.bind(this));
+    // let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels)
   };
 
   function finishCallBids(_adUnits, _auctionId, bidRequests) {
+  // exports.finishCallBids = createHook('asyncSeries', function(_adUnits, _auctionId, bidRequests) {
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
@@ -207,12 +195,14 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     _auctionStatus = AUCTION_IN_PROGRESS;
     adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
+  // }, 'finishCallBids');
   }
 
   return {
     addBidReceived,
     executeCallback,
     callBids,
+    finishCallBids,
     bidsBackAll,
     setWinningBid: (winningBid) => { _winningBid = winningBid },
     getWinningBid: () => _winningBid,
