@@ -34,9 +34,12 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
 
+
+
     // invibes only responds to 1 bid request for each user visit
     const _placementIds = [];
     let _loginId, _customEndpoint, _syncEndpoint, _adContainerId;
+    let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
     bidRequests.forEach(function (bidRequest) {
       bidRequest.startTime = new Date().getTime();
@@ -50,6 +53,9 @@ export const spec = {
     const topWin = getTopMostWindow();
     var invibes = topWin.invibes = topWin.invibes || {};
     invibes.visitId = invibes.visitId || generateRandomId();
+
+    const noop = function () { };
+    invibes.ivLogger = invibes.ivLogger || localStorage && localStorage.InvibesDEBUG ? window.console : { info: noop, error: noop, log: noop, warn: noop, debug: noop };
     initDomainId(invibes);
 
     var currentQueryStringParams = parseQueryStringParams();
@@ -64,7 +70,8 @@ export const spec = {
       bidParamsJson: JSON.stringify({
         placementIds: _placementIds,
         loginId: _loginId,
-        adContainerId: _adContainerId
+        adContainerId: _adContainerId,
+        auctionStartTime: _ivAuctionStart
       }),
       capCounts: getCappedCampaignsAsString(),
 
@@ -72,7 +79,7 @@ export const spec = {
       width: topWin.innerWidth,
       height: topWin.innerHeight,
 
-      rfc: encodeURIComponent(document.cookie).substring(0, 4000)
+      rfc: encodeURIComponent(document.cookie).substring(0, 4000)      
     };
 
     var parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
@@ -137,6 +144,7 @@ export const spec = {
 
         if (bidModel.PlacementId === bidRequest.params.placementId) {
           invibes.bidResponse = responseObj;
+
           var size = getBiggerSize(bidRequest.sizes);
 
           bidResponses.push({
@@ -150,6 +158,15 @@ export const spec = {
             ttl: TIME_TO_LIVE,
             ad: renderCreative(bidModel)
           });
+
+          const now = Date.now();
+          invibes.ivLogger.info('Bid auction started at '
+            + bidModel.AuctionStartTime
+            + ' . Invibes registered the bid at '
+            + now
+            + ' ; bid request took a total of '
+            + (now - bidModel.AuctionStartTime)
+            + ' ms.');
         }
       }
     }
