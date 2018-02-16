@@ -12,7 +12,7 @@ const code = 'audienceNetwork';
 const currency = 'USD';
 const method = 'GET';
 const url = 'https://an.facebook.com/v2/placementbid.json';
-const supportedMediaTypes = ['video'];
+const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hb_bidder = 'fan';
 

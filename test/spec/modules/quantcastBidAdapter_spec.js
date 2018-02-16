@@ -17,7 +17,7 @@ describe('Quantcast adapter', () => {
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
-      requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+      auctionId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
       bidderRequestId: '1cc026909c24c8',
       placementCode: 'div-gpt-ad-1438287399331-0',
       params: {
@@ -74,7 +74,7 @@ describe('Quantcast adapter', () => {
       const bidRequest = {
         bidder: 'quantcast',
         bidId: '2f7b179d443f14',
-        requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+        auctionId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
         bidderRequestId: '1cc026909c24c8',
         placementCode: 'div-gpt-ad-1438287399331-0',
         params: {
