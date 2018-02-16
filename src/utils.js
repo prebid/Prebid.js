@@ -157,17 +157,50 @@ export function parseGPTSingleSizeArray(singleSize) {
   }
 };
 
-exports.getTopWindowLocation = function () {
-  let location;
-  try {
-    // force an exception in x-domain enviornments. #1509
-    window.top.location.toString();
-    location = window.top.location;
-  } catch (e) {
-    location = window.location;
+export function getTopWindowLocation() {
+  if (this.inIframe()) {
+    return getIframeParentLoc();
+  } else {
+    return window.location;
   }
+}
 
-  return location;
+const getIframeParentLoc = function() {
+  let loc = window.location;
+  try {
+    if (window.$sf) {
+      loc = window.document.referrer;
+    } else {
+      if (window.document.location && window.document.location.ancestorOrigins &&
+        window.document.location.ancestorOrigins.length >= 1) {
+        loc = window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
+      } else if (window.document.location) {
+        loc = getNonWebKitIframeParentLoc();
+      }
+    }
+    loc = parseFullUrl(loc);
+  } catch (e) {
+    this.logMessage('getTopParentLoc failure', e);
+  }
+  return loc;
+};
+
+const getNonWebKitIframeParentLoc = function() {
+  let referrerLoc = '';
+  let currentWindow;
+  do {
+    currentWindow = currentWindow ? currentWindow.parent : window;
+    if (currentWindow.document && currentWindow.document.referrer) {
+      referrerLoc = currentWindow.document.referrer;
+    }
+  }
+  while (currentWindow !== window.top);
+  return referrerLoc;
+};
+
+const parseFullUrl = function(locString) {
+  const match = locString.match(/^(https?\:)\/\/(([^:\/?#]*)(?:\:([0-9]+))?)([\/]{0,1}[^?#]*)(\?[^#]*|)(#.*|)$/);
+  return match && {protocol: match[1], host: match[2], hostname: match[3], port: match[4], pathname: match[5], search: match[6], hash: match[7], href: match.input};
 };
 
 exports.getTopWindowUrl = function () {
