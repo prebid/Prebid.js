@@ -433,6 +433,18 @@ const OPEN_RTB_PROTOCOL = {
       test: getConfig('debug') ? 1 : 0,
     };
 
+    ['app', 'device'].forEach(setting => {
+      let value = getConfig(setting);
+      if (typeof value === 'object') {
+        request[setting] = value;
+      }
+    });
+
+    const digiTrust = _getDigiTrustQueryParams();
+    if (digiTrust) {
+      request.user = { ext: { digitrust: digiTrust } };
+    }
+
     return request;
   },
 
