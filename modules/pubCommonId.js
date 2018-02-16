@@ -80,7 +80,7 @@ export function getCookie(name) {
 
 export function setConfig({ enable = true, expInterval = DEFAULT_EXPIRES } = {}) {
   pubcidEnabled = enable;
-  interval = parseInt(expInterval);
+  interval = parseInt(expInterval, 10);
   if (isNaN(interval)) {
     interval = DEFAULT_EXPIRES;
   }
