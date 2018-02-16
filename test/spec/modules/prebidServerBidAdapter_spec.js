@@ -56,6 +56,36 @@ const REQUEST = {
   ]
 };
 
+const VIDEO_REQUEST = {
+  'account_id': '1',
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'max_bids': 1,
+  'timeout_millis': 1000,
+  'secure': 0,
+  'url': '',
+  'prebid_version': '1.4.0-pre',
+  'ad_units': [
+    {
+      'code': 'div-gpt-ad-1460505748561-0',
+      'sizes': [{ 'w': 640, 'h': 480 }],
+      'mediaTypes': {
+        'video': {
+          'playerSize': [[ 640, 480 ]],
+          'mimes': ['video/mp4']
+        }
+      },
+      'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+      'bids': [
+        {
+          'bid_id': '123',
+          'bidder': 'appnexus',
+          'params': { 'placementId': '12349520' }
+        }
+      ]
+    }
+  ]
+};
+
 const BID_REQUESTS = [
   {
     'bidderCode': 'appnexus',
@@ -250,6 +280,48 @@ const RESPONSE_OPENRTB = {
       'appnexus': 8,
     }
   }
+};
+
+const RESPONSE_OPENRTB_VIDEO = {
+  id: 'c7dcf14f',
+  seatbid: [
+    {
+      bid: [
+        {
+          id: '1987250005171537465',
+          impid: '/19968336/header-bid-tag-0',
+          price: 10,
+          adm: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="3.0"><Ad id="81877115" sequence="0"><Wrapper><AdSystem version="3.0">adnxs</AdSystem><VASTAdTagURI><![CDATA[http://lax1-ib.adnxs.com/ab?e=wqT_3QLZBq]]></VASTAdTagURI><Impression><![CDATA[http://ib.adnxs.com/nop]]></Impression><Creatives><Creative adID="81877115"><Linear></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
+          adid: '81877115',
+          adomain: ['appnexus.com'],
+          iurl: 'http://lax1-ib.adnxs.com/cr?id=81877115',
+          cid: '3535',
+          crid: '81877115',
+          w: 1,
+          h: 1,
+          ext: {
+            prebid: {
+              type: 'video',
+            },
+            bidder: {
+              appnexus: {
+                brand_id: 1,
+                auction_id: 6673622101799484743,
+                bidder_id: 2,
+                bid_ad_type: 1,
+              },
+            },
+          },
+        },
+      ],
+      seat: 'appnexus',
+    },
+  ],
+  ext: {
+    responsetimemillis: {
+      appnexus: 81,
+    },
+  },
 };
 
 describe('S2S Adapter', () => {
@@ -534,6 +606,26 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
+    });
+
+    it('handles OpenRTB video responses', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_VIDEO));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
+      expect(response).to.have.property('mediaType', 'video');
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('cpm', 10);
     });
   });
 

@@ -386,15 +386,14 @@ const OPEN_RTB_PROTOCOL = {
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
-      let banner;
-
+      // OpenRTB response contains the adunit code and bidder name. These are
+      // combined to create a unique key for each bid since an id isn't returned
       adUnit.bids.forEach(bid => {
-        // OpenRTB response contains the adunit code and bidder name. These are
-        // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
         this.bidMap[key] = bid;
       });
 
+      let banner;
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
       if (bannerParams && bannerParams.sizes) {
         // get banner sizes in form [{ w: <int>, h: <int> }, ...]
@@ -405,6 +404,12 @@ const OPEN_RTB_PROTOCOL = {
         banner = {format};
       }
 
+      let video;
+      const videoParams = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (!utils.isEmpty(videoParams)) {
+        video = videoParams;
+      }
+
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
         acc[bid.bidder] = bid.params;
@@ -412,7 +417,9 @@ const OPEN_RTB_PROTOCOL = {
       }, {});
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
+
       if (banner) { imp.banner = banner; }
+      if (video) { imp.video = video; }
 
       imps.push(imp);
     });
@@ -449,13 +456,18 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
 
-          if (bid.adm && bid.nurl) {
-            bidObject.ad = bid.adm;
-            bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
-          } else if (bid.adm) {
-            bidObject.ad = bid.adm;
-          } else if (bid.nurl) {
-            bidObject.adUrl = bid.nurl;
+          if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
+            bidObject.mediaType = VIDEO;
+            if (bid.adm) { bidObject.vastXml = bid.adm; }
+          } else { // banner
+            if (bid.adm && bid.nurl) {
+              bidObject.ad = bid.adm;
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
+            } else if (bid.adm) {
+              bidObject.ad = bid.adm;
+            } else if (bid.nurl) {
+              bidObject.adUrl = bid.nurl;
+            }
           }
 
           bidObject.width = bid.w;
