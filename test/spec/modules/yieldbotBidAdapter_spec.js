@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import find from 'core-js/library/fn/array/find';
 import { newBidder } from 'src/adapters/bidderFactory';
 import AdapterManager from 'src/adaptermanager';
-import { auctionManager } from 'src/auctionManager';
+import { newAuctionManager } from 'src/auctionManager';
 import * as utils from 'src/utils';
 import * as urlUtils from 'src/url';
 import events from 'src/events';
@@ -233,6 +233,8 @@ describe('Yieldbot Adapter Unit Tests', function() {
   afterEach(function() {
     YieldbotAdapter._optOut = false;
     YieldbotAdapter.clearAllCookies();
+    YieldbotAdapter._isInitialized = false;
+    YieldbotAdapter.initialize();
   });
 
   describe('Adapter exposes BidderSpec API', function() {
@@ -1089,50 +1091,41 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
   });
 
-  describe('Auction Behavior', function() {
+  describe('Adapter Auction Behavior', function() {
     AdapterManager.bidderRegistry['yieldbot'] = newBidder(spec);
-    let sandbox, server, xhr, fakeRequests;
+    let sandbox, server, auctionManager;
+    const bidUrlRegexp = /yldbt\.com\/m\/1234\/v1\/init/;
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-      server = sinon.fakeServer.create();
+      sandbox = sinon.sandbox.create({ useFakeServer: true });
+      server = sandbox.server;
       server.respondImmediately = true;
-
-      xhr = sinon.useFakeXMLHttpRequest();
-      fakeRequests = [];
-      xhr.onCreate = function (xhr) {
-        fakeRequests.push(xhr);
-      };
+      server.respondWith(
+        'GET',
+        bidUrlRegexp,
+        [
+          200,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify(FIXTURE_SERVER_RESPONSE.body)
+        ]
+      );
       FIXTURE_SERVER_RESPONSE.user_syncs = [];
+      auctionManager = newAuctionManager();
     });
 
     afterEach(function() {
+      auctionManager = null;
       sandbox.restore();
       YieldbotAdapter._bidRequestCount = 0;
     });
 
-    function auctionDetails(auctionCount, adUnits, adUnitCodes, requestCb, done, quit) {
-      const cb = () => {
-        if (requestCb) {
-          try {
-            requestCb(fakeRequests[auctionCount]);
-            if (quit) {
-              done();
-            }
-          } catch (err) {
-            done(err);
-          }
-        }
-      };
-      return {
-        adUnits: adUnits,
-        adUnitCodes: adUnitCodes,
-        callback: cb
-      };
-    };
-
-    const AUCTIONS = { FIRST: 0, SECOND: 1 };
-    it('should build auction bids', function(done) {
+    it('should provide auction bids', function(done) {
       let bidCount = 0;
+      const firstAuction = auctionManager.createAuction(
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
+      );
       const bidResponseHandler = (event) => {
         bidCount++;
         if (bidCount === 4) {
@@ -1141,22 +1134,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
         }
       };
       events.on('bidResponse', bidResponseHandler);
-
-      const firstAdUnits = FIXTURE_AD_UNITS;
-      const firstAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
-      const firstAuction = auctionManager.createAuction(
-        auctionDetails(
-          AUCTIONS.FIRST,
-          firstAdUnits,
-          firstAdUnitCodes
-        )
-      );
       firstAuction.callBids();
-      fakeRequests[AUCTIONS.FIRST].respond(
-        200,
-        { 'Content-Type': 'application/json' },
-        JSON.stringify(FIXTURE_SERVER_RESPONSE.body)
-      );
     });
 
     it('should provide multiple auctions with correct bid cpms', function(done) {
@@ -1210,19 +1188,13 @@ describe('Yieldbot Adapter Unit Tests', function() {
       const firstAdUnits = FIXTURE_AD_UNITS;
       const firstAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
       const firstAuction = auctionManager.createAuction(
-        auctionDetails(
-          AUCTIONS.FIRST,
-          firstAdUnits,
-          firstAdUnitCodes
-        )
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
       );
       firstAuctionId = firstAuction.getAuctionId();
       firstAuction.callBids();
-      fakeRequests[AUCTIONS.FIRST].respond(
-        200,
-        { 'Content-Type': 'application/json' },
-        JSON.stringify(FIXTURE_SERVER_RESPONSE.body)
-      );
 
       /*
        * Second auction with different bid values and fewer slots
@@ -1232,77 +1204,114 @@ describe('Yieldbot Adapter Unit Tests', function() {
       FIXTURE_SERVER_RESPONSE_2.user_syncs = [];
       FIXTURE_SERVER_RESPONSE_2.body.slots.shift();
       FIXTURE_SERVER_RESPONSE_2.body.slots.forEach((bid, idx) => { const num = idx + 1; bid.cpm = `${num}${num}${num}`; });
-      const secondAdUnits = FIXTURE_AD_UNITS;
-      const secondAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
       const secondAuction = auctionManager.createAuction(
-        auctionDetails(
-          AUCTIONS.SECOND,
-          secondAdUnits,
-          secondAdUnitCodes
-        )
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
       );
-
       secondAuctionId = secondAuction.getAuctionId();
-      secondAuction.callBids();
-      fakeRequests[AUCTIONS.SECOND].respond(
-        200,
-        { 'Content-Type': 'application/json' },
-        JSON.stringify(FIXTURE_SERVER_RESPONSE_2.body)
+      server.respondWith(
+        'GET',
+        bidUrlRegexp,
+        [
+          200,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify(FIXTURE_SERVER_RESPONSE_2.body)
+        ]
       );
+      secondAuction.callBids();
     });
 
     it('should have refresh bid type after the first auction', function(done) {
-      const firstAdUnits = FIXTURE_AD_UNITS;
-      const firstAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
       const firstAuction = auctionManager.createAuction(
-        auctionDetails(
-          AUCTIONS.FIRST,
-          firstAdUnits,
-          firstAdUnitCodes,
-          (request, done) => {
-            const url = urlUtils.parse(
-              request.url,
-              { noDecodeWholeURL: true }
-            );
-            const searchParams = url.search;
-            expect(searchParams.bt, 'First auction bid type').to.equal('init');
-          },
-          done,
-          false
-        )
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
       );
       firstAuction.callBids();
-      fakeRequests[AUCTIONS.FIRST].respond(
-        200,
-        { 'Content-Type': 'application/json' },
-        JSON.stringify(FIXTURE_SERVER_RESPONSE.body)
-      );
 
-      const secondAdUnits = FIXTURE_AD_UNITS;
-      const secondAdUnitCodes = FIXTURE_AD_UNITS.map(unit => unit.code);
       const secondAuction = auctionManager.createAuction(
-        auctionDetails(
-          AUCTIONS.SECOND,
-          secondAdUnits,
-          secondAdUnitCodes,
-          (request) => {
-            const url = urlUtils.parse(
-              request.url,
-              { noDecodeWholeURL: true }
-            );
-            const searchParams = url.search;
-            expect(searchParams.bt, 'Second auction bid type').to.equal('refresh');
-          },
-          done,
-          true
-        )
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
       );
       secondAuction.callBids();
-      fakeRequests[AUCTIONS.SECOND].respond(
-        200,
-        { 'Content-Type': 'application/json' },
-        JSON.stringify(FIXTURE_SERVER_RESPONSE.body)
+
+      const firstRequest = urlUtils.parse(server.firstRequest.url);
+      expect(firstRequest.search.bt, 'First request bid type').to.equal('init');
+
+      const secondRequest = urlUtils.parse(server.secondRequest.url);
+      expect(secondRequest.search.bt, 'Second request bid type').to.equal('refresh');
+
+      done();
+    });
+
+    it('should use server response url_prefix property value after the first auction', function(done) {
+      const firstAuction = auctionManager.createAuction(
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
       );
+      firstAuction.callBids();
+
+      const secondAuction = auctionManager.createAuction(
+        {
+          adUnits: FIXTURE_AD_UNITS,
+          adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+        }
+      );
+      secondAuction.callBids();
+
+      expect(server.firstRequest.url, 'Default url prefix').to.match(/i\.yldbt\.com\/m\//);
+      expect(server.secondRequest.url, 'Locality url prefix').to.match(/ads-adseast-vpc\.yldbt\.com\/m\//);
+
+      done();
+    });
+
+    it('should increment the session page view depth only before the first auction', function(done) {
+      /*
+       * First visit: two bid requests
+       */
+      for (let idx = 0; idx < 2; idx++) {
+        auctionManager.createAuction(
+          {
+            adUnits: FIXTURE_AD_UNITS,
+            adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+          }
+        ).callBids();
+      }
+
+      const firstRequest = urlUtils.parse(server.firstRequest.url);
+      expect(firstRequest.search.pvd, 'First pvd').to.equal('1');
+
+      const secondRequest = urlUtils.parse(server.secondRequest.url);
+      expect(secondRequest.search.pvd, 'Second pvd').to.equal('1');
+
+      /*
+       * Next visit: two bid requests
+       */
+      YieldbotAdapter._isInitialized = false;
+      YieldbotAdapter.initialize();
+      for (let idx = 0; idx < 2; idx++) {
+        auctionManager.createAuction(
+          {
+            adUnits: FIXTURE_AD_UNITS,
+            adUnitCodes: FIXTURE_AD_UNITS.map(unit => unit.code)
+          }
+        ).callBids();
+      }
+
+      const nextVisitFirstRequest = urlUtils.parse(server.thirdRequest.url);
+      expect(nextVisitFirstRequest.search.pvd, 'Second visit, first pvd').to.equal('2');
+
+      const nextVisitSecondRequest = urlUtils.parse(server.lastRequest.url);
+      expect(nextVisitSecondRequest.search.pvd, 'Second visit, second pvd').to.equal('2');
+
+      done();
     });
   });
 });
