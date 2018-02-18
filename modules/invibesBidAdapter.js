@@ -100,7 +100,7 @@ function buildRequest(bidRequests, auctionStart) {
       loginId: _loginId,
       adContainerId: _adContainerId,
       auctionStartTime: _ivAuctionStart,
-      prebidVersion: CONSTANTS.PREBID_VERSION
+      bidVersion: CONSTANTS.PREBID_VERSION
     }),
     capCounts: getCappedCampaignsAsString(),
 
@@ -131,20 +131,17 @@ function buildRequest(bidRequests, auctionStart) {
 }
 
 function handleResponse(responseObj, bidRequests) {
-  responseObj = responseObj.body;
-
   if (bidRequests == null || bidRequests == []) {
     utils.logInfo('Invibes Adapter - No bids have been requested');
     return [];
   }
 
+  responseObj = responseObj.body || responseObj;
+  responseObj = responseObj.videoAdContentResult || responseObj;
+
   if (typeof responseObj !== 'object') {
     utils.logInfo('Invibes Adapter - Bid response is empty');
     return [];
-  }
-
-  if (typeof responseObj.videoAdContentResult === 'object') {
-    responseObj = responseObj.videoAdContentResult;
   }
 
   let ads = responseObj.Ads;
