@@ -1,4 +1,4 @@
-﻿var utils = require('src/utils.js');
+var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adaptermanager = require('src/adaptermanager');
@@ -46,7 +46,7 @@ const InvibesAdapter = function InvibesAdapter() {
               var responseObj = JSON.parse(response);
               var bidResponses = handleResponse(responseObj, bids);
 
-              if (bidResponses !== null && bidResponses !== []) {
+              if (bidResponses != null && bidResponses.length !== 0) {
                 placeBids(bidResponses);
                 addScripts(responseObj);
               }
@@ -194,7 +194,7 @@ function buildRequest(bidRequests, auctionStart) {
 }
 
 function handleResponse(responseObj, bidRequests) {
-  if (bidRequests == null || bidRequests == []) {
+  if (bidRequests == null || bidRequests.length === 0) {
     utils.logInfo('Invibes Adapter - No bids have been requested');
     return [];
   }
