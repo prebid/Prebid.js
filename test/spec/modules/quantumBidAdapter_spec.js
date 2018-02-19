@@ -210,9 +210,7 @@ describe('quantumBidAdapter', () => {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
-  })
-
-  describe('isBidRequestValid', () => {
+  }ribe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
     })
@@ -243,8 +241,8 @@ describe('quantumBidAdapter', () => {
     it('handles native request : should get correct bid response', () => {
       const result = spec.interpretResponse({body: nativeServerResponse}, NATIVE_REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
-      expect(result[0]).to.have.property('width').equal(0)
-      expect(result[0]).to.have.property('height').equal(0)
+      expect(result[0]).to.have.property('width').to.be.below(2)
+      expect(result[0]).to.have.property('height').to.be.below(2)
       expect(result[0]).to.have.property('native')
     })
 

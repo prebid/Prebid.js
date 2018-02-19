@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { BANNER, NATIVE } from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
@@ -6,6 +7,7 @@ const ENDPOINT_URL = '//s.sspqns.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['quantx', 'qtx'], // short code
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -37,7 +39,7 @@ export const spec = {
       }
       let renderMode = 'native';
       for (let i = 0; i < bid.sizes.length; i++) {
-        if (bid.sizes[i][0] > 0 && bid.sizes[i][1] > 0) {
+        if (bid.sizes[i][0] > 1 && bid.sizes[i][1] > 1) {
           renderMode = 'banner';
           break;
         }
@@ -81,8 +83,8 @@ export const spec = {
       bid.creativeId = serverBody.creative_id || '0';
       bid.cpm = responseCPM;
       bid.requestId = bidRequest.bidId;
-      bid.width = 0;
-      bid.height = 0;
+      bid.width = 1;
+      bid.height = 1;
       bid.ttl = 200;
       bid.netRevenue = true;
       bid.currency = 'USD';
@@ -233,18 +235,30 @@ export const spec = {
                   native.title = asset['title']['text'];
                   break;
                 case 2:
-                  native.icon = asset['img']['url'];
+                  native.icon = {
+                    url: asset['img']['url'],
+                    width: 15,
+                    height: 15
+                  };
                   break;
                 case 3:
                   native.body = asset['data']['value'];
                   break;
                 case 4:
-                  native.image = '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(asset['img']['url']) + '/external';
+                  native.image = {
+                    url: '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(asset['img']['url']) + '/external',
+                    width: 290,
+                    height: 130
+                  };
                   break;
                 case 10:
                   native.sponsoredBy = asset['data']['value'];
                   break;
               }
+            }
+            native.cta = 'read more';
+            if (serverBody.language) {
+              native.cta = 'read more';
             }
 
             native.clickUrl = link.url;
