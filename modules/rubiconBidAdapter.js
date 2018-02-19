@@ -73,7 +73,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * @param {object} bid
    * @return boolean
@@ -109,12 +109,21 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
+      let page_url = config.getConfig('pageUrl');
+      if (bidRequest.params.referrer) {
+        page_url = bidRequest.params.referrer;
+      } else if (!page_url) {
+        page_url = utils.getTopWindowUrl();
+      }
+
+      page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
+
       if (bidRequest.mediaType === 'video') {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
 
         let data = {
-          page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+          page_url,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
           integration: INTEGRATION,
@@ -171,8 +180,7 @@ export const spec = {
         keywords,
         visitor,
         inventory,
-        userId,
-        referrer: pageUrl
+        userId
       } = bidRequest.params;
 
       // defaults
@@ -209,7 +217,7 @@ export const spec = {
 
       data.push(
         'rand', Math.random(),
-        'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
+        'rf', page_url
       );
 
       data = data.concat(_getDigiTrustQueryParams());
@@ -265,16 +273,23 @@ export const spec = {
         requestId: bidRequest.bidId,
         currency: 'USD',
         creativeId: ad.creative_id,
+        mediaType: ad.creative_type,
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
-        netRevenue: config.getConfig('rubicon.netRevenue') || false
+        netRevenue: config.getConfig('rubicon.netRevenue') || false,
+        rubicon: {
+          advertiserId: ad.advertiser,
+          networkId: ad.network
+        }
       };
+
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
         bid.impression_id = ad.impression_id;
+        bid.videoCacheKey = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));

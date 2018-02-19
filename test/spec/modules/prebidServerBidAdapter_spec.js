@@ -216,8 +216,8 @@ describe('S2S Adapter', () => {
   beforeEach(() => adapter = new Adapter());
 
   afterEach(() => {
-    addBidResponse.reset();
-    done.reset();
+    addBidResponse.resetHistory();
+    done.resetHistory();
   });
 
   describe('request function', () => {
@@ -242,6 +242,41 @@ describe('S2S Adapter', () => {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+    });
+
+    it('adds digitrust id is present and user is not optout', () => {
+      let digiTrustObj = {
+        success: true,
+        identity: {
+          privacy: {
+            optout: false
+          },
+          id: 'testId',
+          keyv: 'testKeyV'
+        }
+      };
+
+      window.DigiTrust = {
+        getUser: () => digiTrustObj
+      };
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.digiTrust).to.deep.equal({
+        id: digiTrustObj.identity.id,
+        keyv: digiTrustObj.identity.keyv,
+        pref: 0
+      });
+
+      digiTrustObj.identity.privacy.optout = true;
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid.digiTrust).to.not.exist;
+
+      delete window.DigiTrust;
     });
   });
 
@@ -358,7 +393,7 @@ describe('S2S Adapter', () => {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
-      sinon.stub(adapterManager, 'getBidAdapter', () => rubiconAdapter);
+      sinon.stub(adapterManager, 'getBidAdapter').callsFake(() => rubiconAdapter);
 
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
@@ -429,6 +464,7 @@ describe('S2S Adapter', () => {
     it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
       let myConfig = Object.assign({
+        cookieSet: true,
         cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
       }, CONFIG);
 
@@ -450,7 +486,7 @@ describe('S2S Adapter', () => {
       utils.logError.restore();
     });
 
-    it('should log error when accountId is missing', () => {
+    it('should log an error when accountId is missing', () => {
       const options = {
         enabled: true,
         bidders: ['appnexus'],
@@ -463,7 +499,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log error when bidders is missing', () => {
+    it('should log an error when bidders is missing', () => {
       const options = {
         accountId: '1',
         enabled: true,
@@ -474,6 +510,76 @@ describe('S2S Adapter', () => {
 
       config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should log an error when endpoint is missing', () => {
+      const options = {
+        accountId: '1',
+        bidders: ['appnexus'],
+        timeout: 1000,
+        enabled: true,
+        adapter: 'prebidServer'
+      };
+
+      config.setConfig({ s2sConfig: options});
+      sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should log an error when using an unknown vendor', () => {
+      const options = {
+        accountId: '1',
+        bidders: ['appnexus'],
+        defaultVendor: 'mytest'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.calledOnce(logErrorSpy);
+    });
+
+    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', () => {
+      const options = {
+        accountId: '123',
+        bidders: ['appnexus'],
+        defaultVendor: 'appnexus',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '123');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
+      expect(vendorConfig.cookieSet).to.be.false;
+      expect(vendorConfig.cookieSetUrl).to.be.undefined;
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
+      expect(vendorConfig).to.have.property('timeout', 750);
+    });
+
+    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', () => {
+      const options = {
+        accountId: 'abc',
+        bidders: ['rubicon'],
+        defaultVendor: 'rubicon',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', 'abc');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
+      expect(vendorConfig.cookieSet).to.be.false;
+      expect(vendorConfig.cookieSetUrl).to.be.undefined;
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
+      expect(vendorConfig).to.have.property('timeout', 750);
     });
   });
 });

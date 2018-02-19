@@ -245,10 +245,10 @@ describe('Serverbid BidAdapter', () => {
       expect(opts).to.be.empty;
     });
 
-    it('should always return empty array', () => {
+    it('should return a sync url if iframe syncs are enabled', () => {
       let opts = spec.getUserSyncs(syncOptions);
 
-      expect(opts).to.be.empty;
+      expect(opts.length).to.equal(1);
     });
   });
 });
