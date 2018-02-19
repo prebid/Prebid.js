@@ -59,14 +59,14 @@ export const spec = {
 
 function getOsType() {
   let ua = navigator.userAgent.toLowerCase();
-  let os = ['android', 'ios', 'mac', 'linux', 'window', 'etc'];
-  let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i, ''];
+  let os = ['android', 'ios', 'mac', 'linux', 'window'];
+  let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i];
 
-  return regexp_os.some((tos, idx) => {
-    if (ua.match(tos)) {
+  return os.find((tos, idx) => {
+    if (ua.match(regexp_os[idx])) {
       return os[idx];
     }
-  });
+  }) || 'etc';
 }
 
 function getSize(sizes) {
