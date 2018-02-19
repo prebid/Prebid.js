@@ -255,13 +255,6 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
   });
 
-  describe('CONSTANTS.REQUEST_PARAMS', function() {
-    it('should have all request search params defined and no more', function() {
-      const requestParamsValues = utils.getKeys(YieldbotAdapter.CONSTANTS.REQUEST_PARAMS)
-        .map(key => utils.getValue(YieldbotAdapter.CONSTANTS.REQUEST_PARAMS, key));
-      expect(Object.values(requestParamsValues.sort())).to.deep.equal(ALL_SEARCH_PARAMS.sort());
-    });
-  });
   describe('isBidRequestValid', function() {
     let bid = {
       bidder: 'yieldbot',
@@ -447,7 +440,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
       const cookieName = YieldbotAdapter.newId();
       const cookieValue = YieldbotAdapter.newId();
 
-      YieldbotAdapter.setCookie(cookieName, cookieValue, YieldbotAdapter.CONSTANTS.USER_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, cookieValue, 2000, '/');
       expect(YieldbotAdapter.getCookie(cookieName)).to.equal(cookieValue);
 
       YieldbotAdapter.deleteCookie(cookieName);
@@ -476,36 +469,52 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
   describe('clearAllcookies', function() {
     it('should delete all first-party cookies', function() {
-      let label, cookieName, cookieValue;
-      for (label in YieldbotAdapter.CONSTANTS.COOKIES) {
-        if (YieldbotAdapter.CONSTANTS.COOKIES.hasOwnProperty(label)) {
-          cookieName = YieldbotAdapter.CONSTANTS.COOKIES[label];
-          YieldbotAdapter.setCookie(cookieName, 1, YieldbotAdapter.CONSTANTS.USER_ID_TIMEOUT, '/');
-        }
-      };
+      let idx, cookieLabels = YieldbotAdapter._cookieLabels, cookieName, cookieValue;
+      for (idx = 0; idx < cookieLabels.length; idx++) {
+        YieldbotAdapter.deleteCookie('__ybot' + cookieLabels[idx]);
+      }
 
-      for (label in YieldbotAdapter.CONSTANTS.COOKIES) {
-        if (YieldbotAdapter.CONSTANTS.COOKIES.hasOwnProperty(label)) {
-          cookieName = YieldbotAdapter.CONSTANTS.COOKIES[label];
-          cookieValue = YieldbotAdapter.getCookie(cookieName);
-          expect(!!cookieValue).to.equal(true);
-        }
-      };
+      YieldbotAdapter.sessionBlocked = true;
+      expect(YieldbotAdapter.sessionBlocked, 'sessionBlocked').to.equal(true);
+
+      const userId = YieldbotAdapter.userId;
+      expect(YieldbotAdapter.userId, 'userId').to.equal(userId);
+
+      const sessionId = YieldbotAdapter.sessionId;
+      expect(YieldbotAdapter.sessionId, 'sessionId').to.equal(sessionId);
+
+      const pageviewDepth = YieldbotAdapter.pageviewDepth;
+      expect(pageviewDepth, 'returned pageviewDepth').to.equal(1);
+      expect(YieldbotAdapter.pageviewDepth, 'get pageviewDepth').to.equal(2);
+
+      const lastPageviewId = YieldbotAdapter.newId();
+      YieldbotAdapter.lastPageviewId = lastPageviewId;
+      expect(YieldbotAdapter.lastPageviewId, 'get lastPageviewId').to.equal(lastPageviewId);
+
+      const lastPageviewTime = Date.now();
+      YieldbotAdapter.lastPageviewTime = lastPageviewTime;
+      expect(YieldbotAdapter.lastPageviewTime, 'lastPageviewTime').to.equal(lastPageviewTime);
+
+      const urlPrefix = YieldbotAdapter.urlPrefix('http://here.there.com/ad/');
+      expect(YieldbotAdapter.urlPrefix(), 'urlPrefix').to.equal('http://here.there.com/ad/');
+
+      for (idx = 0; idx < cookieLabels.length; idx++) {
+        cookieValue = YieldbotAdapter.getCookie('__ybot' + cookieLabels[idx]);
+        expect(!!cookieValue, 'setter: ' + cookieLabels[idx]).to.equal(true);
+      }
 
       YieldbotAdapter.clearAllCookies();
 
-      for (label in YieldbotAdapter.CONSTANTS.COOKIES) {
-        if (YieldbotAdapter.CONSTANTS.COOKIES.hasOwnProperty(label)) {
-          cookieName = YieldbotAdapter.CONSTANTS.COOKIES[label];
-          cookieValue = YieldbotAdapter.getCookie(cookieName);
-          expect(cookieValue).to.equal(null);
-        }
+      for (idx = 0; idx < cookieLabels.length; idx++) {
+        cookieName = '__ybot' + cookieLabels[idx];
+        cookieValue = YieldbotAdapter.getCookie(cookieName);
+        expect(cookieValue, cookieName).to.equal(null);
       };
     });
   });
 
   describe('sessionBlocked', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.SESSION_BLOCKED;
+    const cookieName = '__ybotn';
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
     });
@@ -516,16 +525,16 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should return true if cookie value is interpreted as non-zero', function() {
-      YieldbotAdapter.setCookie(cookieName, '1', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '1', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string "1"').to.equal(true);
 
-      YieldbotAdapter.setCookie(cookieName, '10.01', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '10.01', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string "10.01"').to.equal(true);
 
-      YieldbotAdapter.setCookie(cookieName, '-10.01', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '-10.01', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string "-10.01"').to.equal(true);
 
-      YieldbotAdapter.setCookie(cookieName, 1, YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, 1, 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the number 1').to.equal(true);
     });
 
@@ -534,26 +543,26 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should return false if cookie value is interpreted as zero', function() {
-      YieldbotAdapter.setCookie(cookieName, '0', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '0', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string "0"').to.equal(false);
 
-      YieldbotAdapter.setCookie(cookieName, '.01', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '.01', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string ".01"').to.equal(false);
 
-      YieldbotAdapter.setCookie(cookieName, '-.9', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, '-.9', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the string "-.9"').to.equal(false);
 
-      YieldbotAdapter.setCookie(cookieName, 0, YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, 0, 2000, '/');
       expect(YieldbotAdapter.sessionBlocked, 'cookie value: the number 0').to.equal(false);
     });
 
     it('should return false if cookie value source is a non-numeric string', function() {
-      YieldbotAdapter.setCookie(cookieName, 'true', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, 'true', 2000, '/');
       expect(YieldbotAdapter.sessionBlocked).to.equal(false);
     });
 
     it('should return false if cookie value source is a boolean', function() {
-      YieldbotAdapter.setCookie(cookieName, true, YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, true, 2000, '/');
       expect(YieldbotAdapter.sessionBlocked).to.equal(false);
     });
 
@@ -576,7 +585,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
   });
 
   describe('userId', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.USER_ID;
+    const cookieName = '__ybotu';
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
     });
@@ -593,14 +602,14 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should return user Id if cookie exists', function() {
       const expectedUserId = YieldbotAdapter.newId();
-      YieldbotAdapter.setCookie(cookieName, expectedUserId, YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, expectedUserId, 2000, '/');
       const userId = YieldbotAdapter.userId;
       expect(userId).to.equal(expectedUserId);
     });
   });
 
   describe('sessionId', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.SESSION_ID;
+    const cookieName = '__ybotsi';
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
     });
@@ -617,14 +626,14 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should return session Id if cookie exists', function() {
       const expectedSessionId = YieldbotAdapter.newId();
-      YieldbotAdapter.setCookie(cookieName, expectedSessionId, YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, expectedSessionId, 2000, '/');
       const sessionId = YieldbotAdapter.sessionId;
       expect(sessionId).to.equal(expectedSessionId);
     });
   });
 
   describe('lastPageviewId', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.LAST_PAGEVIEW_ID;
+    const cookieName = '__ybotlpvi';
 
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
@@ -649,7 +658,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
   });
 
   describe('lastPageviewTime', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.PREVIOUS_VISIT;
+    const cookieName = '__ybotlpv';
 
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
@@ -674,7 +683,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
   });
 
   describe('pageviewDepth', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.PAGEVIEW_DEPTH;
+    const cookieName = '__ybotpvd';
 
     beforeEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
@@ -700,7 +709,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
   });
 
   describe('urlPrefix', function() {
-    const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.URL_PREFIX;
+    const cookieName = '__ybotc';
     const protocol = document.location.protocol;
     afterEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
@@ -709,12 +718,12 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should set the default prefix if cookie does not exist', function(done) {
       const urlPrefix = YieldbotAdapter.urlPrefix();
-      expect(urlPrefix).to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
+      expect(urlPrefix).to.equal('//i.yldbt.com/m/');
       done();
     });
 
     it('should return prefix if cookie exists', function() {
-      YieldbotAdapter.setCookie(cookieName, protocol + '//closest.az.com/path/', YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT, '/');
+      YieldbotAdapter.setCookie(cookieName, protocol + '//closest.az.com/path/', 2000, '/');
       const urlPrefix = YieldbotAdapter.urlPrefix();
       expect(urlPrefix).to.equal(protocol + '//closest.az.com/path/');
     });
@@ -722,7 +731,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
     it('should reset prefix if default already set', function() {
       const defaultUrlPrefix = YieldbotAdapter.urlPrefix();
       const url = protocol + '//close.az.com/path/';
-      expect(defaultUrlPrefix).to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
+      expect(defaultUrlPrefix).to.equal('//i.yldbt.com/m/');
 
       let urlPrefix = YieldbotAdapter.urlPrefix(url);
       expect(urlPrefix, 'reset prefix').to.equal(url);
@@ -741,10 +750,10 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should fallback to default for invalid argument', function() {
       let urlPrefix = YieldbotAdapter.urlPrefix('//close.az.com/path/');
-      expect(urlPrefix, 'Url w/o protocol').to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
+      expect(urlPrefix, 'Url w/o protocol').to.equal('//i.yldbt.com/m/');
 
       urlPrefix = YieldbotAdapter.urlPrefix('mumble');
-      expect(urlPrefix, 'Invalid Url').to.equal(YieldbotAdapter.CONSTANTS.DEFAULT_REQUEST_URL_PREFIX);
+      expect(urlPrefix, 'Invalid Url').to.equal('//i.yldbt.com/m/');
     });
   });
 
@@ -822,11 +831,11 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should re-enable requests when sessionBlocked expires', function() {
-      const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.SESSION_BLOCKED;
+      const cookieName = '__ybotn';
       YieldbotAdapter.setCookie(
         cookieName,
         1,
-        YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT,
+        2000,
         '/');
       let requests = YieldbotAdapter.buildRequests(FIXTURE_BID_REQUESTS);
       expect(requests.length).to.equal(0);
@@ -942,11 +951,11 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should use edge server Url prefix if set', function() {
-      const cookieName = YieldbotAdapter.CONSTANTS.COOKIES.URL_PREFIX;
+      const cookieName = '__ybotc';
       YieldbotAdapter.setCookie(
         cookieName,
         'http://close.edge.adserver.com/',
-        YieldbotAdapter.CONSTANTS.SESSION_ID_TIMEOUT,
+        2000,
         '/');
 
       const request = YieldbotAdapter.buildRequests(FIXTURE_BID_REQUESTS)[0];
@@ -1042,7 +1051,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
         FIXTURE_SERVER_RESPONSE,
         FIXTURE_BID_REQUEST
       );
-      const edgeServerUrlPrefix = YieldbotAdapter.getCookie(YieldbotAdapter.CONSTANTS.COOKIES.URL_PREFIX);
+      const edgeServerUrlPrefix = YieldbotAdapter.getCookie('__ybotc');
 
       const protocol = document.location.protocol;
       const beginsRegex = new RegExp('^' + protocol + '\/\/close\.edge\.adserver\.com\/');
