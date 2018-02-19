@@ -5,12 +5,14 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
 import { getTopWindowUrl } from 'src/utils';
+import findIndex from 'core-js/library/fn/array/find-index';
+import includes from 'core-js/library/fn/array/includes';
 
 const code = 'audienceNetwork';
 const currency = 'USD';
 const method = 'GET';
 const url = 'https://an.facebook.com/v2/placementbid.json';
-const supportedMediaTypes = ['video'];
+const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hb_bidder = 'fan';
 
@@ -36,11 +38,18 @@ const flattenSize = size =>
   (Array.isArray(size) && size.length === 2) ? `${size[0]}x${size[1]}` : size;
 
 /**
+ * Expands a 'WxH' string as a 2-element [W, H] array
+ * @param {String} size
+ * @returns {Array}
+ */
+const expandSize = size => size.split('x').map(Number);
+
+/**
  * Is this a valid slot size?
  * @param {String} size
  * @returns {Boolean}
  */
-const isValidSize = size => ['300x250', '320x50'].includes(size);
+const isValidSize = size => includes(['300x250', '320x50'], size);
 
 /**
  * Is this a video format?
@@ -85,6 +94,12 @@ ${nativeContainer}</div></body></html>`;
 };
 
 /**
+ * Get the current window location URL correctly encoded for use in a URL query string.
+ * @returns {String} URI-encoded URL
+ */
+const getTopWindowUrlEncoded = () => encodeURIComponent(getTopWindowUrl());
+
+/**
  * Convert each bid request to a single URL to fetch those bids.
  * @param {Array} bids - list of bids
  * @param {String} bids[].placementCode - Prebid placement identifier
@@ -118,7 +133,7 @@ const buildRequests = bids => {
 
   // Build URL
   const testmode = isTestmode();
-  const pageurl = getTopWindowUrl();
+  const pageurl = getTopWindowUrlEncoded();
   const search = {
     placementids,
     adformats,
@@ -126,9 +141,9 @@ const buildRequests = bids => {
     pageurl,
     sdk
   };
-  const video = adformats.findIndex(isVideo);
+  const video = findIndex(adformats, isVideo);
   if (video !== -1) {
-    [search.playerwidth, search.playerheight] = sizes[video].split('x').map(Number)
+    [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
   }
   const data = formatQS(search);
 
@@ -147,51 +162,50 @@ const buildRequests = bids => {
 const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
   const ttl = Number(config.getConfig().bidderTimeout);
 
-  return body.errors && body.errors.length
-    ? []
-    : Object.keys(body.bids)
-      // extract Array of bid responses
-      .map(placementId => body.bids[placementId])
-      // flatten
-      .reduce((a, b) => a.concat(b), [])
-      // transform to bidResponse
-      .map((bid, i) => {
-        const {
-          bid_id: fb_bidid,
-          placement_id: creativeId,
-          bid_price_cents: cpm
-        } = bid;
+  const { bids = {} } = body;
+  return Object.keys(bids)
+    // extract Array of bid responses
+    .map(placementId => bids[placementId])
+    // flatten
+    .reduce((a, b) => a.concat(b), [])
+    // transform to bidResponse
+    .map((bid, i) => {
+      const {
+        bid_id: fb_bidid,
+        placement_id: creativeId,
+        bid_price_cents: cpm
+      } = bid;
 
-        const format = adformats[i];
-        const [width, height] = sizes[i];
-        const ad = createAdHtml(creativeId, format, fb_bidid);
-        const requestId = requestIds[i];
+      const format = adformats[i];
+      const [width, height] = expandSize(flattenSize(sizes[i]));
+      const ad = createAdHtml(creativeId, format, fb_bidid);
+      const requestId = requestIds[i];
 
-        const bidResponse = {
-          // Prebid attributes
-          requestId,
-          cpm: cpm / 100,
-          width,
-          height,
-          ad,
-          ttl,
-          creativeId,
-          netRevenue,
-          currency,
-          // Audience Network attributes
-          hb_bidder,
-          fb_bidid,
-          fb_format: format,
-          fb_placementid: creativeId
-        };
-        // Video attributes
-        if (isVideo(format)) {
-          const pageurl = getTopWindowUrl();
-          bidResponse.mediaType = 'video';
-          bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${encodeURIComponent(pageurl)}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
-        }
-        return bidResponse;
-      });
+      const bidResponse = {
+        // Prebid attributes
+        requestId,
+        cpm: cpm / 100,
+        width,
+        height,
+        ad,
+        ttl,
+        creativeId,
+        netRevenue,
+        currency,
+        // Audience Network attributes
+        hb_bidder,
+        fb_bidid,
+        fb_format: format,
+        fb_placementid: creativeId
+      };
+      // Video attributes
+      if (isVideo(format)) {
+        const pageurl = getTopWindowUrlEncoded();
+        bidResponse.mediaType = 'video';
+        bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
+      }
+      return bidResponse;
+    });
 };
 
 export const spec = {

@@ -10,7 +10,7 @@ describe('HuddledmassesAdapter', () => {
       placement_id: 0
     },
     placementCode: 'placementid_0',
-    requestId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     sizes: [[300, 250]],
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
