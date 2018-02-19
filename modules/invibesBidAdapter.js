@@ -131,7 +131,7 @@ function buildRequest(bidRequests, auctionStart) {
 }
 
 function handleResponse(responseObj, bidRequests) {
-  if (bidRequests == null || bidRequests == []) {
+  if (bidRequests == null || bidRequests.length === 0) {
     utils.logInfo('Invibes Adapter - No bids have been requested');
     return [];
   }
