@@ -23,7 +23,9 @@ export const spec = {
    */
   buildRequests: function(bidReqs) {
     let sovrnImps = [];
+    let iv;
     utils._each(bidReqs, function (bid) {
+      iv = iv || utils.getBidIdParameter('iv', bid.params);
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
@@ -36,9 +38,11 @@ export const spec = {
       imp: sovrnImps,
       site: {
         domain: window.location.host,
-        page: window.location.pathname + location.search + location.hash
+        page: window.location.host + window.location.pathname + location.search + location.hash
       }
     };
+    if (iv) sovrnBidReq.iv = iv;
+
     return {
       method: 'POST',
       url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
