@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -184,9 +184,9 @@ function getKeywords(keywords) {
 function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm,
+    cpm: 0.00,
     creativeId: rtbBid.creative_id,
-    dealId: rtbBid.deal_id,
+    dealId: 99999999,
     currency: 'USD',
     netRevenue: true,
     ttl: 300
