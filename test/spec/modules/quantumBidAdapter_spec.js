@@ -210,7 +210,9 @@ describe('quantumBidAdapter', () => {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
-  }ribe('isBidRequestValid', () => {
+  })
+
+  describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
     })
