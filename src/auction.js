@@ -187,7 +187,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   };
 
   function finishCallBids(_adUnits, _auctionId, bidRequests) {
-  // exports.finishCallBids = createHook('asyncSeries', function(_adUnits, _auctionId, bidRequests) {
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
@@ -195,7 +194,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     _auctionStatus = AUCTION_IN_PROGRESS;
     adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
-  // }, 'finishCallBids');
   }
 
   return {

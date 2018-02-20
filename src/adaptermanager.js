@@ -150,8 +150,8 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 }
 
 // exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
-// exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+// exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -192,7 +192,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
-        // gdpr: adUnits[0].gdpr
+        gdpr: adUnits[0].gdpr
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -211,7 +211,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
-      // gdpr: adUnits[0].gdpr
+      gdpr: adUnits[0].gdpr
     };
     if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
@@ -219,8 +219,8 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   });
   // return bidRequests;
   callback(adUnits, auctionId, bidRequests);
-}
-// }, 'makeBidRequests');
+// }
+}, 'makeBidRequests');
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
@@ -270,8 +270,8 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = createHook('asyncSeries', function (adUnits, bidRequests, addBidResponse, doneCb) {
-// exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+// exports.callBids = createHook('asyncSeries', function (adUnits, bidRequests, addBidResponse, doneCb) {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -339,8 +339,8 @@ exports.callBids = createHook('asyncSeries', function (adUnits, bidRequests, add
       utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
     }
   });
-// }
-}, 'callBids');
+}
+// }, 'callBids');
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;

@@ -514,9 +514,6 @@ describe('auctionmanager.js', function () {
     }];
 
     before(() => {
-      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
-      makeRequestsStub.returns(bidRequests);
-
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
         return function(url, callback) {
           const fakeResponse = sinon.stub();
@@ -528,7 +525,6 @@ describe('auctionmanager.js', function () {
 
     after(() => {
       ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
     });
 
     describe('when auction timeout is 3000', () => {
@@ -568,7 +564,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.pbDg, '1.99', '0 - 3 hits at to 1 cent increment');
       });
@@ -579,7 +575,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.pbDg, '4.35', '3 - 8 hits at 5 cent increment');
       });
@@ -590,7 +586,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.pbDg, '19.50', '8 - 20 hits at 50 cent increment');
       });
@@ -601,7 +597,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.pbDg, '20.00', '20+ caps at 20.00');
       });
@@ -612,7 +608,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
       });
@@ -624,7 +620,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting.hb_bidder, 'sampleBidder');
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
@@ -656,7 +652,6 @@ describe('auctionmanager.js', function () {
           'timeout': 3000
         }];
 
-        makeRequestsStub.returns(bidRequests);
         let bids1 = Object.assign({},
           bids[0],
           {
@@ -668,7 +663,7 @@ describe('auctionmanager.js', function () {
         spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
         spec.isBidRequestValid.returns(true);
         spec.interpretResponse.returns(bids1);
-        auction.callBids();
+        auction.finishCallBids(adUnits, '1234', bidRequests);
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
@@ -821,7 +816,7 @@ describe('auctionmanager.js', function () {
       spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
-      auction.callBids();
+      auction.finishCallBids(adUnits, '1234', bidRequests);
 
       const addedBid2 = auction.getBidsReceived().pop();
       assert.equal(addedBid2.adId, bids1[0].requestId);
@@ -844,7 +839,7 @@ describe('auctionmanager.js', function () {
       spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
-      auction.callBids();
+      auction.finishCallBids(adUnits, '1234', bidRequests);
 
       let length = auction.getBidsReceived().length;
       const addedBid2 = auction.getBidsReceived().pop();
@@ -870,7 +865,7 @@ describe('auctionmanager.js', function () {
       spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1Copy);
 
-      auction.callBids();
+      auction.finishCallBids(adUnits, '1234', bidRequests);
 
       assert.equal(auction.getBidsReceived().length, 2);
       assert.equal(auction.getAuctionStatus(), 'completed');
