@@ -19,6 +19,22 @@ config.getConfig('gdpr', config => setConfig(config.gdpr));
 
 function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels, callback, fn) {
 // function callBidsHook(adUnits, bidRequests, addBidResponse, doneCb, fn) {
+
+  let context = this;
+  let args = arguments;
+
+  doLookUp(function(result) {
+    // this applys the change
+    adUnits.forEach(adUnit => {
+      adUnit['gdpr'] = result;
+    });
+
+    // this finishes the hook process, keep this in some form
+    fn.apply(context, args);
+  });
+}
+
+function doLookUp(mainCb) {
   let consentFn = () => {};
 
   // do gdpr lookup here
@@ -38,14 +54,7 @@ function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels
   gdprId = getConsent(consentFn, function(result) {
     return result;
   });
-
-  // this applys the change
-  adUnits.forEach(adUnit => {
-    adUnit['gdpr'] = gdprId;
-  });
-
-  // this finishes the hook process, keep this in some form
-  fn.apply(this, arguments);
+  mainCb(gdprId);
 }
 
 // extra code
