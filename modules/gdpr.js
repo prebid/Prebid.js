@@ -22,43 +22,28 @@ function makeBidRequestsHook(adUnits, auctionStart, auctionId, cbTimeout, labels
 
   let context = this;
   let args = arguments;
-
-  doLookUp(function(result) {
-    // this applys the change
-    adUnits.forEach(adUnit => {
-      adUnit['gdpr'] = result;
-    });
-
-    // this finishes the hook process, keep this in some form
+  // in case we already have consent
+  if (gdprId) {
+    applyConsent(gdprId);
     fn.apply(context, args);
-  });
-}
-
-function doLookUp(mainCb) {
-  let consentFn = () => {};
-
-  // do gdpr lookup here
-  consentFn = (cb) => {
-    if (cmp === 'iab') {
-      window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-        console.log('getConsentData result is ' + consentString);
-        cb(consentString);
-        // gdprId = consentString;
-      });
-    }
+    return;
   }
 
-  function getConsent(fn, cb) {
-    fn.call(this, cb);
+  if (cmp === 'iab') {
+    window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
+      console.log('getConsentData result is ' + consentString);
+      gdprId = consentString;
+      // this applys the change
+      applyConsent(consentString);
+
+      // this finishes the hook process, keep this in some form
+      fn.apply(context, args);
+    });
   }
-  gdprId = getConsent(consentFn, function(result) {
-    return result;
-  });
-  mainCb(gdprId);
+
+  function applyConsent(consent) {
+    adUnits.forEach(adUnit => {
+      adUnit['gdpr'] = consent;
+    });
+  }
 }
-
-// extra code
-
-// bidRequests.forEach(bidRequest => {
-//   bidRequest['gdpr'] = gdprId;
-// });
