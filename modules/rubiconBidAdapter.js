@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import {BANNER, VIDEO} from 'src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -73,7 +74,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
    * @return boolean
@@ -93,148 +94,238 @@ export const spec = {
       return false;
     }
 
-    if (bid.mediaType === 'video') {
-      if (typeof params.video !== 'object' || !params.video.size_id) {
+    if (spec.hasVideoMediaType(bid)) {
+      // support instream only
+      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' ||
+        typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
     }
     return true;
   },
+
   /**
    * @param {BidRequest[]} bidRequests
    * @param bidderRequest
    * @return ServerRequest[]
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    return bidRequests.map(bidRequest => {
+    // separate video bids because the requests are structured differently
+    let requests = [];
+    const videoRequests = bidRequests.filter(spec.hasVideoMediaType).map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      if (bidRequest.mediaType === 'video') {
-        let params = bidRequest.params;
-        let size = parseSizes(bidRequest);
+      let params = bidRequest.params;
+      let size = parseSizes(bidRequest);
 
-        let data = {
-          page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
-          resolution: _getScreenResolution(),
-          account_id: params.accountId,
-          integration: INTEGRATION,
-          timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-          stash_creatives: true,
-          ae_pass_through_parameters: params.video.aeParams,
-          slots: []
-        };
+      let data = {
+        page_url: _getPageUrl(bidRequest),
+        resolution: _getScreenResolution(),
+        account_id: params.accountId,
+        integration: INTEGRATION,
+        'x_source.tid': bidRequest.transactionId,
+        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
+        stash_creatives: true,
+        ae_pass_through_parameters: params.video.aeParams,
+        slots: []
+      };
 
-        // Define the slot object
-        let slotData = {
-          site_id: params.siteId,
-          zone_id: params.zoneId,
-          position: params.position || 'btf',
-          floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-          element_id: bidRequest.adUnitCode,
-          name: bidRequest.adUnitCode,
-          language: params.video.language,
-          width: size[0],
-          height: size[1],
-          size_id: params.video.size_id
-        };
+      // Define the slot object
+      let slotData = {
+        site_id: params.siteId,
+        zone_id: params.zoneId,
+        position: params.position || 'btf',
+        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
+        element_id: bidRequest.adUnitCode,
+        name: bidRequest.adUnitCode,
+        language: params.video.language,
+        width: size[0],
+        height: size[1],
+        size_id: params.video.size_id
+      };
 
-        if (params.inventory && typeof params.inventory === 'object') {
-          slotData.inventory = params.inventory;
-        }
-
-        if (params.keywords && Array.isArray(params.keywords)) {
-          slotData.keywords = params.keywords;
-        }
-
-        if (params.visitor && typeof params.visitor === 'object') {
-          slotData.visitor = params.visitor;
-        }
-
-        data.slots.push(slotData);
-
-        return {
-          method: 'POST',
-          url: VIDEO_ENDPOINT,
-          data,
-          bidRequest
-        }
+      if (params.inventory && typeof params.inventory === 'object') {
+        slotData.inventory = params.inventory;
       }
 
-      // non-video request builder
-      let {
-        accountId,
-        siteId,
-        zoneId,
-        position,
-        floor,
-        keywords,
-        visitor,
-        inventory,
-        userId,
-        referrer: pageUrl
-      } = bidRequest.params;
-
-      // defaults
-      floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
-      position = position || 'btf';
-
-      // use rubicon sizes if provided, otherwise adUnit.sizes
-      let parsedSizes = parseSizes(bidRequest);
-
-      // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
-      let data = [
-        'account_id', accountId,
-        'site_id', siteId,
-        'zone_id', zoneId,
-        'size_id', parsedSizes[0],
-        'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
-        'p_pos', position,
-        'rp_floor', floor,
-        'rp_secure', isSecure() ? '1' : '0',
-        'tk_flint', INTEGRATION,
-        'tid', bidRequest.transactionId,
-        'p_screen_res', _getScreenResolution(),
-        'kw', keywords,
-        'tk_user_key', userId
-      ];
-
-      if (visitor !== null && typeof visitor === 'object') {
-        utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));
+      if (params.keywords && Array.isArray(params.keywords)) {
+        slotData.keywords = params.keywords;
       }
 
-      if (inventory !== null && typeof inventory === 'object') {
-        utils._each(inventory, (item, key) => data.push(`tg_i.${key}`, item));
+      if (params.visitor && typeof params.visitor === 'object') {
+        slotData.visitor = params.visitor;
       }
 
-      data.push(
-        'rand', Math.random(),
-        'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
-      );
-
-      data = data.concat(_getDigiTrustQueryParams());
-
-      data = data.reduce(
-        (memo, curr, index) =>
-          index % 2 === 0 && data[index + 1] !== undefined
-            ? memo + curr + '=' + encodeURIComponent(data[index + 1]) + '&' : memo,
-        ''
-      ).slice(0, -1); // remove trailing &
+      data.slots.push(slotData);
 
       return {
-        method: 'GET',
-        url: FASTLANE_ENDPOINT,
+        method: 'POST',
+        url: VIDEO_ENDPOINT,
         data,
         bidRequest
-      };
+      }
     });
+
+    if (config.getConfig('rubicon.singleRequest') !== true) {
+      // bids are not grouped if single request mode is not enabled
+      requests = videoRequests.concat(bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest)).map(bidRequest => {
+        const bidParams = spec.createSlotParams(bidRequest);
+        return {
+          method: 'GET',
+          url: FASTLANE_ENDPOINT,
+          data: Object.keys(bidParams).reduce((paramString, key) => {
+            const propValue = bidParams[key];
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+          }, '') + `slots=1&rand=${Math.random()}`,
+          bidRequest
+        };
+      }));
+    } else {
+      // single request requires bids to be grouped by site id into a single request
+      // note: utils.groupBy wasn't used because deep property access was needed
+      const nonVideoRequests = bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest));
+      const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
+        (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
+        return groupedBids;
+      }, {});
+
+      requests = videoRequests.concat(Object.keys(groupedBidRequests).map(bidGroupKey => {
+        let bidsInGroup = groupedBidRequests[bidGroupKey];
+
+        // fastlane SRA has a limit of 10 slots
+        if (bidsInGroup.length > 10) {
+          utils.logWarn(`single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
+          bidsInGroup = bidsInGroup.slice(0, 10);
+        }
+
+        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(spec.createSlotParams));
+
+        // SRA request returns grouped bidRequest arrays not a plain bidRequest
+        return {
+          method: 'GET',
+          url: FASTLANE_ENDPOINT,
+          data: Object.keys(combinedSlotParams).reduce((paramString, key) => {
+            const propValue = combinedSlotParams[key];
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+          }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
+          bidRequest: groupedBidRequests[bidGroupKey],
+        };
+      }));
+    }
+    return requests;
   },
+
+  /**
+   * @summary combines param values from an array of slots into a single semicolon delineated value
+   * or just one value if they are all the same.
+   * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
+   * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
+   */
+  combineSlotUrlParams: function(aSlotUrlParams) {
+    // if only have params for one slot, return those params
+    if (aSlotUrlParams.length === 1) {
+      return aSlotUrlParams[0];
+    }
+
+    // reduce param values from all slot objects into an array of values in a single object
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function(param) {
+        if (!oCombinedParams.hasOwnProperty(param)) {
+          oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
+        }
+        // insert into the proper element of the array
+        oCombinedParams[param].splice(iIndex, 1, oSlotUrlParams[param]);
+      });
+
+      return oCombinedParams;
+    }, {});
+
+    // convert arrays into semicolon delimited strings
+    const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
+
+    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
+      const sValues = oCombinedSlotUrlParams[param].join(';');
+      // consolidate param values into one value if they are all the same
+      const match = sValues.match(re);
+      oCombinedSlotUrlParams[param] = match ? match[1] : sValues;
+    });
+
+    return oCombinedSlotUrlParams;
+  },
+
+  /**
+   * @param {BidRequest} bidRequest
+   * @returns {Object} - object key values named and formatted as slot params
+   */
+  createSlotParams: function(bidRequest) {
+    bidRequest.startTime = new Date().getTime();
+
+    const params = bidRequest.params;
+
+    // use rubicon sizes if provided, otherwise adUnit.sizes
+    const parsedSizes = parseSizes(bidRequest);
+
+    const data = {
+      'account_id': params.accountId,
+      'site_id': params.siteId,
+      'zone_id': params.zoneId,
+      'size_id': parsedSizes[0],
+      'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
+      'p_pos': params.position || 'btf',
+      'rp_floor': (params.floor && parseFloat(params.floor) > 0.01) ? parseFloat(params.floor) : 0.01,
+      'rp_secure': isSecure() ? '1' : '0',
+      'tk_flint': INTEGRATION,
+      'x_source.tid': bidRequest.transactionId,
+      'p_screen_res': _getScreenResolution(),
+      'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
+      'tk_user_key': params.userId,
+      'tg_fl.eid': bidRequest.code,
+      'rf': _getPageUrl(bidRequest)
+    };
+
+    // visitor properties
+    const visitor = params.visitor;
+    if (visitor !== null && typeof visitor === 'object') {
+      Object.keys(visitor).forEach((key) => {
+        data[`tg_v.${key}`] = visitor[key];
+      });
+    }
+
+    // inventory properties
+    const inventory = params.inventory;
+    if (inventory !== null && typeof inventory === 'object') {
+      Object.keys(inventory).forEach((key) => {
+        data[`tg_i.${key}`] = inventory[key];
+      });
+    }
+
+    // digitrust properties
+    const digitrustParams = _getDigiTrustQueryParams();
+    Object.keys(digitrustParams).forEach(paramKey => {
+      data[paramKey] = digitrustParams[paramKey];
+    });
+
+    return data;
+  },
+
+  /**
+   * Test if bid has mediaType or mediaTypes set for video.
+   * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  hasVideoMediaType: function(bidRequest) {
+    return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  },
+
   /**
    * @param {*} responseObj
-   * @param {BidRequest} bidRequest
+   * @param {BidRequest|Object.<string, BidRequest[]>} bidRequest - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
+   * non-SRA responses return a plain BidRequest object
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
-    responseObj = responseObj.body
+    responseObj = responseObj.body;
     let ads = responseObj.ads;
 
     // check overall response
@@ -243,7 +334,7 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -252,44 +343,55 @@ export const spec = {
       return [];
     }
 
-    // if there are multiple ads, sort by CPM
-    ads = ads.sort(_adCpmSort);
-
-    return ads.reduce((bids, ad) => {
+    return ads.reduce((bids, ad, i) => {
       if (ad.status !== 'ok') {
         return [];
       }
 
-      let bid = {
-        requestId: bidRequest.bidId,
-        currency: 'USD',
-        creativeId: ad.creative_id,
-        cpm: ad.cpm || 0,
-        dealId: ad.deal,
-        ttl: 300, // 5 minutes
-        netRevenue: config.getConfig('rubicon.netRevenue') || false
-      };
-      if (bidRequest.mediaType === 'video') {
-        bid.width = bidRequest.params.video.playerWidth;
-        bid.height = bidRequest.params.video.playerHeight;
-        bid.vastUrl = ad.creative_depot_url;
-        bid.impression_id = ad.impression_id;
-      } else {
-        bid.ad = _renderCreative(ad.script, ad.impression_id);
-        [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+      // associate bidRequests under the assumption that response ads order matches request bids order
+      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
+
+      if (typeof associatedBidRequest !== 'undefined') {
+        let bid = {
+          requestId: associatedBidRequest.bidId,
+          currency: 'USD',
+          creativeId: ad.creative_id,
+          mediaType: ad.creative_type,
+          cpm: ad.cpm || 0,
+          dealId: ad.deal,
+          ttl: 300, // 5 minutes
+          netRevenue: config.getConfig('rubicon.netRevenue') || false,
+          rubicon: {
+            advertiserId: ad.advertiser,
+            networkId: ad.network
+          }
+        };
+
+        if (ad.creative_type === VIDEO) {
+          bid.width = associatedBidRequest.params.video.playerWidth;
+          bid.height = associatedBidRequest.params.video.playerHeight;
+          bid.vastUrl = ad.creative_depot_url;
+          bid.impression_id = ad.impression_id;
+          bid.videoCacheKey = ad.impression_id;
+        } else {
+          bid.ad = _renderCreative(ad.script, ad.impression_id);
+          [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        }
+
+        // add server-side targeting
+        bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
+          .reduce((memo, item) => {
+            memo[item.key] = item.values[0];
+            return memo;
+          }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
+
+        bids.push(bid);
       }
 
-      // add server-side targeting
-      bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
-        .reduce((memo, item) => {
-          memo[item.key] = item.values[0];
-          return memo;
-        }, {'rpfl_elemid': bidRequest.adUnitCode});
-
-      bids.push(bid);
-
       return bids;
-    }, []);
+    }, []).sort((adA, adB) => {
+      return (adB.cpm || 0.0) - (adA.cpm || 0.0);
+    });
   },
   getUserSyncs: function(syncOptions) {
     if (!hasSynced && syncOptions.iframeEnabled) {
@@ -301,10 +403,6 @@ export const spec = {
     }
   }
 };
-
-function _adCpmSort(adA, adB) {
-  return (adB.cpm || 0.0) - (adA.cpm || 0.0);
-}
 
 function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
@@ -320,11 +418,25 @@ function _getDigiTrustQueryParams() {
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return [];
   }
-  return [
-    'dt.id', digiTrustId.id,
-    'dt.keyv', digiTrustId.keyv,
-    'dt.pref', 0
-  ];
+  return {
+    'dt.id': digiTrustId.id,
+    'dt.keyv': digiTrustId.keyv,
+    'dt.pref': 0
+  };
+}
+
+/**
+ * @param {BidRequest} bidRequest
+ * @returns {string}
+ */
+function _getPageUrl(bidRequest) {
+  let page_url = config.getConfig('pageUrl');
+  if (bidRequest.params.referrer) {
+    page_url = bidRequest.params.referrer;
+  } else if (!page_url) {
+    page_url = utils.getTopWindowUrl();
+  }
+  return bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
 }
 
 function _renderCreative(script, impId) {
@@ -341,56 +453,58 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (bid.mediaType === 'video') {
+
+  if (spec.hasVideoMediaType(bid)) {
     let size = [];
     if (params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
       ];
-    } else if (
-      Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-        Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
-    ) {
+    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
     }
     return size;
   }
-  return masSizeOrdering(Array.isArray(params.sizes)
-    ? params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
-  );
+
+  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+
+  return masSizeOrdering(sizes);
 }
 
-export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
-
+function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
-    // map sizes while excluding non-matches
+  // map sizes while excluding non-matches
     .reduce((result, size) => {
       let mappedSize = parseInt(sizeMap[size], 10);
       if (mappedSize) {
         result.push(mappedSize);
       }
       return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    }, []);
+}
 
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
+export function masSizeOrdering(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return sizes.sort((first, second) => {
+    // sort by MAS_SIZE_PRIORITY priority order
+    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+    if (firstPriority > -1 || secondPriority > -1) {
+      if (firstPriority === -1) {
+        return 1;
       }
+      if (secondPriority === -1) {
+        return -1;
+      }
+      return firstPriority - secondPriority;
+    }
 
-      // and finally ascending order
-      return first - second;
-    });
+    // and finally ascending order
+    return first - second;
+  });
 }
 
 var hasSynced = false;
