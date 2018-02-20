@@ -158,7 +158,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 };
 
 export function getTopWindowLocation() {
-  if (this.inIframe()) {
+  if (exports.inIframe()) {
     return getIframeParentLoc();
   } else {
     return window.location;
