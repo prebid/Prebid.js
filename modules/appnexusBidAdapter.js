@@ -185,12 +185,14 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    buyerMemberId: rtbBid.buyer_member_id,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    appnexus: {
+        buyerMemberId: rtbBid.buyer_member_id
+    }
   };
 
   if (rtbBid.rtb.video) {

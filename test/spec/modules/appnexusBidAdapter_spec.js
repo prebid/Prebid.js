@@ -371,7 +371,6 @@ describe('AppNexusAdapter', () => {
           'requestId': '3db3773286ee59',
           'cpm': 0.5,
           'creativeId': 29681110,
-          'buyerMemberId': 958,
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -379,7 +378,10 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'appnexus': {
+            'buyerMemberId': 958
+          }
         }
       ];
       let bidderRequest;
