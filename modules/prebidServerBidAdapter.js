@@ -394,6 +394,12 @@ const OPEN_RTB_PROTOCOL = {
       });
 
       let banner;
+      // default to banner if mediaTypes isn't defined
+      if (utils.isEmpty(adUnit.mediaTypes)) {
+        const format = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        banner = {format};
+      }
+
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
       if (bannerParams && bannerParams.sizes) {
         // get banner sizes in form [{ w: <int>, h: <int> }, ...]
