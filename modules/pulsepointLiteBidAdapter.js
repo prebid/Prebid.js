@@ -220,16 +220,26 @@ function dataAsset(id, params, type, defaultLen) {
  * Produces an OpenRTB site object.
  */
 function site(bidderRequest) {
+  var pageUrl;
+  var pageDomain;
+  if (bidderRequest && bidderRequest[0] && bidderRequest[0].params) {
+    pageUrl = bidderRequest[0].params.pageUrl;
+    pageDomain = bidderRequest[0].params.pageDomain;
+  }
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
   const appParams = bidderRequest[0].params.app;
   if (!appParams) {
-    return {
+    const siteInfo = {
       publisher: {
         id: pubId.toString(),
       },
       ref: referrer(),
-      page: getTopWindowLocation().href,
+      page: pageUrl || getTopWindowLocation().href,
+    };
+    if (pageDomain) {
+      siteInfo.domain = pageDomain;
     }
+    return siteInfo;
   }
   return null;
 }
