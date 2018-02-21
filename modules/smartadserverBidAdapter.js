@@ -84,7 +84,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      console.log('Error while parsing smart server response');
+      utils.logError('Error while parsing smart server response', error);
     }
     return bidResponses;
   },
@@ -97,7 +97,6 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = []
-    var serverResponses
     if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'iframe',
