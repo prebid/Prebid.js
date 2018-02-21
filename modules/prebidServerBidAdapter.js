@@ -281,6 +281,8 @@ export function PrebidServer() {
             }
             if (bidObj.cache_url) {
               bidObject.cache_url = bidObj.cache_url;
+              // point vastUrl to cache_url as required by method isValidVideoBid in video.js
+              bidObject.vastUrl = bidObj.cache_url;
             }
             // From ORTB see section 4.2.3: adm Optional means of conveying ad markup in case the bid wins; supersedes the win notice if markup is included in both.
             if (bidObj.media_type === VIDEO) {
