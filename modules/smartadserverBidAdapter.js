@@ -87,6 +87,24 @@ export const spec = {
       console.log('Error while parsing smart server response');
     }
     return bidResponses;
+  },
+  /**
+   * User syncs.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {Syncs[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = []
+    var serverResponses
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+      syncs.push({
+        type: 'iframe',
+        url: serverResponses[0].body.cSyncUrl
+      });
+    }
+    return syncs;
   }
 }
 registerBidder(spec);
