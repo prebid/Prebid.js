@@ -119,23 +119,23 @@ describe('adtelligentBidAdapter', () => {
 
   describe('buildRequests', () => {
     let videoBidRequests = [VIDEO_REQUEST];
-    let dispalyBidRequests = [DISPLAY_REQUEST];
-    let videoAndDispalyBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    let displayBidRequests = [DISPLAY_REQUEST];
+    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
 
-    const displayRequest = spec.buildRequests(dispalyBidRequests, {});
+    const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
-    const videoAndDispalyRequests = spec.buildRequests(videoAndDispalyBidRequests, {});
+    const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
 
     it('sends bid request to ENDPOINT via GET', () => {
       expect(videoRequest.method).to.equal('GET');
       expect(displayRequest.method).to.equal('GET');
-      expect(videoAndDispalyRequests.method).to.equal('GET');
+      expect(videoAndDisplayRequests.method).to.equal('GET');
     });
 
     it('sends bid request to correct ENDPOINT', () => {
       expect(videoRequest.url).to.equal(ENDPOINT);
       expect(displayRequest.url).to.equal(ENDPOINT);
-      expect(videoAndDispalyRequests.url).to.equal(ENDPOINT);
+      expect(videoAndDisplayRequests.url).to.equal(ENDPOINT);
     });
 
     it('sends correct video bid parameters', () => {
@@ -166,8 +166,8 @@ describe('adtelligentBidAdapter', () => {
       expect(bid).to.deep.equal(eq);
     });
 
-    it('sends correct video and dispaly bid parameters', () => {
-      const bid = Object.assign({}, videoAndDispalyRequests.data);
+    it('sends correct video and display bid parameters', () => {
+      const bid = Object.assign({}, videoAndDisplayRequests.data);
       delete bid.domain;
 
       const eq = {
