@@ -44,12 +44,11 @@ const InvibesAdapter = function InvibesAdapter() {
           try {
             if (response) {
               var responseObj = JSON.parse(response);
-              var bidResponses = handleResponse(responseObj, bids);
 
-              if (bidResponses != null && bidResponses.length !== 0) {
-                placeBids(bidResponses);
-                addScripts(responseObj);
-              }
+              var bidResponses = handleResponse(responseObj, bids);
+              placeBids(bidResponses);
+
+              addScripts(responseObj);
             }
           }
           catch (ex) {
@@ -67,6 +66,9 @@ const InvibesAdapter = function InvibesAdapter() {
   }
 
   function placeBids(bidResponses) {
+    if (bidResponses === null || bidResponses.length === 0)
+      return;
+
     bidResponses.forEach(function (biddingResponse) {
       var adResponse = bidfactory.createBid(1);
       adResponse.bidderCode = CONSTANTS.BIDDER_CODE;
@@ -129,7 +131,7 @@ function isBidRequestValid(bid) {
 function buildRequest(bidRequests, auctionStart) {
   // invibes only responds to 1 bid request for each user visit
   const _placementIds = [];
-  let _loginId, _customEndpoint, _syncEndpoint, _adContainerId;
+  let _loginId, _customEndpoint, _syncEndpoint, _bidContainerId;
   let _ivAuctionStart = auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
@@ -138,12 +140,13 @@ function buildRequest(bidRequests, auctionStart) {
     _loginId = _loginId || bidRequest.params.loginId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _syncEndpoint = _syncEndpoint || bidRequest.params.syncEndpoint;
-    _adContainerId = _adContainerId || bidRequest.params.adContainerId;
+    _bidContainerId = _bidContainerId || bidRequest.params.adContainerId || bidRequest.params.bidContainerId;
   });
 
   const topWin = getTopMostWindow();
   var invibes = topWin.invibes = topWin.invibes || {};
   invibes.visitId = invibes.visitId || generateRandomId();
+  invibes.bidContainerId = invibes.bidContainerId || _bidContainerId;
 
   const noop = function () { };
   invibes.ivLogger = invibes.ivLogger || localStorage && localStorage.InvibesDEBUG ? window.console : { info: noop, error: noop, log: noop, warn: noop, debug: noop };
@@ -161,7 +164,7 @@ function buildRequest(bidRequests, auctionStart) {
     bidParamsJson: JSON.stringify({
       placementIds: _placementIds,
       loginId: _loginId,
-      adContainerId: _adContainerId,
+      bidContainerId: _bidContainerId,
       auctionStartTime: _ivAuctionStart,
       bidVersion: CONSTANTS.PREBID_VERSION
     }),
@@ -169,9 +172,7 @@ function buildRequest(bidRequests, auctionStart) {
 
     vId: invibes.visitId,
     width: topWin.innerWidth,
-    height: topWin.innerHeight,
-
-    rfc: encodeURIComponent(document.cookie).substring(0, 4000)
+    height: topWin.innerHeight
   };
 
   var parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
@@ -207,6 +208,15 @@ function handleResponse(responseObj, bidRequests) {
     return [];
   }
 
+  const topWin = getTopMostWindow();
+  const invibes = topWin.invibes = topWin.invibes || {};
+
+  if (typeof invibes.bidResponse === 'object') {
+    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+  }
+
+  invibes.bidResponse = responseObj;
+
   let ads = responseObj.Ads;
 
   if (!Array.isArray(ads) || ads.length < 1) {
@@ -227,19 +237,13 @@ function handleResponse(responseObj, bidRequests) {
   }
 
   const bidResponses = [];
-  const topWin = getTopMostWindow();
-  const invibes = topWin.invibes = topWin.invibes || {};
-  if (typeof invibes.bidResponse !== 'object') {
+  for (var i = 0; i < bidRequests.length; i++) {
+    var bidRequest = bidRequests[i];
 
-    for (var i = 0; i < bidRequests.length; i++) {
-      var bidRequest = bidRequests[i];
+    if (bidModel.PlacementId === bidRequest.params.placementId) {
+      var size = getBiggerSize(bidRequest.sizes);
 
-      if (bidModel.PlacementId === bidRequest.params.placementId) {
-        invibes.bidResponse = responseObj;
-
-        var size = getBiggerSize(bidRequest.sizes);
-
-        bidResponses.push({
+      bidResponses.push({
           requestId: bidRequest.bidId,
           cpm: ad.BidPrice,
           width: size[0],
@@ -253,22 +257,18 @@ function handleResponse(responseObj, bidRequests) {
           placementCode: bidRequest.placementCode
         });
 
-        const now = Date.now();
-        invibes.ivLogger.info('Bid auction started at '
-          + bidModel.AuctionStartTime
-          + ' . Invibes registered the bid at '
-          + now
-          + ' ; bid request took a total of '
-          + (now - bidModel.AuctionStartTime)
-          + ' ms.');
-      }
-      else {
+      const now = Date.now();
+      invibes.ivLogger.info('Bid auction started at '
+        + bidModel.AuctionStartTime
+        + ' . Invibes registered the bid at '
+        + now
+        + ' ; bid request took a total of '
+        + (now - bidModel.AuctionStartTime)
+        + ' ms.');
+    }
+    else {
         utils.logInfo('Invibes Adapter - Incorrect Placement Id: ' + bidRequest.params.placementId);
       }
-    }
-  }
-  else {
-    utils.logInfo('Invibes Adapter - Invibes has already placed a bid on this user visit');
   }
 
   return bidResponses;
