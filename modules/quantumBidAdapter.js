@@ -47,6 +47,10 @@ export const spec = {
 
       let mediaType = (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) ? 'native' : 'banner';
 
+      if (mediaType === 'native') {
+        renderMode = 'native';
+      }
+
       if (!bidId) {
         bidId = bid.bidId;
       }
@@ -235,21 +239,13 @@ export const spec = {
                   native.title = asset['title']['text'];
                   break;
                 case 2:
-                  native.icon = {
-                    url: asset['img']['url'],
-                    width: 15,
-                    height: 15
-                  };
+                  native.icon = asset['img'];
                   break;
                 case 3:
                   native.body = asset['data']['value'];
                   break;
                 case 4:
-                  native.image = {
-                    url: '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(asset['img']['url']) + '/external',
-                    width: 290,
-                    height: 130
-                  };
+                  native.image = asset['img'];
                   break;
                 case 10:
                   native.sponsoredBy = asset['data']['value'];
