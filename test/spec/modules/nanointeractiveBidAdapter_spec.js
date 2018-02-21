@@ -79,7 +79,7 @@ describe('nanointeractive adapter tests', function () {
         expect(nanoBidAdapter.isBidRequestValid(getBid(false))).to.equal(false);
       });
       it('Test buildRequests()', function () {
-        let stub = sinon.stub(utils, 'getOrigin', () => 'http://localhost');
+        let stub = sinon.stub(utils, 'getOrigin').callsFake(() => 'http://localhost');
 
         let request = nanoBidAdapter.buildRequests([getBid(true)]);
         expect(request.method).to.equal('POST');

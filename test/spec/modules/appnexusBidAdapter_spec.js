@@ -3,6 +3,8 @@ import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
+const adloader = require('../../../src/adloader');
+
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
 describe('AppNexusAdapter', () => {
@@ -66,6 +68,24 @@ describe('AppNexusAdapter', () => {
         'auctionId': '1d1a030790a475',
       }
     ];
+
+    it('should parse out private sizes', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            privateSizes: [300, 250]
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].private_sizes).to.exist;
+      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
+    });
 
     it('should add source and verison to the tag', () => {
       const request = spec.buildRequests(bidRequests);
@@ -289,6 +309,18 @@ describe('AppNexusAdapter', () => {
   })
 
   describe('interpretResponse', () => {
+    let loadScriptStub;
+
+    beforeEach(() => {
+      loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+        args[1]();
+      });
+    });
+
+    afterEach(() => {
+      loadScriptStub.restore();
+    });
+
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -346,7 +378,10 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'appnexus': {
+            'buyerMemberId': 958
+          }
         }
       ];
       let bidderRequest;
