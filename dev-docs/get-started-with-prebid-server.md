@@ -94,6 +94,10 @@ pbjs.que.push(function() {
 {% endhighlight %}
 
 {: .alert.alert-info :}
+**OpenRTB Endpoint**  
+If your `s2sConfig.endpoint` points to a url containing the path `openrtb2/auction`, such as the AppNexus-hosted endpoint https://prebid.adnxs.com/pbs/v1/openrtb2/auction', Prebid will communicate with that endpoint using the OpenRTB protocol.  
+
+{: .alert.alert-info :}
 **Additional `cookieSet` details**  
 We recommend that users leave `cookieSet` enabled since it's essential for server-to-server header bidding that we have a persistent cookie for improved cookie match rates.  If set to `false`:  
 &bull; Prebid.js will not overwrite all links on page to redirect through a persistent cookie URL  
