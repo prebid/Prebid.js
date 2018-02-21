@@ -378,7 +378,10 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'appnexus': {
+            'buyerMemberId': 958
+          }
         }
       ];
       let bidderRequest;
