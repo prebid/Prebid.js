@@ -120,18 +120,22 @@ describe('adtelligentBidAdapter', () => {
   describe('buildRequests', () => {
     let videoBidRequests = [VIDEO_REQUEST];
     let dispalyBidRequests = [DISPLAY_REQUEST];
+    let videoAndDispalyBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
 
     const displayRequest = spec.buildRequests(dispalyBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
+    const videoAndDispalyRequests = spec.buildRequests(videoAndDispalyBidRequests, {});
 
     it('sends bid request to ENDPOINT via GET', () => {
       expect(videoRequest.method).to.equal('GET');
       expect(displayRequest.method).to.equal('GET');
+      expect(videoAndDispalyRequests.method).to.equal('GET');
     });
 
     it('sends bid request to correct ENDPOINT', () => {
       expect(videoRequest.url).to.equal(ENDPOINT);
       expect(displayRequest.url).to.equal(ENDPOINT);
+      expect(videoAndDispalyRequests.url).to.equal(ENDPOINT);
     });
 
     it('sends correct video bid parameters', () => {
@@ -157,6 +161,24 @@ describe('adtelligentBidAdapter', () => {
         ad_type: 'display',
         aid: 12345,
         sizes: '300x250'
+      };
+
+      expect(bid).to.deep.equal(eq);
+    });
+
+    it('sends correct video and dispaly bid parameters', () => {
+      const bid = Object.assign({}, videoAndDispalyRequests.data);
+      delete bid.domain;
+
+      const eq = {
+        callbackId: '84ab500420319d',
+        ad_type: 'display',
+        aid: 12345,
+        sizes: '300x250',
+        callbackId2: '84ab500420319d',
+        ad_type2: 'video',
+        aid2: 12345,
+        sizes2: '480x360,640x480'
       };
 
       expect(bid).to.deep.equal(eq);
