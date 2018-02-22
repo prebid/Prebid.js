@@ -28,7 +28,7 @@ export const spec = {
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: utils.getBidIdParameter('tagid', bid.params),
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
         bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
       });
       iv = iv || utils.getBidIdParameter('iv', bid.params);
