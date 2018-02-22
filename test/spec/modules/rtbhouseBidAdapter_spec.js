@@ -13,7 +13,7 @@ function buildEndpointUrl(region) {
   return 'https://' + region + '.' + ENDPOINT_URL;
 }
 
-/** 
+/**
 	* endof Helpers
 	*/
 
