@@ -100,7 +100,7 @@ function makeImp(req) {
     'banner': makeBanner(req)
   };
 
-  if (req.params.bidfloor && utils.isInteger(req.params.bidfloor)) {
+  if (req.params.bidfloor && isFinite(req.params.bidfloor)) {
     imp.bidfloor = req.params.bidfloor
   }
 

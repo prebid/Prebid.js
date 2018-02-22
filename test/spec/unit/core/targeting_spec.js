@@ -74,13 +74,13 @@ describe('targeting tests', () => {
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$._sendAllBids = false;
-      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived', function() {
+      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [bid1, bid2];
       });
-      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes', function() {
+      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired', () => true);
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
     });
 
     afterEach(() => {
