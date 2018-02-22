@@ -22,7 +22,7 @@ Banner and video formats are supported.
           bidder: 'widespace',
           params: {
             sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3', // Required
-            cur: 'EUR', // Required
+            currency: 'EUR', // Required
             demo: { // Optional
               gender: 'M',
               country: 'Sweden'
