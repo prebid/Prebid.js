@@ -671,8 +671,13 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function cookiesAreEnabled() {
+export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+}
+export function cookiesAreEnabled() {
+  if (exports.checkCookieSupport()) {
     return true;
   }
   window.document.cookie = 'prebid.cookieTest';
@@ -807,6 +812,13 @@ export function getOrigin() {
   } else {
     return window.location.origin;
   }
+}
+
+/**
+ * Returns Do Not Track state
+ */
+export function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
 const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;

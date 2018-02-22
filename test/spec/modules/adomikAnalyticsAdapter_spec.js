@@ -5,16 +5,26 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('Adomik Prebid Analytic', function () {
+  let sendEventStub;
+  let sendWonEventStub;
+
   describe('enableAnalytics', function () {
     beforeEach(() => {
       sinon.spy(adomikAnalytics, 'track');
-      sinon.spy(adomikAnalytics, 'sendTypedEvent');
-      sinon.spy(adomikAnalytics, 'sendWonEvent');
+      sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
+      sendWonEventStub = sinon.stub(adomikAnalytics, 'sendWonEvent');
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {
       adomikAnalytics.track.restore();
-      adomikAnalytics.sendTypedEvent.restore();
+      sendEventStub.restore();
+      sendWonEventStub.restore();
+      events.getEvents.restore();
+    });
+
+    after(() => {
+      adomikAnalytics.disableAnalytics();
     });
 
     it('should catch all events', function (done) {
@@ -114,8 +124,8 @@ describe('Adomik Prebid Analytic', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
-        sinon.assert.callCount(adomikAnalytics.sendTypedEvent, 1);
-        sinon.assert.callCount(adomikAnalytics.sendWonEvent, 1);
+        sinon.assert.callCount(sendEventStub, 1);
+        sinon.assert.callCount(sendWonEventStub, 1);
         done();
       }, 3000);
 
