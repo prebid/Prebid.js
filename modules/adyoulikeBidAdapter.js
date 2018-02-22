@@ -44,11 +44,16 @@ export const spec = {
       }, {}),
       PageRefreshed: getPageRefreshed()
     };
-    const payloadString = JSON.stringify(payload);
+    const data = JSON.stringify(payload);
+    const options = {
+      withCredentials: false
+    };
+
     return {
       method: 'POST',
       url: createEndpoint(dcHostname),
-      data: payloadString,
+      data,
+      options
     };
   },
   /**
