@@ -18,4 +18,4 @@ prebid_1_0_supported : true
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `tagid` | required | The sovrn Ad Tag ID | "315045" |
-| `sizes` | optional | Override the default prebid size array | [970, 250] |
+| `bidfloor` | optional | Bid floor in dollars | "0.04" |
