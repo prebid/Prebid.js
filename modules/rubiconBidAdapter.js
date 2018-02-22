@@ -96,7 +96,7 @@ export const spec = {
 
     if (spec.hasVideoMediaType(bid)) {
       // support instream only
-      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' ||
+      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' ||
         typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
@@ -208,7 +208,7 @@ export const spec = {
             const propValue = combinedSlotParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
-          bidRequest: groupedBidRequests[bidGroupKey],
+          bidRequest: bidsInGroup,
         };
       }));
     }
@@ -351,7 +351,7 @@ export const spec = {
       // associate bidRequests under the assumption that response ads order matches request bids order
       const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
 
-      if (typeof associatedBidRequest !== 'undefined') {
+      if (associatedBidRequest && typeof associatedBidRequest === 'object') {
         let bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
@@ -386,6 +386,8 @@ export const spec = {
           }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
 
         bids.push(bid);
+      } else {
+        utils.logError(`bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
 
       return bids;
