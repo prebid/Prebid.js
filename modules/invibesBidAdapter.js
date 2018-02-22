@@ -57,10 +57,11 @@ const InvibesAdapter = function InvibesAdapter() {
         },
         error: handleError
       },
-      JSON.stringify(callParams.data),
+      // for POST: JSON.stringify(data), { method: callParams.method, contentType: callParams.options.contentType }
+      callParams.data,
       {
-        method: callParams.method,
-        contentType: callParams.options.contentType
+        method: "GET",
+        withCredentials: true
       }
     );
   }
@@ -156,7 +157,7 @@ function buildRequest(bidRequests, auctionStart) {
 
   let data = {
     location: getDocumentLocation(topWin),
-    videoAdHtmlId: randomStringGenerator(),
+    videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: getCookie('IvbsCampIdsLocal'),
     lId: invibes.dom.id,
@@ -296,10 +297,6 @@ function parseQueryStringParams() {
   return params;
 }
 
-function randomStringGenerator() {
-  return Math.ceil(Math.random() * 1e9);
-}
-
 function getBiggerSize(array) {
   var result = [0, 0];
   for (var i = 0; i < array.length; i++) {
@@ -391,8 +388,8 @@ var Uid = {
   }
 };
 
-var cookieDomain;
-function getCookie(name) {
+var cookieDomain, noCookies;
+function getCookie (name) {
   var i, x, y, cookies = document.cookie.split(";");
   for (i = 0; i < cookies.length; i++) {
     x = cookies[i].substr(0, cookies[i].indexOf("="));
@@ -404,7 +401,8 @@ function getCookie(name) {
   }
 };
 
-function setCookie(name, value, exdays, domain) {
+function setCookie (name, value, exdays, domain) {
+  if (noCookies && name != 'ivNoCookie' && (exdays || 0) >= 0) { return; }
   if (exdays > 365) { exdays = 365; }
   domain = domain || cookieDomain;
   var exdate = new Date();
@@ -432,6 +430,7 @@ var detectTopmostCookieDomain = function () {
   }
 };
 cookieDomain = detectTopmostCookieDomain();
+noCookies = getCookie('ivNoCookie');
 
 function initDomainId(invibes, persistence) {
   if (typeof invibes.dom === 'object') {
