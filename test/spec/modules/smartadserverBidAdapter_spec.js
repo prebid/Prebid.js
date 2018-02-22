@@ -107,6 +107,8 @@ describe('Smart bid adapter tests', () => {
     expect(bid.ttl).to.equal(300);
     expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
     expect(bid.referrer).to.equal(utils.getTopWindowUrl());
+
+    expect(function() { spec.interpretResponse(BID_RESPONSE, {data : 'invalid Json'}) }).to.not.throw();
   });
 
   it('Verifies bidder code', () => {
