@@ -18,11 +18,12 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function(bid) {
-    return true
-    //return bid.params && REQUIRED_PARAMS.every(p => Object.keys(bid.params).includes(p));
+    return bid.params && REQUIRED_PARAMS.every(p => Object.keys(bid.params).includes(p));
   },
 
   buildRequests: function(validBidRequests) {
+    console.log('validBidRequests', validBidRequests);
+    top.validBidRequests = validBidRequests;
     let data = {};
     let serverRequests = [];
     let ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
@@ -91,12 +92,6 @@ export const spec = {
     });
     console.log(bidResponses);
     return bidResponses
-  }//,
-  //
-  // getUserSyncs: function(syncOptions, serverResponses) {
-  //   console.log('syncOptions', syncOptions);
-  //   console.log('serverResponses', serverResponses);
-  //   return [];
-  // }
+  }
 };
 registerBidder(spec);
