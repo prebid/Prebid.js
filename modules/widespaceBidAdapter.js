@@ -9,7 +9,7 @@ import {
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
 const DEFAULT_CURRENCY = 'EUR';
-const REQUIRED_PARAMS = ['sid', 'cur'];
+const REQUIRED_PARAMS = ['sid', 'currency'];
 const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
 
 export const spec = {
