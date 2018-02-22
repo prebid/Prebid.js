@@ -306,15 +306,15 @@ pbjs.addAdUnits({
             icon: {
                 required: true,
                 sizes: [50, 50]
-            },
-        },
-        bids: [{
-            bidder: 'appnexus',
-            params: {
-                placementId: '9880618'
             }
-        }, ]
-    }
+        }
+    },
+    bids: [{
+        bidder: 'appnexus',
+        params: {
+            placementId: '9880618'
+        }
+    }, ]
 })
 ```
 
