@@ -10,6 +10,7 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { createHook } from 'src/hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -188,7 +189,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  function setConfig(options) {
+  let setConfig = createHook('asyncSeries', function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;
@@ -208,7 +209,7 @@ export function newConfig() {
     });
 
     callSubscribers(topicalConfig);
-  }
+  });
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of
