@@ -89,12 +89,10 @@ describe('adapterManager tests', () => {
           {bidder: 'fakeBidder', params: {placementId: 'id'}}
         ]
       }];
-      const callback = function(adUnits, auctionId, bidRequests) {
-        AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
-        sinon.assert.called(utils.logError);
-      }
 
-      AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000, [], callback);
+      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      sinon.assert.called(utils.logError);
     });
 
     it('should emit BID_REQUESTED event', () => {
@@ -476,11 +474,10 @@ describe('adapterManager tests', () => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus'], bid.bidder));
           return adUnit;
         })
-        AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000, [], function(adUnits, auctionId, bidRequests) {
-          AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
-          expect(cnt).to.equal(1);
-          sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
-        });
+        let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(1);
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       });
 
       it('should fire for simultaneous s2s and client requests', () => {
@@ -489,14 +486,13 @@ describe('adapterManager tests', () => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus'], bid.bidder));
           return adUnit;
         })
-        AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000, [], function(adUnits, auctionId, bidRequests) {
-          AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
-          expect(cnt).to.equal(2);
-          sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
-          sinon.assert.calledOnce(adequantAdapterMock.callBids);
-          adequantAdapterMock.callBids.reset();
-          delete AdapterManager.bidderRegistry['adequant'];
-        });
+        let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(2);
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+        sinon.assert.calledOnce(adequantAdapterMock.callBids);
+        adequantAdapterMock.callBids.reset();
+        delete AdapterManager.bidderRegistry['adequant'];
       });
     });
   }); // end s2s tests
@@ -515,9 +511,8 @@ describe('adapterManager tests', () => {
     }
 
     function callBids(adUnits = getTestAdUnits()) {
-      AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000, [], function(adUnits, auctionId, bidRequests) {
-        AdapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
-      });
+      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      AdapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
     }
 
     function checkServerCalled(numAdUnits, numBids) {
@@ -748,11 +743,9 @@ describe('adapterManager tests', () => {
             Date.now(),
             utils.getUniqueIdentifierStr(),
             function callback() {},
-            [],
-            function(adUnits, auctionId, bidRequests) {
-              sinon.assert.calledOnce(utils.shuffle);
-            }
+            []
           );
+          sinon.assert.calledOnce(utils.shuffle);
         });
       });
 
@@ -772,19 +765,18 @@ describe('adapterManager tests', () => {
             Date.now(),
             utils.getUniqueIdentifierStr(),
             function callback() {},
-            [],
-            function(adUnits, auctionId, bidRequests) {
-              expect(bidRequests.length).to.equal(2);
-              let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
-              expect(rubiconBidRequests.bids.length).to.equal(1);
-              expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
-
-              let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
-              expect(appnexusBidRequests.bids.length).to.equal(2);
-              expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-              expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
-            }
+            []
           );
+
+          expect(bidRequests.length).to.equal(2);
+          let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
+          expect(rubiconBidRequests.bids.length).to.equal(1);
+          expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+
+          let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
+          expect(appnexusBidRequests.bids.length).to.equal(2);
+          expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
+          expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
         });
 
         it('should filter sizes using size config', () => {
@@ -809,18 +801,17 @@ describe('adapterManager tests', () => {
             Date.now(),
             utils.getUniqueIdentifierStr(),
             function callback() {},
-            [],
-            function(adUnits, auctionId, bidRequests) {
-              // only valid sizes as specified in size config should show up in bidRequests
-              bidRequests.forEach(bidRequest => {
-                bidRequest.bids.forEach(bid => {
-                  bid.sizes.forEach(size => {
-                    expect(validSizeMap[size]).to.equal(true);
-                  });
-                });
-              });
-            }
+            []
           );
+
+          // only valid sizes as specified in size config should show up in bidRequests
+          bidRequests.forEach(bidRequest => {
+            bidRequest.bids.forEach(bid => {
+              bid.sizes.forEach(size => {
+                expect(validSizeMap[size]).to.equal(true);
+              });
+            });
+          });
 
           setSizeConfig([{
             'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
@@ -833,12 +824,11 @@ describe('adapterManager tests', () => {
             Date.now(),
             utils.getUniqueIdentifierStr(),
             function callback() {},
-            [],
-            function(adUnits, auctionId, bidRequests) {
-              // if no valid sizes, all bidders should be filtered out
-              expect(bidRequests.length).to.equal(0);
-            }
+            []
           );
+
+          // if no valid sizes, all bidders should be filtered out
+          expect(bidRequests.length).to.equal(0);
         });
 
         it('should filter adUnits/bidders based on applied labels', () => {
@@ -852,15 +842,14 @@ describe('adapterManager tests', () => {
             Date.now(),
             utils.getUniqueIdentifierStr(),
             function callback() {},
-            ['visitor-uk', 'desktop'],
-            function(adUnits, auctionId, bidRequests) {
-              // only one adUnit and one bid from that adUnit should make it through the applied labels above
-              expect(bidRequests.length).to.equal(1);
-              expect(bidRequests[0].bidderCode).to.equal('rubicon');
-              expect(bidRequests[0].bids.length).to.equal(1);
-              expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
-            }
+            ['visitor-uk', 'desktop']
           );
+
+          // only one adUnit and one bid from that adUnit should make it through the applied labels above
+          expect(bidRequests.length).to.equal(1);
+          expect(bidRequests[0].bidderCode).to.equal('rubicon');
+          expect(bidRequests[0].bids.length).to.equal(1);
+          expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
         });
       })
     });

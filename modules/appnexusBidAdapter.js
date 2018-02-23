@@ -74,12 +74,16 @@ export const spec = {
       payload.member_id = member;
     }
     const payloadString = JSON.stringify(payload);
-    return {
+    let postData = {
       method: 'POST',
       url: URL,
       data: payloadString,
       bidderRequest
     };
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      postData.url += '?gdpr_consent=' + bidderRequest.gdprConsent;
+    }
+    return postData;
   },
 
   /**

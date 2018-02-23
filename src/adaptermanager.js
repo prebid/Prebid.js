@@ -6,9 +6,7 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
-// import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from './hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -149,9 +147,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-// exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
-// exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
-exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionStart, auctionId, cbTimeout, labels, callback) {
+exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -191,8 +187,7 @@ exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionSta
         bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC,
-        gdpr: adUnits[0].gdpr
+        src: CONSTANTS.S2S.SRC
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -210,17 +205,19 @@ exports.makeBidRequests = createHook('asyncSeries', function(adUnits, auctionSta
       bidderRequestId,
       bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
-      timeout: cbTimeout,
-      gdpr: adUnits[0].gdpr
+      timeout: cbTimeout
     };
     if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
-  // return bidRequests;
-  callback(adUnits, auctionId, bidRequests);
-// }
-}, 'makeBidRequests');
+  if (adUnits[0].gdprConsent) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['gdprConsent'] = adUnits[0].gdprConsent;
+    });
+  }
+  return bidRequests;
+}
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
