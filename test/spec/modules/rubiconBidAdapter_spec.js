@@ -13,7 +13,118 @@ const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be s
 
 describe('the rubicon adapter', () => {
   let sandbox,
-    bidderRequest;
+    bidderRequest,
+    sizeMap;
+
+  /**
+   * @typedef {Object} sizeMapConverted
+   * @property {string} sizeId
+   * @property {string} size
+   * @property {Array.<Array>} sizeAsArray
+   * @property {number} width
+   * @property {number} height
+   */
+
+  /**
+   * @param {Array.<sizeMapConverted>} sizesMapConverted
+   * @param {Object} bid
+   * @return {sizeMapConverted}
+   */
+  function getSizeIdForBid(sizesMapConverted, bid) {
+    return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
+  }
+
+  /**
+   * @param {Array.<Object>} ads
+   * @param {sizeMapConverted} size
+   * @return {Object}
+   */
+  function getResponseAdBySize(ads, size) {
+    return ads.find(item => item.size_id === size.sizeId);
+  }
+
+  /**
+   * @param {Array.<BidRequest>} bidRequests
+   * @param {sizeMapConverted} size
+   * @return {BidRequest}
+   */
+  function getBidRequestBySize(bidRequests, size) {
+    return bidRequests.find(item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
+  }
+
+  /**
+   * @typedef {Object} overrideProps
+   * @property {string} status
+   * @property {number} cpm
+   * @property {number} zone_id
+   * @property {number} ad_id
+   * @property {string} creative_id
+   * @property {string} targeting_key - rpfl_{id}
+   */
+  /**
+   * @param {number} i - index
+   * @param {string} sizeId - id that maps to size
+   * @param {Array.<overrideProps>} [indexOverMap]
+   * @return {{status: string, cpm: number, zone_id: *, size_id: *, impression_id: *, ad_id: *, creative_id: string, type: string, targeting: *[]}}
+   */
+  function createResponseAdByIndex(i, sizeId, indexOverMap) {
+    const overridePropMap = (indexOverMap && indexOverMap[i] && typeof indexOverMap[i] === 'object') ? indexOverMap[i] : {};
+    const overrideProps = Object.keys(overridePropMap).reduce((aggregate, key) => {
+      aggregate[key] = overridePropMap[key];
+      return aggregate;
+    }, {});
+
+    const getProp = (propName, defaultValue) => {
+      return (overrideProps[propName]) ? overridePropMap[propName] : defaultValue;
+    };
+
+    return {
+      'status': getProp('status', 'ok'),
+      'cpm': getProp('cpm', i/100),
+      'zone_id': getProp('zone_id', i+1),
+      'size_id': sizeId,
+      'impression_id': i+1,
+      'ad_id': getProp('ad_id', i+1),
+      'advertiser': i+1,
+      'network': i+1,
+      'creative_id': getProp('creative_id', `crid-${i}`),
+      'type': 'script',
+      'script': 'alert(\'foo\')',
+      'campaign_id': i+1,
+      'targeting': [
+        {
+          'key': getProp('targeting_key', `rpfl_${i}`),
+          'values': [ '43_tier_all_test' ]
+        }
+      ]
+    };
+  }
+
+  /**
+   * @param {number} i
+   * @param {Array.<Array>} size
+   * @return {{ params: {accountId: string, siteId: string, zoneId: string }, adUnitCode: string, code: string, sizes: *[], bidId: string, bidderRequestId: string }}
+   */
+  function createBidRequestByIndex(i, size) {
+    return {
+      bidder: 'rubicon',
+      params: {
+        accountId: '14062',
+        siteId: '70608',
+        zoneId: (i+1).toString(),
+        userId: '12346',
+        position: 'atf',
+        referrer: 'localhost'
+      },
+      adUnitCode: `/19968336/header-bid-tag-${i}`,
+      code: `div-${i}`,
+      sizes: [size],
+      bidId: i.toString(),
+      bidderRequestId: i.toString(),
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+    };
+  }
 
   function createVideoBidderRequest() {
     let bid = bidderRequest.bids[0];
@@ -41,8 +152,10 @@ describe('the rubicon adapter', () => {
   function createLegacyVideoBidderRequest() {
     let bid = bidderRequest.bids[0];
 
+    // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
 
+    // Current property (Prebid 1.0)
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -168,6 +281,32 @@ describe('the rubicon adapter', () => {
       auctionStart: 1472239426000,
       timeout: 5000
     };
+
+    sizeMap = [
+      {sizeId:1, size: '468x60'},
+      {sizeId:2, size: '728x90'},
+      {sizeId:5, size: '120x90'},
+      {sizeId:8, size: '120x600'},
+      {sizeId:9, size: '160x600'},
+      {sizeId:10, size: '300x600'},
+      {sizeId:13, size: '200x200'},
+      {sizeId:14, size: '250x250'},
+      {sizeId:15, size: '300x250'},
+      {sizeId:16, size: '336x280'},
+      {sizeId:19, size: '300x100'},
+      {sizeId:31, size: '980x120'},
+      {sizeId:32, size: '250x360'}
+      // Create convenience properties for [sizeAsArray, width, height] by parsing the size string
+    ].map(item => {
+      const sizeAsArray = item.size.split('x').map(s => parseInt(s));
+      return {
+        sizeId: item.sizeId,
+        size: item.size,
+        sizeAsArray: sizeAsArray.slice(),
+        width: sizeAsArray[0],
+        height: sizeAsArray[1]
+      };
+    });
   });
 
   afterEach(() => {
@@ -197,7 +336,6 @@ describe('the rubicon adapter', () => {
       describe('to fastlane', () => {
         it('should make a well-formed request objects', () => {
           sandbox.stub(Math, 'random', () => 0.1);
-
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
 
@@ -528,6 +666,8 @@ describe('the rubicon adapter', () => {
 
         describe('singleRequest config', () => {
           it('should group all bid requests with the same site id', () => {
+            sandbox.stub(Math, 'random',() => 0.1);
+
             sandbox.stub(config, 'getConfig',(key) => {
               const config = {
                 'rubicon.singleRequest': true
@@ -535,19 +675,140 @@ describe('the rubicon adapter', () => {
               return config[key];
             });
 
+            const expectedQuery = {
+              'account_id': '14062',
+              'site_id': '70608',
+              'zone_id': '335918',
+              'size_id': '15',
+              'alt_size_ids': '43',
+              'p_pos': 'atf',
+              'rp_floor': '0.01',
+              'rp_secure': /[01]/,
+              'rand': '0.1',
+              'tk_flint': INTEGRATION,
+              'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+              'p_screen_res': /\d+x\d+/,
+              'tk_user_key': '12346',
+              'kw': 'a,b,c',
+              'tg_v.ucat': 'new',
+              'tg_v.lastsearch': 'iphone',
+              'tg_i.rating': '5-star',
+              'tg_i.prodtype': 'tech',
+              'tg_fl.eid': 'div-1',
+              'rf': 'localhost'
+            };
+
             const bidCopy = clone(bidderRequest.bids[0]);
+            bidCopy.params.siteId = '70608';
+            bidCopy.params.zoneId = '1111';
             bidderRequest.bids.push(bidCopy);
 
             const bidCopy2 = clone(bidderRequest.bids[0]);
-            bidCopy2.params.siteId = '32001';
+            bidCopy2.params.siteId = '99999';
+            bidCopy2.params.zoneId = '2222';
             bidderRequest.bids.push(bidCopy2);
 
             const bidCopy3 = clone(bidderRequest.bids[0]);
-            bidCopy3.params.siteId = '32001';
+            bidCopy3.params.siteId = '99999';
+            bidCopy3.params.zoneId = '3333';
             bidderRequest.bids.push(bidCopy3);
 
-            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            expect(serverRequests).that.is.an('array').of.length(2);
+            const serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // array length should match the num of unique 'siteIds'
+            expect(serverRequests).to.be.a('array');
+            expect(serverRequests).to.have.lengthOf(2);
+
+            // collect all bidRequests so order can be checked against the url param slot order
+            const bidRequests = serverRequests.reduce((aggregator, item) => aggregator.concat(item.bidRequest), []);
+            let bidRequestIndex = 0;
+
+            serverRequests.forEach(item => {
+              expect(item).to.be.a('object');
+              expect(item).to.have.property('method');
+              expect(item).to.have.property('url');
+              expect(item).to.have.property('data');
+              expect(item).to.have.property('bidRequest');
+
+              expect(item.method).to.equal('GET');
+              expect(item.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(item.data).to.be.a('string');
+
+              // 'bidRequest' type must be 'array' if SRA enabled
+              expect(item.bidRequest).to.be.a('array').to.have.lengthOf(2);
+
+              item.bidRequest.forEach((bidRequestItem, i, array) => {
+                expect(bidRequestItem).to.be.a('object');
+                // every 'siteId' values need to match
+                expect(bidRequestItem.params.siteId).to.equal(array[0].params.siteId);
+              });
+
+              const data = parseQuery(item.data);
+
+              Object.keys(expectedQuery).forEach(key => {
+                expect(data).to.have.property(key);
+
+                // extract semicolon delineated values
+                const params = data[key].split(';');
+
+                // skip value test for site and zone ids
+                if (key !== 'site_id' && key !== 'zone_id') {
+                  if (expectedQuery[key] instanceof RegExp) {
+                    params.forEach(paramItem => {
+                      expect(paramItem).to.match(expectedQuery[key]);
+                    });
+                  }
+                  else {
+                    expect(params).to.contain(expectedQuery[key]);
+                  }
+                }
+
+                // check parsed url data list order with requestBid list, items must have same index in both lists
+                if (key === 'zone_id') {
+                  params.forEach((p) => {
+                    expect(bidRequests[bidRequestIndex]).to.be.a('object');
+                    expect(bidRequests[bidRequestIndex].params).to.be.a('object');
+
+                    // 'zone_id' is used to verify so each bid must have a unique 'zone_id'
+                    expect(p).to.equal(bidRequests[bidRequestIndex].params.zoneId);
+
+                    // increment to next bidRequest index having verified that item positions match in url params and bidRequest lists
+                    bidRequestIndex++;
+                  });
+                }
+              });
+            });
+          });
+
+          it('should not send more than 10 bids in a request', () => {
+            sandbox.stub(config, 'getConfig',(key) => {
+              const config = {
+                'rubicon.singleRequest': true
+              };
+              return config[key];
+            });
+
+            for (let i = 0; i < 20; i++) {
+              let bidCopy = clone(bidderRequest.bids[0]);
+              bidCopy.params.zoneId = `${i}0000`;
+              bidderRequest.bids.push(bidCopy);
+            }
+
+            const serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // if bids are greater than 10, additional bids are dropped
+            expect(serverRequests[0].bidRequest).to.have.lengthOf(10);
+
+            // check that slots param value matches
+            const foundSlotsCount = serverRequests[0].data.indexOf('&slots=10&');
+            expect(foundSlotsCount !== -1).to.equal(true);
+
+            // check that zone_id has 10 values (since all zone_ids are unique all should exist in get param)
+            const data = parseQuery(serverRequests[0].data);
+
+            expect(data).to.be.a('object');
+            expect(data).to.have.property('zone_id');
+            expect(data.zone_id.split(';')).to.have.lengthOf(10);
           });
 
           it('should not group bid requests if singleRequest does not equal true', () => {
@@ -611,34 +872,12 @@ describe('the rubicon adapter', () => {
             let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
             expect(serverRequests).that.is.an('array').of.length(3);
           });
-
-          it('should not send more than 10 slots', () => {
-            sandbox.stub(config, 'getConfig',(key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
-
-            const bidCopy = clone(bidderRequest.bids[0]);
-            bidderRequest.bids.push(bidCopy);
-
-            for (let i = 0; i < 15; i++) {
-              const bidCopy = clone(bidderRequest.bids[0]);
-              bidCopy.params.siteId = '70608';
-              bidderRequest.bids.push(bidCopy);
-            }
-
-            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            const foundSlotsCount = serverRequests[0].data.indexOf('&slots=10&');
-            expect(foundSlotsCount !== -1).to.equal(true);
-          });
         });
       });
 
       describe('for video requests', () => {
-        it('should make a well-formed video request', () => {
-          createVideoBidderRequest();
+        it('should make a well-formed video request with legacy mediaType config', () => {
+          createLegacyVideoBidderRequest();
 
           sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
@@ -698,8 +937,8 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
         });
 
-        it('should make a well-formed video request using legacy mediaType config', () => {
-          createLegacyVideoBidderRequest();
+        it('should make a well-formed video request', () => {
+          createVideoBidderRequest();
 
           sandbox.stub(Date, 'now',() =>
             bidderRequest.auctionStart + 100
@@ -779,17 +1018,51 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should not validate bid request when no video object is passed in', () => {
+        it('should not validate bid request when a invalid video object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest.bids[0]);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          let result = spec.isBidRequestValid(floorBidderRequest.bids[0]);
+          bidRequestCopy.params.video = {};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          expect(result).to.equal(false);
+          bidRequestCopy.params.video = undefined;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = 123;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = { size_id: '' };
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          delete bidRequestCopy.params.video;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+        });
+
+        it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoVideo();
+          sandbox.stub(Date, 'now',() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidderRequestCopy = clone(bidderRequest);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = {};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = undefined;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = NaN;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          delete bidderRequestCopy.bids[0].params.video;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
         });
 
         it('should not validate bid request when video is outstream', () => {
@@ -798,24 +1071,35 @@ describe('the rubicon adapter', () => {
             bidderRequest.auctionStart + 100
           );
 
-          const result = spec.isBidRequestValid(clone(bidderRequest).bids[0]);
-
-          expect(result).to.equal(false);
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now',() =>
             bidderRequest.auctionStart + 100
           );
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest);
 
-          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
-          let post = request.data;
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
 
-          expect(post.slots[0].width).to.equal(300);
-          expect(post.slots[0].height).to.equal(250);
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
+        });
+
+        it('should get size from bid.sizes too with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoPlayer();
+          sandbox.stub(Date, 'now',() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
         });
       });
 
@@ -1113,46 +1397,151 @@ describe('the rubicon adapter', () => {
           };
 
           let bids = spec.interpretResponse({ body: response }, {
-            bidRequest: [bidderRequest.bids[0]]
+            bidRequest: [clone(bidderRequest.bids[0])]
           });
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].cpm).to.be.equal(0);
         });
 
-        it('should handle a matching/combining adUnits with an Array of bidRequests (when singleRequest=true)', () => {
-          let response = {
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0,
-              'zone_id': 25000,
-              'size_id': 15
-            },
-            {
-              'status': 'ok',
-              'cpm': 0.51,
-              'zone_id': 50000,
-              'size_id': 13,
-            }]
-          };
+        describe('singleRequest enabled', () => {
+          it('uses bidRequests of type Array to returns valid adUnits', () => {
+            const stubAds = [];
+            for (let i = 0; i < 10; i++) {
+              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId));
+            }
 
-          const bid2 = clone(bidderRequest.bids[0]);
-          bid2.sizes = [[200, 200]];
-          bidderRequest.bids.push(bid2);
+            const stubBids = [];
+            for (let i = 0; i < 10; i++) {
+              stubBids.push(createBidRequestByIndex(i, sizeMap[i].sizeAsArray.slice()));
+            }
 
-          let bids = spec.interpretResponse({ body: response }, {
-            bidRequest: bidderRequest.bids
+            const bids = spec.interpretResponse({
+              body: {
+                'status': 'ok',
+                'site_id': '1100',
+                'account_id': 14062,
+                'zone_id': 2100,
+                'size_id': '1',
+                'tracking': '',
+                'inventory': {},
+                'ads': stubAds
+              }}, { bidRequest: stubBids });
+            expect(bids).to.be.a('array').with.lengthOf(10);
+
+            bids.forEach((bid) => {
+              expect(bid).to.be.a('object');
+              expect(bid).to.have.property('cpm').that.is.a('number');
+              expect(bid).to.have.property('width').that.is.a('number');
+              expect(bid).to.have.property('height').that.is.a('number');
+
+              // verify that result bid 'sizeId' links to a size from the sizeMap
+              const size = getSizeIdForBid(sizeMap, bid);
+              expect(size).to.be.a('object');
+
+              // use 'size' to verify that result bid links to the 'response.ad' passed to function
+              const associateAd = getResponseAdBySize(stubAds, size);
+              expect(associateAd).to.be.a('object');
+              expect(associateAd).to.have.property('creative_id').that.is.a('string');
+
+              // use 'size' to verify that result bid links to the 'bidRequest' passed to function
+              const associateBidRequest = getBidRequestBySize(stubBids, size);
+              expect(associateBidRequest).to.be.a('object');
+              expect(associateBidRequest).to.have.property('bidId').that.is.a('string');
+
+              // verify all bid properties set using 'ad' and 'bidRequest' match
+              // 'ad.creative_id === bid.creativeId'
+              expect(bid.requestId).to.equal(associateBidRequest.bidId);
+              // 'bid.requestId === bidRequest.bidId'
+              expect(bid.creativeId).to.equal(associateAd.creative_id);
+            });
           });
 
-          expect(bids).to.be.lengthOf(2);
-          expect(bids[0].width).to.be.equal(200);
-          expect(bids[1].width).to.be.equal(300);
+          it('handles incorrect adUnits length by returning an empty array', () => {
+            const stubAds = [];
+            for (let i = 0; i < 12; i++) {
+              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId));
+            }
+
+            const stubBids = [];
+            for (let i = 0; i < 10; i++) {
+              stubBids.push(createBidRequestByIndex(i, sizeMap[i].sizeAsArray.slice()));
+            }
+
+            const bids = spec.interpretResponse({
+              body: {
+                'status': 'ok',
+                'site_id': '1100',
+                'account_id': 14062,
+                'zone_id': 2100,
+                'size_id': '1',
+                'tracking': '',
+                'inventory': {},
+                'ads': stubAds
+              }}, { bidRequest: stubBids });
+            // no bids expected because response didn't match requested bid number
+            expect(bids).to.be.a('array').with.lengthOf(0);
+          });
+
+          it('handles errors by skipping adUnits with errors, but continues processing and returns valid results', () => {
+            const stubAds = [];
+            // Create overrides to break associations between bids and ads
+            // Each override should cause one less bid to be returned by interpretResponse
+            const overrideMap = [];
+            overrideMap[2] = { zone_id: 56 };
+            overrideMap[4] = { status: 'error' };
+            overrideMap[7] = { status: 'error', zone_id: 56 };
+            overrideMap[8] = { status: 'error' };
+
+            for (let i = 0; i < 10; i++) {
+              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId, overrideMap));
+            }
+
+            const stubBids = [];
+            for (let i = 0; i < 10; i++) {
+              stubBids.push(createBidRequestByIndex(i, sizeMap[i].sizeAsArray.slice()));
+            }
+
+            const bids = spec.interpretResponse({
+              body: {
+                'status': 'ok',
+                'site_id': '1100',
+                'account_id': 14062,
+                'zone_id': 2100,
+                'size_id': '1',
+                'tracking': '',
+                'inventory': {},
+                'ads': stubAds
+              }}, { bidRequest: stubBids });
+            expect(bids).to.be.a('array').with.lengthOf(6);
+
+            bids.forEach((bid) => {
+              expect(bid).to.be.a('object');
+              expect(bid).to.have.property('cpm').that.is.a('number');
+              expect(bid).to.have.property('width').that.is.a('number');
+              expect(bid).to.have.property('height').that.is.a('number');
+
+              // verify that result bid 'sizeId' links to a size from the sizeMap
+              const size = getSizeIdForBid(sizeMap, bid);
+              expect(size).to.be.a('object');
+
+              // use 'size' to verify that result bid links to the 'response.ad' passed to function
+              const associateAd = getResponseAdBySize(stubAds, size);
+              expect(associateAd).to.be.a('object');
+              expect(associateAd).to.have.property('creative_id').that.is.a('string');
+
+              // use 'size' to verify that result bid links to the 'bidRequest' passed to function
+              const associateBidRequest = getBidRequestBySize(stubBids, size);
+              expect(associateBidRequest).to.be.a('object');
+              expect(associateBidRequest).to.have.property('bidId').that.is.a('string');
+
+              // verify all bid properties set using 'ad' and 'bidRequest' match
+              // 'ad.creative_id === bid.creativeId'
+              expect(bid.requestId).to.equal(associateBidRequest.bidId);
+              // 'bid.requestId === bidRequest.bidId'
+              expect(bid.creativeId).to.equal(associateAd.creative_id);
+            });
+          });
         });
       });
 
