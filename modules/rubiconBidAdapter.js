@@ -96,7 +96,7 @@ export const spec = {
 
     if (spec.hasVideoMediaType(bid)) {
       // support instream only
-      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' || !utils.deepAccess(params, 'video.size_id')) {
+      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' || typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
     }
