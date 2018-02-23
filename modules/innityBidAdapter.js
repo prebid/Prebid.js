@@ -17,7 +17,7 @@ export const spec = {
         method: 'GET',
         url: ENDPOINT,
         data: {
-          cb: new Date().getTime(),
+          cb: utils.timestamp(),
           ver: 2,
           hb: 1,
           output: 'js',
@@ -49,9 +49,6 @@ export const spec = {
       ad: '<script src="' + location.protocol + '//cdn.innity.net/frame_util.js"></script>' + res.tag,
     };
     return [bidResponse];
-  },
-  getUserSyncs: function(syncOptions, serverResponses) {
-    return [];
   }
 }
 registerBidder(spec);
