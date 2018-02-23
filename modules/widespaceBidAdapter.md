@@ -25,10 +25,10 @@ Banner and video formats are supported.
             currency: 'EUR', // Required
             demo: { // Optional
               gender: 'M',
-              country: 'Sweden'
-              region: 'Stockholm'
-              postal: '15115'
-              city: 'Stockholm'
+              country: 'Sweden',
+              region: 'Stockholm',
+              postal: '15115',
+              city: 'Stockholm',
               yob: '1984'
             }
           }
