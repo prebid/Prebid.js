@@ -153,7 +153,7 @@ function _validateFloor (bid) {
   return '';
 }
 
-function _creative (sbi_dc, sbi_aid, isVideo) {
+function _creative (sbi_dc, sbi_aid) {
   let src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
