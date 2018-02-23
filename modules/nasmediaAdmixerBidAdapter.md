@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name: NasmeidaAdmixer Bidder Adapter
+Module Name: NasmediaAdmixer Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: prebid@nasmedia.co.kr
 ```

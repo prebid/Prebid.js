@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/danmarketplaceBidAdapter';
+import { spec } from 'modules/danmarketBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('DAN_Marketplace Adapter', function () {
@@ -13,7 +13,7 @@ describe('DAN_Marketplace Adapter', function () {
 
   describe('isBidRequestValid', () => {
     let bid = {
-      'bidder': 'danmarketplace',
+      'bidder': 'danmarket',
       'params': {
         'uid': '4'
       },
@@ -41,7 +41,7 @@ describe('DAN_Marketplace Adapter', function () {
   describe('buildRequests', () => {
     let bidRequests = [
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'danmarket',
         'params': {
           'uid': '5'
         },
@@ -52,7 +52,7 @@ describe('DAN_Marketplace Adapter', function () {
         'auctionId': '1d1a030790a475',
       },
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'danmarket',
         'params': {
           'uid': '5'
         },
@@ -63,7 +63,7 @@ describe('DAN_Marketplace Adapter', function () {
         'auctionId': '1d1a030790a475',
       },
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'danmarket',
         'params': {
           'uid': '6'
         },
@@ -130,7 +130,7 @@ describe('DAN_Marketplace Adapter', function () {
     it('should get correct bid response', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '4'
           },
@@ -164,7 +164,7 @@ describe('DAN_Marketplace Adapter', function () {
     it('should get correct multi bid response', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '4'
           },
@@ -175,7 +175,7 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c8c99',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '5'
           },
@@ -186,7 +186,7 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c8c99',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '4'
           },
@@ -244,7 +244,7 @@ describe('DAN_Marketplace Adapter', function () {
     it('handles wrong and nobid responses', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '6'
           },
@@ -255,7 +255,7 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c84d34',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '7'
           },
@@ -266,7 +266,7 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c84d34',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'danmarket',
           'params': {
             'uid': '8'
           },
