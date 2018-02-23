@@ -457,7 +457,7 @@ function parseSizes(bid) {
 
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video.playerWidth && params.video.playerHeight) {
+    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
