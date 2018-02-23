@@ -342,15 +342,29 @@ export const spec = {
       return [];
     }
 
+    // check that lengths are the same for 'ads' and 'bidRequests'
+    if (Array.isArray(bidRequest) && ads.length !== bidRequest.length) {
+      utils.logError('Error: requested bids length does not match the ads length', bidRequest, ads);
+      return [];
+    }
+
     return ads.reduce((bids, ad, i) => {
       if (ad.status !== 'ok') {
-        return [];
+        return bids;
       }
 
-      // associate bidRequests under the assumption that response ads order matches request bids order
+      // associate bidRequests; assuming ads matches bidRequest
       const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
+        // If single request mode is enabled, bidRequest should be an Array
+        if (Array.isArray(bidRequest)) {
+          if (typeof ad.zone_id !== 'undefined' && associatedBidRequest.params.zoneId !== ad.zone_id.toString()) {
+            utils.logError(`Error, 'bidRequest.zoneId:${associatedBidRequest.params.zoneId}' does not match 'ad.zone_id:${ad.zone_id}'`, bidRequest, ad);
+            return bids;
+          }
+        }
+
         let bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
