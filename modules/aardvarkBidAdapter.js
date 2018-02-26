@@ -38,8 +38,7 @@ function requestBids(bidderCode, callbackName, bidReqs) {
     if (!_ai || !_ai.length || !_sc || !_sc.length) { continue; }
 
     _categories = utils.getBidIdParameter('categories', bid.params);
-    if (_categories && Array.isArray(_categories) && _categories.length) { 
-      categories = categories.concat(_categories); }
+    if (_categories && Array.isArray(_categories) && _categories.length) { categories = categories.concat(_categories); }
 
     _endpoint = utils.getBidIdParameter('host', bid.params);
     if (_endpoint) { endpoint = _endpoint; }
