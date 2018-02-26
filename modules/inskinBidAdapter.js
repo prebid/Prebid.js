@@ -1,35 +1,16 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
-const BIDDER_CODE = 'serverbid';
+const BIDDER_CODE = 'inskin';
 
 const CONFIG = {
-  'serverbid': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
-  'connectad': {
-    'BASE_URI': 'https://i.connectad.io/api/v2'
-  },
-  'onefiftytwo': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
-  'insticator': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
-  'adsparc': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
-  'automatad': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  'inskin': {
+    'BASE_URI': 'https://mfad.inskinad.com/api/v2'
   }
 };
 
-let siteId = 0;
-let bidder = 'serverbid';
-
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -65,10 +46,6 @@ export const spec = {
 
     let ENDPOINT_URL;
 
-    // These variables are used in creating the user sync URL.
-    siteId = validBidRequests[0].params.siteId;
-    bidder = validBidRequests[0].params.bidder;
-
     const data = Object.assign({
       placements: [],
       time: Date.now(),
@@ -86,8 +63,11 @@ export const spec = {
 
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(bid.sizes),
+        eventIds: [40, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295]
       }, bid.params);
+
+      placement.adTypes.push(5, 9, 163, 2163, 3006);
 
       if (placement.networkId && placement.siteId) {
         data.placements.push(placement);
@@ -113,6 +93,7 @@ export const spec = {
     let bidId;
     let bidObj;
     let bidResponses = [];
+    let bidsMap = {};
 
     bids = bidRequest.bidRequest;
 
@@ -121,6 +102,8 @@ export const spec = {
       bid = {};
       bidObj = bids[i];
       bidId = bidObj.bidId;
+
+      bidsMap[bidId] = bidObj;
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];
@@ -131,7 +114,7 @@ export const spec = {
           bid.cpm = price;
           bid.width = decision.width;
           bid.height = decision.height;
-          bid.ad = retrieveAd(decision);
+          bid.ad = retrieveAd(bidId, decision);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
@@ -143,25 +126,33 @@ export const spec = {
       }
     }
 
+    if (bidResponses.length) {
+      window.addEventListener('message', function(e) {
+        if (!e.data || e.data.from !== 'ism-bid') {
+          return;
+        }
+
+        const decision = serverResponse.decisions && serverResponse.decisions[e.data.bidId];
+        if (!decision) {
+          return;
+        }
+
+        const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
+        window[id] = {
+          bidId: e.data.bidId,
+          serverResponse
+        };
+        const script = document.createElement('script');
+        script.src = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
+        document.getElementsByTagName('head')[0].appendChild(script);
+      });
+    }
+
     return bidResponses;
   },
 
   getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      if (bidder === 'connectad') {
-        return [{
-          type: 'iframe',
-          url: '//cdn.connectad.io/connectmyusers.php'
-        }];
-      } else {
-        return [{
-          type: 'iframe',
-          url: '//s.zkcdn.net/ss/' + siteId + '.html'
-        }];
-      }
-    } else {
-      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
-    }
+    return [];
   }
 };
 
@@ -200,15 +191,6 @@ const sizeMap = [
 sizeMap[77] = '970x90';
 sizeMap[123] = '970x250';
 sizeMap[43] = '300x600';
-sizeMap[286] = '970x66';
-sizeMap[3230] = '970x280';
-sizeMap[429] = '486x60';
-sizeMap[374] = '700x500';
-sizeMap[934] = '300x1050';
-sizeMap[1578] = '320x100';
-sizeMap[331] = '320x250';
-sizeMap[3301] = '320x267';
-sizeMap[2730] = '728x250';
 
 function getSize(sizes) {
   const result = [];
@@ -221,8 +203,8 @@ function getSize(sizes) {
   return result;
 }
 
-function retrieveAd(decision) {
-  return decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
+function retrieveAd(bidId, decision) {
+  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + utils.createTrackPixelHtml(decision.impressionUrl);
 }
 
 registerBidder(spec);
