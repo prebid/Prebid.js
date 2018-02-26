@@ -9,7 +9,7 @@ import {
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
-const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_CURRENCY = 'USD';
 const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
 const REFERRER = getTopWindowLocation().href;
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
@@ -23,7 +23,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     const PARAMS = bid.params;
-    return PARAMS && PARAMS.sid && (PARAMS.cur || PARAMS.currency);
+    return PARAMS && PARAMS.sid;
   },
 
   buildRequests: function(validBidRequests) {
