@@ -39,10 +39,10 @@ function _pick(obj, properties) {
       return newObj;
     }
 
-    let newProp = prop,
-      match;
+    let newProp = prop;
+    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
 
-    if (match = prop.match(/^(.+?)\sas\s(.+?)$/i)) {
+    if (match) {
       prop = match[1];
       newProp = match[2];
     }
@@ -94,25 +94,25 @@ export function getDomain(referrer) {
 }
 
 function getDeviceType() {
-    // Get the width and height of the screen
-    // Default to value that matches "desktop" (> 1024) if not supported
-    // because that means this is probably an old browser and therefore definitely NOT a tablet or phone
-    let height = window.screen.height || 1025;
-    let width = window.screen.width || 1025;
+  // Get the width and height of the screen
+  // Default to value that matches "desktop" (> 1024) if not supported
+  // because that means this is probably an old browser and therefore definitely NOT a tablet or phone
+  let height = window.screen.height || 1025;
+  let width = window.screen.width || 1025;
 
-    // Take the highest of the two, in case we are in portrait mode with a phone
-    let nApplicableWidth = Math.max(height, width);
+  // Take the highest of the two, in case we are in portrait mode with a phone
+  let nApplicableWidth = Math.max(height, width);
 
-    let device = 'desktop';
-    if (nApplicableWidth <= 736) {
-        // Phones are 736px wide or less (iphone 6 = 667px, 6+ = 736px)
-        device = 'phone';
-    } else if (nApplicableWidth <= 1024) {
-        // Tables are 1024 pixels wide or less
-        device = 'tablet';
-    }
+  let device = 'desktop';
+  if (nApplicableWidth <= 736) {
+    // Phones are 736px wide or less (iphone 6 = 667px, 6+ = 736px)
+    device = 'phone';
+  } else if (nApplicableWidth <= 1024) {
+    // Tables are 1024 pixels wide or less
+    device = 'tablet';
+  }
 
-    return device;
+  return device;
 }
 
 function sendMessage(auctionId, bidId) {
@@ -200,7 +200,20 @@ function parseBid(bid) {
   ]);
 }
 
-let rubiconAdapter = Object.assign(adapter({url: ENDPOINT, analyticsType: 'endpoint'}), {
+let baseAdapter = adapter({url: ENDPOINT, analyticsType: 'endpoint'});
+let rubiconAdapter = Object.assign({}, baseAdapter, {
+  enableAnalytics(config) {
+    if (typeof config.options === 'object') {
+      if (config.options.endpoint) {
+        this.getUrl = () => config.options.endpoint;
+      }
+    }
+    baseAdapter.enableAnalytics.apply(this, arguments);
+  },
+  disableAnalytics() {
+    this.getUrl = baseAdapter.getUrl;
+    baseAdapter.disableAnalytics.apply(this, arguments);
+  },
   track({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -218,7 +231,7 @@ let rubiconAdapter = Object.assign(adapter({url: ENDPOINT, analyticsType: 'endpo
             'bidId',
             'transactionId',
             'params', (params, bid) => {
-              switch(bid.bidder) {
+              switch (bid.bidder) {
                 // specify bidder params we want here
                 case 'rubicon':
                   return _pick(params, [
@@ -259,7 +272,7 @@ let rubiconAdapter = Object.assign(adapter({url: ENDPOINT, analyticsType: 'endpo
       case BID_RESPONSE:
         let bid = cache.auctions[args.auctionId].bids[args.adId];
         bid.source = args.source;
-        switch(args.getStatusCode()) {
+        switch (args.getStatusCode()) {
           case GOOD:
             bid.status = 'success';
             break;

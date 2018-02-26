@@ -134,6 +134,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     utils._each(_handlers, (handler, event) => {
       events.off(event, handler);
     });
+    this.enableAnalytics = _enable;
   }
 
   function _emptyQueue() {

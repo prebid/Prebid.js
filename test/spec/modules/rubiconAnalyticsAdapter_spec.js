@@ -294,7 +294,6 @@ describe('rubicon analytics adapter', () => {
         'referrerUri',
         'domain'
       ]));
-
     });
 
     it('should send batched message without BID_WON if necessary', () => {
@@ -308,7 +307,5 @@ describe('rubicon analytics adapter', () => {
     it('should properly mark bids as timed out', () => {
 
     });
-
-
   });
 });
