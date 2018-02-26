@@ -2,6 +2,7 @@ const assert = require('chai').assert;
 const adapter = require('modules/stroeerCoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 const utils = require('src/utils');
+const config = require('src/config').config;
 
 function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
@@ -224,7 +225,7 @@ describe('stroeerssp adapter', function () {
 
     describe('yieldlove auction type on server', function() {
       afterEach(function() {
-        delete window.adscale_Auction_Type;
+        config.setConfig({ 'ssat': 1 });
       });
 
       function runAndAssert(expectedSsat) {
@@ -271,19 +272,19 @@ describe('stroeerssp adapter', function () {
       }
 
       it('enable first price auction', function() {
-        window.adscale_Auction_Type = 1;
+        config.setConfig({ 'ssat': 1 });
         runAndAssert(1);
       });
 
       it('explicitly enable second price auction on server', function() {
-        window.adscale_Auction_Type = 2;
+        config.setConfig({ 'ssat': 2 });
         runAndAssert(2);
       });
 
       const invalidTypeSamples = [-1, 0, 3, 4];
       invalidTypeSamples.forEach((type) => {
         it(`invalid yieldlove auction type ${type} set on server`, function() {
-          window.adscale_Auction_Type = 4;
+          config.setConfig({ 'ssat': type });
 
           clock.tick(13500);
 

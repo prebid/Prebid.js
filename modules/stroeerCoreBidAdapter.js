@@ -4,6 +4,7 @@ const utils = require('src/utils');
 const ajax = require('src/ajax').ajax;
 const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
+const config = require('src/config').config;
 
 const StroeerCoreAdapter = function (win = window) {
   const defaultHost = 'dsh.adscale.de';
@@ -130,13 +131,14 @@ const StroeerCoreAdapter = function (win = window) {
     callBids: function (params) {
       const allBids = params.bids;
 
-      if (window.adscale_Auction_Type === undefined) {
-        window.adscale_Auction_Type = 2;
+      var ssat = config.getConfig('ssat');
+      if (ssat === undefined) {
+        ssat = 2;
       }
 
-      if ([1, 2].indexOf(window.adscale_Auction_Type) === -1) {
+      if ([1, 2].indexOf(ssat) === -1) {
         allBids.forEach(bid => bidmanager.addBidResponse(bid.placementCode, Object.assign(bidfactory.createBid(2, bid), {bidderCode})));
-        utils.logError(`${window.adscale_Auction_Type} is not a valid auction type`, 'ERROR');
+        utils.logError(`${ssat} is not a valid auction type`, 'ERROR');
 
         return;
       }
@@ -148,7 +150,7 @@ const StroeerCoreAdapter = function (win = window) {
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
         timeout: params.timeout - (Date.now() - params.auctionStart),
-        ssat: window.adscale_Auction_Type
+        ssat: ssat
       };
 
       const validBidRequestById = {};
