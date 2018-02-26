@@ -65,7 +65,6 @@ export const YieldbotAdapter = {
     const cookieName = '__ybotn';
     const sessionBlocked = blockSession ? 1 : 0;
     this.setCookie(cookieName, sessionBlocked, this._sessionTimeout, '/');
-    return !!sessionBlocked;
   },
 
   get userId() {
@@ -104,7 +103,7 @@ export const YieldbotAdapter = {
 
   set lastPageviewId(id) {
     const cookieName = '__ybotlpvi';
-    return this.setCookie(cookieName, id, this._sessionTimeout, '/');
+    this.setCookie(cookieName, id, this._sessionTimeout, '/');
   },
 
   get lastPageviewTime() {
@@ -115,7 +114,7 @@ export const YieldbotAdapter = {
 
   set lastPageviewTime(ts) {
     const cookieName = '__ybotlpv';
-    return this.setCookie(cookieName, ts, this._sessionTimeout, '/');
+    this.setCookie(cookieName, ts, this._sessionTimeout, '/');
   },
 
   /**
