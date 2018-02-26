@@ -136,7 +136,6 @@ function buildRequest(bidRequests, auctionStart) {
   let _ivAuctionStart = auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
-    bidRequest.startTime = new Date().getTime();
     _placementIds.push(bidRequest.params.placementId);
     _loginId = _loginId || bidRequest.params.loginId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
@@ -209,11 +208,18 @@ function handleResponse(responseObj, bidRequests) {
     return [];
   }
 
+  let bidModel = responseObj.BidModel;
+  if (typeof bidModel !== 'object') {
+    utils.logInfo('Invibes Adapter - Bidding is not configured');
+    return [];
+  }
+
   const topWin = getTopMostWindow();
   const invibes = topWin.invibes = topWin.invibes || {};
 
   if (typeof invibes.bidResponse === 'object') {
     utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+    return [];
   }
 
   invibes.bidResponse = responseObj;
@@ -222,7 +228,7 @@ function handleResponse(responseObj, bidRequests) {
 
   if (!Array.isArray(ads) || ads.length < 1) {
     if (responseObj.AdReason != null) {
-      utils.logError(responseObj.AdReason);
+      utils.logInfo('Invibes Adapter - ' + responseObj.AdReason);
     }
 
     utils.logInfo('Invibes Adapter - No ads available');
@@ -231,8 +237,7 @@ function handleResponse(responseObj, bidRequests) {
 
   let ad = ads[0];
 
-  let bidModel = responseObj.BidModel;
-  if (typeof bidModel !== 'object' || bidModel.PlacementId == null) {
+  if (bidModel.PlacementId == null) {
     utils.logInfo('Invibes Adapter - No Placement Id in response');
     return [];
   }
