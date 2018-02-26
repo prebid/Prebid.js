@@ -123,7 +123,6 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/**/*_spec.js': ['webpack', 'sourcemap'],
       'test/test_index.js': ['webpack', 'sourcemap']
     },
 
