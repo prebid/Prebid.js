@@ -201,15 +201,10 @@ export const YieldbotAdapter = {
 
       const yieldbotSlotParams = this.getSlotRequestParams(pageviewIdToMap, bidRequests);
 
-      searchParams['sn'] =
-        yieldbotSlotParams['sn'] || '';
+      searchParams['sn'] = yieldbotSlotParams['sn'] || '';
+      searchParams['ssz'] = yieldbotSlotParams['ssz'] || '';
 
-      searchParams['ssz'] =
-        yieldbotSlotParams['ssz'] || '';
-
-      const bidUrl = this.urlPrefix() +
-              yieldbotSlotParams.psn +
-              '/v1/init';
+      const bidUrl = this.urlPrefix() + yieldbotSlotParams.psn + '/v1/init';
 
       searchParams['cts_ini'] = Date.now();
       requests.push({
@@ -288,11 +283,7 @@ export const YieldbotAdapter = {
 
           const yieldbotSlotParams = bidRequest.yieldbotSlotParams || null;
           const ybBidId = bidRequest.data['pvi'];
-          const paramKey = ybBidId +
-                  ':' +
-                  bid.slot +
-                  ':' +
-                  bid.size || '';
+          const paramKey = `${ybBidId}:${bid.slot}:${bid.size || ''}`;
           const bidIdMap = yieldbotSlotParams && yieldbotSlotParams.bidIdMap ? yieldbotSlotParams.bidIdMap : {};
           const requestId = bidIdMap[paramKey] || '';
 
