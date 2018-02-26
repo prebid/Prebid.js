@@ -44,7 +44,8 @@ const buildBidderRequest = () => ({
         sid: 'ODA='
       }
     }
-  ]
+  ],
+  ssat: 1
 });
 
 const buildBidderResponse = () => ({
@@ -53,13 +54,13 @@ const buildBidderResponse = () => ({
     'cpm': 4.0,
     'width': 300,
     'height': 600,
-    'ad': '<div>tag1</div>'
+    'ad': '<div>tag1</div>',
   }, {
     'bidId': 'bid2',
     'cpm': 4.0,
     'width': 728,
     'height': 90,
-    'ad': '<div>tag2</div>'
+    'ad': '<div>tag2</div>',
   }]
 });
 
@@ -201,6 +202,7 @@ describe('stroeerssp adapter', function () {
         'ref': 'http://www.google.com/?query=monkey',
         'mpa': true,
         'ssl': false,
+        'ssat': 2,
         'bids': [
           {
             'sid': 'NDA=',
@@ -218,6 +220,89 @@ describe('stroeerssp adapter', function () {
       };
 
       assert.deepEqual(bidRequest, expectedJson);
+    });
+
+    describe('yieldlove auction type on server', function() {
+      afterEach(function() {
+        delete window.adscale_Auction_Type;
+      });
+
+      function runAndAssert(expectedSsat) {
+        clock.tick(13500);
+
+        fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+        adapter(win).callBids(bidderRequest);
+        fakeServer.respond();
+
+        assert.equal(fakeServer.requests.length, 1);
+
+        const request = fakeServer.requests[0];
+
+        const bidRequest = JSON.parse(request.requestBody);
+
+        const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
+
+        assert.equal(expectedTimeout, 1500);
+
+        const expectedJson = {
+          'id': 'bidder-request-id-123',
+          'timeout': expectedTimeout,
+          'ref': 'http://www.google.com/?query=monkey',
+          'mpa': true,
+          'ssl': false,
+          'ssat': expectedSsat,
+          'bids': [
+            {
+              'sid': 'NDA=',
+              'bid': 'bid1',
+              'siz': [[300, 600], [160, 60]],
+              'viz': true
+            },
+            {
+              'sid': 'ODA=',
+              'bid': 'bid2',
+              'siz': [[728, 90]],
+              'viz': true
+            }
+          ]
+        };
+
+        assert.deepEqual(bidRequest, expectedJson);
+      }
+
+      it('enable first price auction', function() {
+        window.adscale_Auction_Type = 1;
+        runAndAssert(1);
+      });
+
+      it('explicitly enable second price auction on server', function() {
+        window.adscale_Auction_Type = 2;
+        runAndAssert(2);
+      });
+
+      const invalidTypeSamples = [-1, 0, 3, 4];
+      invalidTypeSamples.forEach((type) => {
+        it(`invalid yieldlove auction type ${type} set on server`, function() {
+          window.adscale_Auction_Type = 4;
+
+          clock.tick(13500);
+
+          fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+          adapter(win).callBids(bidderRequest);
+          fakeServer.respond();
+
+          assert.equal(fakeServer.requests.length, 0);
+
+          const request = fakeServer.requests[0];
+
+          const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
+
+          assert.equal(expectedTimeout, 1500);
+
+          assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1');
+          assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
+        })
+      });
     });
 
     describe('optional fields', () => {

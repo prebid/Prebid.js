@@ -36,8 +36,7 @@ const StroeerCoreAdapter = function (win = window) {
       while (win.top !== res && res.parent.location.href.length) {
         res = res.parent;
       }
-    }
-    catch (ignore) {}
+    } catch (ignore) {}
 
     return res;
   }
@@ -68,8 +67,7 @@ const StroeerCoreAdapter = function (win = window) {
 
     try {
       return visibleInWindow(win.document.getElementById(elementId), win);
-    }
-    catch (e) {
+    } catch (e) {
       // old browser, element not found, cross-origin etc.
     }
     return undefined;
@@ -121,8 +119,7 @@ const StroeerCoreAdapter = function (win = window) {
 
     try {
       response = JSON.parse(rawResponse);
-    }
-    catch (e) {
+    } catch (e) {
       utils.logError('unable to parse bid response', 'ERROR', e);
     }
 
@@ -131,16 +128,29 @@ const StroeerCoreAdapter = function (win = window) {
 
   return {
     callBids: function (params) {
+      const allBids = params.bids;
+
+      if (window.adscale_Auction_Type === undefined) {
+        window.adscale_Auction_Type = 2;
+      }
+
+      if ([1, 2].indexOf(window.adscale_Auction_Type) === -1) {
+        allBids.forEach(bid => bidmanager.addBidResponse(bid.placementCode, Object.assign(bidfactory.createBid(2, bid), {bidderCode})));
+        utils.logError(`${window.adscale_Auction_Type} is not a valid auction type`, 'ERROR');
+
+        return;
+      }
+
       const requestBody = {
         id: params.bidderRequestId,
         bids: [],
         ref: getPageReferer(),
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
-        timeout: params.timeout - (Date.now() - params.auctionStart)
+        timeout: params.timeout - (Date.now() - params.auctionStart),
+        ssat: window.adscale_Auction_Type
       };
 
-      const allBids = params.bids;
       const validBidRequestById = {};
 
       allBids.forEach(bidRequest => {
@@ -152,8 +162,7 @@ const StroeerCoreAdapter = function (win = window) {
             viz: elementInView(bidRequest.placementCode)
           });
           validBidRequestById[bidRequest.bidId] = bidRequest;
-        }
-        else {
+        } else {
           bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
         }
       });
@@ -173,12 +182,10 @@ const StroeerCoreAdapter = function (win = window) {
               // desktop when content type is json/application, they don't send the body on subsequent requests.
               redirectCount++;
               sendBidRequest(response.redirect);
-            }
-            else {
+            } else {
               if (response.bids) {
                 handleBidResponse(response, validBidRequestById);
-              }
-              else {
+              } else {
                 utils.logError('invalid response ' + JSON.stringify(response), 'ERROR');
                 handleBidResponse({bids: []}, validBidRequestById);
               }
@@ -198,8 +205,7 @@ const StroeerCoreAdapter = function (win = window) {
 
       if (requestBody.bids.length > 0) {
         sendBidRequest(buildUrl(allBids[0].params));
-      }
-      else {
+      } else {
         insertUserConnect(allBids);
       }
     }
