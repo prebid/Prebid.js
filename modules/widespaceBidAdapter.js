@@ -31,6 +31,7 @@ export const spec = {
     let data = {};
     let serverRequests = [];
     const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
+    const PERF_DATA = getPerfData();
     let isInHostileIframe = false;
     try {
       isInHostileIframe = window.top.innerWidth < 0;
@@ -38,7 +39,7 @@ export const spec = {
       isInHostileIframe = true;
     }
 
-    validBidRequests.forEach((bid) => {
+    validBidRequests.forEach((bid, i) => {
       data = {
         'ver': '5.0.0',
         'tagType': 'dyn',
@@ -68,6 +69,12 @@ export const spec = {
         });
       }
 
+      if (PERF_DATA[i]) {
+        Object.keys(PERF_DATA[i]).forEach((perfDataKey) => {
+          data[perfDataKey] = PERF_DATA[i][perfDataKey];
+        });
+      }
+
       serverRequests.push({
         method: 'POST',
         options: {
@@ -82,14 +89,11 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, request) {
-    console.log(Date.now() - preReqTime);
-    top.serverResponse = serverResponse;
-    top.request = request;
+    const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
     let bidResponses = [];
-
     successBids.forEach((bid) => {
-      setPostPerfData(bid.reqId);
+      setPerfData(bid.reqId, responseTime);
       if (bid.status === 'ad') {
         bidResponses.push({
           requestId: bid.callbackUid,
@@ -110,16 +114,29 @@ export const spec = {
   }
 };
 
-function setPostPerfData(reqId) {
+function setPerfData(reqId, time) {
   if (preReqTime && LOCAL_STORAGE_AVAILABLE) {
     const perfString = JSON.stringify({
       'perf_status': 'OK',
       'perf_reqid': reqId,
-      'perf_ms': Date.now() - preReqTime
+      'perf_ms': time
     });
-    localStorage.setItem('perf', perfString);
+    localStorage.setItem('wsPerfData' + reqId, perfString);
     return perfString;
   }
+}
+
+function getPerfData() {
+  let data = [];
+  if (LOCAL_STORAGE_AVAILABLE) {
+    Object.keys(localStorage).filter((key) => {
+      if (key.indexOf('wsPerfData') > -1) {
+        data.push(JSON.parse(localStorage.getItem(key)));
+        localStorage.removeItem(key);
+      }
+    });
+  }
+  return data;
 }
 
 registerBidder(spec);
