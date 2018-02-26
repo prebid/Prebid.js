@@ -29,7 +29,7 @@ function requestBids(bidderCode, callbackName, bidReqs) {
   ref = ref ? ref.host : DEFAULT_REFERRER;
 
   var categories = window.rtkcategories || [];
-  if (!Array.isArray(categories)) {categories = [];}
+  if (!Array.isArray(categories)) { categories = []; }
 
   for (var i = 0, l = bidReqs.length, bid, _ai, _sc, _endpoint, _categories; i < l; i += 1) {
     bid = bidReqs[i];
@@ -38,8 +38,8 @@ function requestBids(bidderCode, callbackName, bidReqs) {
     if (!_ai || !_ai.length || !_sc || !_sc.length) { continue; }
 
     _categories = utils.getBidIdParameter('categories', bid.params);
-    if (_categories && Array.isArray(_categories) && _categories.length) {
-      categories = categories.concat(_categories);}
+    if (_categories && Array.isArray(_categories) && _categories.length) { 
+      categories = categories.concat(_categories); }
 
     _endpoint = utils.getBidIdParameter('host', bid.params);
     if (_endpoint) { endpoint = _endpoint; }
