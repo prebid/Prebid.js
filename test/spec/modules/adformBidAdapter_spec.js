@@ -22,7 +22,7 @@ describe('Adform adapter', () => {
         adxDomain: 'adx.adform.net'
       };
       assert.isFalse(spec.isBidRequestValid(bid));
-    })
+    });
   });
 
   describe('buildRequests', () => {
@@ -147,6 +147,7 @@ describe('Adform adapter', () => {
     bids = [
       {
         adUnitCode: placementCode[0],
+        auctionId: '7aefb970-2045',
         bidId: '2a0cf4e',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
@@ -154,29 +155,28 @@ describe('Adform adapter', () => {
         adxDomain: 'newDomain',
         tid: 45,
         placementCode: placementCode[0],
-        requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-4ca1'
       },
       {
         adUnitCode: placementCode[1],
+        auctionId: '7aefb970-2045',
         bidId: '2a0cf5b',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
         params: params[1],
         placementCode: placementCode[1],
-        requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-4iuy'
       },
       {
         adUnitCode: placementCode[2],
+        auctionId: '7aefb970-2045',
         bidId: '2a0cf6n',
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
         params: params[2],
         placementCode: placementCode[2],
-        requestId: '7aefb970-2045',
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-7ev3'
       }

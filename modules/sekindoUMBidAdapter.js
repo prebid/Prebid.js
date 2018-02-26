@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 export const spec = {
   code: 'sekindoUM',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -104,14 +104,6 @@ export const spec = {
 
     bidResponses.push(bidResponse);
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
-    }
   }
 }
 registerBidder(spec);

@@ -671,8 +671,13 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function cookiesAreEnabled() {
+export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+}
+export function cookiesAreEnabled() {
+  if (exports.checkCookieSupport()) {
     return true;
   }
   window.document.cookie = 'prebid.cookieTest';
@@ -809,6 +814,13 @@ export function getOrigin() {
   }
 }
 
+/**
+ * Returns Do Not Track state
+ */
+export function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
+}
+
 const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
@@ -832,17 +844,16 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
  * @param {Object} adUnit ad unit from which the bidder is being dropped
- * @param {Array} unSupportedBidders arrary of bidder codes that are not compatible with the adUnit
+ * @param {string} bidder bidder code that is not compatible with the adUnit
  * @return {string} warning message to display when condition is met
  */
-export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
-  const mediaType = adUnit.mediaType || Object.keys(adUnit.mediaTypes).join(', ');
-  const plural = unSupportedBidders.length === 1 ? 'This bidder' : 'These bidders';
+export function unsupportedBidderMessage(adUnit, bidder) {
+  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
-    containing bidders that don't support ${mediaType}: ${unSupportedBidders.join(', ')}.
-    ${plural} won't fetch demand.
+    containing bidders that don't support ${mediaType}: ${bidder}.
+    This bidder won't fetch demand.
   `;
 }
 

@@ -7,7 +7,7 @@ import { config } from 'src/config';
 
 const TYPE = S2S.SRC;
 const getConfig = config.getConfig;
-const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders', 'endpoint'];
+const REQUIRED_S2S_CONFIG_KEYS = ['siteId', 'networkId', 'bidders'];
 
 let _s2sConfig;
 
@@ -100,30 +100,30 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
   function _callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     let bidRequest = s2sBidRequest;
 
-    // one request per ad unit
+    const data = {
+      placements: [],
+      time: Date.now(),
+      user: {},
+      url: utils.getTopWindowUrl(),
+      referrer: document.referrer,
+      enableBotFiltering: true,
+      includePricingData: true,
+      parallel: true
+    };
+    const allBids = [];
+
     for (let i = 0; i < bidRequest.ad_units.length; i++) {
       let adunit = bidRequest.ad_units[i];
       let siteId = _s2sConfig.siteId;
       let networkId = getLocalConfig().networkId;
       let sizes = adunit.sizes;
 
-      const data = {
-        placements: [],
-        time: Date.now(),
-        user: {},
-        url: utils.getTopWindowUrl(),
-        referrer: document.referrer,
-        enableBotFiltering: true,
-        includePricingData: true,
-        parallel: true
-      };
-
-      const bids = adunit.bids || [];
-
+      var bids = adunit.bids || [];
       // one placement for each of the bids
       for (let i = 0; i < bids.length; i++) {
         const bid = bids[i];
         bid.code = adunit.code;
+        allBids.push(bid);
 
         const placement = Object.assign({}, {
           divName: bid.bid_id,
@@ -138,9 +138,9 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
           data.placements.push(placement);
         }
       }
-      if (data.placements.length) {
-        ajax(BASE_URI, _responseCallback(addBidResponse, bids, done), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
-      }
+    }
+    if (data.placements.length) {
+      ajax(BASE_URI, _responseCallback(addBidResponse, allBids, done), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
     }
   }
 
