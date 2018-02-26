@@ -211,13 +211,13 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidRequests.push(bidderRequest);
     }
   });
-  if (adUnits[0].gdprConsent) {
+  if (adUnits[0].consentId) {
     bidRequests.forEach(bidRequest => {
-      bidRequest['gdprConsent'] = adUnits[0].gdprConsent;
+      bidRequest['consentId'] = adUnits[0].consentId;
     });
   }
   return bidRequests;
-}
+};
 
 exports.checkBidRequestSizes = (adUnits) => {
   Array.prototype.forEach.call(adUnits, adUnit => {
@@ -267,7 +267,6 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-// exports.callBids = createHook('asyncSeries', function (adUnits, bidRequests, addBidResponse, doneCb) {
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
@@ -337,7 +336,6 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     }
   });
 }
-// }, 'callBids');
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;

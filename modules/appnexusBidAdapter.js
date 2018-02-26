@@ -80,8 +80,8 @@ export const spec = {
       data: payloadString,
       bidderRequest
     };
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      postData.url += '?gdpr_consent=' + bidderRequest.gdprConsent;
+    if (bidderRequest && bidderRequest.consentId) {
+      postData.url += '?gdpr_consent=' + bidderRequest.consentId;
     }
     return postData;
   },
