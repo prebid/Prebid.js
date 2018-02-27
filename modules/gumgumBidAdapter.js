@@ -15,6 +15,7 @@ function _getBrowserParams() {
   let topWindow
   let topScreen
   let topUrl
+  let ggad
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -36,8 +37,11 @@ function _getBrowserParams() {
     sh: topScreen.height,
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1,
-    adBuyId: (topUrl.match(/#ggad=(.+)$/) || [null, null])[1]
+    dpr: topWindow.devicePixelRatio || 1
+  }
+  ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
+  if (ggad) {
+    browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
   }
   return browserParams
 }
