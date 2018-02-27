@@ -46,7 +46,6 @@ const buildBidderRequest = () => ({
       }
     }
   ],
-  ssat: 1
 });
 
 const buildBidderResponse = () => ({
@@ -62,6 +61,29 @@ const buildBidderResponse = () => ({
     'width': 728,
     'height': 90,
     'ad': '<div>tag2</div>',
+  }]
+});
+
+const buildBidderResponseSecondPriceAuction = () => ({
+  'bids': [{
+    'bidId': 'bid1',
+    'cpm': 4.0,
+    'width': 300,
+    'height': 600,
+    'ad': '<div>tag1</div>',
+    'cpm2': 3.8,
+    'floor': 2.0,
+    'exchangerate': 1.0,
+    'nurl': 'www.something.com'
+  }, {
+    'bidId': 'bid2',
+    'cpm': 4.0,
+    'width': 728,
+    'height': 90,
+    'ad': '<div>tag2</div>',
+    'floor': 1.0,
+    'exchangerate': 0.8,
+    'nurl': 'www.something-else.com'
   }]
 });
 
@@ -413,6 +435,53 @@ describe('stroeerssp adapter', function () {
 
       assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600);
       assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
+    });
+
+    it('first price only auction', function() {
+
+      config.setConfig({ 'ssat': 1 });
+
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      let bid = bidmanager.addBidResponse.firstCall.args[1];
+      assert.propertyVal(bid, 'cpm2', undefined);
+      assert.propertyVal(bid, 'floor', undefined);
+      assert.propertyVal(bid, 'exchangerate', undefined);
+      assert.propertyVal(bid, 'nurl', undefined);
+
+      config.setConfig({ 'ssat': 2 });
+
+    });
+
+    it('second price auction', function() {
+
+      fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
+
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      let bid1 = bidmanager.addBidResponse.firstCall.args[1];
+      assert.propertyVal(bid1, 'cpm2', 3.8);
+      assert.propertyVal(bid1, 'floor', 2.0);
+      assert.propertyVal(bid1, 'exchangerate', 1.0);
+      assert.propertyVal(bid1, 'nurl', 'www.something.com');
+
+      let bid2 = bidmanager.addBidResponse.secondCall.args[1];
+      assert.propertyVal(bid2, 'cpm2', undefined);
+      assert.propertyVal(bid2, 'floor', 1.0);
+      assert.propertyVal(bid2, 'exchangerate', 0.8);
+      assert.propertyVal(bid2, 'nurl', 'www.something-else.com');
+
+
     });
 
     it('should add unfulfilled bids', function() {

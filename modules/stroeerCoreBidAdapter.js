@@ -100,7 +100,11 @@ const StroeerCoreAdapter = function (win = window) {
           cpm: bidResponse.cpm,
           width: bidResponse.width,
           height: bidResponse.height,
-          ad: bidResponse.ad
+          ad: bidResponse.ad,
+          cpm2: bidResponse.cpm2,
+          floor: bidResponse.floor,
+          exchangerate: bidResponse.exchangerate,
+          nurl: bidResponse.nurl
         });
         bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
       }
@@ -159,6 +163,7 @@ const StroeerCoreAdapter = function (win = window) {
         if (validBidRequest(bidRequest)) {
           requestBody.bids.push({
             bid: bidRequest.bidId,
+
             sid: bidRequest.params.sid,
             siz: bidRequest.sizes,
             viz: elementInView(bidRequest.placementCode)
