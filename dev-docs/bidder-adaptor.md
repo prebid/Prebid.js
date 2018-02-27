@@ -202,7 +202,7 @@ When the page asks Prebid.js for bids, your module's `buildRequests` function wi
 * *Ad Unit Params*: The arguments provided by the page are in `validBidRequests` as illustrated below.
 * *Transaction ID*: `bidderRequest.bids[].transactionId` should be sent to your server and forwarded to any Demand Side Platforms your server communicates with.
 * *Ad Server Currency*: If your service supports bidding in more than one currency, your adapter should call `config.getConfig(currency)` to see if the page has defined which currency it needs for the ad server.
-* *Referrer*: Referrer should be passed into your server and utilized there. This is important in contexts like AMP where the original page referrer isn't available directly to the adapter. We suggest using the `utils.getTopWindowUrl()` function to obtain the referrer.
+* *Referrer*: Referrer should be passed into your server and utilized there. This is important in contexts like AMP where the original page referrer isn't available directly to the adapter. The convention is to do something like this: `referrer: config.getConfig('pageUrl') || utils.getTopWindowUrl()`.
 
 Sample array entry for `validBidRequests[]`:
 
