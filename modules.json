@@ -23,5 +23,6 @@
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
-    "prebidServerBidAdapter"
+    "prebidServerBidAdapter",
+    "freestarBidAdapter"
 ]
