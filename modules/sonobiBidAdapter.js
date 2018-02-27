@@ -47,8 +47,13 @@ export const spec = {
       'key_maker': JSON.stringify(data),
       'ref': getTopWindowLocation().host,
       's': utils.generateUUID(),
-      'pv': PAGEVIEW_ID,
     };
+
+    if (validBidRequests[0].params.pageViewId) {
+      payload.pv = validBidRequests[0].params.pageViewId;
+    } else {
+      payload.pv = PAGEVIEW_ID;
+    }
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
