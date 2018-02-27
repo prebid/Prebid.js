@@ -1392,8 +1392,9 @@ Example config for [server-to-server]({{site.baseurl}}/dev-docs/get-started-with
 pbjs.setConfig({
     s2sConfig: {
         accountId: '1',
-        enabled: true,
         bidders: ['appnexus', 'pubmatic'],
+        defaultVendor: 'appnexus',
+        enabled: true,
         timeout: 1000,
         adapter: 'prebidServer',
         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
@@ -1410,14 +1411,18 @@ Additional information of these properties:
 | Attribute | Scope | Type | Description                                                                                   |
 |------------+---------+---------+---------------------------------------------------------------|
 | `accountId` | Required | String | Your Prebid Server account ID |
-| `enabled` | Optional | Boolean | Enables S2S - defaults to `false` |
 | `bidders` | Required | Array of Strings | Which bidders support auctions on the server side |
+| `defaultVendor` | Optional | String | Automatically includes all following options in the config with vendor's default values.*  Individual properties can be overridden by including them in the config along with this setting. |
+| `enabled` | Optional | Boolean | Enables S2S - defaults to `false` |
 | `timeout` | Required | Integer | Number of milliseconds allowed for the server-side auctions |
 | `adapter` | Required | String | Adapter code for S2S. Defaults to 'prebidServer' |
 | `endpoint` | Required | URL | Defines the auction endpoint for the Prebid Server cluster |
 | `syncEndpoint` | Required | URL | Defines the cookie_sync endpoint for the Prebid Server cluster |
-| `cookieSet` | Optional | Boolean | Initiates link-rewriting for Safari to improve cookie match rate. Defaults 'true' |
+| `cookieSet` | Optional | Boolean | Initiates link-rewriting for Safari to improve cookie match rate. |
 | `cookieSetUrl` | Optional | URL | Cluster-specific script for Safari link-rewriting |
+
+*Currently supported vendors are: appnexus & rubicon
+*Note - When using defaultVendor option, accountId and bidders properties still need to be defined.
 
 Additional options for `s2sConfig` may be enabled by including the [Server-to-Server testing module]({{site.baseurl}}/dev-docs/modules/s2sTesting.html).
 
