@@ -66,10 +66,6 @@ describe('adxcg analytics adapter', () => {
         }
       ];
 
-
-
-
-
       // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
         timestamp: auctionTimestamp
