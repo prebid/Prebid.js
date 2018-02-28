@@ -50,13 +50,13 @@ export const spec = {
     };
 
     if (validBidRequests[0].params.pageViewId) {
-      payload.pv = encodeURI(validBidRequests[0].params.pageViewId);
+      payload.pv = validBidRequests[0].params.pageViewId;
     } else {
       payload.pv = PAGEVIEW_ID;
     }
 
     if (validBidRequests[0].params.appNexusTargeting) {
-      payload.gmgt = encodeURI(validBidRequests[0].params.appNexusTargeting);
+      payload.gmgt = validBidRequests[0].params.appNexusTargeting;
     }
 
     if (validBidRequests[0].params.hfa) {
