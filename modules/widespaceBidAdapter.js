@@ -41,11 +41,11 @@ export const spec = {
 
     validBidRequests.forEach((bid, i) => {
       data = {
-        'ver': '5.0.0',
-        'tagType': 'dyn',
-        'a': 'application/json',
-        'forceAdId': '23456',
-        'hb.callback': 'dummy',
+        'ver': '5.0.0', //remove
+        'tagType': 'dyn', //remove
+        'a': 'application/json', //remove
+        'forceAdId': '23456', //remove
+        'hb.callback': 'dummy', //remove
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'windowWidth': isInHostileIframe ? window.innerWidth : window.top.innerWidth,
@@ -111,6 +111,27 @@ export const spec = {
     });
 
     return bidResponses
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses) {
+    top.syncOptions = syncOptions;
+    top.serverResponses = serverResponses;
+
+    // if (syncOptions.iframeEnabled) {
+    //   return [{
+    //     type: 'iframe',
+    //     url: '//bh.contextweb.com/visitormatch'
+    //   }];
+    // } else if (syncOptions.pixelEnabled) {
+    //   return [{
+    //     type: 'image',
+    //     url: '//bh.contextweb.com/visitormatch/prebid'
+    //   }];
+    // }
+    return [{
+      type: 'iframe',
+      url: 'http://playground.widespace.com/usman/resources/ws300x300.jpg'
+    }];
   }
 };
 
