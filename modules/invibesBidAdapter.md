@@ -15,13 +15,12 @@ Connect to Invibes for bids.
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               sizes: [[0, 0]],
                bids: [
                    {
-                       bidder: "invibes",
+                       bidder: 'invibes',
                        params: {
-                           placementId: 123456789,
-						   customEndpoint: '//content.videostep.com/Bid/VideoAdContent'
+                           placementId: '12345'
                        }
                    }
                ]
