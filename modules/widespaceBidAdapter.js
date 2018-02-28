@@ -9,7 +9,6 @@ import {
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
-const DEFAULT_CURRENCY = 'USD';
 const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
 const REFERRER = getTopWindowLocation().href;
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
@@ -22,12 +21,10 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function(bid) {
-    const PARAMS = bid.params;
-    return PARAMS && PARAMS.sid;
+    return bid.params && String(bid.params.sid).length > 9;
   },
 
   buildRequests: function(validBidRequests) {
-    top.validBidRequests = validBidRequests;
     let data = {};
     let serverRequests = [];
     const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
@@ -41,11 +38,11 @@ export const spec = {
 
     validBidRequests.forEach((bid, i) => {
       data = {
-        'ver': '5.0.0', //remove
-        'tagType': 'dyn', //remove
-        'a': 'application/json', //remove
-        'forceAdId': '23456', //remove
-        'hb.callback': 'dummy', //remove
+        'ver': '5.0.0', // remove
+        'tagType': 'dyn', // remove
+        'a': 'application/json', // remove
+        'forceAdId': '23456', // remove
+        'hb.callback': 'dummy', // remove
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'windowWidth': isInHostileIframe ? window.innerWidth : window.top.innerWidth,
@@ -58,7 +55,7 @@ export const spec = {
         'hb.name': `prebidjs-${version}`,
         'hb.callbackUid': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
-        'hb.currency': bid.params.cur || bid.params.currency || DEFAULT_CURRENCY
+        'hb.currency': bid.params.cur || bid.params.currency
       };
 
       if (bid.params.demo) {
@@ -97,7 +94,7 @@ export const spec = {
       if (bid.status === 'ad') {
         bidResponses.push({
           requestId: bid.callbackUid,
-          cpm: Math.floor(bid.cpm),
+          cpm: bid.cpm,
           width: bid.width,
           height: bid.height,
           creativeId: bid.adId,

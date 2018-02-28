@@ -63,7 +63,7 @@ describe('+widespaceAdatperTest', () => {
         params: {
           sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3'
         }
-      })).to.equal(false);
+      })).to.equal(true);
     });
   });
 
@@ -83,6 +83,10 @@ describe('+widespaceAdatperTest', () => {
       expect(request[0].data).to.exists;
     });
 
+    it('-bidRequest data is form data', () => {
+      expect(typeof request[0].data).to.equal('string');
+    });
+
     it('-bidRequest options have header type', () => {
       expect(request[0].options.contentType).to.exists;
     });
@@ -98,7 +102,9 @@ describe('+widespaceAdatperTest', () => {
         'height',
         'creativeId',
         'currency',
+        'netRevenue',
         'ttl',
+        'referrer',
         'ad'
       ];
       const resultKeys = Object.keys(result[0]);
