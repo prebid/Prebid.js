@@ -15,7 +15,7 @@ Connect to Invibes for bids.
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[0, 0]],
+               sizes: [[400, 300]],
                bids: [
                    {
                        bidder: 'invibes',
