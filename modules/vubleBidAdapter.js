@@ -116,7 +116,6 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    // TODO
     if (syncOptions.iframeEnabled) {
       if (serverResponses.length > 0) {
         let responseBody = serverResponses[0].body;
@@ -128,6 +127,7 @@ export const spec = {
         }
       }
     }
+    return [];
   }
 };
 

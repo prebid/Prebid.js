@@ -18,7 +18,7 @@ Module that connects to Vuble's demand sources
             sizes: [[640, 360]],
             mediaTypes: {
                 video: {
-                    context: 'instream',
+                    context: 'instream'
                 }
             },
             bids: [
@@ -39,7 +39,7 @@ Module that connects to Vuble's demand sources
             sizes: [[640, 360]],
             mediaTypes: {
                 video: {
-                    context: 'outstream',
+                    context: 'outstream'
                 }
             },
             bids: [
