@@ -106,7 +106,7 @@ describe('VubleAdapter', () => {
           context: 'instream'
         }
       },
-      bidId: 1
+      bidId: 'abdc'
     };
     let bid2 = {
       bidder: 'vuble',
@@ -122,7 +122,7 @@ describe('VubleAdapter', () => {
           context: 'outstream'
         }
       },
-      bidId: 2
+      bidId: 'efgh'
     };
 
     // Formatted requets
@@ -138,7 +138,7 @@ describe('VubleAdapter', () => {
         floor_price: 5.5,
         url: 'http://www.vuble.tv/',
         env: 'net',
-        bid_id: 1
+        bid_id: 'abdc'
       }
     };
     let request2 = {
@@ -153,7 +153,7 @@ describe('VubleAdapter', () => {
         floor_price: 0,
         url: 'http://www.vuble.fr/',
         env: 'com',
-        bid_id: 2
+        bid_id: 'efgh'
       }
     };
 
@@ -179,20 +179,18 @@ describe('VubleAdapter', () => {
     };
     // bid Request
     let bid = {
-      bidder: 'vuble',
-      bidId: 'abdc',
-      params: {
+      data: {
+        context: 'instream',
         env: 'net',
-        pubId: '3',
-        zoneId: '12345',
-        floorPrice: 5.50 // optional
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '12345',
+        bid_id: 'abdc',
+        floor_price: 5.50 // optional
       },
-      sizes: [[640, 360]],
-      mediaTypes: {
-        video: {
-          context: 'instream'
-        }
-      }
+      method: 'POST',
+      url: '//player.mediabong.net/prebid/request'
     };
     // Formatted reponse
     let result = {

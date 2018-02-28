@@ -95,14 +95,14 @@ export const spec = {
 
     let responses = [];
     let reponse = {
-      requestId: bid.bidId,
+      requestId: bid.data.bid_id,
       cpm: responseBody.cpm,
-      width: size[0],
-      height: size[1],
+      width: bid.data.width,
+      height: bid.data.height,
       ttl: TTL,
       creativeId: responseBody.creativeId,
       netRevenue: true,
-      currency: CURRENCIES[bid.params.env],
+      currency: CURRENCIES[bid.data.env],
       vastUrl: responseBody.url
     };
     responses.push(reponse);
