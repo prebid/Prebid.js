@@ -30,7 +30,11 @@ describe('VubleAdapter', () => {
         floorPrice: 5.00 // optional
       },
       sizes: [[640, 360]],
-      mediaType: 'video'
+      mediaTypes: {
+        video: {
+          context: 'instream'
+        }
+      },
     };
 
     it('should be true', () => {
@@ -49,11 +53,11 @@ describe('VubleAdapter', () => {
 
     it('should be false because the mediaType is missing or wrong', () => {
       let wrongBid = utils.deepClone(bid);
-      wrongBid.mediaType = 'videos';
+      wrongBid.mediaTypes = {};
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
 
       wrongBid = utils.deepClone(bid);
-      delete wrongBid.mediaType;
+      delete wrongBid.mediaTypes;
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
 

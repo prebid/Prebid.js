@@ -27,7 +27,7 @@ export const spec = {
       return false;
     }
 
-    if (bid.mediaType !== 'video') {
+    if (!utils.deepAccess(bid, 'mediaTypes.video.context')) {
       return false;
     }
 
