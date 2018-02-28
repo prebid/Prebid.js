@@ -14,13 +14,13 @@ nav_section: tutorials
 # Setting up Prebid for AMP in DFP
 {: .no_toc}
 
-{% include amp-deprecation-warning.md %}
-
 This page describes how to set up a line item and creative to serve on AMP pages with Prebid.js.
+
+{: .alert.alert-success :}
+For engineering setup instructions, see [Show Prebid Ads on AMP Pages]({{site.github.url}}/dev-docs/show-prebid-ads-on-amp-pages.html).
 
 * TOC
 {:toc}
-
 
 ## Line Item Setup
 
@@ -34,60 +34,44 @@ In addition to your other line item settings, you'll need the following:
 
 + Set **Rotate creatives** to *Evenly*.
 
-+ In the targeting section, select **Key-values** targeting.  In [Show Prebid Ads on AMP Pages]({{site.github.url}}/dev-docs/show-prebid-ads-on-amp-pages.html), we targeted the "prebid_amp" keyword set to "true" from the developer side as an example, but you will want to coordinate with your development team to use your own key-values.
++ In the targeting section, select **Key-values** targeting.  You'll need to coordinate with your development team on what key-values you want to target.
 
 Save your line item and add a creative.
-
 
 ## Creative Setup
 
 On the new creative screen, select the **Third party** creative type.
 
-Enter the below code snippet in the **Code snippet** text area, and make sure to uncheck the **Serve into a SafeFrame** checkbox.
+Enter the below code snippet in the **Code snippet** text area.
 
-Note that you can always get the latest version of the creative code below from [the AMP example creative file in our GitHub repo](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/amp/creative.html).
+{: .alert.alert-success :}
+You can always get the latest version of the creative code below from [the AMP example creative file in our GitHub repo](https://github.com/prebid/prebid-universal-creative/blob/master/template/amp/dfp-creative.js).
 
-```html
-<!-- This script tag should be returned by your ad server -->
+{% highlight html %}
 
-<script>
-    // This is the `renderAd` function from Prebid.js moved within the creative iframe
-  var renderAd = function (ev) {
-    var key = ev.message ? "message" : "data";
-    var data = {};
+    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.1.2/dist/creative.js"></script>
+    <script>
+    var adId = "%%PATTERN:hb_adid%%";
+    var cacheHost = "%%PATTERN:hb_cache_host%%";
+    var cachePath = "%%PATTERN:hb_cache_path%%";
+    var uuid = "%%PATTERN:hb_cache_id%%";
+    var mediaType = "%%PATTERN:hb_format%%";
+    var pubUrl = "%%PATTERN:url%%";
+
     try {
-      data = JSON.parse(ev[key]);
+        pbjs.renderAd(document, adId, {
+            cacheHost: cacheHost,
+            cachePath: cachePath,
+            uuid: uuid,
+            mediaType: mediaType,
+            pubUrl: pubUrl
+        });
     } catch (e) {
-      // Do nothing.  No ad found.
+        console.log(e);
     }
-    if (data.ad || data.adUrl) {
-      if (data.ad) {
-        document.write(data.ad);
-        document.close();
-      } else if (data.adUrl) {
-        document.write('<IFRAME SRC="' + data.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true"></IFRAME>');
-        document.close();
-      }
-    }
-  };
+    </script>
 
-  var requestAdFromPrebid = function () {
-    var message = JSON.stringify({
-      message: 'Prebid creative requested: %%PATTERN:hb_adid%%',
-      adId: '%%PATTERN:hb_adid%%'
-    });
-    window.parent.postMessage(message, '*');
-  };
-
-  var listenAdFromPrebid = function () {
-    window.addEventListener("message", renderAd, false);
-  };
-
-  listenAdFromPrebid();
-  requestAdFromPrebid();
-</script>
-```
-
+{% endhighlight %}
 
 ## Further Reading
 
@@ -95,3 +79,8 @@ Note that you can always get the latest version of the creative code below from 
 + [How Prebid on AMP Works]({{site.github.url}}/dev-docs/how-prebid-on-amp-works.html)
 
 </div>
+
+<!-- Reference Links -->
+
+[PBS]: {{site.baseurl}}/dev-docs/get-started-with-prebid-server.html
+[RTC-Overview]: https://github.com/ampproject/amphtml/blob/master/extensions/amp-a4a/rtc-documentation.md
