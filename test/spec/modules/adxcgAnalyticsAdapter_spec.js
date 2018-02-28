@@ -21,11 +21,28 @@ describe('adxcg analytics adapter', () => {
   });
 
   describe('track', () => {
+    let initOptions = {
+      publisherId: '42'
+    };
+
+    adaptermanager.registerAnalyticsAdapter({
+      code: 'adxcg',
+      adapter: adxcgAnalyticsAdapter
+    });
+
+    beforeEach(() => {
+      adaptermanager.enableAnalytics({
+        provider: 'adxcg',
+        options: initOptions
+      });
+    });
+
+    afterEach(() => {
+      adxcgAnalyticsAdapter.disableAnalytics();
+    });
+
     it('builds and sends auction data', () => {
       let auctionTimestamp = 1496510254313;
-      let initOptions = {
-        publisherId: '42'
-      };
       let bidRequest = {
         auctionId: 'requestIdData'
       };
@@ -49,15 +66,9 @@ describe('adxcg analytics adapter', () => {
         }
       ];
 
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'adxcg',
-        adapter: adxcgAnalyticsAdapter
-      });
 
-      adaptermanager.enableAnalytics({
-        provider: 'adxcg',
-        options: initOptions
-      });
+
+
 
       // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
