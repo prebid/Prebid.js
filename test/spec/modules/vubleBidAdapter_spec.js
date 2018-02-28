@@ -220,5 +220,41 @@ describe('VubleAdapter', () => {
       delete wrongResponse.body;
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
     });
-  })
+  });
+
+  describe('Check getUserSyncs method return', () => {
+    // Sync options
+    let syncOptions = {
+      iframeEnabled: false
+    };
+    // Server's response
+    let response = {
+      body: {
+        status: 'ok',
+        cpm: 5.00,
+        creativeId: '2468',
+        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4'
+      }
+    };
+    // Formatted reponse
+    let result = {
+      type: 'iframe',
+      url: 'http://player.mediabong.net/csifr?1234'
+    };
+
+    it('should return an empty array', () => {
+      expect(adapter.getUserSyncs({}, [])).to.be.empty;
+      expect(adapter.getUserSyncs({}, [])).to.be.empty;
+      expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
+      expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
+      syncOptions.iframeEnabled = true;
+      expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
+      expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
+    });
+
+    it('should be equal to the expected result', () => {
+      response.body.iframeSync = 'http://player.mediabong.net/csifr?1234';
+      expect(adapter.getUserSyncs(syncOptions, [response])).to.deep.equal([result]);
+    })
+  });
 });
