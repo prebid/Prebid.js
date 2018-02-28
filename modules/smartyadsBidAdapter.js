@@ -1,4 +1,5 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'smartyads';
@@ -6,17 +7,17 @@ const URL = '//ssp-nj.webtradehub.com/?c=o&m=multi';
 const URL_SYNC = '//ssp-nj.webtradehub.com/?c=o&m=cookie';
 
 function isBidResponseValid(bid) {
-  if (!bid['requestId'] || !bid['cpm'] || !bid['creativeId'] ||
-    !bid['ttl'] || !bid['currency']) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
+    !bid.ttl || !bid.currency) {
     return false;
   }
   switch (bid['mediaType']) {
-    case 'banner':
-      return Boolean(bid['width'] && bid['height'] && bid['ad']);
-    case 'video':
-      return Boolean(bid['vastUrl']);
-    case 'native':
-      return Boolean(bid['title'] && bid['image'] && bid['impressionTrackers']);
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    case NATIVE:
+      return Boolean(bid.title && bid.image && bid.impressionTrackers);
     default:
       return false;
   }
@@ -24,10 +25,10 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner', 'video', 'native'],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid['bidId'] && bid['params'] && !isNaN(bid['params']['placementId']) && bid['params']['traffic']);
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
   },
 
   buildRequests: (validBidRequests = []) => {
@@ -49,13 +50,14 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
-    for (let i = 0; i < validBidRequests.length; i++) {
+    const len = validBidRequests.length;
+    for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      let placement = {};
-      placement['placementId'] = bid.params.placementId;
-      placement['bidId'] = bid.bidId;
-      placement['traffic'] = bid.params.traffic;
-      placements.push(placement);
+      placements.push({
+        placementId: bid.params.placementId,
+        bidId: bid.bidId,
+        traffic: bid.params.traffic || BANNER
+      });
     }
     return {
       method: 'POST',
@@ -70,7 +72,7 @@ export const spec = {
     for (let i = 0; i < serverResponse.length; i++) {
       let resItem = serverResponse[i];
       if (isBidResponseValid(resItem)) {
-        delete resItem['mediaType'];
+        delete resItem.mediaType;
         response.push(resItem);
       }
     }
