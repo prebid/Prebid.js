@@ -66,7 +66,9 @@ export const spec = {
         zone_id: bid.params.zoneId,
         context: context,
         floor_price: bid.params.floorPrice ? bid.params.floorPrice : 0,
-        url: referrer
+        url: referrer,
+        env: bid.params.env,
+        bid_id: bid.bidId
       };
 
       return {

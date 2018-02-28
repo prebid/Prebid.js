@@ -105,7 +105,8 @@ describe('VubleAdapter', () => {
         video: {
           context: 'instream'
         }
-      }
+      },
+      bidId: 1
     };
     let bid2 = {
       bidder: 'vuble',
@@ -120,7 +121,8 @@ describe('VubleAdapter', () => {
         video: {
           context: 'outstream'
         }
-      }
+      },
+      bidId: 2
     };
 
     // Formatted requets
@@ -134,7 +136,9 @@ describe('VubleAdapter', () => {
         zone_id: '12345',
         context: 'instream',
         floor_price: 5.5,
-        url: 'http://www.vuble.tv/'
+        url: 'http://www.vuble.tv/',
+        env: 'net',
+        bid_id: 1
       }
     };
     let request2 = {
@@ -147,7 +151,9 @@ describe('VubleAdapter', () => {
         zone_id: '2468',
         context: 'outstream',
         floor_price: 0,
-        url: 'http://www.vuble.fr/'
+        url: 'http://www.vuble.fr/',
+        env: 'com',
+        bid_id: 2
       }
     };
 
