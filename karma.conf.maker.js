@@ -63,8 +63,6 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressSkipped: false,
       suppressPassed: true
     };
-  } else {
-    karmaConf.reporters = ['progress'];
   }
   if (codeCoverage) {
     karmaConf.reporters.push('coverage-istanbul');
@@ -138,7 +136,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    reporters: ['progress'],
+    reporters: ['mocha'],
+    mochaReporter: {
+      showDiff: true
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
