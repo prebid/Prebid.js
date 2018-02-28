@@ -32,8 +32,8 @@ function newPluginsArray(browserstack) {
     'karma-chrome-launcher',
     'karma-coverage-istanbul-reporter',
     'karma-es5-shim',
-    'karma-expect',
     'karma-mocha',
+    'karma-chai',
     'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
@@ -43,7 +43,6 @@ function newPluginsArray(browserstack) {
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
-    plugins.push('karma-sauce-launcher');
     plugins.push('karma-firefox-launcher');
     plugins.push('karma-opera-launcher');
     plugins.push('karma-safari-launcher');
@@ -116,7 +115,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
+    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon'],
 
     files: files,
 
