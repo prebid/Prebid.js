@@ -83,7 +83,7 @@ describe('the rubicon adapter', () => {
       'cpm': getProp('cpm', i/100),
       'zone_id': getProp('zone_id', i+1),
       'size_id': sizeId,
-      'impression_id': i+1,
+      'impression_id': getProp('impression_id', `1-${i}`),
       'ad_id': getProp('ad_id', i+1),
       'advertiser': i+1,
       'network': i+1,
@@ -1405,10 +1405,13 @@ describe('the rubicon adapter', () => {
         });
 
         describe('singleRequest enabled', () => {
-          it('uses bidRequests of type Array to returns valid adUnits', () => {
+          it('handles bidRequest of type Array and returns associated adUnits', () => {
+            const overrideMap = [];
+            overrideMap[0] = { impression_id: '1' };
+
             const stubAds = [];
             for (let i = 0; i < 10; i++) {
-              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId));
+              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId, overrideMap));
             }
 
             const stubBids = [];
@@ -1457,10 +1460,13 @@ describe('the rubicon adapter', () => {
             });
           });
 
-          it('handles incorrect adUnits length by returning an empty array', () => {
+          it('handles incorrect adUnits length by returning all bids with matching ads', () => {
+            const overrideMap = [];
+            overrideMap[0] = { impression_id: '1' };
+
             const stubAds = [];
-            for (let i = 0; i < 12; i++) {
-              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId));
+            for (let i = 0; i < 6; i++) {
+              stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId, overrideMap));
             }
 
             const stubBids = [];
@@ -1479,18 +1485,20 @@ describe('the rubicon adapter', () => {
                 'inventory': {},
                 'ads': stubAds
               }}, { bidRequest: stubBids });
+
             // no bids expected because response didn't match requested bid number
-            expect(bids).to.be.a('array').with.lengthOf(0);
+            expect(bids).to.be.a('array').with.lengthOf(6);
           });
 
-          it('handles errors by skipping adUnits with errors, but continues processing and returns valid results', () => {
+          it('skips adUnits with error status and returns all bids with ok status', () => {
             const stubAds = [];
             // Create overrides to break associations between bids and ads
             // Each override should cause one less bid to be returned by interpretResponse
             const overrideMap = [];
-            overrideMap[2] = { zone_id: 56 };
+            overrideMap[0] = { impression_id: '1' };
+            overrideMap[2] = { status: 'error' };
             overrideMap[4] = { status: 'error' };
-            overrideMap[7] = { status: 'error', zone_id: 56 };
+            overrideMap[7] = { status: 'error' };
             overrideMap[8] = { status: 'error' };
 
             for (let i = 0; i < 10; i++) {
@@ -1504,7 +1512,7 @@ describe('the rubicon adapter', () => {
 
             const bids = spec.interpretResponse({
               body: {
-                'status': 'ok',
+                'status': 'error',
                 'site_id': '1100',
                 'account_id': 14062,
                 'zone_id': 2100,
@@ -1529,6 +1537,8 @@ describe('the rubicon adapter', () => {
               const associateAd = getResponseAdBySize(stubAds, size);
               expect(associateAd).to.be.a('object');
               expect(associateAd).to.have.property('creative_id').that.is.a('string');
+              expect(associateAd).to.have.property('status').that.is.a('string');
+              expect(associateAd.status).to.equal('ok');
 
               // use 'size' to verify that result bid links to the 'bidRequest' passed to function
               const associateBidRequest = getBidRequestBySize(stubBids, size);

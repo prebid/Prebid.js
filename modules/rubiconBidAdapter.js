@@ -325,12 +325,13 @@ export const spec = {
    */
   interpretResponse: function(responseObj, {bidRequest}) {
     responseObj = responseObj.body;
-    let ads = responseObj.ads;
 
     // check overall response
-    if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
+    if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
+
+    let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
@@ -339,12 +340,6 @@ export const spec = {
 
     // check the ad response
     if (!Array.isArray(ads) || ads.length < 1) {
-      return [];
-    }
-
-    // check that lengths are the same for 'ads' and 'bidRequests'
-    if (Array.isArray(bidRequest) && ads.length !== bidRequest.length) {
-      utils.logError('Error: requested bids length does not match the ads length', bidRequest, ads);
       return [];
     }
 
@@ -357,14 +352,6 @@ export const spec = {
       const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
-        // If single request mode is enabled, bidRequest should be an Array
-        if (Array.isArray(bidRequest)) {
-          if (typeof ad.zone_id !== 'undefined' && associatedBidRequest.params.zoneId !== ad.zone_id.toString()) {
-            utils.logError(`Error, 'bidRequest.zoneId:${associatedBidRequest.params.zoneId}' does not match 'ad.zone_id:${ad.zone_id}'`, bidRequest, ad);
-            return bids;
-          }
-        }
-
         let bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
