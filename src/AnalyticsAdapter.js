@@ -112,7 +112,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [SET_TARGETING]: args => this.enqueue({ eventType: SET_TARGETING, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AUCTION_INIT]: args => {
-          args.config = config.options; // enableAnaltyics configuration object
+          args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
         }
       };
