@@ -109,7 +109,7 @@ describe('VubleAdapter', () => {
         env: 'com',
         pubId: '8',
         zoneId: '2468',
-        referrer: "http://www.vuble.fr/"
+        referrer: 'http://www.vuble.fr/'
       },
       sizes: '640x360',
       mediaTypes: {
