@@ -86,7 +86,6 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bid) {
-    const size = utils.parseSizesInput(bid.sizes)[0].split('x');
     const responseBody = serverResponse.body;
 
     if (typeof responseBody !== 'object' || responseBody.status !== 'ok') {
