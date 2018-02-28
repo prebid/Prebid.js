@@ -44,11 +44,11 @@ describe('invibesBidAdapter:', function () {
   beforeEach(function () {
     top.window.invibes = null;
     document.cookie = '';
-    this.sandbox = sinon.sandbox.create();
+    this.cStub1 = sinon.stub(console, "info");
   });
 
   afterEach(function () {
-    this.sandbox.restore();
+    this.cStub1.restore();
   });
 
   describe('isBidRequestValid:', function () {
@@ -229,6 +229,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', () => {
+        localStorage.InvibesDEBUG = false;
         let result = spec.interpretResponse({ body: response }, { bidRequests });
         let secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;

@@ -134,7 +134,7 @@ function handleResponse(responseObj, bidRequests) {
     utils.logInfo('Invibes Adapter - Bid response is empty');
     return [];
   }
-  
+
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
 
