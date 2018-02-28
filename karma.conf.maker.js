@@ -34,7 +34,6 @@ function newPluginsArray(browserstack) {
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-chai-subset',
     'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
@@ -114,7 +113,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai-subset', 'chai', 'sinon'],
+    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon'],
 
     files: files,
 
