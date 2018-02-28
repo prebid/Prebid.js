@@ -33,9 +33,14 @@ describe('RockYouAdapter', () => {
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'sizes': [[999, 888]],
       'bidderRequestId': '418b37f85e772c',
-      'auctionId': '18fd8b8b0bd757'
+      'auctionId': '18fd8b8b0bd757',
+      'mediaTypes': {
+        banner: {
+          'sizes': [[320, 50], [300, 250], [300, 600]]
+        }
+      }
     };
 
     it('successfully generates a URL', () => {
@@ -49,9 +54,10 @@ describe('RockYouAdapter', () => {
         }
       ];
 
-      let result = spec.buildRequests(bidRequests, {
+      let results = spec.buildRequests(bidRequests, {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       expect(result.url).to.not.be.undefined;
       expect(result.url).to.not.be.null;
@@ -66,9 +72,10 @@ describe('RockYouAdapter', () => {
         sampleBidRequest
       ];
 
-      let result = spec.buildRequests(bidRequests, {
+      let results = spec.buildRequests(bidRequests, {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -82,9 +89,10 @@ describe('RockYouAdapter', () => {
         sampleBidRequest
       ];
 
-      let result = spec.buildRequests(bidRequests, {
+      let results = spec.buildRequests(bidRequests, {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -95,33 +103,57 @@ describe('RockYouAdapter', () => {
       expect(userData).to.not.be.null;
     });
 
-    it('generates multiple imp bodies', () => {
+    it('generates multiple requests with single imp bodies', () => {
+      const SECOND_PLACEMENT_ID = 'YYYPLACEMENTIDYYY';
+      let firstBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+      let secondBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+      secondBidRequest.params.placementId = SECOND_PLACEMENT_ID;
+
       let bidRequests = [
-        sampleBidRequest,
-        sampleBidRequest
+        firstBidRequest,
+        secondBidRequest
       ];
 
-      let result = spec.buildRequests(bidRequests, {
+      let results = spec.buildRequests(bidRequests, {
         bidderRequestId: 'sample'
       });
 
-      // Double encoded JSON
-      let payload = JSON.parse(result.data);
+      expect(results instanceof Array).to.be.true;
+      expect(results.length).to.equal(2);
 
-      expect(payload).to.not.be.null;
-      expect(payload.imp).to.not.be.null;
-      expect(payload.imp.length).to.equal(2);
+      let firstRequest = results[0];
+
+      // Double encoded JSON
+      let firstPayload = JSON.parse(firstRequest.data);
+
+      expect(firstPayload).to.not.be.null;
+      expect(firstPayload.imp).to.not.be.null;
+      expect(firstPayload.imp.length).to.equal(1);
+
+      expect(firstRequest.url).to.not.be.null;
+      expect(firstRequest.url.indexOf('ZZZPLACEMENTZZZ')).to.be.gt(0);
+
+      let secondRequest = results[1];
+
+      // Double encoded JSON
+      let secondPayload = JSON.parse(secondRequest.data);
+
+      expect(secondPayload).to.not.be.null;
+      expect(secondPayload.imp).to.not.be.null;
+      expect(secondPayload.imp.length).to.equal(1);
+
+      expect(secondRequest.url).to.not.be.null;
+      expect(secondRequest.url.indexOf(SECOND_PLACEMENT_ID)).to.be.gt(0);
     });
 
     it('generates a banner request as expected', () => {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
-      localBidRequest.mediaTypes = { banner: {} };
-
-      let result = spec.buildRequests([localBidRequest], {
+      let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -146,9 +178,10 @@ describe('RockYouAdapter', () => {
       localBidRequest.sizes = [320, 50];
       localBidRequest.mediaTypes = { banner: {} };
 
-      let result = spec.buildRequests([localBidRequest], {
+      let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -171,11 +204,13 @@ describe('RockYouAdapter', () => {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
       localBidRequest.sizes = ['x', 'w'];
-      localBidRequest.mediaTypes = { banner: {} };
 
-      let result = spec.buildRequests([localBidRequest], {
+      localBidRequest.mediaTypes = { banner: { sizes: ['y', 'z']} };
+
+      let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -198,11 +233,14 @@ describe('RockYouAdapter', () => {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
-      localBidRequest.mediaTypes = { video: {} };
+      localBidRequest.mediaTypes = { video: {
+        playerSize: [326, 56]
+      } };
 
-      let result = spec.buildRequests([localBidRequest], {
+      let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       // Double encoded JSON
       let payload = JSON.parse(result.data);
@@ -217,8 +255,8 @@ describe('RockYouAdapter', () => {
 
       let videoData = firstImp.video;
 
-      expect(videoData.w).to.equal(320);
-      expect(videoData.h).to.equal(50);
+      expect(videoData.w).to.equal(326);
+      expect(videoData.h).to.equal(56);
     });
 
     it('propagates the mediaTypes object in the built request', () => {
@@ -226,9 +264,10 @@ describe('RockYouAdapter', () => {
 
       localBidRequest.mediaTypes = { video: {} };
 
-      let result = spec.buildRequests([localBidRequest], {
+      let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
       });
+      let result = results.pop();
 
       let mediaTypes = result.mediaTypes;
 
