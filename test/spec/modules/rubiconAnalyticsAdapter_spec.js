@@ -3,6 +3,19 @@ import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsA
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
 
+let Ajv = require('ajv');
+let schema = require('./rubiconAnalyticsSchema.json');
+let ajv = new Ajv({
+  allErrors: true
+});
+
+let validator = ajv.compile(schema);
+
+function validate(message) {
+  validator(message);
+  expect(validator.errors).to.deep.equal(null);
+}
+
 // using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
 let events = require('src/events');
 let ajax = require('src/ajax');
@@ -426,6 +439,7 @@ describe('rubicon analytics adapter', () => {
       expect(request.url).to.equal('//localhost:9999/test');
 
       let message = JSON.parse(request.requestBody);
+      validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
@@ -446,11 +460,13 @@ describe('rubicon analytics adapter', () => {
       expect(requests.length).to.equal(2);
 
       let message = JSON.parse(requests[0].requestBody);
+      validate(message);
       expect(message.bidsWon.length).to.equal(1);
       expect(message.auctions).to.deep.equal(ANALYTICS_MESSAGE.auctions);
       expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[0]);
 
       message = JSON.parse(requests[1].requestBody);
+      validate(message);
       expect(message.bidsWon.length).to.equal(1);
       expect(message).to.not.have.property('auctions');
       expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[1]);
@@ -467,9 +483,10 @@ describe('rubicon analytics adapter', () => {
       expect(requests.length).to.equal(1);
 
       let message = JSON.parse(requests[0].requestBody);
+      validate(message);
       let timedOutBid = message.auctions[0].adUnits[0].bids[0];
       expect(timedOutBid.status).to.equal('error');
-      expect(timedOutBid.error).to.equal('timeout-error');
+      expect(timedOutBid.error.code).to.equal('timeout-error');
       expect(timedOutBid).to.not.have.property('bidResponse');
     });
   });

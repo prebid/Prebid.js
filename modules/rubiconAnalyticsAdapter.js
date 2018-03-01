@@ -179,13 +179,17 @@ function sendMessage(auctionId, bidWonId) {
 
     message.auctions = [auction];
 
-    message.bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
+    let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
       let bidId = auctionCache.bidsWon[adUnitCode];
       if (bidId) {
         memo.push(formatBid(auctionCache.bids[bidId]));
       }
       return memo;
     }, []);
+
+    if (bidsWon.length > 0) {
+      message.bidsWon = bidsWon;
+    }
 
     auctionCache.sent = true;
   } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
@@ -300,7 +304,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             break;
           default:
             bid.status = 'error';
-            bid.error = 'request-error';
+            bid.error = {
+              code: 'request-error'
+            };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args);
@@ -348,7 +354,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           let auctionCache = cache.auctions[badBid.auctionId];
           let bid = auctionCache.bids[badBid.bidId];
           bid.status = 'error';
-          bid.error = 'timeout-error';
+          bid.error = {
+            code: 'timeout-error'
+          };
         });
         break;
     }
