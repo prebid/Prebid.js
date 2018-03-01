@@ -44,7 +44,7 @@ describe('invibesBidAdapter:', function () {
   beforeEach(function () {
     top.window.invibes = null;
     document.cookie = '';
-    this.cStub1 = sinon.stub(console, "info");
+    this.cStub1 = sinon.stub(console, 'info');
   });
 
   afterEach(function () {
@@ -100,7 +100,6 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('has location, html id, placement and width/height', () => {
-      // window.location.assign("https://www.test.com?bvci=1&bvid=2&trybvci=3&trybvid=4");
       const request = spec.buildRequests(bidRequests, { auctionStart: Date.now() });
       const parsedData = request.data;
       expect(parsedData.location).to.exist;
