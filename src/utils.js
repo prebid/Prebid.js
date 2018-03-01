@@ -2,6 +2,8 @@ import { config } from './config';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { parse } from './url';
+
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -175,10 +177,12 @@ const getIframeParentLoc = function() {
         window.document.location.ancestorOrigins.length >= 1) {
         loc = window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
       } else if (window.document.location) {
+        // force an exception in x-domain environments. #1509
+        window.top.location.toString();
         loc = getNonWebKitIframeParentLoc();
       }
     }
-    loc = parseFullUrl(loc);
+    loc = parse(loc);
   } catch (e) {
     this.logMessage('getTopParentLoc failure', e);
   }
@@ -196,11 +200,6 @@ const getNonWebKitIframeParentLoc = function() {
   }
   while (currentWindow !== window.top);
   return referrerLoc;
-};
-
-const parseFullUrl = function(locString) {
-  const match = locString.match(/^(https?\:)\/\/(([^:\/?#]*)(?:\:([0-9]+))?)([\/]{0,1}[^?#]*)(\?[^#]*|)(#.*|)$/);
-  return match && {protocol: match[1], host: match[2], hostname: match[3], port: match[4], pathname: match[5], search: match[6], hash: match[7], href: match.input};
 };
 
 exports.getTopWindowUrl = function () {
