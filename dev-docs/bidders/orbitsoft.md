@@ -7,6 +7,7 @@ nav_section: reference
 hide: true
 biddercode: orbitsoft
 biddercode_longer_than_12: false
+prebid_1_0_supported : true
 ---
 
 
@@ -25,7 +26,7 @@ Example:
     bidder: "orbitsoft",
     params: {
         placementId: 142,
-        requestUrl: "http://adserver.com/ads/show/hb",
+        requestUrl: "https://orbitsoft.com/php/ads/hb.php",
         style: {
             title: {
                 family: "Tahoma",
