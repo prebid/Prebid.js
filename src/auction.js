@@ -383,6 +383,12 @@ export function getStandardBidderSettings() {
           return bidResponse.mediaType;
         }
       },
+      {
+        key: 'hb_ttr',
+        val: function (bidResponse) {
+          return bidResponse.timeToRespond;
+        }
+      },
     ]
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
