@@ -23,7 +23,7 @@ const {
 } = CONSTANTS;
 
 const ENDPOINT = '//localhost:9999/test';
-const SEND_TIMEOUT = 3000;
+export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
 const cache = {
@@ -122,6 +122,7 @@ function sendMessage(auctionId, bidWonId) {
       'transactionId',
       'bidId',
       'status',
+      'error',
       'source',
       'clientLatencyMillis',
       'params',
@@ -344,7 +345,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_TIMEOUT:
         args.forEach(badBid => {
-          let bid = cache.auctions[badBid.auctionId].bids[badBid.bidId];
+          let auctionCache = cache.auctions[badBid.auctionId];
+          let bid = auctionCache.bids[badBid.bidId];
           bid.status = 'error';
           bid.error = 'timeout-error';
         });

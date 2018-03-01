@@ -1,7 +1,7 @@
 import adaptermanager from 'src/adaptermanager';
-import rubiconAnalyticsAdapter from 'modules/rubiconAnalyticsAdapter';
-import _ from 'lodash';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
+import { config } from 'src/config';
 
 // using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
 let events = require('src/events');
@@ -15,6 +15,7 @@ const {
     BID_REQUESTED,
     BID_RESPONSE,
     BID_WON,
+    BID_TIMEOUT,
     SET_TARGETING
   }
 } = CONSTANTS;
@@ -164,12 +165,6 @@ const MOCK = {
       'bidder': 'rubicon',
       'adUnitCode': '/19968336/header-bid-tag-0',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
-    },
-    {
-      'bidId': '3bd4ebb1c900e2',
-      'bidder': 'rubicon',
-      'adUnitCode': '/19968336/header-bid-tag1',
-      'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
     }
   ]
 };
@@ -186,6 +181,8 @@ const ANALYTICS_MESSAGE = {
   'auctions': [
     {
       'clientTimeoutMillis': 3000,
+      'serverTimeoutMillis': 1000,
+      'serverAccountId': 1001,
       'adUnits': [
         {
           'adUnitCode': '/19968336/header-bid-tag-0',
@@ -360,11 +357,12 @@ const ANALYTICS_MESSAGE = {
   ]
 };
 
-describe.only('rubicon analytics adapter', () => {
+describe('rubicon analytics adapter', () => {
   let sandbox;
   let xhr;
   let requests;
   let oldScreen;
+  let clock;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -383,12 +381,20 @@ describe.only('rubicon analytics adapter', () => {
       height: '812'
     };
 
-    sandbox.stub(Date, 'now').returns(1519767013781);
+    clock = sandbox.useFakeTimers(1519767013781);
+
+    config.setConfig({
+      s2sConfig: {
+        timeout: 1000,
+        accountId: 1001,
+      }
+    })
   });
 
   afterEach(() => {
     window.screen = oldScreen;
     sandbox.restore();
+    config.resetConfig();
   });
 
   it('should be configurable', () => {
@@ -424,16 +430,47 @@ describe.only('rubicon analytics adapter', () => {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should send batched message without BID_WON if necessary', () => {
+    it('should send batched message without BID_WON if necessary and further BID_WON events individually', () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
 
-    });
+      clock.tick(SEND_TIMEOUT + 1000);
 
-    it('should send BID_WON events individually if batched message it belong to was already sent', () => {
+      events.emit(BID_WON, MOCK.BID_WON[1]);
 
+      expect(requests.length).to.equal(2);
+
+      let message = JSON.parse(requests[0].requestBody);
+      expect(message.bidsWon.length).to.equal(1);
+      expect(message.auctions).to.deep.equal(ANALYTICS_MESSAGE.auctions);
+      expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[0]);
+
+      message = JSON.parse(requests[1].requestBody);
+      expect(message.bidsWon.length).to.equal(1);
+      expect(message).to.not.have.property('auctions');
+      expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[1]);
     });
 
     it('should properly mark bids as timed out', () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
 
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(requests.length).to.equal(1);
+
+      let message = JSON.parse(requests[0].requestBody);
+      let timedOutBid = message.auctions[0].adUnits[0].bids[0];
+      expect(timedOutBid.status).to.equal('error');
+      expect(timedOutBid.error).to.equal('timeout-error');
+      expect(timedOutBid).to.not.have.property('bidResponse');
     });
   });
 });
