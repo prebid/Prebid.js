@@ -1,8 +1,4 @@
 
-// ===== Parse ====/
-Parse.initialize("6ZZDyvR3T7JcfxPqRqdkvW6q89IKoSjRJxpDc8gw", "bvzQPaz6EILUCspXr38z2kZDpRXqwhSy9AtBrLrP");
-
-
 function submitEmail() {
   var email = $('#email-field').val();
   var site = $('#site-field').val();
