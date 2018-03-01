@@ -32,6 +32,7 @@ export function parse(url, options) {
     parsed.href = decodeURIComponent(url);
   }
   return {
+    href: parsed.href,
     protocol: (parsed.protocol || '').replace(/:$/, ''),
     hostname: parsed.hostname,
     port: +parsed.port,
