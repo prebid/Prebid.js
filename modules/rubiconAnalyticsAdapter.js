@@ -22,6 +22,11 @@ const {
   }
 } = CONSTANTS;
 
+let serverConfig;
+config.getConfig('s2sConfig', ({s2sConfig}) => {
+  serverConfig = s2sConfig;
+});
+
 const ENDPOINT = '//localhost:9999/test';
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
@@ -70,12 +75,6 @@ function validMediaType(type) {
   return ['display', 'native', 'video'].indexOf(type) === -1;
 }
 
-function parseUrl(url) {
-  let parser = document.createElement('a');
-  parser.href = url;
-  return parser;
-}
-
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return _pick(bid, [
@@ -84,7 +83,13 @@ function sendMessage(auctionId, bidWonId) {
       'bidId',
       'status',
       'error',
-      'source',
+      'source', (source, bid) => {
+        if (source) {
+          return source;
+        }
+        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+          ? 'server' : 'client'
+      },
       'clientLatencyMillis',
       'params',
       'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
@@ -121,8 +126,6 @@ function sendMessage(auctionId, bidWonId) {
 
       return adUnits;
     }, {});
-
-    let serverConfig = config.getConfig('s2sConfig');
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
@@ -210,6 +213,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'transactionId',
+            'status', () => 'noBid', // default a bid to noBid until response is recieved or bid is timed out
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
