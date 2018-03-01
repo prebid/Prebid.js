@@ -76,45 +76,6 @@ function parseUrl(url) {
   return parser;
 }
 
-export function getDomain(referrer) {
-  let parts = referrer.split('.');
-
-  if (parts.length === 1) {
-    return referrer;
-  }
-
-  if (parts[0] === 'www') {
-    parts.shift();
-  }
-  let last = parts.length - 1;
-  if (parts[last].length === 2 && parts[last - 1].length < 4) {
-
-  }
-  return parts[last - 1] + '.' + parts[last];
-}
-
-function getDeviceType() {
-  // Get the width and height of the screen
-  // Default to value that matches "desktop" (> 1024) if not supported
-  // because that means this is probably an old browser and therefore definitely NOT a tablet or phone
-  let height = window.screen.height || 1025;
-  let width = window.screen.width || 1025;
-
-  // Take the highest of the two, in case we are in portrait mode with a phone
-  let nApplicableWidth = Math.max(height, width);
-
-  let device = 'desktop';
-  if (nApplicableWidth <= 736) {
-    // Phones are 736px wide or less (iphone 6 = 667px, 6+ = 736px)
-    device = 'phone';
-  } else if (nApplicableWidth <= 1024) {
-    // Tables are 1024 pixels wide or less
-    device = 'tablet';
-  }
-
-  return device;
-}
-
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return _pick(bid, [
@@ -139,11 +100,7 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer,
-    domain: getDomain(parseUrl(referrer).hostname),
-    client: {
-      deviceClass: getDeviceType()
-    }
+    referrerUri: referrer
   };
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {

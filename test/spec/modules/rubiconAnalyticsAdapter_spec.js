@@ -187,10 +187,6 @@ const ANALYTICS_MESSAGE = {
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
-  'domain': 'test.com',
-  'client': {
-    'deviceClass': 'tablet'
-  },
   'auctions': [
     {
       'clientTimeoutMillis': 3000,

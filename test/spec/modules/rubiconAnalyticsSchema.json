@@ -5,7 +5,8 @@
   "type": "object",
   "required": [
     "eventTimeMillis",
-    "domain"
+    "integration",
+    "version"
   ],
   "anyOf": [
     {
@@ -32,24 +33,6 @@
     "version": {
       "type": "string",
       "description": "Version of Prebid.js responsible for the auctions contained within."
-    },
-    "domain": {
-      "type": "string",
-      "description": "top-level domain where auction was performed."
-    },
-    "client": {
-      "type": "object",
-      "description": "Object for describing browser environment of auctions.",
-      "properties": {
-        "deviceClass": {
-          "type": "string",
-          "enum": [
-            "mobile",
-            "tablet",
-            "desktop"
-          ]
-        }
-      }
     },
     "auctions": {
       "type": "array",
