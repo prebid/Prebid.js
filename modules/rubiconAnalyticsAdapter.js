@@ -164,7 +164,7 @@ function sendMessage(auctionId, bidWonId) {
       return adUnits;
     }, {});
 
-    let serverConfig = config.getConfig('s2sconfig');
+    let serverConfig = config.getConfig('s2sConfig');
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
