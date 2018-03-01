@@ -52,13 +52,12 @@
     "hb_pb",
     "hb_size",
     "hb_deal",
+    "hb_source",
+    "hb_format",
     "hb_ttr"
   ],
   "S2S" : {
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction",
     "SRC" : "s2s",
-    "ADAPTER" : "prebidServer",
-    "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   }
 }
