@@ -73,17 +73,20 @@ export const spec = {
     if (member > 0) {
       payload.member_id = member;
     }
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        gdprConsentString: bidderRequest.gdprConsent.consentString,
+        gdprConsentRequired: bidderRequest.gdprConsent.consentRequired
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
-    let postData = {
+    return {
       method: 'POST',
       url: URL,
       data: payloadString,
       bidderRequest
     };
-    if (bidderRequest && bidderRequest.consentId) {
-      postData.url += '?gdpr_consent=' + bidderRequest.consentId;
-    }
-    return postData;
   },
 
   /**

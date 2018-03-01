@@ -9,21 +9,18 @@ export let userCMP;
 export let consentId = '';
 export let consentTimeout;
 export let lookUpFailureChoice;
-let timedOut = false;
-let context;
-let args;
-let nextFn;
 
 export function requestBidsHook(config, fn) {
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
-  context = this;
-  args = arguments;
-  nextFn = fn;
+  let context = this;
+  let args = arguments;
+  let nextFn = fn;
+  let cmpActive = true;
   let _timer;
 
   // in case we already have consent (eg during bid refresh)
   if (consentId) {
-    adUnits = applyConsent(adUnits, consentId);
+    adUnits = applyConsent(consentId);
     return fn.apply(context, args);
   }
 
@@ -51,10 +48,10 @@ export function requestBidsHook(config, fn) {
     // if new user, then wait for user to make a choice and then run postLookup method
     // if existing user, then skip to postLookup method
     window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-      if (!timedOut) {
+      if (cmpActive) {
         if (consentString === null || !consentString) {
           window.__cmp('addEventListener', 'onSubmit', function() {
-            if (!timedOut) {
+            if (cmpActive) {
               // redo lookup to find new string based on user's choices
               window.__cmp('getConsentData', 'vendorConsents', postLookup);
             }
@@ -68,39 +65,44 @@ export function requestBidsHook(config, fn) {
 
   // after we have grabbed ideal ID from CMP, apply the data to adUnits object and finish up the module
   function postLookup(consentString) {
-    if (!timedOut) {
+    if (cmpActive) {
       if (typeof consentString != 'string' || consentString === '') {
         exitFailedCMP(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
       } else {
         clearTimeout(_timer);
         consentId = consentString;
-        adUnits = applyConsent(adUnits, consentString);
+        adUnits = applyConsent(consentString);
         fn.apply(context, args);
       }
     }
   }
-}
 
-// assuming we have valid consent ID, apply to adUnits object
-function applyConsent(adUnits, consentString) {
-  adUnits.forEach(adUnit => {
-    adUnit['consentId'] = consentString;
-  });
-  return adUnits;
-}
+  // assuming we have valid consent ID, apply to adUnits object
+  function applyConsent(consentString) {
+    adUnits.forEach(adUnit => {
+      adUnit['gdprConsent'] = {
+        consentString: consentString,
+        consentRequired: true
+      };
+    });
+    return adUnits;
+  }
 
-export function cmpTimedOut () {
-  // may pass specific flag instead of normal lookup value in adUnits
-  timedOut = true;
-  exitFailedCMP('CMP workflow exceeded timeout threshold.');
-}
+  function cmpTimedOut () {
+    if (cmpActive) {
+      exitFailedCMP('CMP workflow exceeded timeout threshold.');
+    }
+  }
 
-function exitFailedCMP(message) {
-  if (lookUpFailureChoice === 'proceed') {
-    utils.logWarn(message + ' Resuming auction without consent data as per consentManagement config.');
-    nextFn.apply(context, args);
-  } else {
-    utils.logError(message + ' Aborting auction as per consentManagement config.');
+  function exitFailedCMP(message) {
+    cmpActive = false;
+    if (lookUpFailureChoice === 'proceed') {
+      utils.logWarn(message + ' Resuming auction without consent data as per consentManagement config.');
+      applyConsent(undefined);
+      nextFn.apply(context, args);
+    } else {
+      utils.logError(message + ' Canceling auction as per consentManagement config.');
+    }
   }
 }
 

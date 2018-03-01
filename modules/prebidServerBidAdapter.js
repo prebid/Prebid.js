@@ -456,12 +456,9 @@ const OPEN_RTB_PROTOCOL = {
       request.user = { ext: { digitrust: digiTrust } };
     }
 
-    if (config.getConfig('consentManagement')) {
-      request.Regs = { ext: { gdpr: 1 } };
-
-      if (bidRequests && bidRequests[0].consentId) {
-        request.user = { ext: { consent: bidRequests[0].consentId } };
-      }
+    if (bidRequests && bidRequests[0].gdprConsent) {
+      request.regs = { ext: { gdpr: bidRequests[0].gdprConsent.consentRequired ? 1 : 0 } };
+      request.user = { ext: { consent: bidRequests[0].gdprConsent.consentString } };
     }
 
     return request;

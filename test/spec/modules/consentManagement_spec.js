@@ -1,4 +1,4 @@
-import {setConfig, requestBidsHook, resetConsentId, cmpTimedOut, userCMP, consentId, consentTimeout, lookUpFailureChoice} from 'modules/consentManagement';
+import {setConfig, requestBidsHook, resetConsentId, userCMP, consentId, consentTimeout, lookUpFailureChoice} from 'modules/consentManagement';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -70,7 +70,7 @@ describe('consentManagement', function () {
 
   // requestBidsHook method
   describe('requestBidsHook tests:', () => {
-    let adUnits1 = [{
+    let adUnits = [{
       code: 'div-gpt-ad-1460505748561-0',
       sizes: [[300, 250], [300, 600]],
       bids: [{
@@ -117,7 +117,7 @@ describe('consentManagement', function () {
           expect(userCMP).to.be.equal(badCMPConfig.cmp);
 
           didHookReturn = false;
-          // let retAdUnits1;
+          let adUnits1 = utils.deepClone(adUnits);
 
           requestBidsHook({adUnits: adUnits1}, (config) => {
             didHookReturn = true;
@@ -126,7 +126,7 @@ describe('consentManagement', function () {
 
           sinon.assert.calledOnce(utils.logWarn);
           expect(didHookReturn).to.be.true;
-          assert.deepEqual(retAdUnits, adUnits1);
+          assert.deepEqual(retAdUnits, adUnits);
         });
       });
 
@@ -146,7 +146,7 @@ describe('consentManagement', function () {
           setConfig(goodConfigWithProceed);
 
           didHookReturn = false;
-          // let retAdUnits1;
+          let adUnits1 = utils.deepClone(adUnits);
 
           requestBidsHook({adUnits: adUnits1}, (config) => {
             didHookReturn = true;
@@ -155,7 +155,7 @@ describe('consentManagement', function () {
 
           sinon.assert.calledOnce(utils.logWarn);
           expect(didHookReturn).to.be.true;
-          assert.deepEqual(retAdUnits, adUnits1);
+          assert.deepEqual(retAdUnits, adUnits);
         });
       });
     });
@@ -181,6 +181,8 @@ describe('consentManagement', function () {
           args[2](testCMP);
         });
         setConfig(goodConfigWithProceed);
+
+        let adUnits1 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits1}, (config) => {});
         cmpStub.restore();
 
@@ -188,13 +190,15 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testCMP);
         });
-        requestBidsHook({adUnits: adUnits1}, (config) => {
+        let adUnits2 = utils.deepClone(adUnits);
+        requestBidsHook({adUnits: adUnits2}, (config) => {
           didHookReturn = true;
           retAdUnits = config.adUnits;
         });
 
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].consentId).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
     });
@@ -207,6 +211,7 @@ describe('consentManagement', function () {
       beforeEach(() => {
         firstpass = true;
         didHookReturn = false;
+        retAdUnits = [];
         resetConsentId();
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
@@ -238,6 +243,7 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithProceed);
 
+        let adUnits1 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits1}, (config) => {
           didHookReturn = true;
           retAdUnits = config.adUnits;
@@ -246,7 +252,8 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logError);
         sinon.assert.notCalled(utils.logWarn);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].consentId).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
       });
 
       it('performs lookup check and updates adUnits for a valid existing user', () => {
@@ -257,6 +264,7 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithProceed);
 
+        let adUnits1 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits1}, (config) => {
           didHookReturn = true;
           retAdUnits = config.adUnits;
@@ -265,10 +273,11 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].consentId).to.equal('BOJy+UqOJy+UqABAB+AAAAAZ+A==');
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal('BOJy+UqOJy+UqABAB+AAAAAZ+A==');
+        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
       });
 
-      it('throws an error when second lookup failed while config used cancel setting', () => {
+      it('throws an error when postLookup check failed while config used cancel setting', () => {
         let testCMP = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
@@ -276,16 +285,18 @@ describe('consentManagement', function () {
         });
 
         setConfig(goodConfigWithCancel);
+        let adUnits1 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits1}, (config) => {
           didHookReturn = true;
           retAdUnits = config.adUnits;
         });
         sinon.assert.calledOnce(utils.logError);
         expect(didHookReturn).to.be.false;
-        assert.deepEqual(retAdUnits, adUnits1);
+        expect(retAdUnits).to.be.an('array').that.is.empty;
+        assert.deepEqual(adUnits1, adUnits);
       });
 
-      it('throws a warning + calls callback when second lookup failed while config used proceed setting', () => {
+      it('throws a warning + modifies adunits + calls callback when postLookup check failed while config used proceed setting', () => {
         let testCMP = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
@@ -293,46 +304,15 @@ describe('consentManagement', function () {
         });
 
         setConfig(goodConfigWithProceed);
+        let adUnits1 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits1}, (config) => {
           didHookReturn = true;
           retAdUnits = config.adUnits;
         });
         sinon.assert.calledOnce(utils.logWarn);
         expect(didHookReturn).to.be.true;
-        assert.deepEqual(retAdUnits, adUnits1, 'adUnits object not modified');
-      });
-
-      it('throws an error when CMP lookup times out', () => {
-        debugger; //eslint-disable-line
-        clock = sinon.useFakeTimers();
-        let cmpTimedOutSpy = sinon.spy(cmpTimedOut);
-        let testCMP = null;
-
-        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          // debugger; // eslint-disable-line
-          if (firstpass) {
-            firstpass = false;
-            args[2](testCMP);
-          } else {
-            // clock.next();
-          }
-        });
-        setConfig(goodConfigWithCancel);
-        requestBidsHook({adUnits: adUnits1}, (config) => {
-          didHookReturn = true;
-          retAdUnits = config.adUnits;
-        });
-        // STILL UNDER CONSTRUCTION :)
-
-        clock.runAll();
-        // clock.tick(consentTimeout - 1);
-        // sinon.assert.notCalled(utils.logError);
-        // clock.tick(1);
-        // console.log(cmpTimedOutSpy.callCount);
-        // sinon.assert.calledOnce(cmpTimedOutSpy);
-        // sinon.assert.calledOnce(utils.logError);
-        // expect(didHookReturn).to.be.false;
-        // assert.deepEqual(retAdUnits, adUnits1, 'adUnits object not modified');
+        expect(retAdUnits[0].gdprConsent.consentString).to.be.undefined;
+        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
       });
     });
   });
