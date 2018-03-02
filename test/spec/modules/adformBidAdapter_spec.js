@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import * as url from 'src/url';
 import {spec} from 'modules/adformBidAdapter';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 describe('Adform adapter', () => {
   let serverResponse, bidRequest, bidResponses;
@@ -29,7 +30,7 @@ describe('Adform adapter', () => {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
-      assert.lengthOf(parsedUrl.items, 3);
+      assert.lengthOf(parsedUrl.items, 5);
     });
 
     it('should handle global request parameters', () => {
@@ -63,6 +64,16 @@ describe('Adform adapter', () => {
           someVar: 'someValue',
           transactionId: '5f33781f-9552-4iuy',
           priceType: 'gross'
+        },
+        {
+          mid: '3',
+          pdom: 'home',
+          transactionId: '5f33781f-9552-7ev3'
+        },
+        {
+          mid: '3',
+          pdom: 'home',
+          transactionId: '5f33781f-9552-7ev3'
         },
         {
           mid: '3',
@@ -135,14 +146,31 @@ describe('Adform adapter', () => {
 
     it('should create bid response item for every requested item', () => {
       let result = spec.interpretResponse(serverResponse, bidRequest);
-      assert.lengthOf(result, 3);
+      assert.lengthOf(result, 5);
+    });
+
+    it('should create bid response with vast xml', () => {
+      const result = spec.interpretResponse(serverResponse, bidRequest)[3];
+      assert.equal(result.vastXml, '<vast_xml>');
+    });
+
+    it('should create bid response with vast url', () => {
+      const result = spec.interpretResponse(serverResponse, bidRequest)[4];
+      assert.equal(result.vastUrl, 'vast://url');
+    });
+
+    it('should set mediaType on bid response', () => {
+      const expected = [ BANNER, BANNER, BANNER, VIDEO, VIDEO ];
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i].mediaType, expected[i]);
+      }
     });
   });
 
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
-    let adUnitCode = ['div-01', 'div-02', 'div-03'];
-    let placementCode = adUnitCode;
+    let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', priceType: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
     bids = [
       {
@@ -179,6 +207,28 @@ describe('Adform adapter', () => {
         placementCode: placementCode[2],
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
         transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[3],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[2],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[4],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[2],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
       }
     ];
     serverResponse = {
@@ -209,6 +259,24 @@ describe('Adform adapter', () => {
           width: 600,
           win_bid: 10,
           win_cur: 'EUR'
+        },
+        {
+          deal_id: '123abc',
+          height: 300,
+          response: 'vast_content',
+          width: 600,
+          win_bid: 10,
+          win_cur: 'EUR',
+          vast_content: '<vast_xml>'
+        },
+        {
+          deal_id: '123abc',
+          height: 300,
+          response: 'vast_url',
+          width: 600,
+          win_bid: 10,
+          win_cur: 'EUR',
+          vast_url: 'vast://url'
         }
       ],
       headers: {}
