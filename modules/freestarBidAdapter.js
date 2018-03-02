@@ -45,13 +45,32 @@ AppNexusAdapter = function AppNexusAdapter() {
     var referrer = utils.getBidIdParameter('referrer', bid.params);
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
     let usePaymentRule = utils.getBidIdParameter('usePaymentRule', bid.params);
-    var jptCall = '//35.226.213.130:8080/open-ssp/SupplyVideoService?site=1';
+    var jptCall = '//35.226.213.130:8080/open-ssp/SupplyVideoService?site=1&';
+
+    var cookie = window.document.cookie.split(';');
+    var cookieObj = {};
+    for (var i = 0; i < cookie.length; i++) {
+      var tmp;
+      if (cookie[i].indexOf('_fs') != -1) {
+        tmp = cookie[i].split('=');
+        if(tmp[0].trim() == '_fsloc') {
+          tmp.shift();
+          cookieObj['_fsloc'] = tmp.join('=');
+        } else {
+          cookieObj[tmp[0].trim()] = tmp[1].trim();
+        }
+      }
+    }
 
     jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
     jptCall = utils.tryAppendQueryString(jptCall, 'use_pmt_rule', usePaymentRule);
+
+    for (var key in cookieObj) {
+      jptCall = utils.tryAppendQueryString(jptCall, key, cookieObj[key]);
+    }
 
     if (member) {
       jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
