@@ -15,7 +15,7 @@ nav_section: prebid-amp
 
 This page has instructions for showing ads on AMP pages using Prebid.js.
 
-At a high level, our implementation uses [Prebid Server][PBS] to talk to [AMP][AMPads] runtim using the [AMP Real Time Config (RTC)][RTC-Overview] protocol.
+Through this implementation, [Prebid Server][PBS] fetches demand and returns key-value targeting to the AMP runtime using the [AMP Real Time Config (RTC)][RTC-Overview] protocol.
 
 For more information about AMP RTC, see:
 
@@ -47,7 +47,9 @@ To set up Prebid to serve ads into your AMP pages, you'll need:
 The `amp-ad` elements in the page body need to be set up as shown below, especially the following attributes:
 
 + `data-slot`: Identifies the ad slot for the auction.
-+ `rtc-config`: Used to pass JSON configuration data to [Prebid Server][PBS], which will actually handle the communication with AMP RTC. The rtc_config.vendors property should define any vendors that will be receiving RTC callouts (including Prebid Server) up to a maximum of five
++ `rtc-config`: Used to pass JSON configuration data to [Prebid Server][PBS], which handles the communication with AMP RTC. 
+    + `vendors` is an object that defines any vendors that will be receiving RTC callouts (including Prebid Server) up to a maximum of five.  The list of supported RTC vendors is maintained in [callout-vendors.js][callout-vendors.js].
+    + `timeoutMillis` is an optional integer that defines the timeout in milliseconds for each individual RTC callout.  The configured timeout must be greater than 0 and less than 1000ms.  If omitted, the timeout value defaults to 1000ms.
 
 {% highlight html %}
 
@@ -94,9 +96,10 @@ You can always get the latest version of the creative code below from [the AMP e
 
 ## Related Topics
 
++ [How Prebid on AMP Works]({{site.github.url}}/dev-docs/how-prebid-on-amp-works.html)
++ [Setting up Prebid for AMP in DFP]({{site.github.url}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops Setup)
 + [AMP RTC Overview][RTC-Overview]
 + [AMP RTC Publisher Integration Guide](https://github.com/ampproject/amphtml/blob/master/extensions/amp-a4a/rtc-publisher-implementation-guide.md)
-+ [Setting up Prebid for AMP in DFP]({{site.github.url}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops Setup)
 
 </div>
 
@@ -104,4 +107,4 @@ You can always get the latest version of the creative code below from [the AMP e
 
 [PBS]: {{site.baseurl}}/dev-docs/get-started-with-prebid-server.html
 [RTC-Overview]: https://github.com/ampproject/amphtml/blob/master/extensions/amp-a4a/rtc-documentation.md
-[AMPads]: https://github.com/ampproject/amphtml/blob/master/ads/google/a4a/docs/a4a-readme.md
+[callout-vendors.js]: https://github.com/ampproject/amphtml/blob/master/extensions/amp-a4a/0.1/callout-vendors.js

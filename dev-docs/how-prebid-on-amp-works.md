@@ -13,7 +13,7 @@ nav_section: prebid-amp
 # How Prebid on AMP Works
 {: .no_toc}
 
-{: .pb-img.pb-md-img :}
+{: .pb-img :}
 ![Prebid AMP Overview Diagram]({{site.github.url}}/assets/images/dev-docs/amp-rtc.png)
 
 This page has information about how Prebid works with AMP to show Prebid ads on AMP pages.
