@@ -76,7 +76,7 @@ export const spec = {
         }
         if (isVideo(bidRequest)) {
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/1x1?ts=${timestamp}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}`
         }
 
         bidResponses.push(bidResponse)
