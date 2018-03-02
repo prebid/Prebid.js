@@ -213,6 +213,7 @@ const ANALYTICS_MESSAGE = {
               'height': 90
             }
           ],
+          'status': 'success',
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
@@ -245,7 +246,8 @@ const ANALYTICS_MESSAGE = {
                   'hb_pb': '1.20',
                   'hb_size': '728x90',
                   'hb_source': 'client'
-                }
+                },
+                'mediaType': 'banner'
               }
             }
           ]
@@ -269,6 +271,7 @@ const ANALYTICS_MESSAGE = {
               'height': 90
             }
           ],
+          'status': 'success',
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '3bd4ebb1c900e2',
@@ -301,7 +304,8 @@ const ANALYTICS_MESSAGE = {
                   'hb_pb': '1.20',
                   'hb_size': '728x90',
                   'hb_source': 'client'
-                }
+                },
+                'mediaType': 'banner'
               }
             }
           ]
@@ -313,6 +317,7 @@ const ANALYTICS_MESSAGE = {
     {
       'bidder': 'rubicon',
       'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+      'adUnitCode': '/19968336/header-bid-tag-0',
       'bidId': '2ecff0db240757',
       'status': 'success',
       'source': 'client',
@@ -322,6 +327,9 @@ const ANALYTICS_MESSAGE = {
         'siteId': '70608',
         'zoneId': '335918'
       },
+      'mediaTypes': [
+        'banner'
+      ],
       'bidResponse': {
         'bidPriceUSD': 1.22752,
         'dimensions': {
@@ -334,12 +342,14 @@ const ANALYTICS_MESSAGE = {
           'hb_pb': '1.20',
           'hb_size': '728x90',
           'hb_source': 'client'
-        }
+        },
+        'mediaType': 'banner'
       }
     },
     {
       'bidder': 'rubicon',
       'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
+      'adUnitCode': '/19968336/header-bid-tag1',
       'bidId': '3bd4ebb1c900e2',
       'status': 'success',
       'source': 'client',
@@ -349,6 +359,9 @@ const ANALYTICS_MESSAGE = {
         'siteId': '70608',
         'zoneId': '335918'
       },
+      'mediaTypes': [
+        'banner'
+      ],
       'bidResponse': {
         'bidPriceUSD': 1.5,
         'dimensions': {
@@ -361,13 +374,14 @@ const ANALYTICS_MESSAGE = {
           'hb_pb': '1.20',
           'hb_size': '728x90',
           'hb_source': 'client'
-        }
+        },
+        'mediaType': 'banner'
       }
     }
   ]
 };
 
-describe('rubicon analytics adapter', () => {
+describe.only('rubicon analytics adapter', () => {
   let sandbox;
   let xhr;
   let requests;

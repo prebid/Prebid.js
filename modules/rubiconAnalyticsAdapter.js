@@ -131,6 +131,12 @@ function sendMessage(auctionId, bidWonId) {
         adUnit.bids = [];
       }
 
+      // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
+      let statusPriority = ['error', 'noBid', 'success'];
+      if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) {
+        adUnit.status = bid.status;
+      }
+
       adUnit.bids.push(formatBid(bid));
 
       return adUnits;
