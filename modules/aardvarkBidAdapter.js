@@ -28,11 +28,17 @@ function requestBids(bidderCode, callbackName, bidReqs) {
 
   ref = ref ? ref.host : DEFAULT_REFERRER;
 
-  for (var i = 0, l = bidReqs.length, bid, _ai, _sc, _endpoint; i < l; i += 1) {
+  var categories = window.rtkcategories || [];
+  if (!Array.isArray(categories)) { categories = []; }
+
+  for (var i = 0, l = bidReqs.length, bid, _ai, _sc, _endpoint, _categories; i < l; i += 1) {
     bid = bidReqs[i];
     _ai = utils.getBidIdParameter('ai', bid.params);
     _sc = utils.getBidIdParameter('sc', bid.params);
     if (!_ai || !_ai.length || !_sc || !_sc.length) { continue; }
+
+    _categories = utils.getBidIdParameter('categories', bid.params);
+    if (_categories && Array.isArray(_categories) && _categories.length) { categories = categories.concat(_categories); }
 
     _endpoint = utils.getBidIdParameter('host', bid.params);
     if (_endpoint) { endpoint = _endpoint; }
@@ -48,10 +54,19 @@ function requestBids(bidderCode, callbackName, bidReqs) {
 
   if (!ai.length || !scs.length) { return utils.logWarn('Bad bid request params given for adapter $' + bidderCode + ' (' + AARDVARK_BIDDER_CODE + ')'); }
 
+  var categoriesStr = '';
+  if (categories.length) {
+    categoriesStr = '&categories=' + categories.filter(function(elem, pos, arr) {
+      return arr.indexOf(elem) === pos;
+    }).map(function(c) {
+      return encodeURIComponent(c);
+    }).join(',');
+  }
+
   adloader.loadScript([
     '//' + endpoint + '/', ai, '/', scs.join('_'),
     '/aardvark/?jsonp=$$PREBID_GLOBAL$$.', callbackName,
-    '&rtkreferer=', ref, '&', bidIds.join('&')
+    '&rtkreferer=', ref, categoriesStr, '&', bidIds.join('&')
   ].join(''));
 }
 
