@@ -15,6 +15,6 @@ prebid_1_0_supported : true
 
 | Name       | Scope    | Description       | Type    | Example                                           |
 | :--------- | :------- | :---------------- | :------ | :------------------------------------------------ |
-| slave_id   | required | slave ID          | integer |`'adoceanmyaozpniqismex'`                          |
+| slave_id   | required | slave ID          | string  |`'adoceanmyaozpniqismex'`                          |
 | master_id  | required | master ID         | string  |`'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7'` |
 | emiter     | required | traffic source id | string  |`'myao.adocean.pl'`                                |
