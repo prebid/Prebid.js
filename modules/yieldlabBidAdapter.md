@@ -3,7 +3,7 @@
 ```
 Module Name: Yieldlab Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: api@platform-lunar.com
+Maintainer: solutions@yieldlab.de
 ```
 
 # Description
