@@ -394,6 +394,43 @@ describe('S2S Adapter', () => {
 
       delete window.DigiTrust;
     });
+
+    it('adds device and app objects to request', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app'},
+      });
+
+      config.setConfig({s2sConfig: s2sConfig});
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
+    it('adds device and app objects to request for ORTB', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app'},
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      config.setConfig({s2sConfig: s2sConfig});
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
   });
 
   describe('response handler', () => {
