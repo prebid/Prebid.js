@@ -67,7 +67,7 @@ export const spec = {
           width: sizes[0],
           height: sizes[1],
           creativeId: '' + matchedBid.id,
-          dealId: matchedBid.did,
+          dealId: matchedBid.pid,
           currency: CURRENCY_CODE,
           netRevenue: true,
           ttl: BID_RESPONSE_TTL_SEC,
