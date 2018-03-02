@@ -75,7 +75,7 @@ The following parameters in the `bidResponse` object are common across all bidde
 {: .table .table-bordered .table-striped }
 | Bidder          | Supported Media Types | Prebid 1.0 Support? |
 |-----------------+-----------------------+---------------------|
-| adgeneration    | video,native          | X                   |
+| adgeneration    | native                | X                   |
 | adkernelAdn     | video                 | X                   |
 | adkernel        | video                 | X                   |
 | admixer         | video                 | X                   |
