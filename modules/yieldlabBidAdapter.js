@@ -69,7 +69,7 @@ export const spec = {
           creativeId: '' + matchedBid.id,
           dealId: matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: true,
+          netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}"></script>`
