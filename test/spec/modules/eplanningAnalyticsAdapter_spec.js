@@ -129,7 +129,7 @@ describe('eplanning analytics adapter', () => {
           p: {auctionId: pauctionId, time: auctionTimestamp}},
         // BID REQ
         {ec: constants.EVENTS.BID_REQUESTED,
-          p: {auctionId: pauctionId, time: 1509369418389, bidder: pbidderCode, bids: [{ time: 1509369418389, sizes: [[300, 250]], bidder: pbidderCode, placementCode: 'container-1', auctionId: pauctionId}]}},
+          p: {auctionId: pauctionId, time: 1509369418389, bidder: pbidderCode, bids: [{time: 1509369418389, sizes: [[300, 250]], bidder: pbidderCode, placementCode: 'container-1', auctionId: pauctionId}]}},
         // BID RESP
         {ec: constants.EVENTS.BID_RESPONSE,
           p: {auctionId: pauctionId, bidder: pbidderCode, cpm: 0.015, size: '300x250', time: 1509369418832}},
