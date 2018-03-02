@@ -138,7 +138,7 @@ export const spec = {
         let slotData = {
           site_id: params.siteId,
           zone_id: params.zoneId,
-          position: params.position || 'unknown',
+          position: parsePosition(params.position),
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
           element_id: bidRequest.adUnitCode,
           name: bidRequest.adUnitCode,
@@ -391,6 +391,13 @@ function mapSizes(sizes) {
       }
       return result;
     }, []);
+}
+
+function parsePosition(position) {
+  if (position === 'atf' || position === 'btf') {
+    return position;
+  }
+  return 'unknown';
 }
 
 export function masSizeOrdering(sizes) {
