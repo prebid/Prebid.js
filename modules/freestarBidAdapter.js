@@ -45,7 +45,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var referrer = utils.getBidIdParameter('referrer', bid.params);
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
     let usePaymentRule = utils.getBidIdParameter('usePaymentRule', bid.params);
-    var jptCall = '//35.226.213.130:8080/open-ssp/SupplyVideoService?site='+location.hostname+'&';
+    var jptCall = '//35.226.213.130:8080/open-ssp/BidRequestService?site='+location.hostname+'&';
 
     var cookie = window.document.cookie.split(';');
     var cookieObj = {};
