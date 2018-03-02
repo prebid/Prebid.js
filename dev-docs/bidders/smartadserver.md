@@ -1,7 +1,7 @@
 ---
 layout: bidder
-title: Smart AdServer
-description: Prebid Smart AdServer Bidder Adaptor
+title: Smart
+description: Prebid Smart Bidder Adaptor
 
 top_nav_section: dev_docs
 nav_section: reference
@@ -17,7 +17,7 @@ prebid_1_0_supported: true
 ---
 
 ### Note:
-The Smart AdServer bidder adaptor requires setup and approval from the Smart AdServer Service team. Please reach out to your account manager for more information and start using it.
+The Smart bidder adaptor requires setup and approval from the Smart Service team. Please reach out to your account manager for more information and start using it.
 
 ### bid params
 
