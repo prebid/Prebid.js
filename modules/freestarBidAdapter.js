@@ -1,256 +1,136 @@
-import { getBidRequest } from 'src/utils';
-import adaptermanager from 'src/adaptermanager';
+import {config} from 'src/config';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
+const BIDDER_CODE = 'freestar';
+// const ENDPOINT_URL = '//35.226.213.130:8080/open-ssp/BidRequestService?site='+location.hostname+'&';
+const ENDPOINT_URL = '//testsite.com/openssp/response.json';
+export const spec = {
+  code: BIDDER_CODE,
 
-var CONSTANTS = require('src/constants');
-var utils = require('src/utils');
-var adloader = require('src/adloader');
-var bidmanager = require('src/bidmanager');
-var bidfactory = require('src/bidfactory');
-var Adapter = require('src/adapter').default;
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+  },
 
-var AppNexusAdapter;
-AppNexusAdapter = function AppNexusAdapter() {
-  var baseAdapter = new Adapter('appnexus');
-  var usersync = false;
-
-  baseAdapter.callBids = function (params) {
-    // var bidCode = baseAdapter.getBidderCode();
-
-    var anArr = params.bids;
-
-    // var bidsCount = anArr.length;
-
-    // set expected bids count for callback execution
-    // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
-
-    for (var i = 0; i < anArr.length; i++) {
-      var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
-
-      // store a reference to the bidRequest from the callback id
-      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
-    }
-  };
-
-  function buildJPTCall(bid, callbackId) {
-    // determine tag params
-    var placementId = utils.getBidIdParameter('placementId', bid.params);
-
-    // memberId will be deprecated, use member instead
-    var memberId = utils.getBidIdParameter('memberId', bid.params);
-    var member = utils.getBidIdParameter('member', bid.params);
-    var inventoryCode = utils.getBidIdParameter('invCode', bid.params);
-    var query = utils.getBidIdParameter('query', bid.params);
-    var referrer = utils.getBidIdParameter('referrer', bid.params);
-    var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
-    let usePaymentRule = utils.getBidIdParameter('usePaymentRule', bid.params);
-    var jptCall = '//35.226.213.130:8080/open-ssp/BidRequestService?site='+location.hostname+'&';
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(validBidRequests) {
+    console.log('freestar::', 'validBidRequests', validBidRequests);
+    const bids = validBidRequests.map(formatBid);
 
     var cookie = window.document.cookie.split(';');
     var cookieObj = {};
     for (var i = 0; i < cookie.length; i++) {
       var tmp;
+      // see if _fs* is within the string
       if (cookie[i].indexOf('_fs') != -1) {
+        // if so, split it
         tmp = cookie[i].split('=');
+        // check if _fsloc, whose values has = within it
         if(tmp[0].trim() == '_fsloc') {
+          // and if so, manipulate differently
           tmp.shift();
           cookieObj['_fsloc'] = tmp.join('=');
         } else {
+          // if not, add to obj
           cookieObj[tmp[0].trim()] = tmp[1].trim();
         }
       }
     }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
-    jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
-    jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
-    jptCall = utils.tryAppendQueryString(jptCall, 'use_pmt_rule', usePaymentRule);
-
+    const payload = [];
+    payload.push('site=' + encodeURIComponent(location.hostname));
+    payload.push('page=' + encodeURIComponent(location.pathname));
+    payload.push(bids);
     for (var key in cookieObj) {
-      jptCall = utils.tryAppendQueryString(jptCall, key, cookieObj[key]);
+      payload.push(key + '=' + encodeURIComponent(cookieObj[key]));
     }
+    var payloadString = payload.join('&');
+    return {
+      method: 'GET',
+      url: ENDPOINT_URL,
+      data: payloadString,
+    };
+  },
 
-    if (member) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
-    } else if (memberId) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member', memberId);
-      utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
-    }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
-    jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', (utils.getBidIdParameter('trafficSourceCode', bid.params)));
-
-    // sizes takes a bit more logic
-    var sizeQueryString = '';
-    var parsedSizes = utils.parseSizesInput(bid.sizes);
-
-    // combine string into proper querystring for impbus
-    var parsedSizesLength = parsedSizes.length;
-    if (parsedSizesLength > 0) {
-      // first value should be "size"
-      sizeQueryString = 'size=' + parsedSizes[0];
-      if (parsedSizesLength > 1) {
-        // any subsequent values should be "promo_sizes"
-        sizeQueryString += '&promo_sizes=';
-        for (var j = 1; j < parsedSizesLength; j++) {
-          sizeQueryString += parsedSizes[j] += ',';
-        }
-
-        // remove trailing comma
-        if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
-          sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, {bidderRequest}) {
+    console.log('freestar::', 'serverResponse', serverResponse, bidderRequest);
+    serverResponse = serverResponse.body;
+    const bids = [];
+    // @TODO: add error handling
+    if(typeof serverResponse.seatbid != 'undefined') {
+      for(var i = 0; i < serverResponse.seatbid.length; i++) {
+        var seatBid = serverResponse.seatbid[i].bid;
+        if(seatBid.length != 0) {
+          for(var j = 0; j < seatBid.length; j++) {
+            bids.push(parseBid(seatBid[j]));
+          }
         }
       }
     }
-
-    if (sizeQueryString) {
-      jptCall += sizeQueryString + '&';
-    }
-
-    // this will be deprecated soon
-    var targetingParams = utils.parseQueryStringParameters(query);
-
-    if (targetingParams) {
-      // don't append a & here, we have already done it in parseQueryStringParameters
-      jptCall += targetingParams;
-    }
-
-    // append custom attributes:
-    var paramsCopy = Object.assign({}, bid.params);
-
-    // delete attributes already used
-    delete paramsCopy.placementId;
-    delete paramsCopy.memberId;
-    delete paramsCopy.invCode;
-    delete paramsCopy.query;
-    delete paramsCopy.referrer;
-    delete paramsCopy.alt_referrer;
-    delete paramsCopy.member;
-    delete paramsCopy.usePaymentRule;
-
-    // get the reminder
-    var queryParams = utils.parseQueryStringParameters(paramsCopy);
-
-    // append
-    if (queryParams) {
-      jptCall += queryParams;
-    }
-
-    // append referrer
-    if (referrer === '') {
-      referrer = utils.getTopWindowUrl();
-    }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
-    jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
-
-    // remove the trailing "&"
-    if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
-      jptCall = jptCall.substring(0, jptCall.length - 1);
-    }
-
-    // @if NODE_ENV='debug'
-    utils.logMessage('jpt request built: ' + jptCall);
-
-    // @endif
-
-    // append a timer here to track latency
-    bid.startTime = new Date().getTime();
-
-    return jptCall;
+    return bids;
+  },
+  // @TODO: How are we doing user sync?
+  getUserSyncs: function(syncOptions) {
+    // if (syncOptions.iframeEnabled) {
+    //   return [{
+    //     type: 'iframe',
+    //     url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+    //   }];
+    // }
   }
+}
 
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
-    var bidCode;
-
-    if (jptResponseObj && jptResponseObj.callback_uid) {
-      var responseCPM;
-      var id = jptResponseObj.callback_uid;
-      var placementCode = '';
-      var bidObj = getBidRequest(id);
-      if (bidObj) {
-        bidCode = bidObj.bidder;
-
-        placementCode = bidObj.placementCode;
-
-        // set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
-      }
-
-      // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for ad ID: ' + id);
-
-      // @endif
-      var bid = [];
-      if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
-        responseCPM = parseInt(jptResponseObj.result.cpm, 10);
-
-        // CPM response from /jpt is dollar/cent multiplied by 10000
-        // in order to avoid using floats
-        // switch CPM to "dollar/cent"
-        responseCPM = responseCPM / 10000;
-
-        // store bid response
-        // bid status is good (indicating 1)
-        var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1, bidObj);
-        bid.creative_id = adId;
-        bid.bidderCode = bidCode;
-        bid.cpm = responseCPM;
-        bid.adUrl = jptResponseObj.result.ad;
-        bid.width = jptResponseObj.result.width;
-        bid.height = jptResponseObj.result.height;
-        bid.dealId = jptResponseObj.result.deal_id;
-
-        bidmanager.addBidResponse(placementCode, bid);
-      } else {
-        // no response data
-        // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-
-        // @endif
-        // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bid);
-      }
-
-      if (!usersync) {
-        var iframe = utils.createInvisibleIframe();
-        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-        try {
-          document.body.appendChild(iframe);
-        } catch (error) {
-          utils.logError(error);
-        }
-        usersync = true;
-      }
-    } else {
-      // no response data
-      // @if NODE_ENV='debug'
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-
-      // @endif
-    }
+function parseBid(bid) {
+  console.log('freestar::', 'parseBid', 'bid', bid);
+  const bidResponse = {
+    requestId: bid.id,
+    cpm: bid.price,
+    width: 300,
+    height: 250,
+    creativeId: bid.cid, //@TODO: verify
+    // dealId: DEAL_ID,
+    currency: 'US',
+    netRevenue: true,
+    ttl: 60,
+    ad: bid.adm
   };
+  return bidResponse;
+}
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    buildJPTCall: buildJPTCall
+function formatBid(bid) {
+  var str = {}, res = [];
+  str.id = bid.bidId; //@TODO: This id needs to be reflected in the response
+  str.adUnitCode = bid.adUnitCode;
+  str.size = bid.size[0].join('x');
+  str.promo_sizes = bid.size.slice(1).map(function(size) {
+    return size.join('x');
   });
-};
+  str.promo_sizes = str.promo_sizes.join(',');
+  for(var key in str) {
+    res.push(key + '=' + encodeURIComponent(str[key]));
+  }
+  if(typeof bid.params != 'undefined') {
+    for(var key in bid.params) {
+      res.push(key + '=' + encodeURIComponent(bid.params[key]));
+    }
+  }
+  str = res.join('&');
+  return str;
+}
 
-adaptermanager.registerBidAdapter(new AppNexusAdapter(), 'freestar');
-// adaptermanager.aliasBidAdapter('appnexus', 'brealtime');
-// adaptermanager.aliasBidAdapter('appnexus', 'pagescience');
-// adaptermanager.aliasBidAdapter('appnexus', 'defymedia');
-// adaptermanager.aliasBidAdapter('appnexus', 'gourmetads');
-// adaptermanager.aliasBidAdapter('appnexus', 'matomy');
-// adaptermanager.aliasBidAdapter('appnexus', 'featureforward');
-// adaptermanager.aliasBidAdapter('appnexus', 'oftmedia');
-
-module.exports = AppNexusAdapter;
+registerBidder(spec);
