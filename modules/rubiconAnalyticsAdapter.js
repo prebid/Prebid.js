@@ -77,7 +77,7 @@ function validMediaType(type) {
 
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
-    return _pick(bid, [
+    return Object.assign(_pick(bid, [
       'bidder',
       'bidId',
       'status',
@@ -89,8 +89,12 @@ function sendMessage(auctionId, bidWonId) {
         return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
           ? 'server' : 'client'
       },
+      'serverAccountId', () => serverConfig && serverConfig.accountId ? serverConfig.accountId : undefined,
       'clientLatencyMillis',
       'params',
+      'adUnitCode',
+      'transactionId', () => bid.adUnit.transactionId,
+      'mediaTypes', () => bid.adUnit.mediaTypes,
       'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
         'bidPriceUSD',
         'dealId',
@@ -98,7 +102,11 @@ function sendMessage(auctionId, bidWonId) {
         'mediaType',
         'adserverTargeting'
       ]) : undefined
-    ]);
+    ]), _pick(bid.adUnit, [
+      'adUnitCode',
+      'transactionId',
+      'mediaTypes'
+    ]));
   }
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {

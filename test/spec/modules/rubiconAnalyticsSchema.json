@@ -139,7 +139,7 @@
                 "type": "string"
               },
               "serverAccountId": {
-                "type": "string"
+                "type": "number"
               },
               "samplingFactor": {
                 "$ref": "#/definitions/samplingFactor"
