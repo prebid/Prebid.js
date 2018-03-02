@@ -556,6 +556,97 @@ describe('stroeerssp adapter', function () {
       assertConnectJs(element, customtUserConnectJsUrl, 'NDA=')
     });
 
+    describe('generateAd method on bid object', function() {
+      const tests = [
+        // full price text
+        {price:"1.570000", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw"},
+        // partial price text
+        {price:"1.59", bidId: "123456789123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        // large bidId will be trimmed (> 16 characters)
+        {price:"1.59", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        // small bidId will be padded (< 16 characters)
+        {price:"1.59", bidId: "123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw"},
+        // float instead of text
+        {price:1.59, bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        // long price after applying exchange rate: 12.03 * 0.32 = 3.8495999999999997 (use 3.8496)
+        {price:12.03, bidId: "123456789123456789", exchangeRate: 0.32, expectation: "MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A"},
+        // long price after applying exchange rate: 22.23 * 0.26 = 5.779800000000001 (use 5.7798)
+        {price:22.23, bidId: "123456789123456789", exchangeRate: 0.26, expectation: "MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA"},
+        // somehow empty string for price
+        {price:"", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw"},
+        // handle zero
+        {price:0, bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MDAwMDAwMDAwMDAwMDAwMBhGtwXJgFkgKAaAWw"}
+      ];
+      tests.forEach(test => {
+
+        it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`, function() {
+          const bidderResponse = buildBidderResponse();
+
+          const responseBid = bidderResponse.bids[0];
+          responseBid.exchangerate = test.exchangeRate;
+          responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE:ENC}></img>";
+          responseBid.bidId = test.bidId;
+
+
+          bidderRequest.bids[0].bidId = test.bidId;
+
+          adapter(win).callBids(bidderRequest);
+
+          fakeServer.respond();
+
+          const bid = bidmanager.addBidResponse.firstCall.args[1];
+          const ad = bid.generateAd({auctionPrice: test.price});
+
+          const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
+          const encryptedPrice = rx.exec(ad);
+          assert.equal(encryptedPrice[1], test.expectation);
+        });
+      });
+
+      it('should replace all occurrences of ${AUCTION_PRICE:ENC}', function() {
+        const bidderResponse = buildBidderResponse({bidId1: "123456789123456789"});
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE:ENC}></img>\n<script>var price=${AUCTION_PRICE:ENC}</script>";
+        responseBid.bidId = "123456789123456789";
+
+        fakeServer.respondWith(JSON.stringify(bidderResponse));
+        bidderRequest.bids[0].bidId = "123456789123456789";
+
+        adapter(win).callBids(bidderRequest);
+
+        fakeServer.respond();
+
+        const bid = bidmanager.addBidResponse.firstCall.args[1];
+        const ad = bid.generateAd({auctionPrice: "40.22"});
+
+        const expectedAd = "<img src='tracker.com\?p=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA><\/img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA</script>";
+        assert.equal(ad, expectedAd);
+      });
+
+      it.only('should replace all occurrences of ${AUCTION_PRICE}', function() {
+        const bidderResponse = buildBidderResponse();
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE}></img>\n<script>var price=${AUCTION_PRICE}</script>";
+        responseBid.bidId = "123456789123456789";
+
+        fakeServer.respondWith(JSON.stringify(bidderResponse));
+        bidderRequest.bids[0].bidId = "123456789123456789";
+
+
+        adapter(win).callBids(bidderRequest);
+
+        fakeServer.respond();
+
+        const bid = bidmanager.addBidResponse.firstCall.args[1];
+        const ad = bid.generateAd({auctionPrice: 40.22});
+
+        const expectedAd = "<img src='tracker.com\?p=40.22><\/img>\n<script>var price=40.22</script>";
+        assert.equal(ad, expectedAd);
+      });
+    });
+
     function assertConnectJs(actualElement, expectedUrl, expectedSlotId) {
       assert.strictEqual(actualElement.tagName, 'SCRIPT');
       assert.strictEqual(actualElement.src, expectedUrl);

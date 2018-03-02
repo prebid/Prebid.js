@@ -6,6 +6,8 @@ const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
 const config = require('src/config').config;
 
+const crypter = new Crypter("c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=", "eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=");
+
 const StroeerCoreAdapter = function (win = window) {
   const defaultHost = 'dsh.adscale.de';
   const defaultPath = '/dsh';
@@ -106,6 +108,19 @@ const StroeerCoreAdapter = function (win = window) {
           exchangerate: bidResponse.exchangerate,
           nurl: bidResponse.nurl
         });
+
+        bidObject.generateAd = function({auctionPrice}) {
+
+          if (this.exchangerate && this.exchangerate !== 1) {
+            auctionPrice = (parseFloat(auctionPrice) * this.exchangerate).toFixed(4);
+          }
+
+          let creative = this.ad;
+          return creative
+            .replace(/\${AUCTION_PRICE:ENC}/g, crypter.encrypt(this.adId, auctionPrice.toString()))
+            .replace(/\${AUCTION_PRICE}/g, auctionPrice);
+        };
+
         bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
       }
     });
@@ -223,24 +238,21 @@ adaptermanager.registerBidAdapter(new StroeerCoreAdapter(), 'stroeerCore');
 
 module.exports = StroeerCoreAdapter;
 
-// Encryption code in progress:
-
-/* file to be embedded into stroeerCoreBidAdapter */
 
 function Crypter(encKey, intKey) {
   this.encKey = atob(encKey);   // pad key
   this.intKey = atob(intKey);   // signature key
 }
 
-// use key-hash version of impressionId to encrypt content
-Crypter.prototype.encrypt = function (impressionId, price) {
+
+Crypter.prototype.encrypt = function (anyRandomString, data) {
   const CIPHERTEXT_SIZE = 8;
   const SIGNATURE_SIZE = 4;
 
-  let paddedImpressionId = impressionId.padEnd(16, '0').substring(0, 16);
+  let paddedImpressionId = anyRandomString.padEnd(16, '0').substring(0, 16);
 
-  if (price.length > CIPHERTEXT_SIZE) {
-    throw new Error("price too long");
+  if (data.length > CIPHERTEXT_SIZE) {
+    throw new Error("data too long");
   }
 
   let encryptionPad = str_hmac_sha1(this.encKey, paddedImpressionId);
@@ -255,7 +267,7 @@ Crypter.prototype.encrypt = function (impressionId, price) {
 
   console.log("BEGIN XOR");
   for (let i = 0; i < CIPHERTEXT_SIZE; i++) {
-    let priceCharCode = (i >= price.length) ? '\x00' : price.charCodeAt(i);
+    let priceCharCode = (i >= data.length) ? '\x00' : data.charCodeAt(i);
 
     console.log(`${priceCharCode} ^ ${encryptionPad.charCodeAt(i)} = ${priceCharCode ^ convertSignedByte(encryptionPad.charCodeAt(i))}`);
     encryptedPrice = encryptedPrice + String.fromCharCode(0xff & (priceCharCode ^ convertSignedByte(encryptionPad.charCodeAt(i))));
@@ -272,11 +284,10 @@ Crypter.prototype.encrypt = function (impressionId, price) {
 
   // Integrity
 
-  const data = new ArrayOfCharCodes(price, CIPHERTEXT_SIZE, 0);
-  data.addString(paddedImpressionId);
+  const dataArray = new ArrayOfCharCodes(data, CIPHERTEXT_SIZE, 0);
+  dataArray.addString(paddedImpressionId);
 
-  // const signature = str_hmac_sha1(this.intKey, price + paddedImpressionId).substring(0, SIGNATURE_SIZE);
-  const signature = str_hmac_sha1(this.intKey, data).substring(0, SIGNATURE_SIZE);
+  const signature = str_hmac_sha1(this.intKey, dataArray).substring(0, SIGNATURE_SIZE);
 
   console.log("BEGIN SIGNATURE");
   for (let i = 0; i < signature.length; i++) {
@@ -337,9 +348,6 @@ ArrayOfCharCodes.prototype.addString = function(str) {
 
   this.length += str.length;
 };
-
-
-StroeerCoreAdapter.Crypter = Crypter;
 
 
 // http://pajhome.org.uk/crypt/md5/sha1.js
