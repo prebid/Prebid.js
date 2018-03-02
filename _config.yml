@@ -124,6 +124,10 @@ nav_sections:
     code: support
     name: SUPPORT
 
+  - top_nav: videos
+    code: videos
+    name: VIDEOS
+
   - top_nav: principles
     code: principles
     name: PRINCIPLES
