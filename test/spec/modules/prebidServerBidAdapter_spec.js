@@ -675,7 +675,7 @@ describe('S2S Adapter', () => {
         adapter: 'prebidServer'
       };
 
-      config.setConfig({ s2sConfig: options});
+      config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
     });
 

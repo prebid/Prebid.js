@@ -81,7 +81,7 @@ describe('Adform adapter', () => {
 
   describe('interpretResponse', () => {
     it('should respond with empty response when there is empty serverResponse', () => {
-      let result = spec.interpretResponse({ body: {}}, {});
+      let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
     });
     it('should respond with empty response when sizes doesn\'t match', () => {
