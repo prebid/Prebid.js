@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
-const BID_RESPONSE_TTL_SEC = 600
+const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
 
 export const spec = {
