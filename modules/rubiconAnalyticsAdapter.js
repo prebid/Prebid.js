@@ -79,7 +79,6 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return _pick(bid, [
       'bidder',
-      'transactionId',
       'bidId',
       'status',
       'error',
@@ -96,6 +95,7 @@ function sendMessage(auctionId, bidWonId) {
         'bidPriceUSD',
         'dealId',
         'dimensions',
+        'mediaType',
         'adserverTargeting'
       ]) : undefined
     ]);
@@ -115,6 +115,7 @@ function sendMessage(auctionId, bidWonId) {
       if (!adUnit) {
         adUnit = adUnits[bid.adUnit.adUnitCode] = _pick(bid.adUnit, [
           'adUnitCode',
+          'transactionId',
           'mediaTypes',
           'dimensions',
           'adserverTargeting', () => cache.targeting[bid.adUnit.adUnitCode]
@@ -172,6 +173,7 @@ function parseBidResponse(bid) {
     'adserverTargeting',
     'dealId',
     'status',
+    'mediaType',
     'dimensions', () => _pick(bid, [
       'width',
       'height'
@@ -212,7 +214,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           memo[bid.bidId] = _pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
-            'transactionId',
             'status', () => 'noBid', // default a bid to noBid until response is recieved or bid is timed out
             'params', (params, bid) => {
               switch (bid.bidder) {
@@ -227,6 +228,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             },
             'adUnit', () => _pick(bid, [
               'adUnitCode',
+              'transactionId',
               'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
               'mediaTypes', (types, bid) => {
                 if (bid.mediaType && validMediaType(bid.mediaType)) {

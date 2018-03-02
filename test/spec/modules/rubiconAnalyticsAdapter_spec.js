@@ -37,6 +37,7 @@ const BID = {
   'bidder': 'rubicon',
   'width': 728,
   'height': 90,
+  'mediaType': 'banner',
   'statusMessage': 'Bid available',
   'adId': '2ecff0db240757',
   'source': 'client',
