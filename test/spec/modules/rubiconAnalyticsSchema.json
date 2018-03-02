@@ -90,7 +90,7 @@
                   "type": "string"
                 },
                 "mediaTypes": {
-                  "$ref": "#/defintions/mediaTypes"
+                  "$ref": "#/definitions/mediaTypes"
                 },
                 "dimensions": {
                   "type": "array",
