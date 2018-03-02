@@ -13,7 +13,7 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
-    if (bid && bid.params && bid.params.placementId && bid.params.adSize) {
+    if (bid && bid.params && bid.params.adslotId && bid.params.adSize) {
       return true
     }
     return false
@@ -25,18 +25,18 @@ export const spec = {
    * @returns {{method: string, url: string}}
    */
   buildRequests: function (validBidRequests) {
-    const placementIds = []
+    const adslotIds = []
     const timestamp = Date.now()
 
     utils._each(validBidRequests, function (bid) {
-      placementIds.push(bid.params.placementId)
+      adslotIds.push(bid.params.adslotId)
     })
 
-    const placements = placementIds.join(',')
+    const adslots = adslotIds.join(',')
 
     return {
       method: 'GET',
-      url: `${ENDPOINT}/yp/${placements}?ts=${timestamp}&json=true`,
+      url: `${ENDPOINT}/yp/${adslots}?ts=${timestamp}&json=true`,
       validBidRequests: validBidRequests
     }
   },
@@ -56,7 +56,7 @@ export const spec = {
       }
 
       let matchedBid = find(serverResponse.body, function (bidResponse) {
-        return bidRequest.params.placementId == bidResponse.id
+        return bidRequest.params.adslotId == bidResponse.id
       })
 
       if (matchedBid) {
@@ -72,11 +72,11 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}"></script>`
         }
         if (isVideo(bidRequest)) {
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}`
         }
 
         bidResponses.push(bidResponse)

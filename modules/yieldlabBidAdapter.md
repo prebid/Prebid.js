@@ -19,8 +19,8 @@ Module that connects to Yieldlab's demand sources
                bids: [{
                    bidder: "yieldlab",
                    params: {
-                       placement: "5220336",
-                       accountId: "1381604",
+                       adslotId: "5220336",
+                       supplyId: "1381604",
                        adSize: "728x90"
                    }
                }]
@@ -35,8 +35,8 @@ Module that connects to Yieldlab's demand sources
                bids: [{
                    bidder: "yieldlab",
                    params: {
-                       placementId: "5220339",
-                       accountId: "1381604",
+                       adslotId: "5220339",
+                       supplyId: "1381604",
                        adSize: "640x480"
                    }
                }]
