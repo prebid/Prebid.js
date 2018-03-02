@@ -249,14 +249,17 @@ function _appendSiteAppDevice(request) {
   if (!request) return;
 
   // ORTB specifies app OR site
-  if (typeof _s2sConfig.app === 'object') {
-    request.app = _s2sConfig.app;
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {publisher: {id: _s2sConfig.accountId}};
+    request.site = {
+      publisher: { id: _s2sConfig.accountId },
+      page: utils.getTopWindowUrl()
+    }
   }
-  if (typeof _s2sConfig.device === 'object') {
-    request.device = _s2sConfig.device;
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
   }
 }
 
