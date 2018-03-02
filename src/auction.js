@@ -389,20 +389,24 @@ export function getStandardBidderSettings() {
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
+  if (!custBidObj) {
+    return {};
+  }
+
   var keyValues = {};
   var bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
 
   // 1) set the keys from "standard" setting or from prebid defaults
-  if (custBidObj && bidder_settings) {
+  if (bidder_settings) {
     // initialize default if not set
     const standardSettings = getStandardBidderSettings();
     setKeys(keyValues, standardSettings, custBidObj);
-  }
 
-  // 2) set keys from specific bidder setting override if they exist
-  if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-    custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
+    // 2) set keys from specific bidder setting override if they exist
+    if (bidderCode && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+      setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+      custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
+    }
   }
 
   // set native key value targeting
