@@ -73,14 +73,24 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
-          // If bid.sizes is defined, filter by intersection of adUnit.sizes and bid.sizes
-          if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-            filteredAdUnitSizes = filteredAdUnitSizes.filter(adUnitSize => {
-              return bid.sizes.some(bidSize => (bidSize[0] === adUnitSize[0] && bidSize[1] === adUnitSize[1]))
-            });
-          }
-
           let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+
+          // If bid.sizes is defined, filter by intersection of sizes and bid.sizes
+          if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+            let filteredBidSizes = sizes.filter(size => {
+              if (Array.isArray(size)) {
+                return bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1]));
+              }
+              else if (size && typeof size === 'object') {
+                return bid.sizes.some(bidSize => (typeof size === 'object' && bidSize[0] === size.w && bidSize[1] === size.h));
+              }
+              return true;
+            });
+
+            if (filteredBidSizes > 0) {
+              sizes = filteredBidSizes;
+            }
+          }
 
           if (active) {
             bids.push(Object.assign({}, bid, {

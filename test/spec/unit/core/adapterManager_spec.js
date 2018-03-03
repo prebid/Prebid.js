@@ -136,6 +136,21 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
     });
+
+    it('should handle sizes filtering if defined as a bid property', () => {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90], [300, 250], [300, 600], [250, 250]],
+        bids: [
+          {sizes: [[300,250]], bidder: 'appnexus', params: {placementId: 'id'}},
+          {sizes: [[728,90],[250,250]], bidder: 'fakeBidder', params: {placementId: 'id'}},
+          {sizes: [[301,300]], bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+    });
+
   });
 
   describe('S2S tests', () => {
