@@ -73,6 +73,13 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
+          // If bid.sizes is defined, filter by intersection of adUnit.sizes and bid.sizes
+          if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+            filteredAdUnitSizes = filteredAdUnitSizes.filter(adUnitSize => {
+              return bid.sizes.some(bidSize => (bidSize[0] === adUnitSize[0] && bidSize[1] === adUnitSize[1]))
+            });
+          }
+
           let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
 
           if (active) {
