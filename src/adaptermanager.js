@@ -82,7 +82,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
                 return bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1]));
               }
               else if (size && typeof size === 'object') {
-                return bid.sizes.some(bidSize => (typeof size === 'object' && bidSize[0] === size.w && bidSize[1] === size.h));
+                return bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h));
               }
               return true;
             });
