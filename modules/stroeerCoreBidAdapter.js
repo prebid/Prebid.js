@@ -6,7 +6,8 @@ const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
 const config = require('src/config').config;
 
-const crypter = new Crypter("c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=", "eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=");
+const externalCrypter = new Crypter("c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=", "eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=");
+const internalCrypter = new Crypter("wjhss9DVoBfGEBNpfQ0CTxRHwVx9Ig1aEdM7S0piaVc=", "vCXHs3GIOUgygSWkhsWXSV2kSsRD5NjcFrWLe1E3R74=");
 
 const StroeerCoreAdapter = function (win = window) {
   const defaultHost = 'dsh.adscale.de';
@@ -111,13 +112,16 @@ const StroeerCoreAdapter = function (win = window) {
 
         bidObject.generateAd = function({auctionPrice}) {
 
+          const sspAuctionPrice = auctionPrice;
+
           if (this.exchangerate && this.exchangerate !== 1) {
             auctionPrice = (parseFloat(auctionPrice) * this.exchangerate).toFixed(4);
           }
 
           let creative = this.ad;
           return creative
-            .replace(/\${AUCTION_PRICE:ENC}/g, crypter.encrypt(this.adId, auctionPrice.toString()))
+            .replace(/\${AUCTION_PRICE:ENC}/g, externalCrypter.encrypt(this.adId, auctionPrice.toString()))
+            .replace(/\${SSP_AUCTION_PRICE:ENC}/g, internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
             .replace(/\${AUCTION_PRICE}/g, auctionPrice);
         };
 
