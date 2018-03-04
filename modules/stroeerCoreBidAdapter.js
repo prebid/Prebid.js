@@ -154,7 +154,7 @@ const StroeerCoreAdapter = function (win = window) {
     callBids: function (params) {
       const allBids = params.bids;
 
-      var ssat = config.getConfig('ssat');
+      let ssat = config.getConfig('ssat');
       if (ssat === undefined) {
         ssat = 2;
       }
@@ -256,7 +256,7 @@ Crypter.prototype.encrypt = function (anyRandomString, data) {
   let paddedImpressionId = anyRandomString.padEnd(16, '0').substring(0, 16);
 
   if (data.length > CIPHERTEXT_SIZE) {
-    throw new Error("data too long");
+    throw new Error("data to encrypt is too long");
   }
 
   let encryptionPad = str_hmac_sha1(this.encKey, paddedImpressionId);
