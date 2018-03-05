@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/invibesBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -174,8 +173,7 @@ describe('invibesBidAdapter:', function () {
           <body style='margin : 0; padding: 0;'>
           <!-- Creative -->
           </body>
-        </html>`,
-      placementCode: undefined
+        </html>`
     }];
 
     context('when the response is not valid', function () {
@@ -238,13 +236,13 @@ describe('invibesBidAdapter:', function () {
 
   describe('getUserSyncs', function () {
     it('returns an iframe if enabled', () => {
-      var response = spec.getUserSyncs({iframeEnabled: true});
+      let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.equal(SYNC_ENDPOINT);
     });
 
     it('returns undefined if iframe not enabled ', () => {
-      var response = spec.getUserSyncs({ iframeEnabled: false });
+      let response = spec.getUserSyncs({ iframeEnabled: false });
       expect(response).to.equal(undefined);
     });
   });

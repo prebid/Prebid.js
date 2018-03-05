@@ -75,13 +75,13 @@ function buildRequest(bidRequests, auctionStart) {
   });
 
   const topWin = getTopMostWindow();
-  var invibes = topWin.invibes = topWin.invibes || {};
+  const invibes = topWin.invibes = topWin.invibes || {};
   invibes.visitId = invibes.visitId || generateRandomId();
   invibes.bidContainerId = invibes.bidContainerId || _bidContainerId;
 
   initDomainId(invibes);
 
-  var currentQueryStringParams = parseQueryStringParams();
+  const currentQueryStringParams = parseQueryStringParams();
 
   let data = {
     location: getDocumentLocation(topWin),
@@ -104,10 +104,10 @@ function buildRequest(bidRequests, auctionStart) {
     height: topWin.innerHeight
   };
 
-  var parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
-  for (var key in currentQueryStringParams) {
+  const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
+  for (let key in currentQueryStringParams) {
     if (currentQueryStringParams.hasOwnProperty(key)) {
-      var value = currentQueryStringParams[key];
+      let value = currentQueryStringParams[key];
       if (parametersToPassForward.indexOf(key) > -1 || /^vs|^invib/i.test(key)) {
         data[key] = value;
       }
@@ -173,11 +173,11 @@ function handleResponse(responseObj, bidRequests) {
   }
 
   const bidResponses = [];
-  for (var i = 0; i < bidRequests.length; i++) {
-    var bidRequest = bidRequests[i];
+  for (let i = 0; i < bidRequests.length; i++) {
+    let bidRequest = bidRequests[i];
 
     if (bidModel.PlacementId === bidRequest.params.placementId) {
-      var size = getBiggerSize(bidRequest.sizes);
+      let size = getBiggerSize(bidRequest.sizes);
 
       bidResponses.push({
         requestId: bidRequest.bidId,
@@ -188,9 +188,7 @@ function handleResponse(responseObj, bidRequests) {
         currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
         netRevenue: true,
         ttl: CONSTANTS.TIME_TO_LIVE,
-        ad: renderCreative(bidModel),
-
-        placementCode: bidRequest.placementCode
+        ad: renderCreative(bidModel)
       });
 
       const now = Date.now();
@@ -213,10 +211,10 @@ function getDocumentLocation(topWin) {
 }
 
 function parseQueryStringParams() {
-  var params = {};
+  let params = {};
   try { params = JSON.parse(localStorage.ivbs); } catch (e) { }
-  var re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
-  var m;
+  let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
+  let m;
   while ((m = re.exec(window.location.href)) != null) {
     if (m.index === re.lastIndex) {
       re.lastIndex++;
@@ -227,8 +225,8 @@ function parseQueryStringParams() {
 }
 
 function getBiggerSize(array) {
-  var result = [0, 0];
-  for (var i = 0; i < array.length; i++) {
+  let result = [0, 0];
+  for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] > result[0] * result[1]) {
       result = array[i];
     }
@@ -237,7 +235,7 @@ function getBiggerSize(array) {
 }
 
 function getTopMostWindow() {
-  var res = window;
+  let res = window;
 
   try {
     while (top !== res) {
@@ -259,22 +257,22 @@ function renderCreative(bidModel) {
 }
 
 function getCappedCampaignsAsString() {
-  var key = 'ivvcap';
+  const key = 'ivvcap';
 
-  var loadData = function () {
+  let loadData = function () {
     return JSON.parse(localStorage.getItem(key)) || {};
   };
 
-  var saveData = function (data) {
+  let saveData = function (data) {
     localStorage.setItem(key, JSON.stringify(data));
   };
 
-  var clearExpired = function () {
-    var now = new Date().getTime();
-    var data = loadData();
-    var dirty = false;
+  let clearExpired = function () {
+    let now = new Date().getTime();
+    let data = loadData();
+    let dirty = false;
     Object.keys(data).forEach(function (k) {
-      var exp = data[k][1];
+      let exp = data[k][1];
       if (exp <= now) {
         delete data[k];
         dirty = true;
@@ -285,9 +283,9 @@ function getCappedCampaignsAsString() {
     }
   };
 
-  var getCappedCampaigns = function () {
+  let getCappedCampaigns = function () {
     clearExpired();
-    var data = loadData();
+    let data = loadData();
     return Object.keys(data)
       .filter(function (k) { return data.hasOwnProperty(k); })
       .sort()
@@ -310,26 +308,26 @@ function initLogger() {
 }
 
 /// Local domain cookie management =====================
-var Uid = {
+let Uid = {
   generate: function () {
-    var date = new Date().getTime();
+    let date = new Date().getTime();
     if (date > 151 * 10e9) {
-      var datePart = Math.floor(date / 1000).toString(36);
-      var maxRand = parseInt('zzzzzz', 36)
-      var randPart = Math.floor(Math.random() * maxRand).toString(36);
+      let datePart = Math.floor(date / 1000).toString(36);
+      let maxRand = parseInt('zzzzzz', 36)
+      let randPart = Math.floor(Math.random() * maxRand).toString(36);
       return datePart + '.' + randPart;
     }
   },
   getCrTime: function (s) {
-    var toks = s.split('.');
+    let toks = s.split('.');
     return parseInt(toks[0] || 0, 36) * 1e3;
   }
 };
 
-var cookieDomain, noCookies;
+let cookieDomain, noCookies;
 function getCookie(name) {
-  var i, x, y;
-  var cookies = document.cookie.split(';');
+  let i, x, y;
+  let cookies = document.cookie.split(';');
   for (i = 0; i < cookies.length; i++) {
     x = cookies[i].substr(0, cookies[i].indexOf('='));
     y = cookies[i].substr(cookies[i].indexOf('=') + 1);
@@ -344,24 +342,24 @@ function setCookie(name, value, exdays, domain) {
   if (noCookies && name != 'ivNoCookie' && (exdays || 0) >= 0) { return; }
   if (exdays > 365) { exdays = 365; }
   domain = domain || cookieDomain;
-  var exdate = new Date();
-  var exms = exdays * 24 * 60 * 60 * 1000;
+  let exdate = new Date();
+  let exms = exdays * 24 * 60 * 60 * 1000;
   exdate.setTime(exdate.getTime() + exms);
-  var cookieValue = value + ((!exdays) ? '' : '; expires=' + exdate.toUTCString());
+  let cookieValue = value + ((!exdays) ? '' : '; expires=' + exdate.toUTCString());
   cookieValue += ';domain=' + domain + ';path=/';
   document.cookie = name + '=' + cookieValue;
 };
 
-var detectTopmostCookieDomain = function () {
-  var testCookie = Uid.generate();
-  var hostParts = location.host.split('.');
+let detectTopmostCookieDomain = function () {
+  let testCookie = Uid.generate();
+  let hostParts = location.host.split('.');
   if (hostParts.length === 1) {
     return location.host;
   }
-  for (var i = hostParts.length - 1; i >= 0; i--) {
-    var domain = '.' + hostParts.slice(i).join('.');
+  for (let i = hostParts.length - 1; i >= 0; i--) {
+    let domain = '.' + hostParts.slice(i).join('.');
     setCookie(testCookie, testCookie, 1, domain);
-    var val = getCookie(testCookie);
+    let val = getCookie(testCookie);
     if (val === testCookie) {
       setCookie(testCookie, testCookie, -1, domain);
       return domain;
@@ -376,10 +374,10 @@ function initDomainId(invibes, persistence) {
     return;
   }
 
-  var cookiePersistence = {
+  let cookiePersistence = {
     cname: 'ivbsdid',
     load: function () {
-      var str = getCookie(this.cname) || '';
+      let str = getCookie(this.cname) || '';
       try {
         return JSON.parse(str);
       } catch (e) { }
@@ -390,12 +388,12 @@ function initDomainId(invibes, persistence) {
   };
 
   persistence = persistence || cookiePersistence;
-  var state;
-  var minHC = 5;
+  let state;
+  const minHC = 5;
 
-  var validGradTime = function (d) {
-    var min = 151 * 10e9;
-    var yesterday = new Date().getTime() - 864 * 10e4
+  let validGradTime = function (d) {
+    const min = 151 * 10e9;
+    let yesterday = new Date().getTime() - 864 * 10e4
     return d > min && d < yesterday;
   };
 
@@ -405,9 +403,9 @@ function initDomainId(invibes, persistence) {
     temp: 1
   };
 
-  var graduate;
+  let graduate;
 
-  var setId = function () {
+  let setId = function () {
     invibes.dom = {
       id: state.temp ? undefined : state.id,
       tempId: state.id,
