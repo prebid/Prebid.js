@@ -112,11 +112,18 @@ const StroeerCoreAdapter = function (win = window) {
 
         bidObject.generateAd = function({auctionPrice}) {
 
-          const sspAuctionPrice = auctionPrice;
+          let sspAuctionPrice = auctionPrice;
 
           if (this.exchangerate && this.exchangerate !== 1) {
             auctionPrice = (parseFloat(auctionPrice) * this.exchangerate).toFixed(4);
           }
+
+          const notInExponentialForm = price => price.indexOf('e') === -1;
+          assert(notInExponentialForm(auctionPrice), `auction price is in exp form`);
+          assert(notInExponentialForm(sspAuctionPrice), `ssp auction price is in exp form`);
+
+          auctionPrice = tunePrice(auctionPrice);
+          sspAuctionPrice = tunePrice(sspAuctionPrice);
 
           let creative = this.ad;
           return creative
@@ -136,6 +143,52 @@ const StroeerCoreAdapter = function (win = window) {
     unfulfilledBidRequests.forEach(bidRequest => {
       bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
     });
+  }
+
+  function assert(truthy, errorMsg) {
+    if (!truthy) {
+      throw new Error(errorMsg)
+    }
+  }
+
+  function tunePrice(price) {
+    const str = String(price);
+    if (str.length > 8) {
+      const sides = str.split(".");
+      if (sides.length === 2) {
+
+        let integerPart = sides[0];
+
+        let bytesRemaining  = 8 - integerPart.length;
+
+        let fractionalPart = sides[1];
+
+        if (bytesRemaining >= 3) {
+          fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
+        }
+        else if (bytesRemaining === 2 && fractionalPart[1] === '0') {
+          fractionalPart = fractionalPart[0];
+        }
+        else if (bytesRemaining === 1 && fractionalPart[0] === '0') {
+          fractionalPart = '';
+        }
+        else if (bytesRemaining === 0 && fractionalPart[0] === '0') {
+          fractionalPart = '';
+        }
+        else {
+          throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
+        }
+        const newPrice = integerPart + (fractionalPart.length > 0 ? "." + fractionalPart : "");
+        utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
+        return newPrice;
+      }
+      else {
+        throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
+      }
+    }
+    else {
+      return price;
+    }
   }
 
   function parseResponse(rawResponse) {
