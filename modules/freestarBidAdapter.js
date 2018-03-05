@@ -2,8 +2,8 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
-// const ENDPOINT_URL = '//35.226.213.130:8080/open-ssp/BidRequestService?site='+location.hostname+'&';
-const ENDPOINT_URL = '//testsite.com/openssp/response.json';
+const ENDPOINT_URL = '//35.226.213.130:8080/open-ssp/HeaderBiddingService';
+// const ENDPOINT_URL = '//testsite.com/openssp/response.json';
 export const spec = {
   code: BIDDER_CODE,
 
@@ -25,7 +25,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     console.log('freestar::', 'validBidRequests', validBidRequests);
-    const bids = validBidRequests.map(formatBid);
+    const adUnitsToBidUpon = validBidRequests.map(formatBid), payload = {};
 
     var cookie = window.document.cookie.split(';');
     var cookieObj = {};
@@ -46,18 +46,18 @@ export const spec = {
         }
       }
     }
-    const payload = [];
-    payload.push('site=' + encodeURIComponent(location.hostname));
-    payload.push('page=' + encodeURIComponent(location.pathname));
-    payload.push(bids);
+    // throw it all into an object and pass it along
+    payload['adUnitsToBidUpon'] = adUnitsToBidUpon;
+    payload['site'] = location.hostname;
+    payload['page'] = location.pathname;
     for (var key in cookieObj) {
-      payload.push(key + '=' + encodeURIComponent(cookieObj[key]));
+      payload[key] = cookieObj[key];
     }
-    var payloadString = payload.join('&');
+    console.log('freestar::', 'payload', payload);
     return {
-      method: 'GET',
+      method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString,
+      data: JSON.stringify(payload),
     };
   },
 
@@ -121,15 +121,11 @@ function formatBid(bid) {
     return size.join('x');
   });
   str.promo_sizes = str.promo_sizes.join(',');
-  for(var key in str) {
-    res.push(key + '=' + encodeURIComponent(str[key]));
-  }
   if(typeof bid.params != 'undefined') {
     for(var key in bid.params) {
-      res.push(key + '=' + encodeURIComponent(bid.params[key]));
+      str[key] = bid.params[key];
     }
   }
-  str = res.join('&');
   return str;
 }
 
