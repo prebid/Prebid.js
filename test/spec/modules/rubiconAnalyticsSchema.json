@@ -281,7 +281,7 @@
             "dimensions": {
               "$ref": "#/definitions/dimensions"
             },
-            "medaType": {
+            "mediaType": {
               "type": "string",
               "enum": [
                 "native",

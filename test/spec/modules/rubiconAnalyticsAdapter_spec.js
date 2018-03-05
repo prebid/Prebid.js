@@ -193,9 +193,11 @@ const ANALYTICS_MESSAGE = {
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'serverAccountId': 1001,
+      'samplingFactor': 1,
       'adUnits': [
         {
           'adUnitCode': '/19968336/header-bid-tag-0',
+          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
           'mediaTypes': [
             'banner'
           ],
@@ -224,7 +226,6 @@ const ANALYTICS_MESSAGE = {
           'bids': [
             {
               'bidder': 'rubicon',
-              'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
               'bidId': '2ecff0db240757',
               'status': 'success',
               'source': 'client',
@@ -254,6 +255,7 @@ const ANALYTICS_MESSAGE = {
         },
         {
           'adUnitCode': '/19968336/header-bid-tag1',
+          'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
           'mediaTypes': [
             'banner'
           ],
@@ -282,7 +284,6 @@ const ANALYTICS_MESSAGE = {
           'bids': [
             {
               'bidder': 'rubicon',
-              'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
               'bidId': '3bd4ebb1c900e2',
               'status': 'success',
               'source': 'client',
@@ -322,6 +323,8 @@ const ANALYTICS_MESSAGE = {
       'status': 'success',
       'source': 'client',
       'clientLatencyMillis': 617477221,
+      'samplingFactor': 1,
+      'serverAccountId': 1001,
       'params': {
         'accountId': '14062',
         'siteId': '70608',
@@ -354,6 +357,8 @@ const ANALYTICS_MESSAGE = {
       'status': 'success',
       'source': 'client',
       'clientLatencyMillis': 617477221,
+      'samplingFactor': 1,
+      'serverAccountId': 1001,
       'params': {
         'accountId': '14062',
         'siteId': '70608',
@@ -381,7 +386,18 @@ const ANALYTICS_MESSAGE = {
   ]
 };
 
-describe.only('rubicon analytics adapter', () => {
+function performStandardAuction() {
+  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+  events.emit(AUCTION_END, MOCK.AUCTION_END);
+  events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+  events.emit(BID_WON, MOCK.BID_WON[0]);
+  events.emit(BID_WON, MOCK.BID_WON[1]);
+}
+
+describe('rubicon analytics adapter', () => {
   let sandbox;
   let xhr;
   let requests;
@@ -421,8 +437,92 @@ describe.only('rubicon analytics adapter', () => {
     config.resetConfig();
   });
 
-  it('should be configurable', () => {
-    // TODO: determine configuration
+  describe('sampling', () => {
+    beforeEach(() => {
+      sandbox.stub(Math, 'random').returns(0.08);
+      sandbox.stub(utils, 'logError');
+    });
+
+    afterEach(() => {
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+
+    describe('with options.samplingFactor', () => {
+      it('should sample', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            samplingFactor: 10
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(1);
+      });
+
+      it('should unsample', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            samplingFactor: 20
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(0);
+      });
+
+      it('should throw errors for invalid samplingFactor', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            samplingFactor: 30
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(0);
+        expect(utils.logError.called).to.equal(true);
+      });
+    });
+    describe('with options.sampling', () => {
+      it('should sample', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            sampling: 0.1
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(1);
+      });
+
+      it('should unsample', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            sampling: 0.05
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(0);
+      });
+
+      it('should throw errors for invalid samplingFactor', () => {
+        rubiconAnalyticsAdapter.enableAnalytics({
+          options: {
+            sampling: 1 / 30
+          }
+        });
+
+        performStandardAuction();
+
+        expect(requests.length).to.equal(0);
+        expect(utils.logError.called).to.equal(true);
+      });
+    });
   });
 
   describe('when handling events', () => {
@@ -435,14 +535,7 @@ describe.only('rubicon analytics adapter', () => {
     });
 
     it('should build a batched message from prebid events', () => {
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
-      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
-      events.emit(BID_WON, MOCK.BID_WON[1]);
+      performStandardAuction();
 
       expect(requests.length).to.equal(1);
       let request = requests[0];

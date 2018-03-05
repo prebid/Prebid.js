@@ -77,7 +77,7 @@ function validMediaType(type) {
 
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
-    return Object.assign(_pick(bid, [
+    return _pick(bid, [
       'bidder',
       'bidId',
       'status',
@@ -89,12 +89,8 @@ function sendMessage(auctionId, bidWonId) {
         return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
           ? 'server' : 'client'
       },
-      'serverAccountId', () => serverConfig && serverConfig.accountId ? serverConfig.accountId : undefined,
       'clientLatencyMillis',
       'params',
-      'adUnitCode',
-      'transactionId', () => bid.adUnit.transactionId,
-      'mediaTypes', () => bid.adUnit.mediaTypes,
       'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
         'bidPriceUSD',
         'dealId',
@@ -102,11 +98,17 @@ function sendMessage(auctionId, bidWonId) {
         'mediaType',
         'adserverTargeting'
       ]) : undefined
-    ]), _pick(bid.adUnit, [
+    ]);
+  }
+  function formatBidWon(bid) {
+    return Object.assign(formatBid(bid), _pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
       'mediaTypes'
-    ]));
+    ]), {
+      serverAccountId: serverConfig && serverConfig.accountId ? serverConfig.accountId : undefined,
+      samplingFactor
+    });
   }
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {
@@ -144,6 +146,7 @@ function sendMessage(auctionId, bidWonId) {
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
+      samplingFactor,
       adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
     };
 
@@ -157,7 +160,7 @@ function sendMessage(auctionId, bidWonId) {
     let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
       let bidId = auctionCache.bidsWon[adUnitCode];
       if (bidId) {
-        memo.push(formatBid(auctionCache.bids[bidId]));
+        memo.push(formatBidWon(auctionCache.bids[bidId]));
       }
       return memo;
     }, []);
@@ -169,7 +172,7 @@ function sendMessage(auctionId, bidWonId) {
     auctionCache.sent = true;
   } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
     message.bidsWon = [
-      formatBid(auctionCache.bids[bidWonId])
+      formatBidWon(auctionCache.bids[bidWonId])
     ];
   }
 
@@ -195,15 +198,35 @@ function parseBidResponse(bid) {
   ]);
 }
 
+let samplingFactor = 1;
+
 let baseAdapter = adapter({url: ENDPOINT, analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
   enableAnalytics(config = {}) {
+    samplingFactor = 1;
+
     if (typeof config.options === 'object') {
       if (config.options.endpoint) {
         this.getUrl = () => config.options.endpoint;
       }
+      if (typeof config.options.sampling !== 'undefined') {
+        samplingFactor = 1 / parseFloat(config.options.sampling);
+      }
+      if (typeof config.options.samplingFactor !== 'undefined') {
+        if (typeof config.options.sampling !== 'undefined') {
+          utils.logWarn('Both options.samplingFactor and options.sampling enabled in rubicon analytics, defaulting to samplingFactor');
+        }
+        samplingFactor = parseFloat(config.options.samplingFactor);
+        config.options.sampling = 1 / samplingFactor;
+      }
     }
-    baseAdapter.enableAnalytics.apply(this, arguments);
+
+    let validSamplingFactors = [1, 10, 20, 40, 100];
+    if (validSamplingFactors.indexOf(samplingFactor) === -1) {
+      utils.logError('invlaid sampilngFactor for rubicon analytics: ' + samplingFactor + ', must be one of ' + validSamplingFactors.join(', '));
+    } else {
+      baseAdapter.enableAnalytics.call(this, config);
+    }
   },
   disableAnalytics() {
     this.getUrl = baseAdapter.getUrl;
