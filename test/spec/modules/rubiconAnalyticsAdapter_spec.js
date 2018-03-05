@@ -248,13 +248,6 @@ const ANALYTICS_MESSAGE = {
                   'width': 640,
                   'height': 480
                 },
-                'adserverTargeting': {
-                  'hb_bidder': 'rubicon',
-                  'hb_adid': '2ecff0db240757',
-                  'hb_pb': '1.20',
-                  'hb_size': '640x480',
-                  'hb_source': 'client'
-                },
                 'mediaType': 'video'
               }
             }
@@ -306,13 +299,6 @@ const ANALYTICS_MESSAGE = {
                   'width': 728,
                   'height': 90
                 },
-                'adserverTargeting': {
-                  'hb_bidder': 'rubicon',
-                  'hb_adid': '3bd4ebb1c900e2',
-                  'hb_pb': '1.50',
-                  'hb_size': '728x90',
-                  'hb_source': 'client'
-                },
                 'mediaType': 'banner'
               }
             }
@@ -340,18 +326,18 @@ const ANALYTICS_MESSAGE = {
       'mediaTypes': [
         'video'
       ],
+      'adserverTargeting': {
+        'hb_bidder': 'rubicon',
+        'hb_adid': '2ecff0db240757',
+        'hb_pb': '1.20',
+        'hb_size': '640x480',
+        'hb_source': 'client'
+      },
       'bidResponse': {
         'bidPriceUSD': 1.22752,
         'dimensions': {
           'width': 640,
           'height': 480
-        },
-        'adserverTargeting': {
-          'hb_bidder': 'rubicon',
-          'hb_adid': '2ecff0db240757',
-          'hb_pb': '1.20',
-          'hb_size': '640x480',
-          'hb_source': 'client'
         },
         'mediaType': 'video'
       }
@@ -374,18 +360,18 @@ const ANALYTICS_MESSAGE = {
       'mediaTypes': [
         'banner'
       ],
+      'adserverTargeting': {
+        'hb_bidder': 'rubicon',
+        'hb_adid': '3bd4ebb1c900e2',
+        'hb_pb': '1.50',
+        'hb_size': '728x90',
+        'hb_source': 'client'
+      },
       'bidResponse': {
         'bidPriceUSD': 1.52,
         'dimensions': {
           'width': 728,
           'height': 90
-        },
-        'adserverTargeting': {
-          'hb_bidder': 'rubicon',
-          'hb_adid': '3bd4ebb1c900e2',
-          'hb_pb': '1.50',
-          'hb_size': '728x90',
-          'hb_source': 'client'
         },
         'mediaType': 'banner'
       }

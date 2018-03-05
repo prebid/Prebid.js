@@ -149,6 +149,10 @@
               },
               "mediaTypes": {
                 "$ref": "#/definitions/mediaTypes"
+              },
+              "adserverTargeting": {
+                "type": "object",
+                "description": "The adserverTargeting set for this bid"
               }
             }
           }
@@ -205,8 +209,7 @@
         "bidder",
         "bidId",
         "status",
-        "source",
-        "params"
+        "source"
       ],
       "properties": {
         "bidder": {
@@ -241,6 +244,9 @@
         },
         "error": {
           "type": "object",
+          "required": [
+            "code"
+          ],
           "properties": {
             "code": {
               "type": "string",
@@ -294,12 +300,8 @@
               "description": "The bid value denoted in USD"
             },
             "dealId": {
-              "type": "string",
+              "type": "integer",
               "description": "The id associated with any potential deals"
-            },
-            "adserverTargeting": {
-              "type": "object",
-              "description": "The adserverTaregting set for this bid"
             }
           }
         }

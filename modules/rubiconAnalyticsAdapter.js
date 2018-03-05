@@ -95,8 +95,7 @@ function sendMessage(auctionId, bidWonId) {
         'bidPriceUSD',
         'dealId',
         'dimensions',
-        'mediaType',
-        'adserverTargeting'
+        'mediaType'
       ]) : undefined
     ]);
   }
@@ -104,7 +103,8 @@ function sendMessage(auctionId, bidWonId) {
     return Object.assign(formatBid(bid), _pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
-      'mediaTypes'
+      'mediaTypes',
+      'adserverTargeting', () => cache.targeting[bid.adUnit.adUnitCode]
     ]), {
       serverAccountId: serverConfig && serverConfig.accountId ? serverConfig.accountId : undefined,
       samplingFactor
@@ -187,7 +187,6 @@ function parseBidResponse(bid) {
       }
       // TODO: throw error or something if not USD?
     },
-    'adserverTargeting',
     'dealId',
     'status',
     'mediaType',
