@@ -13,7 +13,6 @@ const CONSTANTS = {
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
-  aliases: [CONSTANTS.BIDDER_CODE],
   /**
    * @param {object} bid
    * @return boolean
