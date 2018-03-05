@@ -110,8 +110,7 @@ export const spec = {
 function createAd(body, bidRequest) {
   let ad = body.ad;
   if (body.vastxml && body.vastxml.length > 0) {
-    ad = `<div id="apvad-${bidRequest.bidId}"></div>` +
-      appendChildToBody(ad, createAPVTag() + insertVASTMethod(bidRequest.bidId, body.vastxml));
+    ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethod(bidRequest.bidId, body.vastxml)}</body>`;
   }
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
@@ -155,6 +154,9 @@ function createNativeAd(body) {
     native.clickUrl = body.native_ad.link.url;
     native.clickTrackers = body.native_ad.link.clicktrackers || [];
     native.impressionTrackers = body.native_ad.imptrackers || [];
+    if (body.beaconurl && body.beaconurl != '') {
+      native.impressionTrackers.push(body.beaconurl)
+    }
   }
   return native;
 }

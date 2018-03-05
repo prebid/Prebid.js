@@ -103,7 +103,7 @@ export const spec = {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
           if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-            const bid = newBid(serverBid, rtbBid);
+            const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
           }
@@ -123,11 +123,11 @@ export const spec = {
   }
 }
 
-function newRenderer(adUnitCode, rtbBid) {
+function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
-    config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+    config: rendererOptions,
     loaded: false,
   });
 
@@ -178,9 +178,10 @@ function getKeywords(keywords) {
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
  * @param rtbBid
+ * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid) {
+function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -188,7 +189,10 @@ function newBid(serverBid, rtbBid) {
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    appnexus: {
+      buyerMemberId: rtbBid.buyer_member_id
+    }
   };
 
   if (rtbBid.rtb.video) {
@@ -200,9 +204,14 @@ function newBid(serverBid, rtbBid) {
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
+      const rendererOptions = utils.deepAccess(
+        bidderRequest.bids[0],
+        'renderer.options'
+      );
+
       Object.assign(bid, {
         adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid)
+        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
       });
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
@@ -275,7 +284,7 @@ function bidToTag(bid) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = getSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes);
   }
   if (bid.params.supplyType) {
     tag.supply_type = bid.params.supplyType;

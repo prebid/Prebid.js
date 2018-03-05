@@ -50,15 +50,6 @@ export const spec = {
     }
 
     return bids;
-  },
-
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//' + ENDPOINT + '/adx/usersync'
-      }];
-    }
   }
 }
 

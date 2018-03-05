@@ -143,7 +143,7 @@ const buildRequests = bids => {
   };
   const video = findIndex(adformats, isVideo);
   if (video !== -1) {
-    [search.playerwidth, search.playerheight] = sizes[video].split('x').map(Number)
+    [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
   }
   const data = formatQS(search);
 
@@ -162,51 +162,50 @@ const buildRequests = bids => {
 const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
   const ttl = Number(config.getConfig().bidderTimeout);
 
-  return body.errors && body.errors.length
-    ? []
-    : Object.keys(body.bids)
-      // extract Array of bid responses
-      .map(placementId => body.bids[placementId])
-      // flatten
-      .reduce((a, b) => a.concat(b), [])
-      // transform to bidResponse
-      .map((bid, i) => {
-        const {
-          bid_id: fb_bidid,
-          placement_id: creativeId,
-          bid_price_cents: cpm
-        } = bid;
+  const { bids = {} } = body;
+  return Object.keys(bids)
+    // extract Array of bid responses
+    .map(placementId => bids[placementId])
+    // flatten
+    .reduce((a, b) => a.concat(b), [])
+    // transform to bidResponse
+    .map((bid, i) => {
+      const {
+        bid_id: fb_bidid,
+        placement_id: creativeId,
+        bid_price_cents: cpm
+      } = bid;
 
-        const format = adformats[i];
-        const [width, height] = expandSize(flattenSize(sizes[i]));
-        const ad = createAdHtml(creativeId, format, fb_bidid);
-        const requestId = requestIds[i];
+      const format = adformats[i];
+      const [width, height] = expandSize(flattenSize(sizes[i]));
+      const ad = createAdHtml(creativeId, format, fb_bidid);
+      const requestId = requestIds[i];
 
-        const bidResponse = {
-          // Prebid attributes
-          requestId,
-          cpm: cpm / 100,
-          width,
-          height,
-          ad,
-          ttl,
-          creativeId,
-          netRevenue,
-          currency,
-          // Audience Network attributes
-          hb_bidder,
-          fb_bidid,
-          fb_format: format,
-          fb_placementid: creativeId
-        };
-        // Video attributes
-        if (isVideo(format)) {
-          const pageurl = getTopWindowUrlEncoded();
-          bidResponse.mediaType = 'video';
-          bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
-        }
-        return bidResponse;
-      });
+      const bidResponse = {
+        // Prebid attributes
+        requestId,
+        cpm: cpm / 100,
+        width,
+        height,
+        ad,
+        ttl,
+        creativeId,
+        netRevenue,
+        currency,
+        // Audience Network attributes
+        hb_bidder,
+        fb_bidid,
+        fb_format: format,
+        fb_placementid: creativeId
+      };
+      // Video attributes
+      if (isVideo(format)) {
+        const pageurl = getTopWindowUrlEncoded();
+        bidResponse.mediaType = 'video';
+        bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
+      }
+      return bidResponse;
+    });
 };
 
 export const spec = {
