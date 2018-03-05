@@ -72,7 +72,7 @@ function sizeToDimensions(size) {
 }
 
 function validMediaType(type) {
-  return ['display', 'native', 'video'].indexOf(type) === -1;
+  return ['banner', 'native', 'video'].indexOf(type) !== -1;
 }
 
 function sendMessage(auctionId, bidWonId) {
@@ -267,7 +267,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               'adUnitCode',
               'transactionId',
               'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
-              'mediaTypes', (types, bid) => {
+              'mediaTypes', (types) => {
                 if (bid.mediaType && validMediaType(bid.mediaType)) {
                   return [bid.mediaType];
                 }

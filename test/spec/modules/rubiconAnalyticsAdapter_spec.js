@@ -35,9 +35,9 @@ const {
 
 const BID = {
   'bidder': 'rubicon',
-  'width': 728,
-  'height': 90,
-  'mediaType': 'banner',
+  'width': 640,
+  'height': 480,
+  'mediaType': 'video',
   'statusMessage': 'Bid available',
   'adId': '2ecff0db240757',
   'source': 'client',
@@ -63,12 +63,12 @@ const BID = {
   'pbAg': '1.20',
   'pbDg': '1.22',
   'pbCg': '',
-  'size': '728x90',
+  'size': '640x480',
   'adserverTargeting': {
     'hb_bidder': 'rubicon',
     'hb_adid': '2ecff0db240757',
     'hb_pb': '1.20',
-    'hb_size': '728x90',
+    'hb_size': '640x480',
     'hb_source': 'client'
   },
   getStatusCode() {
@@ -80,7 +80,10 @@ const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag1',
   adId: '3bd4ebb1c900e2',
   requestId: '3bd4ebb1c900e2',
-  cpm: 1.5,
+  width: 728,
+  height: 90,
+  mediaType: 'banner',
+  cpm: 1.52,
   rubiconTargeting: {
     'rpfl_elemid': '/19968336/header-bid-tag1',
     'rpfl_14062': '2_tier0100'
@@ -88,7 +91,7 @@ const BID2 = Object.assign({}, BID, {
   adserverTargeting: {
     'hb_bidder': 'rubicon',
     'hb_adid': '3bd4ebb1c900e2',
-    'hb_pb': '1.20',
+    'hb_pb': '1.50',
     'hb_size': '728x90',
     'hb_source': 'client'
   }
@@ -119,12 +122,24 @@ const MOCK = {
           'keywords': ['a', 'b', 'c'],
           'inventory': 'test',
           'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
-          'position': 'btf'
+          'position': 'btf',
+          'video': {
+            'language': 'en',
+            'playerHeight': 480,
+            'playerWidth': 640,
+            'size_id': 203,
+            'skip': 1,
+            'skipdelay': 15,
+            'aeParams': {
+              'p_aso.video.ext.skip': '1',
+              'p_aso.video.ext.skipdelay': '15'
+            }
+          }
         },
-        'mediaType': 'banner',
+        'mediaType': 'video',
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-        'sizes': [[1000, 300], [970, 250], [728, 90]],
+        'sizes': [[640, 480]],
         'bidId': '2ecff0db240757',
         'bidderRequestId': '1be65d7958826a',
         'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
@@ -199,20 +214,12 @@ const ANALYTICS_MESSAGE = {
           'adUnitCode': '/19968336/header-bid-tag-0',
           'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
           'mediaTypes': [
-            'banner'
+            'video'
           ],
           'dimensions': [
             {
-              'width': 1000,
-              'height': 300
-            },
-            {
-              'width': 970,
-              'height': 250
-            },
-            {
-              'width': 728,
-              'height': 90
+              'width': 640,
+              'height': 480
             }
           ],
           'status': 'success',
@@ -220,7 +227,7 @@ const ANALYTICS_MESSAGE = {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
             'hb_pb': '1.20',
-            'hb_size': '728x90',
+            'hb_size': '640x480',
             'hb_source': 'client'
           },
           'bids': [
@@ -238,17 +245,17 @@ const ANALYTICS_MESSAGE = {
               'bidResponse': {
                 'bidPriceUSD': 1.22752,
                 'dimensions': {
-                  'width': 728,
-                  'height': 90
+                  'width': 640,
+                  'height': 480
                 },
                 'adserverTargeting': {
                   'hb_bidder': 'rubicon',
                   'hb_adid': '2ecff0db240757',
                   'hb_pb': '1.20',
-                  'hb_size': '728x90',
+                  'hb_size': '640x480',
                   'hb_source': 'client'
                 },
-                'mediaType': 'banner'
+                'mediaType': 'video'
               }
             }
           ]
@@ -277,7 +284,7 @@ const ANALYTICS_MESSAGE = {
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '3bd4ebb1c900e2',
-            'hb_pb': '1.20',
+            'hb_pb': '1.50',
             'hb_size': '728x90',
             'hb_source': 'client'
           },
@@ -294,7 +301,7 @@ const ANALYTICS_MESSAGE = {
                 'zoneId': '335918'
               },
               'bidResponse': {
-                'bidPriceUSD': 1.5,
+                'bidPriceUSD': 1.52,
                 'dimensions': {
                   'width': 728,
                   'height': 90
@@ -302,7 +309,7 @@ const ANALYTICS_MESSAGE = {
                 'adserverTargeting': {
                   'hb_bidder': 'rubicon',
                   'hb_adid': '3bd4ebb1c900e2',
-                  'hb_pb': '1.20',
+                  'hb_pb': '1.50',
                   'hb_size': '728x90',
                   'hb_source': 'client'
                 },
@@ -331,22 +338,22 @@ const ANALYTICS_MESSAGE = {
         'zoneId': '335918'
       },
       'mediaTypes': [
-        'banner'
+        'video'
       ],
       'bidResponse': {
         'bidPriceUSD': 1.22752,
         'dimensions': {
-          'width': 728,
-          'height': 90
+          'width': 640,
+          'height': 480
         },
         'adserverTargeting': {
           'hb_bidder': 'rubicon',
           'hb_adid': '2ecff0db240757',
           'hb_pb': '1.20',
-          'hb_size': '728x90',
+          'hb_size': '640x480',
           'hb_source': 'client'
         },
-        'mediaType': 'banner'
+        'mediaType': 'video'
       }
     },
     {
@@ -368,7 +375,7 @@ const ANALYTICS_MESSAGE = {
         'banner'
       ],
       'bidResponse': {
-        'bidPriceUSD': 1.5,
+        'bidPriceUSD': 1.52,
         'dimensions': {
           'width': 728,
           'height': 90
@@ -376,7 +383,7 @@ const ANALYTICS_MESSAGE = {
         'adserverTargeting': {
           'hb_bidder': 'rubicon',
           'hb_adid': '3bd4ebb1c900e2',
-          'hb_pb': '1.20',
+          'hb_pb': '1.50',
           'hb_size': '728x90',
           'hb_source': 'client'
         },
