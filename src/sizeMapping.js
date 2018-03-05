@@ -87,3 +87,28 @@ function evaluateSizeConfig(configs) {
     shouldFilter: false
   });
 }
+
+/**
+ * @param bid
+ * @param {Array<Array<number>>} sizes
+ * @returns {Array<Array<number>>}
+ */
+export function resolveBidOverrideSizes(bid, sizes = []) {
+  // If bid has a sizes array, filter for values that exist in bid.sizes from sizes
+  let filteredSizes;
+  if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    filteredSizes = sizes.filter(size => {
+      return Array.isArray(size) ?
+        bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1])) :
+        bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h));
+    });
+    // If no sizes after filtering, bid sizes contained invalid values
+    if (filteredSizes.length === 0) {
+      logWarn('Invalid bid override sizes', bid);
+      filteredSizes = sizes;
+    }
+  } else {
+    filteredSizes = sizes;
+  }
+  return filteredSizes;
+}

@@ -1,7 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp } from './utils';
-import { resolveStatus } from './sizeMapping';
+import { resolveStatus, resolveBidOverrideSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
@@ -73,24 +73,10 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
-          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+          // Sizes defined at the bid level are the enabled sizes for that bid
+          let filteredBidSizes = resolveBidOverrideSizes(bid, filteredAdUnitSizes);
 
-          // If bid.sizes is defined, filter by intersection of sizes and bid.sizes
-          if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-            let filteredBidSizes = sizes.filter(size => {
-              if (Array.isArray(size)) {
-                return bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1]));
-              }
-              else if (size && typeof size === 'object') {
-                return bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h));
-              }
-              return true;
-            });
-
-            if (filteredBidSizes > 0) {
-              sizes = filteredBidSizes;
-            }
-          }
+          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredBidSizes);
 
           if (active) {
             bids.push(Object.assign({}, bid, {
