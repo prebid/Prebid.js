@@ -209,33 +209,49 @@ describe('sizeMapping', () => {
 
   describe('when handling sizes defined on a bid', () => {
     it('should filter an intersection of adUnit sizes and bid sizes', () => {
-      sandbox.stub(utils, 'logWarn');
-
       const testAdUnitSizes = deepClone(testSizes);
-      const testAdUnitSizesObjs = testAdUnitSizes.map(size => ({w: size[0], h: size[1]}));
 
-      const bidEmptySizes = {sizes: []};
       const bidOneSize = {sizes: [[728,90]]};
       const bidMultipleSizes = {sizes: [[728,90],[300, 250],[300,100]]};
+
+      // Test single valid bid size, should return single valid size
+      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizes)).to.deep.equal(bidOneSize.sizes);
+      // Test multiple valid bid sizes, should return valid sizes
+      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizes)).to.deep.equal(bidMultipleSizes.sizes);
+    });
+
+    it('should filter bid sizes with adUnit sizes defined as a list of objects', () => {
+      // adUnit sizes defined using w/h object structure Array.<{ w:number, h:number }>
+      const testAdUnitSizesObjs = deepClone(testSizes).map(size => ({w: size[0], h: size[1]}));
+
+      const bidOneSize = {sizes: [[728,90]]};
+      const bidMultipleSizes = {sizes: [[728,90],[300, 250],[300,100]]};
+
+      // Test single valid bid size, should return single valid size but defined as Array.<{ w:number, h:number }>
+      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs)).to.deep.equal(bidOneSize.sizes.map(size => ({w:size[0], h:size[1]})));
+      // Test multiple valid bid sizes, should return valid sizes but defined as Array.<{ w:number, h:number }>
+      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w:size[0], h:size[1]})));
+    });
+
+    it('should return unfiltered sizes when bid sizes are invalid', () => {
+      sandbox.stub(utils, 'logWarn');
+      const testAdUnitSizes = deepClone(testSizes);
       const bidInvalidSize = {sizes: [[728,250]]};
 
-      // Empty bid sizes
-      expect(resolveBidOverrideSizes(bidEmptySizes, testAdUnitSizes)).to.deep.equal(testAdUnitSizes);
-
-      // Empty adUnit sizes
-      expect(resolveBidOverrideSizes(bidOneSize, [])).to.deep.equal([]);
-
-      // Valid sizes
-      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizes)).to.deep.equal(bidOneSize.sizes);
-      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizes)).to.deep.equal(bidMultipleSizes.sizes);
-
-      // Valid sizes: using adUnit sizes defined using object structure { w:number, h:number }
-      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs)).to.deep.equal(bidOneSize.sizes.map(size => ({w:size[0], h:size[1]})));
-      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w:size[0], h:size[1]})));
-
-      // Invalid bid sizes
+      // Invalid bid sizes, should return unfiltered sizes and log warning
       expect(resolveBidOverrideSizes(bidInvalidSize, testAdUnitSizes)).to.deep.equal(testAdUnitSizes);
       expect(utils.logWarn.firstCall.args[0]).to.match(/Invalid bid override sizes/);
+    });
+
+    it('should return unfiltered sizes when bid sizes or adUnit sizes are empty', () => {
+      const testAdUnitSizes = deepClone(testSizes);
+      const bidOneSize = {sizes: [[728,90]]};
+      const bidEmptySizes = {sizes: []};
+
+      // Empty bid sizes, should return unfiltered bids
+      expect(resolveBidOverrideSizes(bidEmptySizes, testAdUnitSizes)).to.deep.equal(testAdUnitSizes);
+      // Valid bid size and empty adUnit sizes, should return empty adUnit sizes
+      expect(resolveBidOverrideSizes(bidOneSize, [])).to.deep.equal([]);
     });
   })
 });

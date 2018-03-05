@@ -89,20 +89,20 @@ function evaluateSizeConfig(configs) {
 }
 
 /**
- * @param bid
- * @param {Array<Array<number>>} sizes
- * @returns {Array<Array<number>>}
+ * If a bid has a sizes array defined, filter values that exist in bid.sizes from sizes
+ * @param bid - bid to resolve sizes against
+ * @param {Array<Array<number>>} sizes - adUnit sizes
+ * @returns {Array<Array<number>>} - sizes filtered using bid.sizes
  */
-export function resolveBidOverrideSizes(bid, sizes = []) {
-  // If bid has a sizes array, filter for values that exist in bid.sizes from sizes
+export function resolveBidOverrideSizes(bid, sizes) {
   let filteredSizes;
   if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     filteredSizes = sizes.filter(size => {
-      return Array.isArray(size) ?
-        bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1])) :
-        bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h));
+      // if size has array type: test equality between array versus array
+      // else size has object type: test equality between array versus Object.<w:number, h:number>
+      return Array.isArray(size) ? bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1])) : bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h));
     });
-    // If no sizes after filtering, bid sizes contained invalid values
+    // bid sizes contained invalid sizes if sizes are empty after filtering
     if (filteredSizes.length === 0) {
       logWarn('Invalid bid override sizes', bid);
       filteredSizes = sizes;
