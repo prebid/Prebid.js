@@ -49,8 +49,8 @@ export function newTargeting(auctionManager) {
     }
   };
 
-  function addTimedOutIncompleteAuction(targeting) {
-    return targeting.push({[adUnitCodes[0]]: [{hb_ttr: [-1]}]});
+  function addTimedOutIncompleteAuction(adUnitCode, targeting) {
+    return targeting.push({[adUnitCode]: [{hb_ttr: [-1]}]});
   }
 
   /**
@@ -82,7 +82,7 @@ export function newTargeting(auctionManager) {
     const winningBid = winningBidTargeting.length > 0;
     const allBidsReceived = bidsReceived.length === auctionManager.getBidsRequested().length;
     if (!(winningBid || allBidsReceived)) {
-      addTimedOutIncompleteAuction(targeting);
+      addTimedOutIncompleteAuction(adUnitCodes[0], targeting);
     }
 
     targeting = flattenTargeting(targeting);

@@ -117,7 +117,7 @@ describe('Index Exchange adapter', () => {
     });
     it('should interpret empty bid response ttl', () => {
       const bids = spec.interpretResponse(emptyBidResponse, {'bidRequest': bidRequests[0]});
-      expect(bids[0].ttl).to.equal(3000);
+      expect(bids[0].ttl).to.equal(360);
     });
     it('should interpret empty bid response ad', () => {
       const bids = spec.interpretResponse(emptyBidResponse, {'bidRequest': bidRequests[0]});
@@ -165,7 +165,7 @@ describe('Index Exchange adapter', () => {
     });
     it('should interpret filled bid response ttl', () => {
       const bids = spec.interpretResponse(filledBidResponse, {'bidRequest': bidRequests[0]});
-      expect(bids[0].ttl).to.equal(3000);
+      expect(bids[0].ttl).to.equal(360);
     });
     it('should interpret filled bid response ad', () => {
       const bids = spec.interpretResponse(filledBidResponse, {'bidRequest': bidRequests[0]});
