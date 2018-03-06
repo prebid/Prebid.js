@@ -114,7 +114,7 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses[0].body.sbi_px) {
+    if (syncOptions.pixelEnabled && serverResponses && serverResponses[0] && serverResponses[0].body && serverResponses[0].body.sbi_px) {
       serverResponses[0].body.sbi_px.forEach(pixel => {
         syncs.push({
           type: pixel.type,
