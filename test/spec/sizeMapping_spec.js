@@ -228,9 +228,9 @@ describe('sizeMapping', () => {
       const bidMultipleSizes = {sizes: [[728,90],[300, 250],[300,100]]};
 
       // Test single valid bid size, should return single valid size but defined as Array.<{ w:number, h:number }>
-      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs)).to.deep.equal(bidOneSize.sizes.map(size => ({w:size[0], h:size[1]})));
+      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs, true)).to.deep.equal(bidOneSize.sizes.map(size => ({w:size[0], h:size[1]})));
       // Test multiple valid bid sizes, should return valid sizes but defined as Array.<{ w:number, h:number }>
-      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w:size[0], h:size[1]})));
+      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs, true)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w:size[0], h:size[1]})));
     });
 
     it('should return unfiltered sizes when bid sizes are invalid', () => {

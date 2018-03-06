@@ -74,7 +74,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
           ]));
 
           // Sizes defined at the bid level are the enabled sizes for that bid
-          let filteredBidSizes = resolveBidOverrideSizes(bid, filteredAdUnitSizes);
+          let filteredBidSizes = resolveBidOverrideSizes(bid, filteredAdUnitSizes, _s2sConfig.enabled);
 
           let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredBidSizes);
 
