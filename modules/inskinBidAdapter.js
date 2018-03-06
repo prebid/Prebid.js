@@ -51,7 +51,6 @@ export const spec = {
       time: Date.now(),
       user: {},
       url: utils.getTopWindowUrl(),
-      referrer: document.referrer,
       enableBotFiltering: true,
       includePricingData: true,
       parallel: true
