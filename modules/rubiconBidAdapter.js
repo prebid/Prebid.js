@@ -73,7 +73,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * @param {object} bid
    * @return boolean
@@ -109,12 +109,21 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
+      let page_url = config.getConfig('pageUrl');
+      if (bidRequest.params.referrer) {
+        page_url = bidRequest.params.referrer;
+      } else if (!page_url) {
+        page_url = utils.getTopWindowUrl();
+      }
+
+      page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
+
       if (bidRequest.mediaType === 'video') {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
 
         let data = {
-          page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+          page_url,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
           integration: INTEGRATION,
@@ -129,7 +138,7 @@ export const spec = {
         let slotData = {
           site_id: params.siteId,
           zone_id: params.zoneId,
-          position: params.position || 'btf',
+          position: parsePosition(params.position),
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
           element_id: bidRequest.adUnitCode,
           name: bidRequest.adUnitCode,
@@ -171,8 +180,7 @@ export const spec = {
         keywords,
         visitor,
         inventory,
-        userId,
-        referrer: pageUrl
+        userId
       } = bidRequest.params;
 
       // defaults
@@ -209,7 +217,7 @@ export const spec = {
 
       data.push(
         'rand', Math.random(),
-        'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
+        'rf', page_url
       );
 
       data = data.concat(_getDigiTrustQueryParams());
@@ -268,13 +276,23 @@ export const spec = {
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
-        netRevenue: config.getConfig('rubicon.netRevenue') || false
+        netRevenue: config.getConfig('rubicon.netRevenue') || false,
+        rubicon: {
+          advertiserId: ad.advertiser,
+          networkId: ad.network
+        }
       };
+
+      if (ad.creative_type) {
+        bid.mediaType = ad.creative_type;
+      }
+
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
         bid.impression_id = ad.impression_id;
+        bid.videoCacheKey = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
@@ -357,14 +375,13 @@ function parseSizes(bid) {
     }
     return size;
   }
-  return masSizeOrdering(Array.isArray(params.sizes)
-    ? params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
-  );
+
+  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+
+  return masSizeOrdering(sizes);
 }
 
-export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
-
+function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
     // map sizes while excluding non-matches
     .reduce((result, size) => {
@@ -373,25 +390,37 @@ export function masSizeOrdering(sizes) {
         result.push(mappedSize);
       }
       return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    }, []);
+}
 
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
+function parsePosition(position) {
+  if (position === 'atf' || position === 'btf') {
+    return position;
+  }
+  return 'unknown';
+}
+
+export function masSizeOrdering(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return sizes.sort((first, second) => {
+    // sort by MAS_SIZE_PRIORITY priority order
+    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+    if (firstPriority > -1 || secondPriority > -1) {
+      if (firstPriority === -1) {
+        return 1;
       }
+      if (secondPriority === -1) {
+        return -1;
+      }
+      return firstPriority - secondPriority;
+    }
 
-      // and finally ascending order
-      return first - second;
-    });
+    // and finally ascending order
+    return first - second;
+  });
 }
 
 var hasSynced = false;

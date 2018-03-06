@@ -16,13 +16,13 @@ Module that connects to OpenX's demand sources
         {
             code: 'test-div',
             sizes: [[728, 90]],  // a display size
-            mediaType: 'banner',
+            mediaTypes: {'banner': {}},
             bids: [
                 {
-                    bidder: "openx",
+                    bidder: 'openx',
                     params: {
-                        unit: "539439964",
-                        delDomain: "se-demo-d.openx.net"
+                        unit: '539439964',
+                        delDomain: 'se-demo-d.openx.net'
                     }
                 }
             ]
@@ -30,7 +30,7 @@ Module that connects to OpenX's demand sources
         {
             code: 'video1',
             sizes: [[640,480]],
-            mediaType: 'video',
+            mediaTypes: {'video': {}},
             bids: [
               {
                 bidder: 'openx',
