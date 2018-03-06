@@ -149,7 +149,7 @@ const StroeerCoreAdapter = function (win = window) {
   }
 
   // ===========================================================
-  // Commented out for now as assert() function is not used.
+  // Commented out for now as assert() is not used.
   // ===========================================================
 
   /*
@@ -219,8 +219,10 @@ const StroeerCoreAdapter = function (win = window) {
         timeout: params.timeout - (Date.now() - params.auctionStart)
       };
 
-      // Check to see if atleast one bid has a SSAT value
-      // If so, we must isolate those that don't instead of defaulting to 2
+      /*
+       * Check to see if atleast one bid has a SSAT value
+       * If so, we must isolate those that don't instead of defaulting to 2
+       */
       let ssatIsPresentInAtleastOne = false;
       let bidsWithSsat = [];
       for (let i = 0; i < allBids.length; i++) {
@@ -234,6 +236,7 @@ const StroeerCoreAdapter = function (win = window) {
       for (let i = 0; i < allBids.length; i++) {
         let bidRequest = allBids[i];
         let bidSsat = bidRequest.params.ssat;
+        // If all bids have no ssat then default to 2 and accept all
         if (ssatIsPresentInAtleastOne === false) {
           bidSsat = 2;
           bidsWithSsat.push(i);

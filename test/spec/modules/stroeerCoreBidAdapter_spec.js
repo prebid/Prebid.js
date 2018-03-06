@@ -495,6 +495,46 @@ describe('stroeerssp adapter', function () {
         assert.deepEqual(bidRequest, expectedJsonRequestSecondAuction);
       });
 
+      it('test an auction with ssat but no sid', function() {
+        clock.tick(13500);
+
+        const bidderRequestSecondType = ({
+          bidderRequestId: 'bidder-request-id-125',
+          bidderCode: 'stroeerCore',
+          timeout: 5000,
+          auctionStart: 10000,
+          bids: [
+            {
+              bidId: 'bid1',
+              bidder: 'stroeerCore',
+              placementCode: 'div-1',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                ssat: 2
+              }
+            },
+            {
+              bidId: 'bid2',
+              bidder: 'stroeerCore',
+              placementCode: 'div-2',
+              sizes: [[728, 90]],
+              params: {
+                ssat: 2
+              }
+            }
+          ],
+        });
+
+        fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
+        adapter(win).callBids(bidderRequestSecondType);
+        fakeServer.respond();
+
+        assert.equal(fakeServer.requests.length, 0);
+
+        sinon.assert.calledTwice(bidmanager.addBidResponse);
+      });
+
       /* This test no longer works as the SSAT is part of the bid params
       const invalidTypeSamples = [-1, 0, 3, 4];
       invalidTypeSamples.forEach((type) => {
