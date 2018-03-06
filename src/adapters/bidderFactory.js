@@ -342,13 +342,11 @@ export function newBidder(spec) {
   }
 }
 
-// check that the bid has a width and height set
-function validBidSize(adUnitCode, bid, bidRequests) {
+// check that the bid has a width and height set, or set the width and height if it can be inferred
+function validBidSize(adUnitCode, bid, adUnit) {
   if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
     return true;
   }
-
-  const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
 
   const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
   const parsedSizes = parseSizesInput(sizes);
@@ -376,13 +374,19 @@ export function isValid(adUnitCode, bid, bidRequests) {
     return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
   }
 
-  if (!adUnitCode) {
-    logWarn('No adUnitCode was supplied to addBidResponse.');
+  if (!bid) {
+    logError(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
     return false;
   }
 
-  if (!bid) {
-    logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
+  if (!adUnitCode) {
+    logError(errorMessage('No adUnitCode was supplied to addBidResponse.'));
+    return false;
+  }
+
+  const req = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+  if (!req.start) {
+    logError(errorMessage('Cannot find valid matching bid request.'));
     return false;
   }
 
@@ -399,7 +403,7 @@ export function isValid(adUnitCode, bid, bidRequests) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }
-  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, req)) {
     logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }

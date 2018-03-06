@@ -9,8 +9,10 @@ import { config } from 'src/config';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
+  start: utils.timestamp(),
   bids: [
     {
+      bidder: CODE,
       bidId: 1,
       auctionId: 'first-bid-id',
       adUnitCode: 'mock/placement',
@@ -19,6 +21,7 @@ const MOCK_BIDS_REQUEST = {
       }
     },
     {
+      bidder: CODE,
       bidId: 2,
       auctionId: 'second-bid-id',
       adUnitCode: 'mock/placement2',
@@ -335,6 +338,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
 
       const bid = {
+        bidderCode: CODE,
         creativeId: 'creative-id',
         requestId: '1',
         ad: 'ad-url.com',
@@ -608,7 +612,9 @@ describe('validate bid response: ', () => {
 
   it('should add native bids that do have required assets', () => {
     let bidRequest = {
+      start: utils.timestamp(),
       bids: [{
+        bidder: CODE,
         bidId: 1,
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
@@ -625,6 +631,7 @@ describe('validate bid response: ', () => {
     let bids1 = Object.assign({},
       bids[0],
       {
+        bidderCode: CODE,
         'mediaType': 'native',
         'native': {
           'title': 'Native Creative',
@@ -645,7 +652,9 @@ describe('validate bid response: ', () => {
 
   it('should not add native bids that do not have required assets', () => {
     let bidRequest = {
+      start: utils.timestamp(),
       bids: [{
+        bidder: CODE,
         bidId: 1,
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
@@ -681,7 +690,9 @@ describe('validate bid response: ', () => {
 
   it('should add bid when renderer is present on outstream bids', () => {
     let bidRequest = {
+      start: utils.timestamp(),
       bids: [{
+        bidder: CODE,
         bidId: 1,
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
@@ -715,6 +726,7 @@ describe('validate bid response: ', () => {
 
   it('should add banner bids that have no width or height but single adunit size', () => {
     let bidRequest = {
+      start: utils.timestamp(),
       bids: [{
         bidder: CODE,
         bidId: 1,
