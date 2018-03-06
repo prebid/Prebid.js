@@ -47,13 +47,13 @@ export const spec = {
       }
     }
     // throw it all into an object and pass it along
+    payload['id'] = uid();
     payload['adUnitsToBidUpon'] = adUnitsToBidUpon;
     payload['site'] = location.hostname;
     payload['page'] = location.pathname;
     for (var key in cookieObj) {
       payload[key] = cookieObj[key];
     }
-    console.log('freestar::', 'payload', payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -127,6 +127,15 @@ function formatBid(bid) {
     }
   }
   return str;
+}
+
+function uid() {
+  const src = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var uid = '';
+  for(var i = 0; i < 16; i++) {
+    uid += src.substr((Math.floor(Math.random() * src.length) + 1 ),1)
+  }
+  return uid;
 }
 
 registerBidder(spec);
