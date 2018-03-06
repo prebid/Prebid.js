@@ -26,7 +26,8 @@ const isBidRequestValid = bid =>
   typeof bid.params.placementId === 'string' &&
   bid.params.placementId.length > 0 &&
   Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-  (isVideo(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
+  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).every(size => size === '300x250') : true) &&
+  (isValidNonSizedFormat(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 
 /**
  * Flattens a 2-element [W, H] array as a 'WxH' string,
@@ -52,11 +53,35 @@ const expandSize = size => size.split('x').map(Number);
 const isValidSize = size => includes(['300x250', '320x50'], size);
 
 /**
+ * Is this a valid, non-sized format?
+ * @param {String} size
+ * @returns {Boolean}
+ */
+const isValidNonSizedFormat = format => includes(['video', 'native'], format);
+
+/**
+ * Is this a valid size and format?
+ * @param {String} size
+ * @returns {Boolean}
+ */
+const isValidSizeAndFormat = (size, format) =>
+  (isFullWidth(format) && flattenSize(size) === '300x250') ||
+  isValidNonSizedFormat(format) ||
+  isValidSize(flattenSize(size));
+
+/**
  * Is this a video format?
  * @param {String} format
  * @returns {Boolean}
  */
 const isVideo = format => format === 'video';
+
+/**
+ * Is this a fullwidth format?
+ * @param {String} format
+ * @returns {Boolean}
+ */
+const isFullWidth = format => format === 'fullwidth';
 
 /**
  * Which SDK version should be used for this format?
@@ -120,7 +145,7 @@ const buildRequests = bids => {
 
   bids.forEach(bid => bid.sizes
     .map(flattenSize)
-    .filter(size => isValidSize(size) || isVideo(bid.params.format))
+    .filter(size => isValidSizeAndFormat(size, bid.params.format))
     .slice(0, 1)
     .forEach(size => {
       placementids.push(bid.params.placementId);
