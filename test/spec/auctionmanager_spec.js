@@ -801,5 +801,30 @@ describe('auctionmanager.js', function () {
       config.getConfig.restore();
       store.store.restore();
     });
+
+    it('runs auction after video responses with multiple bid objects have been cached', () => {
+      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
+      sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
+
+      const bidsCopy = [
+        Object.assign({}, bids[0], { mediaType: 'video' }),
+        Object.assign({}, bids[0], { mediaType: 'banner' }),
+      ];
+      const bids1Copy = [
+        Object.assign({}, bids1[0], { mediaType: 'video' }),
+        Object.assign({}, bids1[0], { mediaType: 'video' }),
+      ];
+
+      spec.interpretResponse.returns(bidsCopy);
+      spec1.interpretResponse.returns(bids1Copy);
+
+      auction.callBids();
+
+      assert.equal(auction.getBidsReceived().length, 4);
+      assert.equal(auction.getAuctionStatus(), 'completed');
+
+      config.getConfig.restore();
+      store.store.restore();
+    });
   });
 });
