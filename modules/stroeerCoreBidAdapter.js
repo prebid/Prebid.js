@@ -118,9 +118,13 @@ const StroeerCoreAdapter = function (win = window) {
             auctionPrice = (parseFloat(auctionPrice) * this.exchangerate).toFixed(4);
           }
 
-          const notInExponentialForm = price => price.indexOf('e') === -1;
-          assert(notInExponentialForm(auctionPrice), `auction price is in exp form`);
-          assert(notInExponentialForm(sspAuctionPrice), `ssp auction price is in exp form`);
+          // ===========================================================
+          // Commented out for now as price.indexOf() is not a function.
+          // ===========================================================
+
+          //const notInExponentialForm = price => price.indexOf('e') === -1;
+          //assert(notInExponentialForm(auctionPrice), `auction price is in exp form`);
+          //assert(notInExponentialForm(sspAuctionPrice), `ssp auction price is in exp form`);
 
           auctionPrice = tunePrice(auctionPrice);
           sspAuctionPrice = tunePrice(sspAuctionPrice);
