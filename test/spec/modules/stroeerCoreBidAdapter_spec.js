@@ -2,7 +2,6 @@ const assert = require('chai').assert;
 const adapter = require('modules/stroeerCoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 const utils = require('src/utils');
-const config = require('src/config').config;
 
 function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
@@ -33,7 +32,8 @@ const buildBidderRequest = () => ({
       sizes: [[300, 600], [160, 60]],
       mediaType: '',
       params: {
-        sid: 'NDA='
+        sid: 'NDA=',
+        ssat: 2
       }
     },
     {
@@ -42,7 +42,38 @@ const buildBidderRequest = () => ({
       placementCode: 'div-2',
       sizes: [[728, 90]],
       params: {
-        sid: 'ODA='
+        sid: 'ODA=',
+        ssat: 1
+      }
+    }
+  ],
+});
+
+const buildBidderRequestSecondPriceAuction = () => ({
+  bidderRequestId: 'bidder-request-id-123',
+  bidderCode: 'stroeerCore',
+  timeout: 5000,
+  auctionStart: 10000,
+  bids: [
+    {
+      bidId: 'bid1',
+      bidder: 'stroeerCore',
+      placementCode: 'div-1',
+      sizes: [[300, 600], [160, 60]],
+      mediaType: '',
+      params: {
+        sid: 'NDA=',
+        ssat: 2
+      }
+    },
+    {
+      bidId: 'bid2',
+      bidder: 'stroeerCore',
+      placementCode: 'div-2',
+      sizes: [[728, 90]],
+      params: {
+        sid: 'ODA=',
+        ssat: 2
       }
     }
   ],
@@ -55,12 +86,18 @@ const buildBidderResponse = () => ({
     'width': 300,
     'height': 600,
     'ad': '<div>tag1</div>',
+    'cpm2': 3.8,
+    'floor': 2.0,
+    'exchangerate': 1.0,
+    'nurl': 'www.something.com',
+    'ssat': 2
   }, {
     'bidId': 'bid2',
     'cpm': 4.0,
     'width': 728,
     'height': 90,
     'ad': '<div>tag2</div>',
+    'ssat': 1
   }]
 });
 
@@ -74,7 +111,8 @@ const buildBidderResponseSecondPriceAuction = () => ({
     'cpm2': 3.8,
     'floor': 2.0,
     'exchangerate': 1.0,
-    'nurl': 'www.something.com'
+    'nurl': 'www.something.com',
+    'ssat': 2
   }, {
     'bidId': 'bid2',
     'cpm': 4.0,
@@ -83,7 +121,8 @@ const buildBidderResponseSecondPriceAuction = () => ({
     'ad': '<div>tag2</div>',
     'floor': 1.0,
     'exchangerate': 0.8,
-    'nurl': 'www.something-else.com'
+    'nurl': 'www.something-else.com',
+    'ssat': 2
   }]
 });
 
@@ -225,19 +264,20 @@ describe('stroeerssp adapter', function () {
         'ref': 'http://www.google.com/?query=monkey',
         'mpa': true,
         'ssl': false,
-        'ssat': 2,
         'bids': [
           {
             'sid': 'NDA=',
             'bid': 'bid1',
             'siz': [[300, 600], [160, 60]],
-            'viz': true
+            'viz': true,
+            'ssat': 2
           },
           {
             'sid': 'ODA=',
             'bid': 'bid2',
             'siz': [[728, 90]],
-            'viz': true
+            'viz': true,
+            'ssat': 1
           }
         ]
       };
@@ -245,16 +285,64 @@ describe('stroeerssp adapter', function () {
       assert.deepEqual(bidRequest, expectedJson);
     });
 
-    describe('yieldlove auction type on server', function() {
-      afterEach(function() {
-        config.setConfig({ 'ssat': 1 });
-      });
+    describe('Auction type (ssat) set (or not) in each individual bid', function() {
 
-      function runAndAssert(expectedSsat) {
+      it('test an auction with two valid and two non-valid auction types', function() {
         clock.tick(13500);
 
+        const bidderRequestTwoValidOneInvalid = ({
+          bidderRequestId: 'bidder-request-id-124',
+          bidderCode: 'stroeerCore',
+          timeout: 5000,
+          auctionStart: 10000,
+          bids: [
+            {
+              bidId: 'bid1',
+              bidder: 'stroeerCore',
+              placementCode: 'div-1',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                sid: 'NDA=',
+                ssat: 2
+              }
+            },
+            {
+              bidId: 'bid2',
+              bidder: 'stroeerCore',
+              placementCode: 'div-2',
+              sizes: [[728, 90]],
+              params: {
+                sid: 'ODA=',
+                ssat: 0
+              }
+            },
+            {
+              bidId: 'bid3',
+              bidder: 'stroeerCore',
+              placementCode: 'div-3',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                sid: 'NDA=',
+                ssat: 1
+              }
+            },
+            {
+              bidId: 'bid4',
+              bidder: 'stroeerCore',
+              placementCode: 'div-4',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                sid: 'NDA='
+              }
+            }
+          ],
+        });
+
         fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
-        adapter(win).callBids(bidderRequest);
+        adapter(win).callBids(bidderRequestTwoValidOneInvalid);
         fakeServer.respond();
 
         assert.equal(fakeServer.requests.length, 1);
@@ -268,45 +356,150 @@ describe('stroeerssp adapter', function () {
         assert.equal(expectedTimeout, 1500);
 
         const expectedJson = {
-          'id': 'bidder-request-id-123',
+          'id': 'bidder-request-id-124',
           'timeout': expectedTimeout,
           'ref': 'http://www.google.com/?query=monkey',
           'mpa': true,
           'ssl': false,
-          'ssat': expectedSsat,
           'bids': [
             {
               'sid': 'NDA=',
               'bid': 'bid1',
               'siz': [[300, 600], [160, 60]],
-              'viz': true
+              'viz': true,
+              'ssat': 2
             },
             {
-              'sid': 'ODA=',
-              'bid': 'bid2',
-              'siz': [[728, 90]],
-              'viz': true
+              'sid': 'NDA=',
+              'bid': 'bid3',
+              'siz': [[300, 600], [160, 60]],
+              'ssat': 1
             }
           ]
         };
 
         assert.deepEqual(bidRequest, expectedJson);
-      }
-
-      it('enable first price auction', function() {
-        config.setConfig({ 'ssat': 1 });
-        runAndAssert(1);
       });
 
-      it('explicitly enable second price auction on server', function() {
-        config.setConfig({ 'ssat': 2 });
-        runAndAssert(2);
+      // For default auction type and explicit second type
+      const expectedJsonRequestSecondAuction = {
+        'id': 'bidder-request-id-125',
+        'timeout': 1500,
+        'ref': 'http://www.google.com/?query=monkey',
+        'mpa': true,
+        'ssl': false,
+        'bids': [
+          {
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'siz': [[300, 600], [160, 60]],
+            'viz': true,
+            'ssat': 2
+          },
+          {
+            'sid': 'ODA=',
+            'bid': 'bid2',
+            'siz': [[728, 90]],
+            'viz': true,
+            'ssat': 2
+          }
+        ]
+      };
+
+      it('test an auction with one no auction types set', function() {
+        clock.tick(13500);
+
+        const bidderRequestNoAuctionTypes = ({
+          bidderRequestId: 'bidder-request-id-125',
+          bidderCode: 'stroeerCore',
+          timeout: 5000,
+          auctionStart: 10000,
+          bids: [
+            {
+              bidId: 'bid1',
+              bidder: 'stroeerCore',
+              placementCode: 'div-1',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                sid: 'NDA='
+              }
+            },
+            {
+              bidId: 'bid2',
+              bidder: 'stroeerCore',
+              placementCode: 'div-2',
+              sizes: [[728, 90]],
+              params: {
+                sid: 'ODA='
+              }
+            }
+          ],
+        });
+
+        fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
+        adapter(win).callBids(bidderRequestNoAuctionTypes);
+        fakeServer.respond();
+
+        assert.equal(fakeServer.requests.length, 1);
+
+        const request = fakeServer.requests[0];
+
+        const bidRequest = JSON.parse(request.requestBody);
+
+        assert.deepEqual(bidRequest, expectedJsonRequestSecondAuction);
       });
 
+      it('test an auction with explicitly set second auction type', function() {
+        clock.tick(13500);
+
+        const bidderRequestSecondType = ({
+          bidderRequestId: 'bidder-request-id-125',
+          bidderCode: 'stroeerCore',
+          timeout: 5000,
+          auctionStart: 10000,
+          bids: [
+            {
+              bidId: 'bid1',
+              bidder: 'stroeerCore',
+              placementCode: 'div-1',
+              sizes: [[300, 600], [160, 60]],
+              mediaType: '',
+              params: {
+                sid: 'NDA=',
+                ssat: 2
+              }
+            },
+            {
+              bidId: 'bid2',
+              bidder: 'stroeerCore',
+              placementCode: 'div-2',
+              sizes: [[728, 90]],
+              params: {
+                sid: 'ODA=',
+                ssat: 2
+              }
+            }
+          ],
+        });
+
+        fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
+        adapter(win).callBids(bidderRequestSecondType);
+        fakeServer.respond();
+
+        assert.equal(fakeServer.requests.length, 1);
+
+        const request = fakeServer.requests[0];
+
+        const bidRequest = JSON.parse(request.requestBody);
+
+        assert.deepEqual(bidRequest, expectedJsonRequestSecondAuction);
+      });
+
+      /* This test no longer works as the SSAT is part of the bid params
       const invalidTypeSamples = [-1, 0, 3, 4];
       invalidTypeSamples.forEach((type) => {
         it(`invalid yieldlove auction type ${type} set on server`, function() {
-          config.setConfig({ 'ssat': type });
 
           clock.tick(13500);
 
@@ -325,7 +518,7 @@ describe('stroeerssp adapter', function () {
           assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1');
           assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
         })
-      });
+      }); */
     });
 
     describe('optional fields', () => {
@@ -437,29 +630,7 @@ describe('stroeerssp adapter', function () {
       assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
     });
 
-    it('first price only auction', function() {
-
-      config.setConfig({ 'ssat': 1 });
-
-      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
-
-      adapter(win).callBids(bidderRequest);
-
-      fakeServer.respond();
-
-      sinon.assert.calledTwice(bidmanager.addBidResponse);
-
-      let bid = bidmanager.addBidResponse.firstCall.args[1];
-      assert.propertyVal(bid, 'cpm2', undefined);
-      assert.propertyVal(bid, 'floor', undefined);
-      assert.propertyVal(bid, 'exchangerate', undefined);
-      assert.propertyVal(bid, 'nurl', undefined);
-
-      config.setConfig({ 'ssat': 2 });
-
-    });
-
-    it('second price auction', function() {
+    it('should get auction type from bid params', function() {
 
       fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
 
@@ -480,8 +651,6 @@ describe('stroeerssp adapter', function () {
       assert.propertyVal(bid2, 'floor', 1.0);
       assert.propertyVal(bid2, 'exchangerate', 0.8);
       assert.propertyVal(bid2, 'nurl', 'www.something-else.com');
-
-
     });
 
     it('should add unfulfilled bids', function() {

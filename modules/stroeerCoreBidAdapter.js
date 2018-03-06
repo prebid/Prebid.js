@@ -4,7 +4,6 @@ const utils = require('src/utils');
 const ajax = require('src/ajax').ajax;
 const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
-const config = require('src/config').config;
 
 const externalCrypter = new Crypter("c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=", "eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=");
 const internalCrypter = new Crypter("wjhss9DVoBfGEBNpfQ0CTxRHwVx9Ig1aEdM7S0piaVc=", "vCXHs3GIOUgygSWkhsWXSV2kSsRD5NjcFrWLe1E3R74=");
@@ -107,7 +106,8 @@ const StroeerCoreAdapter = function (win = window) {
           cpm2: bidResponse.cpm2,
           floor: bidResponse.floor,
           exchangerate: bidResponse.exchangerate,
-          nurl: bidResponse.nurl
+          nurl: bidResponse.nurl,
+          ssat: bidResponse.ssat
         });
 
         bidObject.generateAd = function({auctionPrice}) {
@@ -210,18 +210,7 @@ const StroeerCoreAdapter = function (win = window) {
   return {
     callBids: function (params) {
       const allBids = params.bids;
-
-      let ssat = config.getConfig('ssat');
-      if (ssat === undefined) {
-        ssat = 2;
-      }
-
-      if ([1, 2].indexOf(ssat) === -1) {
-        allBids.forEach(bid => bidmanager.addBidResponse(bid.placementCode, Object.assign(bidfactory.createBid(2, bid), {bidderCode})));
-        utils.logError(`${ssat} is not a valid auction type`, 'ERROR');
-
-        return;
-      }
+      const validBidRequestById = {};
 
       const requestBody = {
         id: params.bidderRequestId,
@@ -229,26 +218,51 @@ const StroeerCoreAdapter = function (win = window) {
         ref: getPageReferer(),
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
-        timeout: params.timeout - (Date.now() - params.auctionStart),
-        ssat: ssat
+        timeout: params.timeout - (Date.now() - params.auctionStart)
       };
 
-      const validBidRequestById = {};
+      // Check to see if atleast one bid has a SSAT value
+      // If so, we must isolate those that don't instead of defaulting to 2
+      let ssatIsPresentInAtleastOne = false;
+      let bidsWithSsat = [];
+      for (let i = 0; i < allBids.length; i++) {
+        let bidSsat = allBids[i].params.ssat;
+        if (bidSsat !== undefined) {
+          ssatIsPresentInAtleastOne = true;
+          bidsWithSsat.push(i);
+        }
+      };
 
-      allBids.forEach(bidRequest => {
+      for (let i = 0; i < allBids.length; i++) {
+        let bidRequest = allBids[i];
+        let bidSsat = bidRequest.params.ssat;
+        if (ssatIsPresentInAtleastOne === false) {
+          bidSsat = 2;
+          bidsWithSsat.push(i);
+        }
+
         if (validBidRequest(bidRequest)) {
-          requestBody.bids.push({
-            bid: bidRequest.bidId,
+          if ((bidsWithSsat.indexOf(i) !== -1) && ([1, 2].indexOf(bidSsat) !== -1)) {
 
-            sid: bidRequest.params.sid,
-            siz: bidRequest.sizes,
-            viz: elementInView(bidRequest.placementCode)
-          });
-          validBidRequestById[bidRequest.bidId] = bidRequest;
+            requestBody.bids.push({
+              bid: bidRequest.bidId,
+              sid: bidRequest.params.sid,
+              siz: bidRequest.sizes,
+              viz: elementInView(bidRequest.placementCode),
+              ssat: bidSsat
+            });
+
+            validBidRequestById[bidRequest.bidId] = bidRequest;
+
+          } else {
+            bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}))
+            utils.logError(`${bidSsat} is not a valid auction type`, 'ERROR');
+          }
         } else {
           bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
+          utils.logError(`Invalid bid request`, 'ERROR');
         }
-      });
+      }
 
       // Safeguard against the unexpected - an infinite request loop.
       let redirectCount = 0;
