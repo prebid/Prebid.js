@@ -12,10 +12,12 @@ describe('adxcg analytics adapter', () => {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
+    sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(() => {
     xhr.restore();
+    events.getEvents.restore();
   });
 
   describe('track', () => {
@@ -25,7 +27,7 @@ describe('adxcg analytics adapter', () => {
         publisherId: '42'
       };
       let bidRequest = {
-        requestId: 'requestIdData'
+        auctionId: 'requestIdData'
       };
       let bidResponse = {
         adId: 'adIdData',
