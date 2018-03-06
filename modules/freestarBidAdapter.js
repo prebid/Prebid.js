@@ -24,7 +24,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    console.log('freestar::', 'validBidRequests', validBidRequests);
     const adUnitsToBidUpon = validBidRequests.map(formatBid), payload = {};
 
     var cookie = window.document.cookie.split(';');
