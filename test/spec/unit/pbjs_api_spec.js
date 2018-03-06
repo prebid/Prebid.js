@@ -673,7 +673,8 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('renderAd', function () {
-    var bidId = 1;
+    var bidId = '10c8b8b14b81e01'; // Realistic bidId
+    var secondBidId = '10c8b8b14b81e02';
     var doc = {};
     var elStub = {};
     var adResponse = {};
@@ -746,6 +747,51 @@ describe('Unit: Prebid Module', function () {
       });
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+      assert.ok(doc.close.called, 'close method called');
+    });
+
+    it('should write the ad to the doc if two adIds are returned', function () {
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+      $$PREBID_GLOBAL$$.renderAd(doc, `${bidId},${secondBidId}`);
+      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+      assert.ok(doc.close.called, 'close method called');
+    });
+
+    it('should pick the highest (possibly cached) bid if two adIds are returned', function () {
+      const winningAdResponse = "<script type='text/javascript' src='http://server.example.com/ad/ad2.js'></script>";
+
+      // Losing because the cpm price is lower
+      const losingCachedAd = ({
+        auctionId: 1,
+        width: 300,
+        height: 250,
+        adId: bidId,
+        cpm: '1.00',
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+
+      const winningAd = ({
+        auctionId: 1,
+        width: 300,
+        height: 250,
+        adId: secondBidId,
+        cpm: '2.00',
+        ad: winningAdResponse
+      });
+
+      auction.getBidsReceived = function() {
+        let bidsReceived = getBidResponses();
+        bidsReceived.push(losingCachedAd);
+        bidsReceived.push(winningAd);
+        return bidsReceived;
+      }
+
+      adResponse.ad = winningAdResponse;
+      $$PREBID_GLOBAL$$.renderAd(doc, `${losingCachedAd.adId},${winningAd.adId}`);
       assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
       assert.ok(doc.close.called, 'close method called');
     });
