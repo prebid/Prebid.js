@@ -29,13 +29,7 @@ module.exports = {
     "no-global-assign": "off",
     "no-path-concat": "off",
     "no-redeclare": "off",
-    "no-new-object": "off",
-    "no-array-constructor": "off",
     "node/no-deprecated-api": "off",
-    "no-cond-assign": "off",
-    "no-sequences": "off",
-    "no-eval": "off",
-    "no-new": "off",
     "no-return-assign": "off",
     "no-undef": "off",
     "no-unused-vars": "off",
@@ -43,7 +37,6 @@ module.exports = {
     "no-useless-escape": "off",
     "one-var": "off",
     "standard/array-bracket-even-spacing": "off",
-    "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off"
   }
 };

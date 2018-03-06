@@ -4,12 +4,11 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {STATUS} from 'src/constants';
 import bidfactory from 'src/bidfactory';
-import {config} from 'src/config';
 
 const bidderCode = 'indexExchange';
 const prebidVersion = encodeURIComponent('$prebid.version$');
 const url = 'https://as-sec.casalemedia.com';
-const timeToLive = config.getConfig('_bidderTimeout');
+const timeToLive = 360;
 const currency = 'USD';
 
 // eslint-disable-next-line
