@@ -47,10 +47,7 @@ export function requestBidsHook(config, fn) {
     // first lookup - to determine if new or existing user
     // if new user, then wait for user to make a choice and then run postLookup method
     // if existing user, then skip to postLookup method
-    let lookupStart = performance.now();
     window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-      let lookupDone = performance.now();
-      logTimer(lookupStart, lookupDone);
       if (cmpActive) {
         if (consentString === null || !consentString) {
           window.__cmp('addEventListener', 'onSubmit', function() {
@@ -101,7 +98,7 @@ export function requestBidsHook(config, fn) {
     cmpActive = false;
     if (lookUpFailureChoice === 'proceed') {
       utils.logWarn(message + ' Resuming auction without consent data as per consentManagement config.');
-      applyConsent(undefined);
+      adUnits = applyConsent(undefined);
       nextFn.apply(context, args);
     } else {
       utils.logError(message + ' Canceling auction as per consentManagement config.');
@@ -111,10 +108,6 @@ export function requestBidsHook(config, fn) {
 
 export function resetConsentId() {
   consentId = '';
-}
-
-function logTimer(firstTime, secondTime) {
-  console.log('lookup time took: ' + (secondTime - firstTime));
 }
 
 export function setConfig(config) {
