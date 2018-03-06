@@ -106,7 +106,7 @@ function sendMessage(auctionId, bidWonId) {
       'mediaTypes',
       'adserverTargeting', () => cache.targeting[bid.adUnit.adUnitCode]
     ]), {
-      serverAccountId: serverConfig && serverConfig.accountId ? serverConfig.accountId : undefined,
+      accountId,
       samplingFactor
     });
   }
@@ -147,11 +147,11 @@ function sendMessage(auctionId, bidWonId) {
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
       samplingFactor,
+      accountId,
       adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
     };
 
     if (serverConfig) {
-      auction.serverAccountId = serverConfig.accountId;
       auction.serverTimeoutMillis = serverConfig.timeout;
     }
 
@@ -198,6 +198,7 @@ function parseBidResponse(bid) {
 }
 
 let samplingFactor = 1;
+let accountId;
 
 let baseAdapter = adapter({url: ENDPOINT, analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
@@ -205,6 +206,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     samplingFactor = 1;
 
     if (typeof config.options === 'object') {
+      if (config.options.accountId) {
+        accountId = config.options.accountId;
+      }
       if (config.options.endpoint) {
         this.getUrl = () => config.options.endpoint;
       }
@@ -222,13 +226,16 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
     let validSamplingFactors = [1, 10, 20, 40, 100];
     if (validSamplingFactors.indexOf(samplingFactor) === -1) {
-      utils.logError('invlaid sampilngFactor for rubicon analytics: ' + samplingFactor + ', must be one of ' + validSamplingFactors.join(', '));
+      utils.logError('invalid samplingFactor for rubicon analytics: ' + samplingFactor + ', must be one of ' + validSamplingFactors.join(', '));
+    } else if (!accountId) {
+      utils.logError('required accountId missing for rubicon analytics');
     } else {
       baseAdapter.enableAnalytics.call(this, config);
     }
   },
   disableAnalytics() {
     this.getUrl = baseAdapter.getUrl;
+    accountId = null;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
   track({eventType, args}) {

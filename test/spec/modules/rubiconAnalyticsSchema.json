@@ -52,7 +52,7 @@
             "type": "integer",
             "description": "Timeout configured for server adapter request in milliseconds (if applicable)."
           },
-          "serverAccountId": {
+          "accountId": {
             "type": "number",
             "description": "The account id for prebid server (if applicable)."
           },
@@ -129,7 +129,7 @@
           {
             "required": [
               "transactionId",
-              "serverAccountId",
+              "accountId",
               "samplingFactor",
               "mediaTypes",
               "adUnitCode"
@@ -138,7 +138,7 @@
               "transactionId": {
                 "type": "string"
               },
-              "serverAccountId": {
+              "accountId": {
                 "type": "number"
               },
               "samplingFactor": {

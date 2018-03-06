@@ -207,7 +207,7 @@ const ANALYTICS_MESSAGE = {
     {
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
-      'serverAccountId': 1001,
+      'accountId': 1001,
       'samplingFactor': 1,
       'adUnits': [
         {
@@ -317,7 +317,7 @@ const ANALYTICS_MESSAGE = {
       'source': 'client',
       'clientLatencyMillis': 617477221,
       'samplingFactor': 1,
-      'serverAccountId': 1001,
+      'accountId': 1001,
       'params': {
         'accountId': '14062',
         'siteId': '70608',
@@ -351,7 +351,7 @@ const ANALYTICS_MESSAGE = {
       'source': 'client',
       'clientLatencyMillis': 617477221,
       'samplingFactor': 1,
-      'serverAccountId': 1001,
+      'accountId': 1001,
       'params': {
         'accountId': '14062',
         'siteId': '70608',
@@ -419,7 +419,7 @@ describe('rubicon analytics adapter', () => {
     config.setConfig({
       s2sConfig: {
         timeout: 1000,
-        accountId: 1001,
+        accountId: 10000,
       }
     })
   });
@@ -428,6 +428,14 @@ describe('rubicon analytics adapter', () => {
     window.screen = oldScreen;
     sandbox.restore();
     config.resetConfig();
+  });
+
+  it('should require accountId', () => {
+    sandbox.stub(utils, 'logError');
+
+    rubiconAnalyticsAdapter.enableAnalytics();
+
+    expect(utils.logError.called).to.equal(true);
   });
 
   describe('sampling', () => {
@@ -444,6 +452,7 @@ describe('rubicon analytics adapter', () => {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             samplingFactor: 10
           }
         });
@@ -456,6 +465,7 @@ describe('rubicon analytics adapter', () => {
       it('should unsample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             samplingFactor: 20
           }
         });
@@ -468,6 +478,7 @@ describe('rubicon analytics adapter', () => {
       it('should throw errors for invalid samplingFactor', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             samplingFactor: 30
           }
         });
@@ -482,6 +493,7 @@ describe('rubicon analytics adapter', () => {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             sampling: 0.1
           }
         });
@@ -494,6 +506,7 @@ describe('rubicon analytics adapter', () => {
       it('should unsample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             sampling: 0.05
           }
         });
@@ -506,6 +519,7 @@ describe('rubicon analytics adapter', () => {
       it('should throw errors for invalid samplingFactor', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            accountId: 1001,
             sampling: 1 / 30
           }
         });
@@ -520,7 +534,11 @@ describe('rubicon analytics adapter', () => {
 
   describe('when handling events', () => {
     beforeEach(() => {
-      rubiconAnalyticsAdapter.enableAnalytics();
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          accountId: 1001
+        }
+      });
     });
 
     afterEach(() => {
