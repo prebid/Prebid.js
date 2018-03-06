@@ -286,7 +286,6 @@ describe('stroeerssp adapter', function () {
     });
 
     describe('Auction type (ssat) set (or not) in each individual bid', function() {
-
       it('test an auction with two valid and two non-valid auction types', function() {
         clock.tick(13500);
 
@@ -631,7 +630,6 @@ describe('stroeerssp adapter', function () {
     });
 
     it('should get auction type from bid params', function() {
-
       fakeServer.respondWith(JSON.stringify(buildBidderResponseSecondPriceAuction()));
 
       adapter(win).callBids(bidderRequest);
@@ -728,32 +726,31 @@ describe('stroeerssp adapter', function () {
     describe('generateAd method on bid object', function() {
       const externalEncTests = [
         // full price text
-        {price:"1.570000", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw"},
+        { price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw' },
         // partial price text
-        {price:"1.59", bidId: "123456789123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        { price: '1.59', bidId: '123456789123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
         // large bidId will be trimmed (> 16 characters)
-        {price:"1.59", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        { price: '1.59', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
         // small bidId will be padded (< 16 characters)
-        {price:"1.59", bidId: "123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw"},
+        { price: '1.59', bidId: '123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw' },
         // float instead of text
-        {price:1.59, bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg"},
+        { price: 1.59, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
         // long price after applying exchange rate: 12.03 * 0.32 = 3.8495999999999997 (use 3.8496)
-        {price:12.03, bidId: "123456789123456789", exchangeRate: 0.32, expectation: "MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A"},
+        { price: 12.03, bidId: '123456789123456789', exchangeRate: 0.32, expectation: 'MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A' },
         // long price after applying exchange rate: 22.23 * 0.26 = 5.779800000000001 (use 5.7798)
-        {price:22.23, bidId: "123456789123456789", exchangeRate: 0.26, expectation: "MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA"},
+        { price: 22.23, bidId: '123456789123456789', exchangeRate: 0.26, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA' },
         // somehow empty string for price
-        {price:"", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw"},
+        { price: '', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw' },
         // handle zero
-        {price:0, bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg"}
+        { price: 0, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg' }
       ];
       externalEncTests.forEach(test => {
-
         it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`, function() {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
           responseBid.exchangerate = test.exchangeRate;
-          responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE:ENC}></img>";
+          responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
           responseBid.bidId = test.bidId;
 
           fakeServer.respondWith(JSON.stringify(bidderResponse));
@@ -773,22 +770,20 @@ describe('stroeerssp adapter', function () {
         });
       });
 
-
       const internalEncTests = [
         // full price text
-        {price: "1.570000", bidId: "123456789123456789", exchangeRate: 1.0, expectation: "MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ"},
+        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ'},
         // partial price text
-        {price: "1.570000", bidId: "123456789123456789", exchangeRate: 0.5, expectation: "MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ"},
+        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ'},
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
-
         it(`should replace \${SSP_AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} with exchange rate ${test.exchangeRate} ignored`, function() {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
           responseBid.exchangerate = test.exchangeRate;
-          responseBid.ad = "<img src='tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>";
+          responseBid.ad = '<img src=\'tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>';
           responseBid.bidId = test.bidId;
 
           fakeServer.respondWith(JSON.stringify(bidderResponse));
@@ -809,44 +804,44 @@ describe('stroeerssp adapter', function () {
       });
 
       it('should replace all occurrences of ${SPP_AUCTION_PRICE:ENC}', function() {
-        const bidderResponse = buildBidderResponse({bidId1: "123456789123456789"});
+        const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
-        responseBid.ad = "<img src='tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>";
-        responseBid.bidId = "123456789123456789";
+        responseBid.ad = '<img src=\'tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
 
         fakeServer.respondWith(JSON.stringify(bidderResponse));
-        bidderRequest.bids[0].bidId = "123456789123456789";
+        bidderRequest.bids[0].bidId = '123456789123456789';
 
         adapter(win).callBids(bidderRequest);
 
         fakeServer.respond();
 
         const bid = bidmanager.addBidResponse.firstCall.args[1];
-        const ad = bid.generateAd({auctionPrice: "40.22"});
+        const ad = bid.generateAd({auctionPrice: '40.22'});
 
-        const expectedAd = "<img src='tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>";
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>';
         assert.equal(ad, expectedAd);
       });
 
       it('should replace all occurrences of ${AUCTION_PRICE:ENC}', function() {
-        const bidderResponse = buildBidderResponse({bidId1: "123456789123456789"});
+        const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
-        responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE:ENC}></img>\n<script>var price=${AUCTION_PRICE:ENC}</script>";
-        responseBid.bidId = "123456789123456789";
+        responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>\n<script>var price=${AUCTION_PRICE:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
 
         fakeServer.respondWith(JSON.stringify(bidderResponse));
-        bidderRequest.bids[0].bidId = "123456789123456789";
+        bidderRequest.bids[0].bidId = '123456789123456789';
 
         adapter(win).callBids(bidderRequest);
 
         fakeServer.respond();
 
         const bid = bidmanager.addBidResponse.firstCall.args[1];
-        const ad = bid.generateAd({auctionPrice: "40.22"});
+        const ad = bid.generateAd({auctionPrice: '40.22'});
 
-        const expectedAd = "<img src='tracker.com?p=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA</script>";
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA</script>';
         assert.equal(ad, expectedAd);
       });
 
@@ -854,12 +849,11 @@ describe('stroeerssp adapter', function () {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
-        responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE}></img>\n<script>var price=${AUCTION_PRICE}</script>";
-        responseBid.bidId = "123456789123456789";
+        responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE}></img>\n<script>var price=${AUCTION_PRICE}</script>';
+        responseBid.bidId = '123456789123456789';
 
         fakeServer.respondWith(JSON.stringify(bidderResponse));
-        bidderRequest.bids[0].bidId = "123456789123456789";
-
+        bidderRequest.bids[0].bidId = '123456789123456789';
 
         adapter(win).callBids(bidderRequest);
 
@@ -868,7 +862,7 @@ describe('stroeerssp adapter', function () {
         const bid = bidmanager.addBidResponse.firstCall.args[1];
         const ad = bid.generateAd({auctionPrice: 40.22});
 
-        const expectedAd = "<img src='tracker.com?p=40.22></img>\n<script>var price=40.22</script>";
+        const expectedAd = '<img src=\'tracker.com?p=40.22></img>\n<script>var price=40.22</script>';
         assert.equal(ad, expectedAd);
       });
 
@@ -876,12 +870,11 @@ describe('stroeerssp adapter', function () {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
-        responseBid.ad = "<img src='tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>";
-        responseBid.bidId = "123456789123456789";
+        responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
 
         fakeServer.respondWith(JSON.stringify(bidderResponse));
-        bidderRequest.bids[0].bidId = "123456789123456789";
-
+        bidderRequest.bids[0].bidId = '123456789123456789';
 
         adapter(win).callBids(bidderRequest);
 
@@ -890,7 +883,7 @@ describe('stroeerssp adapter', function () {
         const bid = bidmanager.addBidResponse.firstCall.args[1];
         const ad = bid.generateAd({auctionPrice: 40.22});
 
-        const expectedAd = "<img src='tracker.com?p=40.22&e=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>";
+        const expectedAd = '<img src=\'tracker.com?p=40.22&e=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>';
         assert.equal(ad, expectedAd);
       });
     });
