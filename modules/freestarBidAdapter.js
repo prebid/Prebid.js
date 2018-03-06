@@ -2,8 +2,9 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
-const ENDPOINT_URL = '//35.226.213.130:8080/open-ssp/HeaderBiddingService';
+const ENDPOINT_URL = 'http://35.226.213.130:8080/open-ssp/HeaderBiddingService';
 // const ENDPOINT_URL = '//testsite.com/openssp/response.json';
+console.log('freestar::', 'adapter loaded');
 export const spec = {
   code: BIDDER_CODE,
 
@@ -14,8 +15,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    return true;
+    // return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
+
 
   /**
    * Make a server request from the list of BidRequests.
@@ -25,7 +28,6 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const adUnitsToBidUpon = validBidRequests.map(formatBid), payload = {};
-
     var cookie = window.document.cookie.split(';');
     var cookieObj = {};
     for (var i = 0; i < cookie.length; i++) {
@@ -95,7 +97,6 @@ export const spec = {
 }
 
 function parseBid(bid) {
-  console.log('freestar::', 'parseBid', 'bid', bid);
   const bidResponse = {
     requestId: bid.id,
     cpm: bid.price,
@@ -115,8 +116,8 @@ function formatBid(bid) {
   var str = {}, res = [];
   str.id = bid.bidId; //@TODO: This id needs to be reflected in the response
   str.adUnitCode = bid.adUnitCode;
-  str.size = bid.size[0].join('x');
-  str.promo_sizes = bid.size.slice(1).map(function(size) {
+  str.size = bid.sizes[0].join('x');
+  str.promo_sizes = bid.sizes.slice(1).map(function(size) {
     return size.join('x');
   });
   str.promo_sizes = str.promo_sizes.join(',');
