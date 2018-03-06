@@ -91,7 +91,7 @@ function evaluateSizeConfig(configs) {
 /**
  * If a bid has a sizes array defined, filter values that exist in bid.sizes from sizes
  * @param {{sizes:number}} bid - bid to resolve sizes for
- * @param {Array.<Array.<number>>|Array.<Object.<number,number>>} sizes - adUnit sizes
+ * @param {Array.<Array.<number>>|Array.<{w:number, h:number}>} sizes - adUnit sizes
  * @param {boolean} [s2sEnabled] - if s2s is enabled sizes are in object format {w:number,h:number} else sizes are array format [[number],[number]]
  * @returns {Array.<Array.<number>>} - sizes filtered using bid.sizes
  */
@@ -99,10 +99,9 @@ export function resolveBidOverrideSizes(bid, sizes, s2sEnabled) {
   let filteredSizes;
   if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     if (s2sEnabled) {
-      filteredSizes = sizes.filter(size => (bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h))));
-    }
-    else {
-      filteredSizes = sizes.filter(size => (bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1]))));
+      filteredSizes = sizes.filter(size => bid.sizes.some(bidSize => (bidSize[0] === size.w && bidSize[1] === size.h)));
+    } else {
+      filteredSizes = sizes.filter(size => bid.sizes.some(bidSize => (bidSize[0] === size[0] && bidSize[1] === size[1])));
     }
     // bid sizes contained invalid sizes if sizes are empty after filtering
     if (filteredSizes.length === 0) {

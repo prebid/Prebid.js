@@ -211,8 +211,8 @@ describe('sizeMapping', () => {
     it('should filter an intersection of adUnit sizes and bid sizes', () => {
       const testAdUnitSizes = deepClone(testSizes);
 
-      const bidOneSize = {sizes: [[728,90]]};
-      const bidMultipleSizes = {sizes: [[728,90],[300, 250],[300,100]]};
+      const bidOneSize = {sizes: [[728, 90]]};
+      const bidMultipleSizes = {sizes: [[728, 90], [300, 250], [300, 100]]};
 
       // Test single valid bid size, should return single valid size
       expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizes)).to.deep.equal(bidOneSize.sizes);
@@ -224,19 +224,19 @@ describe('sizeMapping', () => {
       // adUnit sizes defined using w/h object structure Array.<{ w:number, h:number }>
       const testAdUnitSizesObjs = deepClone(testSizes).map(size => ({w: size[0], h: size[1]}));
 
-      const bidOneSize = {sizes: [[728,90]]};
-      const bidMultipleSizes = {sizes: [[728,90],[300, 250],[300,100]]};
+      const bidOneSize = {sizes: [[728, 90]]};
+      const bidMultipleSizes = {sizes: [[728, 90], [300, 250], [300, 100]]};
 
       // Test single valid bid size, should return single valid size but defined as Array.<{ w:number, h:number }>
-      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs, true)).to.deep.equal(bidOneSize.sizes.map(size => ({w:size[0], h:size[1]})));
+      expect(resolveBidOverrideSizes(bidOneSize, testAdUnitSizesObjs, true)).to.deep.equal(bidOneSize.sizes.map(size => ({w: size[0], h: size[1]})));
       // Test multiple valid bid sizes, should return valid sizes but defined as Array.<{ w:number, h:number }>
-      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs, true)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w:size[0], h:size[1]})));
+      expect(resolveBidOverrideSizes(bidMultipleSizes, testAdUnitSizesObjs, true)).to.deep.equal(bidMultipleSizes.sizes.map(size => ({w: size[0], h: size[1]})));
     });
 
     it('should return unfiltered sizes when bid sizes are invalid', () => {
       sandbox.stub(utils, 'logWarn');
       const testAdUnitSizes = deepClone(testSizes);
-      const bidInvalidSize = {sizes: [[728,250]]};
+      const bidInvalidSize = {sizes: [[728, 250]]};
 
       // Invalid bid sizes, should return unfiltered sizes and log warning
       expect(resolveBidOverrideSizes(bidInvalidSize, testAdUnitSizes)).to.deep.equal(testAdUnitSizes);
@@ -245,7 +245,7 @@ describe('sizeMapping', () => {
 
     it('should return unfiltered sizes when bid sizes or adUnit sizes are empty', () => {
       const testAdUnitSizes = deepClone(testSizes);
-      const bidOneSize = {sizes: [[728,90]]};
+      const bidOneSize = {sizes: [[728, 90]]};
       const bidEmptySizes = {sizes: []};
 
       // Empty bid sizes, should return unfiltered bids
