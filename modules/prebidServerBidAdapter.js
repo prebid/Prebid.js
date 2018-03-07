@@ -376,6 +376,8 @@ const LEGACY_PROTOCOL = {
           bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
           bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
 
+          if (result.burl) { bidObject.burl = result.burl; }
+
           bids.push({ adUnit: bidObj.code, bid: bidObject });
         });
       }
@@ -505,6 +507,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.requestId = bid.id;
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
+          if (bid.burl) { bidObject.burl = bid.burl; }
 
           // TODO: Remove when prebid-server returns ttl, currency and netRevenue
           bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;

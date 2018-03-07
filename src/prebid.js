@@ -234,6 +234,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else if (adUrl) {
           const iframe = utils.createInvisibleIframe();
           iframe.height = height;
@@ -244,6 +245,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
           utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }
