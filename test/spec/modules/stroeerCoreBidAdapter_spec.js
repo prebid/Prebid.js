@@ -149,7 +149,7 @@ describe('stroeerssp adapter', function () {
       const request = fakeServer.requests[0];
 
       assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'http://dsh.adscale.de/dsh');
+      assert.equal(request.url, 'http://hb.adscale.de/dsh');
     });
 
     describe('send bids as a POST request to custom endpoint', function () {
@@ -157,7 +157,7 @@ describe('stroeerssp adapter', function () {
         {protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'http://other.com:234/xyz'},
         {protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'},
         {protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'}, expected: 'https://other.com:871/xyz'},
-        {protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'http://dsh.adscale.de:234/xyz'},
+        {protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'http://hb.adscale.de:234/xyz'},
       ];
 
       tests.forEach(test => {
@@ -256,7 +256,7 @@ describe('stroeerssp adapter', function () {
 
   describe('bid response', () => {
     it('should redirect when told', function() {
-      fakeServer.respondWith('POST', /\/dsh.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/there'}));
+      fakeServer.respondWith('POST', /\/hb.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/there'}));
       fakeServer.respondWith('POST', /\/somewhere.com\//, JSON.stringify(buildBidderResponse()));
 
       sandbox.stub(utils, 'insertElement');
@@ -288,7 +288,7 @@ describe('stroeerssp adapter', function () {
     });
 
     it('should never to more than one redirect', () => {
-      fakeServer.respondWith('POST', /\/dsh.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/over'}));
+      fakeServer.respondWith('POST', /\/hb.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/over'}));
       fakeServer.respondWith('POST', /\/somewhere.com\//, JSON.stringify({redirect: 'http://somewhere.com/there'}));
 
       sandbox.stub(utils, 'insertElement');

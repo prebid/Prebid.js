@@ -6,7 +6,7 @@ const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
 
 const StroeerCoreAdapter = function (win = window) {
-  const defaultHost = 'dsh.adscale.de';
+  const defaultHost = 'hb.adscale.de';
   const defaultPath = '/dsh';
   const defaultPort = '';
   const bidderCode = 'stroeerCore';
