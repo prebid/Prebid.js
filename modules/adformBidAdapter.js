@@ -1,10 +1,12 @@
 'use strict';
 
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'adform';
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
@@ -64,14 +66,20 @@ export const spec = {
     }
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    var bidObject, response, bid;
+    const VALID_RESPONSES = {
+      banner: 1,
+      vast_content: 1,
+      vast_url: 1
+    };
+    var bidObject, response, bid, type;
     var bidRespones = [];
     var bids = bidRequest.bids;
     var responses = serverResponse.body;
     for (var i = 0; i < responses.length; i++) {
       response = responses[i];
+      type = response.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
-      if (response.response === 'banner' && verifySize(response, bid.sizes)) {
+      if (VALID_RESPONSES[response.response] && (verifySize(response, bid.sizes) || type === VIDEO)) {
         bidObject = {
           requestId: bid.bidId,
           cpm: response.win_bid,
@@ -84,7 +92,10 @@ export const spec = {
           ttl: 360,
           ad: response.banner,
           bidderCode: bidRequest.bidder,
-          transactionId: bid.transactionId
+          transactionId: bid.transactionId,
+          vastUrl: response.vast_url,
+          vastXml: response.vast_content,
+          mediaType: type
         };
         bidRespones.push(bidObject);
       }
