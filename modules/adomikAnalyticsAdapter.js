@@ -1,6 +1,7 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
+import { logInfo } from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 import findIndex from 'core-js/library/fn/array/find-index';
 
@@ -12,19 +13,14 @@ const bidResponse = CONSTANTS.EVENTS.BID_RESPONSE;
 const bidWon = CONSTANTS.EVENTS.BID_WON;
 const bidTimeout = CONSTANTS.EVENTS.BID_TIMEOUT;
 
-let bidwonTimeout = 1000;
-
 let adomikAdapter = Object.assign(adapter({}),
   {
     // Track every event needed
     track({ eventType, args }) {
       switch (eventType) {
         case auctionInit:
+          adomikAdapter.initializeBucketEvents()
           adomikAdapter.currentContext.id = args.auctionId
-          adomikAdapter.currentContext.timeout = args.timeout
-          if (args.config.bidwonTimeout !== undefined && typeof args.config.bidwonTimeout === 'number') {
-            bidwonTimeout = args.config.bidwonTimeout;
-          }
           break;
 
         case bidTimeout:
@@ -39,12 +35,9 @@ let adomikAdapter = Object.assign(adapter({}),
           break;
 
         case bidWon:
-          adomikAdapter.bucketEvents.push({
-            type: 'winner',
-            event: {
-              id: args.adId,
-              placementCode: args.adUnitCode
-            }
+          adomikAdapter.sendWonEvent({
+            id: args.adId,
+            placementCode: args.adUnitCode
           });
           break;
 
@@ -61,16 +54,18 @@ let adomikAdapter = Object.assign(adapter({}),
           break;
 
         case auctionEnd:
-          setTimeout(() => {
-            if (adomikAdapter.bucketEvents.length > 0) {
-              adomikAdapter.sendTypedEvent();
-            }
-          }, bidwonTimeout);
+          if (adomikAdapter.bucketEvents.length > 0) {
+            adomikAdapter.sendTypedEvent();
+          }
           break;
       }
     }
   }
 );
+
+adomikAdapter.initializeBucketEvents = function() {
+  adomikAdapter.bucketEvents = [];
+}
 
 adomikAdapter.sendTypedEvent = function() {
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
@@ -78,7 +73,6 @@ adomikAdapter.sendTypedEvent = function() {
   const bulkEvents = {
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
-    timeout: adomikAdapter.currentContext.timeout,
     hostname: window.location.hostname,
     eventsByPlacementCode: groupedTypedEvents.map(function(typedEventsByType) {
       let sizes = [];
@@ -108,8 +102,11 @@ adomikAdapter.sendTypedEvent = function() {
     })
   };
 
+  const stringBulkEvents = JSON.stringify(bulkEvents)
+  logInfo('Events sent to adomik prebid analytic ' + stringBulkEvents);
+
   // Encode object in base64
-  const encodedBuf = window.btoa(JSON.stringify(bulkEvents));
+  const encodedBuf = window.btoa(stringBulkEvents);
 
   // Create final url and split it in 1600 characters max (+endpoint length)
   const encodedUri = encodeURIComponent(encodedBuf);
@@ -121,6 +118,17 @@ adomikAdapter.sendTypedEvent = function() {
     img.src = 'https://' + adomikAdapter.currentContext.url + '/?q=' + partUrl;
   })
 };
+
+adomikAdapter.sendWonEvent = function (wonEvent) {
+  const stringWonEvent = JSON.stringify(wonEvent)
+  logInfo('Won event sent to adomik prebid analytic ' + wonEvent);
+
+  // Encode object in base64
+  const encodedBuf = window.btoa(stringWonEvent);
+  const encodedUri = encodeURIComponent(encodedBuf);
+  const img = new Image(1, 1);
+  img.src = `https://${adomikAdapter.currentContext.url}/?q=${encodedUri}&id=${adomikAdapter.currentContext.id}&won=true`
+}
 
 adomikAdapter.buildBidResponse = function (bid) {
   return {
@@ -181,23 +189,20 @@ adomikAdapter.buildTypedEvents = function () {
   return groupedTypedEvents;
 }
 
-// Initialize adomik object
-adomikAdapter.currentContext = {};
-adomikAdapter.bucketEvents = [];
-
 adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
 
 adomikAdapter.enableAnalytics = function (config) {
+  adomikAdapter.currentContext = {};
+
   const initOptions = config.options;
   if (initOptions) {
     adomikAdapter.currentContext = {
       uid: initOptions.id,
       url: initOptions.url,
-      debug: initOptions.debug,
       id: '',
       timeouted: false,
-      timeout: 0,
     }
+    logInfo('Adomik Analytics enabled with config', initOptions);
     adomikAdapter.adapterEnableAnalytics(config);
   }
 };

@@ -1,4 +1,5 @@
 
+
 import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
@@ -224,3 +225,4 @@ function nativeResponse(imp, bid) {
 }
 
 registerBidder(spec);
+

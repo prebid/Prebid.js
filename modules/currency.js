@@ -16,6 +16,7 @@ var adServerCurrency = 'USD';
 export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
+var defaultRates;
 
 /**
  * Configuration function for currency
@@ -45,6 +46,9 @@ var bidderCurrencyDefault = {};
  *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
  *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
  *  }
+ *  @param {object} [config.defaultRates]
+ *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
+ *  there is an error loading the config.conversionRateFile.
  */
 export function setConfig(config) {
   let url = DEFAULT_CURRENCY_RATE_URL;
@@ -52,6 +56,10 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
+  }
+
+  if (typeof config.defaultRates === 'object') {
+    defaultRates = config.defaultRates;
   }
 
   if (typeof config.adServerCurrency === 'string') {
@@ -74,6 +82,17 @@ export function setConfig(config) {
 }
 config.getConfig('currency', config => setConfig(config.currency));
 
+function errorSettingsRates(msg) {
+  if (defaultRates) {
+    currencyRates.conversions = defaultRates;
+    currencyRatesLoaded = true;
+    utils.logWarn(msg);
+    utils.logWarn('Currency failed loading rates, falling back to currency.defaultRates');
+  } else {
+    utils.logError(msg);
+  }
+}
+
 function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
@@ -83,16 +102,21 @@ function initCurrency(url) {
   hooks['addBidResponse'].addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
-    ajax(url, function (response) {
-      try {
-        currencyRates = JSON.parse(response);
-        utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
-        currencyRatesLoaded = true;
-        processBidResponseQueue();
-      } catch (e) {
-        utils.logError('failed to parse currencyRates response: ' + response);
+    ajax(url,
+      {
+        success: function (response) {
+          try {
+            currencyRates = JSON.parse(response);
+            utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            currencyRatesLoaded = true;
+            processBidResponseQueue();
+          } catch (e) {
+            errorSettingsRates('Failed to parse currencyRates response: ' + response);
+          }
+        },
+        error: errorSettingsRates
       }
-    });
+    );
   }
 }
 

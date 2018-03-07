@@ -1,3 +1,4 @@
+
 import {expect} from 'chai';
 import {spec} from 'modules/platformioBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
@@ -208,3 +209,4 @@ describe('Platform.io Adapter Tests', () => {
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
   });
 });
+
