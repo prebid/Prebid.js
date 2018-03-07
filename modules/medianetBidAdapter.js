@@ -50,6 +50,7 @@ function logEvent (event) {
     params.requrl = utils.getTopWindowUrl() || '';
     params.event = event.name;
     params.value = event.value || '';
+    params.pbver = $$PREBID_GLOBAL$$.version;
 
     return params;
   }
