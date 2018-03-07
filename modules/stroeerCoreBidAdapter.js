@@ -140,38 +140,46 @@ const StroeerCoreAdapter = function (win = window) {
     });
   }
 
-
   function tunePrice(price) {
+    const ENCRYPTION_SIZE_LIMIT = 8;
     const str = String(price);
-    if (str.length > 8) {
-      const sides = str.split('.');
-      if (sides.length === 2) {
-        let integerPart = sides[0];
-
-        let bytesRemaining = 8 - integerPart.length;
-
-        let fractionalPart = sides[1];
-
-        if (bytesRemaining >= 3) {
-          fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
-        } else if (bytesRemaining === 2 && fractionalPart[1] === '0') {
-          fractionalPart = fractionalPart[0];
-        } else if (bytesRemaining === 1 && fractionalPart[0] === '0') {
-          fractionalPart = '';
-        } else if (bytesRemaining === 0 && fractionalPart[0] === '0') {
-          fractionalPart = '';
-        } else {
-          throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
-        }
-        const newPrice = integerPart + (fractionalPart.length > 0 ? '.' + fractionalPart : '');
-        utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
-        return newPrice;
-      } else {
-        throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
-      }
-    } else {
+    if (str.length <= ENCRYPTION_SIZE_LIMIT) {
       return price;
     }
+
+    const throwError = () => {
+      throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
+    };
+    const sides = str.split('.');
+
+    if (sides.length === 2) {
+      const integerPart = sides[0].trim();
+      let fractionalPart = sides[1].trim();
+
+      const bytesRemaining = ENCRYPTION_SIZE_LIMIT - integerPart.length;
+
+      if (bytesRemaining > 2) {
+        // room '.' and at least two fraction digits
+        fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
+      }
+      else if (bytesRemaining === 2 && (fractionalPart.charAt(1) === '0')) {
+        // room for '.' and first fraction digit. Can only accept if second fraction digit is zero.
+        fractionalPart = fractionalPart.charAt(0);
+      }
+      else if (bytesRemaining >= 0 && bytesRemaining < 2 && fractionalPart.charAt(0) === '0' && fractionalPart.charAt(1) === '0') {
+        // no more room for '.' or fraction digit. Only accept if first and second fraction digits are zero.
+        fractionalPart = '';
+      }
+      else {
+        throwError();
+      }
+
+      const newPrice = integerPart + (fractionalPart.length > 0 ? '.' + fractionalPart : '');
+      utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
+      return newPrice;
+    }
+
+    throwError();
   }
 
   function parseResponse(rawResponse) {
