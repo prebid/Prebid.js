@@ -68,7 +68,7 @@ export function createHook(type, fn, hookName) {
   }
 
   function hookedFn(...args) {
-    if (_hooks.length === 0) {
+    if (_hooks.length === 1 && _hooks[0].fn === fn) {
       return fn.apply(this, args);
     }
     return types[type].apply(this, args);
