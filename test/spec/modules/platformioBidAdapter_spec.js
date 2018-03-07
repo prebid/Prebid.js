@@ -209,4 +209,3 @@ describe('Platform.io Adapter Tests', () => {
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
   });
 });
-
