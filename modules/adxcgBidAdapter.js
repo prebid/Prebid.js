@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import * as url from 'src/url';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {NATIVE, VIDEO} from 'src/mediaTypes';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes';
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -9,7 +9,7 @@ import {NATIVE, VIDEO} from 'src/mediaTypes';
  */
 
 const BIDDER_CODE = 'adxcg';
-const SUPPORTED_AD_TYPES = [VIDEO, NATIVE];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const SOURCE = 'pbjs10';
 export const spec = {
   code: BIDDER_CODE,

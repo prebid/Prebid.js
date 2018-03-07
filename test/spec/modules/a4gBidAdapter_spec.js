@@ -1,4 +1,4 @@
-import { expect} from 'chai';
+import { expect } from 'chai';
 import { spec } from 'modules/a4gBidAdapter';
 
 describe('a4gAdapterTests', () => {
