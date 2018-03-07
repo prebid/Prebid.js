@@ -1,0 +1,10 @@
+[
+	"appnexusBidAdapter",
+	"sekindoUMBidAdapter",
+	"pulsepointBidAdapter",
+	"audienceNetworkBidAdapter",
+	"openxBidAdapter",
+	"rubiconBidAdapter",
+	"sovrnBidAdapter",
+	"pubmaticBidAdapter"
+]
