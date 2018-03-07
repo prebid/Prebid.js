@@ -18,17 +18,20 @@ let preReqTime = 0;
 export const spec = {
   code: BIDDER_CODE,
 
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
     return bid.params && String(bid.params.sid).length > 9;
   },
 
   buildRequests: function(validBidRequests) {
+    top.validBidRequests = validBidRequests;
+    top.config = config;
     let data = {};
     let serverRequests = [];
     const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
     const PERF_DATA = getPerfData();
+
     let isInHostileIframe = false;
     try {
       isInHostileIframe = window.top.innerWidth < 0;
@@ -50,12 +53,13 @@ export const spec = {
         'referer': REFERRER,
         'sid': bid.params.sid,
         'hb': '1',
-        'hb.bidfloor': bid.bidfloor || 0,
+        'hb.floor': bid.bidfloor || '',
+        'hb.spb': pixelSyncPossibility(),
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': `prebidjs-${version}`,
         'hb.callbackUid': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
-        'hb.currency': bid.params.cur || bid.params.currency
+        'hb.currency': bid.params.cur || bid.params.currency || ''
       };
 
       if (bid.params.demo) {
@@ -86,6 +90,9 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, request) {
+    pbjs.getAllWinningBid()
+    top.serverResponse = serverResponse;
+    top.request = request;
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
     let bidResponses = [];
@@ -113,22 +120,10 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     top.syncOptions = syncOptions;
     top.serverResponses = serverResponses;
-
-    // if (syncOptions.iframeEnabled) {
-    //   return [{
-    //     type: 'iframe',
-    //     url: '//bh.contextweb.com/visitormatch'
-    //   }];
-    // } else if (syncOptions.pixelEnabled) {
-    //   return [{
-    //     type: 'image',
-    //     url: '//bh.contextweb.com/visitormatch/prebid'
-    //   }];
-    // }
-    return [{
-      type: 'iframe',
+    return [/*{
+      type: 'image',
       url: 'http://playground.widespace.com/usman/resources/ws300x300.jpg'
-    }];
+    }*/];
   }
 };
 
@@ -155,6 +150,11 @@ function getPerfData() {
     });
   }
   return data;
+}
+
+function pixelSyncPossibility() {
+  const userSync = config.getConfig('userSync');
+  return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
 registerBidder(spec);
