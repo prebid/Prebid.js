@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', '152media'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
