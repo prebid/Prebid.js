@@ -50,6 +50,8 @@ describe('auctionmanager.js', function () {
     var source = 'client';
     var mediatype = 'banner';
 
+    const timeToRespond = 123;
+
     before(function () {
       bid.cpm = bidPriceCpm;
       bid.pbLg = bidPbLg;
@@ -67,6 +69,7 @@ describe('auctionmanager.js', function () {
       bid.adId = adId;
       bid.source = source;
       bid.mediaType = mediatype;
+      bid.timeToRespond = timeToRespond;
     });
 
     it('No bidder level configuration defined - default', function () {
@@ -77,6 +80,7 @@ describe('auctionmanager.js', function () {
         'hb_size': size,
         'hb_source': source,
         'hb_format': mediatype,
+        'hb_ttr': timeToRespond,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -177,6 +181,7 @@ describe('auctionmanager.js', function () {
         'hb_size': size,
         'hb_source': source,
         'hb_format': mediatype,
+        'hb_ttr': timeToRespond,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -221,6 +226,7 @@ describe('auctionmanager.js', function () {
         'hb_size': size,
         'hb_source': source,
         'hb_format': mediatype,
+        'hb_ttr': timeToRespond
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
@@ -387,6 +393,7 @@ describe('auctionmanager.js', function () {
         'hb_size': '300x250',
         'hb_source': source,
         'hb_format': mediatype,
+        'hb_ttr': timeToRespond,
       };
       var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);

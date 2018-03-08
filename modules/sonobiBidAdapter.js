@@ -47,8 +47,17 @@ export const spec = {
       'key_maker': JSON.stringify(data),
       'ref': getTopWindowLocation().host,
       's': utils.generateUUID(),
-      'pv': PAGEVIEW_ID,
     };
+
+    if (validBidRequests[0].params.pageViewId) {
+      payload.pv = validBidRequests[0].params.pageViewId;
+    } else {
+      payload.pv = PAGEVIEW_ID;
+    }
+
+    if (validBidRequests[0].params.appNexusTargeting) {
+      payload.gmgt = validBidRequests[0].params.appNexusTargeting;
+    }
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
@@ -105,7 +114,7 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses[0].body.sbi_px) {
+    if (syncOptions.pixelEnabled && serverResponses && serverResponses[0] && serverResponses[0].body && serverResponses[0].body.sbi_px) {
       serverResponses[0].body.sbi_px.forEach(pixel => {
         syncs.push({
           type: pixel.type,
