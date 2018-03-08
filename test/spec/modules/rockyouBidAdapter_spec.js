@@ -205,7 +205,7 @@ describe('RockYouAdapter', () => {
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
       localBidRequest.sizes = ['x', 'w'];
 
-      localBidRequest.mediaTypes = { banner: { sizes: ['y', 'z']} };
+      localBidRequest.mediaTypes = { banner: { sizes: ['y', 'z'] } };
 
       let results = spec.buildRequests([localBidRequest], {
         bidderRequestId: 'sample'
