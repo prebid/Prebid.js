@@ -69,20 +69,19 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
-    console.log('freestar::', 'serverResponse', serverResponse, bidderRequest);
+  interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
     const bids = [];
     // @TODO: add error handling
-    if(typeof serverResponse.seatbid != 'undefined') {
-      for(var i = 0; i < serverResponse.seatbid.length; i++) {
-        var seatBid = serverResponse.seatbid[i].bid;
-        if(seatBid.length != 0) {
-          for(var j = 0; j < seatBid.length; j++) {
-            bids.push(parseBid(seatBid[j]));
-          }
-        }
-      }
+    if(serverResponse.winningProvider) {
+      bids.push(parseBid(Object.assign(
+        {},
+        {
+          requestId:serverResponse.bidRequest.imp[0].id,
+          currency: serverResponse.winningProvider.currency
+        },
+        serverResponse.winningProvider.winningSeat.bid[0],
+      )));
     }
     return bids;
   },
@@ -98,18 +97,23 @@ export const spec = {
 }
 
 function parseBid(bid) {
+  console.log('freestar::', 'parseBid', bid);
   const bidResponse = {
-    requestId: bid.id,
+    requestId: bid.requestId,
+    // cpm: 2500,
     cpm: bid.price,
-    width: 300,
-    height: 250,
+    width: bid.w,
+    // width: 300,
+    height: bid.h,
+    // height: 250,
     creativeId: bid.cid, //@TODO: verify
-    // dealId: DEAL_ID,
-    currency: 'US',
+    // // dealId: DEAL_ID,
+    currency: bid.currency,
     netRevenue: true,
     ttl: 60,
     ad: bid.adm
   };
+  console.log('freestar::', 'parseBid', bidResponse);
   return bidResponse;
 }
 
