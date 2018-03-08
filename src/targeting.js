@@ -80,8 +80,8 @@ export function newTargeting(auctionManager) {
     });
 
     const winningBid = winningBidTargeting.length > 0;
-    const allBidsReceived = bidsReceived.length === auctionManager.getBidsRequested().length;
-    if (!(winningBid || allBidsReceived)) {
+    const someBidTimedOut = auctionManager.getBidsRequested().some((bidRequest) => bidRequest.doneCbCallCount === 0);
+    if (!winningBid && someBidTimedOut) {
       addTimedOutIncompleteAuction(adUnitCodes[0], targeting);
     }
 
