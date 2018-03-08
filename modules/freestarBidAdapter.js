@@ -27,9 +27,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    const adUnitsToBidUpon = validBidRequests.map(formatBid), payload = {};
-    var cookie = window.document.cookie.split(';');
-    var cookieObj = {};
+    const adUnitsToBidUpon = validBidRequests.map(formatBid),
+      payload = {},
+      cookie = window.document.cookie.split(';'),
+      cookieObj = {};
     for (var i = 0; i < cookie.length; i++) {
       var tmp;
       // see if _fs* is within the string
