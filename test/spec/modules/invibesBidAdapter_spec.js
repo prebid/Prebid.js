@@ -1,127 +1,249 @@
-import {
-  expect
-} from 'chai';
-import * as utils from 'src/utils';
-import InvibesAdapter from 'modules/invibesBidAdapter';
-import bidmanager from 'src/bidmanager';
+import { expect } from 'chai';
+import { spec } from 'modules/invibesBidAdapter';
 
-let getDefaultBidRequest = () => {
-  return {
-    bidderCode: 'invibes',
-    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-    bidderRequestId: '7101db09af0db2',
-    start: new Date().getTime(),
-    bids: [{
-      bidder: 'invibes',
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-      placementCode: 'test-div',
+describe('invibesBidAdapter:', function () {
+  const BIDDER_CODE = 'invibes';
+  const PLACEMENT_ID = '12345';
+  const ENDPOINT = '//bid.videostep.com/Bid/VideoAdContent';
+  const SYNC_ENDPOINT = '//k.r66net.com/GetUserSync';
+
+  let bidRequests = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
       params: {
-        placementId: '1234567',
-        customEndpoint: 'https://static.r66net.com/bid/testEndpoint.js'
+        placementId: PLACEMENT_ID
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: 'abcde'
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  beforeEach(function () {
+    top.window.invibes = null;
+    document.cookie = '';
+    this.cStub1 = sinon.stub(console, 'info');
+  });
+
+  afterEach(function () {
+    this.cStub1.restore();
+  });
+
+  describe('isBidRequestValid:', function () {
+    context('valid bid request:', function () {
+      it('returns true when bidder params.placementId is set', function () {
+        const validBid = {
+          bidder: BIDDER_CODE,
+          params: {
+            placementId: PLACEMENT_ID
+          }
+        }
+
+        expect(spec.isBidRequestValid(validBid)).to.be.true;
+      })
+    });
+
+    context('invalid bid request:', function () {
+      it('returns false when no params', function () {
+        const invalidBid = {
+          bidder: BIDDER_CODE
+        }
+
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+
+      it('returns false when placementId is not set', function () {
+        const invalidBid = {
+          bidder: BIDDER_CODE,
+          params: {
+            id: '5'
+          }
+        }
+
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+    });
+  });
+
+  describe('buildRequests', () => {
+    it('sends bid request to ENDPOINT via GET', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends cookies with the bid request', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.options.withCredentials).to.equal(true);
+    });
+
+    it('has location, html id, placement and width/height', () => {
+      const request = spec.buildRequests(bidRequests, { auctionStart: Date.now() });
+      const parsedData = request.data;
+      expect(parsedData.location).to.exist;
+      expect(parsedData.videoAdHtmlId).to.exist;
+      expect(parsedData.vId).to.exist;
+      expect(parsedData.width).to.exist;
+      expect(parsedData.height).to.exist;
+    });
+
+    it('sends all Placement Ids', () => {
+      const request = spec.buildRequests(bidRequests);
+      expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[0].params.placementId);
+      expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
+    });
+
+    it('uses cookies', () => {
+      global.document.cookie = 'ivNoCookie=1';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.be.undefined;
+    });
+
+    it('does not overwrite the domain id', () => {
+      top.window.invibes = window.invibes || {};
+      top.window.invibes.dom = {};
+      let request = spec.buildRequests(bidRequests);
+    });
+
+    it('doesnt send the domain id if not graduated', () => {
+      global.document.cookie = 'ivbsdid={"id":"p4vauj.4ekt9w","hc":3,"temp":1}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.not.exist;
+    });
+
+    it('graduate and send the domain id', () => {
+      global.document.cookie = 'ivbsdid={"id":"p4rrk7.ax2i2s","hc":4,"temp":1}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.exist;
+    });
+
+    it('send the domain id if already graduated', () => {
+      global.document.cookie = 'ivbsdid={"id":"p4rrk7.ax2i2s"}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.exist;
+    });
+  })
+
+  describe('interpretResponse', function () {
+    let response = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->'
       }
-    }]
-  };
-};
+    };
 
-describe('InvibesAdapter', () => {
-  let adapter;
+    let expectedResponse = [{
+      requestId: bidRequests[0].bidId,
+      cpm: 0.5,
+      width: 400,
+      height: 300,
+      creativeId: 123,
+      currency: 'EUR',
+      netRevenue: true,
+      ttl: 300,
+      ad: `<html>
+        <head><script type='text/javascript'>inDapIF=true;</script></head>
+          <body style='margin : 0; padding: 0;'>
+          <!-- Creative -->
+          </body>
+        </html>`
+    }];
 
-  function createBidderRequest({
-    bids,
-    params
-  } = {}) {
-    var bidderRequest = getDefaultBidRequest();
-    if (bids && Array.isArray(bids)) {
-      bidderRequest.bids = bids;
-    }
-    if (params) {
-      bidderRequest.bids.forEach(bid => bid.params = params);
-    }
-    return bidderRequest;
-  }
+    context('when the response is not valid', function () {
+      it('handles response with no bids requested', () => {
+        let emptyResult = spec.interpretResponse({ body: response });
+        expect(emptyResult).to.be.empty;
+      });
 
-  beforeEach(() => adapter = new InvibesAdapter());
+      it('handles empty response', () => {
+        let emptyResult = spec.interpretResponse(null, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
 
-  describe('callBids()', () => {
-    it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
+      it('handles response with bidding is not configured', () => {
+        let emptyResult = spec.interpretResponse({ body: { Ads: [{ BidPrice: 1 }] } }, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
+
+      it('handles response with no ads are received', () => {
+        let emptyResult = spec.interpretResponse({ body: { BidModel: { PlacementId: '12345' }, AdReason: 'No ads' } }, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
+
+      it('handles response with no ads are received - no ad reason', () => {
+        let emptyResult = spec.interpretResponse({ body: { BidModel: { PlacementId: '12345' } } }, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
+
+      it('handles response when no placement Id matches', () => {
+        let emptyResult = spec.interpretResponse({ body: { BidModel: { PlacementId: '123456' }, Ads: [{ BidPrice: 1 }] } }, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
+
+      it('handles response when placement Id is not present', () => {
+        let emptyResult = spec.interpretResponse({ BidModel: {}, Ads: [{ BidPrice: 1 }] }, { bidRequests });
+        expect(emptyResult).to.be.empty;
+      });
     });
 
-    describe('bid request', () => {
-      beforeEach(() => {
-        sinon.stub(utils, 'createContentToExecuteExtScriptInFriendlyFrame', function() {
-          return '';
-        });
+    context('when the response is valid', function () {
+      it('responds with a valid bid', () => {
+        let result = spec.interpretResponse({ body: response }, { bidRequests });
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
-      afterEach(() => {
-        utils.createContentToExecuteExtScriptInFriendlyFrame.restore();
+      it('responds with a valid bid and uses logger', () => {
+        localStorage.InvibesDEBUG = true;
+        let result = spec.interpretResponse({ body: response }, { bidRequests });
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
-      it('requires parameters to be made', () => {
-        adapter.callBids({});
-        utils.createContentToExecuteExtScriptInFriendlyFrame.calledOnce.should.be.false;
-      });
-
-      it('valid placement test creative', () => {
-        var bidRequest = createBidderRequest();
-        adapter.callBids(bidRequest);
-        var callURL = utils.createContentToExecuteExtScriptInFriendlyFrame.getCall(0).args[0];
-        expect(bidRequest.bids[0].params.placementId).to.equal('1234567');
-        expect(callURL).to.contain('placementIds');
+      it('does not make multiple bids', () => {
+        localStorage.InvibesDEBUG = false;
+        let result = spec.interpretResponse({ body: response }, { bidRequests });
+        let secondResult = spec.interpretResponse({ body: response }, { bidRequests });
+        expect(secondResult).to.be.empty;
       });
     });
+  });
 
-    describe('#handleInvibesCallback: ', () => {
-      beforeEach(() => {
-        sinon.stub(utils, 'createContentToExecuteExtScriptInFriendlyFrame', function() {
-          return '';
-        });
-        sinon.stub(bidmanager, 'addBidResponse');
-      });
+  describe('getUserSyncs', function () {
+    it('returns an iframe if enabled', () => {
+      let response = spec.getUserSyncs({ iframeEnabled: true });
+      expect(response.type).to.equal('iframe');
+      expect(response.url).to.equal(SYNC_ENDPOINT);
+    });
 
-      afterEach(() => {
-        utils.createContentToExecuteExtScriptInFriendlyFrame.restore();
-        bidmanager.addBidResponse.restore();
-      });
-
-      it('exists and is a function', () => {
-        expect($$PREBID_GLOBAL$$.handleInvibesCallback).to.exist.and.to.be.a('function');
-      });
-
-      it('empty response, arguments not passed', () => {
-        adapter.callBids(createBidderRequest());
-        $$PREBID_GLOBAL$$.handleInvibesCallback();
-        expect(bidmanager.addBidResponse.callCount).to.equal(0);
-      });
-
-      it('not empty response', () => {
-        adapter.callBids(createBidderRequest());
-        $$PREBID_GLOBAL$$.handleInvibesCallback({
-          bidstatus: '1',
-          bid: 0.01,
-          placementId: '1234567'
-        });
-        sinon.assert.called(bidmanager.addBidResponse);
-        expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('test-div');
-        var theBid = bidmanager.addBidResponse.firstCall.args[1];
-        expect(theBid.bidderCode).to.equal('invibes');
-        expect(theBid.cpm).to.equal(0.01);
-      });
-
-      it('not empty response but invalid status', () => {
-        adapter.callBids(createBidderRequest());
-        $$PREBID_GLOBAL$$.handleInvibesCallback({
-          bidstatus: '0',
-          placementId: '1234567'
-        });
-        sinon.assert.called(bidmanager.addBidResponse);
-        expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('test-div');
-        var theBid = bidmanager.addBidResponse.firstCall.args[1];
-        expect(theBid.bidderCode).to.equal('invibes');
-      });
+    it('returns undefined if iframe not enabled ', () => {
+      let response = spec.getUserSyncs({ iframeEnabled: false });
+      expect(response).to.equal(undefined);
     });
   });
 });
