@@ -29,8 +29,8 @@ var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
-
 var prebid = require('./package.json');
+
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
@@ -49,8 +49,8 @@ gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
-      read: false
-    })
+    read: false
+  })
     .pipe(clean());
 });
 
@@ -78,13 +78,13 @@ var explicitModules = [
 
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules(),
-      allModules = helpers.getModuleNames(modules);
+    allModules = helpers.getModuleNames(modules);
 
-  if(modules.length === 0) {
+  if (modules.length === 0) {
     modules = allModules.filter(module => !explicitModules.includes(module));
   } else {
     var diff = _.difference(modules, allModules);
-    if(diff.length !== 0) {
+    if (diff.length !== 0) {
       throw new gutil.PluginError({
         plugin: 'bundle',
         message: 'invalid modules: ' + diff.join(', ')
@@ -106,13 +106,13 @@ function bundle(dev, moduleArr) {
   gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
-      entries
-    )
+    entries
+  )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-        global: prebid.globalVarName
-      }
+      global: prebid.globalVarName
+    }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
@@ -239,11 +239,32 @@ gulp.task('watch', function () {
 });
 
 gulp.task('lint', () => {
+  if (process.env.TRAVIS) {
+    return runLintStrict();
+  }
   return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError());
 });
+
+gulp.task('lint-strict', () => {
+  return runLintStrict();
+});
+
+function runLintStrict() {
+  return gulp.src(getFilesInRecentCommit())
+    .pipe(eslint({
+      // Load strict lint file
+      configFile: '.eslintrc.strict.js'
+    }))
+    .pipe(eslint.format('stylish'))
+    .pipe(eslint.failAfterError());
+}
+
+function getFilesInRecentCommit() {
+  return execSync('git diff --name-only master...HEAD').toString().trim().split('\n');
+}
 
 gulp.task('clean-docs', function () {
   del(['docs']);
@@ -260,7 +281,7 @@ gulp.task('docs', ['clean-docs'], function () {
 
 gulp.task('e2etest', ['devpack', 'webpack'], function() {
   var cmdQueue = [];
-  if(argv.browserstack) {
+  if (argv.browserstack) {
     var browsers = require('./browsers.json');
     delete browsers['bs_ie_9_windows_7'];
 
@@ -272,11 +293,11 @@ gulp.task('e2etest', ['devpack', 'webpack'], function() {
 
     var startWith = 'bs';
 
-    Object.keys(browsers).filter(function(v){
+    Object.keys(browsers).filter(function(v) {
       return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
-    }).map(function(v,i,arr) {
-      var newArr = (i%2 === 0) ? arr.slice(i,i+2) : null;
-      if(newArr) {
+    }).map(function(v, i, arr) {
+      var newArr = (i % 2 === 0) ? arr.slice(i, i + 2) : null;
+      if (newArr) {
         var cmd = 'nightwatch --env ' + newArr.join(',') + cmdStr;
         cmdQueue.push(cmd);
       }
