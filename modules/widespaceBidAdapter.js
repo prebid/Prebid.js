@@ -12,8 +12,10 @@ const WS_ADAPTER_VERSION = '2.0.0';
 const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
 const REFERRER = getTopWindowLocation().href;
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
+const pbjs = window['$$PREBID_GLOBAL$$'];
 
 let preReqTime = 0;
+let adUnitCodes = [];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,12 +27,10 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests) {
-    top.validBidRequests = validBidRequests;
-    top.config = config;
-    let data = {};
     let serverRequests = [];
     const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
-    const PERF_DATA = getPerfData();
+    const PERF_DATA = getData('wsPerfData');
+    const BID_INFO = getData('wsBidInfo');
 
     let isInHostileIframe = false;
     try {
@@ -40,7 +40,8 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      data = {
+      adUnitCodes.push(bid.adUnitCode);
+      let data = {
         'ver': '5.0.0', // remove
         'tagType': 'dyn', // remove
         'a': 'application/json', // remove
@@ -53,11 +54,13 @@ export const spec = {
         'referer': REFERRER,
         'sid': bid.params.sid,
         'hb': '1',
+        'hb.bidInfo': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
         'hb.floor': bid.bidfloor || '',
-        'hb.spb': pixelSyncPossibility(),
+        'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': `prebidjs-${version}`,
         'hb.callbackUid': bid.bidId,
+        'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''
       };
@@ -90,17 +93,18 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, request) {
-    pbjs.getAllWinningBid()
-    top.serverResponse = serverResponse;
-    top.request = request;
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
     let bidResponses = [];
     successBids.forEach((bid) => {
-      setPerfData(bid.reqId, responseTime);
+      storeData({
+        'perf_status': 'OK',
+        'perf_reqid': bid.reqId,
+        'perf_ms': responseTime
+      }, `wsPerfData${bid.reqId}`);
       if (bid.status === 'ad') {
         bidResponses.push({
-          requestId: bid.callbackUid,
+          requestId: bid.bidId || bid.callbackUid,
           cpm: bid.cpm,
           width: bid.width,
           height: bid.height,
@@ -118,32 +122,25 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    top.syncOptions = syncOptions;
-    top.serverResponses = serverResponses;
-    return [/*{
+    return [{
       type: 'image',
       url: 'http://playground.widespace.com/usman/resources/ws300x300.jpg'
-    }*/];
+    }];
   }
 };
 
-function setPerfData(reqId, time) {
-  if (preReqTime && LOCAL_STORAGE_AVAILABLE) {
-    const perfString = JSON.stringify({
-      'perf_status': 'OK',
-      'perf_reqid': reqId,
-      'perf_ms': time
-    });
-    localStorage.setItem('wsPerfData' + reqId, perfString);
-    return perfString;
+function storeData(data, name) {
+  if (LOCAL_STORAGE_AVAILABLE) {
+    localStorage.setItem(name, JSON.stringify(data));
+    return true;
   }
 }
 
-function getPerfData() {
+function getData(name) {
   let data = [];
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
-      if (key.indexOf('wsPerfData') > -1) {
+      if (key.includes(name)) {
         data.push(JSON.parse(localStorage.getItem(key)));
         localStorage.removeItem(key);
       }
@@ -156,5 +153,19 @@ function pixelSyncPossibility() {
   const userSync = config.getConfig('userSync');
   return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
+
+pbjs.onEvent('bidWon', function(bid) {
+  if (adUnitCodes.includes(bid.adUnitCode)) {
+    storeData({'bidder': bid.bidder,
+      'bidId': bid.adId,
+      'cmp': bid.cpm,
+      'ttr': bid.timeToRespond
+    }, `wsBidInfo${bid.adId}`);
+  }
+});
+
+pbjs.onEvent('auctionEnd', function(bid) {
+  console.log('auctionEnd', bid, pbjs.getHighestCpmBids()[0], pbjs.getHighestCpmBids()[1]);
+});
 
 registerBidder(spec);
