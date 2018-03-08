@@ -890,3 +890,7 @@ export function isInteger(value) {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
 }
+
+function foobar() {
+  console.log('hi');
+}
