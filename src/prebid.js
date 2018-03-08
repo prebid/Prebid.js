@@ -154,10 +154,6 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   };
 };
 
-$$PREBID_GLOBAL$$.foobar = function (test) {
-  console.log(test);
-};
-
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
