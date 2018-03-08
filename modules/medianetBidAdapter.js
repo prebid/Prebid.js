@@ -35,9 +35,8 @@ function logEvent (event) {
   }
 
   function getLoggingData(data) {
-    data = data || [];
-
     let params = {};
+
     params.logid = 'kfk';
     params.evtid = 'projectevents';
     params.project = 'prebid';
