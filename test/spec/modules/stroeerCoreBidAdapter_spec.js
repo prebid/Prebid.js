@@ -368,7 +368,6 @@ describe('stroeerssp adapter', function () {
           ]
         };
 
-        console.log(JSON.stringify(bidRequest));
         assert.deepEqual(bidRequest, expectedJson);
       });
 

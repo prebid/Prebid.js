@@ -42,18 +42,6 @@ const StroeerCoreAdapter = function (win = window) {
     return res;
   }
 
-  // TODO: remove. polyfill in included in build.
-  function find(arr, fn) {
-    // not all browsers support Array.find
-    let res;
-    for (let i = 0; i < arr.length; i++) {
-      if (fn(arr[i])) {
-        res = arr[i];
-        break;
-      }
-    }
-    return res;
-  }
 
   function elementInView(elementId) {
     const visibleInWindow = (el, win) => {
@@ -78,7 +66,7 @@ const StroeerCoreAdapter = function (win = window) {
   function insertUserConnect(bids) {
     const scriptElement = win.document.createElement('script');
     const anyBidWithSlotId = bids[0];
-    const anyBidWithConnectJsUrl = find(bids, b => b.params && b.params.connectjsurl);
+    const anyBidWithConnectJsUrl = bids.find(b => b.params && b.params.connectjsurl);
 
     if (anyBidWithSlotId) {
       scriptElement.setAttribute('data-container-config', JSON.stringify({slotId: anyBidWithSlotId.params.sid}));
@@ -211,7 +199,7 @@ const StroeerCoreAdapter = function (win = window) {
     filters.push(createFilter((bid) => typeof bid.params === "object", bid => `bid ${bid.bidId} does not have custom params`));
     filters.push(createFilter((bid) => utils.isStr(bid.params.sid), bid => `bid ${bid.bidId} does not have a sid string field`));
     filters.push(createFilter((bid) => ssat === null || (bid.params.ssat === ssat), bid => `bid ${bid.bidId} has auction type that is inconsistent with other bids (expected ${ssat})`));
-    filters.push(createFilter((bid) => bid.params.ssat === undefined || [1, 2].indexOf(bid.params.ssat) > -1, bid => `bid ${bid.bidId} does not have a valid ssat value (must be 1 or 2)`));
+    filters.push(createFilter((bid) => bid.params.ssat === undefined || [1, 2].includes(bid.params.ssat), bid => `bid ${bid.bidId} does not have a valid ssat value (must be 1 or 2)`));
 
     return filters;
   }
@@ -231,7 +219,7 @@ const StroeerCoreAdapter = function (win = window) {
       const validationFilters = createValidationFilters(ssat);
 
       const validBids = allBids.filter(bid => validationFilters.every(fn => fn(bid)));
-      const invalidBids = allBids.filter(bid => validBids.indexOf(bid) === -1);
+      const invalidBids = allBids.filter(bid => !validBids.includes(bid));
 
 
       const requestBody = {
