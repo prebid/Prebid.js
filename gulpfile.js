@@ -30,6 +30,7 @@ var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 var prebid = require('./package.json');
+const execSync = require('child_process').execSync;
 
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
