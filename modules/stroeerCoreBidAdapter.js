@@ -14,7 +14,15 @@ const StroeerCoreAdapter = function (win = window) {
   const defaultPort = '';
   const bidderCode = 'stroeerCore';
 
-  const validBidRequest = bid => bid.params && utils.isStr(bid.params.sid);
+  const validBidRequest = bid => {
+    const params = bid.params;
+    if (!params) return false;
+    if (!utils.isStr(params.sid)) return false;
+    if (params.ssat !== undefined) {
+      return [1, 2].indexOf(params.ssat) !== -1;
+    }
+    return true;
+  };
 
   const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
 
@@ -199,58 +207,49 @@ const StroeerCoreAdapter = function (win = window) {
       const allBids = params.bids;
       const validBidRequestById = {};
 
+      const bidWithSsat = allBids.find(b => b.params.ssat);
+      const ssat = bidWithSsat ? bidWithSsat.params.ssat : null;
+
       const requestBody = {
         id: params.bidderRequestId,
         bids: [],
         ref: getPageReferer(),
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
-        timeout: params.timeout - (Date.now() - params.auctionStart)
+        timeout: params.timeout - (Date.now() - params.auctionStart),
+        ssat: ssat && utils.isNumber(ssat) ? ssat : 2
       };
 
-      /*
-       * Check to see if atleast one bid has a SSAT value
-       * If so, we must isolate those that don't instead of defaulting to 2
-       */
-      let ssatIsPresentInAtleastOne = false;
-      let bidsWithSsat = [];
-      for (let i = 0; i < allBids.length; i++) {
-        let bidSsat = allBids[i].params.ssat;
-        if (bidSsat !== undefined) {
-          ssatIsPresentInAtleastOne = true;
-          bidsWithSsat.push(i);
+      const result = allBids.reduce((acc, curr) => {
+        if (ssat === null || curr.params.ssat === ssat) {
+          acc.accepts.push(curr);
         }
-      };
-
-      for (let i = 0; i < allBids.length; i++) {
-        let bidRequest = allBids[i];
-        let bidSsat = bidRequest.params.ssat;
-        // If all bids have no ssat then default to 2 and accept all
-        if (ssatIsPresentInAtleastOne === false) {
-          bidSsat = 2;
-          bidsWithSsat.push(i);
+        else {
+          acc.rejects.push(curr);
         }
+        return acc;
+      }, {accepts: [], rejects: []});
 
+      result.accepts.forEach(bidRequest => {
         if (validBidRequest(bidRequest)) {
-          if ((bidsWithSsat.indexOf(i) !== -1) && ([1, 2].indexOf(bidSsat) !== -1)) {
-            requestBody.bids.push({
-              bid: bidRequest.bidId,
-              sid: bidRequest.params.sid,
-              siz: bidRequest.sizes,
-              viz: elementInView(bidRequest.placementCode),
-              ssat: bidSsat
-            });
-
-            validBidRequestById[bidRequest.bidId] = bidRequest;
-          } else {
-            bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}))
-            utils.logError(`${bidSsat} is not a valid auction type`, 'ERROR');
-          }
-        } else {
-          bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
-          utils.logError(`Invalid bid request`, 'ERROR');
+          requestBody.bids.push({
+            bid: bidRequest.bidId,
+            sid: bidRequest.params.sid,
+            siz: bidRequest.sizes,
+            viz: elementInView(bidRequest.placementCode)
+          });
+          validBidRequestById[bidRequest.bidId] = bidRequest;
         }
-      }
+        else {
+          utils.logError(`Invalid bid ${bidRequest.bidId}`, 'ERROR');
+          bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
+        }
+      });
+
+      result.rejects.forEach(bidRequest => {
+        bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
+        utils.logError(`bid ${bidRequest.bidId} does not share the same auction type as other bids (type ${ssat})`, 'ERROR');
+      });
 
       // Safeguard against the unexpected - an infinite request loop.
       let redirectCount = 0;
