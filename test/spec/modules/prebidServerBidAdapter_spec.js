@@ -399,7 +399,7 @@ describe('S2S Adapter', () => {
     it('adds device and app objects to request', () => {
       const _config = { s2sConfig: CONFIG,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-        app: { bundle: 'com.test.app'},
+        app: { bundle: 'com.test.app' },
       };
 
       config.setConfig(_config);
@@ -422,7 +422,7 @@ describe('S2S Adapter', () => {
       const _config = {
         s2sConfig: s2sConfig,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-        app: { bundle: 'com.test.app'},
+        app: { bundle: 'com.test.app' },
       }
 
       config.setConfig(_config);
