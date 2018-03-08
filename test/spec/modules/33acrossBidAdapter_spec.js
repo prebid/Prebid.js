@@ -14,7 +14,7 @@ describe('33acrossBidAdapter:', function () {
   const SITE_ID = 'pub1234';
   const PRODUCT_ID = 'product1';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-  const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
+  const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
   beforeEach(function() {
     this.bidRequests = [

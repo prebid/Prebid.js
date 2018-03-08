@@ -512,6 +512,50 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
         });
 
+        it('should send request with proper ad position', () => {
+          createVideoBidderRequest();
+          var positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'atf';
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          let post = request.data;
+          let slot = post.slots[0];
+
+          expect(slot.position).to.equal('atf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'btf';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('btf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'unknown';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = '123';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          delete positionBidderRequest.bids[0].params.position;
+          expect(positionBidderRequest.bids[0].params.position).to.equal(undefined);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+        });
+
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
