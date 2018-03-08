@@ -14,16 +14,6 @@ const StroeerCoreAdapter = function (win = window) {
   const defaultPort = '';
   const bidderCode = 'stroeerCore';
 
-  const validBidRequest = bid => {
-    const params = bid.params;
-    if (!params) return false;
-    if (!utils.isStr(params.sid)) return false;
-    if (params.ssat !== undefined) {
-      return [1, 2].indexOf(params.ssat) !== -1;
-    }
-    return true;
-  };
-
   const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
 
   const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || undefined;
@@ -52,6 +42,7 @@ const StroeerCoreAdapter = function (win = window) {
     return res;
   }
 
+  // TODO: remove. polyfill in included in build.
   function find(arr, fn) {
     // not all browsers support Array.find
     let res;
@@ -86,7 +77,7 @@ const StroeerCoreAdapter = function (win = window) {
 
   function insertUserConnect(bids) {
     const scriptElement = win.document.createElement('script');
-    const anyBidWithSlotId = find(bids, validBidRequest);
+    const anyBidWithSlotId = bids[0];
     const anyBidWithConnectJsUrl = find(bids, b => b.params && b.params.connectjsurl);
 
     if (anyBidWithSlotId) {
@@ -202,13 +193,46 @@ const StroeerCoreAdapter = function (win = window) {
     return response;
   }
 
+  function createValidationFilters(ssat) {
+    const filters = [];
+
+    const createFilter = (checkFn, errorMsgFn) => {
+      return (bid) => {
+        if (checkFn(bid)) {
+          return true;
+        }
+        else {
+          utils.logError(`invalid bid: ${errorMsgFn(bid)}`, 'ERROR');
+          return false;
+        }
+      }
+    };
+
+    filters.push(createFilter((bid) => typeof bid.params === "object", bid => `bid ${bid.bidId} does not have custom params`));
+    filters.push(createFilter((bid) => utils.isStr(bid.params.sid), bid => `bid ${bid.bidId} does not have a sid string field`));
+    filters.push(createFilter((bid) => ssat === null || (bid.params.ssat === ssat), bid => `bid ${bid.bidId} has auction type that is inconsistent with other bids (expected ${ssat})`));
+    filters.push(createFilter((bid) => bid.params.ssat === undefined || [1, 2].indexOf(bid.params.ssat) > -1, bid => `bid ${bid.bidId} does not have a valid ssat value (must be 1 or 2)`));
+
+    return filters;
+  }
+
   return {
     callBids: function (params) {
       const allBids = params.bids;
       const validBidRequestById = {};
 
-      const bidWithSsat = allBids.find(b => b.params.ssat);
+      const bidWithSsat = allBids.find(b => b.params && b.params.ssat);
       const ssat = bidWithSsat ? bidWithSsat.params.ssat : null;
+
+      if (ssat) {
+        utils.logInfo("using value ${ssat} for ssat");
+      }
+
+      const validationFilters = createValidationFilters(ssat);
+
+      const validBids = allBids.filter(bid => validationFilters.every(fn => fn(bid)));
+      const invalidBids = allBids.filter(bid => validBids.indexOf(bid) === -1);
+
 
       const requestBody = {
         id: params.bidderRequestId,
@@ -217,39 +241,20 @@ const StroeerCoreAdapter = function (win = window) {
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
         timeout: params.timeout - (Date.now() - params.auctionStart),
-        ssat: ssat && utils.isNumber(ssat) ? ssat : 2
+        ssat: ssat ? ssat : 2
       };
 
-      const result = allBids.reduce((acc, curr) => {
-        if (ssat === null || curr.params.ssat === ssat) {
-          acc.accepts.push(curr);
-        }
-        else {
-          acc.rejects.push(curr);
-        }
-        return acc;
-      }, {accepts: [], rejects: []});
-
-      result.accepts.forEach(bidRequest => {
-        if (validBidRequest(bidRequest)) {
-          requestBody.bids.push({
-            bid: bidRequest.bidId,
-            sid: bidRequest.params.sid,
-            siz: bidRequest.sizes,
-            viz: elementInView(bidRequest.placementCode)
-          });
-          validBidRequestById[bidRequest.bidId] = bidRequest;
-        }
-        else {
-          utils.logError(`Invalid bid ${bidRequest.bidId}`, 'ERROR');
-          bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
-        }
+      validBids.forEach(bidRequest => {
+        requestBody.bids.push({
+          bid: bidRequest.bidId,
+          sid: bidRequest.params.sid,
+          siz: bidRequest.sizes,
+          viz: elementInView(bidRequest.placementCode)
+        });
+        validBidRequestById[bidRequest.bidId] = bidRequest;
       });
 
-      result.rejects.forEach(bidRequest => {
-        bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
-        utils.logError(`bid ${bidRequest.bidId} does not share the same auction type as other bids (type ${ssat})`, 'ERROR');
-      });
+      invalidBids.forEach(bid => bidmanager.addBidResponse(bid.placementCode, Object.assign(bidfactory.createBid(2, bid), {bidderCode})));
 
       // Safeguard against the unexpected - an infinite request loop.
       let redirectCount = 0;
@@ -273,11 +278,11 @@ const StroeerCoreAdapter = function (win = window) {
                 utils.logError('invalid response ' + JSON.stringify(response), 'ERROR');
                 handleBidResponse({bids: []}, validBidRequestById);
               }
-              insertUserConnect(allBids);
+              insertUserConnect(validBids);
             }
           },
           error: function () {
-            insertUserConnect(allBids);
+            insertUserConnect(validBids);
           }
         };
 
@@ -290,7 +295,7 @@ const StroeerCoreAdapter = function (win = window) {
       if (requestBody.bids.length > 0) {
         sendBidRequest(buildUrl(allBids[0].params));
       } else {
-        insertUserConnect(allBids);
+        insertUserConnect(validBids);
       }
     }
   };
