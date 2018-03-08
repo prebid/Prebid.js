@@ -28,7 +28,7 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* You need to have `NodeJS` 4.x or greater installed..
 
 <a name="Build"></a>
 
