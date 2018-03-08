@@ -17,3 +17,7 @@ before_install:
 
 script:
   - gulp run-tests
+
+  branches:
+    only:
+    - master
