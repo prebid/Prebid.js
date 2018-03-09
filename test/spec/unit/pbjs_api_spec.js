@@ -149,12 +149,12 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
   before(() => {
-    bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').callsFake(() => true);
+    bidExpiryStub = sinon.stub(auctionManager, 'isStillValidBid').returns(true);
   });
 
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
-    targetingModule.isBidExpired.restore();
+    auctionManager.isStillValidBid.restore();
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
@@ -377,6 +377,7 @@ describe('Unit: Prebid Module', function () {
     let cbTimeout = 3000;
     let auctionManagerInstance = newAuctionManager();
     let targeting = newTargeting(auctionManagerInstance);
+    sinon.stub(auctionManagerInstance, 'isStillValidBid').returns(true)
 
     let RESPONSE = {
       'version': '0.0.1',

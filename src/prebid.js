@@ -21,8 +21,6 @@ var events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-
-const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 var eventValidators = {
@@ -222,7 +220,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       if (bid) {
         utils.logMessage('Rendering ad with adId :' + bid.adId);
 
-        bid.status = RENDERED;
+        bid.status = CONSTANTS.BID_STATE.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);

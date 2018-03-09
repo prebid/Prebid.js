@@ -1,4 +1,4 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchingSlot } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
@@ -9,15 +9,7 @@ var CONSTANTS = require('./constants.json');
 
 var pbTargetingKeys = [];
 
-export const BID_TARGETING_SET = 'targetingSet';
-
 const MAX_DFP_KEYLENGTH = 20;
-
-// return unexpired bids
-export const isBidExpired = (bid) => (timestamp() - bid.responseTimestamp) < bid.ttl * 1000;
-
-// return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && bid.status === BID_TARGETING_SET) || !bid.status);
 
 /**
  * @typedef {Object.<string,string>} targeting
@@ -160,8 +152,6 @@ export function newTargeting(auctionManager) {
 
   function getBidsReceived() {
     return auctionManager.getBidsReceived()
-      .filter(isUnusedBid)
-      .filter(exports.isBidExpired)
   }
 
   /**
@@ -210,7 +200,7 @@ export function newTargeting(auctionManager) {
   function getWinningBidTargeting(adUnitCodes, bidsReceived) {
     let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
     winners.forEach((winner) => {
-      winner.status = BID_TARGETING_SET;
+      winner.status = CONSTANTS.BID_STATE.BID_TARGETING_SET;
     });
 
     // TODO : Add losing bids to pool from here ?
