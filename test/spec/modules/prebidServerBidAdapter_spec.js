@@ -361,6 +361,38 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
+    it('adds gdpr consent information to ortb2 request depending on module use', () => {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config};
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'abc123',
+        consentRequired: true
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.regs.ext.gdpr).is.equal(1);
+      expect(requestBid.user.ext.consent).is.equal('abc123');
+
+      config.resetConfig();
+      config.setConfig({s2sConfig: CONFIG});
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid.regs).to.not.exist;
+      expect(requestBid.user).to.not.exist;
+
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+    });
+
     it('adds digitrust id is present and user is not optout', () => {
       let digiTrustObj = {
         success: true,
@@ -394,38 +426,6 @@ describe('S2S Adapter', () => {
       expect(requestBid.digiTrust).to.not.exist;
 
       delete window.DigiTrust;
-    });
-
-    it('adds gdpr consent information to ortb2 request depending on module use', () => {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-
-      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config};
-      config.setConfig(consentConfig);
-
-      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-      gdprBidRequest[0].gdprConsent = {
-        consentString: 'abc123',
-        consentRequired: true
-      };
-
-      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
-
-      expect(requestBid.regs.ext.gdpr).is.equal(1);
-      expect(requestBid.user.ext.consent).is.equal('abc123');
-
-      config.resetConfig();
-      config.setConfig({s2sConfig: CONFIG});
-
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      requestBid = JSON.parse(requests[1].requestBody);
-
-      expect(requestBid.regs).to.not.exist;
-      expect(requestBid.user).to.not.exist;
-
-      config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
     });
   });
 
