@@ -41,6 +41,7 @@ To set up Prebid to serve ads into your AMP pages, you'll need:
 
 + [AMP content page](#amp-content-page): This is where your content lives.
 + [HTML Creative](#html-creative): This is the creative your Ad Ops team puts in your ad server.
++ [User Sync in AMP](#user-sync-in-amp): This is the `amp-iframe` pixel that must be added to your AMP page to sync users with Prebid Server.
 
 ### AMP content page
 
@@ -56,7 +57,7 @@ The `amp-ad` elements in the page body need to be set up as shown below, especia
     <amp-ad width="300" height="250"
             type="doubleclick"
             data-slot="/19968336/universal_creative"
-            rtc-config='{"vendors": {"PrebidAppNexus": {"PLACEMENT_ID": "12345679"}}, "timeoutMillis": 500}'>
+            rtc-config='{"vendors": {"prebidappnexus": {"PLACEMENT_ID": "12345679"}}, "timeoutMillis": 500}'>
     </amp-ad>
 
 {% endhighlight %}
@@ -70,7 +71,7 @@ You can always get the latest version of the creative code below from [the AMP e
 
 {% highlight html %}
 
-    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.1.2/dist/creative.js"></script>
+    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.2.1/dist/creative.js"></script>
     <script>
     var adId = "%%PATTERN:hb_adid%%";
     var cacheHost = "%%PATTERN:hb_cache_host%%";
@@ -91,6 +92,25 @@ You can always get the latest version of the creative code below from [the AMP e
         console.log(e);
     }
     </script>
+
+{% endhighlight %}
+
+### User Sync
+
+To properly sync user IDs with Prebid Server, the `amp-iframe` pixel below should be added to your AMP pages. As of now, only image pixels (those returned with "type": "redirect") are supported.
+
+{: .alert.alert-warning :}
+Iframes must be either 600px away from the top or not within the first 75% of the viewport when scrolled to the top – whichever is smaller. For more information on this, see [amp-iframe](https://ampbyexample.com/components/amp-iframe/)
+
+{% highlight html %}
+
+    <amp-iframe width="1" title="User Sync"
+                            height="1"
+                            layout="responsive"
+                            sandbox="allow-scripts"
+                            frameborder="0"
+                            src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.2.1/dist/load-cookie.html">
+    </amp-iframe>
 
 {% endhighlight %}
 
