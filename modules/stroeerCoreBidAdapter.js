@@ -91,7 +91,7 @@ const StroeerCoreAdapter = function (win = window) {
           width: bidResponse.width,
           height: bidResponse.height,
           ad: bidResponse.ad,
-          cpm2: bidResponse.cpm2,
+          cpm2: bidResponse.cpm2 || 0,
           floor: bidResponse.floor || cpm,
           exchangerate: bidResponse.exchangerate,
           nurl: bidResponse.nurl,

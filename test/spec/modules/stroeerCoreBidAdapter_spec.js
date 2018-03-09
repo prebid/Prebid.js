@@ -619,16 +619,19 @@ describe('stroeerssp adapter', function () {
       assert.propertyVal(bid1, 'nurl', 'www.something.com');
 
       let bid2 = bidmanager.addBidResponse.secondCall.args[1];
-      assert.propertyVal(bid2, 'cpm2', undefined);
+      assert.propertyVal(bid2, 'cpm2', 0);
       assert.propertyVal(bid2, 'floor', 1.0);
       assert.propertyVal(bid2, 'exchangerate', 0.8);
       assert.propertyVal(bid2, 'nurl', 'www.something-else.com');
     });
 
-    it('should default floor to same value as cpm', function() {
+    it('should default floor to same value as cpm and default cpm2 to 0', function() {
       const json = buildBidderResponse();
       assert.isUndefined(json.bids[0].floor);
+      assert.isUndefined(json.bids[0].cpm2);
       assert.isUndefined(json.bids[1].floor);
+      assert.isUndefined(json.bids[1].cpm2);
+
 
       fakeServer.respondWith(JSON.stringify(json));
 
@@ -639,11 +642,11 @@ describe('stroeerssp adapter', function () {
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
       let bid1 = bidmanager.addBidResponse.firstCall.args[1];
-      assert.propertyVal(bid1, 'cpm2', undefined);
+      assert.propertyVal(bid1, 'cpm2', 0);
       assert.propertyVal(bid1, 'floor', 4.0);
 
       let bid2 = bidmanager.addBidResponse.firstCall.args[1];
-      assert.propertyVal(bid2, 'cpm2', undefined);
+      assert.propertyVal(bid2, 'cpm2', 0);
       assert.propertyVal(bid2, 'floor', 4.0);
     });
 
