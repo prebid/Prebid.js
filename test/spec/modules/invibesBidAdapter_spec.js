@@ -3,7 +3,6 @@ import { spec } from 'modules/invibesBidAdapter';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
-  const PLACEMENT_ID = '12345';
   const ENDPOINT = '//bid.videostep.com/Bid/VideoAdContent';
   const SYNC_ENDPOINT = '//k.r66net.com/GetUserSync';
 
@@ -13,7 +12,7 @@ describe('invibesBidAdapter:', function () {
       bidder: BIDDER_CODE,
       bidderRequestId: 'r1',
       params: {
-        placementId: PLACEMENT_ID
+        placementId: '12345'
       },
       adUnitCode: 'test-div',
       auctionId: 'a1',
@@ -56,7 +55,7 @@ describe('invibesBidAdapter:', function () {
         const validBid = {
           bidder: BIDDER_CODE,
           params: {
-            placementId: PLACEMENT_ID
+            placementId: '12345'
           }
         }
 
