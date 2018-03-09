@@ -3,13 +3,14 @@ const adapter = require('modules/stroeerCoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 const utils = require('src/utils');
 
-function assertBid(bidObject, bidId, ad, width, height) {
+function assertBid(bidObject, bidId, ad, width, height, cpm, floor = cpm) {
   assert.propertyVal(bidObject, 'adId', bidId);
   assert.propertyVal(bidObject, 'ad', ad);
   assert.propertyVal(bidObject, 'width', width);
   assert.propertyVal(bidObject, 'height', height);
-  assert.propertyVal(bidObject, 'cpm', 4.0);
+  assert.propertyVal(bidObject, 'cpm', cpm);
   assert.propertyVal(bidObject, 'bidderCode', 'stroeerCore');
+  assert.propertyVal(bidObject, 'floor', floor);
 }
 
 function assertNoFillBid(bidObject, bidId) {
@@ -83,46 +84,34 @@ const buildBidderResponse = () => ({
     'cpm': 4.0,
     'width': 300,
     'height': 600,
-    'ad': '<div>tag1</div>',
-    'cpm2': 3.8,
-    'floor': 2.0,
-    'exchangerate': 1.0,
-    'nurl': 'www.something.com',
-    'ssat': 2
+    'ad': '<div>tag1</div>'
   }, {
     'bidId': 'bid2',
-    'cpm': 4.0,
+    'cpm': 7.3,
     'width': 728,
     'height': 90,
-    'ad': '<div>tag2</div>',
-    'ssat': 1
+    'ad': '<div>tag2</div>'
   }]
 });
 
-const buildBidderResponseSecondPriceAuction = () => ({
-  'bids': [{
-    'bidId': 'bid1',
-    'cpm': 4.0,
-    'width': 300,
-    'height': 600,
-    'ad': '<div>tag1</div>',
-    'cpm2': 3.8,
-    'floor': 2.0,
-    'exchangerate': 1.0,
-    'nurl': 'www.something.com',
-    'ssat': 2
-  }, {
-    'bidId': 'bid2',
-    'cpm': 4.0,
-    'width': 728,
-    'height': 90,
-    'ad': '<div>tag2</div>',
-    'floor': 1.0,
-    'exchangerate': 0.8,
-    'nurl': 'www.something-else.com',
-    'ssat': 2
-  }]
-});
+const buildBidderResponseSecondPriceAuction = () => {
+  const response = buildBidderResponse();
+
+  const bid1 = response.bids[0];
+  bid1.cpm2 = 3.8;
+  bid1.floor = 2.0;
+  bid1.exchangerate = 1.0;
+  bid1.nurl = 'www.something.com';
+  bid1.ssat = 2;
+
+  const bid2 = response.bids[1];
+  bid2.floor = 1.0;
+  bid2.exchangerate = 0.8;
+  bid2.nurl = 'www.something-else.com';
+  bid2.ssat = 2;
+
+  return response;
+};
 
 const createWindow = (href, params = {}) => {
   let {parent, referrer, top, frameElement, placementElements = []} = params;
@@ -568,8 +557,8 @@ describe('stroeerssp adapter', function () {
       const firstBid = bidmanager.addBidResponse.firstCall.args[1];
       const secondBid = bidmanager.addBidResponse.secondCall.args[1];
 
-      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600);
-      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
+      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600, 4);
+      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should never to more than one redirect', () => {
@@ -610,8 +599,8 @@ describe('stroeerssp adapter', function () {
       const firstBid = bidmanager.addBidResponse.firstCall.args[1];
       const secondBid = bidmanager.addBidResponse.secondCall.args[1];
 
-      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600);
-      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
+      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600, 4);
+      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should get auction type from bid params', function() {
@@ -636,6 +625,28 @@ describe('stroeerssp adapter', function () {
       assert.propertyVal(bid2, 'nurl', 'www.something-else.com');
     });
 
+    it('should default floor to same value as cpm', function() {
+      const json = buildBidderResponse();
+      assert.isUndefined(json.bids[0].floor);
+      assert.isUndefined(json.bids[1].floor);
+
+      fakeServer.respondWith(JSON.stringify(json));
+
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      let bid1 = bidmanager.addBidResponse.firstCall.args[1];
+      assert.propertyVal(bid1, 'cpm2', undefined);
+      assert.propertyVal(bid1, 'floor', 4.0);
+
+      let bid2 = bidmanager.addBidResponse.firstCall.args[1];
+      assert.propertyVal(bid2, 'cpm2', undefined);
+      assert.propertyVal(bid2, 'floor', 4.0);
+    });
+
     it('should add unfulfilled bids', function() {
       const result = buildBidderResponse();
 
@@ -649,7 +660,7 @@ describe('stroeerssp adapter', function () {
 
       assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1');
 
-      assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2', '<div>tag2</div>', 728, 90);
+      assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should exclude bids without slot id param', () => {
@@ -668,7 +679,7 @@ describe('stroeerssp adapter', function () {
       // invalid bids are added last
       assert.strictEqual(bidmanager.addBidResponse.secondCall.args[0], 'div-1');
 
-      assertBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
+      assertBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1', '<div>tag1</div>', 300, 600, 4);
 
       assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });

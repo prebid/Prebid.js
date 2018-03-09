@@ -83,14 +83,16 @@ const StroeerCoreAdapter = function (win = window) {
       const bidRequest = validBidRequestById[bidResponse.bidId];
 
       if (bidRequest) {
+        const cpm = bidResponse.cpm;
+
         const bidObject = Object.assign(bidfactory.createBid(1, bidRequest), {
           bidderCode,
-          cpm: bidResponse.cpm,
+          cpm: cpm,
           width: bidResponse.width,
           height: bidResponse.height,
           ad: bidResponse.ad,
           cpm2: bidResponse.cpm2,
-          floor: bidResponse.floor,
+          floor: bidResponse.floor || cpm,
           exchangerate: bidResponse.exchangerate,
           nurl: bidResponse.nurl,
           ssat: bidResponse.ssat
@@ -201,7 +203,7 @@ const StroeerCoreAdapter = function (win = window) {
       const bidWithSsat = allBids.find(b => b.params && b.params.ssat);
       const ssat = bidWithSsat ? bidWithSsat.params.ssat : null;
 
-      if (ssat) utils.logInfo(`using value ${ssat} for ssat`);
+      if (ssat != null) utils.logInfo(`using value ${ssat} for ssat`);
 
       const validationFilters = createValidationFilters(ssat);
 
