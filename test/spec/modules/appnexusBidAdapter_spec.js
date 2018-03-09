@@ -307,20 +307,27 @@ describe('AppNexusAdapter', () => {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
-    it('should gdpr consent information to the request', () => {
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'appnexus',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'consentId': 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+        'gdprConsent': {
+          consentString: consentString,
+          consentRequired: true
+        }
       };
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      // add expect checks - new spec will likely have the consent data in the request.data field
+      expect(payload.gdprConsent).to.exist;
+      console.log(payload.gdprConsent);
+      expect(payload.gdprConsent.gdprConsentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.gdprConsentRequired).to.exist.and.to.be.true;
     });
   })
 
