@@ -1,4 +1,4 @@
-import {setConfig, requestBidsHook, resetConsentId, userCMP, consentId, consentTimeout, lookUpFailureChoice} from 'modules/consentManagement';
+import {setConfig, requestBidsHook, resetConsentId, userCMP, consentTimeout, lookUpFailureChoice} from 'modules/consentManagement';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -6,7 +6,6 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 describe('consentManagement', function () {
-  // check config gets ingested properly (note check for warning)
   describe('setConfig tests:', () => {
     describe('empty setConfig value', () => {
       beforeEach(() => {
@@ -20,7 +19,7 @@ describe('consentManagement', function () {
 
       it('should use system default values', () => {
         setConfig({});
-        expect(userCMP).to.be.equal('iab');
+        expect(userCMP).to.be.equal('appnexus');
         expect(consentTimeout).to.be.equal(5000);
         expect(lookUpFailureChoice).to.be.equal('proceed');
         sinon.assert.calledThrice(utils.logInfo);
@@ -55,20 +54,19 @@ describe('consentManagement', function () {
       });
       it('results in all user settings overriding system defaults', () => {
         let allConfig = {
-          cmp: 'iab',
+          cmp: 'appnexus',
           waitForConsentTimeout: 750,
           lookUpFailureResolution: 'cancel'
         };
 
         setConfig(allConfig);
-        expect(userCMP).to.be.equal('iab');
+        expect(userCMP).to.be.equal('appnexus');
         expect(consentTimeout).to.be.equal(750);
         expect(lookUpFailureChoice).to.be.equal('cancel');
       });
     });
   });
 
-  // requestBidsHook method
   describe('requestBidsHook tests:', () => {
     let adUnits = [{
       code: 'div-gpt-ad-1460505748561-0',
@@ -82,13 +80,13 @@ describe('consentManagement', function () {
     }];
 
     let goodConfigWithCancel = {
-      cmp: 'iab',
+      cmp: 'appnexus',
       waitForConsentTimeout: 100,
       lookUpFailureResolution: 'cancel'
     };
 
     let goodConfigWithProceed = {
-      cmp: 'iab',
+      cmp: 'appnexus',
       waitForConsentTimeout: 750,
       lookUpFailureResolution: 'proceed'
     };
@@ -97,8 +95,7 @@ describe('consentManagement', function () {
     let retAdUnits = [];
 
     describe('error checks:', () => {
-      // unknown framework id provided - check for warning and returns extra call
-      describe('unknown CMP framework ID', () => {
+      describe('unknown CMP framework ID:', () => {
         beforeEach(() => {
           sinon.stub(utils, 'logWarn');
         });
@@ -130,8 +127,7 @@ describe('consentManagement', function () {
         });
       });
 
-      // CMP framework not present - check for warning and returns extra call
-      describe('IAB CMP framework not present', () => {
+      describe('AppNexus CMP framework not present:', () => {
         beforeEach(() => {
           sinon.stub(utils, 'logWarn');
         });
@@ -160,7 +156,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('already known consentId', () => {
+    describe('already known consentId:', () => {
       let cmpStub = sinon.stub();
 
       beforeEach(() => {
@@ -175,10 +171,10 @@ describe('consentManagement', function () {
       });
 
       it('should bypass CMP and simply apply adUnit changes', () => {
-        let testCMP = 'xyz';
+        let testConsentString = 'xyz';
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testCMP);
+          args[2](testConsentString);
         });
         setConfig(goodConfigWithProceed);
 
@@ -188,7 +184,7 @@ describe('consentManagement', function () {
 
         // reset the stub to ensure it wasn't called during the second round of calls
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testCMP);
+          args[2](testConsentString);
         });
         let adUnits2 = utils.deepClone(adUnits);
         requestBidsHook({adUnits: adUnits2}, (config) => {
@@ -197,13 +193,13 @@ describe('consentManagement', function () {
         });
 
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
         expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
     });
 
-    describe('CMP workflow', () => {
+    describe('CMP workflow:', () => {
       let firstpass;
       let cmpStub = sinon.stub();
       let clock = sinon.useFakeTimers();
@@ -229,16 +225,16 @@ describe('consentManagement', function () {
       });
 
       it('performs extra lookup checks and updates adUnits for a valid new user', () => {
-        let testCMP = null;
+        let testConsentString = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           // simulates user generating a valid consentId string in between second/third callbacks
           if (firstpass) {
             firstpass = false;
           } else {
-            testCMP = 'abc';
+            testConsentString = 'abc';
           }
-          args[2](testCMP);
+          args[2](testConsentString);
         });
 
         setConfig(goodConfigWithProceed);
@@ -252,14 +248,14 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logError);
         sinon.assert.notCalled(utils.logWarn);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testCMP);
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
         expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
       });
 
       it('performs lookup check and updates adUnits for a valid existing user', () => {
-        let testCMP = 'BOJy+UqOJy+UqABAB+AAAAAZ+A==';
+        let testConsentString = 'BOJy+UqOJy+UqABAB+AAAAAZ+A==';
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testCMP);
+          args[2](testConsentString);
         });
 
         setConfig(goodConfigWithProceed);
@@ -278,10 +274,10 @@ describe('consentManagement', function () {
       });
 
       it('throws an error when postLookup check failed while config used cancel setting', () => {
-        let testCMP = null;
+        let testConsentString = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testCMP);
+          args[2](testConsentString);
         });
 
         setConfig(goodConfigWithCancel);
@@ -297,10 +293,10 @@ describe('consentManagement', function () {
       });
 
       it('throws a warning + modifies adunits + calls callback when postLookup check failed while config used proceed setting', () => {
-        let testCMP = null;
+        let testConsentString = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testCMP);
+          args[2](testConsentString);
         });
 
         setConfig(goodConfigWithProceed);
