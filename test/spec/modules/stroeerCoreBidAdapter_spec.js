@@ -395,7 +395,6 @@ describe('stroeerssp adapter', function () {
           ]
         };
 
-
         clock.tick(13500);
 
         const bidderRequestSecondType = ({
@@ -874,8 +873,8 @@ describe('stroeerssp adapter', function () {
       });
     });
 
-    describe("price truncation", function() {
-      const d = new Decrpyter("c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=");
+    describe('price truncation', function() {
+      const d = new Decrpyter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=');
       const validPrices = [
         { price: '1.5700000', expectation: '1.570000'},
         { price: '12345678', expectation: '12345678'},
@@ -958,20 +957,14 @@ describe('stroeerssp adapter', function () {
   });
 });
 
-
-
 function Decrpyter(encKey) {
   this.encKey = atob(encKey);
 }
 
 function unwebSafeBase64EncodedString(str) {
-  let pad = "";
-  if (str.length % 4 === 2) {
-    pad += "==";
-  }
-  else if (str.length % 4 === 1) {
-    pad += "=";
-  }
+  let pad = '';
+  if (str.length % 4 === 2) pad += '==';
+  else if (str.length % 4 === 1) pad += '=';
 
   str = str.replace(/-/g, '+')
     .replace(/_/g, '/');
@@ -1012,7 +1005,6 @@ function convertSignedByte(value) {
     return value;
   }
 }
-
 
 // Code taken from http://pajhome.org.uk/crypt/md5/sha1.js
 /*

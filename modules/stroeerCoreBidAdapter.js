@@ -42,7 +42,6 @@ const StroeerCoreAdapter = function (win = window) {
     return res;
   }
 
-
   function elementInView(elementId) {
     const visibleInWindow = (el, win) => {
       const rect = el.getBoundingClientRect();
@@ -145,21 +144,13 @@ const StroeerCoreAdapter = function (win = window) {
 
       const bytesRemaining = ENCRYPTION_SIZE_LIMIT - integerPart.length;
 
-      if (bytesRemaining > 2) {
-        // room '.' and at least two fraction digits
-        fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
-      }
-      else if (bytesRemaining === 2 && (fractionalPart.charAt(1) === '0')) {
-        // room for '.' and first fraction digit. Can only accept if second fraction digit is zero.
-        fractionalPart = fractionalPart.charAt(0);
-      }
-      else if (bytesRemaining >= 0 && bytesRemaining < 2 && fractionalPart.charAt(0) === '0' && fractionalPart.charAt(1) === '0') {
-        // no more room for '.' or fraction digit. Only accept if first and second fraction digits are zero.
-        fractionalPart = '';
-      }
-      else {
-        throwError();
-      }
+      // room '.' and at least two fraction digits
+      if (bytesRemaining > 2) fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
+      // room for '.' and first fraction digit. Can only accept if second fraction digit is zero.
+      else if (bytesRemaining === 2 && (fractionalPart.charAt(1) === '0')) fractionalPart = fractionalPart.charAt(0);
+      // no more room for '.' or fraction digit. Only accept if first and second fraction digits are zero.
+      else if (bytesRemaining >= 0 && bytesRemaining < 2 && fractionalPart.charAt(0) === '0' && fractionalPart.charAt(1) === '0') fractionalPart = '';
+      else throwError();
 
       const newPrice = integerPart + (fractionalPart.length > 0 ? '.' + fractionalPart : '');
       utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
@@ -186,9 +177,7 @@ const StroeerCoreAdapter = function (win = window) {
 
     const createFilter = (checkFn, errorMsgFn) => {
       return (bid) => {
-        if (checkFn(bid)) {
-          return true;
-        }
+        if (checkFn(bid)) return true;
         else {
           utils.logError(`invalid bid: ${errorMsgFn(bid)}`, 'ERROR');
           return false;
@@ -196,7 +185,7 @@ const StroeerCoreAdapter = function (win = window) {
       }
     };
 
-    filters.push(createFilter((bid) => typeof bid.params === "object", bid => `bid ${bid.bidId} does not have custom params`));
+    filters.push(createFilter((bid) => typeof bid.params === 'object', bid => `bid ${bid.bidId} does not have custom params`));
     filters.push(createFilter((bid) => utils.isStr(bid.params.sid), bid => `bid ${bid.bidId} does not have a sid string field`));
     filters.push(createFilter((bid) => ssat === null || (bid.params.ssat === ssat), bid => `bid ${bid.bidId} has auction type that is inconsistent with other bids (expected ${ssat})`));
     filters.push(createFilter((bid) => bid.params.ssat === undefined || [1, 2].includes(bid.params.ssat), bid => `bid ${bid.bidId} does not have a valid ssat value (must be 1 or 2)`));
@@ -212,15 +201,12 @@ const StroeerCoreAdapter = function (win = window) {
       const bidWithSsat = allBids.find(b => b.params && b.params.ssat);
       const ssat = bidWithSsat ? bidWithSsat.params.ssat : null;
 
-      if (ssat) {
-        utils.logInfo("using value ${ssat} for ssat");
-      }
+      if (ssat) utils.logInfo(`using value ${ssat} for ssat`);
 
       const validationFilters = createValidationFilters(ssat);
 
       const validBids = allBids.filter(bid => validationFilters.every(fn => fn(bid)));
       const invalidBids = allBids.filter(bid => !validBids.includes(bid));
-
 
       const requestBody = {
         id: params.bidderRequestId,
@@ -229,7 +215,7 @@ const StroeerCoreAdapter = function (win = window) {
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),
         timeout: params.timeout - (Date.now() - params.auctionStart),
-        ssat: ssat ? ssat : 2
+        ssat: ssat || 2
       };
 
       validBids.forEach(bidRequest => {
