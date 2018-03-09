@@ -138,7 +138,7 @@ export const spec = {
         let slotData = {
           site_id: params.siteId,
           zone_id: params.zoneId,
-          position: params.position || 'btf',
+          position: parsePosition(params.position),
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
           element_id: bidRequest.adUnitCode,
           name: bidRequest.adUnitCode,
@@ -273,7 +273,6 @@ export const spec = {
         requestId: bidRequest.bidId,
         currency: 'USD',
         creativeId: ad.creative_id,
-        mediaType: ad.creative_type,
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
@@ -283,6 +282,10 @@ export const spec = {
           networkId: ad.network
         }
       };
+
+      if (ad.creative_type) {
+        bid.mediaType = ad.creative_type;
+      }
 
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
@@ -388,6 +391,13 @@ function mapSizes(sizes) {
       }
       return result;
     }, []);
+}
+
+function parsePosition(position) {
+  if (position === 'atf' || position === 'btf') {
+    return position;
+  }
+  return 'unknown';
 }
 
 export function masSizeOrdering(sizes) {

@@ -16,7 +16,7 @@ Module that connects to DAN Marketplace demand source to fetch bids.
                sizes: [[300, 250]],
                bids: [
                    {
-                       bidder: "danmarketplace",
+                       bidder: "danmarket",
                        params: {
                            uid: '4',
                            priceType: 'gross' // by default is 'net'
@@ -28,7 +28,7 @@ Module that connects to DAN Marketplace demand source to fetch bids.
                sizes: [[728, 90]],
                bids: [
                    {
-                       bidder: "danmarketplace",
+                       bidder: "danmarket",
                        params: {
                            uid: 5,
                            priceType: 'gross'

@@ -36,7 +36,5 @@ module.exports = {
     "no-use-before-define": "off",
     "no-useless-escape": "off",
     "one-var": "off",
-    "standard/array-bracket-even-spacing": "off",
-    "standard/object-curly-even-spacing": "off"
   }
 };
