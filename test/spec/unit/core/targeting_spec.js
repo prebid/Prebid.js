@@ -3,7 +3,7 @@ import { targeting as targetingInstance } from 'src/targeting';
 import { config } from 'src/config';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
-import { auctionManager } from 'src/auctionManager';
+import { auctionManager, isStillValidBid } from 'src/auctionManager';
 import * as targetingModule from 'src/targeting';
 
 const bid1 = {
@@ -80,13 +80,13 @@ describe('targeting tests', () => {
       amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
+      bidExpiryStub = sinon.stub(auctionManager, 'isStillValidBid').returns(true);
     });
 
     afterEach(() => {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidExpired.restore();
+      auctionManager.isStillValidBid.restore();
     });
 
     it('selects the top bid when _sendAllBids true', () => {

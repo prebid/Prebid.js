@@ -21,6 +21,8 @@ const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 
 const DEFAULT_TIMEOUTBUFFER = 200;
 
+const DEFAULT_GLOBALFLOORPRICE = 0.00;
+
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 
@@ -112,6 +114,14 @@ export function newConfig() {
       _customPriceBucket: {},
       get customPriceBucket() {
         return this._customPriceBucket;
+      },
+
+      _globalFloorPrice: DEFAULT_GLOBALFLOORPRICE,
+      get globalFloorPrice() {
+        return this._globalFloorPrice;
+      },
+      set globalFloorPrice(val) {
+        this._globalFloorPrice = val;
       },
 
       _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,

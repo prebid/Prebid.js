@@ -16,8 +16,9 @@
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  */
 
-import { uniques, flatten } from './utils';
+import { uniques, flatten, timestamp } from './utils';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { config } from 'src/config';
 import find from 'core-js/library/fn/array/find';
 
 const CONSTANTS = require('./constants.json');
@@ -31,6 +32,22 @@ const CONSTANTS = require('./constants.json');
 export function newAuctionManager() {
   let _auctions = [];
   let auctionManager = {};
+
+  auctionManager.isStillValidBid = bid => {
+    if (!bid) return false;
+
+    // check if the bid is expired
+    const expired = (timestamp() - bid.responseTimestamp) >= (bid.ttl * 1000);
+
+    // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
+    const unused = (bid.status && bid.status === CONSTANTS.BID_STATE.BID_TARGETING_SET) || !bid.status;
+
+    // see if we hit our global floorprice
+    const FLOORPRICE = config.getConfig('globalFloorPrice');
+    const reachedFloorPrice = FLOORPRICE && bid.cpm && bid.cpm > FLOORPRICE;
+
+    return !expired && unused && reachedFloorPrice;
+  }
 
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
@@ -60,7 +77,8 @@ export function newAuctionManager() {
         return auction.getBidsReceived();
       }
     }).reduce(flatten, [])
-      .filter(bid => bid);
+      .filter(bid => bid)
+      .filter(this.isStillValidBid)
   };
 
   auctionManager.getAdUnits = function() {
@@ -81,7 +99,7 @@ export function newAuctionManager() {
   };
 
   auctionManager.findBidByAdId = function(adId) {
-    return find(_auctions.map(auction => auction.getBidsReceived()).reduce(flatten, []), bid => bid.adId === adId);
+    return find(this.getBidsReceived(), bid => bid.adId === adId);
   };
 
   auctionManager.getStandardBidderAdServerTargeting = function() {

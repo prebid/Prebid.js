@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
+import { flatten, uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter, removeRequestId } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
@@ -21,8 +21,6 @@ var events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-
-const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 var eventValidators = {
@@ -208,10 +206,21 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logMessage('Calling renderAd with adId :' + id);
   if (doc && id) {
     try {
-      // lookup ad by ad Id
-      const bid = auctionManager.findBidByAdId(id);
+      // lookup ads by ad Id
+      const bids = (id + '').split(',')
+        .map(adId => auctionManager.findBidByAdId(adId))
+        .filter(bid => bid);
+
+      // get the highest earning ad
+      let bid;
+      if (bids.length) {
+        bid = bids.length > 1 ? bids.reduce(getHighestCpm) : bids[0];
+      }
+
       if (bid) {
-        bid.status = RENDERED;
+        utils.logMessage('Rendering ad with adId :' + bid.adId);
+
+        bid.status = CONSTANTS.BID_STATE.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
