@@ -3,8 +3,6 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
 const ENDPOINT_URL = 'http://35.226.213.130:8080/open-ssp/HeaderBiddingService';
-// const ENDPOINT_URL = '//testsite.com/openssp/response.json';
-console.log('freestar::', 'adapter loaded');
 export const spec = {
   code: BIDDER_CODE,
 
@@ -97,15 +95,11 @@ export const spec = {
 }
 
 function parseBid(bid) {
-  console.log('freestar::', 'parseBid', bid);
   const bidResponse = {
     requestId: bid.requestId,
-    // cpm: 2500,
     cpm: bid.price,
-    // width: bid.w,
-    width: 300,
-    // height: bid.h,
-    height: 250,
+    width: bid.w,
+    height: bid.h,
     creativeId: bid.cid, //@TODO: verify
     // // dealId: DEAL_ID,
     currency: bid.currency,
@@ -113,7 +107,6 @@ function parseBid(bid) {
     ttl: 60,
     ad: bid.adm
   };
-  console.log('freestar::', 'parseBid', bidResponse);
   return bidResponse;
 }
 
