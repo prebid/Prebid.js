@@ -72,7 +72,7 @@ export const spec = {
         netRevenue: true,
         ttl: A4G_TTL,
         ad: response.ad,
-        adId:response.id
+        adId: response.id
       };
       bidResponses.push(bidResponse);
     });
