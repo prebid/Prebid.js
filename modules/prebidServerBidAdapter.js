@@ -8,6 +8,7 @@ import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
+import { spec as appnexus } from 'modules/appnexusBidAdapter';
 import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
@@ -213,7 +214,13 @@ const paramTypes = {
 function convertTypes(adUnits) {
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const types = paramTypes[bid.bidder] || [];
+      // aliases use the base bidder's paramTypes
+      const bidder = includes(appnexus.aliases, bid.bidder)
+        ? appnexus.code
+        : bid.bidder;
+
+      const types = paramTypes[bidder] || [];
+
       Object.keys(types).forEach(key => {
         if (bid.params[key]) {
           bid.params[key] = types[key](bid.params[key]);
@@ -397,14 +404,20 @@ const OPEN_RTB_PROTOCOL = {
 
   buildRequest(s2sBidRequest, adUnits) {
     let imps = [];
+    let aliases = {};
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
-      // OpenRTB response contains the adunit code and bidder name. These are
-      // combined to create a unique key for each bid since an id isn't returned
       adUnit.bids.forEach(bid => {
+        // OpenRTB response contains the adunit code and bidder name. These are
+        // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
         this.bidMap[key] = bid;
+
+        // check for and store valid appnexus aliases to add to the request
+        if (includes(appnexus.aliases, bid.bidder)) {
+          aliases[bid.bidder] = appnexus.code;
+        }
       });
 
       let banner;
@@ -462,6 +475,10 @@ const OPEN_RTB_PROTOCOL = {
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
       request.user = { ext: { digitrust: digiTrust } };
+    }
+
+    if (!utils.isEmpty(aliases)) {
+      request.ext = { prebid: { aliases } };
     }
 
     return request;
