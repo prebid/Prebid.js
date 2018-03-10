@@ -1,68 +1,9 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
-import events from 'src/events';
-import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
-import * as url from 'src/url';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
-const EVENT_PIXEL_URL = 'lg1.media.net/log';
-const { BID_TIMEOUT } = CONSTANTS.EVENTS;
-const TIMEOUT_EVENT_NAME = 'client_timeout';
-
-let bidParams = {};
-
-events.on(BID_TIMEOUT, function (timedOutBidders) {
-  let mnetBidder = timedOutBidders.filter(bidder => bidder.bidder === BIDDER_CODE);
-  if (mnetBidder.length > 0) {
-    let eventData = {
-      name: TIMEOUT_EVENT_NAME,
-      value: config.getConfig('bidderTimeout')
-    };
-    logEvent(eventData).trigger(mnetBidder);
-  }
-});
-
-function logEvent (event) {
-  function generateUrl(data) {
-    let getParams = {
-      protocol: 'https',
-      hostname: EVENT_PIXEL_URL,
-      search: getLoggingData(data)
-    };
-
-    return url.format(getParams);
-  }
-
-  function getLoggingData(data) {
-    data = data || [];
-
-    let params = {};
-    params.logid = 'kfk';
-    params.evtid = 'projectevents';
-    params.project = 'prebid';
-    params.acid = (data[0] && data[0].auctionId) ? data[0].auctionId : '';
-    params.cid = bidParams.cid || '';
-    params.crid = data.map((adunit) => adunit.adUnitCode).toString();
-    params.crid_count = data.length || 0;
-    params.dn = utils.getTopWindowLocation().host || '';
-    params.requrl = utils.getTopWindowUrl() || '';
-    params.event = event.name;
-    params.value = event.value || '';
-    params.pbver = $$PREBID_GLOBAL$$.version;
-
-    return params;
-  }
-
-  function trigger(data) {
-    utils.triggerPixel(generateUrl(data));
-  }
-
-  return {
-    trigger: trigger
-  }
-}
 
 function siteDetails(site) {
   site = site || {};
@@ -123,7 +64,6 @@ function slotParams(bidRequest) {
 }
 
 function generatePayload(bidRequests) {
-  bidParams = bidRequests[0].params;
   return {
     site: siteDetails(bidRequests[0].params.site),
     ext: configuredParams(bidRequests[0].params),
@@ -198,13 +138,6 @@ export const spec = {
     if (!serverResponse || !serverResponse.body) {
       utils.logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
-    }
-
-    if (serverResponse.body.ext && serverResponse.body.ext.nbr) {
-      let eventData = {
-        name: serverResponse.body.ext.nbr,
-      };
-      logEvent(eventData).trigger();
     }
 
     let bids = serverResponse.body.bidList;
