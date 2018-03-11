@@ -282,7 +282,7 @@ adaptermanager.registerBidAdapter(new StroeerCoreAdapter(), 'stroeerCore');
 module.exports = StroeerCoreAdapter;
 
 function Crypter(encKey, intKey) {
-  this.encKey = atob(encKey); // pad key
+  this.encKey = atob(encKey); // padEnd key
   this.intKey = atob(intKey); // signature key
 }
 
@@ -290,7 +290,7 @@ Crypter.prototype.encrypt = function (anyRandomString, data) {
   const CIPHERTEXT_SIZE = 8;
   const SIGNATURE_SIZE = 4;
 
-  let paddedImpressionId = anyRandomString.padEnd(16, '0').substring(0, 16);
+  let paddedImpressionId = padEnd(anyRandomString, 16, '0').substring(0, 16);
 
   if (data.length > CIPHERTEXT_SIZE) {
     throw new Error('data to encrypt is too long');
@@ -307,11 +307,10 @@ Crypter.prototype.encrypt = function (anyRandomString, data) {
 
   // Integrity
 
-  const dataArray = new ArrayOfCharCodes(data, CIPHERTEXT_SIZE, 0);
+  data = padEnd(data, CIPHERTEXT_SIZE, '\u0000');
+  data += paddedImpressionId;
 
-  dataArray.addString(paddedImpressionId);
-
-  const signature = str_hmac_sha1(this.intKey, dataArray).substring(0, SIGNATURE_SIZE);
+  const signature = str_hmac_sha1(this.intKey, data).substring(0, SIGNATURE_SIZE);
 
   return base64EncodeUrlFriendly(paddedImpressionId + encryptedPrice + signature);
 };
@@ -331,36 +330,13 @@ function convertSignedByte(value) {
   }
 }
 
-function ArrayOfCharCodes(str, length, charCodePadding) {
-  let remainder = length - str.length;
-  this.charCodes = [];
-  for (let i = 0; i < str.length; i++) {
-    this.charCodes.push(str.charCodeAt(i));
-  }
+function padEnd(str, targetLength, paddingChar) {
+  const remainder = targetLength - str.length;
   for (let i = 0; i < remainder; i++) {
-    this.charCodes.push(charCodePadding);
+    str += paddingChar;
   }
-
-  this.length = this.charCodes.length;
+  return str;
 }
-
-ArrayOfCharCodes.prototype.charCodeAt = function(index) {
-  const charCode = this.charCodes[index];
-
-  if (charCode === undefined) {
-    // Same behaviour as real string charCodeAt
-    return NaN;
-  }
-  return charCode;
-};
-
-ArrayOfCharCodes.prototype.addString = function(str) {
-  for (let i = 0; i < str.length; i++) {
-    this.charCodes.push(str.charCodeAt(i));
-  }
-
-  this.length += str.length;
-};
 
 // Code taken from http://pajhome.org.uk/crypt/md5/sha1.js
 /*
