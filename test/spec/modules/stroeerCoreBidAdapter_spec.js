@@ -771,9 +771,11 @@ describe('stroeerssp adapter', function () {
 
       const internalEncTests = [
         // full price text
-        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ'},
+        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
+        // ignore exchange rate
+       {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
         // partial price text
-        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2NxvFVB-P3SJiWDpBVQ'},
+       {price: '2.945', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny4i5OEcHq-I-FhZIg'},
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
@@ -819,7 +821,7 @@ describe('stroeerssp adapter', function () {
         const bid = bidmanager.addBidResponse.firstCall.args[1];
         const ad = bid.generateAd({auctionPrice: '40.22'});
 
-        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>';
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw</script>';
         assert.equal(ad, expectedAd);
       });
 
@@ -882,7 +884,7 @@ describe('stroeerssp adapter', function () {
         const bid = bidmanager.addBidResponse.firstCall.args[1];
         const ad = bid.generateAd({auctionPrice: 40.22});
 
-        const expectedAd = '<img src=\'tracker.com?p=40.22&e=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nx7bTxqN7RJS6cw5GA</script>';
+        const expectedAd = '<img src=\'tracker.com?p=40.22&e=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw</script>';
         assert.equal(ad, expectedAd);
       });
     });

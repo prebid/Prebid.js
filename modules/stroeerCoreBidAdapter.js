@@ -6,7 +6,7 @@ const url = require('src/url');
 const adaptermanager = require('src/adaptermanager');
 
 const externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
-const internalCrypter = new Crypter('wjhss9DVoBfGEBNpfQ0CTxRHwVx9Ig1aEdM7S0piaVc=', 'vCXHs3GIOUgygSWkhsWXSV2kSsRD5NjcFrWLe1E3R74=');
+const internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
 const StroeerCoreAdapter = function (win = window) {
   const defaultHost = 'dsh.adscale.de';
