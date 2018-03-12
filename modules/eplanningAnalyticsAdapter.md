@@ -16,7 +16,8 @@ Analytics adapter for E-Planning.
 {
   provider: 'eplanning',
     options : {
-      host: 'https://ads.us.e-planning.net/hba/1/'  //optional host
+      host: 'https://ads.us.e-planning.net/hba/1/',  // Host (optional)
+      ci: "123456" // Client ID (required)
     }
 }
 ```

@@ -27,7 +27,8 @@ describe('eplanning analytics adapter', () => {
       let auctionTimestamp = 1496510254313;
       let pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
       let initOptions = {
-        host: 'https://ads.ar.e-planning.net/hba/1/'
+        host: 'https://ads.ar.e-planning.net/hba/1/',
+        ci: '12345'
       };
       let pbidderCode = 'adapter';
 
@@ -114,6 +115,9 @@ describe('eplanning analytics adapter', () => {
       requests = requests.filter(req => req.url.includes(initOptions.host));
 
       expect(requests.length).to.equal(1);
+
+      expect(requests[0].url.includes(initOptions.host+initOptions.ci));
+      expect(requests[0].url.includes("https://ads.ar.e-planning.net/hba/1/12345?d="));
 
       let info = requests[0].url;
       let purl = new URL(info);

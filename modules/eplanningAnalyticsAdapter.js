@@ -1,6 +1,7 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
+import * as utils from 'src/utils';
 
 const CONSTANTS = require('src/constants.json');
 
@@ -98,7 +99,7 @@ var eplAnalyticsAdapter = Object.assign(adapter(
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
       try {
         let strjson = JSON.stringify(eplAnalyticsAdapter.context.events);
-        ajax(eplAnalyticsAdapter.context.host + '?d=' + encodeURIComponent(strjson));
+        ajax(eplAnalyticsAdapter.context.host + eplAnalyticsAdapter.context.ci + '?d=' + encodeURIComponent(strjson));
       } catch (err) {}
     }
   }
@@ -108,9 +109,15 @@ var eplAnalyticsAdapter = Object.assign(adapter(
 eplAnalyticsAdapter.originEnableAnalytics = eplAnalyticsAdapter.enableAnalytics;
 
 eplAnalyticsAdapter.enableAnalytics = function (config) {
+  if (!config.options.ci) {
+    utils.logError('Client ID (ci) option is not defined. Analytics won\'t work');
+    return;
+  }
+
   eplAnalyticsAdapter.context = {
     events: [],
-    host: config.options.host || EPL_HOST
+    host: config.options.host || EPL_HOST,
+    ci: config.options.ci
   };
 
   eplAnalyticsAdapter.originEnableAnalytics(config);
