@@ -181,7 +181,7 @@ describe('AppNexusAdapter', () => {
           nativeParams: {
             title: {required: true},
             body: {required: true},
-            image: {required: true, sizes: [{ width: 100, height: 100 }] },
+            image: {required: true, sizes: [{ width: 100, height: 100 }]},
             cta: {required: false},
             sponsoredBy: {required: true}
           }
@@ -194,7 +194,7 @@ describe('AppNexusAdapter', () => {
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
         description: {required: true},
-        main_image: {required: true, sizes: [{ width: 100, height: 100 }] },
+        main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
         ctatext: {required: false},
         sponsored_by: {required: true}
       });
@@ -215,7 +215,7 @@ describe('AppNexusAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {required: true, sizes: [{}] },
+        main_image: {required: true, sizes: [{}]},
       });
     });
 

@@ -182,8 +182,8 @@ describe('PulsePoint Adapter Tests', () => {
     const nativeResponse = {
       'native': {
         assets: [
-          { title: { text: 'Ad Title'} },
-          { data: { type: 1, value: 'Sponsored By: Brand' }},
+          { title: { text: 'Ad Title' } },
+          { data: { type: 1, value: 'Sponsored By: Brand' } },
           { img: { type: 3, url: 'http://images.cdn.brand.com/123' } }
         ],
         link: { url: 'http://brand.clickme.com/' },
@@ -240,13 +240,13 @@ describe('PulsePoint Adapter Tests', () => {
     expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { ct: 123 } })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { cp: 123 } })).to.equal(false);
-    expect(spec.isBidRequestValid({ params: { ct: 123, cp: 234 }})).to.equal(true);
+    expect(spec.isBidRequestValid({ params: { ct: 123, cp: 234 } })).to.equal(true);
   });
 
   it('Verifies sync options', () => {
     expect(spec.getUserSyncs({})).to.be.undefined;
-    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
-    const options = spec.getUserSyncs({ iframeEnabled: true});
+    expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
+    const options = spec.getUserSyncs({ iframeEnabled: true });
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
@@ -254,7 +254,7 @@ describe('PulsePoint Adapter Tests', () => {
   });
 
   it('Verifies image pixel sync', () => {
-    const options = spec.getUserSyncs({ pixelEnabled: true});
+    const options = spec.getUserSyncs({ pixelEnabled: true });
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('image');

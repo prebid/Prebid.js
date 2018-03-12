@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { BANNER } from 'src/mediaTypes';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -70,7 +71,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(REGIONS.includes(bid.params.region) && bid.params.publisherId);
+    return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
   },
 
   buildRequests: function (validBidRequests) {
