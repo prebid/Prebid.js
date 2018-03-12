@@ -21,7 +21,7 @@ Please use ```platformio``` as the bidder code.
               pubId: '29521', // required
               siteId: '26047', // required
               size: '250X250', // required
-              placementId: '123',
+              placementId: '123', // required
               bidFloor: '0.001'
           }
       }]
@@ -40,7 +40,7 @@ Please use ```platformio``` as the bidder code.
           params: { 
               pubId: '29521', // required
               siteId: '26047', // required
-              placementId: '123',
+              placementId: '123', // required
               bidFloor: '0.001'
           }
       }]
