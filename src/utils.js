@@ -194,8 +194,7 @@ exports.getTopFrameReferrer = function () {
 exports.getAncestorOrigins = function () {
   if (window.document.location && window.document.location.ancestorOrigins &&
     window.document.location.ancestorOrigins.length >= 1) {
-    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length
-    - 1];
+    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
   }
 };
 

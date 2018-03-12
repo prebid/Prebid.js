@@ -626,11 +626,11 @@ describe('Utils', function () {
     let sandbox;
 
     beforeEach(() => {
-     sandbox = sinon.sandbox.create();
+      sandbox = sinon.sandbox.create();
     });
 
     afterEach(() => {
-     sandbox.restore();
+      sandbox.restore();
     });
 
     it('returns window.location if not in iFrame', () => {
