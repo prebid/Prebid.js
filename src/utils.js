@@ -159,47 +159,56 @@ export function parseGPTSingleSizeArray(singleSize) {
   }
 };
 
-export function getTopWindowLocation() {
+exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
-    return getIframeParentLoc();
-  } else {
-    return window.location;
+    let loc;
+    try {
+      loc = exports.getAncestorOrigins() || exports.getTopFrameReferrer();
+    } catch (e) {
+      logInfo('could not obtain top window location', e);
+    }
+    if (loc) return parse(loc);
   }
+  return exports.getWindowLocation();
 }
 
-const getIframeParentLoc = function() {
-  let loc = window.location;
+exports.getTopFrameReferrer = function () {
   try {
-    if (window.$sf) {
-      loc = window.document.referrer;
-    } else {
-      if (window.document.location && window.document.location.ancestorOrigins &&
-        window.document.location.ancestorOrigins.length >= 1) {
-        loc = window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
-      } else if (window.document.location) {
-        // force an exception in x-domain environments. #1509
-        window.top.location.toString();
-        loc = getNonWebKitIframeParentLoc();
+    // force an exception in x-domain environments. #1509
+    window.top.location.toString();
+    let referrerLoc = '';
+    let currentWindow;
+    do {
+      currentWindow = currentWindow ? currentWindow.parent : window;
+      if (currentWindow.document && currentWindow.document.referrer) {
+        referrerLoc = currentWindow.document.referrer;
       }
     }
-    loc = parse(loc);
+    while (currentWindow !== window.top);
+    return referrerLoc;
   } catch (e) {
-    this.logMessage('getTopParentLoc failure', e);
+    return window.document.referrer;
   }
-  return loc;
 };
 
-const getNonWebKitIframeParentLoc = function() {
-  let referrerLoc = '';
-  let currentWindow;
-  do {
-    currentWindow = currentWindow ? currentWindow.parent : window;
-    if (currentWindow.document && currentWindow.document.referrer) {
-      referrerLoc = currentWindow.document.referrer;
-    }
+exports.getAncestorOrigins = function () {
+  if (window.document.location && window.document.location.ancestorOrigins &&
+    window.document.location.ancestorOrigins.length >= 1) {
+    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length
+    - 1];
   }
-  while (currentWindow !== window.top);
-  return referrerLoc;
+};
+
+exports.getWindowTop = function () {
+  return window.top;
+};
+
+exports.getWindowSelf = function () {
+  return window.self;
+};
+
+exports.getWindowLocation = function () {
+  return window.location;
 };
 
 exports.getTopWindowUrl = function () {
@@ -684,7 +693,7 @@ export function deepClone(obj) {
 
 export function inIframe() {
   try {
-    return window.self !== window.top;
+    return exports.getWindowSelf() !== exports.getWindowTop();
   } catch (e) {
     return true;
   }
