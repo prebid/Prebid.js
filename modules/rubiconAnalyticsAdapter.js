@@ -134,7 +134,7 @@ function sendMessage(auctionId, bidWonId) {
       }
 
       // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
-      let statusPriority = ['error', 'noBid', 'success'];
+      let statusPriority = ['error', 'no-bid', 'success'];
       if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) {
         adUnit.status = bid.status;
       }
@@ -257,7 +257,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           memo[bid.bidId] = _pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
-            'status', () => 'noBid', // default a bid to noBid until response is recieved or bid is timed out
+            'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
