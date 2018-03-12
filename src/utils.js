@@ -167,7 +167,7 @@ exports.getTopWindowLocation = function() {
     } catch (e) {
       logInfo('could not obtain top window location', e);
     }
-    if (loc) return parse(loc);
+    if (loc) return parse(loc, {'decodeSearchAsString': true});
   }
   return exports.getWindowLocation();
 }

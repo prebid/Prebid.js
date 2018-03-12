@@ -681,7 +681,7 @@ describe('Utils', function () {
       expect(topWindowLocation.hostname).to.equal('www.google.com');
       expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.hash).to.equal('');
-      assert.deepEqual(topWindowLocation.search, {});
+      expect(topWindowLocation.search).to.equal('');
       expect(topWindowLocation.host).to.equal('www.google.com');
     });
 
@@ -702,7 +702,7 @@ describe('Utils', function () {
       expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.pathname).to.equal('/');
       expect(topWindowLocation.hash).to.equal('');
-      assert.deepEqual(topWindowLocation.search, {});
+      expect(topWindowLocation.search).to.equal('');
       expect(topWindowLocation.host).to.equal('www.example.com');
     });
   });
