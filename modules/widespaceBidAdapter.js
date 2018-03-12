@@ -12,10 +12,16 @@ const WS_ADAPTER_VERSION = '2.0.0';
 const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
 const REFERRER = getTopWindowLocation().href;
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
-const pbjs = window['$$PREBID_GLOBAL$$'];
+const PBJS = window['$$PREBID_GLOBAL$$'];
+const LS_KEYS = {
+  PERF_DATA: 'wsPerfData',
+  BID_INFO: 'wsBidInfo',
+  LC_UID: 'wsLcuid',
+  CUST_DATA: 'wsCustomData'
+};
 
 let preReqTime = 0;
-let adUnitCodes = [];
+let adUnitInfo = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,8 +35,10 @@ export const spec = {
   buildRequests: function(validBidRequests) {
     let serverRequests = [];
     const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
-    const PERF_DATA = getData('wsPerfData');
-    const BID_INFO = getData('wsBidInfo');
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA);
+    const BID_INFO = getData(LS_KEYS.BID_INFO);
+    const CUST_DATA = getData(LS_KEYS.CUST_DATA);
+    const LC_UID = getData(LS_KEYS.LC_UID, false)[0] || storeData(generateLcuid(), LS_KEYS.LC_UID, false) || '';
 
     let isInHostileIframe = false;
     try {
@@ -40,7 +48,9 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      adUnitCodes.push(bid.adUnitCode);
+      adUnitInfo[bid.bidId] = {
+        'adUnitCode': bid.adUnitCode,
+      };
       let data = {
         'ver': '5.0.0', // remove
         'tagType': 'dyn', // remove
@@ -53,8 +63,10 @@ export const spec = {
         'windowHeight': isInHostileIframe ? window.innerHeight : window.top.innerHeight,
         'referer': REFERRER,
         'sid': bid.params.sid,
+        'lcuid': LC_UID,
         'hb': '1',
-        'hb.bidInfo': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
+        'hb.wbi': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
+        'hb.cd': CUST_DATA[i] ? encodeURIComponent(JSON.stringify(CUST_DATA[i])) : '',
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
@@ -97,20 +109,22 @@ export const spec = {
     const successBids = serverResponse.body || [];
     let bidResponses = [];
     successBids.forEach((bid) => {
+      const bidId = bid.bidId || bid.callbackUid;
+      adUnitInfo[bidId]['reqId'] = bid.reqId;
       storeData({
         'perf_status': 'OK',
         'perf_reqid': bid.reqId,
         'perf_ms': responseTime
-      }, `wsPerfData${bid.reqId}`);
+      }, `${LS_KEYS.PERF_DATA}${bid.reqId}`);
       if (bid.status === 'ad') {
         bidResponses.push({
-          requestId: bid.bidId || bid.callbackUid,
+          requestId: bidId,
           cpm: bid.cpm,
           width: bid.width,
           height: bid.height,
           creativeId: bid.adId,
           currency: bid.currency,
-          netRevenue: true,
+          netRevenue: Boolean(bid.netRev),
           ttl: bid.ttl || config.getConfig('_bidderTimeout'),
           referrer: REFERRER,
           ad: bid.code
@@ -122,27 +136,31 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    return [{
-      type: 'image',
-      url: 'http://playground.widespace.com/usman/resources/ws300x300.jpg'
-    }];
+    // return serverResponses.reduce((allSyncPixels, response) => {
+    //   return response.body[0].syncPixels.forEach((url) => {
+    //     allSyncPixels.push({type: 'image', url});
+    //   });
+    //   return allSyncPixels;
+    // }, []);
   }
 };
 
-function storeData(data, name) {
+function storeData(data, name, stringify = true) {
   if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, JSON.stringify(data));
-    return true;
+    localStorage.setItem(name, stringify ? JSON.stringify(data) : data);
+    return localStorage.getItem(name);
   }
 }
 
-function getData(name) {
+function getData(name, remove = true) {
   let data = [];
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
       if (key.includes(name)) {
         data.push(JSON.parse(localStorage.getItem(key)));
-        localStorage.removeItem(key);
+        if (remove) {
+          localStorage.removeItem(key);
+        }
       }
     });
   }
@@ -154,18 +172,24 @@ function pixelSyncPossibility() {
   return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
-pbjs.onEvent('bidWon', function(bid) {
-  if (adUnitCodes.includes(bid.adUnitCode)) {
-    storeData({'bidder': bid.bidder,
-      'bidId': bid.adId,
-      'cmp': bid.cpm,
-      'ttr': bid.timeToRespond
-    }, `wsBidInfo${bid.adId}`);
-  }
-});
+function generateLcuid() {
+  return (String(4) + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
+}
 
-pbjs.onEvent('auctionEnd', function(bid) {
-  console.log('auctionEnd', bid, pbjs.getHighestCpmBids()[0], pbjs.getHighestCpmBids()[1]);
+PBJS.onEvent('bidWon', function(bid) {
+  const adUnitCodes = Object.keys(adUnitInfo).map(val => adUnitInfo[val]['adUnitCode']);
+  if (adUnitCodes.includes(bid.adUnitCode) && bid.bidderCode !== BIDDER_CODE) {
+    const reqId = Object.keys(adUnitInfo).reduce((rid, key) => {
+      rid = adUnitInfo[key]['adUnitCode'] === bid.adUnitCode ? adUnitInfo[key]['reqId'] : rid;
+      return rid
+    }, '');
+    storeData({'bidder': bid.bidder,
+      'reqId': reqId,
+      'cpm': bid.cpm,
+      'cur': bid.currency,
+      'netRev': bid.netRevenue
+    }, `${LS_KEYS.BID_INFO}${reqId}`);
+  }
 });
 
 registerBidder(spec);
