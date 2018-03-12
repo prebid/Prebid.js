@@ -116,8 +116,8 @@ describe('eplanning analytics adapter', () => {
 
       expect(requests.length).to.equal(1);
 
-      expect(requests[0].url.includes(initOptions.host+initOptions.ci));
-      expect(requests[0].url.includes("https://ads.ar.e-planning.net/hba/1/12345?d="));
+      expect(requests[0].url.includes(initOptions.host + initOptions.ci));
+      expect(requests[0].url.includes('https://ads.ar.e-planning.net/hba/1/12345?d='));
 
       let info = requests[0].url;
       let purl = new URL(info);
