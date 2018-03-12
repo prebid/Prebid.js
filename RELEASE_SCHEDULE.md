@@ -7,7 +7,7 @@ it will be about a week before the Prebid Org [Download Page](http://prebid.org/
 
 You can determine what is in a given build using the [releases page](https://github.com/prebid/Prebid.js/releases)
 
-Announcements regarding releases will be made to the email list. **How is this email list maintained?**
+Announcements regarding releases will be made to the #headerbidding-dev channel in subredditadops.slack.com.
 
 # FAQs
 
