@@ -9,7 +9,7 @@ const externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y
 const internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
 const StroeerCoreAdapter = function (win = window) {
-  const defaultHost = 'dsh.adscale.de';
+  const defaultHost = 'hb.adscale.de';
   const defaultPath = '/dsh';
   const defaultPort = '';
   const bidderCode = 'stroeerCore';
