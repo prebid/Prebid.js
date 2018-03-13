@@ -72,14 +72,19 @@ export const spec = {
     const bids = [];
     // @TODO: add error handling
     if(serverResponse.winningProvider) {
-      bids.push(parseBid(Object.assign(
-        {},
-        {
-          requestId:serverResponse.bidRequest.imp[0].id,
-          currency: serverResponse.winningProvider.currency
-        },
-        serverResponse.winningProvider.winningSeat.bid[0],
-      )));
+      let winners = serverResponse.winningProvider;
+      if(winners instanceof Array) {
+        winners.forEach(function(winner) {
+          bids.push(parseBid(Object.assign(
+            {},
+            {
+              requestId:winner.winningSeat.bid[0].impid,
+              currency: winner.currency
+            },
+            winner.winningSeat.bid[0],
+          )));
+        })
+      }
     }
     return bids;
   },
@@ -104,7 +109,7 @@ function parseBid(bid) {
     // // dealId: DEAL_ID,
     currency: bid.currency,
     netRevenue: true,
-    ttl: 60,
+    ttl: 60, //@TODO: verify
     ad: bid.adm
   };
   return bidResponse;
