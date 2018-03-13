@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'clickforce';
-const ENDPOINT_URL = '//ad-test.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
+const ENDPOINT_URL = '//ad.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
 export const spec = {
   code: BIDDER_CODE,
