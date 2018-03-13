@@ -1,53 +1,70 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var utils = require('src/utils.js');
-var adaptermanager = require('src/adaptermanager');
-var CONSTANTS = require('src/constants.json');
+import * as utils from 'src/utils';
+import {config} from 'src/config';
+import {registerBidder} from 'src/adapters/bidderFactory';
 
-var ClickforceAdapter = function ClickforceAdapter() {
-  function _callBids(params) {
-    var bids = params.bids;
-    for (var i = 0; i < bids.length; i++) {
-      var bidServer = window.location.protocol + '//ad.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&';
-      var bid = bids[i];
-      var bidParams = {};
-      if (typeof (bid.params.bidServer) !== 'undefined') {
-        bidServer = bid.params.bidServer;
-      }
-      bidParams.z = bid.params.zone;
-      bidParams.bidId = bid.bidId;
-      bidParams.rf = utils.getTopWindowUrl();
-      var bidURL = bidServer + utils.parseQueryStringParameters(bidParams);
-      utils.logMessage('CLICKFORCE : ' + bidURL);
-      adloader.loadScript(bidURL);
-    }
+const BIDDER_CODE = 'clickforce';
+const ENDPOINT_URL = '//ad-test.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
+
+export const spec = {
+  code: BIDDER_CODE,
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    return bid && bid.params && !!bid.params.zone;
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(validBidRequests) {
+    const bidParams = [];
+    const bidId = null;
+    utils._each(validBidRequests, function(bid) {
+      bidParams.push({
+        z : bid.params.zone,
+        bidId : bid.bidId
+      });
+    });
+    return {
+        method: 'POST',
+        url: ENDPOINT_URL,
+        data: bidParams,
+    };
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param {*} bidRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, bidRequest) {   
+    const cfResponses = [];
+    utils._each(serverResponse.body, function(response) {
+      cfResponses.push({
+        requestId: response.requestId,
+        cpm: response.cpm,
+        width: response.width,
+        height: response.height,
+        creativeId: response.creativeId,
+        currency: response.currency,
+        netRevenue: response.netRevenue,
+        ttl: response.ttl,
+        ad: response.tag
+      });
+    });
+
+    return cfResponses;
   }
-
-  $$PREBID_GLOBAL$$.clickforceCallBack = function(response) {
-    var bidObject, bidRequest, callbackID;
-    callbackID = response.callback_uid;
-    bidRequest = utils.getBidRequest(callbackID);
-    if (response.tag.length > 0) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
-      bidObject.bidderCode = 'clickforce';
-      bidObject.cpm = parseFloat(response.cpm);
-      bidObject.ad = response.tag;
-      bidObject.statusMessage = response.type;
-      bidObject.width = response.width;
-      bidObject.height = response.height;
-    } else {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-      bidObject.bidderCode = 'clickforce';
-      utils.logMessage('No Bid response from request: ' + callbackID);
-    }
-    bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
-  };
-
-  return {
-    callBids: _callBids
-  };
 };
 
-adaptermanager.registerBidAdapter(new ClickforceAdapter(), 'clickforce');
-module.exports = ClickforceAdapter;
+registerBidder(spec);
