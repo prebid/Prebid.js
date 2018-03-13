@@ -1,4 +1,4 @@
-import {setConfig, requestBidsHook, resetConsentId, userCMP, consentTimeout, lookUpFailureChoice} from 'modules/consentManagement';
+import {setConfig, requestBidsHook, resetConsentId, userCMP, consentTimeout, lookupFailureChoice} from 'modules/consentManagement';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -21,7 +21,7 @@ describe('consentManagement', function () {
         setConfig({});
         expect(userCMP).to.be.equal('appnexus');
         expect(consentTimeout).to.be.equal(5000);
-        expect(lookUpFailureChoice).to.be.equal('proceed');
+        expect(lookupFailureChoice).to.be.equal('proceed');
         sinon.assert.calledThrice(utils.logInfo);
       });
     });
@@ -43,7 +43,7 @@ describe('consentManagement', function () {
 
         setConfig(badConfig);
         sinon.assert.calledOnce(utils.logWarn);
-        expect(lookUpFailureChoice).to.be.equal('proceed');
+        expect(lookupFailureChoice).to.be.equal('proceed');
       });
     });
 
@@ -62,7 +62,7 @@ describe('consentManagement', function () {
         setConfig(allConfig);
         expect(userCMP).to.be.equal('appnexus');
         expect(consentTimeout).to.be.equal(750);
-        expect(lookUpFailureChoice).to.be.equal('cancel');
+        expect(lookupFailureChoice).to.be.equal('cancel');
       });
     });
   });
@@ -81,7 +81,7 @@ describe('consentManagement', function () {
 
     let goodConfigWithCancel = {
       cmp: 'appnexus',
-      waitForConsentTimeout: 100,
+      waitForConsentTimeout: 750,
       lookUpFailureResolution: 'cancel'
     };
 
@@ -157,6 +157,7 @@ describe('consentManagement', function () {
     });
 
     describe('already known consentId:', () => {
+      // am i really needed?
       let cmpStub = sinon.stub();
 
       beforeEach(() => {
@@ -200,12 +201,9 @@ describe('consentManagement', function () {
     });
 
     describe('CMP workflow:', () => {
-      let firstpass;
       let cmpStub = sinon.stub();
-      let clock = sinon.useFakeTimers();
 
       beforeEach(() => {
-        firstpass = true;
         didHookReturn = false;
         retAdUnits = [];
         resetConsentId();
@@ -220,12 +218,12 @@ describe('consentManagement', function () {
         cmpStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
-        clock.restore();
         delete window.__cmp;
       });
 
       it('performs extra lookup checks and updates adUnits for a valid new user', () => {
         let testConsentString = null;
+        let firstpass = true;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           // simulates user generating a valid consentId string in between second/third callbacks
@@ -269,7 +267,7 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal('BOJy+UqOJy+UqABAB+AAAAAZ+A==');
+        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
         expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
       });
 

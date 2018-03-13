@@ -14,7 +14,7 @@ const DEFAULT_FAILURE_CHOICE = 'proceed';
 
 export let userCMP;
 export let consentTimeout;
-export let lookUpFailureChoice;
+export let lookupFailureChoice;
 
 let consentId = '';
 let adUnits;
@@ -25,20 +25,13 @@ let nextFn;
 let cmpActive;
 let timer;
 
-// CMP switchboard
-function callCMP() {
-  switch (userCMP) {
-    case 'appnexus':
-      lookupAppNexusConsent();
-      break;
-    default:
-      utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
-      return nextFn.apply(context, args);
-  }
-}
+// add new CMPs here, with their dedicated lookup function that passes the consentString to postLookup()
+const cmpCallMap = {
+  'appnexus': lookupAppNexusConsent
+};
 
 // AppNexus CMP lookup process
-function lookupAppNexusConsent () {
+function lookupAppNexusConsent() {
   if (!window.__cmp) {
     utils.logWarn('AppNexus CMP framework is not detected on page.  Aborting consentManagement module and resuming auction.');
     return nextFn.apply(context, args);
@@ -87,7 +80,11 @@ export function requestBidsHook(config, fn) {
     return nextFn.apply(context, args);
   }
 
-  callCMP();
+  if (!Object.keys(cmpCallMap).includes(userCMP)) {
+    utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+    return nextFn.apply(context, args);
+  }
+  cmpCallMap[userCMP].call();
 }
 
 // after we have grabbed ideal ID from CMP, apply the data to adUnits object and finish up the module
@@ -104,7 +101,7 @@ function postLookup(consentString) {
   }
 }
 
-function cmpTimedOut () {
+function cmpTimedOut() {
   if (cmpActive) {
     exitFailedCMP('CMP workflow exceeded timeout threshold.');
   }
@@ -112,7 +109,7 @@ function cmpTimedOut () {
 
 function exitFailedCMP(message) {
   cmpActive = false;
-  if (lookUpFailureChoice === 'proceed') {
+  if (lookupFailureChoice === 'proceed') {
     utils.logWarn(message + ' Resuming auction without consent data as per consentManagement config.');
     applyConsent(adUnits, undefined);
     nextFn.apply(context, args);
@@ -159,14 +156,14 @@ export function setConfig(config) {
 
   if (typeof config.lookUpFailureResolution === 'string') {
     if (config.lookUpFailureResolution === 'proceed' || config.lookUpFailureResolution === 'cancel') {
-      lookUpFailureChoice = config.lookUpFailureResolution;
+      lookupFailureChoice = config.lookUpFailureResolution;
     } else {
-      lookUpFailureChoice = DEFAULT_FAILURE_CHOICE;
-      utils.logWarn(`Invalid choice was set for consentManagement lookUpFailureResolution property. Using system default (${lookUpFailureChoice}).`);
+      lookupFailureChoice = DEFAULT_FAILURE_CHOICE;
+      utils.logWarn(`Invalid choice was set for consentManagement lookUpFailureResolution property. Using system default (${lookupFailureChoice}).`);
     }
   } else {
-    lookUpFailureChoice = DEFAULT_FAILURE_CHOICE;
-    utils.logInfo(`consentManagement config did not specify lookUpFailureResolution.  Using system default setting (${lookUpFailureChoice}).`);
+    lookupFailureChoice = DEFAULT_FAILURE_CHOICE;
+    utils.logInfo(`consentManagement config did not specify lookUpFailureResolution.  Using system default setting (${lookupFailureChoice}).`);
   }
 
   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
