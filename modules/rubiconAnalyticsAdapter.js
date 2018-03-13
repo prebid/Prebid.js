@@ -176,7 +176,14 @@ function sendMessage(auctionId, bidWonId) {
     ];
   }
 
-  ajax(this.getUrl(), null, JSON.stringify(message));
+  ajax(
+    this.getUrl(),
+    null,
+    JSON.stringify(message),
+    {
+      contentType: 'application/json'
+    }
+  );
 }
 
 function parseBidResponse(bid) {
