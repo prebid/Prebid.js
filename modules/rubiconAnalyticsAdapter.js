@@ -64,6 +64,19 @@ function _pick(obj, properties) {
   }, {});
 }
 
+function stringProperties(obj) {
+  return Object.keys(obj).reduce((newObj, prop) => {
+    let value = obj[prop];
+    if (typeof value === 'number') {
+      value = value.toFixed(3);
+    } else if (typeof value !== 'string') {
+      value = String(value);
+    }
+    newObj[prop] = value;
+    return newObj;
+  }, {});
+}
+
 function sizeToDimensions(size) {
   return {
     width: size[0],
@@ -104,7 +117,7 @@ function sendMessage(auctionId, bidWonId) {
       'adUnitCode',
       'transactionId',
       'mediaTypes',
-      'adserverTargeting', () => cache.targeting[bid.adUnit.adUnitCode]
+      'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode])
     ]), {
       accountId,
       samplingFactor
@@ -128,7 +141,7 @@ function sendMessage(auctionId, bidWonId) {
           'transactionId',
           'mediaTypes',
           'dimensions',
-          'adserverTargeting', () => cache.targeting[bid.adUnit.adUnitCode]
+          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode])
         ]);
         adUnit.bids = [];
       }

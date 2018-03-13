@@ -101,8 +101,7 @@
                   }
                 },
                 "adserverTargeting": {
-                  "type": "object",
-                  "description": "The result of setting targeting for this adUnit based off bidResponses"
+                  "$ref": "#/definitions/adserverTargeting"
                 },
                 "bids": {
                   "type": "array",
@@ -151,8 +150,7 @@
                 "$ref": "#/definitions/mediaTypes"
               },
               "adserverTargeting": {
-                "type": "object",
-                "description": "The adserverTargeting set for this bid"
+                "$ref": "#/definitions/adserverTargeting"
               }
             }
           }
@@ -161,6 +159,15 @@
     }
   },
   "definitions": {
+    "adserverTargeting": {
+      "type": "object",
+      "description": "The adserverTargeting key/value pairs",
+      "patternProperties": {
+        ".+": {
+          "type": "string"
+        }
+      }
+    },
     "samplingFactor": {
       "type": "integer",
       "description": "An integer value representing the factor to multiply event count by to receive unsampled count.",

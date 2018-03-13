@@ -67,7 +67,7 @@ const BID = {
   'adserverTargeting': {
     'hb_bidder': 'rubicon',
     'hb_adid': '2ecff0db240757',
-    'hb_pb': '1.20',
+    'hb_pb': 1.20,
     'hb_size': '640x480',
     'hb_source': 'client'
   },
@@ -91,7 +91,7 @@ const BID2 = Object.assign({}, BID, {
   adserverTargeting: {
     'hb_bidder': 'rubicon',
     'hb_adid': '3bd4ebb1c900e2',
-    'hb_pb': '1.50',
+    'hb_pb': '1.500',
     'hb_size': '728x90',
     'hb_source': 'client'
   }
@@ -226,7 +226,7 @@ const ANALYTICS_MESSAGE = {
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
-            'hb_pb': '1.20',
+            'hb_pb': '1.200',
             'hb_size': '640x480',
             'hb_source': 'client'
           },
@@ -277,7 +277,7 @@ const ANALYTICS_MESSAGE = {
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '3bd4ebb1c900e2',
-            'hb_pb': '1.50',
+            'hb_pb': '1.500',
             'hb_size': '728x90',
             'hb_source': 'client'
           },
@@ -329,7 +329,7 @@ const ANALYTICS_MESSAGE = {
       'adserverTargeting': {
         'hb_bidder': 'rubicon',
         'hb_adid': '2ecff0db240757',
-        'hb_pb': '1.20',
+        'hb_pb': '1.200',
         'hb_size': '640x480',
         'hb_source': 'client'
       },
@@ -363,7 +363,7 @@ const ANALYTICS_MESSAGE = {
       'adserverTargeting': {
         'hb_bidder': 'rubicon',
         'hb_adid': '3bd4ebb1c900e2',
-        'hb_pb': '1.50',
+        'hb_pb': '1.500',
         'hb_size': '728x90',
         'hb_source': 'client'
       },
