@@ -680,6 +680,7 @@ describe('Unit: Prebid Module', function () {
     var spyLogError = null;
     var spyLogMessage = null;
     var inIframe = true;
+    let triggerPixelStub;
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
@@ -719,6 +720,7 @@ describe('Unit: Prebid Module', function () {
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     });
 
     afterEach(function () {
@@ -726,6 +728,7 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
       utils.logMessage.restore();
       utils.inIframe.restore();
+      utils.triggerPixel.restore();
     });
 
     it('should require doc and id params', function () {
@@ -809,6 +812,20 @@ describe('Unit: Prebid Module', function () {
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
+    });
+
+    it('fires billing url if present on s2s bid', () => {
+      const burl = 'http://www.example.com/burl';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>',
+        source: 's2s',
+        burl
+      });
+
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+
+      sinon.assert.calledOnce(triggerPixelStub);
+      sinon.assert.calledWith(triggerPixelStub, burl);
     });
   });
 
