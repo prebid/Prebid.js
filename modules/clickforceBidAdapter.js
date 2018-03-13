@@ -1,5 +1,4 @@
 import * as utils from 'src/utils';
-import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'clickforce';
@@ -26,17 +25,16 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const bidParams = [];
-    const bidId = null;
     utils._each(validBidRequests, function(bid) {
       bidParams.push({
-        z : bid.params.zone,
-        bidId : bid.bidId
+        z: bid.params.zone,
+        bidId: bid.bidId
       });
     });
     return {
-        method: 'POST',
-        url: ENDPOINT_URL,
-        data: bidParams,
+      method: 'POST',
+      url: ENDPOINT_URL,
+      data: bidParams
     };
   },
 
@@ -47,7 +45,7 @@ export const spec = {
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {   
+  interpretResponse: function(serverResponse, bidRequest) {
     const cfResponses = [];
     utils._each(serverResponse.body, function(response) {
       cfResponses.push({
@@ -62,9 +60,7 @@ export const spec = {
         ad: response.tag
       });
     });
-
     return cfResponses;
   }
 };
-
 registerBidder(spec);
