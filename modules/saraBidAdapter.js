@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'sara';
 const ENDPOINT_URL = '//ad.sara.media/hb';
+const ADAPTER_SYNC_URL = '//ad.sara.media/push_sync';
 const TIME_TO_LIVE = 360;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -57,7 +58,7 @@ export const spec = {
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },
@@ -82,6 +83,15 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: ADAPTER_SYNC_URL
+      }];
+    }
   }
 }
 
