@@ -25,7 +25,7 @@ describe('AudienceNetwork adapter', () => {
       expect(code).to.equal(bidder);
     });
     it('supportedMediaTypes', () => {
-      expect(supportedMediaTypes).to.deep.equal(['video']);
+      expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
     it('isBidRequestValid', () => {
       expect(isBidRequestValid).to.be.a('function');
@@ -92,6 +92,17 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
+    it('native with non-IAB size', () => {
+      expect(isBidRequestValid({
+        bidder,
+        sizes: [[728, 90]],
+        params: {
+          placementId,
+          format: 'native'
+        }
+      })).to.equal(true);
+    });
+
     it('video', () => {
       expect(isBidRequestValid({
         bidder,
@@ -137,6 +148,44 @@ describe('AudienceNetwork adapter', () => {
         sizes: ['640x480'],
         url: 'https://an.facebook.com/v2/placementbid.json',
         data: 'placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=&sdk[]=&playerwidth=640&playerheight=480'
+      }]);
+    });
+
+    it('can build URL for native unit in non-IAB size', () => {
+      expect(buildRequests([{
+        bidder,
+        bidId: requestId,
+        sizes: [[728, 90]],
+        params: {
+          placementId,
+          format: 'native'
+        }
+      }])).to.deep.equal([{
+        adformats: ['native'],
+        method: 'GET',
+        requestIds: [requestId],
+        sizes: ['728x90'],
+        url: 'https://an.facebook.com/v2/placementbid.json',
+        data: 'placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=&sdk[]=5.5.web'
+      }]);
+    });
+
+    it('can build URL for fullwidth 300x250 unit', () => {
+      expect(buildRequests([{
+        bidder,
+        bidId: requestId,
+        sizes: [[300, 250]],
+        params: {
+          placementId,
+          format: 'fullwidth'
+        }
+      }])).to.deep.equal([{
+        adformats: ['fullwidth'],
+        method: 'GET',
+        requestIds: [requestId],
+        sizes: ['300x250'],
+        url: 'https://an.facebook.com/v2/placementbid.json',
+        data: 'placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=&sdk[]=5.5.web'
       }]);
     });
   });
@@ -389,6 +438,44 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseNative.width).to.equal(300);
       expect(bidResponseNative.height).to.equal(250);
       expect(bidResponseNative.ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
+    });
+
+    it('mixture of valid native bid and error in response', () => {
+      const [bidResponse] = interpretResponse({
+        body: {
+          errors: ['test-error-message'],
+          bids: {
+            [placementId]: [{
+              placement_id: placementId,
+              bid_id: 'test-bid-id',
+              bid_price_cents: 123,
+              bid_price_currency: 'usd',
+              bid_price_model: 'cpm'
+            }]
+          }
+        }
+      }, {
+        adformats: ['native'],
+        requestIds: [requestId],
+        sizes: [[300, 250]]
+      });
+
+      expect(bidResponse.cpm).to.equal(1.23);
+      expect(bidResponse.requestId).to.equal(requestId);
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse.ad)
+        .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
+        .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
+        .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.creativeId).to.equal(placementId);
+      expect(bidResponse.netRevenue).to.equal(true);
+      expect(bidResponse.currency).to.equal('USD');
+
+      expect(bidResponse.hb_bidder).to.equal('fan');
+      expect(bidResponse.fb_bidid).to.equal('test-bid-id');
+      expect(bidResponse.fb_format).to.equal('native');
+      expect(bidResponse.fb_placementid).to.equal(placementId);
     });
   });
 });

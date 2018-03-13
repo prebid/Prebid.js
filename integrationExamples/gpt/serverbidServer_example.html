@@ -1,0 +1,103 @@
+<html>
+<head>
+<script>
+    var PREBID_TIMEOUT = 3000;
+
+    var googletag = googletag || {};
+    var sizes = [[728, 90],[300, 250], [300,600]];
+    googletag.cmd = googletag.cmd || [];
+
+    function initAdserver() {
+      if (pbjs.initAdserverSet) return;
+      (function() {
+          var gads = document.createElement('script');
+          gads.async = true;
+          gads.type = 'text/javascript';
+          var useSSL = 'https:' == document.location.protocol;
+          gads.src = (useSSL ? 'https:' : 'http:') +
+          '//www.googletagservices.com/tag/js/gpt.js';
+          var node = document.getElementsByTagName('script')[0];
+          node.parentNode.insertBefore(gads, node);
+        })();
+      pbjs.initAdserverSet = true;
+    };
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    (function() {
+        var pbjsEl = document.createElement("script");
+        pbjsEl.type = "text/javascript";
+        pbjsEl.async = true;
+        pbjsEl.src = '/build/dev/prebid.js';
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+      })();
+
+    pbjs.que.push(function() {
+        var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            sizes: [[300, 250], [300,600]],
+            bids: [
+              {
+                bidder: 'appnexus',
+                params: {
+                   placementId: '12224129'
+                }
+              },
+            ]
+          }];
+
+        pbjs.setConfig({
+          bidderTimeout: 3000,
+          s2sConfig : {
+            enabled : true,
+            bidders : ['appnexus'],
+            timeout : 1000,
+            networkId: '9969',
+            siteId: '985041',
+            adapter: 'serverbidServer',
+            //The accountId and endpoint are required by Prebid for validation
+            //but are not used by ServerBid. They can either be filled in with
+            //nonsense values, or left out entirely. If left out you will see
+            //errors in the browser console, but nothing will actually be wrong.
+            accountId: 9000,
+            endpoint: "unused"
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.requestBids({
+            bidsBackHandler: function(bidResponses) {
+                initAdserver();
+            }
+        })
+    });
+</script>
+
+<script>
+    googletag.cmd.push(function() {
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+        pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+    });
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js S2S Example</h2>
+
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+    </div>
+</body>
+</html>

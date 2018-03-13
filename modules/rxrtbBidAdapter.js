@@ -68,7 +68,7 @@ function getDomain(url) {
 
 function makePrebidRequest(req) {
   let host = req.params.host || DEFAULT_HOST;
-  let url = window.location.protocol + '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token;
+  let url = '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token;
   let reqData = makeRtbRequest(req);
   return {
     method: 'POST',
@@ -100,7 +100,7 @@ function makeImp(req) {
     'banner': makeBanner(req)
   };
 
-  if (req.params.bidfloor && utils.isInteger(req.params.bidfloor)) {
+  if (req.params.bidfloor && isFinite(req.params.bidfloor)) {
     imp.bidfloor = req.params.bidfloor
   }
 
