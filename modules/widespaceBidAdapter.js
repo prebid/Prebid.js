@@ -38,7 +38,7 @@ export const spec = {
     const PERF_DATA = getData(LS_KEYS.PERF_DATA);
     const BID_INFO = getData(LS_KEYS.BID_INFO);
     const CUST_DATA = getData(LS_KEYS.CUST_DATA);
-    const LC_UID = getData(LS_KEYS.LC_UID, false)[0] || storeData(generateLcuid(), LS_KEYS.LC_UID, false) || '';
+    const LC_UID = getLcuid();
 
     let isInHostileIframe = false;
     try {
@@ -63,7 +63,7 @@ export const spec = {
         'windowHeight': isInHostileIframe ? window.innerHeight : window.top.innerHeight,
         'referer': REFERRER,
         'sid': bid.params.sid,
-        'lcuid': LC_UID,
+        'lcuid': LC_UID || -1,
         'hb': '1',
         'hb.wbi': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
         'hb.cd': CUST_DATA[i] ? encodeURIComponent(JSON.stringify(CUST_DATA[i])) : '',
@@ -148,7 +148,7 @@ export const spec = {
 function storeData(data, name, stringify = true) {
   if (LOCAL_STORAGE_AVAILABLE) {
     localStorage.setItem(name, stringify ? JSON.stringify(data) : data);
-    return localStorage.getItem(name);
+    return true;
   }
 }
 
@@ -172,8 +172,14 @@ function pixelSyncPossibility() {
   return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
-function generateLcuid() {
-  return (String(4) + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
+function getLcuid() {
+  let lcuid = getData(LS_KEYS.LC_UID, false)[0];
+  if (!lcuid) {
+    const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
+    storeData(random, LS_KEYS.LC_UID, false);
+    lcuid = getData(LS_KEYS.LC_UID, false)[0];
+  }
+  return lcuid;
 }
 
 PBJS.onEvent('bidWon', function(bid) {
