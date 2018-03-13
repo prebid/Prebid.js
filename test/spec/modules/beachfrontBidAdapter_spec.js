@@ -1,31 +1,46 @@
 import { expect } from 'chai';
-import { spec, ENDPOINT } from 'modules/beachfrontBidAdapter';
+import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
 
 describe('BeachfrontAdapter', () => {
-  let bidRequest;
+  let bidRequests;
 
   beforeEach(() => {
-    bidRequest = {
-      bidder: 'beachfront',
-      params: {
-        bidfloor: 5.00,
-        appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
-      },
-      adUnitCode: 'adunit-code',
-      sizes: [ 640, 480 ],
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475'
-    };
+    bidRequests = [
+      {
+        bidder: 'beachfront',
+        params: {
+          bidfloor: 2.00,
+          appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+        },
+        adUnitCode: 'div-gpt-ad-1460505748561-0',
+        sizes: [ 300, 250 ],
+        bidId: '25186806a41eab',
+        bidderRequestId: '15bdd8d4a0ebaf',
+        auctionId: 'f17d62d0-e3e3-48d0-9f73-cb4ea358a309'
+      }, {
+        bidder: 'beachfront',
+        params: {
+          bidfloor: 1.00,
+          appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+        },
+        adUnitCode: 'div-gpt-ad-1460505748561-1',
+        sizes: [ 300, 600 ],
+        bidId: '365088ee6d649d',
+        bidderRequestId: '15bdd8d4a0ebaf',
+        auctionId: 'f17d62d0-e3e3-48d0-9f73-cb4ea358a309'
+      }
+    ];
   });
 
   describe('spec.isBidRequestValid', () => {
     it('should return true when the required params are passed', () => {
+      const bidRequest = bidRequests[0];
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
     it('should return false when the "bidfloor" param is missing', () => {
+      const bidRequest = bidRequests[0];
       bidRequest.params = {
         appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
       };
@@ -33,6 +48,7 @@ describe('BeachfrontAdapter', () => {
     });
 
     it('should return false when the "appId" param is missing', () => {
+      const bidRequest = bidRequests[0];
       bidRequest.params = {
         bidfloor: 5.00
       };
@@ -40,6 +56,7 @@ describe('BeachfrontAdapter', () => {
     });
 
     it('should return false when no bid params are passed', () => {
+      const bidRequest = bidRequests[0];
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
@@ -51,98 +68,254 @@ describe('BeachfrontAdapter', () => {
   });
 
   describe('spec.buildRequests', () => {
-    it('should create a POST request for every bid', () => {
-      const requests = spec.buildRequests([ bidRequest ]);
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(ENDPOINT + bidRequest.params.appId);
+    describe('for video bids', () => {
+      it('should attach the bid request object', () => {
+        bidRequests[0].mediaTypes = { video: {} };
+        bidRequests[1].mediaTypes = { video: {} };
+        const requests = spec.buildRequests(bidRequests);
+        expect(requests[0].bidRequest).to.equal(bidRequests[0]);
+        expect(requests[1].bidRequest).to.equal(bidRequests[1]);
+      });
+
+      it('should create a POST request for each bid', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.equal(VIDEO_ENDPOINT + bidRequest.params.appId);
+      });
+
+      it('should attach request data', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        const [ width, height ] = bidRequest.sizes;
+        expect(data.isPrebid).to.equal(true);
+        expect(data.appId).to.equal(bidRequest.params.appId);
+        expect(data.domain).to.equal(document.location.hostname);
+        expect(data.id).to.be.a('string');
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+        expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
+        expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+        expect(data.cur).to.deep.equal(['USD']);
+      });
+
+      it('must parse bid size from a nested array', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = [[ width, height ]];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must parse bid size from a string', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = `${width}x${height}`;
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+      });
+
+      it('must handle an empty bid size', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = [];
+        bidRequest.mediaTypes = { video: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.equal({ w: undefined, h: undefined });
+      });
     });
 
-    it('should attach the bid request object', () => {
-      const requests = spec.buildRequests([ bidRequest ]);
-      expect(requests[0].bidRequest).to.equal(bidRequest);
-    });
+    describe('for banner bids', () => {
+      it('should attach the bid requests array', () => {
+        bidRequests[0].mediaTypes = { banner: {} };
+        bidRequests[1].mediaTypes = { banner: {} };
+        const requests = spec.buildRequests(bidRequests);
+        expect(requests[0].bidRequest).to.deep.equal(bidRequests);
+      });
 
-    it('should attach request data', () => {
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      const [ width, height ] = bidRequest.sizes;
-      expect(data.isPrebid).to.equal(true);
-      expect(data.appId).to.equal(bidRequest.params.appId);
-      expect(data.domain).to.equal(document.location.hostname);
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-      expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-      expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
-      expect(data.device).to.deep.contain({ ua: navigator.userAgent });
-      expect(data.cur).to.deep.equal(['USD']);
-    });
+      it('should create a single POST request for all bids', () => {
+        bidRequests[0].mediaTypes = { banner: {} };
+        bidRequests[1].mediaTypes = { banner: {} };
+        const requests = spec.buildRequests(bidRequests);
+        expect(requests.length).to.equal(1);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.equal(BANNER_ENDPOINT);
+      });
 
-    it('must parse bid size from a nested array', () => {
-      const width = 640;
-      const height = 480;
-      bidRequest.sizes = [[ width, height ]];
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-    });
+      it('should attach request data', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        const [ width, height ] = bidRequest.sizes;
+        const topLocation = utils.getTopWindowLocation();
+        expect(data.slots).to.deep.equal([
+          {
+            slot: bidRequest.adUnitCode,
+            id: bidRequest.params.appId,
+            bidfloor: bidRequest.params.bidfloor,
+            sizes: [{ w: width, h: height }]
+          }
+        ]);
+        expect(data.page).to.equal(topLocation.href);
+        expect(data.domain).to.equal(topLocation.hostname);
+        expect(data.search).to.equal(topLocation.search);
+        expect(data.ua).to.equal(navigator.userAgent);
+      });
 
-    it('must parse bid size from a string', () => {
-      const width = 640;
-      const height = 480;
-      bidRequest.sizes = `${width}x${height}`;
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
-    });
+      it('must parse bid size from a nested array', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = [[ width, height ]];
+        bidRequest.mediaTypes = { banner: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].sizes).to.deep.equal([
+          { w: width, h: height }
+        ]);
+      });
 
-    it('must handle an empty bid size', () => {
-      bidRequest.sizes = [];
-      const requests = spec.buildRequests([ bidRequest ]);
-      const data = requests[0].data;
-      expect(data.imp[0].video).to.deep.equal({ w: undefined, h: undefined });
+      it('must parse bid size from a string', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = `${width}x${height}`;
+        bidRequest.mediaTypes = { banner: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].sizes).to.deep.equal([
+          { w: width, h: height }
+        ]);
+      });
+
+      it('must handle an empty bid size', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.sizes = [];
+        bidRequest.mediaTypes = { banner: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].sizes).to.deep.equal([]);
+      });
     });
   });
 
   describe('spec.interpretResponse', () => {
-    it('should return no bids if the response is not valid', () => {
-      const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
-      expect(bidResponse.length).to.equal(0);
+    describe('for video bids', () => {
+      it('should return no bids if the response is not valid', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return no bids if the response "url" is missing', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const serverResponse = {
+          bidPrice: 5.00
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return no bids if the response "bidPrice" is missing', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const serverResponse = {
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return a valid video bid response', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        const [ width, height ] = bidRequest.sizes;
+        expect(bidResponse).to.deep.equal({
+          requestId: bidRequest.bidId,
+          bidderCode: spec.code,
+          cpm: serverResponse.bidPrice,
+          creativeId: serverResponse.cmpId,
+          vastUrl: serverResponse.url,
+          width: width,
+          height: height,
+          mediaType: 'video',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 300
+        });
+      });
     });
 
-    it('should return no bids if the response "url" is missing', () => {
-      const serverResponse = {
-        bidPrice: 5.00
-      };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse.length).to.equal(0);
-    });
+    describe('for banner bids', () => {
+      it('should return no bids if the response is not valid', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
 
-    it('should return no bids if the response "bidPrice" is missing', () => {
-      const serverResponse = {
-        url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da'
-      };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse.length).to.equal(0);
-    });
+      it('should return no bids if the response is empty', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const bidResponse = spec.interpretResponse({ body: [] }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
 
-    it('should return a valid bid response', () => {
-      const serverResponse = {
-        bidPrice: 5.00,
-        url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-        cmpId: '123abc'
-      };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse).to.deep.equal({
-        requestId: bidRequest.bidId,
-        bidderCode: spec.code,
-        cpm: serverResponse.bidPrice,
-        creativeId: serverResponse.cmpId,
-        vastUrl: serverResponse.url,
-        width: 640,
-        height: 480,
-        mediaType: 'video',
-        currency: 'USD',
-        ttl: 300,
-        netRevenue: true
+      it('should return valid banner bid responses', () => {
+        bidRequests[0].mediaTypes = { banner: {} };
+        bidRequests[0].sizes = [[ 300, 250 ], [ 728, 90 ]];
+        bidRequests[1].mediaTypes = { banner: {} };
+        bidRequests[1].sizes = [[ 300, 600 ], [ 200, 200 ]];
+        const serverResponse = [{
+          slot: bidRequests[0].adUnitCode,
+          adm: '<div id="44851937"></div>',
+          crid: 'crid_1',
+          price: 3.02,
+          w: 728,
+          h: 90
+        }, {
+          slot: bidRequests[1].adUnitCode,
+          adm: '<div id="44860506"></div>',
+          crid: 'crid_2',
+          price: 3.06,
+          w: 300,
+          h: 600
+        }];
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest: bidRequests });
+        expect(bidResponse.length).to.equal(2);
+        for (let i = 0; i < bidRequests.length; i++) {
+          expect(bidResponse[ i ]).to.deep.equal({
+            requestId: bidRequests[ i ].bidId,
+            bidderCode: spec.code,
+            ad: serverResponse[ i ].adm,
+            creativeId: serverResponse[ i ].crid,
+            cpm: serverResponse[ i ].price,
+            width: serverResponse[ i ].w,
+            height: serverResponse[ i ].h,
+            mediaType: 'banner',
+            currency: 'USD',
+            netRevenue: true,
+            ttl: 300
+          });
+        }
       });
     });
   });
