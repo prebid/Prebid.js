@@ -632,7 +632,6 @@ describe('stroeerssp adapter', function () {
       assert.isUndefined(json.bids[1].floor);
       assert.isUndefined(json.bids[1].cpm2);
 
-
       fakeServer.respondWith(JSON.stringify(json));
 
       adapter(win).callBids(bidderRequest);
@@ -773,9 +772,9 @@ describe('stroeerssp adapter', function () {
         // full price text
         {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
         // ignore exchange rate
-       {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
+        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
         // partial price text
-       {price: '2.945', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny4i5OEcHq-I-FhZIg'},
+        {price: '2.945', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny4i5OEcHq-I-FhZIg'}
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
@@ -861,6 +860,11 @@ describe('stroeerssp adapter', function () {
         fakeServer.respond();
 
         const bid = bidmanager.addBidResponse.firstCall.args[1];
+
+        // Mimic prebid by replacing AUCTION_PRICE macros in ad. We keep the original for generateAd.
+
+        bid.ad = bid.ad.replace(/\${AUCTION_PRICE}/g, '1.1111111');
+
         const ad = bid.generateAd({auctionPrice: 40.22});
 
         const expectedAd = '<img src=\'tracker.com?p=40.22></img>\n<script>var price=40.22</script>';

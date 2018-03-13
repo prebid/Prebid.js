@@ -95,7 +95,7 @@ const StroeerCoreAdapter = function (win = window) {
           floor: bidResponse.floor || cpm,
           exchangerate: bidResponse.exchangerate,
           nurl: bidResponse.nurl,
-          ssat: bidResponse.ssat
+          originalAd: bidResponse.ad
         });
 
         bidObject.generateAd = function({auctionPrice}) {
@@ -108,7 +108,7 @@ const StroeerCoreAdapter = function (win = window) {
           auctionPrice = tunePrice(auctionPrice);
           sspAuctionPrice = tunePrice(sspAuctionPrice);
 
-          let creative = this.ad;
+          let creative = this.originalAd;
           return creative
             .replace(/\${AUCTION_PRICE:ENC}/g, externalCrypter.encrypt(this.adId, auctionPrice.toString()))
             .replace(/\${SSP_AUCTION_PRICE:ENC}/g, internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
