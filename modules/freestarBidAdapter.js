@@ -84,6 +84,16 @@ export const spec = {
             winner.winningSeat.bid[0],
           )));
         })
+      } else {
+        let winner = winners;
+        bids.push(parseBid(Object.assign(
+          {},
+          {
+            requestId:winner.winningSeat.bid[0].impid,
+            currency: winner.currency
+          },
+          winner.winningSeat.bid[0],
+        )));
       }
     }
     return bids;
