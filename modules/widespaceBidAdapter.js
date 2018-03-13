@@ -91,6 +91,12 @@ export const spec = {
         });
       }
 
+      const CONNECTION = navigator.connection || navigator.webkitConnection;
+      if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
+        data['netinfo.type'] = CONNECTION.type;
+        data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
+      }
+
       serverRequests.push({
         method: 'POST',
         options: {
