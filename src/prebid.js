@@ -288,14 +288,12 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
-        }
-        else if (bid.generateAd) {
-          var ra = bid.generateAd({auctionPrice: bid.cpm});
+        } else if (bid.generateAd) {
+          const ra = bid.generateAd({auctionPrice: bid.cpm});
           doc.write(ra);
           doc.close();
           setRenderSize(doc, width, height);
-        }
-        else if (ad) {
+        } else if (ad) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
