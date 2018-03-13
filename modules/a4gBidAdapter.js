@@ -71,7 +71,8 @@ export const spec = {
         currency: A4G_CURRENCY,
         netRevenue: true,
         ttl: A4G_TTL,
-        ad: response.ad
+        ad: response.ad,
+        adId: response.id
       };
       bidResponses.push(bidResponse);
     });
