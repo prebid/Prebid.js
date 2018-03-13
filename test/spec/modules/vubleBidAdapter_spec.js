@@ -202,7 +202,8 @@ describe('VubleAdapter', () => {
       creativeId: '2468',
       netRevenue: true,
       currency: 'USD',
-      vastUrl: 'https//player.mediabong.net/prebid/ad/a1b2c3d4'
+      vastUrl: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
+      mediaType: 'video'
     };
 
     it('should equal to the expected formatted result', () => {
