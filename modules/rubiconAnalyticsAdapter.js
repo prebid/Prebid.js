@@ -313,7 +313,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             bid.status = 'success';
             break;
           case NO_BID:
-            bid.status = 'nobid';
+            bid.status = 'no-bid';
             break;
           default:
             bid.status = 'error';
@@ -328,7 +328,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         args.bids.forEach(bid => {
           let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId];
           if (!cachedBid.status) {
-            cachedBid.status = 'noBid';
+            cachedBid.status = 'no-bid';
           }
           if (!cachedBid.clientLatencyMillis) {
             cachedBid.clientLatencyMillis = Date.now() - cache.auctions[bid.auctionId].timestamp;
