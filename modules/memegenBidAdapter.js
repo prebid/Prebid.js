@@ -33,6 +33,8 @@ var MemeGenAdapter = function MemeGenAdapter() {
 
     var isInapp = utils.getBidIdParameter('isInapp', bidReq.params);
     var publisherId = utils.getBidIdParameter('publisherId', bidReq.params);
+    var rtbTagId = Number(utils.getBidIdParameter('rtbTagId', bidReq.params));
+    var rtbSiteId = utils.getBidIdParameter('rtbSiteId', bidReq.params);
     var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
     var ua = utils.getBidIdParameter('ua', bidReq.params) || window.navigator.userAgent;
 
@@ -96,7 +98,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             w: adW,
             h: adH
           },
-          tagid: bidReq.placementCode,
+          tagid: rtbTagId || bidReq.placementCode,
           bidfloor: bidFloor,
           secure: secureValue()
         }],
@@ -126,12 +128,18 @@ var MemeGenAdapter = function MemeGenAdapter() {
     var pageDomain = utils.getBidIdParameter('pageDomain', bidReq.params);
     var ip = utils.getBidIdParameter('ip', bidReq.params);
 
-    if (pageUrl && bidRequest.site) {
-      bidRequest.site.page = pageUrl;
-    }
+    if (bidRequest.site) {
+      if (pageUrl) {
+        bidRequest.site.page = pageUrl;
+      }
 
-    if (pageDomain && bidRequest.site) {
-      bidRequest.site.domain = pageDomain;
+      if (pageDomain) {
+        bidRequest.site.domain = pageDomain;
+      }
+
+      if (rtbSiteId) {
+        bidRequest.site.id = rtbSiteId;
+      }
     }
 
     if (ip && bidRequest.device) {
