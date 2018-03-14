@@ -128,7 +128,7 @@ var EbdrAdapter = function EbdrAdapter() {
     }
 
     if (!ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
-      return noBidResponse(ebdrResponseObj, defaultPlacementForBadBid);
+      return noBidResponse(ebdrResponseObj);
     }
 
     for (key in ebdrResponseObj.seatbid[0].bid) {
