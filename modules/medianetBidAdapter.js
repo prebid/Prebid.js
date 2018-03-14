@@ -1,63 +1,11 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
-import events from 'src/events';
-import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
-import * as url from 'src/url';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
-const EVENT_PIXEL_URL = 'lg1.media.net/log';
-const { BID_TIMEOUT } = CONSTANTS.EVENTS;
-const TIMEOUT_EVENT_NAME = 'client_timeout';
 
-let bidParams = {};
-
-events.on(BID_TIMEOUT, function (timedOutBidders) {
-  if (timedOutBidders.indexOf(BIDDER_CODE) !== -1) {
-    let eventData = {
-      name: TIMEOUT_EVENT_NAME,
-      value: config.getConfig('bidderTimeout')
-    };
-    logEvent(eventData).trigger();
-  }
-});
-
-function logEvent (event) {
-  function generateUrl(data) {
-    let getParams = {
-      protocol: 'https',
-      hostname: EVENT_PIXEL_URL,
-      search: getLoggingData(data)
-    };
-
-    return url.format(getParams);
-  }
-
-  function getLoggingData(data) {
-    let params = {};
-
-    params.logid = 'kfk';
-    params.evtid = 'projectevents';
-    params.project = 'prebid';
-    params.cid = bidParams.cid || '';
-    params.dn = utils.getTopWindowLocation().host || '';
-    params.requrl = utils.getTopWindowUrl() || '';
-    params.event = event.name;
-    params.value = event.value || '';
-    params.pbver = $$PREBID_GLOBAL$$.version;
-
-    return params;
-  }
-
-  function trigger(data) {
-    utils.triggerPixel(generateUrl(data));
-  }
-
-  return {
-    trigger: trigger
-  }
-}
+$$PREBID_GLOBAL$$.medianetGlobals = {};
 
 function siteDetails(site) {
   site = site || {};
@@ -118,7 +66,6 @@ function slotParams(bidRequest) {
 }
 
 function generatePayload(bidRequests) {
-  bidParams = bidRequests[0].params;
   return {
     site: siteDetails(bidRequests[0].params.site),
     ext: configuredParams(bidRequests[0].params),
@@ -161,7 +108,7 @@ export const spec = {
       utils.logError(`${BIDDER_CODE} : cid should be a string`);
       return false;
     }
-
+    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
     return true;
   },
 
@@ -193,13 +140,6 @@ export const spec = {
     if (!serverResponse || !serverResponse.body) {
       utils.logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
-    }
-
-    if (serverResponse.body.ext && serverResponse.body.ext.nbr) {
-      let eventData = {
-        name: serverResponse.body.ext.nbr,
-      };
-      logEvent(eventData).trigger();
     }
 
     let bids = serverResponse.body.bidList;
