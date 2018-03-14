@@ -26,6 +26,8 @@ function buildRequests(bidReqs) {
 
   const bidRequest = {
     id: firstBid.auctionId,
+    ver: 1,
+    prebidVer: `$prebid.version$`,
     transactionId: firstBid.transactionId,
     currency: config.getConfig('currency.adServerCurrency'),
     timeout: config.getConfig('bidderTimeout'),
@@ -45,10 +47,10 @@ function buildRequests(bidReqs) {
 }
 
 function interpretResponse(serverResponse, request) {
-  if (!serverResponse.body.length) {
+  if (!serverResponse.body.bids) {
     return [];
   }
-  return serverResponse.body.map((bid) => {
+  return serverResponse.body.bids.map((bid) => {
     return {
       requestId: bid.requestId,
       cpm: bid.cpm,

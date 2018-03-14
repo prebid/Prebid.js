@@ -43,7 +43,8 @@ describe('OnePlanetOnlyAdapter', () => {
     it('Returns valid data if array of bids is valid', () => {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('id', 'transactionId', 'currency', 'timeout', 'siteId', 'domain', 'page', 'referrer', 'adUnits');
+      expect(data).to.have.all.keys('id', 'ver', 'prebidVer', 'transactionId', 'currency', 'timeout', 'siteId',
+        'domain', 'page', 'referrer', 'adUnits');
 
       let adUnit = data.adUnits[0];
       expect(adUnit).to.have.keys('id', 'bidId', 'sizes');
@@ -60,16 +61,18 @@ describe('OnePlanetOnlyAdapter', () => {
   describe('interpretResponse', () => {
     it('Should interpret banner response', () => {
       const serverResponse = {
-        body: [{
-          requestId: '51ef8751f9aead',
-          cpm: 0.4,
-          width: 300,
-          height: 250,
-          creativeId: '2',
-          currency: 'USD',
-          ad: 'Test',
-          ttl: 120,
-        }]
+        body: {
+          bids: [{
+            requestId: '51ef8751f9aead',
+            cpm: 0.4,
+            width: 300,
+            height: 250,
+            creativeId: '2',
+            currency: 'USD',
+            ad: 'Test',
+            ttl: 120,
+          }]
+        }
       };
       let bannerResponses = spec.interpretResponse(serverResponse);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
