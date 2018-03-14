@@ -155,7 +155,11 @@
               },
               "bidwonStatus": {
                 "description": "Whether the bid was successfully rendered or not",
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "success",
+                  "error"
+                ]
               }
             }
           }
