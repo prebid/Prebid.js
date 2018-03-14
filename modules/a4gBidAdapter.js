@@ -36,7 +36,7 @@ export const spec = {
       if (!bidId) {
         bidId = bid.bidId;
       }
-      idParams.push(bid.placementCode);
+      idParams.push(bid.adUnitCode);
       sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
