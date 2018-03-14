@@ -340,7 +340,8 @@ const ANALYTICS_MESSAGE = {
           'height': 480
         },
         'mediaType': 'video'
-      }
+      },
+      'bidwonStatus': 'success'
     },
     {
       'bidder': 'rubicon',
@@ -374,7 +375,8 @@ const ANALYTICS_MESSAGE = {
           'height': 90
         },
         'mediaType': 'banner'
-      }
+      },
+      'bidwonStatus': 'success'
     }
   ]
 };

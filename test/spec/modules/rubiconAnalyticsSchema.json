@@ -131,7 +131,8 @@
               "accountId",
               "samplingFactor",
               "mediaTypes",
-              "adUnitCode"
+              "adUnitCode",
+              "bidwonStatus"
             ],
             "properties": {
               "transactionId": {
@@ -151,6 +152,10 @@
               },
               "adserverTargeting": {
                 "$ref": "#/definitions/adserverTargeting"
+              },
+              "bidwonStatus": {
+                "description": "Whether the bid was successfully rendered or not",
+                "type": "string"
               }
             }
           }

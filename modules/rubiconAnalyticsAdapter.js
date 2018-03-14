@@ -116,9 +116,10 @@ function sendMessage(auctionId, bidWonId) {
     return Object.assign(formatBid(bid), _pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
-      'mediaTypes',
-      'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode])
+      'mediaTypes'
     ]), {
+      adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode]),
+      bidwonStatus: 'success', // hard-coded for now
       accountId,
       samplingFactor
     });
