@@ -91,6 +91,7 @@
     "mkpath": "^1.0.0",
     "mocha": "^1.21.4",
     "mock-fs": "^3.11.0",
+    "number-is-nan": "1.0.1",
     "nightwatch": "^0.9.5",
     "open": "0.0.5",
     "proxyquire": "^1.7.10",
