@@ -5,6 +5,8 @@ import { config } from 'src/config';
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
 
+$$PREBID_GLOBAL$$.medianetGlobals = {};
+
 function siteDetails(site) {
   site = site || {};
 
@@ -106,6 +108,8 @@ export const spec = {
       utils.logError(`${BIDDER_CODE} : cid should be a string`);
       return false;
     }
+
+    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
 
     return true;
   },
