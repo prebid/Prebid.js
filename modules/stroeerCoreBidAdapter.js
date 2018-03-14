@@ -211,7 +211,7 @@ const StroeerCoreAdapter = function (win = window) {
       const invalidBids = allBids.filter(bid => !validBids.includes(bid));
 
       const requestBody = {
-        id: params.bidderRequestId,
+        id: params.requestId,
         bids: [],
         ref: getPageReferer(),
         ssl: isSecureWindow(),

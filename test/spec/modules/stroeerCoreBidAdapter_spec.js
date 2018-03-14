@@ -20,7 +20,10 @@ function assertNoFillBid(bidObject, bidId) {
   assert.notProperty(bidObject, 'cpm');
 }
 
+const REQUEST_ID = utils.getUniqueIdentifierStr();
+
 const buildBidderRequest = () => ({
+  requestId: REQUEST_ID,
   bidderRequestId: 'bidder-request-id-123',
   bidderCode: 'stroeerCore',
   timeout: 5000,
@@ -49,6 +52,7 @@ const buildBidderRequest = () => ({
 });
 
 const buildBidderRequestSecondPriceAuction = () => ({
+  requestId: REQUEST_ID,
   bidderRequestId: 'bidder-request-id-123',
   bidderCode: 'stroeerCore',
   timeout: 5000,
@@ -246,7 +250,7 @@ describe('stroeerssp adapter', function () {
       assert.equal(expectedTimeout, 1500);
 
       const expectedJson = {
-        'id': 'bidder-request-id-123',
+        'id': REQUEST_ID,
         'timeout': expectedTimeout,
         'ref': 'http://www.google.com/?query=monkey',
         'mpa': true,
@@ -276,6 +280,7 @@ describe('stroeerssp adapter', function () {
         clock.tick(13500);
 
         const bidderRequestTwoValidOneInvalid = ({
+          requestId: REQUEST_ID,
           bidderRequestId: 'bidder-request-id-124',
           bidderCode: 'stroeerCore',
           timeout: 5000,
@@ -341,7 +346,7 @@ describe('stroeerssp adapter', function () {
         assert.equal(expectedTimeout, 1500);
 
         const expectedJson = {
-          'id': 'bidder-request-id-124',
+          'id': REQUEST_ID,
           'timeout': expectedTimeout,
           'ref': 'http://www.google.com/?query=monkey',
           'mpa': true,
@@ -362,7 +367,7 @@ describe('stroeerssp adapter', function () {
 
       it('test an auction with explicitly set second auction type', function() {
         const expectedJsonRequestSecondAuction = {
-          'id': 'bidder-request-id-125',
+          'id': REQUEST_ID,
           'timeout': 1500,
           'ref': 'http://www.google.com/?query=monkey',
           'mpa': true,
@@ -387,6 +392,7 @@ describe('stroeerssp adapter', function () {
         clock.tick(13500);
 
         const bidderRequestSecondType = ({
+          requestId: REQUEST_ID,
           bidderRequestId: 'bidder-request-id-125',
           bidderCode: 'stroeerCore',
           timeout: 5000,
@@ -433,6 +439,7 @@ describe('stroeerssp adapter', function () {
         clock.tick(13500);
 
         const bidderRequestSecondType = ({
+          requestId: REQUEST_ID,
           bidderRequestId: 'bidder-request-id-125',
           bidderCode: 'stroeerCore',
           timeout: 5000,
@@ -469,11 +476,10 @@ describe('stroeerssp adapter', function () {
         sinon.assert.calledTwice(bidmanager.addBidResponse);
       });
 
-      /* This test no longer works as the SSAT is part of the bid params
       const invalidTypeSamples = [-1, 0, 3, 4];
       invalidTypeSamples.forEach((type) => {
         it(`invalid yieldlove auction type ${type} set on server`, function() {
-
+          bidderRequest.bids.forEach(b => b.params.ssat = type);
           clock.tick(13500);
 
           fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
@@ -482,8 +488,6 @@ describe('stroeerssp adapter', function () {
 
           assert.equal(fakeServer.requests.length, 0);
 
-          const request = fakeServer.requests[0];
-
           const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
 
           assert.equal(expectedTimeout, 1500);
@@ -491,7 +495,7 @@ describe('stroeerssp adapter', function () {
           assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1');
           assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
         })
-      }); */
+      });
     });
 
     describe('optional fields', () => {
