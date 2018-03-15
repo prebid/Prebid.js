@@ -17,7 +17,7 @@ prebid_1_0_supported : true
 
 | Name | Scope    | Description                   | Example  |
 | :--- | :----    | :----------                   | :------  |
-| `aid`| required | The source ID from Vertamedia.| 324758   | 
+| `aid`| required | The source ID from Vertamedia.| 350975   | 
 
 
 ### Description
@@ -42,7 +42,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 332842
+            aid: 331133
           }
         }]
       },
@@ -59,7 +59,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 332842
+            aid: 331133
           }
         }]
       },
@@ -71,7 +71,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 324758
+            aid: 350975
           }
         }]
       }
