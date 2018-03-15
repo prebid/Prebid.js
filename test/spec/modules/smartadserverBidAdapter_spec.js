@@ -16,6 +16,7 @@ import {
 import * as utils from 'src/utils';
 
 describe('Smart ad server bid adapter tests', () => {
+  // Default params with optional ones
   var DEFAULT_PARAMS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -30,12 +31,16 @@ describe('Smart ad server bid adapter tests', () => {
       pageId: '5678',
       formatId: '90',
       target: 'test=prebid',
-      bidfloor: 0.420
+      bidfloor: 0.420,
+      bundleId: '7569',
+      appName: 'Mozilla',
+      uid: 42
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg'
   }];
 
+  // Default params without optional ones
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -91,6 +96,9 @@ describe('Smart ad server bid adapter tests', () => {
     expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
     expect(requestContent).to.have.property('pageDomain').and.to.equal(utils.getTopWindowUrl());
     expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+    expect(requestContent).to.have.property('bundleId').and.to.equal('7569');
+    expect(requestContent).to.have.property('appName').and.to.equal('Mozilla');
+    expect(requestContent).to.have.property('uid').and.to.equal(42);
   });
 
   it('Verify parse response', () => {
@@ -129,24 +137,51 @@ describe('Smart ad server bid adapter tests', () => {
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
-        pageid: 123
+        pageId: 123
       }
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
-        siteid: 123
+        siteId: 123
       }
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
-        formatid: 123,
-        pageid: 234
+        formatId: 123,
+        pageId: 234
       }
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
         domain: 'www.test.com',
-        pageid: 234
+        pageId: 234
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        domain: 'www.test.com',
+        formatId: 123,
+        siteId: 456,
+        pageId: 234
+      }
+    })).to.equal(true);
+    expect(spec.isBidRequestValid({
+      params: {
+        domain: 'www.test.com',
+        formatId: 123,
+        siteId: 456,
+        pageId: 234,
+        bundleId: 789,
+        appName: 'Mozilla'
+      }
+    })).to.equal(true);
+    expect(spec.isBidRequestValid({
+      params: {
+        domain: 'www.test.com',
+        formatId: 123,
+        pageId: 234,
+        bundleId: 789,
+        appName: 'Mozilla'
       }
     })).to.equal(false);
   });

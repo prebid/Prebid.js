@@ -39,6 +39,9 @@ export const spec = {
         currencyCode: config.getConfig('currency.adServerCurrency'),
         bidfloor: bid.params.bidfloor || 0.0,
         targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
+        bundleId: bid.params.bundleId && bid.params.bundleId != '' ? bid.params.bundleId : undefined,
+        appName: bid.params.appName && bid.params.appName != '' ? bid.params.appName : undefined,
+        uid: bid.params.uid && bid.params.uid != '' ? bid.params.uid : undefined,
         tagId: bid.adUnitCode,
         sizes: bid.sizes.map(size => ({
           w: size[0],
