@@ -36,7 +36,7 @@ export const spec = {
       if (!bidId) {
         bidId = bid.bidId;
       }
-      idParams.push(bid.placementCode);
+      idParams.push(bid.adUnitCode);
       sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
@@ -71,7 +71,8 @@ export const spec = {
         currency: A4G_CURRENCY,
         netRevenue: true,
         ttl: A4G_TTL,
-        ad: response.ad
+        ad: response.ad,
+        adId: response.id
       };
       bidResponses.push(bidResponse);
     });

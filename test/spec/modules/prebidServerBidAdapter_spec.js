@@ -344,6 +344,7 @@ describe('S2S Adapter', () => {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
+      config.resetConfig();
     });
 
     afterEach(() => xhr.restore());
@@ -393,6 +394,64 @@ describe('S2S Adapter', () => {
       expect(requestBid.digiTrust).to.not.exist;
 
       delete window.DigiTrust;
+    });
+
+    it('adds device and app objects to request', () => {
+      const _config = { s2sConfig: CONFIG,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
+    it('adds device and app objects to request for ORTB', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      }
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
+    it('adds site if app is not present', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+      }
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.site).to.exist.and.to.be.a('object');
+      expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
+      expect(requestBid.site.page).to.exist.and.to.be.a('string');
     });
   });
 

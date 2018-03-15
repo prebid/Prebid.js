@@ -102,7 +102,8 @@ export const spec = {
       creativeId: responseBody.creativeId,
       netRevenue: true,
       currency: CURRENCIES[bid.data.env],
-      vastUrl: responseBody.url
+      vastUrl: responseBody.url,
+      mediaType: 'video'
     };
     responses.push(reponse);
 
