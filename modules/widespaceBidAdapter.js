@@ -2,16 +2,17 @@ import { version } from '../package.json';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import {
+  cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput,
-  getTopWindowLocation
+  getTopWindowReferrer,
+  getTopWindowUrl
 } from 'src/utils';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
-const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-const REFERRER = getTopWindowLocation().href;
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
+const COOKIE_ENABLED = cookiesAreEnabled();
 const PBJS = window['$$PREBID_GLOBAL$$'];
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
@@ -34,7 +35,8 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let serverRequests = [];
-    const ENDPOINT_URL = location.protocol + '//' + 'engine.widespace.com/map/engine/dynadreq';
+    const ENDPOINT_URL =  `${location.protocol}//nova-dev-engine.widespace.com/map/engine/dynadreq`;
+    const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA);
     const BID_INFO = getData(LS_KEYS.BID_INFO);
     const CUST_DATA = getData(LS_KEYS.CUST_DATA);
@@ -52,18 +54,15 @@ export const spec = {
         'adUnitCode': bid.adUnitCode,
       };
       let data = {
-        'ver': '5.0.0', // remove
-        'tagType': 'dyn', // remove
-        'a': 'application/json', // remove
-        'forceAdId': '23456', // remove
-        'hb.callback': 'dummy', // remove
+        'forceAdId': '47696', // remove
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
-        'windowWidth': isInHostileIframe ? window.innerWidth : window.top.innerWidth,
-        'windowHeight': isInHostileIframe ? window.innerHeight : window.top.innerHeight,
-        'referer': REFERRER,
+        'adSpaceHttpRefUrl': getTopWindowReferrer(),
+        'referer': getTopWindowUrl(),
+        'inFrame': 1,
         'sid': bid.params.sid,
         'lcuid': LC_UID || -1,
+        'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
         'hb': '1',
         'hb.wbi': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
         'hb.cd': CUST_DATA[i] ? encodeURIComponent(JSON.stringify(CUST_DATA[i])) : '',
@@ -71,12 +70,12 @@ export const spec = {
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': `prebidjs-${version}`,
-        'hb.callbackUid': bid.bidId,
         'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''
       };
 
+      // Include demo data
       if (bid.params.demo) {
         DEMO_DATA_PARAMS.forEach((key) => {
           if (bid.params.demo[key]) {
@@ -85,17 +84,26 @@ export const spec = {
         });
       }
 
+      // Include performance data
       if (PERF_DATA[i]) {
         Object.keys(PERF_DATA[i]).forEach((perfDataKey) => {
           data[perfDataKey] = PERF_DATA[i][perfDataKey];
         });
       }
 
+      // Include connection info if available
       const CONNECTION = navigator.connection || navigator.webkitConnection;
       if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
         data['netinfo.type'] = CONNECTION.type;
         data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
       }
+
+      // Remove empty params
+      Object.keys(data).forEach((key) => {
+        if (data[key] === '' || data[key] === undefined) {
+          delete data[key];
+        }
+      });
 
       serverRequests.push({
         method: 'POST',
@@ -131,8 +139,8 @@ export const spec = {
           creativeId: bid.adId,
           currency: bid.currency,
           netRevenue: Boolean(bid.netRev),
-          ttl: bid.ttl || config.getConfig('_bidderTimeout'),
-          referrer: REFERRER,
+          ttl: bid.ttl,
+          referrer: getTopWindowReferrer(),
           ad: bid.code
         });
       }
@@ -142,18 +150,29 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    // return serverResponses.reduce((allSyncPixels, response) => {
-    //   return response.body[0].syncPixels.forEach((url) => {
-    //     allSyncPixels.push({type: 'image', url});
-    //   });
-    //   return allSyncPixels;
-    // }, []);
+    let userSyncs = [];
+    if (serverResponses) {
+      userSyncs = serverResponses.reduce((allSyncPixels, response) => {
+        (response.body[0].syncPixels || []).forEach((url) => {
+          allSyncPixels.push({type: 'image', url});
+        });
+        return allSyncPixels;
+      }, []);
+    }
+    console.log('userSyncs', userSyncs);
+    return userSyncs;
   }
 };
 
 function storeData(data, name, stringify = true) {
+  const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, stringify ? JSON.stringify(data) : data);
+    localStorage.setItem(name, value);
+    return true;
+  } else if (COOKIE_ENABLED) {
+    const theDate = new Date();
+    expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
+    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
     return true;
   }
 }
@@ -169,6 +188,16 @@ function getData(name, remove = true) {
         }
       }
     });
+  } else if (COOKIE_ENABLED) {
+    document.cookie.split(';').forEach((item) => {
+     let value = item.trim().split('=');
+     if (value[0].includes(name)) {
+       data.push(JSON.parse(value[1]));
+       if (remove) {
+         document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+       }
+     }
+    });
   }
   return data;
 }
@@ -178,6 +207,14 @@ function pixelSyncPossibility() {
   return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
+function visibleOnLoad(element) {
+  if (element && element.getBoundingClientRect) {
+    const topPos = element.getBoundingClientRect().top;
+    return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
+  };
+  return -1;
+}
+
 function getLcuid() {
   let lcuid = getData(LS_KEYS.LC_UID, false)[0];
   if (!lcuid) {
@@ -185,6 +222,7 @@ function getLcuid() {
     storeData(random, LS_KEYS.LC_UID, false);
     lcuid = getData(LS_KEYS.LC_UID, false)[0];
   }
+  console.log('lcuid', lcuid);
   return lcuid;
 }
 
