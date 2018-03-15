@@ -35,7 +35,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let serverRequests = [];
-    const ENDPOINT_URL = `${location.protocol}//nova-dev-engine.widespace.com/map/engine/dynadreq`;
+    const ENDPOINT_URL = 'https://nova-dev-engine.widespace.com/map/engine/dynadreq';
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
     const BID_INFO = getData(LS_KEYS.BID_INFO);
@@ -123,8 +123,9 @@ export const spec = {
     const successBids = serverResponse.body || [];
     let bidResponses = [];
     successBids.forEach((bid) => {
-      const bidId = bid.bidId || bid.callbackUid;
-      adUnitInfo[bidId]['reqId'] = bid.reqId;
+      if (adUnitInfo[bid.bidId]) {
+        adUnitInfo[bid.bidId]['reqId'] = bid.reqId;
+      }
       storeData({
         'perf_status': 'OK',
         'perf_reqid': bid.reqId,
@@ -132,7 +133,7 @@ export const spec = {
       }, `${LS_KEYS.PERF_DATA}${bid.reqId}`);
       if (bid.status === 'ad') {
         bidResponses.push({
-          requestId: bidId,
+          requestId: bid.bidId,
           cpm: bid.cpm,
           width: bid.width,
           height: bid.height,
@@ -149,16 +150,14 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses = []) {
     let userSyncs = [];
-    if (serverResponses) {
-      userSyncs = serverResponses.reduce((allSyncPixels, response) => {
-        (response.body[0].syncPixels || []).forEach((url) => {
-          allSyncPixels.push({type: 'image', url});
-        });
-        return allSyncPixels;
-      }, []);
-    }
+    userSyncs = serverResponses.reduce((allSyncPixels, response) => {
+      (response.body[0].syncPixels || []).forEach((url) => {
+        allSyncPixels.push({type: 'image', url});
+      });
+      return allSyncPixels;
+    }, []);
     return userSyncs;
   }
 };
