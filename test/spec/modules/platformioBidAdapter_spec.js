@@ -1,3 +1,4 @@
+
 import {expect} from 'chai';
 import {spec} from 'modules/platformioBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
@@ -154,8 +155,8 @@ describe('Platform.io Adapter Tests', () => {
           { id: 1, title: { text: 'Ad Title' } },
           { id: 2, data: { value: 'Test description' } },
           { id: 3, data: { value: 'Brand' } },
-          { id: 4, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_icon.png' } },
-          { id: 5, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_image.png' } }
+          { id: 4, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_icon.png', w: 100, h: 100 } },
+          { id: 5, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_image.png', w: 300, h: 300 } }
         ],
         link: { url: 'http://brand.com/' }
       }
@@ -182,8 +183,12 @@ describe('Platform.io Adapter Tests', () => {
     expect(nativeBid).to.not.equal(null);
     expect(nativeBid.title).to.equal('Ad Title');
     expect(nativeBid.sponsoredBy).to.equal('Brand');
-    expect(nativeBid.icon).to.equal('https://s3.amazonaws.com/adx1public/creatives_icon.png');
-    expect(nativeBid.image).to.equal('https://s3.amazonaws.com/adx1public/creatives_image.png');
+    expect(nativeBid.icon.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_icon.png');
+    expect(nativeBid.image.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_image.png');
+    expect(nativeBid.image.width).to.equal(300);
+    expect(nativeBid.image.height).to.equal(300);
+    expect(nativeBid.icon.width).to.equal(100);
+    expect(nativeBid.icon.height).to.equal(100);
     expect(nativeBid.clickUrl).to.equal(encodeURIComponent('http://brand.com/'));
     expect(nativeBid.impressionTrackers).to.have.lengthOf(1);
     expect(nativeBid.impressionTrackers[0]).to.equal('http://rtb.adx1.com/log');
@@ -194,8 +199,9 @@ describe('Platform.io Adapter Tests', () => {
   });
 
   it('Verifies supported media types', () => {
-    expect(spec.supportedMediaTypes).to.have.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('native');
+    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes[0]).to.equal('banner');
+    expect(spec.supportedMediaTypes[1]).to.equal('native');
   });
 
   it('Verifies if bid request valid', () => {

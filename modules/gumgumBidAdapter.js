@@ -14,6 +14,8 @@ let browserParams = {};
 function _getBrowserParams() {
   let topWindow
   let topScreen
+  let topUrl
+  let ggad
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -22,6 +24,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
+    topUrl = utils.getTopWindowUrl()
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -32,9 +35,13 @@ function _getBrowserParams() {
     vh: topWindow.innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
-    pu: utils.getTopWindowUrl(),
+    pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1
+  }
+  ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
+  if (ggad) {
+    browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
   }
   return browserParams
 }
@@ -75,6 +82,7 @@ function isBidRequestValid (bid) {
   switch (true) {
     case !!(params.inScreen): break;
     case !!(params.inSlot): break;
+    case !!(params.ICV): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -107,12 +115,17 @@ function buildRequests (validBidRequests) {
       data.si = parseInt(params.inSlot, 10);
       data.pi = 3;
     }
+    if (params.ICV) {
+      data.ni = parseInt(params.ICV, 10);
+      data.pi = 5;
+    }
 
     bids.push({
       id: bidId,
       tmax: timeout,
       tId: transactionId,
       pi: data.pi,
+      selector: params.selector,
       sizes: bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',

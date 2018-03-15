@@ -33,6 +33,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - All user-sync (aka pixel) activity must be registered via the provided functions
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
+- Adapters may not globally override or default the standard ad server targeting values: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
 
 ## Ticket Coordinator
 
