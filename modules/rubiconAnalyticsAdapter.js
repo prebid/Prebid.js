@@ -116,6 +116,7 @@ function sendMessage(auctionId, bidWonId) {
     return Object.assign(formatBid(bid), _pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
+      'videoAdFormat', () => bid.videoAdFormat,
       'mediaTypes'
     ]), {
       adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode]),
@@ -145,6 +146,10 @@ function sendMessage(auctionId, bidWonId) {
           'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode])
         ]);
         adUnit.bids = [];
+      }
+
+      if (bid.videoAdFormat && !adUnit.videoAdFormat) {
+        adUnit.videoAdFormat = bid.videoAdFormat;
       }
 
       // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
@@ -288,6 +293,30 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                     'siteId',
                     'zoneId'
                   ]);
+              }
+            },
+            'videoAdFormat', (_, cachedBid) => {
+              if (cachedBid.bidder === 'rubicon') {
+                return ({
+                  201: 'pre-roll',
+                  202: 'interstitial',
+                  203: 'outstream',
+                  204: 'mid-roll',
+                  205: 'post-roll',
+                  207: 'vertical'
+                })[utils.deepAccess(bid, 'params.video.size_id')];
+              } else {
+                let startdelay = parseInt(utils.deepAccess(bid, 'params.video.startdelay'), 10);
+                if (!isNaN(startdelay)) {
+                  if (startdelay > 0) {
+                    return 'mid-roll';
+                  }
+                  return ({
+                    '0': 'pre-roll',
+                    '-1': 'mid-roll',
+                    '-2': 'post-roll'
+                  })[startdelay]
+                }
               }
             },
             'adUnit', () => _pick(bid, [

@@ -213,6 +213,7 @@ const ANALYTICS_MESSAGE = {
         {
           'adUnitCode': '/19968336/header-bid-tag-0',
           'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+          'videoAdFormat': 'outstream',
           'mediaTypes': [
             'video'
           ],
@@ -323,6 +324,7 @@ const ANALYTICS_MESSAGE = {
         'siteId': '70608',
         'zoneId': '335918'
       },
+      'videoAdFormat': 'outstream',
       'mediaTypes': [
         'video'
       ],

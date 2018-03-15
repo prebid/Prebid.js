@@ -92,6 +92,9 @@
                 "mediaTypes": {
                   "$ref": "#/definitions/mediaTypes"
                 },
+                "videoAdFormat": {
+                  "$ref": "#/definitions/videoAdFormat"
+                },
                 "dimensions": {
                   "type": "array",
                   "description": "All valid sizes included in this auction (note: may be sizeConfig filtered).",
@@ -147,6 +150,9 @@
               "adUnitCode": {
                 "type": "string"
               },
+              "videoAdFormat": {
+                "$ref": "#/definitions/videoAdFormat"
+              },
               "mediaTypes": {
                 "$ref": "#/definitions/mediaTypes"
               },
@@ -186,6 +192,18 @@
         20,
         40,
         100
+      ]
+    },
+    "videoAdFormat": {
+      "type": "string",
+      "description": "This value only provided for video specifies the ad format",
+      "enum": [
+        "pre-roll",
+        "interstitial",
+        "outstream",
+        "mid-roll",
+        "post-roll",
+        "vertical"
       ]
     },
     "mediaTypes": {
@@ -234,10 +252,6 @@
         "bidId": {
           "type": "string",
           "description": "UUID representing this individual bid request in this auction."
-        },
-        "videoAdFormat": {
-          "type": "string",
-          "description": "This value only provided for video specifies the ad format"
         },
         "params": {
           "description": "A copy of the bid.params from the adUnit.bids",
