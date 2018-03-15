@@ -35,7 +35,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let serverRequests = [];
-    const ENDPOINT_URL =  `${location.protocol}//nova-dev-engine.widespace.com/map/engine/dynadreq`;
+    const ENDPOINT_URL = `${location.protocol}//nova-dev-engine.widespace.com/map/engine/dynadreq`;
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA);
     const BID_INFO = getData(LS_KEYS.BID_INFO);
@@ -159,30 +159,31 @@ export const spec = {
         return allSyncPixels;
       }, []);
     }
-    console.log('userSyncs', userSyncs);
     return userSyncs;
   }
 };
 
 function storeData(data, name, stringify = true) {
-  const value = stringify ? JSON.stringify(data) : data;
+  const value = stringify ? JSON.stringify(data) : String(data);
   if (LOCAL_STORAGE_AVAILABLE) {
     localStorage.setItem(name, value);
     return true;
   } else if (COOKIE_ENABLED) {
     const theDate = new Date();
-    expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
+    const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
     window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
     return true;
   }
 }
 
-function getData(name, remove = true) {
+function getData(name, remove = true, jsonParse = true) {
   let data = [];
+  let foundValue;
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
       if (key.includes(name)) {
-        data.push(JSON.parse(localStorage.getItem(key)));
+        foundValue = localStorage.getItem(key);
+        data.push(jsonParse ? JSON.parse(foundValue) : foundValue);
         if (remove) {
           localStorage.removeItem(key);
         }
@@ -190,13 +191,14 @@ function getData(name, remove = true) {
     });
   } else if (COOKIE_ENABLED) {
     document.cookie.split(';').forEach((item) => {
-     let value = item.trim().split('=');
-     if (value[0].includes(name)) {
-       data.push(JSON.parse(value[1]));
-       if (remove) {
-         document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
-       }
-     }
+      let value = item.split('=');
+      if (value[0].includes(name)) {
+        foundValue = value[1];
+        data.push(jsonParse ? JSON.parse(foundValue) : foundValue);
+        if (remove) {
+          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+        }
+      }
     });
   }
   return data;
@@ -216,13 +218,12 @@ function visibleOnLoad(element) {
 }
 
 function getLcuid() {
-  let lcuid = getData(LS_KEYS.LC_UID, false)[0];
+  let lcuid = getData(LS_KEYS.LC_UID, false, false)[0];
   if (!lcuid) {
     const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
-    storeData(random, LS_KEYS.LC_UID, false);
-    lcuid = getData(LS_KEYS.LC_UID, false)[0];
+    storeData(random, LS_KEYS.LC_UID, false, false);
+    lcuid = getData(LS_KEYS.LC_UID, false, false)[0];
   }
-  console.log('lcuid', lcuid);
   return lcuid;
 }
 
@@ -233,7 +234,7 @@ PBJS.onEvent('bidWon', function(bid) {
       rid = adUnitInfo[key]['adUnitCode'] === bid.adUnitCode ? adUnitInfo[key]['reqId'] : rid;
       return rid
     }, '');
-    storeData({'bidder': bid.bidder,
+    storeData({
       'reqId': reqId,
       'cpm': bid.cpm,
       'cur': bid.currency,
