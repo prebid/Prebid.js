@@ -8,6 +8,7 @@ const BIDDER_CODE = 'gamma';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['gamma'],
+  supportedMediaTypes: ['banner', 'video'],
 
   /**
    * Determines whether or not the given bid request is valid.
