@@ -17,7 +17,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
-- Add a line into the `draft release` notes for this submission. If no draft release is available, create one using [this template]( https://gist.github.com/mkendall07/c3af6f4691bed8a46738b3675cb5a479)
+- Add a line into the [draft release](https://github.com/prebid/Prebid.js/releases) notes for this submission. If no draft release is available, create one using [this template]( https://gist.github.com/mkendall07/c3af6f4691bed8a46738b3675cb5a479)
 
 ### New Adapter or updates to adapter process
 - Follow steps above for general review process. In addition, please verify the following:
@@ -33,6 +33,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - All user-sync (aka pixel) activity must be registered via the provided functions
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
+- Adapters may not globally override or default the standard ad server targeting values: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
 
 ## Ticket Coordinator
 

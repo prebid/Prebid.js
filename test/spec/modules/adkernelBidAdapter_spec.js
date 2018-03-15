@@ -130,14 +130,14 @@ describe('Adkernel adapter', () => {
   describe('banner request building', () => {
     let bidRequest;
     before(() => {
-      let wmock = sinon.stub(utils, 'getTopWindowLocation', () => ({
+      let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
         protocol: 'https:',
         hostname: 'example.com',
         host: 'example.com',
         pathname: '/index.html',
         href: 'https://example.com/index.html'
       }));
-      let dntmock = sinon.stub(utils, 'getDNT', () => true);
+      let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => true);
       let request = spec.buildRequests([bid1_zone1])[0];
       bidRequest = JSON.parse(request.data.r);
       wmock.restore();

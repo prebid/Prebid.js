@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-const BIDDER_CODE = 'danmarketplace';
+const BIDDER_CODE = 'danmarket';
 const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
 const TIME_TO_LIVE = 360;
 const ADAPTER_SYNC_URL = '//ads.danmarketplace.com/push_sync';
@@ -24,7 +24,7 @@ const LOG_ERROR_MESS = {
 export const spec = {
   code: BIDDER_CODE,
 
-  aliases: ['DANMarketplace', 'DAN_Marketplace'],
+  aliases: ['DANMarketplace', 'DAN_Marketplace', 'danmarketplace'],
 
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;

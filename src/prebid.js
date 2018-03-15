@@ -223,6 +223,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
+        const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+        utils.insertElement(creativeComment, doc, 'body');
+
         if (renderer && renderer.url) {
           renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
@@ -231,6 +234,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else if (adUrl) {
           const iframe = utils.createInvisibleIframe();
           iframe.height = height;
@@ -241,6 +245,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
           utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }

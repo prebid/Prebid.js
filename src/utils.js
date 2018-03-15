@@ -2,7 +2,7 @@ import { config } from './config';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-var CONSTANTS = require('./constants');
+const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
@@ -469,6 +469,12 @@ exports.triggerPixel = function (url) {
   img.src = url;
 };
 
+exports.callBurl = function({ source, burl }) {
+  if (source === CONSTANTS.S2S.SRC && burl) {
+    exports.triggerPixel(burl);
+  }
+};
+
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
@@ -671,8 +677,13 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function cookiesAreEnabled() {
+export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+}
+export function cookiesAreEnabled() {
+  if (exports.checkCookieSupport()) {
     return true;
   }
   window.document.cookie = 'prebid.cookieTest';

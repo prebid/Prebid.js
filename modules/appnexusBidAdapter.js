@@ -189,7 +189,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    appnexus: {
+      buyerMemberId: rtbBid.buyer_member_id
+    }
   };
 
   if (rtbBid.rtb.video) {
@@ -281,7 +284,7 @@ function bidToTag(bid) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = getSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes);
   }
   if (bid.params.supplyType) {
     tag.supply_type = bid.params.supplyType;
