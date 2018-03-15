@@ -19,7 +19,7 @@ describe('the rubicon adapter', () => {
     let bid = bidderRequest.bids[0];
 
     bid.mediaTypes = {
-      video:{
+      video: {
         context: 'instream'
       }
     };
@@ -77,7 +77,7 @@ describe('the rubicon adapter', () => {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
-        context: "outstream"
+        context: 'outstream'
       },
     };
     bid.params.video = {
@@ -98,7 +98,7 @@ describe('the rubicon adapter', () => {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
-        context: "instream"
+        context: 'instream'
       },
     };
     bid.params.video = {
