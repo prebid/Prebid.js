@@ -41,7 +41,7 @@ export const spec = {
         targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
         bundleId: bid.params.bundleId && bid.params.bundleId != '' ? bid.params.bundleId : undefined,
         appName: bid.params.appName && bid.params.appName != '' ? bid.params.appName : undefined,
-        uid: bid.params.uid && bid.params.uid != '' ? bid.params.uid : undefined,
+        uid: bid.params.uid || 0,
         tagId: bid.adUnitCode,
         sizes: bid.sizes.map(size => ({
           w: size[0],
