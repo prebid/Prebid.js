@@ -37,9 +37,9 @@ export const spec = {
     let serverRequests = [];
     const ENDPOINT_URL = `${location.protocol}//nova-dev-engine.widespace.com/map/engine/dynadreq`;
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-    const PERF_DATA = getData(LS_KEYS.PERF_DATA);
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
     const BID_INFO = getData(LS_KEYS.BID_INFO);
-    const CUST_DATA = getData(LS_KEYS.CUST_DATA);
+    const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
     const LC_UID = getLcuid();
 
     let isInHostileIframe = false;
@@ -54,7 +54,7 @@ export const spec = {
         'adUnitCode': bid.adUnitCode,
       };
       let data = {
-        'forceAdId': '47696', // remove
+        'forceAdId': '47696',
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
@@ -64,8 +64,8 @@ export const spec = {
         'lcuid': LC_UID || -1,
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
         'hb': '1',
-        'hb.wbi': BID_INFO[i] ? encodeURIComponent(JSON.stringify(BID_INFO[i])) : '',
-        'hb.cd': CUST_DATA[i] ? encodeURIComponent(JSON.stringify(CUST_DATA[i])) : '',
+        'hb.wbi': BID_INFO[i] ? encodedParamValue(BID_INFO[i]) : '',
+        'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
@@ -164,7 +164,7 @@ export const spec = {
 };
 
 function storeData(data, name, stringify = true) {
-  const value = stringify ? JSON.stringify(data) : String(data);
+  const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
     localStorage.setItem(name, value);
     return true;
@@ -176,14 +176,12 @@ function storeData(data, name, stringify = true) {
   }
 }
 
-function getData(name, remove = true, jsonParse = true) {
+function getData(name, remove = true) {
   let data = [];
-  let foundValue;
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
       if (key.includes(name)) {
-        foundValue = localStorage.getItem(key);
-        data.push(jsonParse ? JSON.parse(foundValue) : foundValue);
+        data.push(localStorage.getItem(key));
         if (remove) {
           localStorage.removeItem(key);
         }
@@ -193,8 +191,7 @@ function getData(name, remove = true, jsonParse = true) {
     document.cookie.split(';').forEach((item) => {
       let value = item.split('=');
       if (value[0].includes(name)) {
-        foundValue = value[1];
-        data.push(jsonParse ? JSON.parse(foundValue) : foundValue);
+        data.push(value[1]);
         if (remove) {
           document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
         }
@@ -214,17 +211,22 @@ function visibleOnLoad(element) {
     const topPos = element.getBoundingClientRect().top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   };
-  return -1;
+  return '';
 }
 
 function getLcuid() {
-  let lcuid = getData(LS_KEYS.LC_UID, false, false)[0];
+  let lcuid = getData(LS_KEYS.LC_UID, false)[0];
   if (!lcuid) {
     const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
     storeData(random, LS_KEYS.LC_UID, false, false);
-    lcuid = getData(LS_KEYS.LC_UID, false, false)[0];
+    lcuid = getData(LS_KEYS.LC_UID, false)[0];
   }
   return lcuid;
+}
+
+function encodedParamValue(value) {
+  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
+  return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 
 PBJS.onEvent('bidWon', function(bid) {
