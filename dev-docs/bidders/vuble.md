@@ -31,17 +31,17 @@ var adUnits = [
     {
         code: 'test-vuble-instream',
         sizes: [[640, 360]],
+        mediaTypes: {
+            video: {
+                context: 'instream'
+            }
+        },
         bids: [
             {
                 bidder: 'vuble',
-                mediaTypes: {
-                    video: {
-                        context: 'instream'
-                    }
-                },
                 params: {
                     env: 'net',
-                    pubId: '3',
+                    pubId: 18,
                     zoneId: '12345',
                     referrer: "http://www.vuble.tv/",
                     floorPrice: 5.00
