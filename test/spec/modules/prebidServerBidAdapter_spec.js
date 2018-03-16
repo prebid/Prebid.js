@@ -480,6 +480,36 @@ describe('S2S Adapter', () => {
         }
       });
     });
+
+    it('adds dynamic aliases to request', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      const alias = 'foobar';
+      const aliasBidder = {
+        bidder: alias,
+        params: { placementId: '123456' }
+      };
+
+      const request = Object.assign({}, REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      // TODO: stub this
+      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias);
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          aliases: {
+            [alias]: 'appnexus'
+          }
+        }
+      });
+    });
   });
 
   describe('response handler', () => {
