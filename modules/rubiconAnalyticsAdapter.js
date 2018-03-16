@@ -27,7 +27,7 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
-const ENDPOINT = '//localhost:9999/test';
+const ENDPOINT = '//localhost:3000/event';
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
@@ -119,7 +119,7 @@ function sendMessage(auctionId, bidWonId) {
       'videoAdFormat', () => bid.videoAdFormat,
       'mediaTypes'
     ]), {
-      adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode]),
+      adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
       bidwonStatus: 'success', // hard-coded for now
       accountId,
       samplingFactor
@@ -143,7 +143,7 @@ function sendMessage(auctionId, bidWonId) {
           'transactionId',
           'mediaTypes',
           'dimensions',
-          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode])
+          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
         ]);
         adUnit.bids = [];
       }
@@ -207,11 +207,14 @@ function sendMessage(auctionId, bidWonId) {
 
 function parseBidResponse(bid) {
   return _pick(bid, [
-    'bidPriceUSD', () => {
+    'bidPriceUSD', (value) => {
+      if (value) {
+        return value;
+      }
       if (bid.currency === 'USD') {
         return bid.cpm;
       }
-      // TODO: throw error or something if not USD?
+      // TODO: throw error or something if not USD and currency module wasn't present?
     },
     'dealId',
     'status',

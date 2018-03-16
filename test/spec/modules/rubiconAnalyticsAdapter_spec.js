@@ -555,7 +555,7 @@ describe('rubicon analytics adapter', () => {
       expect(requests.length).to.equal(1);
       let request = requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/test');
+      expect(request.url).to.equal('//localhost:3000/event');
 
       let message = JSON.parse(request.requestBody);
       validate(message);

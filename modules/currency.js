@@ -184,6 +184,16 @@ function wrapFunction(fn, context, params) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
         }
+
+        // used for analytics
+        if (bid.currency === 'USD') {
+          bid.bidPriceUSD = bid.cpm;
+        } else if (bid.originalCurrency === 'USD') {
+          bid.bidPriceUSD = bid.originalCpm;
+        } else {
+          conversion = getCurrencyConversion(bid.originalCurrency, 'USD');
+          bid.bidPriceUSD = (parseFloat(bid.originalCpm) * conversion).toFixed(3);
+        }
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = bidfactory.createBid(STATUS.NO_BID, {
@@ -196,7 +206,7 @@ function wrapFunction(fn, context, params) {
   };
 }
 
-function getCurrencyConversion(fromCurrency) {
+function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
 
@@ -209,11 +219,9 @@ function getCurrencyConversion(fromCurrency) {
     } else {
       throw new Error('Prebid currency support has not been enabled and fromCurrency is not USD');
     }
-  } else if (fromCurrency === adServerCurrency) {
+  } else if (fromCurrency === toCurrency) {
     conversionRate = 1;
   } else {
-    var toCurrency = adServerCurrency;
-
     if (fromCurrency in currencyRates.conversions) {
       // using direct conversion rate from fromCurrency to toCurrency
       rates = currencyRates.conversions[fromCurrency];
