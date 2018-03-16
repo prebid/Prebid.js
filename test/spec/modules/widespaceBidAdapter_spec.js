@@ -150,6 +150,9 @@ describe('+widespaceAdatperTest', () => {
 
       const userSync_test4 = spec.getUserSyncs();
       expect(Array.isArray(userSync_test4)).to.equal(true);
+
+      const userSync_test5 = spec.getUserSyncs({}, []);
+      expect(Array.isArray(userSync_test5)).to.equal(true);
     });
   });
 });

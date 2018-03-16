@@ -5,8 +5,7 @@ import {
   cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput,
-  getTopWindowReferrer,
-  getTopWindowUrl
+  getTopWindowReferrer
 } from 'src/utils';
 
 const BIDDER_CODE = 'widespace';
@@ -30,12 +29,15 @@ export const spec = {
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
-    return bid.params && String(bid.params.sid).length > 9;
+    if (bid.params && bid.params.sid) {
+      return true;
+    }
+    return false;
   },
 
   buildRequests: function(validBidRequests) {
     let serverRequests = [];
-    const ENDPOINT_URL = 'https://nova-dev-engine.widespace.com/map/engine/dynadreq';
+    const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
     const BID_INFO = getData(LS_KEYS.BID_INFO);
@@ -53,12 +55,12 @@ export const spec = {
       adUnitInfo[bid.bidId] = {
         'adUnitCode': bid.adUnitCode,
       };
+
       let data = {
-        'forceAdId': '47696',
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
-        'referer': getTopWindowUrl(),
+        'referer': (isInHostileIframe ? window : window.top).location.href.split('#')[0],
         'inFrame': 1,
         'sid': bid.params.sid,
         'lcuid': LC_UID || -1,
@@ -98,6 +100,14 @@ export const spec = {
         data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
       }
 
+      // Include debug data when available
+      if (!isInHostileIframe) {
+        const DEBUG_AD = (window.top.location.hash.split('&').find((val) => {
+          return val.includes('WS_DEBUG_FORCEADID');
+        }) || '').split('=')[1];
+        data.forceAdId = DEBUG_AD;
+      }
+
       // Remove empty params
       Object.keys(data).forEach((key) => {
         if (data[key] === '' || data[key] === undefined) {
@@ -110,7 +120,7 @@ export const spec = {
         options: {
           contentType: 'application/x-www-form-urlencoded'
         },
-        url: ENDPOINT_URL,
+        url: REQUEST_SERVER_URL,
         data: parseQueryStringParameters(data)
       });
     });
@@ -153,9 +163,11 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses = []) {
     let userSyncs = [];
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
-      (response.body[0].syncPixels || []).forEach((url) => {
-        allSyncPixels.push({type: 'image', url});
-      });
+      if (response && response.body && response.body[0]) {
+        (response.body[0].syncPixels || []).forEach((url) => {
+          allSyncPixels.push({type: 'image', url});
+        });
+      }
       return allSyncPixels;
     }, []);
     return userSyncs;
@@ -226,6 +238,11 @@ function getLcuid() {
 function encodedParamValue(value) {
   const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
+}
+
+function getEngineUrl() {
+  const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
+  return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
 }
 
 PBJS.onEvent('bidWon', function(bid) {
