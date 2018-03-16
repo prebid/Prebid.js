@@ -1,5 +1,3 @@
-'use strict'
-
 import * as utils from 'src/utils'
 import { config } from 'src/config'
 import { registerBidder } from 'src/adapters/bidderFactory'
@@ -63,7 +61,7 @@ export const spec = {
     var bidResponse = {}
     var isCorrectSize = false
     var isCorrectCPM = true
-    var CPM
+    var cpm
     var minCPM
     var maxCPM
     var width
@@ -71,17 +69,16 @@ export const spec = {
 
     serverResponse = serverResponse.body
     if (serverResponse && serverResponse.status === 'SUCCESS' && bidObj) {
-      CPM = serverResponse.cpm
+      cpm = serverResponse.cpm
       minCPM = utils.getBidIdParameter('minCPM', bidObj.params)
       maxCPM = utils.getBidIdParameter('maxCPM', bidObj.params)
       width = parseInt(serverResponse.width)
       height = parseInt(serverResponse.height)
-      console.log(serverResponse.cpm)
 
       // Ensure response CPM is within the given bounds
-      if (minCPM !== '' && CPM < parseFloat(minCPM)) {
+      if (minCPM !== '' && cpm < parseFloat(minCPM)) {
         isCorrectCPM = false
-      } else if (maxCPM !== '' && CPM > parseFloat(maxCPM)) {
+      } else if (maxCPM !== '' && cpm > parseFloat(maxCPM)) {
         isCorrectCPM = false
       }
 
@@ -93,9 +90,8 @@ export const spec = {
       })
       if (isCorrectCPM && isCorrectSize) {
         bidResponse.requestId = bidObj.bidId
-        bidResponse.bidderCode = spec.code
         bidResponse.creativeId = serverResponse.placement_id
-        bidResponse.cpm = CPM
+        bidResponse.cpm = cpm
         bidResponse.width = width
         bidResponse.height = height
         bidResponse.ad = serverResponse.ad_code
@@ -104,6 +100,10 @@ export const spec = {
         bidResponse.ttl = config.getConfig('_bidderTimeout')
         bidResponse.referrer = utils.getTopWindowUrl()
         bidResponses.push(bidResponse)
+      } else if (!isCorrectCPM) {
+        utils.logWarn('CPM did not meet minCPM/maxCPM requirements.')
+      } else {
+        utils.logWarn('Returned ad is of a different size to that requested.')
       }
     }
     return bidResponses
