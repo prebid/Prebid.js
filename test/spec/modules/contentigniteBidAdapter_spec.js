@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec } from 'modules/contentigniteBidAdapter'
+import { expect } from 'chai';
+import { spec } from '../../../modules/contentigniteBidAdapter';
 
 describe('Content Ignite adapter', () => {
-  let bidRequests
+  let bidRequests;
 
   beforeEach(() => {
     bidRequests = [
@@ -22,45 +22,45 @@ describe('Content Ignite adapter', () => {
         bidderRequestId: '1c56ad30b9b8ca8',
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
-    ]
-  })
+    ];
+  });
 
   describe('implementation', () => {
     describe('for requests', () => {
       it('should accept valid bid', () => {
-        let validBid = {
+        const validBid = {
             bidder: 'contentignite',
             params: {
               accountID: '168237',
               zoneID: '299680'
             }
           },
-          isValid = spec.isBidRequestValid(validBid)
+          isValid = spec.isBidRequestValid(validBid);
 
-        expect(isValid).to.equal(true)
-      })
+        expect(isValid).to.equal(true);
+      });
 
       it('should reject invalid bid', () => {
-        let invalidBid = {
+        const invalidBid = {
             bidder: 'contentignite',
             params: {
               accountID: '168237'
             }
           },
-          isValid = spec.isBidRequestValid(invalidBid)
+          isValid = spec.isBidRequestValid(invalidBid);
 
-        expect(isValid).to.equal(false)
-      })
+        expect(isValid).to.equal(false);
+      });
 
       it('should set the keyword parameter', () => {
-        let requests = spec.buildRequests(bidRequests),
-          requestURL = requests[0].url
+        const requests = spec.buildRequests(bidRequests),
+          requestURL = requests[0].url;
 
-        expect(requestURL).to.have.string(';kw=business;')
-      })
+        expect(requestURL).to.have.string(';kw=business;');
+      });
 
       it('should increment the count for the same zone', () => {
-        let bidRequests = [
+        const bidRequests = [
             {
               sizes: [[728, 90]],
               bidder: 'contentignite',
@@ -80,16 +80,16 @@ describe('Content Ignite adapter', () => {
           ],
           requests = spec.buildRequests(bidRequests),
           firstRequest = requests[0].url,
-          secondRequest = requests[1].url
+          secondRequest = requests[1].url;
 
-        expect(firstRequest).to.have.string(';place=0;')
-        expect(secondRequest).to.have.string(';place=1;')
-      })
-    })
+        expect(firstRequest).to.have.string(';place=0;');
+        expect(secondRequest).to.have.string(';place=1;');
+      });
+    });
 
     describe('bid responses', () => {
       it('should return complete bid response', () => {
-        let serverResponse = {
+        const serverResponse = {
             body: {
               status: 'SUCCESS',
               account_id: 107878,
@@ -105,21 +105,19 @@ describe('Content Ignite adapter', () => {
           },
           bids = spec.interpretResponse(serverResponse, {
             bidRequest: bidRequests[0]
-          })
+          });
 
-        expect(bids).to.be.lengthOf(1)
-
-        expect(bids[0].bidderCode).to.equal('contentignite')
-        expect(bids[0].cpm).to.equal(0.1)
-        expect(bids[0].width).to.equal(728)
-        expect(bids[0].height).to.equal(90)
-        expect(bids[0].currency).to.equal('USD')
-        expect(bids[0].netRevenue).to.equal(true)
-        expect(bids[0].ad).to.have.length.above(1)
-      })
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].cpm).to.equal(0.1);
+        expect(bids[0].width).to.equal(728);
+        expect(bids[0].height).to.equal(90);
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].ad).to.have.length.above(1);
+      });
 
       it('should return empty bid response', () => {
-        let serverResponse = {
+        const serverResponse = {
             status: 'NO_ELIGIBLE_ADS',
             zone_id: 299680,
             width: 728,
@@ -128,13 +126,13 @@ describe('Content Ignite adapter', () => {
           },
           bids = spec.interpretResponse(serverResponse, {
             bidRequest: bidRequests[0]
-          })
+          });
 
-        expect(bids).to.be.lengthOf(0)
-      })
+        expect(bids).to.be.lengthOf(0);
+      });
 
       it('should return empty bid response on incorrect size', () => {
-        let serverResponse = {
+        const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
             zone_id: 299680,
@@ -145,13 +143,13 @@ describe('Content Ignite adapter', () => {
           },
           bids = spec.interpretResponse(serverResponse, {
             bidRequest: bidRequests[0]
-          })
+          });
 
-        expect(bids).to.be.lengthOf(0)
-      })
+        expect(bids).to.be.lengthOf(0);
+      });
 
       it('should return empty bid response with CPM too low', () => {
-        let serverResponse = {
+        const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
             zone_id: 299680,
@@ -162,13 +160,13 @@ describe('Content Ignite adapter', () => {
           },
           bids = spec.interpretResponse(serverResponse, {
             bidRequest: bidRequests[0]
-          })
+          });
 
-        expect(bids).to.be.lengthOf(0)
-      })
+        expect(bids).to.be.lengthOf(0);
+      });
 
       it('should return empty bid response with CPM too high', () => {
-        let serverResponse = {
+        const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
             zone_id: 299680,
@@ -179,10 +177,10 @@ describe('Content Ignite adapter', () => {
           },
           bids = spec.interpretResponse(serverResponse, {
             bidRequest: bidRequests[0]
-          })
+          });
 
-        expect(bids).to.be.lengthOf(0)
-      })
-    })
-  })
-})
+        expect(bids).to.be.lengthOf(0);
+      });
+    });
+  });
+});
