@@ -46,7 +46,8 @@ export const spec = {
 
     let isInHostileIframe = false;
     try {
-      isInHostileIframe = window.top.innerWidth < 0;
+      window.top.location.toString();
+      isInHostileIframe = false;
     } catch (e) {
       isInHostileIframe = true;
     }
