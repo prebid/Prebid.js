@@ -135,17 +135,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
-        timedOutBidders = timedOutBidders.map((timeoutBidder) => {
-          timeoutBidder.params = _adUnits
-            .filter(adUnit => timeoutBidder.adUnitCode === adUnit.code)
-            .map((adUnit) => adUnit.bids)
-            .reduce(flatten, [])
-            .filter((bidder) => bidder.bidder === timeoutBidder.bidder)
-            .map((bidder) => bidder.params);
-          return timeoutBidder;
-        });
-        let data = utils.groupBy(timedOutBidders, 'bidder');
-        callTimedOutBidders(data);
+        // Calling timed out bidders
+        if (timedOutBidders.length) {
+          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders);
+        }
         // Only automatically sync if the publisher has not chosen to "enableOverride"
         let userSyncConfig = config.getConfig('userSync') || {};
         if (!userSyncConfig.enableOverride) {
@@ -540,10 +533,4 @@ function getTimedOutBids(bidderRequests, bidsReceived) {
     }));
 
   return timedOutBids;
-}
-
-function callTimedOutBidders(timedOutBidders) {
-  for (const bidder of Object.keys(timedOutBidders)) {
-    adaptermanager.getBidAdapter(bidder).getSpec(bidder).onTimeout();
-  }
 }

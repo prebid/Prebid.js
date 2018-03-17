@@ -435,3 +435,30 @@ exports.getBidAdapter = function(bidder) {
 exports.setS2STestingModule = function (module) {
   s2sTestingModule = module;
 };
+
+exports.callTimedOutBidders = function(adUnits, timedOutBidders) {
+  timedOutBidders = timedOutBidders.map((timeoutBidder) => {
+    // Adding user configured params
+    timeoutBidder.params = adUnits
+      .filter(adUnit => timeoutBidder.adUnitCode === adUnit.code)
+      .map((adUnit) => adUnit.bids)
+      .reduce(flatten, [])
+      .filter((bidder) => bidder.bidder === timeoutBidder.bidder)
+      .map((bidder) => bidder.params);
+    return timeoutBidder;
+  });
+  timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
+
+  for (const bidder of Object.keys(timedOutBidders)) {
+    const adapter = _bidderRegistry[bidder];
+    const spec = adapter.getSpec();
+    try {
+      if (spec.onTimeout && typeof spec.onTimeout === 'function') {
+        utils.log(`Calling onTimeout of ${bidder} with data ${timedOutBidders[bidder]}`);
+        spec.onTimeout(timedOutBidders[bidder]);
+      }
+    } catch (e) {
+      utils.log(`Error calling onTimeout of ${bidder}`);
+    }
+  }
+}
