@@ -815,12 +815,12 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
  * @return {Array} user configured param for the given bidder adunit configuration
  */
 export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
-  return (adUnits
+  return adUnits
     .filter(adUnit => adUnit.code === adUnitCode)
     .map((adUnit) => adUnit.bids)
     .reduce(flatten, [])
     .filter((bidderData) => bidderData.bidder === bidder)
-    .map((bidderData) => bidderData.params || {}));
+    .map((bidderData) => bidderData.params || {});
 }
 /**
  * Returns the origin
