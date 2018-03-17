@@ -24,7 +24,7 @@ The basic steps are:
 1. Build up an array of 'labels' from two sources: either as an output of `sizeConfig`, as an optional argument to [`requestBids()`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.requestBids), or both.
 1. Apply label targeting to AdUnits or specific bids.
 
-See below for examples.
+See the [Publisher API reference]({{site.baseurl}}/dev-docs/publisher-api-reference.html#setConfig-Configure-Responsive-Ads) for syntax.
 
 ## What if some bidders should be skipped for some devices?
 

@@ -1634,6 +1634,9 @@ labelAll: ["A", "B"]
 {: .alert.alert-warning :}
 Only one conditional may be specified on a given AdUnit or bid -- if both `labelAny` and `labelAll` are specified, only the first one will be utilized and an error will be logged to the console. It is allowable for an AdUnit to have one condition and a bid to have another.
 
+{: .alert.alert-warning :}
+If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`. 
+
 Label targeting on the ad unit looks like the following:
 
 {% highlight js %}
