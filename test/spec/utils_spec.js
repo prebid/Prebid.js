@@ -637,17 +637,29 @@ describe('Utils', function () {
       }]
     }];
 
-    it('should return bidder1 params', () => {
+    it('should return params configured', () => {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
       const expected = [{
         key1: 'value1'
       }];
       assert.deepEqual(output, expected);
     });
-    // in case params are not defined it will return array containing empty object
-    it('should return bidder2 params', () => {
+
+    it('should return array containting empty object, if bidder present and no params are configured', () => {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
       const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if bidder is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if adUnit is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
+      const expected = [];
       assert.deepEqual(output, expected);
     });
   });
