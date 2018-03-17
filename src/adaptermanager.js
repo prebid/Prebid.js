@@ -449,7 +449,7 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders) {
     const spec = adapter.getSpec();
     try {
       if (spec.onTimeout && typeof spec.onTimeout === 'function') {
-        utils.logInfo(`Calling onTimeout of ${bidder} with data ${timedOutBidders[bidder]}`);
+        utils.logInfo(`Calling onTimeout of ${bidder} `);
         spec.onTimeout(timedOutBidders[bidder]);
       }
     } catch (e) {

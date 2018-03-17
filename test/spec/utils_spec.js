@@ -623,4 +623,32 @@ describe('Utils', function () {
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
     });
   });
+
+  describe('getUserConfiguredParams', () => {
+    const adUnits = [{
+      code: 'adUnit1',
+      bids: [{
+        bidder: 'bidder1',
+        params: {
+          key1: 'value1'
+        }
+      }, {
+        bidder: 'bidder2'
+      }]
+    }];
+
+    it('should return bidder1 params', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
+      const expected = [{
+        key1: 'value1'
+      }];
+      assert.deepEqual(output, expected);
+    });
+    // in case params are not defined it will return array containing empty object
+    it('should return bidder2 params', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
+      const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+  });
 });
