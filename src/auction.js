@@ -137,7 +137,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       } finally {
         // Calling timed out bidders
         if (timedOutBidders.length) {
-          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders);
+          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
         }
         // Only automatically sync if the publisher has not chosen to "enableOverride"
         let userSyncConfig = config.getConfig('userSync') || {};
