@@ -21,7 +21,8 @@ const RESPONSE = {
   curl: 'https://www.yieldlab.de',
   format: 0,
   id: 1111,
-  price: 1
+  price: 1,
+  pid: 2222
 }
 
 describe('yieldlabBidAdapter', () => {
@@ -81,7 +82,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].width).to.equal(728)
       expect(result[0].height).to.equal(90)
       expect(result[0].creativeId).to.equal('1111')
-      expect(result[0].dealId).to.equal(undefined)
+      expect(result[0].dealId).to.equal(2222)
       expect(result[0].currency).to.equal('EUR')
       expect(result[0].netRevenue).to.equal(false)
       expect(result[0].ttl).to.equal(300)
