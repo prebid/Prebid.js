@@ -438,13 +438,8 @@ exports.setS2STestingModule = function (module) {
 
 exports.callTimedOutBidders = function(adUnits, timedOutBidders) {
   timedOutBidders = timedOutBidders.map((timeoutBidder) => {
-    // Adding user configured params
-    timeoutBidder.params = adUnits
-      .filter(adUnit => timeoutBidder.adUnitCode === adUnit.code)
-      .map((adUnit) => adUnit.bids)
-      .reduce(flatten, [])
-      .filter((bidder) => bidder.bidder === timeoutBidder.bidder)
-      .map((bidder) => bidder.params);
+    // Adding user configured params to timeout event data
+    timeoutBidder.params = utils.getUserConfiguredParams(adUnits, timeoutBidder.adUnitCode, timeoutBidder.bidder);
     return timeoutBidder;
   });
   timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
@@ -454,11 +449,11 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders) {
     const spec = adapter.getSpec();
     try {
       if (spec.onTimeout && typeof spec.onTimeout === 'function') {
-        utils.log(`Calling onTimeout of ${bidder} with data ${timedOutBidders[bidder]}`);
+        utils.logInfo(`Calling onTimeout of ${bidder} with data ${timedOutBidders[bidder]}`);
         spec.onTimeout(timedOutBidders[bidder]);
       }
     } catch (e) {
-      utils.log(`Error calling onTimeout of ${bidder}`);
+      utils.logWarn(`Error calling onTimeout of ${bidder}`);
     }
   }
 }

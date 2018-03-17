@@ -808,6 +808,14 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
   }) || { start: null, auctionId: null };
 }
 
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params);
+}
 /**
  * Returns the origin
  */
