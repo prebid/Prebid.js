@@ -114,12 +114,6 @@ function cmpTimedOut() {
   exitFailedCmp('CMP workflow exceeded timeout threshold.');
 }
 
-// function exitDueToCmpError(msg) {
-//   clearTimeout(timer);
-//   utils.logWarn(`Error detected with CMP: ${msg}  Aborting consentManagement module and resuming auction.`);
-//   nextFn.apply(context, args);
-// }
-
 // controls the exit of the module based on consentManagement config; either we'll resume the auction or cancel the auction
 function exitFailedCmp(message) {
   clearTimeout(timer);

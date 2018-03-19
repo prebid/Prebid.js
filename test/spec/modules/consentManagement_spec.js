@@ -48,17 +48,6 @@ describe('consentManagement', function () {
   });
 
   describe('requestBidsHook tests:', () => {
-    // let adUnits = [{
-    //   code: 'div-gpt-ad-1460505748561-0',
-    //   sizes: [[300, 250], [300, 600]],
-    //   bids: [{
-    //     bidder: 'appnexusAst',
-    //     params: {
-    //       placementId: '10433394'
-    //     }
-    //   }]
-    // }];
-
     let goodConfigWithCancelAuction = {
       cmp: 'appnexus',
       timeout: 7500,
@@ -139,7 +128,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('already known consentId:', () => {
+    describe('already known consentData:', () => {
       let cmpStub = sinon.stub();
 
       beforeEach(() => {
@@ -155,7 +144,7 @@ describe('consentManagement', function () {
         gdprDataHandler.consentData = null;
       });
 
-      it('should bypass CMP and simply apply adUnit changes', () => {
+      it('should bypass CMP and simply use previously stored consentData', () => {
         let testConsentString = 'xyz';
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
