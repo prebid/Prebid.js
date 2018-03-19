@@ -245,6 +245,24 @@ function _getDigiTrustQueryParams() {
   };
 }
 
+function _appendSiteAppDevice(request) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+    request.app.publisher = {id: _s2sConfig.accountId}
+  } else {
+    request.site = {
+      publisher: { id: _s2sConfig.accountId },
+      page: utils.getTopWindowUrl()
+    }
+  }
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
+  }
+}
+
 /*
  * Protocol spec for legacy endpoint
  * e.g., https://<prebid-server-url>/v1/auction
@@ -277,13 +295,7 @@ const LEGACY_PROTOCOL = {
       is_debug: !!getConfig('debug'),
     };
 
-    // grab some global config and pass it along
-    ['app', 'device'].forEach(setting => {
-      let value = getConfig(setting);
-      if (typeof value === 'object') {
-        request[setting] = value;
-      }
-    });
+    _appendSiteAppDevice(request);
 
     let digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
@@ -364,6 +376,8 @@ const LEGACY_PROTOCOL = {
           bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
           bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
 
+          if (result.burl) { bidObject.burl = result.burl; }
+
           bids.push({ adUnit: bidObj.code, bid: bidObject });
         });
       }
@@ -437,19 +451,13 @@ const OPEN_RTB_PROTOCOL = {
 
     const request = {
       id: s2sBidRequest.tid,
-      site: {publisher: {id: _s2sConfig.accountId}},
       source: {tid: s2sBidRequest.tid},
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
     };
 
-    ['app', 'device'].forEach(setting => {
-      let value = getConfig(setting);
-      if (typeof value === 'object') {
-        request[setting] = value;
-      }
-    });
+    _appendSiteAppDevice(request);
 
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
@@ -482,6 +490,7 @@ const OPEN_RTB_PROTOCOL = {
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             if (bid.adm) { bidObject.vastXml = bid.adm; }
+            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
@@ -499,6 +508,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.requestId = bid.id;
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
+          if (bid.burl) { bidObject.burl = bid.burl; }
 
           // TODO: Remove when prebid-server returns ttl, currency and netRevenue
           bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;

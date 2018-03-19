@@ -535,13 +535,13 @@ export const YieldbotAdapter = {
   },
 
   setCookie: function(name, value, expireMillis, path, domain, secure) {
-    const expireTime = expireMillis ? new Date(Date.now() + expireMillis).toGMTString() : '';
     const dataValue = encodeURIComponent(value);
-    const docLocation = path || '';
-    const pageDomain = domain || '';
-    const httpsOnly = secure ? ';secure' : '';
+    const cookieStr = name + '=' + dataValue +
+            (expireMillis ? ';expires=' + new Date(Date.now() + expireMillis).toGMTString() : '') +
+            (path ? ';path=' + path : '') +
+            (domain ? ';domain=' + domain : '') +
+            (secure ? ';secure' : '');
 
-    const cookieStr = `${name}=${dataValue};expires=${expireTime};path=${docLocation};domain=${pageDomain}${httpsOnly}`;
     document.cookie = cookieStr;
   },
 

@@ -13,7 +13,7 @@ const NATIVE_DEFAULTS = {
 export const spec = {
 
   code: 'platformio',
-  supportedMediaTypes: ['native'],
+  supportedMediaTypes: ['banner', 'native'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.pubId && bid.params.siteId)
@@ -200,13 +200,19 @@ function nativeResponse(imp, bid) {
   if (imp['native']) {
     const nativeAd = parse(bid.adm);
     const keys = {};
+    keys.image = {};
+    keys.icon = {};
     if (nativeAd && nativeAd['native'] && nativeAd['native'].assets) {
       nativeAd['native'].assets.forEach(asset => {
         keys.title = asset.title ? asset.title.text : keys.title;
         keys.body = asset.data && asset.id === 2 ? asset.data.value : keys.body;
         keys.sponsoredBy = asset.data && asset.id === 3 ? asset.data.value : keys.sponsoredBy;
-        keys.icon = asset.img && asset.id === 4 ? asset.img.url : keys.icon;
-        keys.image = asset.img && asset.id === 5 ? asset.img.url : keys.image;
+        keys.icon.url = asset.img && asset.id === 4 ? asset.img.url : keys.icon.url;
+        keys.icon.width = asset.img && asset.id === 4 ? asset.img.w : keys.icon.width;
+        keys.icon.height = asset.img && asset.id === 4 ? asset.img.h : keys.icon.height;
+        keys.image.url = asset.img && asset.id === 5 ? asset.img.url : keys.image.url;
+        keys.image.width = asset.img && asset.id === 5 ? asset.img.w : keys.image.width;
+        keys.image.height = asset.img && asset.id === 5 ? asset.img.h : keys.image.height;
       });
       if (nativeAd['native'].link) {
         keys.clickUrl = encodeURIComponent(nativeAd['native'].link.url);

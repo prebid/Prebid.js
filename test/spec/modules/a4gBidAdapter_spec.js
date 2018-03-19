@@ -113,6 +113,7 @@ describe('a4gAdapterTests', () => {
         'width',
         'height',
         'ad',
+        'adId',
         'ttl',
         'creativeId',
         'netRevenue',
