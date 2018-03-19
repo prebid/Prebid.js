@@ -206,7 +206,7 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   let cacheKey = `${fromCurrency}->${toCurrency}`;
   if (cacheKey in conversionCache) {
     conversionRate = conversionCache[cacheKey];
-    utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
+    utils.logMessage('Using conversionCache value ' + conversionRate + ' for ' + cacheKey);
   } else if (currencySupportEnabled === false) {
     if (fromCurrency === 'USD') {
       conversionRate = 1;
