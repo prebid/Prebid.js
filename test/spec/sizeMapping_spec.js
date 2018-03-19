@@ -8,6 +8,11 @@ let deepClone = utils.deepClone;
 describe('sizeMapping', () => {
   var testSizes = [[970, 90], [728, 90], [300, 250], [300, 100], [80, 80]];
 
+  // Should also handle sizes defined with Object format IE { w: 300, h: 250 }
+  const testSizesDefinedWithObjs = [
+    { w: 728, h: 90 }, { w: 300, h: 250 }, { w: 300, h: 100 }
+  ]
+
   var sizeConfig = [{
     'mediaQuery': '(min-width: 1200px)',
     'sizesSupported': [
@@ -133,6 +138,17 @@ describe('sizeMapping', () => {
       expect(status).to.deep.equal({
         active: true,
         sizes: testSizes
+      })
+    });
+
+    it('when adUnit.sizes are defined using Objects, it should still filter sizes for matching mediaQuery block', () => {
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+
+      let statusObjFormatSizes = resolveStatus(undefined, testSizesDefinedWithObjs, sizeConfig);
+
+      expect(statusObjFormatSizes).to.deep.equal({
+        active: true,
+        sizes: [{ w: 728, h: 90 }, { w: 300, h: 250 }]
       })
     });
   });
