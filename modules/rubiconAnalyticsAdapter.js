@@ -207,12 +207,13 @@ function sendMessage(auctionId, bidWonId) {
 
 function parseBidResponse(bid) {
   return _pick(bid, [
-    'bidPriceUSD', (value) => {
-      if (value) {
-        return value;
-      }
+    'getCpmInNewCurrency as bidPriceUSD', (fn) => {
       if (bid.currency === 'USD') {
-        return bid.cpm;
+        return Number(bid.cpm);
+      }
+      // use currency conversion function if present
+      if (typeof fn === 'function') {
+        return Number(fn('USD'));
       }
       // TODO: throw error or something if not USD and currency module wasn't present?
     },

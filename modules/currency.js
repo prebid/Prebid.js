@@ -173,27 +173,21 @@ function processBidResponseQueue() {
 
 function wrapFunction(fn, context, params) {
   return function() {
-    var bid = params[1];
+    let bid = params[1];
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
-      var fromCurrency = bid.currency;
+      let fromCurrency = bid.currency;
       try {
-        var conversion = getCurrencyConversion(fromCurrency);
-        bid.originalCpm = bid.cpm;
+        let conversion = getCurrencyConversion(fromCurrency);
+        let cpm = bid.originalCpm = bid.cpm;
         bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
         }
-
         // used for analytics
-        if (bid.currency === 'USD') {
-          bid.bidPriceUSD = bid.cpm;
-        } else if (bid.originalCurrency === 'USD') {
-          bid.bidPriceUSD = bid.originalCpm;
-        } else {
-          conversion = getCurrencyConversion(bid.originalCurrency, 'USD');
-          bid.bidPriceUSD = (parseFloat(bid.originalCpm) * conversion).toFixed(3);
-        }
+        bid.getCpmInNewCurrency = function(toCurrency) {
+          return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+        };
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = bidfactory.createBid(STATUS.NO_BID, {
@@ -209,9 +203,9 @@ function wrapFunction(fn, context, params) {
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
-
-  if (fromCurrency in conversionCache) {
-    conversionRate = conversionCache[fromCurrency];
+  let cacheKey = `${fromCurrency}->${toCurrency}`;
+  if (cacheKey in conversionCache) {
+    conversionRate = conversionCache[cacheKey];
     utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
   } else if (currencySupportEnabled === false) {
     if (fromCurrency === 'USD') {
@@ -260,9 +254,9 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
       utils.logInfo('getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBaseCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     }
   }
-  if (!(fromCurrency in conversionCache)) {
-    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
-    conversionCache[fromCurrency] = conversionRate;
+  if (!(cacheKey in conversionCache)) {
+    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for ' + cacheKey);
+    conversionCache[cacheKey] = conversionRate;
   }
   return conversionRate;
 }
