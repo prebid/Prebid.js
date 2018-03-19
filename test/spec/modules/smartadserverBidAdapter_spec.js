@@ -32,9 +32,9 @@ describe('Smart ad server bid adapter tests', () => {
       formatId: '90',
       target: 'test=prebid',
       bidfloor: 0.420,
-      bundleId: '7569',
+      buId: '7569',
       appName: 'Mozilla',
-      uid: 42
+      ckId: 42
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg'
@@ -96,9 +96,9 @@ describe('Smart ad server bid adapter tests', () => {
     expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
     expect(requestContent).to.have.property('pageDomain').and.to.equal(utils.getTopWindowUrl());
     expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
-    expect(requestContent).to.have.property('bundleId').and.to.equal('7569');
-    expect(requestContent).to.have.property('appName').and.to.equal('Mozilla');
-    expect(requestContent).to.have.property('uid').and.to.equal(42);
+    expect(requestContent).to.have.property('buid').and.to.equal('7569');
+    expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+    expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
   it('Verify parse response', () => {
@@ -171,7 +171,7 @@ describe('Smart ad server bid adapter tests', () => {
         formatId: 123,
         siteId: 456,
         pageId: 234,
-        bundleId: 789,
+        buId: 789,
         appName: 'Mozilla'
       }
     })).to.equal(true);
@@ -180,7 +180,7 @@ describe('Smart ad server bid adapter tests', () => {
         domain: 'www.test.com',
         formatId: 123,
         pageId: 234,
-        bundleId: 789,
+        buId: 789,
         appName: 'Mozilla'
       }
     })).to.equal(false);
