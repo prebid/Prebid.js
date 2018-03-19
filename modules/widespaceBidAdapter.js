@@ -230,7 +230,7 @@ function getLcuid() {
   let lcuid = getData(LS_KEYS.LC_UID, false)[0];
   if (!lcuid) {
     const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
-    storeData(random, LS_KEYS.LC_UID, false, false);
+    storeData(random, LS_KEYS.LC_UID, false);
     lcuid = getData(LS_KEYS.LC_UID, false)[0];
   }
   return lcuid;
