@@ -8,12 +8,10 @@ describe('Adomik Prebid Analytic', function () {
   describe('enableAnalytics', function () {
     beforeEach(() => {
       sinon.spy(adomikAnalytics, 'track');
-      sinon.spy(adomikAnalytics, 'sendTypedEvent');
     });
 
     afterEach(() => {
       adomikAnalytics.track.restore();
-      adomikAnalytics.sendTypedEvent.restore();
     });
 
     it('should catch all events', function (done) {
@@ -51,25 +49,21 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
-        debug: undefined,
         id: '',
-        timeouted: false,
-        timeout: 0,
+        timeouted: false
       });
 
-      // Step 1: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, requestId: 'test-test-test', timeout: 3000});
+      // Step 2: Send init auction event
+      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, requestId: 'test-test-test'});
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
-        debug: undefined,
         id: 'test-test-test',
-        timeouted: false,
-        timeout: 3000,
+        timeouted: false
       });
 
-      // Step 2: Send bid requested event
+      // Step 3: Send bid requested event
       events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid] });
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(1);
@@ -81,7 +75,7 @@ describe('Adomik Prebid Analytic', function () {
         }
       });
 
-      // Step 3: Send bid response event
+      // Step 4: Send bid response event
       events.emit(constants.EVENTS.BID_RESPONSE, bid);
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(2);
@@ -102,36 +96,25 @@ describe('Adomik Prebid Analytic', function () {
         }
       });
 
-      // Step 4: Send bid won event
+      // Step 5: Send bid won event
       events.emit(constants.EVENTS.BID_WON, bid);
 
-      expect(adomikAnalytics.bucketEvents.length).to.equal(3);
-      expect(adomikAnalytics.bucketEvents[2]).to.deep.equal({
-        type: 'winner',
-        event: {
-          id: '1234',
-          placementCode: '0000',
-        }
-      });
+      expect(adomikAnalytics.bucketEvents.length).to.equal(2);
 
-      // Step 5: Send bid timeout event
+      // Step 6: Send bid timeout event
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
       expect(adomikAnalytics.currentContext.timeouted).to.equal(true);
 
-      // Step 6: Send auction end event
-      var clock = sinon.useFakeTimers();
+      // Step 7: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      setTimeout(function() {
-        sinon.assert.callCount(adomikAnalytics.sendTypedEvent, 1);
-        done();
-      }, 3000);
+      sinon.assert.callCount(adomikAnalytics.track, 6);
 
+      done();
+      var clock = sinon.useFakeTimers();
       clock.tick(5000);
       clock.restore();
-
-      sinon.assert.callCount(adomikAnalytics.track, 6);
     });
   });
 });
