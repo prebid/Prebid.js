@@ -74,9 +74,10 @@ export const spec = {
       payload.member_id = member;
     }
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdprConsent = {
-        gdprConsentString: bidderRequest.gdprConsent.consentString,
-        gdprConsentRequired: bidderRequest.gdprConsent.consentRequired
+      // note - objects for impbus use underscore instead of camelCase
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.consentRequired
       };
     }
 

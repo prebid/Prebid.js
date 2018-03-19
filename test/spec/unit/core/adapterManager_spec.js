@@ -856,14 +856,14 @@ describe('adapterManager tests', () => {
 
     describe('gdpr consent module', () => {
       it('inserts gdprConsent object to bidRequest only when module was enabled', () => {
-        let gdprAdUnits = utils.deepClone(adUnits);
-        gdprAdUnits[0].gdprConsent = {
+        // let gdprAdUnits = utils.deepClone(adUnits);
+        AdapterManager.gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
-        };
+        });
 
         let bidRequests = AdapterManager.makeBidRequests(
-          gdprAdUnits,
+          adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
           function callback() {},
@@ -871,6 +871,8 @@ describe('adapterManager tests', () => {
         );
         expect(bidRequests[0].gdprConsent.consentString).to.equal('abc123def456');
         expect(bidRequests[0].gdprConsent.consentRequired).to.be.true;
+
+        AdapterManager.gdprDataHandler.setConsentData(null);
 
         bidRequests = AdapterManager.makeBidRequests(
           adUnits,

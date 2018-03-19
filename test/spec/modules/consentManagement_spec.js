@@ -1,4 +1,5 @@
-import {setConfig, requestBidsHook, resetConsentId, userCMP, consentTimeout, lookupFailureChoice} from 'modules/consentManagement';
+import {setConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction} from 'modules/consentManagement';
+import {gdprDataHandler} from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -20,30 +21,9 @@ describe('consentManagement', function () {
       it('should use system default values', () => {
         setConfig({});
         expect(userCMP).to.be.equal('appnexus');
-        expect(consentTimeout).to.be.equal(5000);
-        expect(lookupFailureChoice).to.be.equal('proceed');
+        expect(consentTimeout).to.be.equal(10000);
+        expect(allowAuction).to.be.true;
         sinon.assert.calledThrice(utils.logInfo);
-      });
-    });
-
-    describe('invalid lookUpFailureResolution value in setConfig', () => {
-      beforeEach(() => {
-        sinon.stub(utils, 'logWarn');
-      });
-
-      afterEach(() => {
-        utils.logWarn.restore();
-        config.resetConfig();
-      });
-
-      it('should throw Warning message when invalid lookUpFaliureResolution value was used', () => {
-        let badConfig = {
-          lookUpFailureResolution: 'bad'
-        };
-
-        setConfig(badConfig);
-        sinon.assert.calledOnce(utils.logWarn);
-        expect(lookupFailureChoice).to.be.equal('proceed');
       });
     });
 
@@ -55,44 +35,48 @@ describe('consentManagement', function () {
       it('results in all user settings overriding system defaults', () => {
         let allConfig = {
           cmp: 'appnexus',
-          waitForConsentTimeout: 750,
-          lookUpFailureResolution: 'cancel'
+          timeout: 7500,
+          allowAuctionWithoutConsent: false
         };
 
         setConfig(allConfig);
         expect(userCMP).to.be.equal('appnexus');
-        expect(consentTimeout).to.be.equal(750);
-        expect(lookupFailureChoice).to.be.equal('cancel');
+        expect(consentTimeout).to.be.equal(7500);
+        expect(allowAuction).to.be.false;
       });
     });
   });
 
   describe('requestBidsHook tests:', () => {
-    let adUnits = [{
-      code: 'div-gpt-ad-1460505748561-0',
-      sizes: [[300, 250], [300, 600]],
-      bids: [{
-        bidder: 'appnexusAst',
-        params: {
-          placementId: '10433394'
-        }
-      }]
-    }];
+    // let adUnits = [{
+    //   code: 'div-gpt-ad-1460505748561-0',
+    //   sizes: [[300, 250], [300, 600]],
+    //   bids: [{
+    //     bidder: 'appnexusAst',
+    //     params: {
+    //       placementId: '10433394'
+    //     }
+    //   }]
+    // }];
 
-    let goodConfigWithCancel = {
+    let goodConfigWithCancelAuction = {
       cmp: 'appnexus',
-      waitForConsentTimeout: 750,
-      lookUpFailureResolution: 'cancel'
+      timeout: 7500,
+      allowAuctionWithoutConsent: false
     };
 
-    let goodConfigWithProceed = {
+    let goodConfigWithAllowAuction = {
       cmp: 'appnexus',
-      waitForConsentTimeout: 750,
-      lookUpFailureResolution: 'proceed'
+      timeout: 7500,
+      allowAuctionWithoutConsent: true
     };
 
     let didHookReturn;
-    let retAdUnits = [];
+
+    afterEach(() => {
+      gdprDataHandler.consentData = null;
+      resetConsentData();
+    });
 
     describe('error checks:', () => {
       describe('unknown CMP framework ID:', () => {
@@ -104,6 +88,7 @@ describe('consentManagement', function () {
           utils.logWarn.restore();
           config.resetConfig();
           $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+          gdprDataHandler.consentData = null;
         });
 
         it('should return Warning message and return to hooked function', () => {
@@ -114,16 +99,14 @@ describe('consentManagement', function () {
           expect(userCMP).to.be.equal(badCMPConfig.cmp);
 
           didHookReturn = false;
-          let adUnits1 = utils.deepClone(adUnits);
 
-          requestBidsHook({adUnits: adUnits1}, (config) => {
+          requestBidsHook({}, () => {
             didHookReturn = true;
-            retAdUnits = config.adUnits;
           });
-
+          let consent = gdprDataHandler.getConsentData();
           sinon.assert.calledOnce(utils.logWarn);
           expect(didHookReturn).to.be.true;
-          assert.deepEqual(retAdUnits, adUnits);
+          expect(consent).to.be.null;
         });
       });
 
@@ -139,25 +122,24 @@ describe('consentManagement', function () {
         });
 
         it('should return a Warning message and return to hooked function', () => {
-          setConfig(goodConfigWithProceed);
+          setConfig(goodConfigWithAllowAuction);
 
           didHookReturn = false;
-          let adUnits1 = utils.deepClone(adUnits);
 
-          requestBidsHook({adUnits: adUnits1}, (config) => {
+          requestBidsHook({}, () => {
             didHookReturn = true;
-            retAdUnits = config.adUnits;
           });
+          let consent = gdprDataHandler.getConsentData();
 
           sinon.assert.calledOnce(utils.logWarn);
           expect(didHookReturn).to.be.true;
-          assert.deepEqual(retAdUnits, adUnits);
+          expect(consent.consentString).to.be.undefined;
+          expect(consent.consentRequired).to.be.true;
         });
       });
     });
 
     describe('already known consentId:', () => {
-      // am i really needed?
       let cmpStub = sinon.stub();
 
       beforeEach(() => {
@@ -169,6 +151,8 @@ describe('consentManagement', function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
         cmpStub.restore();
+        delete window.__cmp;
+        gdprDataHandler.consentData = null;
       });
 
       it('should bypass CMP and simply apply adUnit changes', () => {
@@ -177,25 +161,24 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentString);
         });
-        setConfig(goodConfigWithProceed);
+        setConfig(goodConfigWithAllowAuction);
 
-        let adUnits1 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits1}, (config) => {});
+        requestBidsHook({}, () => {});
         cmpStub.restore();
 
         // reset the stub to ensure it wasn't called during the second round of calls
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentString);
         });
-        let adUnits2 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits2}, (config) => {
+
+        requestBidsHook({}, () => {
           didHookReturn = true;
-          retAdUnits = config.adUnits;
         });
+        let consent = gdprDataHandler.getConsentData();
 
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
-        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
+        expect(consent.consentString).to.equal(testConsentString);
+        expect(consent.consentRequired).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
     });
@@ -205,8 +188,7 @@ describe('consentManagement', function () {
 
       beforeEach(() => {
         didHookReturn = false;
-        retAdUnits = [];
-        resetConsentId();
+        resetConsentData();
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         window.__cmp = function() {};
@@ -219,9 +201,10 @@ describe('consentManagement', function () {
         utils.logError.restore();
         utils.logWarn.restore();
         delete window.__cmp;
+        gdprDataHandler.consentData = null;
       });
 
-      it('performs extra lookup checks and updates adUnits for a valid new user', () => {
+      it('performs extra lookup checks and stores consentData for a valid new user', () => {
         let testConsentString = null;
         let firstpass = true;
 
@@ -235,78 +218,77 @@ describe('consentManagement', function () {
           args[2](testConsentString);
         });
 
-        setConfig(goodConfigWithProceed);
+        setConfig(goodConfigWithAllowAuction);
 
-        let adUnits1 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits1}, (config) => {
+        requestBidsHook({}, () => {
           didHookReturn = true;
-          retAdUnits = config.adUnits;
         });
+        let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.notCalled(utils.logError);
         sinon.assert.notCalled(utils.logWarn);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
-        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
+        expect(consent.consentString).to.equal(testConsentString);
+        expect(consent.consentRequired).to.be.true;
       });
 
-      it('performs lookup check and updates adUnits for a valid existing user', () => {
+      it('performs lookup check and stores consentData for a valid existing user', () => {
         let testConsentString = 'BOJy+UqOJy+UqABAB+AAAAAZ+A==';
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentString);
         });
 
-        setConfig(goodConfigWithProceed);
+        setConfig(goodConfigWithAllowAuction);
 
-        let adUnits1 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits1}, (config) => {
+        requestBidsHook({}, () => {
           didHookReturn = true;
-          retAdUnits = config.adUnits;
         });
+        let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.equal(testConsentString);
-        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
+        expect(consent.consentString).to.equal(testConsentString);
+        expect(consent.consentRequired).to.be.true;
       });
 
-      it('throws an error when postLookup check failed while config used cancel setting', () => {
+      it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
         let testConsentString = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentString);
         });
 
-        setConfig(goodConfigWithCancel);
-        let adUnits1 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits1}, (config) => {
+        setConfig(goodConfigWithCancelAuction);
+
+        requestBidsHook({}, () => {
           didHookReturn = true;
-          retAdUnits = config.adUnits;
         });
+        let consent = gdprDataHandler.getConsentData();
+
         sinon.assert.calledOnce(utils.logError);
         expect(didHookReturn).to.be.false;
-        expect(retAdUnits).to.be.an('array').that.is.empty;
-        assert.deepEqual(adUnits1, adUnits);
+        expect(consent).to.be.null;
       });
 
-      it('throws a warning + modifies adunits + calls callback when postLookup check failed while config used proceed setting', () => {
+      it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', () => {
         let testConsentString = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentString);
         });
 
-        setConfig(goodConfigWithProceed);
-        let adUnits1 = utils.deepClone(adUnits);
-        requestBidsHook({adUnits: adUnits1}, (config) => {
+        setConfig(goodConfigWithAllowAuction);
+
+        requestBidsHook({}, () => {
           didHookReturn = true;
-          retAdUnits = config.adUnits;
         });
+        let consent = gdprDataHandler.getConsentData();
+
         sinon.assert.calledOnce(utils.logWarn);
         expect(didHookReturn).to.be.true;
-        expect(retAdUnits[0].gdprConsent.consentString).to.be.undefined;
-        expect(retAdUnits[0].gdprConsent.consentRequired).to.be.true;
+        expect(consent.consentString).to.be.undefined;
+        expect(consent.consentRequired).to.be.true;
       });
     });
   });

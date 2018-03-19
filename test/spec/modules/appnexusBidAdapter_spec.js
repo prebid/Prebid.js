@@ -324,9 +324,9 @@ describe('AppNexusAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.gdprConsent).to.exist;
-      expect(payload.gdprConsent.gdprConsentString).to.exist.and.to.equal(consentString);
-      expect(payload.gdprConsent.gdprConsentRequired).to.exist.and.to.be.true;
+      expect(payload.gdpr_consent).to.exist;
+      expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
+      expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
   })
 

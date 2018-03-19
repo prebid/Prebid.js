@@ -147,6 +147,16 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
+exports.gdprDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    this.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return this.consentData;
+  }
+};
+
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
@@ -211,9 +221,10 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidRequests.push(bidderRequest);
     }
   });
-  if (adUnits[0].gdprConsent) {
+
+  if (exports.gdprDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
-      bidRequest['gdprConsent'] = adUnits[0].gdprConsent;
+      bidRequest['gdprConsent'] = exports.gdprDataHandler.getConsentData();
     });
   }
   return bidRequests;
