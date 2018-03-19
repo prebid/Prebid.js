@@ -64,7 +64,7 @@ export const spec = {
         'referer': (isInHostileIframe ? window : window.top).location.href.split('#')[0],
         'inFrame': 1,
         'sid': bid.params.sid,
-        'lcuid': LC_UID || -1,
+        'lcuid': LC_UID || '',
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
         'hb': '1',
         'hb.wbi': BID_INFO[i] ? encodedParamValue(BID_INFO[i]) : '',
