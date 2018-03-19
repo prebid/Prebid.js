@@ -365,7 +365,7 @@ describe('S2S Adapter', () => {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
 
-      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config};
+      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config };
       config.setConfig(consentConfig);
 
       let gdprBidRequest = utils.deepClone(BID_REQUESTS);
