@@ -82,7 +82,7 @@ export const spec = {
       if (bid.params.demo) {
         DEMO_DATA_PARAMS.forEach((key) => {
           if (bid.params.demo[key]) {
-            data[`hb.demo.${key}`] = bid.params.demo[key];
+            data[key] = bid.params.demo[key];
           }
         });
       }
