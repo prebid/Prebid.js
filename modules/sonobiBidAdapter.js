@@ -107,7 +107,7 @@ export const spec = {
         }
 
         const creativeType = bid.sbi_ct;
-        if (creativeType === 'video' || creativeType === 'outstream') {
+        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
