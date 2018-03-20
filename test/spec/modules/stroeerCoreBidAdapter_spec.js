@@ -104,13 +104,13 @@ const buildBidderResponseSecondPriceAuction = () => {
   const bid1 = response.bids[0];
   bid1.cpm2 = 3.8;
   bid1.floor = 2.0;
-  bid1.exchangerate = 1.0;
+  bid1.exchangeRate = 1.0;
   bid1.nurl = 'www.something.com';
   bid1.ssat = 2;
 
   const bid2 = response.bids[1];
   bid2.floor = 1.0;
-  bid2.exchangerate = 0.8;
+  bid2.exchangeRate = 0.8;
   bid2.nurl = 'www.something-else.com';
   bid2.ssat = 2;
 
@@ -619,13 +619,13 @@ describe('stroeerssp adapter', function () {
       let bid1 = bidmanager.addBidResponse.firstCall.args[1];
       assert.propertyVal(bid1, 'cpm2', 3.8);
       assert.propertyVal(bid1, 'floor', 2.0);
-      assert.propertyVal(bid1, 'exchangerate', 1.0);
+      assert.propertyVal(bid1, 'exchangeRate', 1.0);
       assert.propertyVal(bid1, 'nurl', 'www.something.com');
 
       let bid2 = bidmanager.addBidResponse.secondCall.args[1];
       assert.propertyVal(bid2, 'cpm2', 0);
       assert.propertyVal(bid2, 'floor', 1.0);
-      assert.propertyVal(bid2, 'exchangerate', 0.8);
+      assert.propertyVal(bid2, 'exchangeRate', 0.8);
       assert.propertyVal(bid2, 'nurl', 'www.something-else.com');
     });
 
@@ -751,7 +751,7 @@ describe('stroeerssp adapter', function () {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
-          responseBid.exchangerate = test.exchangeRate;
+          responseBid.exchangeRate = test.exchangeRate;
           responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
           responseBid.bidId = test.bidId;
 
@@ -786,7 +786,7 @@ describe('stroeerssp adapter', function () {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
-          responseBid.exchangerate = test.exchangeRate;
+          responseBid.exchangeRate = test.exchangeRate;
           responseBid.ad = '<img src=\'tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>';
           responseBid.bidId = test.bidId;
 

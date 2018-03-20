@@ -93,7 +93,7 @@ const StroeerCoreAdapter = function (win = window) {
           ad: bidResponse.ad,
           cpm2: bidResponse.cpm2 || 0,
           floor: bidResponse.floor || cpm,
-          exchangerate: bidResponse.exchangerate,
+          exchangeRate: bidResponse.exchangeRate,
           nurl: bidResponse.nurl,
           originalAd: bidResponse.ad
         });
@@ -101,8 +101,8 @@ const StroeerCoreAdapter = function (win = window) {
         bidObject.generateAd = function({auctionPrice}) {
           let sspAuctionPrice = auctionPrice;
 
-          if (this.exchangerate && this.exchangerate !== 1) {
-            auctionPrice = (parseFloat(auctionPrice) * this.exchangerate).toFixed(4);
+          if (this.exchangeRate && this.exchangeRate !== 1) {
+            auctionPrice = (parseFloat(auctionPrice) * this.exchangeRate).toFixed(4);
           }
 
           auctionPrice = tunePrice(auctionPrice);
