@@ -15,7 +15,8 @@ const {
     BID_WON,
     BID_ADJUSTMENT,
     BIDDER_DONE,
-    SET_TARGETING
+    SET_TARGETING,
+    AD_RENDER_FAILED
   }
 } = CONSTANTS;
 
@@ -111,6 +112,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BIDDER_DONE]: args => this.enqueue({ eventType: BIDDER_DONE, args }),
         [SET_TARGETING]: args => this.enqueue({ eventType: SET_TARGETING, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
+        [AD_RENDER_FAILED]: args => this.enqueue({ eventType: AD_RENDER_FAILED, args }),
         [AUCTION_INIT]: args => {
           args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
