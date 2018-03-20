@@ -158,10 +158,10 @@ function _validateFloor (bid) {
 }
 
 const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
-  if(mediaType === 'video') {
+  if (mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
 

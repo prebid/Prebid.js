@@ -112,16 +112,16 @@ describe('SonobiBidAdapter', () => {
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1f',
     },
-      {
-        'bidder': 'sonobi',
-        'params': {
-          'ad_unit': '/7780971/sparks_prebid_LB',
-          'sizes': [[300, 250], [300, 600]],
-        },
-        'adUnitCode': 'adunit-code-2',
-        'sizes': [[120, 600], [300, 600], [160, 600]],
-        'bidId': '30b31c1838de1e',
-      }];
+    {
+      'bidder': 'sonobi',
+      'params': {
+        'ad_unit': '/7780971/sparks_prebid_LB',
+        'sizes': [[300, 250], [300, 600]],
+      },
+      'adUnitCode': 'adunit-code-2',
+      'sizes': [[120, 600], [300, 600], [160, 600]],
+      'bidId': '30b31c1838de1e',
+    }];
 
     let keyMakerData = {
       '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25',
@@ -232,7 +232,7 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null"></script>',
+        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=localhost:9876"></script>',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b039',
         'netRevenue': true,
@@ -243,13 +243,14 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
+        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=localhost:9876',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'dozerkey',
-        'mediaType': 'video',
-        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=localhost:9876'}];
+        'dealId': 'dozerkey'
+      }
+    ];
 
     it('should map bidResponse to prebidResponse', () => {
       const response = spec.interpretResponse(bidResponse, bidRequests);
