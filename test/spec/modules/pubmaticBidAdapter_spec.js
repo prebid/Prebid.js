@@ -23,7 +23,8 @@ describe('PubMatic adapter', () => {
     		  lon: '23.7',
     		  wiid: '1234567890',
     		  profId: '100',
-    		  verId: '200'
+    		  verId: '200',
+          dctr: 'key1:val1,val2|key2:val1'
         },
         placementCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
@@ -127,6 +128,8 @@ describe('PubMatic adapter', () => {
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
   		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
   		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
