@@ -161,7 +161,7 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   if(mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  let src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
 
