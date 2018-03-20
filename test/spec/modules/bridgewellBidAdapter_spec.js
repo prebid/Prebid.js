@@ -121,7 +121,7 @@ describe('bridgewellBidAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-    };    
+    };
 
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(true);
@@ -155,7 +155,7 @@ describe('bridgewellBidAdapter', function () {
 
       bidWithZeroCpmWeight.params = {
         'ChannelID': 0
-      };      
+      };
 
       expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(false);
       expect(spec.isBidRequestValid(bidWithCorrectCpmWeight)).to.equal(false);
