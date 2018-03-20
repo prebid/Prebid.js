@@ -26,7 +26,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests) => {
     const bids = validBidRequests.map(bid => {
-      let slotIdentifier = _validateSlot(bid)
+      let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier
         return {
@@ -67,7 +67,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {*} ServerRequest - Info describing the request to the server.
+   * @param {*} bidderRequests - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, { bidderRequests }) => {
@@ -81,6 +81,9 @@ export const spec = {
     Object.keys(bidResponse.slots).forEach(slot => {
       const bidId = _getBidIdFromTrinityKey(slot);
       const bidRequest = bidderRequests.find(bidReqest => bidReqest.bidId === bidId);
+      const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
+      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
@@ -92,23 +95,24 @@ export const spec = {
           cpm: Number(bid.sbi_mouse),
           width: Number(width),
           height: Number(height),
-          ad: _creative(bidResponse.sbi_dc, bid.sbi_aid),
+          ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
           creativeId: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD',
+          currency: 'USD'
         };
 
         if (bid.sbi_dozer) {
           bids.dealId = bid.sbi_dozer;
         }
-        const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-        // If the bid request is a video, we need to set the video bid keys.
-        // @TODO when GO team gives us sbi_ct we can just check if the bid.sbi_ct === 'video' | 'outstream'
-        if (bidRequest.mediaType === 'video' || videoMediaType) {
+
+        const creativeType = bid.sbi_ct;
+        if (creativeType === 'video' || creativeType === 'outstream') {
           bids.mediaType = 'video';
-          bids.vastUrl = _videoCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
+          delete bids.width;
+          delete bids.height;
         }
         bidsReturned.push(bids);
       }
@@ -153,7 +157,10 @@ function _validateFloor (bid) {
   return '';
 }
 
-function _creative (sbi_dc, sbi_aid) {
+const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
+  if(mediaType === 'video') {
+    return _videoCreative(sbi_dc, sbi_aid)
+  }
   let src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
