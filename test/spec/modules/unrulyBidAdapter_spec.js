@@ -189,5 +189,18 @@ describe('UnrulyAdapter', () => {
       expect(sentRendererConfig.renderer).to.equal(fakeRenderer);
       expect(sentRendererConfig.adUnitCode).to.equal('video')
     })
+
+    it('should ensure that renderer is placed in Prebid supply mode', () => {
+      const mockExchangeBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockServerResponse = createExchangeResponse(mockExchangeBid);
+
+      expect('unruly' in window.parent).to.equal(false);
+
+      adapter.interpretResponse(mockServerResponse);
+
+      const supplyMode = window.parent.unruly.native.supplyMode;
+
+      expect(supplyMode).to.equal('prebid');
+    });
   });
 });
