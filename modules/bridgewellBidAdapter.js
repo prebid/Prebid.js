@@ -15,7 +15,23 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return bid && bid.params && !!bid.params.ChannelID;
+    let valid = false;
+    let typeOfCpmWeight;
+
+    if (bid && bid.params) {
+      if (bid.params.ChannelID) {
+        // cpmWeight is optinal parameter and should above than zero
+        typeOfCpmWeight = typeof bid.params.cpmWeight;
+        if (typeOfCpmWeight === 'undefined' ||
+          (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0)) {
+          valid = true;
+        } else {
+          valid = false;
+        }
+      }
+    }
+
+    return valid;
   },
 
   /**
@@ -82,7 +98,8 @@ export const spec = {
         }
 
         bidResponse.requestId = req.bidId;
-        bidResponse.cpm = matchedResponse.cpm;
+        bidResponse.requestId = req.bidId;
+        bidResponse.cpm = req.params.cpmWeight ? matchedResponse.cpm / req.params.cpmWeight : matchedResponse.cpm;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
         bidResponse.ad = matchedResponse.ad;
