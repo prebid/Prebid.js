@@ -202,7 +202,7 @@ function emitAdRenderFail(reason, message, bid) {
 
   data.reason = reason;
   data.message = message;
-  if (data.bid) {
+  if (bid) {
     data.bid = bid;
   }
 
