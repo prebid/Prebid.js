@@ -23,7 +23,8 @@ const { triggerUserSyncs } = userSync;
 /* private variables */
 
 const RENDERED = 'rendered';
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
+const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -196,6 +197,18 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   events.emit(SET_TARGETING);
 };
 
+function emitAdRenderFail(reason, message, bid) {
+  const data = {};
+
+  data.reason = reason;
+  data.message = message;
+  if (bid) {
+    data.bid = bid;
+  }
+
+  utils.logError(message);
+  events.emit(AD_RENDER_FAILED, data);
+}
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -206,6 +219,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
 $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
+
   if (doc && id) {
     try {
       // lookup ad by ad Id
@@ -229,7 +243,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         if (renderer && renderer.url) {
           renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
-          utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
+          const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
+          emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
         } else if (ad) {
           doc.write(ad);
           doc.close();
@@ -247,16 +262,20 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           setRenderSize(doc, width, height);
           utils.callBurl(bid);
         } else {
-          utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
+          const message = `Error trying to write ad. No ad for bid response id: ${id}`;
+          emitAdRenderFail(NO_AD, message, bid);
         }
       } else {
-        utils.logError('Error trying to write ad. Cannot find ad by given id : ' + id);
+        const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
+        emitAdRenderFail(CANNOT_FIND_AD, message);
       }
     } catch (e) {
-      utils.logError('Error trying to write ad Id :' + id + ' to the page:' + e.message);
+      const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
+      emitAdRenderFail(EXCEPTION, message);
     }
   } else {
-    utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
+    const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
+    emitAdRenderFail(MISSING_DOC_OR_ADID, message);
   }
 };
 
