@@ -22,8 +22,10 @@ export const spec = {
       if (bid.params.ChannelID) {
         // cpmWeight is optinal parameter and should above than zero
         typeOfCpmWeight = typeof bid.params.cpmWeight;
-        if (typeOfCpmWeight === 'undefined' ||
-          (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0)) {
+        if (typeOfCpmWeight === 'undefined') {
+          bid.params.cpmWeight = 1;
+          valid = true;
+        } else if (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0) {
           valid = true;
         } else {
           valid = false;
@@ -99,7 +101,7 @@ export const spec = {
 
         bidResponse.requestId = req.bidId;
         bidResponse.requestId = req.bidId;
-        bidResponse.cpm = req.params.cpmWeight ? matchedResponse.cpm / req.params.cpmWeight : matchedResponse.cpm;
+        bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
         bidResponse.ad = matchedResponse.ad;

@@ -110,20 +110,36 @@ describe('bridgewellBidAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
+    let bidWithZeroCpmWeight = {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk',
+        'cpmWeight': 0
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };    
+
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(true);
       expect(spec.isBidRequestValid(bidWithCorrectCpmWeight)).to.equal(true);
       expect(spec.isBidRequestValid(bidWithUncorrectCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithZeroCpmWeight)).to.equal(false);
     });
 
     it('should return false when required params are not passed', () => {
       let bidWithoutCpmWeight = Object.assign({}, bidWithoutCpmWeight);
       let bidWithCorrectCpmWeight = Object.assign({}, bidWithCorrectCpmWeight);
       let bidWithUncorrectCpmWeight = Object.assign({}, bidWithUncorrectCpmWeight);
+      let bidWithZeroCpmWeight = Object.assign({}, bidWithZeroCpmWeight);
 
       delete bidWithoutCpmWeight.params;
       delete bidWithCorrectCpmWeight.params;
       delete bidWithUncorrectCpmWeight.params;
+      delete bidWithZeroCpmWeight.params;
 
       bidWithoutCpmWeight.params = {
         'ChannelID': 0
@@ -137,9 +153,14 @@ describe('bridgewellBidAdapter', function () {
         'ChannelID': 0
       };
 
+      bidWithZeroCpmWeight.params = {
+        'ChannelID': 0
+      };      
+
       expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(false);
       expect(spec.isBidRequestValid(bidWithCorrectCpmWeight)).to.equal(false);
       expect(spec.isBidRequestValid(bidWithUncorrectCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithZeroCpmWeight)).to.equal(false);
     });
   });
 
