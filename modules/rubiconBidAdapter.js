@@ -99,7 +99,7 @@ export const spec = {
 
     if (spec.hasVideoMediaType(bid)) {
       // support instream only
-      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream' || typeof params.video !== 'object' || !params.video.size_id) {
+      if ((utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream') || typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
     }
@@ -114,7 +114,7 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      if (bidRequest.mediaType === 'video') {
+      if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
         let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
@@ -289,7 +289,7 @@ export const spec = {
         bid.mediaType = ad.creative_type;
       }
 
-      if (bidRequest.mediaType === 'video') {
+      if (ad.creative_type === VIDEO) {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
@@ -362,10 +362,9 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight)
+    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
