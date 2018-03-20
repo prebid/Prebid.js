@@ -1,5 +1,7 @@
 import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter';
+import includes from 'core-js/library/fn/array/includes';
 import { expect } from 'chai';
+import {parse as parseURL} from 'src/url';
 let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -112,16 +114,17 @@ describe('eplanning analytics adapter', () => {
       events.emit(constants.EVENTS.AUCTION_END, {auctionId: pauctionId});
 
       // Step 7: Find the request data sent (filtering other hosts)
-      requests = requests.filter(req => req.url.includes(initOptions.host));
-
+      requests = requests.filter(req => {
+        return req.url.indexOf(initOptions.host) > -1;
+      });
       expect(requests.length).to.equal(1);
 
-      expect(requests[0].url.includes(initOptions.host + initOptions.ci));
-      expect(requests[0].url.includes('https://ads.ar.e-planning.net/hba/1/12345?d='));
+      expect(includes([initOptions.host + initOptions.ci], requests[0].url));
+      expect(includes(['https://ads.ar.e-planning.net/hba/1/12345?d='], requests[0].url));
 
       let info = requests[0].url;
-      let purl = new URL(info);
-      let eplData = JSON.parse(decodeURIComponent(purl.searchParams.get('d')));
+      let purl = parseURL(info);
+      let eplData = JSON.parse(decodeURIComponent(purl.search.d));
 
       // Step 8 check that 6 events were sent
       expect(eplData.length).to.equal(6);
