@@ -79,13 +79,22 @@ function stringProperties(obj) {
 
 function sizeToDimensions(size) {
   return {
-    width: size[0],
-    height: size[1]
+    width: size.w || size[0],
+    height: size.h || size[1]
   };
 }
 
 function validMediaType(type) {
   return ['banner', 'native', 'video'].indexOf(type) !== -1;
+}
+
+function formatSource(src) {
+  if (typeof src === 'undefined') {
+    src = 'client';
+  } else if (src === 's2s') {
+    src = 'server';
+  }
+  return src.toLowerCase();
 }
 
 function sendMessage(auctionId, bidWonId) {
@@ -288,6 +297,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
+            'finalSource as source',
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
@@ -354,7 +364,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_RESPONSE:
         let bid = cache.auctions[args.auctionId].bids[args.adId];
-        bid.source = args.source;
+        bid.source = formatSource(bid.source || args.source);
         switch (args.getStatusCode()) {
           case GOOD:
             bid.status = 'success';

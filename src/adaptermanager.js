@@ -112,6 +112,8 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
+    // TODO: fix! this should probably happen in the adapter rather than here. now all the analytics adapters as well as
+    // `getBids` above need to deal w/ potentially two different size formats.
     adUnit.sizes = transformHeightWidth(adUnit);
 
     // filter out client side bids
