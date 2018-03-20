@@ -12,16 +12,13 @@ const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
 const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
 const COOKIE_ENABLED = cookiesAreEnabled();
-const PBJS = window['$$PREBID_GLOBAL$$'];
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
-  BID_INFO: 'wsBidInfo',
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
 
 let preReqTime = 0;
-let adUnitInfo = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,7 +37,6 @@ export const spec = {
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
-    const BID_INFO = getData(LS_KEYS.BID_INFO);
     const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
     const LC_UID = getLcuid();
 
@@ -53,10 +49,6 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      adUnitInfo[bid.bidId] = {
-        'adUnitCode': bid.adUnitCode,
-      };
-
       let data = {
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
@@ -67,7 +59,6 @@ export const spec = {
         'lcuid': LC_UID || '',
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
         'hb': '1',
-        'hb.wbi': BID_INFO[i] ? encodedParamValue(BID_INFO[i]) : '',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
@@ -134,9 +125,6 @@ export const spec = {
     const successBids = serverResponse.body || [];
     let bidResponses = [];
     successBids.forEach((bid) => {
-      if (adUnitInfo[bid.bidId]) {
-        adUnitInfo[bid.bidId]['reqId'] = bid.reqId;
-      }
       storeData({
         'perf_status': 'OK',
         'perf_reqid': bid.reqId,
@@ -245,21 +233,5 @@ function getEngineUrl() {
   const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
   return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
 }
-
-PBJS.onEvent('bidWon', function(bid) {
-  const adUnitCodes = Object.keys(adUnitInfo).map(val => adUnitInfo[val]['adUnitCode']);
-  if (adUnitCodes.includes(bid.adUnitCode) && bid.bidderCode !== BIDDER_CODE) {
-    const reqId = Object.keys(adUnitInfo).reduce((rid, key) => {
-      rid = adUnitInfo[key]['adUnitCode'] === bid.adUnitCode ? adUnitInfo[key]['reqId'] : rid;
-      return rid
-    }, '');
-    storeData({
-      'reqId': reqId,
-      'cpm': bid.cpm,
-      'cur': bid.currency,
-      'netRev': bid.netRevenue
-    }, `${LS_KEYS.BID_INFO}${reqId}`);
-  }
-});
 
 registerBidder(spec);
