@@ -100,7 +100,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
     }
   });
   if (bucket) {
-    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision, granularityMultiplier);
+    cpmStr = getCpmTarget(cpm, bucket, granularityMultiplier);
   }
   return cpmStr;
 }
@@ -118,12 +118,13 @@ function isValidPriceConfig(config) {
   return isValid;
 }
 
-function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
-  if (typeof precision === 'undefined') {
-    precision = _defaultPrecision;
-  }
-  let bucketSize = 1 / (increment * granularityMultiplier);
-  return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
+function getCpmTarget(cpm, bucket, granularityMultiplier) {
+  const precision = typeof bucket.precision !== 'undefined' ? bucket.precision : _defaultPrecision;
+  const increment = bucket.increment * granularityMultiplier;
+  const bucketMin = bucket.min * granularityMultiplier;
+
+  let cpmTarget = ((Math.floor((cpm - bucketMin) / increment)) * increment) + bucketMin;
+  return cpmTarget.toFixed(precision);
 }
 
 export { getPriceBucketString, isValidPriceConfig };
