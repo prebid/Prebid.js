@@ -1,10 +1,10 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter';
-import { parse as parseQuery } from 'querystring';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { userSync } from 'src/userSync';
-import { config } from 'src/config';
+import {spec, masSizeOrdering, resetUserSync} from 'modules/rubiconBidAdapter';
+import {parse as parseQuery} from 'querystring';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {userSync} from 'src/userSync';
+import {config} from 'src/config';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -208,7 +208,8 @@ describe('the rubicon adapter', () => {
 
         it('should send digitrust params', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -253,7 +254,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to optout', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -281,7 +283,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to failure', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -493,6 +496,50 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
         });
 
+        it('should send request with proper ad position', () => {
+          createVideoBidderRequest();
+          let positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'atf';
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          let post = request.data;
+          let slot = post.slots[0];
+
+          expect(slot.position).to.equal('atf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'btf';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('btf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'unknown';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = '123';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          delete positionBidderRequest.bids[0].params.position;
+          expect(positionBidderRequest.bids[0].params.position).to.equal(undefined);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+        });
+
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
@@ -603,7 +650,7 @@ describe('the rubicon adapter', () => {
             ]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -655,7 +702,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -678,7 +725,7 @@ describe('the rubicon adapter', () => {
             'ads': []
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -702,7 +749,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -712,7 +759,7 @@ describe('the rubicon adapter', () => {
         it('should handle an error because of malformed json response', () => {
           let response = '{test{';
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -753,7 +800,7 @@ describe('the rubicon adapter', () => {
             'account_id': 7780
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
