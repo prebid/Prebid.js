@@ -445,7 +445,7 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
   timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
 
-  for (const bidder of Object.keys(timedOutBidders)) {
+  Object.keys(timedOutBidders).forEach((bidder) => {
     try {
       const adapter = _bidderRegistry[bidder];
       const spec = adapter.getSpec();
@@ -456,5 +456,5 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
     } catch (e) {
       utils.logWarn(`Error calling onTimeout of ${bidder}`);
     }
-  }
+  });
 }
