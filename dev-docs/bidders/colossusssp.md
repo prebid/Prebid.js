@@ -15,4 +15,5 @@ prebid_1_0_supported : true
 {: .table .table-bordered .table-striped }
 | Name           | Scope      | Description                                                    | Example            |
 | :-----------   | :--------- | :------------                                                  | :----------------- |
-| `placement_id` | required   | Placement Id will be generated on Colossus SSP Platform. | 0                  |
+| `placement_id` | required   | Placement Id will be generated on Colossus SSP Platform. | 0                        |
+| `traffic`      | optional   | Type traffic                                             | 'banner'                 |
