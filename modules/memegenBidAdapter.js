@@ -36,7 +36,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
     var rtbTagId = Number(utils.getBidIdParameter('rtbTagId', bidReq.params));
     var rtbSiteId = utils.getBidIdParameter('rtbSiteId', bidReq.params);
     var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
-    var buyerId = utils.getBidIdParameter('buyerId', bidReq.params);
+    var buyerUid = utils.getBidIdParameter('buyerUid', bidReq.params);
     var ua = utils.getBidIdParameter('ua', bidReq.params) || window.navigator.userAgent;
 
     var adW = 0;
@@ -143,9 +143,9 @@ var MemeGenAdapter = function MemeGenAdapter() {
       }
     }
 
-    if (buyerId) {
+    if (buyerUid) {
       bidRequest.user = bidRequest.user || {};
-      bidRequest.user.buyerid = buyerId;
+      bidRequest.user.buyeurid = buyerUid;
     }
 
     if (ip && bidRequest.device) {
