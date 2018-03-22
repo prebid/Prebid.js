@@ -52,35 +52,36 @@ export const spec = {
     };
     return {
       method: 'GET',
-      url: '//' + rtbServerDomain + '/hb?' +
-        '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq))
+      url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
+      bids: ebdrImps
     };
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function(serverResponse, bidRequest) {
+    console.log(serverResponse);
+    console.log(bidRequest);
+    let ebdrResponseImps = [];
     const ebdrResponseObj = serverResponse.body;
     if (!ebdrResponseObj || !ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
       return [];
     }
-    var ebdrBid = ebdrResponseObj.seatbid[0].bid[0];
-    var responseCPM;
-    responseCPM = parseFloat(ebdrBid.price);
-    var adm = decodeURIComponent(ebdrBid.adm);
-    var whArr = getWidthAndHeight(bidObj);
-    bid.width = whArr[0];
-    bid.height = whArr[1];
-    return {
-      requestId: ebdrResponseObj.id,
-      bidderCode: spec.code,
-      ad: adm,
-      creativeId: ebdrBid.crid,
-      cpm: responseCPM,
-      width: whArr[0],
-      height: whArr[1],
-      mediaType: BANNER,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 3600
-    };
+    ebdrResponseObj.seatbid[0].bid.forEach(ebdrBid => {
+      var responseCPM;
+      responseCPM = parseFloat(ebdrBid.price);
+      var adm = decodeURIComponent(ebdrBid.adm);
+      ebdrResponseImps.push({
+        requestId: ebdrBid.id,
+        bidderCode: spec.code,
+        ad: adm,
+        creativeId: ebdrBid.crid,
+        cpm: responseCPM,
+        width: ebdrBid.w,
+        height: ebdrBid.h,
+        mediaType: BANNER,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 3600 });
+    });
+    return ebdrResponseImps;
   }
 }
 function getWidthAndHeight(bid) {
