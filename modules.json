@@ -3,5 +3,6 @@
   "guIndexExchangeBidAdapter",
   "trustxBidAdapter",
   "improvedigitalBidAdapter",
-  "appnexusBidAdapter"
+  "appnexusBidAdapter",
+  "guAnalyticsAdapter"
 ]
