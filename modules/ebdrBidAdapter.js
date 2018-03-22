@@ -17,8 +17,7 @@ export const spec = {
     var zoneid = '';
     var requestId = '';
     bids.forEach(bid => {
-      // utils.logInfo(`Log ${bid}`);
-      console.log(bid);
+      utils.logInfo('Log bid', bid);
       var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
       var whArr = getWidthAndHeight(bid);
       zoneid = utils.getBidIdParameter('zoneid', bid.params);
@@ -57,8 +56,8 @@ export const spec = {
     };
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    console.log(serverResponse);
-    console.log(bidRequest);
+    utils.logInfo('Log serverResponse', serverResponse);
+    utils.logInfo('Log bidRequest', bidRequest);
     let ebdrResponseImps = [];
     const ebdrResponseObj = serverResponse.body;
     if (!ebdrResponseObj || !ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
