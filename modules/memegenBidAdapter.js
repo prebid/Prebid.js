@@ -146,7 +146,6 @@ var MemeGenAdapter = function MemeGenAdapter() {
     if (buyerUid) {
       bidRequest.user = bidRequest.user || {};
       bidRequest.user.buyeruid = buyerUid;
-      bidRequest.user.buyerid = buyerUid;
     }
 
     if (ip && bidRequest.device) {
