@@ -81,23 +81,30 @@ export function requestBidsHook(config, fn) {
     return nextFn.apply(context, args);
   }
 
-  // lookup times and user interaction with CMP prompts can greatly vary, so enforcing a timeout on the CMP process
-  timer = setTimeout(cmpTimedOut, consentTimeout);
-
   cmpCallMap[userCMP].call(this, processCmpData, exitFailedCmp);
+
+  if (!haveExited) {
+    if (consentTimeout === 0) {
+      processCmpData(undefined);
+    } else {
+      timer = setTimeout(cmpTimedOut, consentTimeout);
+    }
+  }
 }
 
 // after we have grabbed ideal ID from CMP, apply the data to adUnits object and finish up the module
 function processCmpData(consentString) {
   if (typeof consentString !== 'string' || consentString === '') {
     exitFailedCmp(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
-  }
-  clearTimeout(timer);
-
-  // to stop the auction from running if we chose to cancel and timeout was reached
-  if (haveExited === false) {
+  } else {
+    clearTimeout(timer);
     storeConsentData(consentString);
-    nextFn.apply(context, args);
+
+    // to stop the auction from running if we chose to cancel and timeout was reached
+    if (haveExited === false) {
+      haveExited = true;
+      nextFn.apply(context, args);
+    }
   }
 }
 
@@ -115,16 +122,16 @@ function cmpTimedOut() {
 }
 
 // controls the exit of the module based on consentManagement config; either we'll resume the auction or cancel the auction
-function exitFailedCmp(message) {
+function exitFailedCmp(errorMsg) {
   clearTimeout(timer);
   haveExited = true;
   if (allowAuction) {
-    utils.logWarn(message + ' Resuming auction without consent data as per consentManagement config.');
+    utils.logWarn(errorMsg + ' Resuming auction without consent data as per consentManagement config.');
     storeConsentData(undefined);
 
     nextFn.apply(context, args);
   } else {
-    utils.logError(message + ' Canceling auction as per consentManagement config.');
+    utils.logError(errorMsg + ' Canceling auction as per consentManagement config.');
   }
 }
 
