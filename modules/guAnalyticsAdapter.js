@@ -1,0 +1,176 @@
+// see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
+import adapter from 'src/AnalyticsAdapter';
+import CONSTANTS from 'src/constants.json';
+import * as adaptermanager from 'src/adaptermanager';
+import {ajax} from 'src/ajax';
+
+const analyticsType = 'endpoint';
+const QUEUE_TIMEOUT = 4000;
+
+let analyticsAdapter = Object.assign(adapter({analyticsType}),
+  {
+    track({eventType, args}) {
+      if (!analyticsAdapter.context) {
+        return;
+      }
+      let handler = null;
+      switch (eventType) {
+        case CONSTANTS.EVENTS.AUCTION_INIT:
+          if (analyticsAdapter.context.queue) {
+            analyticsAdapter.context.queue.init();
+          }
+          handler = trackAuctionInit;
+          break;
+        case CONSTANTS.EVENTS.BID_REQUESTED:
+          handler = trackBidRequest;
+          break;
+        case CONSTANTS.EVENTS.BID_RESPONSE:
+          handler = trackBidResponse;
+          break;
+        case CONSTANTS.EVENTS.BID_TIMEOUT:
+          handler = trackBidTimeout;
+          break;
+        case CONSTANTS.EVENTS.AUCTION_END:
+          handler = trackAuctionEnd;
+          break;
+      }
+      if (handler) {
+        let events = handler(args);
+        if (analyticsAdapter.context.queue) {
+          analyticsAdapter.context.queue.push(events);
+        }
+        if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+          sendAll();
+        }
+      }
+    }
+  });
+
+function buildRequestTemplate(options) {
+  return {
+    pv: options.pv
+  }
+}
+
+// from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Only send 0.01% of auctions
+function shouldSend() {
+  return getRandomIntInclusive(0, 10000) === 1
+}
+
+function sendAll() {
+  let events = analyticsAdapter.context.queue.popAll();
+  if (events.length !== 0 && shouldSend()) {
+    let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    ajax(
+      `//${analyticsAdapter.context.host}/hb`,
+      () => {
+      },
+      JSON.stringify(req),
+      {
+        method: 'PUT',
+        contentType: 'application/json; charset=utf-8'
+      }
+    );
+  }
+}
+
+function trackAuctionInit(args) {
+  const event = createHbEvent(undefined, 'init', undefined, args.auctionId);
+  return [event];
+}
+
+function trackBidRequest(args) {
+  return args.bids.map(bid =>
+    createHbEvent(args.bidderCode, 'request', bid.adUnitCode));
+}
+
+function trackBidResponse(args) {
+  const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond);
+  return [event];
+}
+
+function trackBidTimeout(args) {
+  return args.map(bid => createHbEvent(bid.bidder, 'timeout', bid.adUnitCode));
+}
+
+function trackAuctionEnd(args) {
+  const event = createHbEvent(undefined, 'end', undefined, args.auctionId);
+  return [event];
+}
+
+function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
+  let ev = {ev: event};
+  if (bidder) {
+    ev.n = bidder
+  }
+  if (slotId) {
+    ev.sid = slotId;
+  }
+  if (auctionId) {
+    ev.aid = auctionId;
+  }
+  if (timeToRespond) {
+    ev.ttr = timeToRespond;
+  }
+  ev.args = args;
+  return ev;
+}
+
+export function ExpiringQueue(callback, ttl) {
+  let queue = [];
+  let timeoutId;
+
+  this.push = (event) => {
+    if (event instanceof Array) {
+      queue.push.apply(queue, event);
+    } else {
+      queue.push(event);
+    }
+    reset();
+  };
+
+  this.popAll = () => {
+    let result = queue;
+    queue = [];
+    reset();
+    return result;
+  };
+
+  this.init = reset;
+
+  function reset() {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      if (queue.length) {
+        callback();
+      }
+    }, ttl);
+  }
+}
+
+analyticsAdapter.context = {};
+
+analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
+
+analyticsAdapter.enableAnalytics = (config) => {
+  analyticsAdapter.context = {
+    host: config.options.host,
+    requestTemplate: buildRequestTemplate(config.options),
+    queue: new ExpiringQueue(sendAll, QUEUE_TIMEOUT)
+  };
+  analyticsAdapter.originEnableAnalytics(config);
+};
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: analyticsAdapter,
+  code: 'gu'
+});
