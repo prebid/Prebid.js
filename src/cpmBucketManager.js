@@ -123,6 +123,7 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const increment = bucket.increment * granularityMultiplier;
   const bucketMin = bucket.min * granularityMultiplier;
 
+  // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
   let cpmTarget = ((Math.floor((cpm - bucketMin) / increment)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
