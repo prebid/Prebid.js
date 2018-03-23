@@ -52,21 +52,9 @@ function buildRequestTemplate(options) {
   }
 }
 
-// from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
-function getRandomIntInclusive(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Only send 0.01% of auctions
-function shouldSend() {
-  return getRandomIntInclusive(0, 10000) === 1
-}
-
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
-  if (events.length !== 0 && shouldSend()) {
+  if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
     ajax(
       `//${analyticsAdapter.context.host}/hb`,
