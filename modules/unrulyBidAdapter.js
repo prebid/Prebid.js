@@ -15,7 +15,21 @@ function configureRendererQueue () {
   parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
 }
 
+const UNKNOWN_SITE_ID = 'not_found';
+const getSiteIDFromBidResponseBid = bidResponseBid => (
+  bidResponseBid &&
+  bidResponseBid.renderer &&
+  typeof bidResponseBid.renderer.getConfig === 'function' &&
+  bidResponseBid.renderer.getConfig().siteId
+) ? bidResponseBid.renderer.getConfig().siteId : UNKNOWN_SITE_ID;
+
+const trackAuctionWon = siteID =>
+  parent.window.document.createElement('img').src = `//stats3.unrulymedia.com/blank.gif?t=hb_auction_won&pid=${siteID}`;
+
 function notifyRenderer (bidResponseBid) {
+  trackAuctionWon(
+    getSiteIDFromBidResponseBid(bidResponseBid)
+  );
   parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
 }
 
