@@ -71,7 +71,7 @@ You can always get the latest version of the creative code below from [the AMP e
 
 {% highlight html %}
 
-    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.2.1/dist/creative.js"></script>
+    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.3.0/dist/creative.js"></script>
     <script>
     var adId = "%%PATTERN:hb_adid%%";
     var cacheHost = "%%PATTERN:hb_cache_host%%";
@@ -79,6 +79,7 @@ You can always get the latest version of the creative code below from [the AMP e
     var uuid = "%%PATTERN:hb_cache_id%%";
     var mediaType = "%%PATTERN:hb_format%%";
     var pubUrl = "%%PATTERN:url%%";
+    var size = "%%PATTERN:hb_size%%";
 
     try {
         pbjs.renderAd(document, adId, {
@@ -86,7 +87,8 @@ You can always get the latest version of the creative code below from [the AMP e
             cachePath: cachePath,
             uuid: uuid,
             mediaType: mediaType,
-            pubUrl: pubUrl
+            pubUrl: pubUrl,
+            size: size
         });
     } catch (e) {
         console.log(e);
@@ -109,7 +111,7 @@ Iframes must be either 600px away from the top or not within the first 75% of th
                             layout="responsive"
                             sandbox="allow-scripts"
                             frameborder="0"
-                            src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.2.1/dist/load-cookie.html">
+                            src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.3.0/dist/load-cookie.html">
     </amp-iframe>
 
 {% endhighlight %}
