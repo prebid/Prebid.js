@@ -10,7 +10,7 @@ import {
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
-const LOCAL_STORAGE_AVAILABLE = window.localStorage || 0;
+const LOCAL_STORAGE_AVAILABLE = window.localStorage;
 const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
@@ -56,7 +56,7 @@ export const spec = {
         'referer': (isInHostileIframe ? window : window.top).location.href.split('#')[0],
         'inFrame': 1,
         'sid': bid.params.sid,
-        'lcuid': LC_UID || '',
+        'lcuid': LC_UID,
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
@@ -187,7 +187,9 @@ function getData(name, remove = true) {
         }
       }
     });
-  } else if (COOKIE_ENABLED) {
+  }
+
+  if (COOKIE_ENABLED) {
     document.cookie.split(';').forEach((item) => {
       let value = item.split('=');
       if (value[0].includes(name)) {
@@ -203,7 +205,7 @@ function getData(name, remove = true) {
 
 function pixelSyncPossibility() {
   const userSync = config.getConfig('userSync');
-  return userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
+  return userSync && userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
 function visibleOnLoad(element) {
