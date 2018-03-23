@@ -73,7 +73,7 @@ export function requestBidsHook(config, fn) {
 
   // in case we already have consent (eg during bid refresh)
   if (consentData) {
-    return nextFn.apply(context, args);
+    return exitModule();
   }
 
   if (!Object.keys(cmpCallMap).includes(userCMP)) {
@@ -81,8 +81,9 @@ export function requestBidsHook(config, fn) {
     return nextFn.apply(context, args);
   }
 
-  cmpCallMap[userCMP].call(this, processCmpData, exitFailedCmp);
+  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed);
 
+  // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
   if (!haveExited) {
     if (consentTimeout === 0) {
       processCmpData(undefined);
@@ -92,23 +93,48 @@ export function requestBidsHook(config, fn) {
   }
 }
 
-// after we have grabbed ideal ID from CMP, store the data for future use and finish up the module
+/**
+ * This function checks the string value provided by CMP to ensure it's a valid string.
+ * If it's bad we exit the module depending on config settings.
+ * If it's good, then we store the value and exits the module.
+ * @param {string} consentString required; encoded string value from CMP representing user's consent choices
+ */
 function processCmpData(consentString) {
   if (typeof consentString !== 'string' || consentString === '') {
-    exitFailedCmp(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
+    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
   } else {
     clearTimeout(timer);
     storeConsentData(consentString);
 
-    // to stop the auction from running if we chose to cancel and timeout was reached
-    if (haveExited === false) {
-      haveExited = true;
-      nextFn.apply(context, args);
-    }
+    exitModule();
   }
 }
 
-// store CMP data locally in module and then invoke gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
+/**
+ * General timeout callback when interacting with CMP takes too long.
+ */
+function cmpTimedOut() {
+  cmpFailed('CMP workflow exceeded timeout threshold.');
+}
+
+/**
+ * This function contains the controlled steps to perform when there's a problem with CMP.
+ * @param {string} errMsg required; should be a short descriptive message for why the failure/issue happened.
+*/
+function cmpFailed(errMsg) {
+  clearTimeout(timer);
+
+  // still set the consentData to undefined when there is a problem as per config options
+  if (allowAuction) {
+    storeConsentData(undefined);
+  }
+  exitModule(errMsg);
+}
+
+/**
+ * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
+ * @param {string} cmpConsentString required; encoded string value representing user's consent choices (can be undefined in certain use-cases for this function only)
+ */
 function storeConsentData(cmpConsentString) {
   consentData = {
     consentString: cmpConsentString,
@@ -117,21 +143,35 @@ function storeConsentData(cmpConsentString) {
   gdprDataHandler.setConsentData(consentData);
 }
 
-function cmpTimedOut() {
-  exitFailedCmp('CMP workflow exceeded timeout threshold.');
-}
+/**
+ * This function handles the exit logic for the module.
+ * There are several paths in the module's logic to call this function and we only allow 1 of the 3 potential exits to happen before suppressing others.
+ *
+ * We prevent multiple exits to avoid conflicting messages in the console depending on certain scenarios.
+ * One scenario could be auction was canceled due to timeout with CMP being reached because the user was still interacting with CMP for the first time.
+ * While the timeout is the accepted exit and runs first, the CMP's callback still tries to process the user's data (which normally leads to a good exit).
+ * In this case, the good exit will be suppressed since we already decided to cancel the auction.
+ *
+ * Three exit paths are:
+ * 1. good exit where auction runs (CMP data is processed normally).
+ * 2. bad exit but auction still continues (warning message is logged, CMP data is undefined and still passed along).
+ * 3. bad exit with auction canceled (error message is logged).
+ * @param {string} errMsg optional param; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
+ */
+function exitModule(errMsg) {
+  if (haveExited === false) {
+    haveExited = true;
 
-// controls the exit of the module when there's a problem.  Based on consentManagement config, either we'll resume the auction or cancel the auction.
-function exitFailedCmp(errorMsg) {
-  clearTimeout(timer);
-  haveExited = true;
-  if (allowAuction) {
-    utils.logWarn(errorMsg + ' Resuming auction without consent data as per consentManagement config.');
-    storeConsentData(undefined);
-
-    nextFn.apply(context, args);
-  } else {
-    utils.logError(errorMsg + ' Canceling auction as per consentManagement config.');
+    if (errMsg) {
+      if (allowAuction) {
+        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.');
+        nextFn.apply(context, args);
+      } else {
+        utils.logError(errMsg + ' Canceling auction as per consentManagement config.');
+      }
+    } else {
+      nextFn.apply(context, args);
+    }
   }
 }
 
