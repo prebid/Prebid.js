@@ -12,7 +12,7 @@ prebid_1_0_supported : true
 
 ### Note:
 
-The AdKernel adapter doesn't support multiple sizes per ad-unit and will use the first one if multiple sizes are defined.
+The Adkernel Bidding adaptor requires setup and approval before beginning. Please reach out to <prebid@adkernel.com> for more details
 
 ### bid params
 
@@ -20,5 +20,5 @@ The AdKernel adapter doesn't support multiple sizes per ad-unit and will use the
 
 | Name | Scope    | Description        | Example  |
 | :--- | :----    | :----------        | :------  |
-| host   | required | Ad network's RTB host    | `'cpm.metaadserving.com'` |
-| zoneId | required | RTB zone id        | `'30164'` |
+| `host`   | required | Ad network's RTB host    | `'cpm.metaadserving.com'` |
+| `zoneId` | required | RTB zone id        | `'30164'` |
