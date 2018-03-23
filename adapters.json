@@ -1,0 +1,35 @@
+[
+    "aol",
+    "appnexus",
+    "appnexusAst",
+    "conversant",
+    "cox",
+    "districtmDMX",
+    "gumgum",
+    "indexExchange",
+    "openx",
+    "pubgears",
+    "pulsepoint",
+    "rhythmone",
+    "smartyads",
+    "sonobi",
+    "sovrn",
+    "memeglobal",
+    "criteo",
+    "prebidServer",
+    {
+      "appnexus": {
+        "alias": "brealtime"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "defymedia"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
+    }
+]

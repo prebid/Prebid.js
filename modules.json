@@ -1,0 +1,20 @@
+[
+    "freestarAnalyticsAdapter",
+    "aolBidAdapter",
+    "appnexusBidAdapter",
+    "conversantBidAdapter",
+    "gumgumBidAdapter",
+    "justpremiumBidAdapter",
+    "komoonaBidAdapter",
+    "openxBidAdapter",
+    "pubmaticBidAdapter",
+    "pulsepointBidAdapter",
+    "rhythmoneBidAdapter",
+    "rubiconBidAdapter",
+    "sharethroughBidAdapter",
+    "sekindoUMBidAdapter",
+    "smartyadsBidAdapter",
+    "sonobiBidAdapter",
+    "sovrnBidAdapter",
+    "prebidServerBidAdapter"
+]
