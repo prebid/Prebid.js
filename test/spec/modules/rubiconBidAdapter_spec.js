@@ -5,6 +5,7 @@ import { parse as parseQuery } from 'querystring';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { userSync } from 'src/userSync';
 import { config } from 'src/config';
+import * as utils from 'src/utils';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -16,6 +17,31 @@ describe('the rubicon adapter', () => {
 
   function createVideoBidderRequest() {
     let bid = bidderRequest.bids[0];
+
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      }
+    };
+
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'playerHeight': 320,
+      'playerWidth': 640,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createLegacyVideoBidderRequest() {
+    let bid = bidderRequest.bids[0];
+
+    // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
     bid.params.video = {
       'language': 'en',
@@ -33,11 +59,61 @@ describe('the rubicon adapter', () => {
 
   function createVideoBidderRequestNoVideo() {
     let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      },
+    };
+    bid.params.video = '';
+  }
+
+  function createLegacyVideoBidderRequestNoVideo() {
+    let bid = bidderRequest.bids[0];
     bid.mediaType = 'video';
     bid.params.video = '';
   }
 
+  function createVideoBidderRequestOutstream() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'outstream'
+      },
+    };
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'playerHeight': 320,
+      'playerWidth': 640,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
   function createVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      },
+    };
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createLegacyVideoBidderRequestNoPlayer() {
     let bid = bidderRequest.bids[0];
     bid.mediaType = 'video';
     bid.params.video = {
@@ -57,7 +133,7 @@ describe('the rubicon adapter', () => {
 
     bidderRequest = {
       bidderCode: 'rubicon',
-      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
       bids: [
         {
@@ -80,10 +156,11 @@ describe('the rubicon adapter', () => {
             referrer: 'localhost'
           },
           adUnitCode: '/19968336/header-bid-tag-0',
+          code: 'div-1',
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
-          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
@@ -98,27 +175,19 @@ describe('the rubicon adapter', () => {
   });
 
   describe('MAS mapping / ordering', () => {
-    it('should not include values without a proper mapping', () => {
-      // two invalid sizes included: [42, 42], [1, 1]
-      let ordering = masSizeOrdering([[320, 50], [42, 42], [300, 250], [640, 480], [1, 1], [336, 280]]);
-
-      expect(ordering).to.deep.equal([15, 16, 43, 65]);
-    });
-
     it('should sort values without any MAS priority sizes in regular ascending order', () => {
-      let ordering = masSizeOrdering([[320, 50], [640, 480], [336, 280], [200, 600]]);
-
+      let ordering = masSizeOrdering([126, 43, 65, 16]);
       expect(ordering).to.deep.equal([16, 43, 65, 126]);
     });
 
     it('should sort MAS priority sizes in the proper order w/ rest ascending', () => {
-      let ordering = masSizeOrdering([[320, 50], [160, 600], [640, 480], [300, 250], [336, 280], [200, 600]]);
+      let ordering = masSizeOrdering([43, 9, 65, 15, 16, 126]);
       expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
 
-      ordering = masSizeOrdering([[320, 50], [300, 250], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
+      ordering = masSizeOrdering([43, 15, 9, 65, 16, 126, 2]);
       expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
 
-      ordering = masSizeOrdering([[120, 600], [320, 50], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
+      ordering = masSizeOrdering([8, 43, 9, 65, 16, 126, 2]);
       expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
     });
   });
@@ -127,8 +196,7 @@ describe('the rubicon adapter', () => {
     describe('for requests', () => {
       describe('to fastlane', () => {
         it('should make a well-formed request objects', () => {
-          sandbox.stub(Math, 'random', () => 0.1);
-
+          sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
@@ -145,7 +213,7 @@ describe('the rubicon adapter', () => {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -167,20 +235,45 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        it('should use rubicon sizes if present', () => {
+        it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', () => {
+          sandbox.stub(utils, 'getTopWindowUrl').callsFake(() => 'http://www.prebid.org');
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('localhost');
+
+          delete bidderRequest.bids[0].params.referrer;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+
+          let origGetConfig = config.getConfig;
+          sandbox.stub(config, 'getConfig').callsFake(function(key) {
+            if (key === 'pageUrl') {
+              return 'http://www.rubiconproject.com';
+            }
+            return origGetConfig.apply(config, arguments);
+          });
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
+
+          bidderRequest.bids[0].params.secure = true;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
+        });
+
+        it('should use rubicon sizes if present (including non-mappable sizes)', () => {
           var sizesBidderRequest = clone(bidderRequest);
-          sizesBidderRequest.bids[0].params.sizes = [55, 57, 59];
+          sizesBidderRequest.bids[0].params.sizes = [55, 57, 59, 801];
 
           let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
           let data = parseQuery(request.data);
 
           expect(data['size_id']).to.equal('55');
-          expect(data['alt_size_ids']).to.equal('57,59');
+          expect(data['alt_size_ids']).to.equal('57,59,801');
         });
 
         it('should not validate bid request if no valid sizes', () => {
           var sizesBidderRequest = clone(bidderRequest);
-          sizesBidderRequest.bids[0].sizes = [[620, 250], [300, 251]];
+          sizesBidderRequest.bids[0].sizes = [[621, 250], [300, 251]];
 
           let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
 
@@ -210,7 +303,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -255,7 +348,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: true,
               identity: {
@@ -283,7 +376,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser', () =>
+          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
               success: false,
               identity: {
@@ -320,7 +413,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should send digiTrustId config params', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -353,7 +446,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -382,7 +475,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -411,7 +504,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sandbox.stub(config, 'getConfig', (key) => {
+            sandbox.stub(config, 'getConfig').callsFake((key) => {
               var config = {};
               return config[key];
             });
@@ -433,10 +526,10 @@ describe('the rubicon adapter', () => {
       });
 
       describe('for video requests', () => {
-        it('should make a well-formed video request', () => {
-          createVideoBidderRequest();
+        it('should make a well-formed video request with legacy mediaType config', () => {
+          createLegacyVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -451,6 +544,7 @@ describe('the rubicon adapter', () => {
           expect(post.resolution).to.match(/\d+x\d+/);
           expect(post.account_id).to.equal('14062');
           expect(post.integration).to.equal(INTEGRATION);
+          expect(post['x_source.tid']).to.equal('d45dd707-a418-42ec-b8a7-b70a6c6fab0b');
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
@@ -493,10 +587,115 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
         });
 
+        it('should make a well-formed video request', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          let url = request.url;
+
+          expect(url).to.equal('//fastlane-adv.rubiconproject.com/v1/auction/video');
+
+          expect(post).to.have.property('page_url').that.is.a('string');
+          expect(post.resolution).to.match(/\d+x\d+/);
+          expect(post.account_id).to.equal('14062');
+          expect(post.integration).to.equal(INTEGRATION);
+          expect(post['x_source.tid']).to.equal('d45dd707-a418-42ec-b8a7-b70a6c6fab0b');
+          expect(post).to.have.property('timeout').that.is.a('number');
+          expect(post.timeout < 5000).to.equal(true);
+          expect(post.stash_creatives).to.equal(true);
+
+          expect(post).to.have.property('ae_pass_through_parameters');
+          expect(post.ae_pass_through_parameters)
+            .to.have.property('p_aso.video.ext.skip')
+            .that.equals('1');
+          expect(post.ae_pass_through_parameters)
+            .to.have.property('p_aso.video.ext.skipdelay')
+            .that.equals('15');
+
+          expect(post).to.have.property('slots')
+            .with.length.of(1);
+
+          let slot = post.slots[0];
+
+          expect(slot.site_id).to.equal('70608');
+          expect(slot.zone_id).to.equal('335918');
+          expect(slot.position).to.equal('atf');
+          expect(slot.floor).to.equal(0.01);
+          expect(slot.element_id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(slot.name).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(slot.language).to.equal('en');
+          expect(slot.width).to.equal(640);
+          expect(slot.height).to.equal(320);
+          expect(slot.size_id).to.equal(201);
+
+          expect(slot).to.have.property('inventory').that.is.an('object');
+          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('prodtype').that.equals('tech');
+
+          expect(slot).to.have.property('keywords')
+            .that.is.an('array')
+            .of.length(3)
+            .that.deep.equals(['a', 'b', 'c']);
+
+          expect(slot).to.have.property('visitor').that.is.an('object');
+          expect(slot.visitor).to.have.property('ucat').that.equals('new');
+          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+        });
+
+        it('should send request with proper ad position', () => {
+          createVideoBidderRequest();
+          var positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'atf';
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          let post = request.data;
+          let slot = post.slots[0];
+
+          expect(slot.position).to.equal('atf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'btf';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('btf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'unknown';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = '123';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          delete positionBidderRequest.bids[0].params.position;
+          expect(positionBidderRequest.bids[0].params.position).to.equal(undefined);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+        });
+
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
@@ -513,32 +712,117 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should not validate bid request when no video object is passed in', () => {
+        it('should not validate bid request when a invalid video object is passed in', () => {
           createVideoBidderRequestNoVideo();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest.bids[0]);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          let result = spec.isBidRequestValid(floorBidderRequest.bids[0]);
+          bidRequestCopy.params.video = {};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          expect(result).to.equal(false);
+          bidRequestCopy.params.video = undefined;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = 123;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = { size_id: '' };
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          delete bidRequestCopy.params.video;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+        });
+
+        it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoVideo();
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidderRequestCopy = clone(bidderRequest);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = {};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = undefined;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = NaN;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          delete bidderRequestCopy.bids[0].params.video;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+        });
+
+        it('should not validate bid request when video is outstream', () => {
+          createVideoBidderRequestOutstream();
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now', () =>
+          sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest);
 
-          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
-          let post = request.data;
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
 
-          expect(post.slots[0].width).to.equal(300);
-          expect(post.slots[0].height).to.equal(250);
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
+        });
+
+        it('should get size from bid.sizes too with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoPlayer();
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
+        });
+      });
+
+      describe('hasVideoMediaType', () => {
+        it('should return true if mediaType is true', () => {
+          createVideoBidderRequest();
+          const legacyVideoTypeBidRequest = spec.hasVideoMediaType(bidderRequest.bids[0]);
+          expect(legacyVideoTypeBidRequest).is.equal(true);
+        });
+
+        it('should return false if bidRequest.mediaType is not equal to video', () => {
+          expect(spec.hasVideoMediaType({
+            mediaType: 'banner'
+          })).is.equal(false);
+        });
+
+        it('should return false if bidRequest.mediaType is not defined', () => {
+          expect(spec.hasVideoMediaType({})).is.equal(false);
+        });
+
+        it('should return true if bidRequest.mediaTypes.video object exists', () => {
+          expect(spec.hasVideoMediaType({
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [300, 250]
+              }
+            }
+          })).is.equal(true);
         });
       });
     });
@@ -614,6 +898,8 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].rubicon.advertiserId).to.equal(7);
+          expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].ad).to.contain(`alert('foo')`)
@@ -627,6 +913,8 @@ describe('the rubicon adapter', () => {
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].ttl).to.equal(300);
           expect(bids[1].netRevenue).to.equal(false);
+          expect(bids[1].rubicon.advertiserId).to.equal(7);
+          expect(bids[1].rubicon.networkId).to.equal(8);
           expect(bids[1].creativeId).to.equal('crid-9');
           expect(bids[1].currency).to.equal('USD');
           expect(bids[1].ad).to.contain(`alert('foo')`)
@@ -767,6 +1055,8 @@ describe('the rubicon adapter', () => {
             'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].videoCacheKey).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
     });

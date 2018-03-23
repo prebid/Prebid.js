@@ -3,7 +3,7 @@
  */
 
 import { registerVideoSupport } from '../src/adServerManager';
-import { getWinningBids } from '../src/targeting';
+import { targeting } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
 import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
@@ -63,7 +63,7 @@ export default function buildDfpVideoUrl(options) {
   }
 
   const adUnit = options.adUnit;
-  const bid = options.bid || getWinningBids(adUnit.code)[0];
+  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
 
   let urlComponents = {};
 
@@ -88,6 +88,8 @@ export default function buildDfpVideoUrl(options) {
   const customParams = Object.assign({},
     adserverTargeting,
     { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    {hb_cache_id: bid && bid.videoCacheKey},
     options.params.cust_params);
 
   const queryParams = Object.assign({},
@@ -138,7 +140,7 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  if (config.getConfig('usePrebidCache')) { return; }
+  if (config.getConfig('cache.url')) { return; }
 
   if (!deepAccess(components, `${prop}.description_url`)) {
     const vastUrl = bid && bid.vastUrl;
