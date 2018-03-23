@@ -32,7 +32,7 @@ const cmpCallMap = {
 
 /**
  * This function handles interacting with the AppNexus CMP to obtain the consentString value of the user.
- * Given the asynch nature of the CMP's API, we pass in acting success/error callback functions to exit this function
+ * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentString (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
@@ -60,7 +60,7 @@ function lookupAppNexusConsent(cmpSuccess, cmpError) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object and transferred to adaptermanager's gdprDataHandler object.
+ * data as part of a gdprConsent object and gets transferred to adaptermanager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} config This is the same param that's used in pbjs.requestBids.  The config.adunits will be updated.
  * @param {function} fn The next function in the chain, used by hook.js
@@ -92,7 +92,7 @@ export function requestBidsHook(config, fn) {
   }
 }
 
-// after we have grabbed ideal ID from CMP, apply the data to adUnits object and finish up the module
+// after we have grabbed ideal ID from CMP, store the data for future use and finish up the module
 function processCmpData(consentString) {
   if (typeof consentString !== 'string' || consentString === '') {
     exitFailedCmp(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
@@ -108,7 +108,7 @@ function processCmpData(consentString) {
   }
 }
 
-// store CMP string in module and invoke gdprDataHandler.setConsentData() to make information available in adaptermanger.js
+// store CMP data locally in module and then invoke gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
 function storeConsentData(cmpConsentString) {
   consentData = {
     consentString: cmpConsentString,
@@ -121,7 +121,7 @@ function cmpTimedOut() {
   exitFailedCmp('CMP workflow exceeded timeout threshold.');
 }
 
-// controls the exit of the module based on consentManagement config; either we'll resume the auction or cancel the auction
+// controls the exit of the module when there's a problem.  Based on consentManagement config, either we'll resume the auction or cancel the auction.
 function exitFailedCmp(errorMsg) {
   clearTimeout(timer);
   haveExited = true;
@@ -135,7 +135,9 @@ function exitFailedCmp(errorMsg) {
   }
 }
 
-/** Simply resets the module's consentData variable back to undefined */
+/**
+ * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
+ */
 export function resetConsentData() {
   consentData = undefined;
 }
