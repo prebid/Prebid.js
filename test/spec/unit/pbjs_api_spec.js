@@ -507,6 +507,155 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('getAdserverTargeting with `mediaTypePriceGranularity` set for media type', function() {
+    const customConfigObject = {
+      'buckets': [
+        { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
+        { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
+        { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
+        { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+      ]
+    };
+    let currentPriceBucket;
+    let bid;
+    let auction;
+    let ajaxStub;
+    let cbTimeout = 3000;
+    let auctionManagerInstance = newAuctionManager();
+    let targeting = newTargeting(auctionManagerInstance);
+
+    let RESPONSE = {
+      'version': '0.0.1',
+      'tags': [{
+        'uuid': '4d0a6829338a07',
+        'tag_id': 4799418,
+        'auction_id': '2256922143947979797',
+        'no_ad_url': 'http://lax1-ib.adnxs.com/no-ad',
+        'timeout_ms': 2500,
+        'ads': [{
+          'content_source': 'rtb',
+          'ad_type': 'banner',
+          'buyer_member_id': 958,
+          'creative_id': 33989846,
+          'media_type_id': 1,
+          'media_subtype_id': 1,
+          'cpm': 1.99,
+          'cpm_publisher_currency': 0.500000,
+          'publisher_currency_code': '$',
+          'client_initiated_ad_counting': true,
+          'rtb': {
+            'banner': {
+              'width': 728,
+              'height': 90,
+              'content': '<!-- Creative -->'
+            },
+            'trackers': [{
+              'impression_urls': ['http://lax1-ib.adnxs.com/impression']
+            }]
+          }
+        }]
+      }]
+    };
+
+    before(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      currentPriceBucket = configObj.getConfig('priceGranularity');
+      const customPriceGranularity = {
+        'buckets': [
+          { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.3 },
+          { 'precision': 2, 'min': 6, 'max': 20, 'increment': 0.5 },
+          { 'precision': 2, 'min': 21, 'max': 100, 'increment': 1 }
+        ]
+      };
+
+      configObj.setConfig({
+        priceGranularity: customConfigObject,
+        mediaTypePriceGranularity: {
+          "banner": customPriceGranularity,
+          "video": "low",
+          "native": "high"
+        }
+      });
+
+      sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
+          'bidderCode': 'appnexus',
+          'auctionId': '20882439e3238c',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '10433394'
+              },
+              'adUnitCode': 'div-gpt-ad-1460505748561-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
+              ],
+              'bidId': '4d0a6829338a07',
+              'bidderRequestId': '331f3cf3f1d9c8',
+              'auctionId': '20882439e3238c'
+            }
+          ],
+          'auctionStart': 1505250713622,
+          'timeout': 3000
+        }]
+      ));
+    });
+
+    after(() => {
+      configObj.setConfig({ priceGranularity: currentPriceBucket });
+      adaptermanager.makeBidRequests.restore();
+    })
+
+    beforeEach(() => {
+      let adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        sizes: [[300, 250], [300, 600]],
+        mediaTypes: { banner: {} },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: '10433394'
+          }
+        }]
+      }];
+      let adUnitCodes = ['div-gpt-ad-1460505748561-0'];
+      auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
+        return function(url, callback) {
+          const fakeResponse = sinon.stub();
+          fakeResponse.returns('headerContent');
+          callback.success(JSON.stringify(RESPONSE), { getResponseHeader: fakeResponse });
+        }
+      });
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    it('should get correct hb_pb with cpm between 0 - 5', () => {
+      RESPONSE.tags[0].ads[0].cpm = 3.4288;
+      auction.callBids(cbTimeout);
+      let bidTargeting = targeting.getAllTargeting();
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('3.30');
+    });
+
+    it('should get correct hb_pb with cpm between 21 - 100', () => {
+      RESPONSE.tags[0].ads[0].cpm = 43.4288;
+      auction.callBids(cbTimeout);
+      let bidTargeting = targeting.getAllTargeting();
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('43.00');
+    });
+  });
+
   describe('getBidResponses', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       var result = $$PREBID_GLOBAL$$.getBidResponses();
