@@ -57,7 +57,7 @@ function sendAll() {
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
     ajax(
-      `//${analyticsAdapter.context.host}/hb`,
+      `//${analyticsAdapter.context.host}/commercial/api/hb`,
       () => {
       },
       JSON.stringify(req),
@@ -70,6 +70,7 @@ function sendAll() {
 }
 
 function trackAuctionInit(args) {
+  analyticsAdapter.context.auctionTimeStart = Date.now();
   const event = createHbEvent(undefined, 'init', undefined, args.auctionId);
   return [event];
 }
@@ -85,11 +86,13 @@ function trackBidResponse(args) {
 }
 
 function trackBidTimeout(args) {
-  return args.map(bid => createHbEvent(bid.bidder, 'timeout', bid.adUnitCode));
+  const timeToRespond = Date.now() - analyticsAdapter.context.auctionTimeStart;
+  return args.map(bid => createHbEvent(bid.bidder, 'timeout', bid.adUnitCode, undefined, timeToRespond));
 }
 
 function trackAuctionEnd(args) {
-  const event = createHbEvent(undefined, 'end', undefined, args.auctionId);
+  const duration = Date.now() - analyticsAdapter.context.auctionTimeStart;
+  const event = createHbEvent(undefined, 'end', undefined, args.auctionId, duration);
   return [event];
 }
 
@@ -107,7 +110,9 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
   if (timeToRespond) {
     ev.ttr = timeToRespond;
   }
-  ev.args = args;
+  if (args) {
+    ev.args = args;
+  }
   return ev;
 }
 
@@ -131,6 +136,14 @@ export function ExpiringQueue(callback, ttl) {
     return result;
   };
 
+  /**
+   * For test/debug purposes only
+   * @return {Array}
+   */
+  this.peekAll = () => {
+    return queue;
+  };
+
   this.init = reset;
 
   function reset() {
@@ -150,8 +163,17 @@ analyticsAdapter.context = {};
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
+  if (!config.options.host) {
+    utils.logError('host is not defined. Analytics won\'t work');
+    return;
+  }
+  if (!config.options.pv) {
+    utils.logError('pv is not defined. Analytics won\'t work');
+    return;
+  }
   analyticsAdapter.context = {
     host: config.options.host,
+    pv: config.options.pv,
     requestTemplate: buildRequestTemplate(config.options),
     queue: new ExpiringQueue(sendAll, QUEUE_TIMEOUT)
   };
@@ -162,3 +184,5 @@ adaptermanager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: 'gu'
 });
+
+export default analyticsAdapter;
