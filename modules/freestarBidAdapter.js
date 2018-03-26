@@ -13,6 +13,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    // @TODO: add some validation
+    console.log('freestar::', 'isBidRequestValid called', 'bid', bid);
     return true;
     // return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
@@ -25,6 +27,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
+    console.log('freestar::', 'buildRequests called', 'validBidRequests', validBidRequests);
     const adUnitsToBidUpon = validBidRequests.map(formatBid),
       payload = {},
       cookie = window.document.cookie.split(';'),
@@ -69,7 +72,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
-    console.log('freestar::', 'serverResponse', serverResponse);
+    console.log('freestar::', 'buildRequests called', 'serverResponse', serverResponse);
     const bids = [];
     // @TODO: add error handling
     if(serverResponse.winningProvider) {
@@ -121,6 +124,7 @@ registerBidder(spec);
  * @returns {{requestId, cpm, width, height, creativeId: string|string|string|*|string|string, currency, netRevenue: boolean, ttl: number, ad}}
  */
 function parseBid(bid) {
+  console.log('freestar::', 'parseBid called', 'bid', bid);
   const bidResponse = {
     requestId: bid.requestId,
     cpm: bid.price,
@@ -143,6 +147,7 @@ function parseBid(bid) {
  * @returns {{}}
  */
 function formatBid(bid) {
+  console.log('freestar::', 'formatBid called', 'bid', bid);
   var str = {}, res = [];
   str.id = bid.bidId; //@TODO: This id needs to be reflected in the response
   str.adUnitCode = bid.adUnitCode;
