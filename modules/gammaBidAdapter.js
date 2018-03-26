@@ -8,6 +8,7 @@ const BIDDER_CODE = 'gamma';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['gamma'],
+  supportedMediaTypes: ['banner', 'video'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -85,6 +86,7 @@ function newBid(serverBid) {
   if (serverBid.type == 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
+      vastUrl: serverBid.seatbid[0].bid[0].vastUrl,
       ttl: 3600
     });
   }

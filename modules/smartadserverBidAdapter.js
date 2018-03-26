@@ -31,30 +31,31 @@ export const spec = {
     // to find which one the ad server needs
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
-    var bid = validBidRequests[0];
-    const payload = {
-      siteid: bid.params.siteId,
-      pageid: bid.params.pageId,
-      formatid: bid.params.formatId,
-      currencyCode: config.getConfig('currency.adServerCurrency'),
-      bidfloor: bid.params.bidfloor || 0.0,
-      targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
-      tagId: bid.adUnitCode,
-      sizes: bid.sizes.map(size => ({
-        w: size[0],
-        h: size[1]
-      })),
-      pageDomain: utils.getTopWindowUrl(),
-      transactionId: bid.transactionId,
-      timeout: config.getConfig('bidderTimeout'),
-      bidId: bid.bidId
-    };
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: bid.params.domain + '/prebid/v1',
-      data: payloadString,
-    };
+    return validBidRequests.map(bid => {
+      var payload = {
+        siteid: bid.params.siteId,
+        pageid: bid.params.pageId,
+        formatid: bid.params.formatId,
+        currencyCode: config.getConfig('currency.adServerCurrency'),
+        bidfloor: bid.params.bidfloor || 0.0,
+        targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
+        tagId: bid.adUnitCode,
+        sizes: bid.sizes.map(size => ({
+          w: size[0],
+          h: size[1]
+        })),
+        pageDomain: utils.getTopWindowUrl(),
+        transactionId: bid.transactionId,
+        timeout: config.getConfig('bidderTimeout'),
+        bidId: bid.bidId
+      };
+      var payloadString = JSON.stringify(payload);
+      return {
+        method: 'POST',
+        url: bid.params.domain + '/prebid/v1',
+        data: payloadString,
+      };
+    });
   },
   /**
    * Unpack the response from the server into a list of bids.

@@ -3,8 +3,7 @@ import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
-
-var CONSTANTS = require('./constants');
+const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
@@ -507,6 +506,12 @@ exports.insertElement = function(elm, doc, target) {
 exports.triggerPixel = function (url) {
   const img = new Image();
   img.src = url;
+};
+
+exports.callBurl = function({ source, burl }) {
+  if (source === CONSTANTS.S2S.SRC && burl) {
+    exports.triggerPixel(burl);
+  }
 };
 
 /**
