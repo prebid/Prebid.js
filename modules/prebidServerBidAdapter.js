@@ -351,6 +351,11 @@ const LEGACY_PROTOCOL = {
             if (bidObj.nurl) {
               bidObject.vastUrl = bidObj.nurl;
             }
+            // when video bid is already cached by Prebid Server, videoCacheKey and vastUrl should be provided properly
+            if (bidObj.cache_id && bidObj.cache_url) {
+              bidObject.videoCacheKey = bidObj.cache_id;
+              bidObject.vastUrl = bidObj.cache_url;
+            }
           } else {
             if (bidObj.adm && bidObj.nurl) {
               bidObject.ad = bidObj.adm;

@@ -143,7 +143,40 @@ const RESPONSE = {
       'deal_id': 'test-dealid',
       'ad_server_targeting': {
         'foo': 'bar'
-      }
+      },
+      'cache_id': '7654321',
+      'cache_url': 'http://www.test.com/cache?uuid=7654321',
+    }
+  ]
+};
+
+const VIDEO_RESPONSE = {
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'status': 'OK',
+  'bidder_status': [
+    {
+      'bidder': 'appnexus',
+      'response_time_ms': 52,
+      'num_bids': 1
+    }
+  ],
+  'bids': [
+    {
+      'bid_id': '123',
+      'code': 'div-gpt-ad-1460505748561-0',
+      'creative_id': '29681110',
+      'bidder': 'appnexus',
+      'price': 0.5,
+      'adm': '<script type="application/javascript" src="http://nym1-ib.adnxs.com/ab?e=wqT_3QL_Baj_AgAAAwDWAAUBCO-s38cFEJG-p6iRgOfvdhivtLWVpomhsWUgASotCQAAAQII4D8RAQc0AADgPxkAAACA61HgPyEREgApEQmgMPLm_AQ4vgdAvgdIAlDWy5MOWOGASGAAaJFAeP3PBIABAYoBA1VTRJIFBvBSmAGsAqAB-gGoAQGwAQC4AQLAAQPIAQLQAQnYAQDgAQHwAQCKAjp1ZignYScsIDQ5NDQ3MiwgMTQ5MjYzNzI5NSk7dWYoJ3InLCAyOTY4MTExMCwyHgDwnJIC7QEhcHpUNkZ3aTYwSWNFRU5iTGt3NFlBQ0RoZ0Vnd0FEZ0FRQVJJdmdkUTh1YjhCRmdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVwaTRpREFBRGdQOEVCS1l1SWd3QUE0RF9KQWQ0V2JVTnJmUEVfMlFFQUFBQUFBQUR3UC1BQkFQVUIFD0BKZ0Npb2FvcEFtZ0FnQzFBZwEWBEM5CQjoREFBZ0hJQWdIUUFnSFlBZ0hnQWdEb0FnRDRBZ0NBQXdHUUF3Q1lBd0dvQTdyUWh3US6aAjEhRXduSHU68AAcNFlCSUlBUW8JbARreAFmDQHwui7YAugH4ALH0wHqAg93d3cubnl0aW1lcy5jb23yAhEKBkNQR19JRBIHMTk3NzkzM_ICEAoFQ1BfSUQSBzg1MTM1OTSAAwGIAwGQAwCYAxSgAwGqAwDAA6wCyAMA2APjBuADAOgDAPgDA4AEAJIECS9vcGVucnRiMpgEAKIECzEwLjI0NC4wLjIyqAQAsgQKCAAQABgAIAAwALgEAMAEAMgEANIEDDEwLjMuMTM4LjE0ONoEAggB4AQA8ARBXyCIBQGYBQCgBf8RAZwBqgUkNDM3ZmJiZjUtMzNmNS00ODdhLThlMTYtYTcxMTI5MDNjZmU1&s=b52bf8a6265a78a5969444bc846cc6d0f9f3b489&test=1&referrer=www.nytimes.com&pp=${AUCTION_PRICE}&"></script>',
+      'width': 300,
+      'height': 250,
+      'deal_id': 'test-dealid',
+      'ad_server_targeting': {
+        'foo': 'bar'
+      },
+      'media_type': 'video',
+      'cache_id': 'video_cache_id',
+      'cache_url': 'video_cache_url',
     }
   ]
 };
@@ -491,6 +524,28 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.have.property('adId', '123');
+      expect(response).to.not.have.property('videoCacheKey');
+      expect(response).to.have.property('cache_id', '7654321');
+      expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
+      expect(response).to.not.have.property('vastUrl');
+    });
+
+    it('registers video bids', () => {
+      server.respondWith(JSON.stringify(VIDEO_RESPONSE));
+
+      config.setConfig({s2sConfig: CONFIG});
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+      sinon.assert.calledOnce(addBidResponse);
+
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('videoCacheKey', 'video_cache_id');
+      expect(response).to.have.property('cache_id', 'video_cache_id');
+      expect(response).to.have.property('cache_url', 'video_cache_url');
+      expect(response).to.have.property('vastUrl', 'video_cache_url');
     });
 
     it('does not call addBidResponse and calls done when ad unit not set', () => {

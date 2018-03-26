@@ -30,7 +30,7 @@ Module that connects to Bridgewell demand source to fetch bids.
                        bidder: 'bridgewell',
                        params: {
                            ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
-                           cpmWeight: 0.5
+                           cpmWeight: 1.5
                        }
                    }
                ]
