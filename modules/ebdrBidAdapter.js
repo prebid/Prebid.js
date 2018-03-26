@@ -6,35 +6,41 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function(bid) {
-    return !!(bid.params.zoneid);
+    return !!(bid && bid.params && bid.params.zoneid);
   },
   buildRequests: function(bids) {
     const rtbServerDomain = 'dsp.bnmla.com';
-    var domain = window.location.host;
-    var page = window.location.pathname + location.search + location.hash;
+    let domain = window.location.host;
+    let page = window.location.pathname + location.search + location.hash;
     let ebdrImps = [];
-    var ebdrParams = {};
-    var zoneid = '';
-    var requestId = '';
+    const ebdrReq = {};
+    let ebdrParams = {};
+    let zoneid = '';
+    let requestId = '';
     bids.forEach(bid => {
       utils.logInfo('Log bid', bid);
-      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
-      var whArr = getWidthAndHeight(bid);
+      let bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
+      let whArr = getWidthAndHeight(bid);
+      let _mediaTypes = bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER;
       zoneid = utils.getBidIdParameter('zoneid', bid.params);
       requestId = bid.bidderRequestId;
       ebdrImps.push({
         id: bid.bidId,
-        banner: {
+        [_mediaTypes]: {
           w: whArr[0],
           h: whArr[1]
         },
         bidfloor: bidFloor
       })
+      ebdrReq[bid.bidId] = {mediaTypes: _mediaTypes,
+        w: whArr[0],
+        h: whArr[1]
+      };
       ebdrParams['latitude'] = utils.getBidIdParameter('latitude', bid.params);
       ebdrParams['longitude'] = utils.getBidIdParameter('longitude', bid.params);
       ebdrParams['ifa'] = (utils.getBidIdParameter('IDFA', bid.params).length > utils.getBidIdParameter('ADID', bid.params).length) ? utils.getBidIdParameter('IDFA', bid.params) : utils.getBidIdParameter('ADID', bid.params);
     });
-    var ebdrBidReq = {
+    let ebdrBidReq = {
       id: requestId,
       imp: ebdrImps,
       site: {
@@ -52,7 +58,7 @@ export const spec = {
     return {
       method: 'GET',
       url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
-      bids: ebdrImps
+      bids: ebdrReq
     };
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -64,18 +70,24 @@ export const spec = {
       return [];
     }
     ebdrResponseObj.seatbid[0].bid.forEach(ebdrBid => {
-      var responseCPM;
+      let responseCPM;
       responseCPM = parseFloat(ebdrBid.price);
-      var adm = decodeURIComponent(ebdrBid.adm);
+      let adm;
+      let type;
+      if (bidRequest.bids[ebdrBid.id].mediaTypes == BANNER) {
+        adm = decodeURIComponent(ebdrBid.adm)
+        type = 'ad';
+      } else {
+        adm = ebdrBid.adm
+        type = 'vastXml'
+      }
       ebdrResponseImps.push({
         requestId: ebdrBid.id,
-        bidderCode: spec.code,
-        ad: adm,
+        [type]: adm,
         creativeId: ebdrBid.crid,
         cpm: responseCPM,
         width: ebdrBid.w,
         height: ebdrBid.h,
-        mediaType: BANNER,
         currency: 'USD',
         netRevenue: true,
         ttl: 3600 });
@@ -84,18 +96,24 @@ export const spec = {
   }
 }
 function getWidthAndHeight(bid) {
-  var adW = null;
-  var adH = null;
+  let adW = null;
+  let adH = null;
 
-  var sizeArrayLength = bid.sizes.length;
-  if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-    adW = bid.sizes[0];
-    adH = bid.sizes[1];
-  } else {
-    adW = bid.sizes[0][0];
-    adH = bid.sizes[0][1];
+  if (bid.sizes && bid.sizes.length) {
+    let sizeArrayLength = bid.sizes.length;
+    if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+      adW = bid.sizes[0];
+      adH = bid.sizes[1];
+    }
   }
-
+  let _mediaTypes = bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER;
+  if (_mediaTypes == BANNER && bid.mediaTypes[_mediaTypes].sizes && bid.mediaTypes[_mediaTypes].sizes[0] && bid.mediaTypes[_mediaTypes].sizes[0].length === 2) {
+    adW = bid.mediaTypes[_mediaTypes].sizes[0][0];
+    adH = bid.mediaTypes[_mediaTypes].sizes[0][1];
+  } else if (_mediaTypes == VIDEO && bid.mediaTypes[_mediaTypes].playerSize && bid.mediaTypes[_mediaTypes].playerSize.length === 2) {
+    adW = bid.mediaTypes[_mediaTypes].playerSize[0];
+    adH = bid.mediaTypes[_mediaTypes].playerSize[1];
+  }
   return [adW, adH];
 }
 registerBidder(spec);
