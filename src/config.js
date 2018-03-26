@@ -122,7 +122,7 @@ export function newConfig() {
         this._mediaTypePriceGranularity = Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
             if (typeof val === 'string') {
-              aggregate[item] = (hasGranularity(val[item])) ? val[item] : GRANULARITY_OPTIONS.MEDIUM;
+              aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
             } else if (typeof val === 'object') {
               aggregate[item] = val[item];
               utils.logMessage(`Using custom price granularity for ${item}`);

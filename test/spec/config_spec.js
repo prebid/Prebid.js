@@ -144,13 +144,12 @@ describe('config API', () => {
         'cap': true
       }]
     };
-    const mediaTypePriceGranularity = {
-      "banner": "medium",
-      "video": customPriceGranularity,
-      "native": "medium"
-    };
     setConfig({
-      mediaTypePriceGranularity: mediaTypePriceGranularity
+      'mediaTypePriceGranularity': {
+        "banner": "medium",
+        "video": customPriceGranularity,
+        "native": "medium"
+      }
     });
 
     const configResult = getConfig('mediaTypePriceGranularity');

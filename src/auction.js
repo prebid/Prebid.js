@@ -301,9 +301,10 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
 
+  // if config mediaTypePriceGranularity is defined, use bid media type to access customPriceBucket
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
-    config.getConfig('customPriceBucket'),
+    config.getConfig(`mediaTypePriceGranularity${bid.mediaType}`) ? config.getConfig(`mediaTypePriceGranularity${bid.mediaType}`) : config.getConfig('customPriceBucket'),
     config.getConfig('currency.granularityMultiplier')
   );
   bidObject.pbLg = priceStringsObj.low;
