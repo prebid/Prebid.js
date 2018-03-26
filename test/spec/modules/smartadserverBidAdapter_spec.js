@@ -1,154 +1,157 @@
-describe('smartadserver adapter tests', function () {
-  var urlParse = require('url-parse');
-  var querystringify = require('querystringify');
-  var adapter = require('modules/smartadserverBidAdapter');
-  var adLoader = require('src/adloader');
-  var expect = require('chai').expect;
-  var bidmanager = require('src/bidmanager');
-  var CONSTANTS = require('src/constants.json');
+import {
+  expect
+} from 'chai';
+import {
+  spec
+} from 'modules/smartadserverBidAdapter';
+import {
+  getTopWindowLocation
+} from 'src/utils';
+import {
+  newBidder
+} from 'src/adapters/bidderFactory';
+import {
+  config
+} from 'src/config';
+import * as utils from 'src/utils';
 
-  var DEFAULT_PARAMS = {
-    bidderCode: 'smartadserver',
-    bids: [{
-      bidId: 'abcd1234',
-      sizes: [[300, 250], [300, 200]],
-      bidder: 'smartadserver',
-      params: {
-        domain: 'http://www.smartadserver.com',
-        siteId: '1234',
-        pageId: '5678',
-        formatId: '90',
-        target: 'test=prebid',
-        currency: 'EUR',
-        bidfloor: 0.420
-      },
-      requestId: 'efgh5678',
-      placementCode: 'sas_42'
-    }
-    ]
-  };
+describe('Smart ad server bid adapter tests', () => {
+  var DEFAULT_PARAMS = [{
+    adUnitCode: 'sas_42',
+    bidId: 'abcd1234',
+    sizes: [
+      [300, 250],
+      [300, 200]
+    ],
+    bidder: 'smartadserver',
+    params: {
+      domain: 'http://prg.smartadserver.com',
+      siteId: '1234',
+      pageId: '5678',
+      formatId: '90',
+      target: 'test=prebid',
+      bidfloor: 0.420
+    },
+    requestId: 'efgh5678',
+    transactionId: 'zsfgzzg'
+  }];
 
-  var DEFAULT_PARAMS_WO_OPTIONAL = {
-    bidderCode: 'smartadserver',
-    bids: [{
-      bidId: 'abcd1234',
-      sizes: [[300, 250], [300, 200]],
-      bidder: 'smartadserver',
-      params: {
-        domain: 'http://www.smartadserver.com',
-        siteId: '1234',
-        pageId: '5678',
-        formatId: '90'
-      },
-      requestId: 'efgh5678',
-      placementCode: 'sas_42'
-    }
-    ]
-  };
+  var DEFAULT_PARAMS_WO_OPTIONAL = [{
+    adUnitCode: 'sas_42',
+    bidId: 'abcd1234',
+    sizes: [
+      [300, 250],
+      [300, 200]
+    ],
+    bidder: 'smartadserver',
+    params: {
+      domain: 'http://prg.smartadserver.com',
+      siteId: '1234',
+      pageId: '5678',
+      formatId: '90'
+    },
+    requestId: 'efgh5678'
+  }];
 
   var BID_RESPONSE = {
-    cpm: 0.42,
-    ad: 'fake ad content',
-    width: 300,
-    height: 250
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >'
+    }
   };
 
-  it('set url parameters', function () {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript');
-
-    adapter().callBids(DEFAULT_PARAMS);
-
-    var smartCallback;
-    for (var k in $$PREBID_GLOBAL$$) {
-      if (k.lastIndexOf('sas_', 0) === 0) {
-        smartCallback = k;
-        break;
+  it('Verify build request', () => {
+    config.setConfig({
+      'currency': {
+        'adServerCurrency': 'EUR'
       }
-    }
-
-    var bidUrl = stubLoadScript.getCall(0).args[0];
-    var parsedBidUrl = urlParse(bidUrl);
-    var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-    expect(parsedBidUrl.hostname).to.equal('www.smartadserver.com');
-    expect(parsedBidUrl.pathname).to.equal('/prebid');
-
-    expect(parsedBidUrlQueryString).to.have.property('pbjscbk').and.to.equal('$$PREBID_GLOBAL$$.' + smartCallback);
-    expect(parsedBidUrlQueryString).to.have.property('siteid').and.to.equal('1234');
-    expect(parsedBidUrlQueryString).to.have.property('pgid').and.to.equal('5678');
-    expect(parsedBidUrlQueryString).to.have.property('fmtid').and.to.equal('90');
-    expect(parsedBidUrlQueryString).to.have.property('tgt').and.to.equal('test=prebid');
-    expect(parsedBidUrlQueryString).to.have.property('ccy').and.to.equal('EUR');
-    expect(parsedBidUrlQueryString).to.have.property('bidfloor').and.to.equal('0.42');
-    expect(parsedBidUrlQueryString).to.have.property('tag').and.to.equal('sas_42');
-    expect(parsedBidUrlQueryString).to.have.property('sizes').and.to.equal('300x250,300x200');
-    expect(parsedBidUrlQueryString).to.have.property('async').and.to.equal('1');
-
-    stubLoadScript.restore();
-  });
-
-  it('test optional parameters default value', function () {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript');
-
-    adapter().callBids(DEFAULT_PARAMS_WO_OPTIONAL);
-
-    var bidUrl = stubLoadScript.getCall(0).args[0];
-    var parsedBidUrl = urlParse(bidUrl);
-    var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-    expect(parsedBidUrlQueryString).to.have.property('tgt').and.to.equal('');
-    expect(parsedBidUrlQueryString).to.have.property('ccy').and.to.equal('USD');
-
-    stubLoadScript.restore();
-  });
-
-  it('creates an empty bid response if no bids', function() {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-      var parsedBidUrl = urlParse(bidUrl);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](null);
     });
-    var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-    adapter().callBids(DEFAULT_PARAMS);
-
-    var bidResponsePlacementCode = stubAddBidResponse.getCall(0).args[0];
-    var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
-
-    expect(bidResponsePlacementCode).to.equal(DEFAULT_PARAMS.bids[0].placementCode);
-    expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-    expect(bidResponseAd).to.have.property('bidderCode').and.to.equal('smartadserver');
-
-    stubLoadScript.restore();
-    stubAddBidResponse.restore();
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    expect(request).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
+    expect(request).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request.data);
+    expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+    expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+    expect(requestContent).to.have.property('formatid').and.to.equal('90');
+    expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+    expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
+    expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
+    expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
+    expect(requestContent).to.have.property('sizes');
+    expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
+    expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
+    expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
+    expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
+    expect(requestContent).to.have.property('pageDomain').and.to.equal(utils.getTopWindowUrl());
+    expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
   });
 
-  it('creates a bid response if bid is returned', function() {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-      var parsedBidUrl = urlParse(bidUrl);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
+  it('Verify parse response', () => {
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse(BID_RESPONSE, request);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(12);
+    expect(bid.adUrl).to.equal('http://awesome.fake.url');
+    expect(bid.ad).to.equal('< --- awesome script --- >');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.creativeId).to.equal('zioeufg');
+    expect(bid.currency).to.equal('GBP');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.ttl).to.equal(300);
+    expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
+    expect(bid.referrer).to.equal(utils.getTopWindowUrl());
+  });
 
-      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE);
-    });
-    var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  it('Verifies bidder code', () => {
+    expect(spec.code).to.equal('smartadserver');
+  });
 
-    adapter().callBids(DEFAULT_PARAMS);
+  it('Verifies bidder aliases', () => {
+    expect(spec.aliases).to.have.lengthOf(1);
+    expect(spec.aliases[0]).to.equal('smart');
+  });
 
-    var bidResponsePlacementCode = stubAddBidResponse.getCall(0).args[0];
-    var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
+  it('Verifies if bid request valid', () => {
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL[0])).to.equal(true);
+    expect(spec.isBidRequestValid({})).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {}
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        pageid: 123
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        siteid: 123
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        formatid: 123,
+        pageid: 234
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        domain: 'www.test.com',
+        pageid: 234
+      }
+    })).to.equal(false);
+  });
 
-    expect(bidResponsePlacementCode).to.equal(DEFAULT_PARAMS.bids[0].placementCode);
-    expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-    expect(bidResponseAd).to.have.property('bidderCode').and.to.equal('smartadserver');
-    expect(bidResponseAd).to.have.property('cpm').and.to.equal(BID_RESPONSE.cpm);
-    expect(bidResponseAd).to.have.property('ad').and.to.equal(BID_RESPONSE.ad);
-    expect(bidResponseAd).to.have.property('width').and.to.equal(BID_RESPONSE.width);
-    expect(bidResponseAd).to.have.property('height').and.to.equal(BID_RESPONSE.height);
-
-    stubLoadScript.restore();
-    stubAddBidResponse.restore();
+  it('Verifies sync options', () => {
+    expect(spec.getUserSyncs).to.be.undefined;
   });
 });

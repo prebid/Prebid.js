@@ -1,4 +1,5 @@
 import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+import { cookiesAreEnabled } from '../../src/utils';
 
 var assert = require('assert');
 var utils = require('../../src/utils');
@@ -100,7 +101,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -524,95 +525,6 @@ describe('Utils', function () {
       assert.equal(arr.length, count, 'Polyfill test fails');
     });
   });
-
-  /**
-   *  tests fail in IE10 because __lookupSetter__ and __lookupGetter__ are
-   *  not supported. See #1656. commenting out until they can be fixed.
-   *
-   *  describe('cookie support', function () {
-   *    // store original cookie getter and setter so we can reset later
-   *    var origCookieSetter = document.__lookupSetter__('cookie');
-   *    var origCookieGetter = document.__lookupGetter__('cookie');
-   *
-   *    // store original cookieEnabled getter and setter so we can reset later
-   *    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
-   *    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
-   *
-   *    // Replace the document cookie set function with the output of a custom function for testing
-   *    let setCookie = (v) => v;
-   *
-   *    beforeEach(() => {
-   *      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = v;
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *
-   *      // Reset the setCookie cookie function before each test
-   *      setCookie = (v) => v;
-   *      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
-   *      Object.defineProperty(window.document, 'cookie', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = setCookie(v);
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *    });
-   *
-   *    afterEach(() => {
-   *      // redefine window.navigator.cookieEnabled to original getter and setter
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', {
-   *        get: origCookieEnabledGetter,
-   *        set: origCookieEnabledSetter,
-   *        configurable: true
-   *      });
-   *      // redefine document.cookie to original getter and setter
-   *      Object.defineProperty(document, 'cookie', {
-   *        get: origCookieGetter,
-   *        set: origCookieSetter,
-   *        configurable: true
-   *      });
-   *    });
-   *
-   *    it('should be detected', function() {
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
-   *    });
-   *
-   *    it('should be not available', function() {
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
-   *    });
-   *
-   *    it('should be available', function() {
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = 'key=value';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should already be set');
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should settable');
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = true;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be on via on window.navigator');
-   *      // Reset the setCookie
-   *      setCookie = (v) => v;
-   *    });
-   *  });
-  **/
 
   describe('delayExecution', function () {
     it('should execute the core function after the correct number of calls', function () {

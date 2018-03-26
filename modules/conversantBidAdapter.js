@@ -1,16 +1,16 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { VIDEO } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
 const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
-const VERSION = '2.2.1';
+const VERSION = '2.2.2';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['cnvr'], // short code
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -54,13 +54,14 @@ export const spec = {
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
     let requestId = '';
+    let pubcid = null;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
-      requestId = bid.requestId;
+      requestId = bid.auctionId;
 
       const format = convertSizes(bid.sizes);
 
@@ -95,6 +96,10 @@ export const spec = {
         imp.banner = banner;
       }
 
+      if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
+      }
+
       return imp;
     });
 
@@ -109,6 +114,14 @@ export const spec = {
       device: getDevice(),
       at: 1
     };
+
+    if (pubcid) {
+      payload.user = {
+        ext: {
+          fpc: pubcid
+        }
+      };
+    }
 
     return {
       method: 'POST',
