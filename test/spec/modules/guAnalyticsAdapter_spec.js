@@ -6,17 +6,9 @@ import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
 
-describe('', () => {
+describe('Gu analytics adapter', () => {
   let sandbox;
-
-  before(() => {
-    sandbox = sinon.sandbox.create();
-  });
-
-  after(() => {
-    sandbox.restore();
-    analyticsAdapter.disableAnalytics();
-  });
+  let timer;
 
   const REQUEST1 = {
     bidderCode: 'b1',
@@ -74,106 +66,103 @@ describe('', () => {
     size: '300x250'
   };
 
-  describe('Analytics adapter', () => {
-    let ajaxStub;
-    let timer;
+  before(() => {
+    sandbox = sinon.sandbox.create();
+    timer = sandbox.useFakeTimers(0);
+  });
 
-    before(() => {
-      ajaxStub = sandbox.stub(ajax, 'ajax');
-      timer = sandbox.useFakeTimers(0);
+  after(() => {
+    timer.restore();
+    sandbox.restore();
+    analyticsAdapter.disableAnalytics();
+  });
+
+  beforeEach(() => {
+    sandbox.stub(events, 'getEvents').callsFake(() => {
+      return []
+    });
+  });
+
+  afterEach(() => {
+    events.getEvents.restore();
+  });
+
+  it('should be configurable', () => {
+    adaptermanager.registerAnalyticsAdapter({
+      code: 'gu',
+      adapter: analyticsAdapter
     });
 
-    after(() => {
-      ajaxStub.restore();
-      timer.restore();
+    adaptermanager.enableAnalytics({
+      provider: 'gu',
+      options: {
+        host: 'localhost:9000',
+        pv: 'pv1234567'
+      }
     });
 
-    beforeEach(() => {
-      sandbox.stub(events, 'getEvents').callsFake(() => {
-        return []
-      });
+    expect(analyticsAdapter.context).to.have.property('host', 'localhost:9000');
+    expect(analyticsAdapter.context).to.have.property('pv', 'pv1234567');
+  });
+
+  it('should handle auction init event', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
     });
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(1);
+    expect(ev[0]).to.be.eql({ev: 'init', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
+  });
 
-    afterEach(() => {
-      events.getEvents.restore();
+  it('should handle bid request events', () => {
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(3);
+    expect(ev[1]).to.be.eql({ev: 'request', n: 'b1', sid: 'slot-1'});
+    expect(ev[2]).to.be.eql({ev: 'request', n: 'b2', sid: 'slot-1'});
+  });
+
+  it('should handle bid response event', () => {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(4);
+    expect(ev[3]).to.be.eql({
+      ev: 'response',
+      n: 'b1',
+      sid: 'slot-1',
+      ttr: 443
     });
+  });
 
-    it('should be configurable', () => {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'gu',
-        adapter: analyticsAdapter
-      });
-
-      adaptermanager.enableAnalytics({
-        provider: 'gu',
-        options: {
-          host: 'localhost:9000',
-          pv: 'pv1234567'
-        }
-      });
-
-      expect(analyticsAdapter.context).to.have.property('host', 'localhost:9000');
-      expect(analyticsAdapter.context).to.have.property('pv', 'pv1234567');
+  it('should handle bid timeout event', () => {
+    timer.tick(444);
+    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, [{
+      bidId: "208750227436c1",
+      bidder: "b2",
+      adUnitCode: "slot-1",
+      auctionId: "5018eb39-f900-4370-b71e-3bb5b48d324f"
+    }]);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(5);
+    expect(ev[4]).to.be.eql({
+      ev: 'timeout',
+      n: 'b2',
+      sid: 'slot-1',
+      ttr: 444
     });
+  });
 
-    it('should handle auction init event', () => {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
-        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-        config: {},
-        timeout: 3000
-      });
-      const ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(1);
-      expect(ev[0]).to.be.eql({ev: 'init', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
-    });
-
-    it('should handle bid request events', () => {
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-      const ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(3);
-      expect(ev[1]).to.be.eql({ev: 'request', n: 'b1', sid: 'slot-1'});
-      expect(ev[2]).to.be.eql({ev: 'request', n: 'b2', sid: 'slot-1'});
-    });
-
-    it('should handle bid response event', () => {
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
-      const ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(4);
-      expect(ev[3]).to.be.eql({
-        ev: 'response',
-        n: 'b1',
-        sid: 'slot-1',
-        ttr: 443
-      });
-    });
-
-    it('should handle bid timeout event', () => {
-      timer.tick(444);
-      events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, [{
-        bidId: "208750227436c1",
-        bidder: "b2",
-        adUnitCode: "slot-1",
-        auctionId: "5018eb39-f900-4370-b71e-3bb5b48d324f"
-      }]);
-      const ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(5);
-      expect(ev[4]).to.be.eql({
-        ev: 'timeout',
-        n: 'b2',
-        sid: 'slot-1',
-        ttr: 444
-      });
-    });
-
-    it('should handle auction end event', () => {
-      timer.tick(3);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
-      let ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(0);
-      expect(ajaxStub.calledOnce).to.be.equal(true);
-      ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
-      expect(ev[5]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
-    });
+  it('should handle auction end event', () => {
+    timer.tick(3);
+    const ajaxStub = sandbox.stub(ajax, 'ajax');
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
+    let ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(0);
+    expect(ajaxStub.called).to.be.equal(true);
+    ev = JSON.parse(ajaxStub.secondCall.args[2]).hb_ev;
+    expect(ev[5]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
   });
 });
