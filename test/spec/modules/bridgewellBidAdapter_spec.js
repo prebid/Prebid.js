@@ -61,6 +61,17 @@ describe('bridgewellBidAdapter', function () {
       'bidId': '3150ccb55da321',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
+    },
+    {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
+      },
+      'adUnitCode': 'adunit-code-2',
+      'sizes': [728, 90],
+      'bidId': '3150ccb55da321',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
     }
   ];
   const adapter = newBidder(spec);
@@ -226,6 +237,16 @@ describe('bridgewellBidAdapter', function () {
       'width': 300,
       'height': 250,
       'ad': '<div>test 300x250</div>',
+      'ttl': 360,
+      'net_revenue': 'true',
+      'currency': 'NTD'
+    }, {
+      'id': '0e4048d3-5c74-4380-a21a-00ba35629f7d',
+      'bidder_code': 'bridgewell',
+      'cpm': 5.0,
+      'width': 728,
+      'height': 90,
+      'ad': '<div>test 728x90</div>',
       'ttl': 360,
       'net_revenue': 'true',
       'currency': 'NTD'
