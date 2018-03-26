@@ -100,10 +100,6 @@ export const spec = {
         }
 
         bidResponse.requestId = req.bidId;
-<<<<<<< HEAD
-        bidResponse.requestId = req.bidId;
-=======
->>>>>>> upstream/master
         bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
