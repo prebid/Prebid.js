@@ -8,4 +8,6 @@ These are the ways in which the Guardian optimised build differs from the [gener
 * The [Sonobi bid adapter](https://github.com/guardian/Prebid.js/blob/master/modules/sonobiBidAdapter.js):
     * has an extra request parameter, `gmgt`, holding AppNexus targeting key-values
     * has a customised `pv` parameter, holding the Ophan-generated pageview ID
-* We have built a simple console-logging [analytics adapter](https://github.com/guardian/Prebid.js/blob/master/modules/consoleLoggingAnalyticsAdapter.js).
+* We have built two analytics adapters:
+    * an [adapter](https://github.com/guardian/Prebid.js/blob/master/modules/guAnalyticsAdapter.js) to send analytics to the data lake
+    * a simple console-logging [adapter](https://github.com/guardian/Prebid.js/blob/master/modules/consoleLoggingAnalyticsAdapter.js)
