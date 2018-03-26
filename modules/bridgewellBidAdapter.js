@@ -77,9 +77,13 @@ export const spec = {
         return;
       }
 
+      const anotherFormatSize = []; // for store width and hieght to transfer sizes format [width, height] to [[width, height]]
       let matchedResponse = find(serverResponse.body, function(res) {
         return !!res && !res.consumed && find(req.sizes, function(size) {
-          return res.width === size[0] && res.height === size[1];
+          let width = res.width;
+          let height = res.height;
+          if (typeof size === 'number') anotherFormatSize.push(size);
+          return (width === size[0] && height === size[1]) || (width === anotherFormatSize[0] && height === anotherFormatSize[1]);
         });
       });
 
