@@ -69,6 +69,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
+    console.log('freestar::', 'serverResponse', serverResponse);
     const bids = [];
     // @TODO: add error handling
     if(serverResponse.winningProvider) {
@@ -109,6 +110,16 @@ export const spec = {
   }
 }
 
+registerBidder(spec);
+
+// HELPER FUNCTIONS
+
+/**
+ * Parse the response from the server, formating it for Prebid to use
+ *
+ * @param bid
+ * @returns {{requestId, cpm, width, height, creativeId: string|string|string|*|string|string, currency, netRevenue: boolean, ttl: number, ad}}
+ */
 function parseBid(bid) {
   const bidResponse = {
     requestId: bid.requestId,
@@ -125,6 +136,12 @@ function parseBid(bid) {
   return bidResponse;
 }
 
+/**
+ * Creates an object to send to the bidding endpoint
+ *
+ * @param bid
+ * @returns {{}}
+ */
 function formatBid(bid) {
   var str = {}, res = [];
   str.id = bid.bidId; //@TODO: This id needs to be reflected in the response
@@ -142,6 +159,11 @@ function formatBid(bid) {
   return str;
 }
 
+/**
+ * Generates a basic unique ID
+ *
+ * @returns {string}
+ */
 function uid() {
   const src = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   var uid = '';
@@ -150,5 +172,3 @@ function uid() {
   }
   return uid;
 }
-
-registerBidder(spec);
