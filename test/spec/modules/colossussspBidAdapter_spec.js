@@ -16,15 +16,11 @@ describe('ColossussspAdapter', () => {
   };
 
   describe('isBidRequestValid', () => {
-    it('Should return true when placement_id can be cast to a number, and when at least one of the sizes passed is allowed', () => {
+    it('Should return true when placement_id can be cast to a number', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false when placement_id is not a number', () => {
       bid.params.placement_id = 'aaa';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-    it('Should return false when the sizes are not allowed', () => {
-      bid.sizes = [[1, 1]];
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -56,10 +52,10 @@ describe('ColossussspAdapter', () => {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'sizes');
+        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic');
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
-        expect(placement.sizes).to.be.an('array');
+        expect(placement.traffic).to.be.a('string');
       }
     });
     it('Returns empty data if no valid requests are passed', () => {
@@ -72,6 +68,7 @@ describe('ColossussspAdapter', () => {
     let resObject = {
       body: [ {
         requestId: '123',
+        mediaType: 'banner',
         cpm: 0.3,
         width: 320,
         height: 50,
@@ -88,7 +85,7 @@ describe('ColossussspAdapter', () => {
       for (let i = 0; i < serverResponses.length; i++) {
         let dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency');
+          'netRevenue', 'currency', 'mediaType');
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -98,6 +95,7 @@ describe('ColossussspAdapter', () => {
         expect(dataItem.creativeId).to.be.a('string');
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
       }
       it('Returns an empty array if invalid response is passed', () => {
         serverResponses = spec.interpretResponse('invalid_response');
