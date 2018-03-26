@@ -1,4 +1,3 @@
-
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
@@ -11,6 +10,7 @@ const NATIVE_DEFAULTS = {
   IMG_MIN: 150,
   ICON_MIN: 50,
 };
+
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const VIDEO_TARGETING = ['mimes', 'skippable', 'playback_method', 'protocols', 'api'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
