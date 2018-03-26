@@ -93,6 +93,23 @@ pbjs.setConfig({
 });
 ```
 
+## How often is Prebid.js updated?
+
+See [the github release schedule](https://github.com/prebid/Prebid.js/blob/master/README.md) for more details.
+
+## How can I change the price granularity for different ad units?
+
+If you need different [price granularities]({{site.baseurl}}/dev-docs/publisher-api-reference.html#setConfig-Price-Granularity) for different AdUnits (e.g. video and display), the only way for now is to make sure the auctions don't run at the same time. e.g. Run one of them first, then kick off the other in the bidsBackHandler. e.g. here's one approach:
+
+1. Call `setConfig` to define the priceGranularity for the first set of AdUnits
+1. Initiate the first auction with `requestBids`
+1. In the bidsBackHandler
+   1. Set the adserver targeting for the first auction
+   1. Call `setConfig` to define the priceGranularity for the second set of AdUnits
+   1. Initiate the second auction with `requestBids`
+   
+The handling of this scenario will be improved in a future release.
+
 ## Related Reading
 
 + [Prebid Dev Tips]({{site.baseurl}}/dev-docs/troubleshooting-tips.html)
