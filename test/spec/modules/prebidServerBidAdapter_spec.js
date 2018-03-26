@@ -12,6 +12,7 @@ let CONFIG = {
   enabled: true,
   bidders: ['appnexus'],
   timeout: 1000,
+  cacheMarkup: 2,
   endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
 };
 
@@ -390,8 +391,19 @@ describe('S2S Adapter', () => {
       config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid).to.have.property('cache_markup', 2);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+    });
+
+    it('sets invalid cacheMarkup value to 0', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        cacheMarkup: 999
+      });
+      config.setConfig({s2sConfig: s2sConfig});
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid).to.have.property('cache_markup', 0);
     });
 
     it('adds digitrust id is present and user is not optout', () => {
