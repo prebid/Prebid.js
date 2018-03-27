@@ -1,14 +1,14 @@
 # Overview
 
-**Module Name**: VertaMedia Bidder Adapter
+**Module Name**: Adtelligent Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: support@verta.media
+**Maintainer**: support@adtelligent.com
 
 # Description
 
-Get access to multiple demand partners across VertaMedia AdExchange and maximize your yield with VertaMedia header bidding adapter.
+Get access to multiple demand partners across Adtelligent Marketplace and maximize your yield with Adtelligent header bidding adapter.
 
-VertaMedia header bidding adapter connects with VertaMedia demand sources in order to fetch bids.
+Adtelligent header bidding adapter connects with Adtelligent demand sources in order to fetch bids.
 This adapter provides a solution for accessing Video demand and display demand
 
 
@@ -26,7 +26,7 @@ This adapter provides a solution for accessing Video demand and display demand
           }
         },
         bids: [{
-          bidder: 'vertamedia',
+          bidder: 'adtelligent',
           params: {
             aid: 331133
           }
@@ -43,7 +43,7 @@ This adapter provides a solution for accessing Video demand and display demand
           }
         },
         bids: [{
-          bidder: 'vertamedia',
+          bidder: 'adtelligent',
           params: {
             aid: 331133
           }
@@ -55,7 +55,7 @@ This adapter provides a solution for accessing Video demand and display demand
         code: 'div-test-div',
         sizes: [[300, 250]],
         bids: [{
-          bidder: 'vertamedia',
+          bidder: 'adtelligent',
           params: {
             aid: 350975
           }
