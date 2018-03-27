@@ -4,7 +4,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.0';
+const ADAPTER_VERSION = '1.1';
 const ADAPTER_NAME = 'BFIO_PREBID';
 
 export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
