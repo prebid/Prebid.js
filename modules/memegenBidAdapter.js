@@ -70,7 +70,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             w: adW,
             h: adH
           },
-          tagid: bidReq.placementCode,
+          tagid: toStringIfExists(bidReq.placementCode),
           bidfloor: bidFloor,
           secure: secureValue()
         }],
@@ -83,6 +83,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             id: publisherId
           }
         },
+        at: 1,
         device: {
           ua: ua,
           ifa: utils.getBidIdParameter('deviceIfa', bidReq.params)
@@ -99,7 +100,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             w: adW,
             h: adH
           },
-          tagid: rtbTagId || bidReq.placementCode,
+          tagid: toStringIfExists(rtbTagId || bidReq.placementCode),
           bidfloor: bidFloor,
           secure: secureValue()
         }],
@@ -110,6 +111,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             id: publisherId
           }
         },
+        at: 1,
         device: {
           ua: ua,
         },
@@ -230,3 +232,10 @@ var MemeGenAdapter = function MemeGenAdapter() {
 adaptermanager.registerBidAdapter(new MemeGenAdapter(), bidderName);
 
 module.exports = MemeGenAdapter;
+
+function toStringIfExists(val) {
+  if (val === undefined || val === null) {
+    return val;
+  }
+  return String(val);
+}
