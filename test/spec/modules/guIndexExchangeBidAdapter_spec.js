@@ -73,7 +73,7 @@ describe('Index Exchange adapter', () => {
       const requests = spec.buildRequests(bidRequests);
       const url = requests[0].url;
       const decodedUrl = decodeURI(url);
-      expect(decodedUrl).to.match(/https:\/\/as-sec.casalemedia.com\/cygnus\?v=7&fn=cygnus_index_parse_res&s=208209&r={"id":"(\d+)","site":{"page":"http:\/\/localhost:9876\/\?id=(\d+)","ref":"http:\/\/localhost:9876\/\?id=(\d+)"},"imp":\[{"id":"1", "banner":{"w":300,"h":250,"topframe":1},"ext": {"sid":"185406_1","siteID":208209}},{"id":"2", "banner":{"w":300,"h":600,"topframe":1},"ext": {"sid":"185406_2","siteID":208209}}]}&pid=pb%24prebid.version%24/);
+      expect(decodedUrl).to.match(/https:\/\/as-sec.casalemedia.com\/cygnus\?v=7&fn=cygnus_index_parse_res&s=208209&r={"id":"(\d+)","site":{"page":"http:\/\/localhost:9876\/","ref":"http:\/\/localhost:9876\/\?id=(\d+)"},"imp":\[{"id":"1", "banner":{"w":300,"h":250,"topframe":1},"ext": {"sid":"185406_1","siteID":208209}},{"id":"2", "banner":{"w":300,"h":600,"topframe":1},"ext": {"sid":"185406_2","siteID":208209}}]}&pid=pb%24prebid.version%24/);
     });
     it('should have no data', () => {
       const requests = spec.buildRequests(bidRequests);
