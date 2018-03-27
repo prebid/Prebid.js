@@ -96,12 +96,12 @@ describe('Gu analytics adapter', () => {
     adaptermanager.enableAnalytics({
       provider: 'gu',
       options: {
-        host: 'localhost:9000',
+        ajaxUrl: '//localhost:9000',
         pv: 'pv1234567'
       }
     });
 
-    expect(analyticsAdapter.context).to.have.property('host', 'localhost:9000');
+    expect(analyticsAdapter.context).to.have.property('ajaxUrl', '//localhost:9000');
     expect(analyticsAdapter.context).to.have.property('pv', 'pv1234567');
   });
 
@@ -140,10 +140,10 @@ describe('Gu analytics adapter', () => {
   it('should handle bid timeout event', () => {
     timer.tick(444);
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, [{
-      bidId: "208750227436c1",
-      bidder: "b2",
-      adUnitCode: "slot-1",
-      auctionId: "5018eb39-f900-4370-b71e-3bb5b48d324f"
+      bidId: '208750227436c1',
+      bidder: 'b2',
+      adUnitCode: 'slot-1',
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
     }]);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(5);
@@ -162,7 +162,7 @@ describe('Gu analytics adapter', () => {
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
-    ev = JSON.parse(ajaxStub.secondCall.args[2]).hb_ev;
+    ev = JSON.parse(ajaxStub.thirdCall.args[2]).hb_ev;
     expect(ev[5]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
   });
 });

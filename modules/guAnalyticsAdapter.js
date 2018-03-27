@@ -2,6 +2,7 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import * as adaptermanager from 'src/adaptermanager';
+import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 
 const analyticsType = 'endpoint';
@@ -57,7 +58,7 @@ function sendAll() {
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
     ajax(
-      `//${analyticsAdapter.context.host}/commercial/api/hb`,
+      `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`,
       () => {
       },
       JSON.stringify(req),
@@ -163,8 +164,8 @@ analyticsAdapter.context = {};
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
-  if (!config.options.host) {
-    utils.logError('host is not defined. Analytics won\'t work');
+  if (!config.options.ajaxUrl) {
+    utils.logError('ajaxUrl is not defined. Analytics won\'t work');
     return;
   }
   if (!config.options.pv) {
@@ -172,7 +173,7 @@ analyticsAdapter.enableAnalytics = (config) => {
     return;
   }
   analyticsAdapter.context = {
-    host: config.options.host,
+    ajaxUrl: config.options.ajaxUrl,
     pv: config.options.pv,
     requestTemplate: buildRequestTemplate(config.options),
     queue: new ExpiringQueue(sendAll, QUEUE_TIMEOUT)
