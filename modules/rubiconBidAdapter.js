@@ -268,12 +268,16 @@ export const spec = {
         requestId: bidRequest.bidId,
         currency: 'USD',
         creativeId: ad.creative_id,
-        mediaType: ad.creative_type,
         cpm: ad.cpm || 0,
         dealId: ad.deal,
         ttl: 300, // 5 minutes
         netRevenue: config.getConfig('rubicon.netRevenue') || false
       };
+
+      if (ad.creative_type) {
+        bid.mediaType = ad.creative_type;
+      }
+
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
