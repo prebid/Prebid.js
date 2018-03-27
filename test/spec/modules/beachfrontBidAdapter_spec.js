@@ -96,7 +96,7 @@ describe('BeachfrontAdapter', () => {
         expect(data.appId).to.equal(bidRequest.params.appId);
         expect(data.domain).to.equal(document.location.hostname);
         expect(data.id).to.be.a('string');
-        expect(data.imp[0].video).to.deep.equal({ w: width, h: height, mimes: DEFAULT_MIMES });
+        expect(data.imp[0].video).to.deep.contain({ w: width, h: height, mimes: DEFAULT_MIMES });
         expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
         expect(data.site).to.deep.equal({ page: topLocation.href, domain: topLocation.hostname });
         expect(data.device).to.deep.contain({ ua: navigator.userAgent, language: navigator.language, js: 1 });
@@ -138,7 +138,7 @@ describe('BeachfrontAdapter', () => {
         const bidRequest = bidRequests[0];
         const mimes = ['video/webm'];
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.params = { video: { mimes } };
+        bidRequest.params.video = { mimes };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes });
