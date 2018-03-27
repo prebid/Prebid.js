@@ -21,7 +21,7 @@ export const spec = {
       utils.logInfo('Log bid', bid);
       let bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
       let whArr = getWidthAndHeight(bid);
-      let _mediaTypes = bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER;
+      let _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video) ? VIDEO : BANNER;
       zoneid = utils.getBidIdParameter('zoneid', bid.params);
       requestId = bid.bidderRequestId;
       ebdrImps.push({
@@ -98,7 +98,7 @@ export const spec = {
 function getWidthAndHeight(bid) {
   let adW = null;
   let adH = null;
-
+  // Handing old bidder only has size object
   if (bid.sizes && bid.sizes.length) {
     let sizeArrayLength = bid.sizes.length;
     if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
@@ -107,12 +107,14 @@ function getWidthAndHeight(bid) {
     }
   }
   let _mediaTypes = bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER;
-  if (_mediaTypes == BANNER && bid.mediaTypes[_mediaTypes].sizes && bid.mediaTypes[_mediaTypes].sizes[0] && bid.mediaTypes[_mediaTypes].sizes[0].length === 2) {
-    adW = bid.mediaTypes[_mediaTypes].sizes[0][0];
-    adH = bid.mediaTypes[_mediaTypes].sizes[0][1];
-  } else if (_mediaTypes == VIDEO && bid.mediaTypes[_mediaTypes].playerSize && bid.mediaTypes[_mediaTypes].playerSize.length === 2) {
-    adW = bid.mediaTypes[_mediaTypes].playerSize[0];
-    adH = bid.mediaTypes[_mediaTypes].playerSize[1];
+  if (bid.mediaTypes && bid.mediaTypes[_mediaTypes]) {
+    if (_mediaTypes == BANNER && bid.mediaTypes[_mediaTypes].sizes && bid.mediaTypes[_mediaTypes].sizes[0] && bid.mediaTypes[_mediaTypes].sizes[0].length === 2) {
+      adW = bid.mediaTypes[_mediaTypes].sizes[0][0];
+      adH = bid.mediaTypes[_mediaTypes].sizes[0][1];
+    } else if (_mediaTypes == VIDEO && bid.mediaTypes[_mediaTypes].playerSize && bid.mediaTypes[_mediaTypes].playerSize.length === 2) {
+      adW = bid.mediaTypes[_mediaTypes].playerSize[0];
+      adH = bid.mediaTypes[_mediaTypes].playerSize[1];
+    }
   }
   return [adW, adH];
 }
