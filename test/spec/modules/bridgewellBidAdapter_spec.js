@@ -37,6 +37,30 @@ describe('bridgewellBidAdapter', function () {
       'bidId': '42dbe3a7168a6a',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
+    },
+    {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CgUxMjMzOBIBNiIFcGVubnkqCQisAhD6ARoBOQ',
+        'cpmWeight': 0.5
+      },
+      'adUnitCode': 'adunit-code-1',
+      'sizes': [[300, 250]],
+      'bidId': '42dbe3a7168a6a',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    },
+    {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
+        'cpmWeight': -0.5
+      },
+      'adUnitCode': 'adunit-code-2',
+      'sizes': [[728, 90]],
+      'bidId': '3150ccb55da321',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
     }
   ];
   const adapter = newBidder(spec);
@@ -48,7 +72,7 @@ describe('bridgewellBidAdapter', function () {
   });
 
   describe('isBidRequestValid', () => {
-    let bid = {
+    let bidWithoutCpmWeight = {
       'bidder': 'bridgewell',
       'params': {
         'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk'
@@ -60,17 +84,83 @@ describe('bridgewellBidAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
+    let bidWithCorrectCpmWeight = {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk',
+        'cpmWeight': 0.5
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };
+
+    let bidWithUncorrectCpmWeight = {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk',
+        'cpmWeight': -1.0
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };
+
+    let bidWithZeroCpmWeight = {
+      'bidder': 'bridgewell',
+      'params': {
+        'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk',
+        'cpmWeight': 0
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };
+
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(true);
+      expect(spec.isBidRequestValid(bidWithCorrectCpmWeight)).to.equal(true);
+      expect(spec.isBidRequestValid(bidWithUncorrectCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithZeroCpmWeight)).to.equal(false);
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let bidWithoutCpmWeight = Object.assign({}, bidWithoutCpmWeight);
+      let bidWithCorrectCpmWeight = Object.assign({}, bidWithCorrectCpmWeight);
+      let bidWithUncorrectCpmWeight = Object.assign({}, bidWithUncorrectCpmWeight);
+      let bidWithZeroCpmWeight = Object.assign({}, bidWithZeroCpmWeight);
+
+      delete bidWithoutCpmWeight.params;
+      delete bidWithCorrectCpmWeight.params;
+      delete bidWithUncorrectCpmWeight.params;
+      delete bidWithZeroCpmWeight.params;
+
+      bidWithoutCpmWeight.params = {
         'ChannelID': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bidWithCorrectCpmWeight.params = {
+        'ChannelID': 0
+      };
+
+      bidWithUncorrectCpmWeight.params = {
+        'ChannelID': 0
+      };
+
+      bidWithZeroCpmWeight.params = {
+        'ChannelID': 0
+      };
+
+      expect(spec.isBidRequestValid(bidWithoutCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithCorrectCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithUncorrectCpmWeight)).to.equal(false);
+      expect(spec.isBidRequestValid(bidWithZeroCpmWeight)).to.equal(false);
     });
   });
 
@@ -126,6 +216,26 @@ describe('bridgewellBidAdapter', function () {
       'width': 300,
       'height': 250,
       'ad': '<div>test 300x250</div>',
+      'ttl': 360,
+      'net_revenue': 'true',
+      'currency': 'NTD'
+    }, {
+      'id': '8f12c646-3b87-4326-a837-c2a76999f168',
+      'bidder_code': 'bridgewell',
+      'cpm': 5.0,
+      'width': 300,
+      'height': 250,
+      'ad': '<div>test 300x250</div>',
+      'ttl': 360,
+      'net_revenue': 'true',
+      'currency': 'NTD'
+    }, {
+      'id': '0e4048d3-5c74-4380-a21a-00ba35629f7d',
+      'bidder_code': 'bridgewell',
+      'cpm': 5.0,
+      'width': 728,
+      'height': 90,
+      'ad': '<div>test 728x90</div>',
       'ttl': 360,
       'net_revenue': 'true',
       'currency': 'NTD'

@@ -33,7 +33,15 @@
     "BID_WON": "bidWon",
     "SET_TARGETING": "setTargeting",
     "REQUEST_BIDS": "requestBids",
-    "ADD_AD_UNITS": "addAdUnits"
+    "ADD_AD_UNITS": "addAdUnits",
+    "AD_RENDER_FAILED" : "adRenderFailed"
+  },
+  "AD_RENDER_FAILED_REASON" : {
+    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
+    "NO_AD": "noAd",
+    "EXCEPTION": "exception",
+    "CANNOT_FIND_AD": "cannotFindAd",
+    "MISSING_DOC_OR_ADID": "missingDocOrAdid"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
