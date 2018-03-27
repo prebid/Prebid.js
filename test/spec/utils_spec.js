@@ -662,7 +662,7 @@ describe('Utils', function () {
       assert.deepEqual(output, expected);
     });
   });
-  
+
   describe('getTopWindowLocation', () => {
     let sandbox;
 
