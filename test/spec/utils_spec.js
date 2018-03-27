@@ -1,7 +1,7 @@
-import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures';
 
 var assert = require('assert');
-var utils = require('../../src/utils');
+var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -525,95 +525,6 @@ describe('Utils', function () {
     });
   });
 
-  /**
-   *  tests fail in IE10 because __lookupSetter__ and __lookupGetter__ are
-   *  not supported. See #1656. commenting out until they can be fixed.
-   *
-   *  describe('cookie support', function () {
-   *    // store original cookie getter and setter so we can reset later
-   *    var origCookieSetter = document.__lookupSetter__('cookie');
-   *    var origCookieGetter = document.__lookupGetter__('cookie');
-   *
-   *    // store original cookieEnabled getter and setter so we can reset later
-   *    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
-   *    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
-   *
-   *    // Replace the document cookie set function with the output of a custom function for testing
-   *    let setCookie = (v) => v;
-   *
-   *    beforeEach(() => {
-   *      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = v;
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *
-   *      // Reset the setCookie cookie function before each test
-   *      setCookie = (v) => v;
-   *      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
-   *      Object.defineProperty(window.document, 'cookie', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = setCookie(v);
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *    });
-   *
-   *    afterEach(() => {
-   *      // redefine window.navigator.cookieEnabled to original getter and setter
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', {
-   *        get: origCookieEnabledGetter,
-   *        set: origCookieEnabledSetter,
-   *        configurable: true
-   *      });
-   *      // redefine document.cookie to original getter and setter
-   *      Object.defineProperty(document, 'cookie', {
-   *        get: origCookieGetter,
-   *        set: origCookieSetter,
-   *        configurable: true
-   *      });
-   *    });
-   *
-   *    it('should be detected', function() {
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
-   *    });
-   *
-   *    it('should be not available', function() {
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
-   *    });
-   *
-   *    it('should be available', function() {
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = 'key=value';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should already be set');
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should settable');
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = true;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be on via on window.navigator');
-   *      // Reset the setCookie
-   *      setCookie = (v) => v;
-   *    });
-   *  });
-  **/
-
   describe('delayExecution', function () {
     it('should execute the core function after the correct number of calls', function () {
       const callback = sinon.spy();
@@ -709,6 +620,90 @@ describe('Utils', function () {
       const adUnitCopy = utils.deepClone(adUnit);
       expect(adUnitCopy[0].renderer.url).to.be.a('string');
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
+  describe('getTopWindowLocation', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('returns window.location if not in iFrame', () => {
+      sandbox.stub(utils, 'getWindowLocation').returns({
+        href: 'https://www.google.com/',
+        ancestorOrigins: {},
+        origin: 'https://www.google.com',
+        protocol: 'https',
+        host: 'www.google.com',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/',
+        search: '',
+        hash: ''
+      });
+      let windowSelfAndTopObject = { self: 'is same as top' };
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        windowSelfAndTopObject
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        windowSelfAndTopObject
+      );
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal('');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal(0);
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.example.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.example.com');
+      expect(topWindowLocation.port).to.equal(0);
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.example.com');
     });
   });
 });

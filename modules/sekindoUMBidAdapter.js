@@ -2,7 +2,7 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 export const spec = {
   code: 'sekindoUM',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -47,6 +47,8 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'hbcb', '1');/// legasy
       queryString = utils.tryAppendQueryString(queryString, 'dcpmflr', bidfloor);
       queryString = utils.tryAppendQueryString(queryString, 'protocol', protocol);
+      queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.width);
+      queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.height);
       if (bidRequest.mediaType === 'video' || (typeof bidRequest.mediaTypes == 'object' && typeof bidRequest.mediaTypes.video == 'object')) {
         queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.playerWidth);
         queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.playerHeight);
@@ -102,14 +104,6 @@ export const spec = {
 
     bidResponses.push(bidResponse);
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
-    }
   }
 }
 registerBidder(spec);

@@ -36,7 +36,7 @@ describe('kargo adapter tests', function () {
     var bids, cookies = [], localStorageItems = [];
 
     beforeEach(() => {
-      sandbox.stub(config, 'getConfig', function(key) {
+      sandbox.stub(config, 'getConfig').callsFake(function(key) {
         if (key === 'currency') {
           return 'USD';
         }
