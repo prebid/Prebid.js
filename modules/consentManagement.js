@@ -9,10 +9,12 @@ import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
 
 const DEFAULT_CMP = 'appnexus';
+const DEFAULT_CONSENT_REQURED = true;
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
 export let userCMP;
+export let userConsentRequired;
 export let consentTimeout;
 export let allowAuction;
 
@@ -138,7 +140,7 @@ function cmpFailed(errMsg) {
 function storeConsentData(cmpConsentString) {
   consentData = {
     consentString: cmpConsentString,
-    consentRequired: true
+    consentRequired: userConsentRequired
   };
   gdprDataHandler.setConsentData(consentData);
 }
@@ -191,21 +193,28 @@ export function setConfig(config) {
     userCMP = config.cmp;
   } else {
     userCMP = DEFAULT_CMP;
-    utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${userCMP}).`);
+    utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+  }
+
+  if (typeof config.consentRequired === 'boolean') {
+    userConsentRequired = config.consentRequired;
+  } else {
+    userConsentRequired = DEFAULT_CONSENT_REQURED;
+    utils.logInfo(`consentManagement config did not specify consentRequired.  Using system default setting (${DEFAULT_CONSENT_REQURED})`);
   }
 
   if (typeof config.timeout === 'number') {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
-    utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${consentTimeout}).`);
+    utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
 
   if (typeof config.allowAuctionWithoutConsent !== 'undefined') {
     allowAuction = config.allowAuctionWithoutConsent;
   } else {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
-    utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${allowAuction}).`);
+    utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
 
   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
