@@ -24,7 +24,6 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let deliveryUrl = '';
-    let bidId = '';
     const idParams = [];
     const sizeParams = [];
     const zoneIds = [];
@@ -33,10 +32,7 @@ export const spec = {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
       }
-      if (!bidId) {
-        bidId = bid.bidId;
-      }
-      idParams.push(bid.adUnitCode);
+      idParams.push(bid.bidId);
       sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
@@ -48,7 +44,6 @@ export const spec = {
     return {
       method: 'GET',
       url: deliveryUrl,
-      bidId: bidId,
       data: {
         [IFRAME_PARAM_NAME]: 0,
         [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
@@ -62,21 +57,22 @@ export const spec = {
   interpretResponse: function(serverResponses, request) {
     const bidResponses = [];
     utils._each(serverResponses.body, function(response) {
-      const bidResponse = {
-        requestId: request.bidId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.zoneid,
-        currency: A4G_CURRENCY,
-        netRevenue: true,
-        ttl: A4G_TTL,
-        ad: response.ad,
-        adId: response.id
-      };
-      bidResponses.push(bidResponse);
+      if (response.cpm > 0) {
+        const bidResponse = {
+          requestId: response.id,
+          creativeId: response.id,
+          adId: response.id,
+          cpm: response.cpm,
+          width: response.width,
+          height: response.height,
+          currency: A4G_CURRENCY,
+          netRevenue: true,
+          ttl: A4G_TTL,
+          ad: response.ad
+        };
+        bidResponses.push(bidResponse);
+      }
     });
-
     return bidResponses;
   }
 };

@@ -88,6 +88,8 @@ export default function buildDfpVideoUrl(options) {
   const customParams = Object.assign({},
     adserverTargeting,
     { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    {hb_cache_id: bid && bid.videoCacheKey},
     options.params.cust_params);
 
   const queryParams = Object.assign({},

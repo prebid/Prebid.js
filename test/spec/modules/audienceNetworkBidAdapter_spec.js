@@ -4,6 +4,7 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/audienceNetworkBidAdapter';
+import * as utils from 'src/utils';
 
 const {
   code,
@@ -117,6 +118,15 @@ describe('AudienceNetwork adapter', () => {
   });
 
   describe('buildRequests', () => {
+    let isSafariBrowserStub;
+    before(() => {
+      isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
+    });
+
+    after(() => {
+      isSafariBrowserStub.restore();
+    });
+
     it('can build URL for IAB unit', () => {
       expect(buildRequests([{
         bidder,
@@ -191,23 +201,13 @@ describe('AudienceNetwork adapter', () => {
     });
 
     it('can build URL on Safari that includes a cachebuster param', () => {
-      const { userAgent } = navigator;
-      Object.defineProperty(navigator, 'userAgent', {
-        value: 'safari',
-        writable: true
-      });
-
+      isSafariBrowserStub.returns(true);
       expect(buildRequests([{
         bidder,
         bidId: requestId,
         sizes: [[300, 250]],
         params: { placementId }
       }])[0].data).to.contain('&cb=');
-
-      Object.defineProperty(navigator, 'userAgent', {
-        value: userAgent,
-        writable: false
-      });
     });
   });
 

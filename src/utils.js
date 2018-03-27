@@ -2,6 +2,7 @@ import { config } from './config';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { parse } from './url';
 const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -157,17 +158,55 @@ export function parseGPTSingleSizeArray(singleSize) {
   }
 };
 
-exports.getTopWindowLocation = function () {
-  let location;
-  try {
-    // force an exception in x-domain enviornments. #1509
-    window.top.location.toString();
-    location = window.top.location;
-  } catch (e) {
-    location = window.location;
+exports.getTopWindowLocation = function() {
+  if (exports.inIframe()) {
+    let loc;
+    try {
+      loc = exports.getAncestorOrigins() || exports.getTopFrameReferrer();
+    } catch (e) {
+      logInfo('could not obtain top window location', e);
+    }
+    if (loc) return parse(loc, {'decodeSearchAsString': true});
   }
+  return exports.getWindowLocation();
+}
 
-  return location;
+exports.getTopFrameReferrer = function () {
+  try {
+    // force an exception in x-domain environments. #1509
+    window.top.location.toString();
+    let referrerLoc = '';
+    let currentWindow;
+    do {
+      currentWindow = currentWindow ? currentWindow.parent : window;
+      if (currentWindow.document && currentWindow.document.referrer) {
+        referrerLoc = currentWindow.document.referrer;
+      }
+    }
+    while (currentWindow !== window.top);
+    return referrerLoc;
+  } catch (e) {
+    return window.document.referrer;
+  }
+};
+
+exports.getAncestorOrigins = function () {
+  if (window.document.location && window.document.location.ancestorOrigins &&
+    window.document.location.ancestorOrigins.length >= 1) {
+    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
+  }
+};
+
+exports.getWindowTop = function () {
+  return window.top;
+};
+
+exports.getWindowSelf = function () {
+  return window.self;
+};
+
+exports.getWindowLocation = function () {
+  return window.location;
 };
 
 exports.getTopWindowUrl = function () {
@@ -658,7 +697,7 @@ export function deepClone(obj) {
 
 export function inIframe() {
   try {
-    return window.self !== window.top;
+    return exports.getWindowSelf() !== exports.getWindowTop();
   } catch (e) {
     return true;
   }

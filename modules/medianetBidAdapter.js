@@ -1,8 +1,11 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
+
+$$PREBID_GLOBAL$$.medianetGlobals = {};
 
 function siteDetails(site) {
   site = site || {};
@@ -35,7 +38,8 @@ function getSize(size) {
 
 function configuredParams(params) {
   return {
-    customer_id: params.cid
+    customer_id: params.cid,
+    prebid_version: $$PREBID_GLOBAL$$.version
   }
 }
 
@@ -46,7 +50,8 @@ function slotParams(bidRequest) {
     ext: {
       dfp_id: bidRequest.adUnitCode
     },
-    banner: transformSizes(bidRequest.sizes)
+    banner: transformSizes(bidRequest.sizes),
+    all: bidRequest.params
   };
 
   if (bidRequest.params.crid) {
@@ -65,7 +70,8 @@ function generatePayload(bidRequests) {
     site: siteDetails(bidRequests[0].params.site),
     ext: configuredParams(bidRequests[0].params),
     id: bidRequests[0].auctionId,
-    imp: bidRequests.map(request => slotParams(request))
+    imp: bidRequests.map(request => slotParams(request)),
+    tmax: config.getConfig('bidderTimeout')
   }
 }
 
@@ -102,6 +108,8 @@ export const spec = {
       utils.logError(`${BIDDER_CODE} : cid should be a string`);
       return false;
     }
+
+    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
 
     return true;
   },

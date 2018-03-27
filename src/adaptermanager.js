@@ -15,6 +15,7 @@ let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
+exports.aliasRegistry = {};
 
 let _s2sConfig = {};
 config.getConfig('s2sConfig', config => {
@@ -383,6 +384,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
         } else {
           let spec = bidAdaptor.getSpec();
           newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+          exports.aliasRegistry[alias] = bidderCode;
         }
         this.registerBidAdapter(newAdapter, alias, {
           supportedMediaTypes
