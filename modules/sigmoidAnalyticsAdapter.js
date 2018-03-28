@@ -264,7 +264,7 @@ function send(eventType, data, sendDataType) {
       StreamName: 'sample-stream'
     }, function(err, newdata) {
       if (err) {
-       console.error(err);
+      console.error(err);
       }
     });
     if (sendDataType === 'eventStack') {
@@ -294,4 +294,3 @@ adaptermanager.registerAnalyticsAdapter({
 });
 
 export default sigmoidAdapter;
-
