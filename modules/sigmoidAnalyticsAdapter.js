@@ -1,5 +1,5 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
-Updated : 2018-03-20 */
+Updated : 2018-03-28 */
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
