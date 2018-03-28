@@ -108,10 +108,9 @@ Iframes must be either 600px away from the top or not within the first 75% of th
 
     <amp-iframe width="1" title="User Sync"
                             height="1"
-                            layout="responsive"
                             sandbox="allow-scripts"
                             frameborder="0"
-                            src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.3.0/dist/load-cookie.html">
+                            src="https://acdn.adnxs.com/prebid/amp/user-sync/load-cookie.html">
     </amp-iframe>
 
 {% endhighlight %}
