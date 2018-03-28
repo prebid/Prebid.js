@@ -74,9 +74,9 @@ describe('Smart ad server bid adapter tests', () => {
       }
     });
     const request = spec.buildRequests(DEFAULT_PARAMS);
-    expect(request).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
-    expect(request).to.have.property('method').and.to.equal('POST');
-    const requestContent = JSON.parse(request.data);
+    expect(request[0]).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('siteid').and.to.equal('1234');
     expect(requestContent).to.have.property('pageid').and.to.equal('5678');
     expect(requestContent).to.have.property('formatid').and.to.equal('90');
@@ -95,7 +95,7 @@ describe('Smart ad server bid adapter tests', () => {
 
   it('Verify parse response', () => {
     const request = spec.buildRequests(DEFAULT_PARAMS);
-    const bids = spec.interpretResponse(BID_RESPONSE, request);
+    const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(12);

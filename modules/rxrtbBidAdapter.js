@@ -68,7 +68,7 @@ function getDomain(url) {
 
 function makePrebidRequest(req) {
   let host = req.params.host || DEFAULT_HOST;
-  let url = window.location.protocol + '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token;
+  let url = '//' + host + '/dsp?id=' + req.params.id + '&token=' + req.params.token;
   let reqData = makeRtbRequest(req);
   return {
     method: 'POST',
