@@ -76,7 +76,7 @@ Please use ```platformio``` as the bidder code.
                   size: '640X480',
                   placementId: '123',
                   video: {
-                      skipppable: true,
+                      skippable: true,
                   }
               }
           }]
