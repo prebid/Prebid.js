@@ -16,6 +16,6 @@
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
-    "prebidServerBidAdapter",
-    "audienceNetworkBidAdapter"
+    "audienceNetworkBidAdapter",
+    "prebidServerBidAdapter"
 ]
