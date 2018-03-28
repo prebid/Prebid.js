@@ -30,5 +30,24 @@ Adapter that connects to EngageBDR's demand sources.
                longitude:'-118.392805'
             }
         }]
+    },{
+        code: 'test-video',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: [300, 250]
+            }
+        },
+         bids: [{
+            bidder: 'ebdr',
+            params: {
+               zoneid: '99998',
+               bidfloor: '1.00',
+               IDFA:'xxx-xxx',
+               ADID:'xxx-xxx',
+               latitude:'34.089811',
+               longitude:'-118.392805'
+            }
+        }]
     }];
 ```
