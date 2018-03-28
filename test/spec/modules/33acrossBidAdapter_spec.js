@@ -227,14 +227,10 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: 1
               }]
             }
           ]
@@ -281,26 +277,18 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0940
+                price: 0.0940,
+                crid: 1
               },
               {
                 id: '2',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 2
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: 2
               }
               ]
             },
@@ -308,14 +296,10 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '3',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 3
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: 3
               }]
             }
           ]
