@@ -1,4 +1,4 @@
-/*Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
+/* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-20 */
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
@@ -157,9 +157,9 @@ function flushEventStack() {
   eventStack.events = [];
 }
 
-//function flushBidWon() {
+// function flushBidWon() {
 //  bidWon.events = [];
-//}
+// }
 
 let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
   {
@@ -176,7 +176,7 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
 
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
-        //flushEventStack();
+        // flushEventStack();
       }
 
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
@@ -185,7 +185,7 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidBidWon()) {
           send(eventType, bidWon, 'bidWon');
         }
-        //flushBidWon();
+        // flushBidWon();
         return;
       }
 
@@ -195,7 +195,7 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidEventStack()) {
           send(eventType, eventStack, 'eventStack');
         }
-        //flushEventStack();
+        // flushEventStack();
         auctionStatus = 'not_started';
       } else {
         pushEvent(eventType, info);
@@ -240,37 +240,36 @@ sigmoidAdapter.buildUtmTagData = function () {
 function send(eventType, data, sendDataType) {
   AWS.config.credentials = new AWS.Credentials({
     accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
-    });
+  });
 
   AWS.config.region = 'us-east-1';
   AWS.config.credentials.get(function(err) {
   // attach event listener
-  if (err) {
-    alert('Error retrieving credentials.');
-    console.error(err);
-    return;
-    }
-  // create kinesis service object
-  var kinesis = new AWS.Kinesis({
-    apiVersion: '2013-12-02'
-    });
-  var dataList = [];
-  var jsonData = {};
-  jsonData["Data"] = JSON.stringify(data)+"\n";
-  jsonData["PartitionKey"] = 'partition-' + Math.random().toString(36).substring(7);
-  dataList.push(jsonData);
-  kinesis.putRecords({
-    Records: dataList,
-    StreamName: 'sample-stream'
-    }, function(err, newdata) {
     if (err) {
+      alert('Error retrieving credentials.');
       console.error(err);
+      return;
+    }
+    // create kinesis service object
+    var kinesis = new AWS.Kinesis({
+      apiVersion: '2013-12-02'
+    });
+    var dataList = [];
+    var jsonData = {};
+    jsonData['Data'] = JSON.stringify(data) + '\n';
+    jsonData['PartitionKey'] = 'partition-' + Math.random().toString(36).substring(7);
+    dataList.push(jsonData);
+    kinesis.putRecords({
+      Records: dataList,
+      StreamName: 'sample-stream'
+    }, function(err, newdata) {
+      if (err) {
+       console.error(err);
       }
     });
-  if (sendDataType === "eventStack") {
-    flushEventStack();
+    if (sendDataType === 'eventStack') {
+      flushEventStack();
     }
-
   });
 };
 
@@ -295,3 +294,4 @@ adaptermanager.registerAnalyticsAdapter({
 });
 
 export default sigmoidAdapter;
+
