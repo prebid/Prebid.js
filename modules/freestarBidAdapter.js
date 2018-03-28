@@ -2,7 +2,7 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
-const ENDPOINT_URL = 'http://35.226.213.130:8080/open-ssp/HeaderBiddingService';
+const ENDPOINT_URL = 'https://openssp.pub.network:8443/open-ssp/HeaderBiddingService';
 export const spec = {
   code: BIDDER_CODE,
 
