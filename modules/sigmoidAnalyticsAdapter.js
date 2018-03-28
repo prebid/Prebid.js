@@ -157,9 +157,9 @@ function flushEventStack() {
   eventStack.events = [];
 }
 
-function flushBidWon() {
-  bidWon.events = [];
-}
+//function flushBidWon() {
+//  bidWon.events = [];
+//}
 
 let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
   {
@@ -191,7 +191,7 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
 
       if (eventType === auctionEndConst) {
         updateSessionId();
-        buildEventStack(eventType);
+        buildEventStack();
         if (isValidEventStack()) {
           send(eventType, eventStack, 'eventStack');
         }
@@ -238,40 +238,40 @@ sigmoidAdapter.buildUtmTagData = function () {
 };
 
 function send(eventType, data, sendDataType) {
-	AWS.config.credentials = new AWS.Credentials({
-          accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
-          });
+  AWS.config.credentials = new AWS.Credentials({
+    accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
+    });
 
-	AWS.config.region = 'us-east-1'; 
-        AWS.config.credentials.get(function(err) {
-	    // attach event listener
-	    if (err) {
-	        alert('Error retrieving credentials.');
-	        console.error(err);
-	        return;
-	    }
-	    // create kinesis service object
-	    var kinesis = new AWS.Kinesis({
-        	apiVersion: '2013-12-02'
-	    });
-                var dataList = [];
-                var jsonData = {};
-                jsonData["Data"] = JSON.stringify(data)+"\n";
-                jsonData["PartitionKey"] = 'partition-' + Math.random().toString(36).substring(7);;
-                dataList.push(jsonData);
-	   	kinesis.putRecords({
-	            Records: dataList,
-       	    StreamName: 'sample-stream'
-	        }, function(err, newdata) {
-        	    if (err) {
-                	console.error(err);
-	            }
-        	});
-                if (sendDataType === "eventStack") {
-		       flushEventStack();
-		      } 
+  AWS.config.region = 'us-east-1';
+  AWS.config.credentials.get(function(err) {
+  // attach event listener
+  if (err) {
+    alert('Error retrieving credentials.');
+    console.error(err);
+    return;
+    }
+  // create kinesis service object
+  var kinesis = new AWS.Kinesis({
+    apiVersion: '2013-12-02'
+    });
+  var dataList = [];
+  var jsonData = {};
+  jsonData["Data"] = JSON.stringify(data)+"\n";
+  jsonData["PartitionKey"] = 'partition-' + Math.random().toString(36).substring(7);
+  dataList.push(jsonData);
+  kinesis.putRecords({
+    Records: dataList,
+    StreamName: 'sample-stream'
+    }, function(err, newdata) {
+    if (err) {
+      console.error(err);
+      }
+    });
+  if (sendDataType === "eventStack") {
+    flushEventStack();
+    }
 
-	});
+  });
 };
 
 function pushEvent(eventType, args) {
