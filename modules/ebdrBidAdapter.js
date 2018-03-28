@@ -74,23 +74,33 @@ export const spec = {
       responseCPM = parseFloat(ebdrBid.price);
       let adm;
       let type;
+      let _mediaTypes;
+      let vastURL;
       if (bidRequest.bids[ebdrBid.id].mediaTypes == BANNER) {
         adm = decodeURIComponent(ebdrBid.adm)
         type = 'ad';
+        _mediaTypes = BANNER;
       } else {
         adm = ebdrBid.adm
         type = 'vastXml'
+        _mediaTypes = VIDEO;
+        if (ebdrBid.nurl) {
+          vastURL = ebdrBid.nurl;
+        }
       }
-      ebdrResponseImps.push({
+      let response = {
         requestId: ebdrBid.id,
         [type]: adm,
+        mediaType: _mediaTypes,
         creativeId: ebdrBid.crid,
         cpm: responseCPM,
         width: ebdrBid.w,
         height: ebdrBid.h,
         currency: 'USD',
         netRevenue: true,
-        ttl: 3600 });
+        ttl: 3600 }
+      response.vastUrl = vastURL;
+      ebdrResponseImps.push(response);
     });
     return ebdrResponseImps;
   }
