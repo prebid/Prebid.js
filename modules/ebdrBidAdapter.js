@@ -99,7 +99,9 @@ export const spec = {
         currency: 'USD',
         netRevenue: true,
         ttl: 3600 }
-      response.vastUrl = vastURL;
+      if (vastURL) {
+        response.vastUrl = vastURL;
+      }
       ebdrResponseImps.push(response);
     });
     return ebdrResponseImps;
