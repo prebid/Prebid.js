@@ -3,7 +3,7 @@ const utils = require('../src/utils');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
+const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -52,7 +52,7 @@ function _createServerRequest(bidRequest) {
 
   const options = {
     contentType: 'application/json',
-    withCredentials: false
+    withCredentials: true
   };
 
   if (bidRequest.params.customHeaders) {
