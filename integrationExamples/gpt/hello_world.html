@@ -10,22 +10,46 @@
 <html>
   <head>
       <script>
-        var PREBID_TIMEOUT = 700;
+        var PREBID_TIMEOUT = 2000;
   
         var adUnits = [{
+          mediaType: 'banner',
           code: 'div-gpt-ad-1460505748561-0',
           sizes: [[300, 250], [300,600]],
   
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexusAst',
+            bidder: 'platformio',
             params: {
-              placementId: '10433394'
+              pubId: '29521',
+              siteId: '26049',
+              size: '300X250',
+              placementId: '123',
             }
           }]
-  
-        }];
-  
+        },
+{
+            code: '/21623309778/native-3',
+            sizes: [[1, 1]],
+            mediaTypes: {
+                native: {
+                  title: { required: true, len: 75  },
+                  image: { required: true  },
+                  body: { len: 200  },
+                  icon: { required: false }
+                }
+            },
+            bids: [{
+                bidder: 'platformio',
+                params: {
+                    pubId: '29521',
+                    siteId: '26048',
+                    placementId: '123',
+                }
+            }]
+        }
+];
+
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
   
@@ -79,6 +103,7 @@
       <script>
         googletag.cmd.push(function () {
           googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+          googletag.defineSlot('/21623309778/native-3', ['fluid'], 'div-gpt-ad-1513703073890-0').addService(googletag.pubads());
   
           googletag.pubads().enableSingleRequest();
           googletag.enableServices();
@@ -88,11 +113,18 @@
   
   <body>
   <h2>Prebid.js Test</h2>
-  <h5>Div-1</h5>
+  <h3>Banner</h3>
   <div id='div-gpt-ad-1460505748561-0'>
       <script type='text/javascript'>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
       </script>
   </div>
+<h3>Native</h3>
+
+<div id='div-gpt-ad-1513703073890-0'>
+  <script>
+    googletag.cmd.push(function() { googletag.display('div-gpt-ad-1513703073890-0'); });
+  </script>
+</div>
   </body>
   </html>
