@@ -139,6 +139,7 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
+      adaptermanager.aliasRegistry[alias] = spec.code;
       putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
@@ -173,13 +174,16 @@ export function newBidder(spec) {
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses(bids) {
-        const videoBid = bids && bids[0] && bids[0].mediaType && bids[0].mediaType === 'video';
+        const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
+
+        const videoBid = bidsArray.some(bid => bid.mediaType === 'video');
         const cacheEnabled = config.getConfig('cache.url');
 
         // video bids with cache enabled need to be cached first before they are considered done
         if (!(videoBid && cacheEnabled)) {
           done();
         }
+
         registerSyncs(responses);
       }
 
