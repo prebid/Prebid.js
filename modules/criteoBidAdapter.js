@@ -248,6 +248,8 @@ function registerEventHandlers() {
     return;
   }
 
+  registeredEvents = true;
+
   events.on(EVENTS.BID_WON, (bid) => {
     if (bid.bidderCode === 'criteo') {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
@@ -270,8 +272,6 @@ function registerEventHandlers() {
       adapters[k].handleSetTargeting();
     }
   });
-
-  registeredEvents = true;
 }
 
 registerBidder(spec);
