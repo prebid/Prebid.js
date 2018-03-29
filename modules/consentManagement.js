@@ -9,7 +9,6 @@ import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
 
 const DEFAULT_CMP = 'appnexus';
-const DEFAULT_CONSENT_REQURED = true;
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
@@ -198,9 +197,6 @@ export function setConfig(config) {
 
   if (typeof config.consentRequired === 'boolean') {
     userConsentRequired = config.consentRequired;
-  } else {
-    userConsentRequired = DEFAULT_CONSENT_REQURED;
-    utils.logInfo(`consentManagement config did not specify consentRequired.  Using system default setting (${DEFAULT_CONSENT_REQURED})`);
   }
 
   if (typeof config.timeout === 'number') {

@@ -1,4 +1,4 @@
-import {setConfig, requestBidsHook, resetConsentData, userCMP, userConsentRequired, consentTimeout, allowAuction} from 'modules/consentManagement';
+import {setConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction} from 'modules/consentManagement';
 import {gdprDataHandler} from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
@@ -21,10 +21,9 @@ describe('consentManagement', function () {
       it('should use system default values', () => {
         setConfig({});
         expect(userCMP).to.be.equal('appnexus');
-        expect(userConsentRequired).to.be.true;
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 4);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
     });
 
@@ -43,7 +42,6 @@ describe('consentManagement', function () {
 
         setConfig(allConfig);
         expect(userCMP).to.be.equal('appnexus');
-        expect(userConsentRequired).to.be.false;
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
       });
@@ -59,6 +57,7 @@ describe('consentManagement', function () {
 
     let goodConfigWithAllowAuction = {
       cmp: 'appnexus',
+      consentRequired: true,
       timeout: 7500,
       allowAuctionWithoutConsent: true
     };

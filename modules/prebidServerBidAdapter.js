@@ -483,8 +483,32 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
-      request.regs = { ext: { gdpr: bidRequests[0].gdprConsent.consentRequired ? 1 : 0 } };
-      request.user = { ext: { consent: bidRequests[0].gdprConsent.consentString } };
+      // note - consentRequired & consentString may be undefined in certain use-cases for consentManagement module
+      let consentRequired;
+      if (typeof bidRequests[0].gdprConsent.consentRequired === 'boolean') {
+        consentRequired = bidRequests[0].gdprConsent.consentRequired ? 1 : 0;
+      }
+
+      if (request.regs) {
+        if (request.regs.ext) {
+          request.regs.ext.gdpr = consentRequired;
+        } else {
+          request.regs.ext = { gdpr: consentRequired };
+        }
+      } else {
+        request.regs = { ext: { gdpr: consentRequired } };
+      }
+
+      let consentString = bidRequests[0].gdprConsent.consentString;
+      if (request.user) {
+        if (request.user.ext) {
+          request.user.ext.consent = consentString;
+        } else {
+          request.user.ext = { consent: consentString };
+        }
+      } else {
+        request.user = { ext: { consent: consentString } };
+      }
     }
 
     return request;
