@@ -264,6 +264,13 @@ function registerEventHandlers() {
       });
   });
 
+  events.on(EVENTS.SET_TARGETING, () => {
+    const adapters = Criteo.PubTag.Adapters.Prebid.GetAllAdapters();
+    for (const k in adapters) {
+      adapters[k].handleSetTargeting();
+    }
+  });
+
   registeredEvents = true;
 }
 
