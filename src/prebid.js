@@ -7,7 +7,7 @@ import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
+import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -22,7 +22,6 @@ const { triggerUserSyncs } = userSync;
 
 /* private variables */
 
-const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 var eventValidators = {
@@ -110,7 +109,8 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode, auctionManager.getBidsReceived());
+  let bidsReceived = auctionManager.getBidsReceived();
+  return targeting.getAllTargeting(adUnitCode, bidsReceived);
 };
 
 /**
@@ -538,11 +538,21 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 */
 
 /**
- * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return auctionManager.getAllWinningBids()
+    .map(removeRequestId);
+};
+
+/**
+ * Get all of the bids that have won their respective auctions.
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ */
+$$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
+  return auctionManager.getBidsReceived()
+    .filter(bid => bid.status === BID_TARGETING_SET)
     .map(removeRequestId);
 };
 
@@ -554,7 +564,8 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode, auctionManager.getBidsReceived())
+  let bidsReceived = auctionManager.getBidsReceived().filter(getOldestBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
 };
 
