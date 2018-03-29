@@ -105,6 +105,19 @@ function setRenderSize(doc, width, height) {
   if (doc.defaultView && doc.defaultView.frameElement) {
     doc.defaultView.frameElement.width = width;
     doc.defaultView.frameElement.height = height;
+    // in case of nested iframes, resize those as well
+    try {
+      if (doc.defaultView.parent !== window.top) {
+        setRenderSize(doc.defaultView.parent.document, width, height);
+      }
+    } catch (e) {
+      // x-domain try one more time.
+      try {
+        setRenderSize(doc.defaultView.parent.document, width, height);
+      } catch (e) {
+        // reached the top window in x-domain
+      }
+    }
   }
 }
 
