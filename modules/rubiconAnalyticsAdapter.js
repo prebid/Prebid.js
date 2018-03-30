@@ -99,8 +99,6 @@ function formatSource(src) {
 
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
-    const sourceType = (bid.source) ? bid.source
-      : (serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1 ? 'server' : 'client');
     return _pick(bid, [
       'bidder',
       'bidId',
@@ -110,9 +108,10 @@ function sendMessage(auctionId, bidWonId) {
         if (source) {
           return source;
         }
-        return sourceType;
+        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+          ? 'server' : 'client'
       },
-      `clientLatencyMillis as ${sourceType}LatencyMillis`,
+      'clientLatencyMillis',
       'params',
       'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
         'bidPriceUSD',
