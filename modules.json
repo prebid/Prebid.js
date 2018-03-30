@@ -8,7 +8,7 @@
     "justpremiumBidAdapter",
     "komoonaBidAdapter",
     "openxBidAdapter",
-    "prebidServerBidAdapter"
+    "prebidServerBidAdapter",
     "pubmaticBidAdapter",
     "pulsepointBidAdapter",
     "rhythmoneBidAdapter",
