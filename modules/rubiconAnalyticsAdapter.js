@@ -106,7 +106,7 @@ function sendMessage(auctionId, bidWonId) {
       'bidId',
       'status',
       'error',
-      'source', (source, bid) => {
+      'bidSource', (source, bid) => {
         if (source) {
           return source;
         }
