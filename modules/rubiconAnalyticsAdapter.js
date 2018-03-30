@@ -106,7 +106,7 @@ function sendMessage(auctionId, bidWonId) {
       'bidId',
       'status',
       'error',
-      'bidSource', (source, bid) => {
+      'source', (source, bid) => {
         if (source) {
           return source;
         }
@@ -298,7 +298,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
-            'finalSource as bidSource',
+            'finalSource as source',
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
