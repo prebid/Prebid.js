@@ -1,21 +1,21 @@
 [
-    "freestarAnalyticsAdapter",
     "aolBidAdapter",
     "appnexusBidAdapter",
+    "audienceNetworkBidAdapter",
     "conversantBidAdapter",
+    "freestarAnalyticsAdapter",
     "gumgumBidAdapter",
     "justpremiumBidAdapter",
     "komoonaBidAdapter",
     "openxBidAdapter",
+    "prebidServerBidAdapter"
     "pubmaticBidAdapter",
     "pulsepointBidAdapter",
     "rhythmoneBidAdapter",
     "rubiconBidAdapter",
-    "sharethroughBidAdapter",
     "sekindoUMBidAdapter",
+    "sharethroughBidAdapter",
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
-    "audienceNetworkBidAdapter",
-    "prebidServerBidAdapter"
 ]
