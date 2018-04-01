@@ -204,6 +204,7 @@ function emitAdRenderFail(reason, message, bid) {
   data.message = message;
   if (bid) {
     data.bid = bid;
+    adaptermanager.callRenderFailBidder(bid);
   }
 
   utils.logError(message);
