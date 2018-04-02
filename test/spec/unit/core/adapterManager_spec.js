@@ -857,9 +857,14 @@ describe('adapterManager tests', () => {
 
   describe('isValidBidRequest', () => {
     describe('positive tests for validating bid request', () => {
-      beforeEach(() => {});
+      beforeEach(() => {
+        sinon.stub(utils, 'logInfo');
+      });
 
-      afterEach(() => {});
+      afterEach(() => {
+        utils.logInfo.restore();
+      });
+
       it('should maintain adUnit structure and adUnits.sizes is replaced', () => {
         let fullAdUnit = [{
           sizes: [[300, 250], [300, 600]],
@@ -929,6 +934,20 @@ describe('adapterManager tests', () => {
         result = checkBidRequestSizes(mixedAdUnit);
         expect(result[0].sizes).to.deep.equal([[400, 350]]);
         expect(result[0].mediaTypes.video).to.exist;
+
+        let altVideoPlayerSize = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          }
+        }];
+        result = checkBidRequestSizes(altVideoPlayerSize);
+        expect(result[0].sizes).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.calledOnce(utils.logInfo);
       });
     });
 
@@ -978,20 +997,6 @@ describe('adapterManager tests', () => {
           }
         }];
         result = checkBidRequestSizes(badVideo2);
-        expect(result[0].sizes).to.deep.equal([[600, 600]]);
-        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badVideo3 = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480]
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badVideo3);
         expect(result[0].sizes).to.deep.equal([[600, 600]]);
         expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
         expect(result[0].mediaTypes.video).to.exist;
