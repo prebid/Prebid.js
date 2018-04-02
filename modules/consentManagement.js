@@ -63,8 +63,8 @@ function lookupAppNexusConsent(cmpSuccess, cmpError) {
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
  * data as part of a gdprConsent object and gets transferred to adaptermanager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
- * @param {object} config This is the same param that's used in pbjs.requestBids.  The config.adunits will be updated.
- * @param {function} fn The next function in the chain, used by hook.js
+ * @param {object} config required; This is the same param that's used in pbjs.requestBids.  The config.adunits will be updated.
+ * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function requestBidsHook(config, fn) {
   context = this;
@@ -96,7 +96,7 @@ export function requestBidsHook(config, fn) {
 
 /**
  * This function checks the string value provided by CMP to ensure it's a valid string.
- * If it's bad we exit the module depending on config settings.
+ * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exits the module.
  * @param {string} consentString required; encoded string value from CMP representing user's consent choices
  */
@@ -157,7 +157,7 @@ function storeConsentData(cmpConsentString) {
  * 1. good exit where auction runs (CMP data is processed normally).
  * 2. bad exit but auction still continues (warning message is logged, CMP data is undefined and still passed along).
  * 3. bad exit with auction canceled (error message is logged).
- * @param {string} errMsg optional param; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
+ * @param {string} errMsg optional; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
  */
 function exitModule(errMsg) {
   if (haveExited === false) {
@@ -185,7 +185,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {object} config consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConfig(config) {
   if (typeof config.cmp === 'string') {
