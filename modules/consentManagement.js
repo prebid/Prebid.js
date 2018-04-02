@@ -26,7 +26,7 @@ let nextFn;
 let timer;
 let haveExited;
 
-// add new CMPs here, with their dedicated lookup function that passes the consentString to postLookup()
+// add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'appnexus': lookupAppNexusConsent
 };
