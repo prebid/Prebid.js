@@ -71,10 +71,10 @@ function _replaceMacro(key, paramValue, defaultValue, url) {
 }
 
 function buildRequests(validBidRequests) {
-  var bidRequests = [];
+  let bidRequests = [];
 
-  for (var i = 0; i < validBidRequests.length; i++) {
-    var bidRequest = validBidRequests[i];
+  for (let i = 0; i < validBidRequests.length; i++) {
+    let bidRequest = validBidRequests[i];
 
     // if width/height not provided to the ad unit for some reason then attempt request with default 640x480 size
     if (!bidRequest.sizes || !bidRequest.sizes.length) {
@@ -84,15 +84,15 @@ function buildRequests(validBidRequests) {
 
     // JWPlayer demo page uses sizes: [640,480] instead of sizes: [[640,480]] so need to handle single-layer array as well as nested arrays
     if (bidRequest.sizes.length === 2 && typeof bidRequest.sizes[0] === 'number' && typeof bidRequest.sizes[1] === 'number') {
-      var adWidth = bidRequest.sizes[0];
-      var adHeight = bidRequest.sizes[1];
+      let adWidth = bidRequest.sizes[0];
+      let adHeight = bidRequest.sizes[1];
       bidRequest.sizes = [[adWidth, adHeight]];
     }
 
-    for (var j = 0; j < bidRequest.sizes.length; j++) {
-      var size = bidRequest.sizes[j];
-      var playerWidth;
-      var playerHeight;
+    for (let j = 0; j < bidRequest.sizes.length; j++) {
+      let size = bidRequest.sizes[j];
+      let playerWidth;
+      let playerHeight;
       if (size && size.length == 2) {
         playerWidth = size[0];
         playerHeight = size[1];
@@ -100,7 +100,7 @@ function buildRequests(validBidRequests) {
         utils.logWarn('Warning: Could not determine width/height from the provided adUnit');
       }
 
-      var sspUrl = ENDPOINT.concat();
+      let sspUrl = ENDPOINT.concat();
 
       // required parameters
       sspUrl = _replaceMacro(PID_KEY, bidRequest.params.placementId, PID_DEFAULT, sspUrl);
@@ -123,7 +123,7 @@ function buildRequests(validBidRequests) {
       // random number to prevent caching
       sspUrl = sspUrl + '‌&rnd=' + Math.floor(Math.random() * 999999999);
 
-      var sspData = {};
+      let sspData = {};
       sspData.bidId = bidRequest.bidId;
       sspData.bidWidth = playerWidth;
       sspData.bidHeight = playerHeight;
@@ -140,49 +140,58 @@ function buildRequests(validBidRequests) {
 }
 
 function interpretResponse(serverResponse, bidRequest) {
-  var bidResponses = [];
+  let bidResponses = [];
   if (serverResponse && serverResponse.body) {
     if (serverResponse.error) {
       utils.logError('Error: ' + serverResponse.error);
       return bidResponses;
     } else {
       try {
-        var bidResponse = {};
+        let bidResponse = {};
         if (bidRequest && bidRequest.data && bidRequest.data.bidId && bidRequest.data.bidId !== '') {
-          var sspXml = new window.DOMParser().parseFromString(serverResponse.body, 'text/xml');
-          var sspUrl = bidRequest.url.concat();
-          var prebidToken;
-          var extensions = sspXml.getElementsByTagName('Extension');
-
-          if (extensions && extensions.length) {
-            for (var i = 0; i < extensions.length; i++) {
-              if (extensions[i].getAttribute('id') === 'prebidToken') {
-                prebidToken = extensions[i]
-              }
-            }
-            if (prebidToken) {
-              sspUrl = sspUrl + '&pbt' + prebidToken;
-            } else {
-              utils.logWarn('Warning: Could not determine token, cannot guarantee same ad will be received after auctionEnd');
-            }
-          } else {
-            utils.logWarn('Warning: Response did not contain a token, cannot guarantee same ad will be received after auctionEnd');
+          let sspXml;
+          try {
+            sspXml = new window.DOMParser().parseFromString(serverResponse.body, 'text/xml');
+          } catch (e) {
+            sspXml = null;
           }
+          if (sspXml) {
+            let sspUrl = bidRequest.url.concat();
+            let prebidToken;
+            let extensions = sspXml.getElementsByTagName('Extension');
 
-          bidResponse.requestId = bidRequest.data.bidId;
-          bidResponse.bidderCode = BIDDER_CODE;
-          bidResponse.ad = '';
-          bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].innerHTML);
-          bidResponse.width = bidRequest.data.bidWidth;
-          bidResponse.height = bidRequest.data.bidHeight;
-          bidResponse.ttl = BID_TTL_DEFAULT;
-          bidResponse.creativeId = sspXml.getElementsByTagName('Ad')[0].getAttribute('id');
-          bidResponse.currency = sspXml.getElementsByTagName('Pricing')[0].getAttribute('currency');
-          bidResponse.netRevenue = true;
-          bidResponse.vastUrl = sspUrl;
-          bidResponse.mediaType = VIDEO;
+            if (extensions && extensions.length) {
+              for (let i = 0; i < extensions.length; i++) {
+                if (extensions[i].getAttribute('id') === 'prebidToken') {
+                  prebidToken = extensions[i]
+                }
+              }
+              if (prebidToken) {
+                sspUrl = sspUrl + '&pbt' + prebidToken;
+              } else {
+                utils.logWarn('Warning: Could not determine token, cannot guarantee same ad will be received after auctionEnd');
+              }
+            } else {
+              utils.logWarn('Warning: Response did not contain a token, cannot guarantee same ad will be received after auctionEnd');
+            }
 
-          bidResponses.push(bidResponse);
+            bidResponse.requestId = bidRequest.data.bidId;
+            bidResponse.bidderCode = BIDDER_CODE;
+            bidResponse.ad = '';
+            bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].innerHTML);
+            bidResponse.width = bidRequest.data.bidWidth;
+            bidResponse.height = bidRequest.data.bidHeight;
+            bidResponse.ttl = BID_TTL_DEFAULT;
+            bidResponse.creativeId = sspXml.getElementsByTagName('Ad')[0].getAttribute('id');
+            bidResponse.currency = sspXml.getElementsByTagName('Pricing')[0].getAttribute('currency');
+            bidResponse.netRevenue = true;
+            bidResponse.vastUrl = sspUrl;
+            bidResponse.mediaType = VIDEO;
+
+            bidResponses.push(bidResponse);
+          } else {
+            utils.logError('Error: Server response contained invalid XML');
+          }
         } else {
           utils.logError('Error: Could not associate bid request to server response');
         }
