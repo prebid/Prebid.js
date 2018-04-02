@@ -14,20 +14,10 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    if (!Array.isArray(bid.sizes) || bid.sizes.length == 0) {
-      return false;
-    } else {
-      var sizes = [];
-      for (var i = 0; i < bid.sizes.length; i++) {
-        if (Array.isArray(bid.sizes[i]) && bid.sizes[i].length == 2) {
-          sizes.push(bid.sizes[i]);
-        }
-      }
-      if (sizes.length == 0) {
+    var sizes = utils.parseSizesInput(bid.sizes);
+     if (sizes.length == 0) {
         return false;
-      }
     }
-
     if (typeof bid.params.floor == 'undefined' || parseFloat(bid.params.floor) < 0.01) {
       bid.params.floor = 0.01;
     }
