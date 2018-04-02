@@ -52,6 +52,7 @@ describe('rtbdemandAdapter', () => {
   describe('buildRequests', () => {
     let bidderRequest = {
       bidderCode: 'rtbdemand',
+      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
       bids: [
@@ -66,6 +67,7 @@ describe('rtbdemandAdapter', () => {
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         },
@@ -80,6 +82,7 @@ describe('rtbdemandAdapter', () => {
           sizes: [[728, 90], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
