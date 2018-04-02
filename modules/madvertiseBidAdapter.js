@@ -6,7 +6,6 @@ const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 
 export const spec = {
   code: 'madvertise',
-  aliases: ['madvertise'],
   /**
    * @param {object} bid
    * @return boolean
