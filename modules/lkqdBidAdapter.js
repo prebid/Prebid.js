@@ -142,12 +142,8 @@ function buildRequests(validBidRequests) {
 function interpretResponse(serverResponse, bidRequest) {
   var bidResponses = [];
   if (serverResponse && serverResponse.body) {
-    if (!serverResponse || serverResponse.error) {
-      if (serverResponse && serverResponse.error) {
-        utils.logError('Error: ' + serverResponse.error);
-      } else {
-        utils.logError('Error: No server response for the requested URL');
-      }
+    if (serverResponse.error) {
+      utils.logError('Error: ' + serverResponse.error);
       return bidResponses;
     } else {
       try {
@@ -195,7 +191,7 @@ function interpretResponse(serverResponse, bidRequest) {
       }
     }
   } else {
-    utils.logError('Error: Server response was empty');
+    utils.logError('Error: No server response or server response was empty for the requested URL');
   }
 
   return bidResponses;
