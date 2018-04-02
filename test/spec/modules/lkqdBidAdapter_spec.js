@@ -1,6 +1,6 @@
-const { expect } = require('chai');
 import { spec } from 'modules/lkqdBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+const { expect } = require('chai');
 
 describe('LKQD Bid Adapter Test', () => {
   const adapter = newBidder(spec);
@@ -333,4 +333,3 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
     });
   });
 });
-

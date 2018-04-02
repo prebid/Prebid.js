@@ -79,7 +79,7 @@ function buildRequests(validBidRequests) {
     // if width/height not provided to the ad unit for some reason then attempt request with default 640x480 size
     if (!bidRequest.sizes || !bidRequest.sizes.length) {
       utils.logWarn('Warning: Could not find valid width/height parameters on the provided adUnit');
-      bidRequest.sizes = [[640,480]];
+      bidRequest.sizes = [[640, 480]];
     }
 
     // JWPlayer demo page uses sizes: [640,480] instead of sizes: [[640,480]] so need to handle single-layer array as well as nested arrays
