@@ -13,7 +13,7 @@ export const BID_TARGETING_SET = 'targetingSet';
 export const RENDERED = 'rendered';
 
 const MAX_DFP_KEYLENGTH = 20;
-const TTL_BUFFER = 200;
+const TTL_BUFFER = 1000;
 
 // return unexpired bids
 export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();

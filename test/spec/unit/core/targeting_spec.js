@@ -179,7 +179,7 @@ describe('targeting tests', () => {
         timestampStub.restore();
       });
       it('should not include expired bids in the auction', () => {
-        timestampStub.returns(150500);
+        timestampStub.returns(200000);
         // Pool is having 4 bids from 2 auctions. All the bids are expired and only bid #3 is passing the bidExpiry check.
         let bidsReceived = [
           createBidReceived({bidder: 'appnexus', cpm: 18, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', ttl: 150}),
