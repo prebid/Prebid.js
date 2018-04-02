@@ -7,7 +7,7 @@ Maintainer: Scope.FL.Scripts@adform.com
 # Description
 
 Module that connects to Adform demand sources to fetch bids.
-Banner formats are supported.
+Banner and video formats are supported.
 
 # Test Parameters
 ```
