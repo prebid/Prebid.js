@@ -275,6 +275,8 @@ const LEGACY_PROTOCOL = {
   buildRequest(s2sBidRequest, adUnits) {
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
+      adUnit.sizes = adUnit.sizesS2S;
+      delete adUnit.sizesS2S;
       const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
         adUnit.video = Object.assign({}, videoMediaType);

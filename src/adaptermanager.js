@@ -113,7 +113,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
-    adUnit.sizes = transformHeightWidth(adUnit);
+    adUnit.sizesS2S = transformHeightWidth(adUnit);
 
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
@@ -281,6 +281,17 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
     let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
+    adUnitsS2SCopy.forEach((adUnitCopy) => {
+      let validBids = adUnitCopy.bids.filter((bid) => {
+        return serverBidRequests.find(request => {
+          return request.bidderCode === bid.bidder &&
+          request.bids.find((reqBid) => reqBid.adUnitCode === adUnitCopy.code);
+        });
+      });
+      adUnitCopy.bids = validBids;
+    });
+
+    adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
 
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
