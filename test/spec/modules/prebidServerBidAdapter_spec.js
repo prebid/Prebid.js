@@ -358,6 +358,15 @@ const RESPONSE_OPENRTB_VIDEO = {
   },
 };
 
+const RESPONSE_UNSUPPORTED_BIDDER = {
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': '33Across',
+    'error': 'Unsupported bidder'
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter,
     addBidResponse = sinon.spy(),
@@ -559,6 +568,7 @@ describe('S2S Adapter', () => {
 
   describe('response handler', () => {
     let server;
+    let logWarnSpy;
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
@@ -569,6 +579,7 @@ describe('S2S Adapter', () => {
       sinon.stub(utils, 'getBidRequest').returns({
         bidId: '123'
       });
+      logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
     afterEach(() => {
@@ -578,6 +589,7 @@ describe('S2S Adapter', () => {
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       cookie.cookieSet.restore();
+      logWarnSpy.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
@@ -809,6 +821,25 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
+    });
+
+    it('should log warning for unsupported bidder', () => {
+      server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));
+
+      const s2sConfig = Object.assign({}, CONFIG, {
+        bidders: ['33Across']
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+      }
+
+      config.setConfig(_config);
+      config.setConfig({s2sConfig: CONFIG});
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(logWarnSpy);
     });
   });
 
