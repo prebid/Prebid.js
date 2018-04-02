@@ -219,7 +219,6 @@ exports.checkBidRequestSizes = (adUnits) => {
     return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
   }
 
-  // Array.prototype.forEach.call(adUnits, adUnit => {
   adUnits.forEach((adUnit) => {
     if (adUnit.sizes) {
       utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
