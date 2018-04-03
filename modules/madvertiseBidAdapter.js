@@ -14,9 +14,13 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    var sizes = utils.parseSizesInput(bid.sizes);
-     if (sizes.length == 0) {
-        return false;
+    let sizes = utils.parseSizesInput(bid.sizes);
+    if (!sizes || sizes.length === 0) {
+      return false;
+    }
+    console.log(sizes[0]);
+    if(sizes.length > 0 && sizes[0] === undefined ) {
+      return false;
     }
     if (typeof bid.params.floor == 'undefined' || parseFloat(bid.params.floor) < 0.01) {
       bid.params.floor = 0.01;
