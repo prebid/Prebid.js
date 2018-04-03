@@ -721,9 +721,10 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
       expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
     });
 
@@ -741,10 +742,11 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.example.com');
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
       expect(topWindowLocation.pathname).to.equal('/');
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
       expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
     });
   });
