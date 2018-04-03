@@ -19,7 +19,7 @@ export const spec = {
       return false;
     }
     console.log(sizes[0]);
-    if(sizes.length > 0 && sizes[0] === undefined ) {
+    if (sizes.length > 0 && sizes[0] === undefined) {
       return false;
     }
     if (typeof bid.params.floor == 'undefined' || parseFloat(bid.params.floor) < 0.01) {

@@ -73,7 +73,7 @@ describe('madvertise adapater', () => {
     it('minimum request', () => {
       let bid = [{
         bidder: 'madvertise',
-        sizes: [[728, 90],[300,100]],
+        sizes: [[728, 90], [300, 100]],
         bidId: '51ef8751f9aead',
         adUnitCode: 'div-gpt-ad-1460505748561-0',
         transactionId: 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
