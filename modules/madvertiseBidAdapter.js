@@ -18,7 +18,6 @@ export const spec = {
     if (!sizes || sizes.length === 0) {
       return false;
     }
-    console.log(sizes[0]);
     if (sizes.length > 0 && sizes[0] === undefined) {
       return false;
     }
