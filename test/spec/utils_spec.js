@@ -1,4 +1,5 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { expect } from 'chai';
 
 var assert = require('assert');
 var utils = require('src/utils');
@@ -720,10 +721,11 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.google.com');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
     });
 
     it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
@@ -740,11 +742,12 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.example.com');
-      expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.pathname).to.equal('/');
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.example.com');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
     });
   });
 });
