@@ -330,7 +330,7 @@ export function newTargeting(auctionManager) {
     return bids.map(bid => {
       if (
         bid.adserverTargeting && adUnitCodes &&
-        ((utils.isArray(adUnitCodes) && adUnitCodes.includes(bid.adUnitCode)) ||
+        ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
         (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes))
       ) {
         return {
