@@ -1,4 +1,6 @@
 [
+    "freestarAnalyticsAdapter",
+    "adyoulikeBidAdapter",
     "aolBidAdapter",
     "appnexusBidAdapter",
     "audienceNetworkBidAdapter",
