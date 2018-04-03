@@ -26,7 +26,22 @@ Module that connects to Beachfront's demand sources
                     bidder: 'beachfront',
                     params: {
                         bidfloor: 0.01,
-                        appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+                        appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+                        video: {
+                            mimes: ['video/mp4', 'application/javascript']
+                        }
+                    }
+                }
+            ]
+        }, {
+            code: 'test-banner',
+            sizes: [300, 250],
+            bids: [
+                {
+                    bidder: 'beachfront',
+                    params: {
+                        bidfloor: 0.01,
+                        appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
                     }
                 }
             ]

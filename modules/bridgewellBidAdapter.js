@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx';
@@ -14,7 +15,25 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return bid && bid.params && !!bid.params.ChannelID;
+    let valid = false;
+    let typeOfCpmWeight;
+
+    if (bid && bid.params) {
+      if (bid.params.ChannelID) {
+        // cpmWeight is optinal parameter and should above than zero
+        typeOfCpmWeight = typeof bid.params.cpmWeight;
+        if (typeOfCpmWeight === 'undefined') {
+          bid.params.cpmWeight = 1;
+          valid = true;
+        } else if (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0) {
+          valid = true;
+        } else {
+          valid = false;
+        }
+      }
+    }
+
+    return valid;
   },
 
   /**
@@ -58,9 +77,14 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = serverResponse.body.find(function(res) {
-        return !!res && !res.consumed && req.sizes.find(function(size) {
-          return res.width === size[0] && res.height === size[1];
+      const anotherFormatSize = []; // for store width and height
+      let matchedResponse = find(serverResponse.body, function(res) {
+        return !!res && !res.consumed && find(req.sizes, function(size) {
+          let width = res.width;
+          let height = res.height;
+          if (typeof size === 'number') anotherFormatSize.push(size); // if sizes format is Array[Number], push width and height into anotherFormatSize
+          return (width === size[0] && height === size[1]) || // for format Array[Array[Number]] check
+          (width === anotherFormatSize[0] && height === anotherFormatSize[1]); // for foramt Array[Number] check
         });
       });
 
@@ -81,7 +105,7 @@ export const spec = {
         }
 
         bidResponse.requestId = req.bidId;
-        bidResponse.cpm = matchedResponse.cpm;
+        bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
         bidResponse.ad = matchedResponse.ad;
