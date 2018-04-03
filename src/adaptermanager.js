@@ -216,7 +216,11 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
 };
 
 exports.checkBidRequestSizes = (adUnits) => {
-  Array.prototype.forEach.call(adUnits, adUnit => {
+  function isArrayOfNums(val) {
+    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
+  }
+
+  adUnits.forEach((adUnit) => {
     if (adUnit.sizes) {
       utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
     }
@@ -235,10 +239,15 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && utils.isInteger(video.playerSize[0]) && utils.isInteger(video.playerSize[1])) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
           adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from ${video.playerSize} to ${newPlayerSize} so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
         } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
         }
       }
