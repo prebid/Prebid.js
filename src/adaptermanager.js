@@ -94,27 +94,11 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
 
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
-  });
-  return sizesObj;
-}
-
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
-    adUnit.sizesS2S = transformHeightWidth(adUnit);
-
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
       return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);

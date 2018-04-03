@@ -27,16 +27,7 @@ const REQUEST = {
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
-      'sizes': [
-        {
-          'w': 300,
-          'h': 250
-        },
-        {
-          'w': 300,
-          'h': 600
-        }
-      ],
+      'sizes': [[300, 250], [300, 600]],
       'mediaTypes': {
         'banner': {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
@@ -68,7 +59,7 @@ const VIDEO_REQUEST = {
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
-      'sizes': [{ 'w': 640, 'h': 480 }],
+      'sizes': [640, 480],
       'mediaTypes': {
         'video': {
           'playerSize': [[ 640, 480 ]],
@@ -103,12 +94,7 @@ const BID_REQUESTS = [
         'bid_id': '123',
         'adUnitCode': 'div-gpt-ad-1460505748561-0',
         'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-        'sizes': [
-          {
-            'w': 300,
-            'h': 250
-          }
-        ],
+        'sizes': [300, 250],
         'bidId': '259fb43aaa06c1',
         'bidderRequestId': '3d1063078dfcc8',
         'auctionId': '173afb6d132ba3'
