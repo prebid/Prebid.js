@@ -7,6 +7,7 @@ import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -276,9 +277,9 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
     adUnitsS2SCopy.forEach((adUnitCopy) => {
       let validBids = adUnitCopy.bids.filter((bid) => {
-        return serverBidRequests.find(request => {
+        return find(serverBidRequests, request => {
           return request.bidderCode === bid.bidder &&
-          request.bids.find((reqBid) => reqBid.adUnitCode === adUnitCopy.code);
+          find(request.bids, (reqBid) => reqBid.adUnitCode === adUnitCopy.code);
         });
       });
       adUnitCopy.bids = validBids;
