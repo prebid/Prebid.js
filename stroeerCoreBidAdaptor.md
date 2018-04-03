@@ -40,7 +40,7 @@ are specified here because other parties, such as appnexus, may support them.
 
 The adapter asynchronously make a request to the endpoint using AJAX (XHR/XmlHttpRequest). POST method of AJAX is used to deliver a payload in JSON format detailed below. 
 
-The endpoint url is ```http(s)://hb.adscale.de/dsh```. DSH is an abbreviation for "display slot handler".
+The endpoint url is ```http(s)://hb.adscale.de/dsh```.
 
 ### Example Request Payload
 
