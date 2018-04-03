@@ -51,8 +51,6 @@ export const spec = {
         src = src + '&u=' + navigator.userAgent;
       }
 
-      src = src + _getSeenAd();
-
       return {
         method: 'GET',
         url: MADVERTISE_ENDPOINT + src,
@@ -73,8 +71,6 @@ export const spec = {
       return [];
     }
 
-    _setSeenAd(responseObj.creativeId);
-
     let bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
@@ -92,33 +88,4 @@ export const spec = {
   getUserSyncs: function (syncOptions) {
   }
 };
-
-function _getSeenAd() {
-  var cookies = document.cookie.split(';');
-  var src = '';
-  for (var i = 0; i < cookies.length; i++) {
-    var cookie = cookies[i].trim();
-    if (cookie.match(/seenad\[\d+\]=\d+/)) {
-      src += '&' + cookie;
-    }
-  }
-  return src;
-}
-
-function _setSeenAd(adid) {
-  var dateNow = new Date();
-  dateNow.setTime(dateNow.getTime() + (2 * 24 * 60 * 60 * 1000));
-  var expires = 'expires=' + dateNow.toUTCString();
-  var valuecookie = 'seenad[' + adid + ']=' + (Date.now() / 1000 | 0) + ';';
-  var domain, domainParts, host;
-  host = location.host;
-  if (host.split('.').length === 1) {
-    document.cookie = valuecookie + expires + '; path=/';
-  } else {
-    domainParts = host.split('.');
-    domainParts.shift();
-    domain = '.' + domainParts.join('.');
-    document.cookie = valuecookie + expires + '; path=/; domain=' + domain;
-  }
-}
 registerBidder(spec);
