@@ -114,9 +114,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -134,6 +135,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
+        // Calling timed out bidders
+        if (timedOutBidders.length) {
+          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+        }
         // Only automatically sync if the publisher has not chosen to "enableOverride"
         let userSyncConfig = config.getConfig('userSync') || {};
         if (!userSyncConfig.enableOverride) {
