@@ -105,6 +105,10 @@ function getAdUnitCopyForPrebidServer(adUnits) {
       return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
+      if (bid.bidder === 'appnexus') {
+        bid.params.use_pmt_rule = (bid.params.usePaymentRule) ? bid.params.usePaymentRule : false;
+        if (bid.params.usePaymentRule) { delete bid.params.usePaymentRule; }
+      }
       return bid;
     });
   });
