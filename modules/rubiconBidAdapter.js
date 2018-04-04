@@ -91,12 +91,12 @@ export const spec = {
 
     // Log warning if context is 'outstream', is not currently supported
     if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
-      utils.logWarn('Warning: outstream video is not supported yet');
+      utils.logWarn('Warning: outstream video for Rubicon Client Adapter is not supported yet');
     }
 
     // Invalid bid, if mediaTypes contains both 'banner' and 'video'
     if (spec.hasVideoMediaType(bid) && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
-      utils.logWarn('Warning: video and banner mediaTypes defined for bid; the banner definition is ignored');
+      utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
     }
 
     let parsedSizes = parseSizes(bid);
