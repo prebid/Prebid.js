@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import {BANNER, VIDEO} from 'src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -30,6 +31,7 @@ var sizeMap = {
   31: '980x120',
   32: '250x360',
   33: '180x500',
+  34: '580x400',
   35: '980x150',
   37: '468x400',
   38: '930x180',
@@ -43,9 +45,11 @@ var sizeMap = {
   59: '320x80',
   60: '320x150',
   61: '1000x1000',
+  64: '580x500',
   65: '640x480',
   67: '320x480',
   68: '1800x1000',
+  69: '480x400',
   72: '320x320',
   73: '320x160',
   78: '980x240',
@@ -66,14 +70,14 @@ var sizeMap = {
   195: '600x300',
   199: '640x200',
   213: '1030x590',
-  214: '980x360',
+  214: '980x360'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
    * @return boolean
@@ -93,8 +97,9 @@ export const spec = {
       return false;
     }
 
-    if (bid.mediaType === 'video') {
-      if (typeof params.video !== 'object' || !params.video.size_id) {
+    if (spec.hasVideoMediaType(bid)) {
+      // support instream only
+      if ((utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream') || typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
     }
@@ -109,12 +114,13 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      if (bidRequest.mediaType === 'video') {
+      if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
+        let page_rf = !params.referrer ? utils.getTopWindowUrl() : params.referrer;
 
         let data = {
-          page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+          page_url: params.secure ? page_rf.replace(/^http:/i, 'https:') : page_rf,
           resolution: _getScreenResolution(),
           account_id: params.accountId,
           integration: INTEGRATION,
@@ -229,6 +235,15 @@ export const spec = {
     });
   },
   /**
+   * Test if bid has mediaType or mediaTypes set for video.
+   * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  hasVideoMediaType: function(bidRequest) {
+    return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  },
+  /**
    * @param {*} responseObj
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
@@ -243,7 +258,7 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -269,12 +284,18 @@ export const spec = {
         ttl: 300, // 5 minutes
         netRevenue: config.getConfig('rubicon.netRevenue') || false
       };
-      if (bidRequest.mediaType === 'video') {
+
+      if (ad.creative_type) {
+        bid.mediaType = ad.creative_type;
+      }
+
+      if (ad.creative_type === VIDEO) {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
         bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
+        bid.videoCacheKey = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
@@ -342,9 +363,9 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (bid.mediaType === 'video') {
+  if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video.playerWidth && params.video.playerHeight) {
+    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight

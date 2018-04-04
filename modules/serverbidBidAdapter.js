@@ -2,25 +2,71 @@ import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import adaptermanager from 'src/adaptermanager';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
-var ServerBidAdapter;
-ServerBidAdapter = function ServerBidAdapter() {
-  const baseAdapter = new Adapter('serverbid');
+const BIDDER_CODE = 'serverbid';
 
-  const CONFIG = {
-    'serverbid': {
-      'BASE_URI': 'https://e.serverbid.com/api/v2',
-      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
-    },
-    'connectad': {
-      'BASE_URI': 'https://i.connectad.io/api/v2',
-      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
-    },
-    'onefiftytwo': {
-      'BASE_URI': 'https://e.serverbid.com/api/v2',
-      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+const CONFIG = {
+  'serverbid': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'connectad': {
+    'BASE_URI': 'https://i.connectad.io/api/v2'
+  },
+  'onefiftytwo': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'insticator': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'adsparc': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'automatad': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'archon': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  }
+};
+
+let siteId = 0;
+let bidder = 'serverbid';
+
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon'],
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.networkId && bid.params.siteId);
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+
+  buildRequests: function(validBidRequests) {
+    // Do we need to group by bidder? i.e. to make multiple requests for
+    // different endpoints.
+
+    let ret = {
+      method: 'POST',
+      url: '',
+      data: '',
+      bidRequest: []
+    };
+
+    if (validBidRequests.length < 1) {
+      return ret;
     }
   };
 
@@ -99,7 +145,10 @@ ServerBidAdapter = function ServerBidAdapter() {
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 
-  function _callBids(config, params) {
+    // These variables are used in creating the user sync URL.
+    siteId = validBidRequests[0].params.siteId;
+    bidder = validBidRequests[0].params.bidder;
+
     const data = Object.assign({
       placements: [],
       time: Date.now(),
@@ -189,11 +238,58 @@ ServerBidAdapter = function ServerBidAdapter() {
     return result;
   }
 
-  // Export the `callBids` function, so that Prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
+const sizeMap = [
+  null,
+  '120x90',
+  '120x90',
+  '468x60',
+  '728x90',
+  '300x250',
+  '160x600',
+  '120x600',
+  '300x100',
+  '180x150',
+  '336x280',
+  '240x400',
+  '234x60',
+  '88x31',
+  '120x60',
+  '120x240',
+  '125x125',
+  '220x250',
+  '250x250',
+  '250x90',
+  '0x0',
+  '200x90',
+  '300x50',
+  '320x50',
+  '320x480',
+  '185x185',
+  '620x45',
+  '300x125',
+  '800x250'
+];
+
+sizeMap[77] = '970x90';
+sizeMap[123] = '970x250';
+sizeMap[43] = '300x600';
+sizeMap[286] = '970x66';
+sizeMap[3230] = '970x280';
+sizeMap[429] = '486x60';
+sizeMap[374] = '700x500';
+sizeMap[934] = '300x1050';
+sizeMap[1578] = '320x100';
+sizeMap[331] = '320x250';
+sizeMap[3301] = '320x267';
+sizeMap[2730] = '728x250';
+
+function getSize(sizes) {
+  const result = [];
+  sizes.forEach(function(size) {
+    const index = sizeMap.indexOf(size[0] + 'x' + size[1]);
+    if (index >= 0) {
+      result.push(index);
+    }
   });
 };
 

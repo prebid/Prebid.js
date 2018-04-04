@@ -23,22 +23,25 @@ export const spec = {
    */
   buildRequests: function(bidReqs) {
     let sovrnImps = [];
+    let iv;
     utils._each(bidReqs, function (bid) {
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: utils.getBidIdParameter('tagid', bid.params),
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
         bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
       });
+      iv = iv || utils.getBidIdParameter('iv', bid.params);
     });
     const sovrnBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
         domain: window.location.host,
-        page: window.location.pathname + location.search + location.hash
+        page: window.location.host + window.location.pathname + location.search + location.hash
       }
     };
+    if (iv) sovrnBidReq.iv = iv;
     return {
       method: 'POST',
       url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,

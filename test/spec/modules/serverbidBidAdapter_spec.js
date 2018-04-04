@@ -8,7 +8,7 @@ const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
 const REQUEST = {
   'bidderCode': 'serverbid',
-  'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d',
+  'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d',
   'bidderRequestId': '109f2a181342a9',
   'bids': [{
     'bidder': 'serverbid',
@@ -23,7 +23,22 @@ const REQUEST = {
     ],
     'bidId': '2b0f82502298c9',
     'bidderRequestId': '109f2a181342a9',
-    'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+  },
+  {
+    'bidder': 'serverbid',
+    'params': {
+      'networkId': 9969,
+      'siteId': 730181
+    },
+    'placementCode': 'div-gpt-ad-1487778092495-0',
+    'sizes': [
+      [728, 90],
+      [970, 90]
+    ],
+    'bidId': '123',
+    'bidderRequestId': '109f2a181342a9',
+    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   }],
   'start': 1487883186070,
   'auctionStart': 1487883186069,
@@ -59,8 +74,27 @@ const RESPONSE = {
   }
 };
 
-describe('serverbidAdapter', () => {
-  let adapter;
+describe('Serverbid BidAdapter', () => {
+  let bidRequests;
+  let adapter = spec;
+
+  beforeEach(() => {
+    bidRequests = [
+      {
+        bidder: 'serverbid',
+        params: {
+          networkId: '9969',
+          siteId: '730181'
+        },
+        placementCode: 'header-bid-tag-1',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '23acc48ad47af5',
+        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+  });
 
   beforeEach(() => adapter = new Adapter());
 
@@ -216,18 +250,10 @@ describe('serverbidAdapter', () => {
       );
     });
 
-    it('handles JSON.parse errors', () => {
-      server.respondWith('');
+    it('should return a sync url if iframe syncs are enabled', () => {
+      let opts = spec.getUserSyncs(syncOptions);
 
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+      expect(opts.length).to.equal(1);
     });
   });
 });
