@@ -1,4 +1,4 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
+import analyticsAdapter, {ExpiringQueue, getUmtSource} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
 import * as events from 'src/events';
@@ -48,8 +48,8 @@ describe('', () => {
     let stubGetItem;
 
     before(() => {
-      stubSetItem = sandbox.stub(storage, 'setItem');
-      stubGetItem = sandbox.stub(storage, 'getItem');
+      stubSetItem = sandbox.stub(localStorage, 'setItem');
+      stubGetItem = sandbox.stub(localStorage, 'getItem');
     });
 
     afterEach(() => {
@@ -114,34 +114,27 @@ describe('', () => {
   });
 
   describe('ExpiringQueue', () => {
-    let timer;
+    let start;
     before(() => {
-      timer = sandbox.useFakeTimers(0);
+      start = Date.now();
     });
-    after(() => {
-      timer.restore();
-    });
-
     it('should notify after timeout period', (done) => {
       let queue = new ExpiringQueue(() => {
         let elements = queue.popAll();
         expect(elements).to.be.eql([1, 2, 3, 4]);
         elements = queue.popAll();
         expect(elements).to.have.lengthOf(0);
-        expect(Date.now()).to.be.equal(200);
+        expect(Date.now() - start).to.be.at.least(200).and.below(250);
         done();
       }, 100);
 
       queue.push(1);
       setTimeout(() => {
         queue.push([2, 3]);
-        timer.tick(50);
       }, 50);
       setTimeout(() => {
         queue.push([4]);
-        timer.tick(100);
       }, 100);
-      timer.tick(50);
     });
   });
 

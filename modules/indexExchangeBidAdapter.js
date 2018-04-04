@@ -907,6 +907,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           bid.width = cygnusRequest.video.w;
           bid.height = cygnusRequest.video.h;
           bid.vastUrl = cygnusBid.ext.vasturl;
+          bid.descriptionUrl = cygnusBid.ext.vasturl;
           bid.mediaType = 'video';
 
           bidmanager.addBidResponse(prebidRequest.placementCode, bid);

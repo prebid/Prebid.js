@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import YieldbotAdapter from 'modules/yieldbotBidAdapter';
 import bidManager from 'src/bidmanager';
 import adLoader from 'src/adloader';
-import {deepClone} from 'src/utils';
+import {cloneJson} from 'src/utils';
 
 const bidderRequest = {
   bidderCode: 'yieldbot',
@@ -132,7 +132,7 @@ function setupTest(testRequest, force = false) {
   bidManagerStub = sandbox.stub(bidManager, 'addBidResponse');
 
   const ybAdapter = new YieldbotAdapter();
-  let request = testRequest || deepClone(bidderRequest);
+  let request = testRequest || cloneJson(bidderRequest);
   if ((this && !this.currentTest.parent.title.match(localSetupTestRegex)) || force === MAKE_BID_REQUEST) {
     ybAdapter.callBids(request);
     mockYieldbotBidRequest();
@@ -369,7 +369,7 @@ describe('Yieldbot adapter tests', function() {
       sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'leaderboard');
 
       const refreshBids = localRequest.bids.filter((object) => { return object.placementCode === '/4294967296/adunit1'; });
-      let refreshRequest = deepClone(localRequest);
+      let refreshRequest = cloneJson(localRequest);
       refreshRequest.bids = refreshBids;
       expect(refreshRequest.bids.length).to.equal(1);
 

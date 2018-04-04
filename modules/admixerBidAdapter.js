@@ -62,6 +62,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
       if (bid.vastUrl) {
         bidObject.mediaType = 'video';
         bidObject.vastUrl = bid.vastUrl;
+        bidObject.descriptionUrl = bid.vastUrl;
       } else {
         bidObject.ad = bid.ad;
       }

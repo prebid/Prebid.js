@@ -195,6 +195,7 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
+      descriptionUrl: rtbBid.rtb.video.asset_url,
       ttl: 3600
     });
     // This supports Outstream Video
@@ -213,16 +214,8 @@ function newBid(serverBid, rtbBid) {
       body: nativeAd.desc,
       cta: nativeAd.ctatext,
       sponsoredBy: nativeAd.sponsored,
-      image: {
-        url: nativeAd.main_img && nativeAd.main_img.url,
-        height: nativeAd.main_img && nativeAd.main_img.height,
-        width: nativeAd.main_img && nativeAd.main_img.width,
-      },
-      icon: {
-        url: nativeAd.icon && nativeAd.icon.url,
-        height: nativeAd.icon && nativeAd.icon.height,
-        width: nativeAd.icon && nativeAd.icon.width,
-      },
+      image: nativeAd.main_img && nativeAd.main_img.url,
+      icon: nativeAd.icon && nativeAd.icon.url,
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,

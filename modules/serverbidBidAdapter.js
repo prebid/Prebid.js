@@ -1,3 +1,6 @@
+import Adapter from 'src/adapter';
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
@@ -65,8 +68,82 @@ export const spec = {
     if (validBidRequests.length < 1) {
       return ret;
     }
+  };
 
-    let ENDPOINT_URL;
+  const SMARTSYNC_CALLBACK = 'serverbidCallBids';
+
+  const sizeMap = [
+    null,
+    '120x90',
+    '120x90',
+    '468x60',
+    '728x90',
+    '300x250',
+    '160x600',
+    '120x600',
+    '300x100',
+    '180x150',
+    '336x280',
+    '240x400',
+    '234x60',
+    '88x31',
+    '120x60',
+    '120x240',
+    '125x125',
+    '220x250',
+    '250x250',
+    '250x90',
+    '0x0',
+    '200x90',
+    '300x50',
+    '320x50',
+    '320x480',
+    '185x185',
+    '620x45',
+    '300x125',
+    '800x250'
+  ];
+
+  sizeMap[77] = '970x90';
+  sizeMap[123] = '970x250';
+  sizeMap[43] = '300x600';
+
+  const bidIds = [];
+
+  baseAdapter.callBids = function(params) {
+    if (params && params.bids &&
+        utils.isArray(params.bids) &&
+        params.bids.length &&
+        CONFIG[params.bidderCode]) {
+      const config = CONFIG[params.bidderCode];
+      config.request = window[params.bidderCode.toUpperCase() + '_CONFIG'];
+      if (!window.SMARTSYNC) {
+        _callBids(config, params);
+      } else {
+        window[SMARTSYNC_CALLBACK] = function() {
+          window[SMARTSYNC_CALLBACK] = function() {};
+          _callBids(config, params);
+        };
+
+        const siteId = params.bids[0].params.siteId;
+        _appendScript(config.SMARTSYNC_BASE_URI + '/' + siteId + '.js');
+
+        const sstimeout = window.SMARTSYNC_TIMEOUT || ((params.timeout || 500) / 2);
+        setTimeout(function() {
+          var cb = window[SMARTSYNC_CALLBACK];
+          window[SMARTSYNC_CALLBACK] = function() {};
+          cb();
+        }, sstimeout);
+      }
+    }
+  };
+
+  function _appendScript(src) {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = src;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
 
     // These variables are used in creating the user sync URL.
     siteId = validBidRequests[0].params.siteId;
@@ -79,13 +156,15 @@ export const spec = {
       url: utils.getTopWindowUrl(),
       referrer: document.referrer,
       enableBotFiltering: true,
-      includePricingData: true,
-      parallel: true
-    }, validBidRequests[0].params);
+      includePricingData: true
+    }, config.request);
 
-    validBidRequests.map(bid => {
-      let config = CONFIG[bid.bidder];
-      ENDPOINT_URL = config.BASE_URI;
+    const bids = params.bids || [];
+
+    for (let i = 0; i < bids.length; i++) {
+      const bid = bids[i];
+
+      bidIds.push(bid.bidId);
 
       const placement = Object.assign({
         divName: bid.bidId,
@@ -95,78 +174,69 @@ export const spec = {
       if (placement.networkId && placement.siteId) {
         data.placements.push(placement);
       }
-    });
+    }
 
-    ret.data = JSON.stringify(data);
-    ret.bidRequest = validBidRequests;
-    ret.url = ENDPOINT_URL;
+    if (data.placements.length) {
+      ajax(config.BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+    }
+  }
 
-    return ret;
-  },
-
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
-  interpretResponse: function(serverResponse, bidRequest) {
+  function _responseCallback(result) {
     let bid;
-    let bids;
     let bidId;
     let bidObj;
-    let bidResponses = [];
+    let bidCode;
+    let placementCode;
 
-    bids = bidRequest.bidRequest;
+    try {
+      result = JSON.parse(result);
+    } catch (error) {
+      utils.logError(error);
+    }
 
-    serverResponse = (serverResponse || {}).body;
-    for (let i = 0; i < bids.length; i++) {
-      bid = {};
-      bidObj = bids[i];
-      bidId = bidObj.bidId;
+    for (let i = 0; i < bidIds.length; i++) {
+      bidId = bidIds[i];
+      bidObj = utils.getBidRequest(bidId);
+      bidCode = bidObj.bidder;
+      placementCode = bidObj.placementCode;
 
-      if (serverResponse) {
-        const decision = serverResponse.decisions && serverResponse.decisions[bidId];
+      if (result) {
+        const decision = result.decisions && result.decisions[bidId];
         const price = decision && decision.pricing && decision.pricing.clearPrice;
 
         if (decision && price) {
-          bid.requestId = bidId;
+          bid = bidfactory.createBid(1, bidObj);
+          bid.bidderCode = bidCode;
           bid.cpm = price;
           bid.width = decision.width;
           bid.height = decision.height;
           bid.ad = retrieveAd(decision);
-          bid.currency = 'USD';
-          bid.creativeId = decision.adId;
-          bid.ttl = 360;
-          bid.netRevenue = true;
-          bid.referrer = utils.getTopWindowUrl();
-
-          bidResponses.push(bid);
+        } else {
+          bid = bidfactory.createBid(2, bidObj);
+          bid.bidderCode = bidCode;
         }
-      }
-    }
-
-    return bidResponses;
-  },
-
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      if (bidder === 'connectad') {
-        return [{
-          type: 'iframe',
-          url: '//cdn.connectad.io/connectmyusers.php'
-        }];
       } else {
-        return [{
-          type: 'iframe',
-          url: '//s.zkcdn.net/ss/' + siteId + '.html'
-        }];
+        bid = bidfactory.createBid(2, bidObj);
+        bid.bidderCode = bidCode;
       }
-    } else {
-      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
+      bidmanager.addBidResponse(placementCode, bid);
     }
   }
-};
+
+  function retrieveAd(decision) {
+    return decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
+  }
+
+  function getSize(sizes) {
+    const result = [];
+    sizes.forEach(function(size) {
+      const index = sizeMap.indexOf(size[0] + 'x' + size[1]);
+      if (index >= 0) {
+        result.push(index);
+      }
+    });
+    return result;
+  }
 
 const sizeMap = [
   null,
@@ -221,11 +291,14 @@ function getSize(sizes) {
       result.push(index);
     }
   });
-  return result;
-}
+};
 
-function retrieveAd(decision) {
-  return decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
-}
+ServerBidAdapter.createNew = function() {
+  return new ServerBidAdapter();
+};
 
-registerBidder(spec);
+adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
+adaptermanager.aliasBidAdapter('serverbid', 'connectad');
+adaptermanager.aliasBidAdapter('serverbid', 'onefiftytwo');
+
+module.exports = ServerBidAdapter;

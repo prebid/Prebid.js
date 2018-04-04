@@ -23,19 +23,5 @@ This adapter provides a solution for accessing Video demand
                 aid: 332842
             }
         }]
-    }{
-        code: 'outstream-test-div',
-        sizes: [[640, 480]], // ad size
-        mediaTypes: {
-            video: {
-                context: 'outstream'
-            }
-        },
-        bids: [{
-            bidder: 'vertamedia', // adapter name
-            params: {
-                aid: 332842
-            }
-        }]
     }];
 ```

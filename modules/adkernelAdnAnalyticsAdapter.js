@@ -171,15 +171,6 @@ const DIRECT = '(direct)';
 const REFERRAL = '(referral)';
 const ORGANIC = '(organic)';
 
-export let storage = {
-  getItem: (name) => {
-    return localStorage.getItem(name);
-  },
-  setItem: (name, value) => {
-    localStorage.setItem(name, value);
-  }
-};
-
 export function getUmtSource(pageUrl, referrer) {
   let prevUtm = getPreviousTrafficSource();
   let currUtm = getCurrentTrafficSource(pageUrl, referrer);
@@ -190,7 +181,7 @@ export function getUmtSource(pageUrl, referrer) {
   return actual;
 
   function getPreviousTrafficSource() {
-    let val = storage.getItem(ADKERNEL_PREBID_KEY);
+    let val = localStorage.getItem(ADKERNEL_PREBID_KEY);
     if (!val) {
       return getDirect();
     }
@@ -244,10 +235,10 @@ export function getUmtSource(pageUrl, referrer) {
       return;
     }
     let utmArgs = [];
-    utils._each(UTM_TAGS, (utmTagName) => {
+    for (let utmTagName of UTM_TAGS) {
       let utmValue = urlParameters[utmTagName] || '';
       utmArgs.push(utmValue);
-    });
+    }
     return asUtm.apply(this, utmArgs);
   }
 
@@ -257,7 +248,7 @@ export function getUmtSource(pageUrl, referrer) {
 
   function storeUtm(utm) {
     let val = JSON.stringify(utm);
-    storage.setItem(ADKERNEL_PREBID_KEY, val);
+    localStorage.setItem(ADKERNEL_PREBID_KEY, val);
   }
 
   function asUtm(source, medium, campaign, term = '', content = '', c1 = '', c2 = '', c3 = '', c4 = '', c5 = '') {
