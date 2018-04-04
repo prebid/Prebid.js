@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { hooks } from 'src/hook.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
+const DEFAULT_CURRENCY_RATE_URL = 'https://currency.prebid.org/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];

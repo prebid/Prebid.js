@@ -130,6 +130,26 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
 
+  it('should merge the user-provided cust-params with the default ones when using url object', () => {
+    const bidCopy = Object.assign({ }, bid);
+    bidCopy.adserverTargeting = {
+      hb_adid: 'ad_id',
+    };
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s&cust_params=section%3dblog%26mykey%3dmyvalue'
+    }));
+
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_adid', 'ad_id');
+    expect(customParams).to.have.property('section', 'blog');
+    expect(customParams).to.have.property('mykey', 'myvalue');
+  });
+
   it('should not overwrite an existing description_url for object input and cache disabled', () => {
     const bidCopy = Object.assign({}, bid);
     bidCopy.vastUrl = 'vastUrl.example';
