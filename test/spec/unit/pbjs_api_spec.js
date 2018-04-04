@@ -679,34 +679,34 @@ describe('Unit: Prebid Module', function () {
     before(() => {
       currentPriceBucket = configObj.getConfig('priceGranularity');
       sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
-          'bidderCode': 'appnexus',
-          'auctionId': '20882439e3238c',
-          'bidderRequestId': '331f3cf3f1d9c8',
-          'bids': [
-            {
-              'bidder': 'appnexus',
-              'params': {
-                'placementId': '10433394'
-              },
-              'adUnitCode': 'div-gpt-ad-1460505748561-0',
-              'sizes': [
-                [
-                  300,
-                  250
-                ],
-                [
-                  300,
-                  600
-                ]
+        'bidderCode': 'appnexus',
+        'auctionId': '20882439e3238c',
+        'bidderRequestId': '331f3cf3f1d9c8',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '10433394'
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'sizes': [
+              [
+                300,
+                250
               ],
-              'bidId': '4d0a6829338a07',
-              'bidderRequestId': '331f3cf3f1d9c8',
-              'auctionId': '20882439e3238c'
-            }
-          ],
-          'auctionStart': 1505250713622,
-          'timeout': 3000
-        }]));
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '4d0a6829338a07',
+            'bidderRequestId': '331f3cf3f1d9c8',
+            'auctionId': '20882439e3238c'
+          }
+        ],
+        'auctionStart': 1505250713622,
+        'timeout': 3000
+      }]));
     });
 
     after(() => {
@@ -720,7 +720,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should get correct hb_pb with cpm between 0 - 5', () => {
       initTestConfig({
-        adUnits: [ createAdUnit('div-gpt-ad-1460505748561-0')],
+        adUnits: [createAdUnit('div-gpt-ad-1460505748561-0')],
         adUnitCodes: ['div-gpt-ad-1460505748561-0']
       });
 
@@ -734,7 +734,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should get correct hb_pb with cpm between 21 - 100', () => {
       initTestConfig({
-        adUnits: [ createAdUnit('div-gpt-ad-1460505748561-0')],
+        adUnits: [createAdUnit('div-gpt-ad-1460505748561-0')],
         adUnitCodes: ['div-gpt-ad-1460505748561-0']
       });
 
