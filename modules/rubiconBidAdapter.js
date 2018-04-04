@@ -134,7 +134,7 @@ export const spec = {
         let slotData = {
           site_id: params.siteId,
           zone_id: params.zoneId,
-          position: params.position || 'btf',
+          position: params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
           floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
           element_id: bidRequest.adUnitCode,
           name: bidRequest.adUnitCode,
