@@ -246,7 +246,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
     if (typeof config.options === 'object') {
       if (config.options.accountId) {
-        accountId = config.options.accountId;
+        accountId = Number(config.options.accountId);
       }
       if (config.options.endpoint) {
         this.getUrl = () => config.options.endpoint;

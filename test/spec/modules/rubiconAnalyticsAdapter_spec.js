@@ -540,7 +540,7 @@ describe('rubicon analytics adapter', () => {
     beforeEach(() => {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
-          accountId: 1001
+          accountId: '1001'
         }
       });
     });
