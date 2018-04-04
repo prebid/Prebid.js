@@ -146,9 +146,9 @@ describe('config API', () => {
     };
     setConfig({
       'mediaTypePriceGranularity': {
-        "banner": "medium",
-        "video": customPriceGranularity,
-        "native": "medium"
+        'banner': 'medium',
+        'video': customPriceGranularity,
+        'native': 'medium'
       }
     });
 
