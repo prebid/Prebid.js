@@ -1,19 +1,19 @@
 sudo: required
-
 dist: trusty
-
 language: node_js
-
 node_js:
-  - "7.0"
+  - '7.0'
 
-# See https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-the-Chrome-addon-in-the-headless-mode
 addons:
-  chrome: stable
+  chrome: stable,
+  browserstack:
+    username: "jaiminpanchal1"
+    access_key:
+      secure: "erc01RgZ3dEjhaMv0GCI0Ywi2VRnXEjjoWI+YejwVb44dX59lBqCLgMw1T2p1j4lrsmDRSQHzurYU1LsbS8JZ+swCRyPVyPgRWNGQVRpt7gaHCWNn4TuLALeWHeSLCGNKSjdeIXBEzTug4FTTOIX0RqMZO2qiaxTQ83Wa/kXHYPxOh3kv1ODHJXGbayiMebkhjAoB8OiIicgyW59C8pQF3k6976Q08LgtdSm+1Dnk78d7j/Ss1C5X1MGJNlyiEA0EPqBduuZ8WENaApFoinesGSZaawtLKVBr8S+s1FtEdswXBUsfNogM0P5Wohfj+TnfBIYXxByHzZ9N9oIuX2euiyljM1v0FiI9Z8JHob4aG5WuzdJZxhNXYKMUEFg+aogxiB0ONCdBC1lgtvkf1m8unBVe8nbLynMVt0aN0cCSTgk0v7UcT5r45tCFTKCTJwdVO6yQcY8W0gf2iaATNH5b8Uirb4CRVhddP3N0CSpmgGMeGojEWTeeZlx5UHl6z/TOz1DQyPZ8g0hOA6KAakTYfpmMGkpepMK1iNCwCbN5gHYpL0HmcVMKqLEwwBXQbbTf3b/VmSH7HAllBdtsq8FYxJdHXAH1uH28Cx9UqVVxOjzxZBpxaVBd+H+7Z9ZXpPEW9KdFjPDyzkKzzrR0s1oi1Do1KArzSdqFUpdqb4Xujg="
 
 before_install:
   - npm install -g gulp
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 
 script:
-  - gulp run-tests
+  - gulp test --browserstack

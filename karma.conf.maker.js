@@ -86,7 +86,9 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      startTunnel: false,
+      tunnelIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
     }
     karmaConf.customLaunchers = require('./browsers.json')
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
