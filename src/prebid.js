@@ -663,7 +663,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(command) {
       utils.logError('Error processing command :', e.message, e.stack);
     }
   } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function.');
   }
 };
 
