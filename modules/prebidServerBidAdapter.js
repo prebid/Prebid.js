@@ -317,6 +317,9 @@ const LEGACY_PROTOCOL = {
           if (bidder.no_cookie) {
             doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
           }
+          if (bidder.error) {
+            utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
+          }
         });
       }
 
