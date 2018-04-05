@@ -44,13 +44,17 @@ describe('UnrulyAdapter', () => {
     sandbox.stub(utils, 'logError');
     sandbox.stub(Renderer, 'install');
 
+    sinon.stub(window.top.document, 'createElement').returns({});
+
     fakeRenderer = {
-      setRender: sinon.stub()
+      setRender: sinon.stub(),
+      getConfig: sinon.stub()
     };
     Renderer.install.returns(fakeRenderer)
   });
 
   afterEach(() => {
+    window.top.document.createElement.restore && window.top.document.createElement.restore();
     sandbox.restore();
     delete parent.window.unruly
   });
@@ -177,6 +181,8 @@ describe('UnrulyAdapter', () => {
       adapter.interpretResponse(exchangeResponse);
 
       sinon.assert.calledOnce(fakeRenderer.setRender);
+      const mockRendererConfig = {siteId: 'value: siteId'};
+      fakeRenderer.getConfig.returns(mockRendererConfig);
       fakeRenderer.setRender.firstCall.args[0]();
 
       expect(window.top).to.have.deep.property('unruly.native.prebid.uq');
@@ -201,6 +207,65 @@ describe('UnrulyAdapter', () => {
       const supplyMode = window.parent.unruly.native.supplyMode;
 
       expect(supplyMode).to.equal('prebid');
+    });
+
+    it('should fire a tracking pixel if Unruly wins an auction', () => {
+      const mockImgElement = {src: ''};
+
+      fakeRenderer.setRender.callsArg(0);
+      const mockRendererConfig = {siteId: 'value: siteId'};
+      fakeRenderer.getConfig.returns(mockRendererConfig);
+
+      expect(window.top.document.createElement.notCalled).to.be.ok;
+      expect(fakeRenderer.setRender).not.to.have.been.called;
+
+      window.top.document.createElement.returns(mockImgElement);
+
+      const mockReturnedBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = { url: 'value: mockRendererURL' };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      adapter.interpretResponse(mockServerResponse);
+
+      expect(window.top.document.createElement.called).to.be.ok;
+
+      sinon.assert.calledWithExactly(
+        window.top.document.createElement,
+        'img'
+      );
+
+      expect(mockImgElement.src).to.equal(`//stats3.unrulymedia.com/blank.gif?t=hb_auction_won&pid=${mockRendererConfig.siteId}`)
+    });
+
+    it('should fire a tracking pixel with siteId == "not_found" if Unruly wins an auction but siteId is not available', () => {
+      const mockImgElement = {src: ''};
+      const unknownSiteID = 'not_found';
+
+      fakeRenderer.setRender.callsArg(0);
+      const mockRendererConfig = {};
+      fakeRenderer.getConfig.returns(mockRendererConfig);
+
+      expect(window.top.document.createElement.notCalled).to.be.ok;
+      expect(fakeRenderer.setRender).not.to.have.been.called;
+
+      window.top.document.createElement.returns(mockImgElement);
+
+      const mockReturnedBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = { url: 'value: mockRendererURL' };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      adapter.interpretResponse(mockServerResponse);
+
+      expect(window.top.document.createElement.called).to.be.ok;
+
+      sinon.assert.calledWithExactly(
+        window.top.document.createElement,
+        'img'
+      );
+
+      expect(mockImgElement.src).to.equal(`//stats3.unrulymedia.com/blank.gif?t=hb_auction_won&pid=${unknownSiteID}`);
     });
   });
 });
