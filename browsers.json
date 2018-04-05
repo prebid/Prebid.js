@@ -15,20 +15,68 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_56_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "firefox",
-    "browser_version": "56.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_chrome_62_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "51.0",
+    "browser_version": "62.0",
     "device": null,
     "os": "Windows"
+  },
+  "bs_chrome_61_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "chrome",
+    "browser_version": "61.0",
+    "device": null,
+    "os": "Windows"
+  },
+  "bs_firefox_58_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "firefox",
+    "browser_version": "58.0",
+    "device": null,
+    "os": "Windows"
+  },
+  "bs_firefox_57_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "firefox",
+    "browser_version": "57.0",
+    "device": null,
+    "os": "Windows"
+  },
+  "bs_safari_9.1_mac_elcapitan": {
+    "base": "BrowserStack",
+    "os_version": "El Capitan",
+    "browser": "safari",
+    "browser_version": "9.1",
+    "device": null,
+    "os": "OS X"
+  },
+  "bs_safari_8_mac_yosemite": {
+    "base": "BrowserStack",
+    "os_version": "Yosemite",
+    "browser": "safari",
+    "browser_version": "8.0",
+    "device": null,
+    "os": "OS X"
+  },
+  "bs_ios_9": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "9.1",
+    "browser": "iphone",
+    "device": "iPhone 6S",
+    "browser_version": null
+  },
+  "bs_ios_8": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "8.3",
+    "browser": "iphone",
+    "device": "iPhone 6",
+    "browser_version": null
   }
 }
