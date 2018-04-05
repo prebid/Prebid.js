@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes'
+import {BANNER, VIDEO} from 'src/mediaTypes'
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -250,8 +250,8 @@ export const spec = {
    * @returns {boolean}
    */
   hasVideoMediaType: function(bidRequest) {
-    return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined'
-      && (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
+    return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
+      (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
   },
   /**
    * @param {*} responseObj

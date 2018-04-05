@@ -806,7 +806,7 @@ describe('the rubicon adapter', () => {
 
         it('should return false if mediaType is video and size_id is not defined', () => {
           expect(spec.hasVideoMediaType({
-            bid:99,
+            bid: 99,
             mediaType: 'video',
             params: {
               video: {}
