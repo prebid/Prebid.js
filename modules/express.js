@@ -75,7 +75,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
 
         if (adUnit) {
           gptSlotCache[elemId] = gptSlot; // store by elementId
-          adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
+          adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes(window.innerWidth, window.innerHeight));
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
         }
