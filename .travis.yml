@@ -17,7 +17,7 @@ before_install:
 
 script:
   - echo $TRAVIS_PULL_REQUEST
-  if: [ "$TRAVIS_PULL_REQUEST" != "false" ]
+  if: [ $TRAVIS_PULL_REQUEST != "false" ]
     - gulp run-tests
-  if: [ "$TRAVIS_PULL_REQUEST" = "false" ]
+  if: [ $TRAVIS_PULL_REQUEST = "false" ]
     - gulp test --browserstack
