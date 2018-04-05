@@ -15,5 +15,10 @@ before_install:
   - npm install -g gulp
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 
-script:
-  - gulp test --browserstack
+script: |
+  echo ${TRAVIS_PULL_REQUEST}
+  if [[ ${TRAVIS_PULL_REQUEST} == "false" ]]; then
+    gulp test --browserstack
+  else
+    gulp run-tests
+  fi
