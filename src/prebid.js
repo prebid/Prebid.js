@@ -12,7 +12,6 @@ import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
-
 const CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
