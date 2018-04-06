@@ -114,7 +114,7 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
     });
 
-    it.skip('uses cookies', () => {
+    it('uses cookies', () => {
       global.document.cookie = 'ivNoCookie=1';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.be.undefined;

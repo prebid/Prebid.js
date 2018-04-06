@@ -3,20 +3,21 @@ dist: trusty
 language: node_js
 node_js:
   - '7.0'
+env:
+  - BROWSERSTACK_USERNAME=info184
 
 addons:
   chrome: stable,
   browserstack:
-    username: "jaiminpanchal1"
+    username: "info184"
     access_key:
-      secure: "erc01RgZ3dEjhaMv0GCI0Ywi2VRnXEjjoWI+YejwVb44dX59lBqCLgMw1T2p1j4lrsmDRSQHzurYU1LsbS8JZ+swCRyPVyPgRWNGQVRpt7gaHCWNn4TuLALeWHeSLCGNKSjdeIXBEzTug4FTTOIX0RqMZO2qiaxTQ83Wa/kXHYPxOh3kv1ODHJXGbayiMebkhjAoB8OiIicgyW59C8pQF3k6976Q08LgtdSm+1Dnk78d7j/Ss1C5X1MGJNlyiEA0EPqBduuZ8WENaApFoinesGSZaawtLKVBr8S+s1FtEdswXBUsfNogM0P5Wohfj+TnfBIYXxByHzZ9N9oIuX2euiyljM1v0FiI9Z8JHob4aG5WuzdJZxhNXYKMUEFg+aogxiB0ONCdBC1lgtvkf1m8unBVe8nbLynMVt0aN0cCSTgk0v7UcT5r45tCFTKCTJwdVO6yQcY8W0gf2iaATNH5b8Uirb4CRVhddP3N0CSpmgGMeGojEWTeeZlx5UHl6z/TOz1DQyPZ8g0hOA6KAakTYfpmMGkpepMK1iNCwCbN5gHYpL0HmcVMKqLEwwBXQbbTf3b/VmSH7HAllBdtsq8FYxJdHXAH1uH28Cx9UqVVxOjzxZBpxaVBd+H+7Z9ZXpPEW9KdFjPDyzkKzzrR0s1oi1Do1KArzSdqFUpdqb4Xujg="
+      secure: "Ru286R4pMcEIRKwb2AoaaJY6lEKIzeZraxY7CtbOP4ykNk7uqsnyitk4QwxpCCh0n35b71m30okW6ZmZnl0lJXhOMdYoSOYBAnUw2Vn7Y93oMSKIC5dc2/qmtF1t2b1qX65/Ont2iJUj+UY8VQw5Hk2vIT4/5wifYPBnV5ILK4AI7SVk/ma7OzK4rkp3WThlouddctAd7tx4O3YIyJKDi9lkfcMA0pnH4OZSOlDClRLIy50Q1NE+iyqHtWFZK1TwJ+IhQbSsCLbuyQJBRnyJJEftNmtrs5MCZt/9pwFDj7c8+o11F6HCsTBYFkehFRfbKnmhCc1G+bsNXY8OxIWwEHeuVmSGK7TDPYcPPQBc03mcQ1fY/IPNQOdsVJ/n8RsG2u0IU2CF2hhkuNFzeov7dOHljanc45NKOrLdjwzP1aZCAUvLquOTzvmdF23nJhMs8UO+Du4kTK5VfmKyz1MC91E40a0Q15+O4qmS39rNOlwhxPJSfuxxL1jKVPJ7PsFbTkGM8M/XPJ6dyGLufy225HjdLdJTAOa5BZ4st+nXH/AzqHzy6a2I5vTmAz1j4gHLgVU+iNxAkX8znb25s3Rs1ZuFVj+aBSBmNoQA1FA5f/uXWeruTdDig7ksp+XdjsjLm9Md8cWwYaEn04FYj1ztJrylrEMfnc0Kcs6zQ3fll1g="
 
 before_install:
   - npm install -g gulp
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 
 script: |
-  echo ${TRAVIS_PULL_REQUEST}
   if [[ ${TRAVIS_PULL_REQUEST} == "false" ]]; then
     gulp test --browserstack
   else
