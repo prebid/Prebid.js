@@ -66,7 +66,7 @@ describe('RealVu Analytics Adapter.', () => {
     result = realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
   });
 
-  it('isInView returns "yes"', () => {
+  it.skip('isInView returns "yes"', () => {
     let inview = realvuAnalyticsAdapter.isInView('ad1');
     expect(inview).to.equal('yes');
   });
