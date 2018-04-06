@@ -712,29 +712,29 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should validate bid request when a invalid video object is passed in', () => {
+        it('should noy validate bid request when a invalid video object and no banner object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           const bidRequestCopy = clone(bidderRequest.bids[0]);
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           bidRequestCopy.params.video = {};
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           bidRequestCopy.params.video = undefined;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           bidRequestCopy.params.video = 123;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = { size_id: '' };
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          bidRequestCopy.params.video = { size_id: undefined };
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           delete bidRequestCopy.params.video;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
         });
 
         it('should validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
@@ -759,13 +759,13 @@ describe('the rubicon adapter', () => {
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
         });
 
-        it('should validate bid request when video is outstream', () => {
+        it('should not validate bid request when video is outstream', () => {
           createVideoBidderRequestOutstream();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
         it('should get size from bid.sizes too', () => {

@@ -99,6 +99,10 @@ export const spec = {
       utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
     }
 
+    if (bid.mediaTypes && !spec.hasVideoMediaType(bid) && typeof bid.mediaTypes.banner === 'undefined') {
+      return false;
+    }
+
     let parsedSizes = parseSizes(bid);
     if (parsedSizes.length < 1) {
       return false;
