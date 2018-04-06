@@ -52,7 +52,7 @@ vubleAnalytics.originEnableAnalytics = vubleAnalytics.enableAnalytics;
 
 vubleAnalytics.enableAnalytics = config => {
   if (!config.options.pubId) {
-    utils.logError('The publiser id is not defined. Analytics won\'t work');
+    utils.logError('The publisher id is not defined. Analytics won\'t work');
 
     return;
   }
