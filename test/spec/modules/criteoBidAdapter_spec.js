@@ -48,11 +48,13 @@ describe('The Criteo bidding adapter', () => {
   });
 
   describe('buildRequests', () => {
+    const bidderRequest = { timeout: 3000 };
+
     it('should properly build a zoneId request', () => {
       const bidRequests = [
         {
           bidder: 'criteo',
-          bidId: 'bid-123',
+          adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
           sizes: [[728, 90]],
           params: {
@@ -60,8 +62,8 @@ describe('The Criteo bidding adapter', () => {
           },
         },
       ];
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -77,7 +79,7 @@ describe('The Criteo bidding adapter', () => {
       const bidRequests = [
         {
           bidder: 'criteo',
-          bidId: 'bid-123',
+          adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
           sizes: [[300, 250], [728, 90]],
           params: {
@@ -85,8 +87,8 @@ describe('The Criteo bidding adapter', () => {
           },
         },
       ];
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -103,7 +105,7 @@ describe('The Criteo bidding adapter', () => {
       const bidRequests = [
         {
           bidder: 'criteo',
-          bidId: 'bid-123',
+          adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
           sizes: [[728, 90]],
           params: {
@@ -112,7 +114,7 @@ describe('The Criteo bidding adapter', () => {
         },
         {
           bidder: 'criteo',
-          bidId: 'bid-234',
+          adUnitCode: 'bid-234',
           transactionId: 'transaction-234',
           sizes: [[300, 250], [728, 90]],
           params: {
@@ -120,8 +122,8 @@ describe('The Criteo bidding adapter', () => {
           },
         },
       ];
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=2&cb=\d/);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -142,7 +144,8 @@ describe('The Criteo bidding adapter', () => {
   describe('interpretResponse', () => {
     it('should return an empty array when parsing a no bid response', () => {
       const response = {};
-      const bids = spec.interpretResponse(response, null);
+      const request = { bidRequests: [] };
+      const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(0);
     });
 
@@ -158,8 +161,15 @@ describe('The Criteo bidding adapter', () => {
           }],
         },
       };
-      const bids = spec.interpretResponse(response, null);
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
