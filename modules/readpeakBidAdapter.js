@@ -38,7 +38,7 @@ export const spec = {
         fd: 1,
         tid: bidRequests[0].transactionId,
         ext: {
-          prebid: $$PREBID_GLOBAL$$.version,
+          prebid: '$prebid.version$',
         },
       },
     }
