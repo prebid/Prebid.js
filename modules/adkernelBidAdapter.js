@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
-const VERSION = '1.0';
+const VERSION = '1.2';
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -16,7 +16,7 @@ export const spec = {
 
   code: 'adkernel',
   aliases: ['headbidding'],
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && typeof bidRequest.params.host !== 'undefined' &&
       'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
@@ -76,8 +76,8 @@ export const spec = {
       };
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
-        prBid.width = imp.banner.w;
-        prBid.height = imp.banner.h;
+        prBid.width = rtbBid.w;
+        prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
       }
       if ('video' in imp) {
@@ -96,12 +96,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => {
-        return {
-          type: 'iframe',
-          url: sync_url
-        }
-      });
+      .map(sync_url => ({type: 'iframe', url: sync_url}));
   }
 };
 
@@ -110,22 +105,30 @@ registerBidder(spec);
 /**
  *  Builds parameters object for single impression
  */
-function buildImp(bid) {
-  const size = getAdUnitSize(bid);
+function buildImp(bidRequest) {
   const imp = {
-    'id': bid.bidId,
-    'tagid': bid.placementCode
+    'id': bidRequest.bidId,
+    'tagid': bidRequest.adUnitCode
   };
 
-  if (bid.mediaType === 'video') {
-    imp.video = {w: size[0], h: size[1]};
-    if (bid.params.video) {
-      Object.keys(bid.params.video)
+  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
+    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
+    let sizes = canonicalizeSizesArray(utils.deepAccess(bidRequest, `mediaTypes.banner.sizes`) || bidRequest.sizes);
+    imp.banner = {
+      format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
+      topframe: 0
+    };
+  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    let size = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || canonicalizeSizesArray(bidRequest.sizes)[0];
+    imp.video = {
+      w: size[0],
+      h: size[1]
+    };
+    if (bidRequest.params.video) {
+      Object.keys(bidRequest.params.video)
         .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bid.params.video[param]);
+        .forEach(param => imp.video[param] = bidRequest.params.video[param]);
     }
-  } else {
-    imp.banner = {w: size[0], h: size[1]};
   }
   if (utils.getTopWindowLocation().protocol === 'https:') {
     imp.secure = 1;
@@ -134,15 +137,15 @@ function buildImp(bid) {
 }
 
 /**
- * Return ad unit single size
- * @param bid adunit size definition
- * @return {*}
+ * Convert input array of sizes to canonical form Array[Array[Number]]
+ * @param sizes
+ * @return Array[Array[Number]]
  */
-function getAdUnitSize(bid) {
-  if (bid.mediaType === 'video') {
-    return bid.sizes;
+function canonicalizeSizesArray(sizes) {
+  if (sizes.length == 2 && !utils.isArray(sizes[0])) {
+    return [sizes];
   }
-  return bid.sizes[0];
+  return sizes;
 }
 
 /**
@@ -151,16 +154,30 @@ function getAdUnitSize(bid) {
  * @param auctionId
  */
 function buildRtbRequest(imps, auctionId) {
-  return {
+  let req = {
     'id': auctionId,
     'imp': imps,
     'site': createSite(),
     'at': 1,
     'device': {
       'ip': 'caller',
-      'ua': 'caller'
+      'ua': 'caller',
+      'js': 1,
+      'language': getLanguage()
+    },
+    'ext': {
+      'adk_usersync': 1
     }
   };
+  if (utils.getDNT()) {
+    req.device.dnt = 1;
+  }
+  return req;
+}
+
+function getLanguage() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return navigator[language].split('-')[0];
 }
 
 /**

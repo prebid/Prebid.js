@@ -26,11 +26,7 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ yarn install
-
-Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
-
-For more info, see [the Yarn documentation](https://yarnpkg.com).
+    $ npm install
 
 *Note:* You need to have `NodeJS` 4.x or greater installed.
 
@@ -60,11 +56,8 @@ For example, when running the serve command: `gulp serve --modules=openxBidAdapt
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
 **Build standalone prebid.js**
-Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
 
-For more info about yarn see https://yarnpkg.com
-
-- Clone the repo, run `yarn install`
+- Clone the repo, run `npm install`
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
@@ -82,11 +75,11 @@ With `modules.json` containing the following
 ]
 ```
 
-**Build prebid.js using Yarn for bundling**
+**Build prebid.js using npm for bundling**
 
-In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
 
-- Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
+- Add `prebid.js` as a `npm` dependency of your project: `npm install prebid.js`
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
         $ gulp build --modules=path/to/your/list-of-modules.json

@@ -70,7 +70,7 @@ export default function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url);
+    urlComponents = parse(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid);
@@ -88,6 +88,8 @@ export default function buildDfpVideoUrl(options) {
   const customParams = Object.assign({},
     adserverTargeting,
     { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    {hb_cache_id: bid && bid.videoCacheKey},
     options.params.cust_params);
 
   const queryParams = Object.assign({},
@@ -124,7 +126,8 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
   const customParams = Object.assign({},
     adserverTargeting,
   );
-  components.search.cust_params = encodeURIComponent(formatQS(customParams));
+  const encodedCustomParams = encodeURIComponent(formatQS(customParams));
+  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
 
   return buildUrl(components);
 }

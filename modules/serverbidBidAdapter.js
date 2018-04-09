@@ -18,12 +18,21 @@ const CONFIG = {
   },
   'adsparc': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'automatad': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'archon': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
+let siteId = 0;
+let bidder = 'serverbid';
+
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -58,6 +67,10 @@ export const spec = {
     }
 
     let ENDPOINT_URL;
+
+    // These variables are used in creating the user sync URL.
+    siteId = validBidRequests[0].params.siteId;
+    bidder = validBidRequests[0].params.bidder;
 
     const data = Object.assign({
       placements: [],
@@ -137,7 +150,21 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    return [];
+    if (syncOptions.iframeEnabled) {
+      if (bidder === 'connectad') {
+        return [{
+          type: 'iframe',
+          url: '//cdn.connectad.io/connectmyusers.php'
+        }];
+      } else {
+        return [{
+          type: 'iframe',
+          url: '//s.zkcdn.net/ss/' + siteId + '.html'
+        }];
+      }
+    } else {
+      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
+    }
   }
 };
 
@@ -176,6 +203,15 @@ const sizeMap = [
 sizeMap[77] = '970x90';
 sizeMap[123] = '970x250';
 sizeMap[43] = '300x600';
+sizeMap[286] = '970x66';
+sizeMap[3230] = '970x280';
+sizeMap[429] = '486x60';
+sizeMap[374] = '700x500';
+sizeMap[934] = '300x1050';
+sizeMap[1578] = '320x100';
+sizeMap[331] = '320x250';
+sizeMap[3301] = '320x267';
+sizeMap[2730] = '728x250';
 
 function getSize(sizes) {
   const result = [];

@@ -123,7 +123,7 @@ function trackAuctionInit() {
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.placementCode));
+    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.adUnitCode));
 }
 
 function trackBidResponse(args) {
