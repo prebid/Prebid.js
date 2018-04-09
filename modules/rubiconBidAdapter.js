@@ -94,11 +94,17 @@ export const spec = {
       utils.logWarn('Warning: outstream video for Rubicon Client Adapter is not supported yet');
     }
 
-    // Invalid bid, if mediaTypes contains both 'banner' and 'video'
+    // Log warning if mediaTypes contains both 'banner' and 'video'
     if (spec.hasVideoMediaType(bid) && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
       utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
     }
 
+    // Bid is invalid if legacy video is set but params video is missing size_id
+    if (bid.mediaType === 'video' && typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+      return false;
+    }
+
+    // Bid is invalid if mediaTypes video is invalid and a mediaTypes banner property is not defined
     if (bid.mediaTypes && !spec.hasVideoMediaType(bid) && typeof bid.mediaTypes.banner === 'undefined') {
       return false;
     }

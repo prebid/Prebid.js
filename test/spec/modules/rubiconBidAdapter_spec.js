@@ -712,6 +712,28 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
+        it('should validate bid request with invalid video if a mediaTypes banner property is defined', () => {
+          const bidRequest = {
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              },
+              banner: {
+                sizes: [[300,250]]
+              }
+            },
+            params: {
+              accountId: 1001,
+              video: {}
+            },
+            sizes: [[300,250]]
+          }
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+          expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+        });
+
         it('should not validate bid request when a invalid video object and no banner object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now').callsFake(() =>
@@ -737,26 +759,26 @@ describe('the rubicon adapter', () => {
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
         });
 
-        it('should validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
+        it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
           createLegacyVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           const bidderRequestCopy = clone(bidderRequest);
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
           bidderRequestCopy.bids[0].params.video = {};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
           bidderRequestCopy.bids[0].params.video = undefined;
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
           bidderRequestCopy.bids[0].params.video = NaN;
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
           delete bidderRequestCopy.bids[0].params.video;
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
         });
 
         it('should not validate bid request when video is outstream', () => {
