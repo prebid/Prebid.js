@@ -153,7 +153,7 @@ describe('ReadPeakAdapter', () => {
 
       const data = JSON.parse(request.data);
 
-      expect(data.source.ext.prebid).to.equal($$PREBID_GLOBAL$$.version);
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
       expect(data.id).to.equal(bidRequest.bidderRequestId)
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
