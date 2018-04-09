@@ -328,7 +328,11 @@ export function newTargeting(auctionManager) {
     });
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
-      if (bid.adserverTargeting) {
+      if (
+        bid.adserverTargeting && adUnitCodes &&
+        ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
+        (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes))
+      ) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined')
