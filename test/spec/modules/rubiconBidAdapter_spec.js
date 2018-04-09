@@ -712,7 +712,7 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should noy validate bid request when a invalid video object and no banner object is passed in', () => {
+        it('should not validate bid request when a invalid video object and no banner object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
