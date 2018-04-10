@@ -27,7 +27,7 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
-const ENDPOINT = '//localhost:3000/event';
+const ENDPOINT = '//prebid-a.rubiconproject.com/event';
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
