@@ -47,7 +47,7 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 $$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
-  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+  let adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
