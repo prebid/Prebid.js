@@ -5,7 +5,8 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
-  getAdUnits
+  getAdUnits,
+  createBidReceived
 } from 'test/fixtures/fixtures';
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
 import { targeting, newTargeting } from 'src/targeting';
@@ -1626,6 +1627,31 @@ describe('Unit: Prebid Module', function () {
   describe('The monkey-patched que.push function', function() {
     it('should be the same as the cmd.push function', function() {
       assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
+    });
+  });
+
+  describe('getAllPrebidWinningBids', () => {
+    let auctionManagerStub;
+    beforeEach(() => {
+      auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
+    });
+
+    afterEach(() => {
+      auctionManagerStub.restore();
+    });
+
+    it('should return prebid auction winning bids', () => {
+      let bidsReceived = [
+        createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
+        createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4'}),
+      ];
+      auctionManagerStub.returns(bidsReceived)
+      let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
+
+      expect(bids.length).to.equal(1);
+      expect(bids[0].adId).to.equal('adid-1');
     });
   });
 });
