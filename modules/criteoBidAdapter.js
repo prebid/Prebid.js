@@ -13,6 +13,8 @@ const INTEGRATION_MODES = {
   'amp': 1,
 };
 const PROFILE_ID = 207;
+
+// Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
 
 /** @type {BidderSpec} */
