@@ -719,14 +719,14 @@ describe('the rubicon adapter', () => {
                 context: 'instream'
               },
               banner: {
-                sizes: [[300,250]]
+                sizes: [[300, 250]]
               }
             },
             params: {
               accountId: 1001,
               video: {}
             },
-            sizes: [[300,250]]
+            sizes: [[300, 250]]
           }
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
