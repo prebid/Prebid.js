@@ -11,13 +11,12 @@ import { targeting } from './targeting';
 import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
-var $$PREBID_GLOBAL$$ = getGlobal();
-
+const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
-var utils = require('./utils.js');
-var adaptermanager = require('./adaptermanager');
-var bidfactory = require('./bidfactory');
-var events = require('./events');
+const utils = require('./utils.js');
+const adaptermanager = require('./adaptermanager');
+const bidfactory = require('./bidfactory');
+const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -26,7 +25,7 @@ const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
-var eventValidators = {
+const eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
