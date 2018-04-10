@@ -306,7 +306,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
 </Ad>
 </VAST>`;
 
-    it('should correctly parse bid response', () => {
+    it('should correctly parse valid bid response', () => {
       const BIDDER_CODE = 'lkqd';
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(1);
@@ -322,6 +322,14 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
       expect(bidResponse.currency).to.equal('USD');
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.mediaType).to.equal('video');
+    });
+
+    it('safely handles XML parsing failure from invalid bid response', () => {
+      let invalidServerResponse = {};
+      invalidServerResponse.body = '<Ad id="677477"><InLine></AdSystem></InLine></Ad>';
+
+      let result = spec.interpretResponse(invalidServerResponse, bidRequest);
+      expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {

@@ -149,13 +149,8 @@ function interpretResponse(serverResponse, bidRequest) {
       try {
         let bidResponse = {};
         if (bidRequest && bidRequest.data && bidRequest.data.bidId && bidRequest.data.bidId !== '') {
-          let sspXml;
-          try {
-            sspXml = new window.DOMParser().parseFromString(serverResponse.body, 'text/xml');
-          } catch (e) {
-            sspXml = null;
-          }
-          if (sspXml) {
+          let sspXml = new window.DOMParser().parseFromString(serverResponse.body, 'text/xml');
+          if (sspXml && sspXml.getElementsByTagName('parsererror').length == 0) {
             let sspUrl = bidRequest.url.concat();
             let prebidToken;
             let extensions = sspXml.getElementsByTagName('Extension');
