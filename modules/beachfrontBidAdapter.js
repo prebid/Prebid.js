@@ -2,12 +2,16 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.0';
+const ADAPTER_VERSION = '1.1';
 const ADAPTER_NAME = 'BFIO_PREBID';
 
 export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
+
+export const VIDEO_TARGETING = ['mimes'];
+export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const spec = {
   code: 'beachfront',
@@ -139,8 +143,18 @@ function isVideoBid(bid) {
   return bid.mediaTypes && bid.mediaTypes.video;
 }
 
+function getVideoParams(bid) {
+  return Object.keys(Object(bid.params.video))
+    .filter(param => includes(VIDEO_TARGETING, param))
+    .reduce((obj, param) => {
+      obj[ param ] = bid.params.video[ param ];
+      return obj;
+    }, {});
+}
+
 function createVideoRequestData(bid) {
   let size = getFirstSize(bid);
+  let video = getVideoParams(bid);
   let topLocation = utils.getTopWindowLocation();
   return {
     isPrebid: true,
@@ -148,18 +162,24 @@ function createVideoRequestData(bid) {
     domain: document.location.hostname,
     id: utils.getUniqueIdentifierStr(),
     imp: [{
-      video: {
+      video: Object.assign({
         w: size.w,
-        h: size.h
-      },
-      bidfloor: bid.params.bidfloor
+        h: size.h,
+        mimes: DEFAULT_MIMES
+      }, video),
+      bidfloor: bid.params.bidfloor,
+      secure: topLocation.protocol === 'https:' ? 1 : 0
     }],
     site: {
-      page: topLocation.host
+      page: topLocation.href,
+      domain: topLocation.hostname
     },
     device: {
       ua: navigator.userAgent,
+      language: navigator.language,
       devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
+      dnt: getDoNotTrack() ? 1 : 0,
+      js: 1,
       geo: {}
     },
     cur: ['USD']

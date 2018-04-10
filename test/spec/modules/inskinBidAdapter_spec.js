@@ -236,18 +236,24 @@ describe('InSkin BidAdapter', () => {
     });
   });
   describe('getUserSyncs', () => {
-    let syncOptions = {'iframeEnabled': true};
-
     it('handles empty sync options', () => {
       let opts = spec.getUserSyncs({});
 
       expect(opts).to.be.empty;
     });
 
-    it('should always return empty array', () => {
+    it('should return two sync urls if pixel syncs are enabled', () => {
+      let syncOptions = {'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions);
 
-      expect(opts).to.be.empty;
+      expect(opts.length).to.equal(2);
+    });
+
+    it('should return three sync urls if pixel and iframe syncs are enabled', () => {
+      let syncOptions = {'iframeEnabled': true, 'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(3);
     });
   });
 });
