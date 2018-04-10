@@ -56,7 +56,6 @@ describe('ebdrBidAdapter', function () {
     size: '300x250'
   };
 
-
   beforeEach(() => {
     bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
     $$PREBID_GLOBAL$$._bidsRequested = [];
@@ -102,7 +101,6 @@ describe('ebdrBidAdapter', function () {
 
     beforeEach(() => {
       sandbox.stub(bidmanager, 'addBidResponse');
-    
       $$PREBID_GLOBAL$$._bidsRequested.push(validBid_1);
       $$PREBID_GLOBAL$$.ebdrResponse(responseWithAd);
       firstBid = bidmanager.addBidResponse.firstCall.args[1];
