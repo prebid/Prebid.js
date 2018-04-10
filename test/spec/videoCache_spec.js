@@ -101,7 +101,7 @@ describe('The video cache', () => {
       assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
     });
 
-    it('should make the expected request when store() is called on an ad with a vastUrl and vastImpUrl', () => {
+    it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', () => {
       const expectedValue = `<VAST version="3.0">
     <Ad>
       <Wrapper>
