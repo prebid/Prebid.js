@@ -1579,8 +1579,7 @@ describe('Unit: Prebid Module', function () {
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
       for (var key in expectedAdserverTargeting) {
-        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
-        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+        newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
       }
 
       targeting.setTargetingForAst();
