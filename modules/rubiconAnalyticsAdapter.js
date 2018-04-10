@@ -27,7 +27,6 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
-const ENDPOINT = '//prebid-a.rubiconproject.com/event';
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
@@ -239,9 +238,10 @@ function parseBidResponse(bid) {
 let samplingFactor = 1;
 let accountId;
 
-let baseAdapter = adapter({url: ENDPOINT, analyticsType: 'endpoint'});
+let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
   enableAnalytics(config = {}) {
+    let error = false;
     samplingFactor = 1;
 
     if (typeof config.options === 'object') {
@@ -250,6 +250,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       }
       if (config.options.endpoint) {
         this.getUrl = () => config.options.endpoint;
+      } else {
+        utils.logError('required endpoint missing from rubicon analytics');
+        error = true;
       }
       if (typeof config.options.sampling !== 'undefined') {
         samplingFactor = 1 / parseFloat(config.options.sampling);
@@ -265,10 +268,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
     let validSamplingFactors = [1, 10, 20, 40, 100];
     if (validSamplingFactors.indexOf(samplingFactor) === -1) {
+      error = true;
       utils.logError('invalid samplingFactor for rubicon analytics: ' + samplingFactor + ', must be one of ' + validSamplingFactors.join(', '));
     } else if (!accountId) {
+      error = true;
       utils.logError('required accountId missing for rubicon analytics');
-    } else {
+    }
+
+    if (!error) {
       baseAdapter.enableAnalytics.call(this, config);
     }
   },

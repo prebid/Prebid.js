@@ -437,7 +437,23 @@ describe('rubicon analytics adapter', () => {
   it('should require accountId', () => {
     sandbox.stub(utils, 'logError');
 
-    rubiconAnalyticsAdapter.enableAnalytics();
+    rubiconAnalyticsAdapter.enableAnalytics({
+      options: {
+        endpoint: '//localhost:9999/event'
+      }
+    });
+
+    expect(utils.logError.called).to.equal(true);
+  });
+
+  it('should require endpoint', () => {
+    sandbox.stub(utils, 'logError');
+
+    rubiconAnalyticsAdapter.enableAnalytics({
+      options: {
+        accountId: 1001
+      }
+    });
 
     expect(utils.logError.called).to.equal(true);
   });
@@ -456,6 +472,7 @@ describe('rubicon analytics adapter', () => {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             samplingFactor: 10
           }
@@ -469,6 +486,7 @@ describe('rubicon analytics adapter', () => {
       it('should unsample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             samplingFactor: 20
           }
@@ -482,6 +500,7 @@ describe('rubicon analytics adapter', () => {
       it('should throw errors for invalid samplingFactor', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             samplingFactor: 30
           }
@@ -497,6 +516,7 @@ describe('rubicon analytics adapter', () => {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             sampling: 0.1
           }
@@ -510,6 +530,7 @@ describe('rubicon analytics adapter', () => {
       it('should unsample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             sampling: 0.05
           }
@@ -523,6 +544,7 @@ describe('rubicon analytics adapter', () => {
       it('should throw errors for invalid samplingFactor', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
+            endpoint: '//localhost:9999/event',
             accountId: 1001,
             sampling: 1 / 30
           }
@@ -540,6 +562,7 @@ describe('rubicon analytics adapter', () => {
     beforeEach(() => {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
+          endpoint: '//localhost:9999/event',
           accountId: '1001'
         }
       });
@@ -555,7 +578,7 @@ describe('rubicon analytics adapter', () => {
       expect(requests.length).to.equal(1);
       let request = requests[0];
 
-      expect(request.url).to.equal('//prebid-a.rubiconproject.com/event');
+      expect(request.url).to.equal('//localhost:9999/event');
 
       let message = JSON.parse(request.requestBody);
       validate(message);
