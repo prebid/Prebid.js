@@ -412,12 +412,6 @@ describe('rubicon analytics adapter', () => {
 
     sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
 
-    oldScreen = window.screen;
-    window.screen = {
-      width: '375',
-      height: '812'
-    };
-
     clock = sandbox.useFakeTimers(1519767013781);
 
     config.setConfig({
@@ -429,7 +423,6 @@ describe('rubicon analytics adapter', () => {
   });
 
   afterEach(() => {
-    window.screen = oldScreen;
     sandbox.restore();
     config.resetConfig();
   });
