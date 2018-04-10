@@ -57,7 +57,7 @@ var EbdrAdapter = function EbdrAdapter() {
     var ebdrParams = {};
     // assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
-
+    var bidderequestId = bidReqs[0].bidId;
     // build impression array for ebdr
     utils._each(bidReqs, function(bid) {
       var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
@@ -84,7 +84,7 @@ var EbdrAdapter = function EbdrAdapter() {
 
     // build bid request with impressions
     var ebdrBidReq = {
-      id: utils.getUniqueIdentifierStr(),
+      id: bidderequestId,
       imp: ebdrImps,
       site: {
         domain: domain,
@@ -121,7 +121,6 @@ var EbdrAdapter = function EbdrAdapter() {
   $$PREBID_GLOBAL$$.ebdrResponse = function(ebdrResponseObj) {
     var bid = {};
     var key;
-
     // valid object?
     if (!ebdrResponseObj || !ebdrResponseObj.id) {
       return noBidResponse(ebdrResponseObj);
@@ -137,7 +136,6 @@ var EbdrAdapter = function EbdrAdapter() {
       var responseCPM;
       var placementCode = '';
       var id = ebdrBid.impid;
-
       // try to fetch the bid request we sent Ebdr
       var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'ebdr').bids.find(bid => bid.bidId === id);
       if (!bidObj) {
@@ -175,7 +173,6 @@ var EbdrAdapter = function EbdrAdapter() {
       bidmanager.addBidResponse(placementCode, bid);
     }
   }; // ebdrResponse
-
   return {
     callBids: _callBids
   };
