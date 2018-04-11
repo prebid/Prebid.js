@@ -157,10 +157,6 @@ function flushEventStack() {
   eventStack.events = [];
 }
 
-// function flushBidWon() {
-//  bidWon.events = [];
-// }
-
 let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
   {
     track({eventType, args}) {
@@ -176,7 +172,6 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
 
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
-        // flushEventStack();
       }
 
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
@@ -185,7 +180,6 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidBidWon()) {
           send(eventType, bidWon, 'bidWon');
         }
-        // flushBidWon();
         return;
       }
 
@@ -195,7 +189,6 @@ let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidEventStack()) {
           send(eventType, eventStack, 'eventStack');
         }
-        // flushEventStack();
         auctionStatus = 'not_started';
       } else {
         pushEvent(eventType, info);
@@ -246,8 +239,7 @@ function send(eventType, data, sendDataType) {
   AWS.config.credentials.get(function(err) {
   // attach event listener
     if (err) {
-      alert('Error retrieving credentials.');
-      console.error(err);
+      utils.logError(err);
       return;
     }
     // create kinesis service object
