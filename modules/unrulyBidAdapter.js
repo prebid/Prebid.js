@@ -52,7 +52,7 @@ const buildPrebidResponseAndInstallRenderer = bids =>
           prebidBid,
           {
             renderer: rendererInstance,
-            adUnitCode: serverBid.ext.placementCode
+            adUnitCode: serverBid.ext.adUnitCode
           }
         );
 
