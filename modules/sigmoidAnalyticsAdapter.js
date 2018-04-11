@@ -9,12 +9,12 @@ const utils = require('src/utils');
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
 
-let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
-let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
-let bidWonConst = CONSTANTS.EVENTS.BID_WON;
-let bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
-let bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
-let bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
+const auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
+const auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
+const bidWonConst = CONSTANTS.EVENTS.BID_WON;
+const bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
+const bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+const bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
 
 let initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
 let bidWon = {options: {}, events: []};
@@ -202,7 +202,7 @@ sigmoidAdapter.originEnableAnalytics = sigmoidAdapter.enableAnalytics;
 sigmoidAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   initOptions.utmTagData = this.buildUtmTagData();
-  utils.logInfo('Roxot Analytics enabled with config', initOptions);
+  utils.logInfo('Sigmoid Analytics enabled with config', initOptions);
   sigmoidAdapter.originEnableAnalytics(config);
 };
 
