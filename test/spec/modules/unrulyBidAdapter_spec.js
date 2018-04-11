@@ -8,7 +8,7 @@ import { adapter } from 'modules/unrulyBidAdapter'
 
 describe('UnrulyAdapter', () => {
   function createOutStreamExchangeBid({
-    placementCode = 'placement2',
+    adUnitCode = 'placement2',
     statusCode = 1,
     bidId = 'foo',
     vastUrl = 'https://targeting.unrulymedia.com/in_article?uuid=74544e00-d43b-4f3a-a799-69d22ce979ce&supported_mime_type=application/javascript&supported_mime_type=video/mp4&tj=%7B%22site%22%3A%7B%22lang%22%3A%22en-GB%22%2C%22ref%22%3A%22%22%2C%22page%22%3A%22http%3A%2F%2Fdemo.unrulymedia.com%2FinArticle%2Finarticle_nypost_upbeat%2Ftravel_magazines.html%22%2C%22domain%22%3A%22demo.unrulymedia.com%22%7D%2C%22user%22%3A%7B%22profile%22%3A%7B%22quantcast%22%3A%7B%22segments%22%3A%5B%7B%22id%22%3A%22D%22%7D%2C%7B%22id%22%3A%22T%22%7D%5D%7D%7D%7D%7D&video_width=618&video_height=347'
@@ -21,7 +21,7 @@ describe('UnrulyAdapter', () => {
           'config': {},
           'url': 'https://video.unrulymedia.com/native/prebid-loader.js'
         },
-        'placementCode': placementCode
+        'adUnitCode': adUnitCode
       },
       'cpm': 20,
       'bidderCode': 'unruly',
@@ -131,7 +131,7 @@ describe('UnrulyAdapter', () => {
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
     it('should return array of bids when receive a successful response from server', () => {
-      const mockExchangeBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([
         {
@@ -153,7 +153,7 @@ describe('UnrulyAdapter', () => {
       expect(Renderer.install).not.to.have.been.called;
       expect(fakeRenderer.setRender).not.to.have.been.called;
 
-      const mockReturnedBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockRenderer = { url: 'value: mockRendererURL' };
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
@@ -171,7 +171,7 @@ describe('UnrulyAdapter', () => {
     });
 
     it('bid is placed on the bid queue when render is called', () => {
-      const exchangeBid = createOutStreamExchangeBid({ placementCode: 'video', vastUrl: 'value: vastUrl' });
+      const exchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video', vastUrl: 'value: vastUrl' });
       const exchangeResponse = createExchangeResponse(exchangeBid);
 
       adapter.interpretResponse(exchangeResponse);
@@ -191,7 +191,7 @@ describe('UnrulyAdapter', () => {
     })
 
     it('should ensure that renderer is placed in Prebid supply mode', () => {
-      const mockExchangeBid = createOutStreamExchangeBid({placementCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 
       expect('unruly' in window.parent).to.equal(false);
