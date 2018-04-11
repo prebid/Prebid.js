@@ -213,7 +213,10 @@ const paramTypes = {
 function convertTypes(adUnits) {
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const types = paramTypes[bid.bidder] || [];
+      // aliases use the base bidder's paramTypes
+      const bidder = adaptermanager.aliasRegistry[bid.bidder] || bid.bidder;
+      const types = paramTypes[bidder] || [];
+
       Object.keys(types).forEach(key => {
         if (bid.params[key]) {
           bid.params[key] = types[key](bid.params[key]);
@@ -245,13 +248,31 @@ function _getDigiTrustQueryParams() {
   };
 }
 
+function _appendSiteAppDevice(request) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+    request.app.publisher = {id: _s2sConfig.accountId}
+  } else {
+    request.site = {
+      publisher: { id: _s2sConfig.accountId },
+      page: utils.getTopWindowUrl()
+    }
+  }
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
+  }
+}
+
 /*
  * Protocol spec for legacy endpoint
  * e.g., https://<prebid-server-url>/v1/auction
  */
 const LEGACY_PROTOCOL = {
 
-  buildRequest(s2sBidRequest, adUnits) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits) {
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
       const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
@@ -270,20 +291,14 @@ const LEGACY_PROTOCOL = {
       max_bids: _s2sConfig.maxBids,
       timeout_millis: _s2sConfig.timeout,
       secure: _s2sConfig.secure,
-      cache_markup: _s2sConfig.cacheMarkup,
+      cache_markup: _s2sConfig.cacheMarkup === 1 || _s2sConfig.cacheMarkup === 2 ? _s2sConfig.cacheMarkup : 0,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits,
       is_debug: !!getConfig('debug'),
     };
 
-    // grab some global config and pass it along
-    ['app', 'device'].forEach(setting => {
-      let value = getConfig(setting);
-      if (typeof value === 'object') {
-        request[setting] = value;
-      }
-    });
+    _appendSiteAppDevice(request);
 
     let digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
@@ -339,6 +354,11 @@ const LEGACY_PROTOCOL = {
             if (bidObj.nurl) {
               bidObject.vastUrl = bidObj.nurl;
             }
+            // when video bid is already cached by Prebid Server, videoCacheKey and vastUrl should be provided properly
+            if (bidObj.cache_id && bidObj.cache_url) {
+              bidObject.videoCacheKey = bidObj.cache_id;
+              bidObject.vastUrl = bidObj.cache_url;
+            }
           } else {
             if (bidObj.adm && bidObj.nurl) {
               bidObject.ad = bidObj.adm;
@@ -364,6 +384,8 @@ const LEGACY_PROTOCOL = {
           bidObject.currency = (bidObj.currency) ? bidObj.currency : DEFAULT_S2S_CURRENCY;
           bidObject.netRevenue = (bidObj.netRevenue) ? bidObj.netRevenue : DEFAULT_S2S_NETREVENUE;
 
+          if (result.burl) { bidObject.burl = result.burl; }
+
           bids.push({ adUnit: bidObj.code, bid: bidObject });
         });
       }
@@ -381,16 +403,22 @@ const OPEN_RTB_PROTOCOL = {
 
   bidMap: {},
 
-  buildRequest(s2sBidRequest, adUnits) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
+    let aliases = {};
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
-      // OpenRTB response contains the adunit code and bidder name. These are
-      // combined to create a unique key for each bid since an id isn't returned
       adUnit.bids.forEach(bid => {
+        // OpenRTB response contains the adunit code and bidder name. These are
+        // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
         this.bidMap[key] = bid;
+
+        // check for and store valid aliases to add to the request
+        if (adaptermanager.aliasRegistry[bid.bidder]) {
+          aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];
+        }
       });
 
       let banner;
@@ -437,23 +465,50 @@ const OPEN_RTB_PROTOCOL = {
 
     const request = {
       id: s2sBidRequest.tid,
-      site: {publisher: {id: _s2sConfig.accountId}},
       source: {tid: s2sBidRequest.tid},
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
     };
 
-    ['app', 'device'].forEach(setting => {
-      let value = getConfig(setting);
-      if (typeof value === 'object') {
-        request[setting] = value;
-      }
-    });
+    _appendSiteAppDevice(request);
 
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
       request.user = { ext: { digitrust: digiTrust } };
+    }
+
+    if (!utils.isEmpty(aliases)) {
+      request.ext = { prebid: { aliases } };
+    }
+
+    if (bidRequests && bidRequests[0].gdprConsent) {
+      // note - consentRequired & consentString may be undefined in certain use-cases for consentManagement module
+      let consentRequired;
+      if (typeof bidRequests[0].gdprConsent.consentRequired === 'boolean') {
+        consentRequired = bidRequests[0].gdprConsent.consentRequired ? 1 : 0;
+      }
+
+      if (request.regs) {
+        if (request.regs.ext) {
+          request.regs.ext.gdpr = consentRequired;
+        } else {
+          request.regs.ext = { gdpr: consentRequired };
+        }
+      } else {
+        request.regs = { ext: { gdpr: consentRequired } };
+      }
+
+      let consentString = bidRequests[0].gdprConsent.consentString;
+      if (request.user) {
+        if (request.user.ext) {
+          request.user.ext.consent = consentString;
+        } else {
+          request.user.ext = { consent: consentString };
+        }
+      } else {
+        request.user = { ext: { consent: consentString } };
+      }
     }
 
     return request;
@@ -482,6 +537,7 @@ const OPEN_RTB_PROTOCOL = {
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             if (bid.adm) { bidObject.vastXml = bid.adm; }
+            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
@@ -499,6 +555,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.requestId = bid.id;
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
+          if (bid.burl) { bidObject.burl = bid.burl; }
 
           // TODO: Remove when prebid-server returns ttl, currency and netRevenue
           bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
@@ -556,7 +613,7 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
-    const request = protocolAdapter().buildRequest(s2sBidRequest, adUnitsWithSizes);
+    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
     const requestJson = JSON.stringify(request);
 
     ajax(

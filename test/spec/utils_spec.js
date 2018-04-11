@@ -1,8 +1,7 @@
-import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
-import { cookiesAreEnabled } from '../../src/utils';
+import { getAdServerTargeting } from 'test/fixtures/fixtures';
 
 var assert = require('assert');
-var utils = require('../../src/utils');
+var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -621,6 +620,90 @@ describe('Utils', function () {
       const adUnitCopy = utils.deepClone(adUnit);
       expect(adUnitCopy[0].renderer.url).to.be.a('string');
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
+  describe('getTopWindowLocation', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('returns window.location if not in iFrame', () => {
+      sandbox.stub(utils, 'getWindowLocation').returns({
+        href: 'https://www.google.com/',
+        ancestorOrigins: {},
+        origin: 'https://www.google.com',
+        protocol: 'https',
+        host: 'www.google.com',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/',
+        search: '',
+        hash: ''
+      });
+      let windowSelfAndTopObject = { self: 'is same as top' };
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        windowSelfAndTopObject
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        windowSelfAndTopObject
+      );
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal('');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal(0);
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.example.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.example.com');
+      expect(topWindowLocation.port).to.equal(0);
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.example.com');
     });
   });
 });

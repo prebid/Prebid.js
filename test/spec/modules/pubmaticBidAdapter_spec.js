@@ -147,6 +147,42 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
+      it('Request params check with GDPR Consent', () => {
+        let bidRequest = {
+          gdprConsent: {
+            consentString: 'kjfdniwjnifwenrif3',
+            consentRequired: 0
+          }
+        };
+  		  let request = spec.buildRequests(bidRequests, bidRequest);
+  		  let data = JSON.parse(request.data);
+        expect(data.user.ext.consent).to.equal(0);
+        expect(data.regs.ext.gdpr).to.equal('kjfdniwjnifwenrif3');
+  		  expect(data.at).to.equal(1); // auction type
+  		  expect(data.cur[0]).to.equal('USD'); // currency
+  		  expect(data.site.domain).to.be.a('string'); // domain should be set
+  		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
+  		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+  		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
+  		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
+  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+  		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
+  		  expect(data.ext.wrapper.profile).to.equal(bidRequests[0].params.profId); // OpenWrap: Wrapper Profile ID
+  		  expect(data.ext.wrapper.version).to.equal(bidRequests[0].params.verId); // OpenWrap: Wrapper Profile Version ID
+
+  		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
+  		  expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
+  		  expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
+  		  expect(data.imp[0].banner.w).to.equal(300); // width
+  		  expect(data.imp[0].banner.h).to.equal(250); // height
+  		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+  		});
+
   		it('invalid adslot', () => {
   		  bidRequests[0].params.adSlot = '/15671365/DMDemo';
   		  let request = spec.buildRequests(bidRequests);

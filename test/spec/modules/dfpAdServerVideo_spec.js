@@ -104,6 +104,7 @@ describe('The DFP video support module', () => {
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
 
   it('should merge the user-provided cust_params with the default ones', () => {

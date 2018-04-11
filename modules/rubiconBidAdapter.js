@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -73,7 +74,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
    * @return boolean
@@ -93,8 +94,9 @@ export const spec = {
       return false;
     }
 
-    if (bid.mediaType === 'video') {
-      if (typeof params.video !== 'object' || !params.video.size_id) {
+    if (spec.hasVideoMediaType(bid)) {
+      // support instream only
+      if ((utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream') || typeof params.video !== 'object' || !params.video.size_id) {
         return false;
       }
     }
@@ -118,7 +120,7 @@ export const spec = {
 
       page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
 
-      if (bidRequest.mediaType === 'video') {
+      if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
 
@@ -238,6 +240,15 @@ export const spec = {
     });
   },
   /**
+   * Test if bid has mediaType or mediaTypes set for video.
+   * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  hasVideoMediaType: function(bidRequest) {
+    return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  },
+  /**
    * @param {*} responseObj
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
@@ -252,7 +263,7 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -287,7 +298,7 @@ export const spec = {
         bid.mediaType = ad.creative_type;
       }
 
-      if (bidRequest.mediaType === 'video') {
+      if (ad.creative_type === VIDEO) {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
@@ -360,17 +371,14 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (bid.mediaType === 'video') {
+  if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video.playerWidth && params.video.playerHeight) {
+    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
       ];
-    } else if (
-      Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-        Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
-    ) {
+    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
     }
     return size;

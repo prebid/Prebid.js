@@ -15,6 +15,7 @@ let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
+exports.aliasRegistry = {};
 
 let _s2sConfig = {};
 config.getConfig('s2sConfig', config => {
@@ -147,6 +148,16 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
+exports.gdprDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    this.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return this.consentData;
+  }
+};
+
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
@@ -211,6 +222,12 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidRequests.push(bidderRequest);
     }
   });
+
+  if (exports.gdprDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['gdprConsent'] = exports.gdprDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
 };
 
@@ -383,6 +400,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
         } else {
           let spec = bidAdaptor.getSpec();
           newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+          exports.aliasRegistry[alias] = bidderCode;
         }
         this.registerBidAdapter(newAdapter, alias, {
           supportedMediaTypes

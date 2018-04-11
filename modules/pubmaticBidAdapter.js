@@ -195,7 +195,7 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: validBidRequests => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
     validBidRequests.forEach(bid => {
@@ -225,6 +225,20 @@ export const spec = {
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+
+    // Attaching GDPR Consent Params
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.user.ext = {
+        consent: bidderRequest.gdprConsent.consentRequired
+      };
+
+      payload.regs = {
+        ext: {
+          gdpr: bidderRequest.gdprConsent.consentString
+        }
+      };
+    }
+
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
