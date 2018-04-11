@@ -109,7 +109,7 @@ function checkAdUnitConfig() {
 function buildBidWon(eventType, args) {
   bidWon.options = initOptions;
   if (checkAdUnitConfig()) {
-    if (initOptions.adUnits.includes(args.adUnitCode)) {
+    if (includes(initOptions.adUnits, args.adUnitCode)) {
       bidWon.events = [{ args: args, eventType: eventType }];
     }
   } else {
@@ -124,7 +124,7 @@ function buildEventStack() {
 function filterBidsByAdUnit(bids) {
   var filteredBids = [];
   bids.forEach(function (bid) {
-    if (initOptions.adUnits.includes(bid.placementCode)) {
+    if (includes(initOptions.adUnits, bid.placementCode)) {
       filteredBids.push(bid);
     }
   });
@@ -134,7 +134,7 @@ function filterBidsByAdUnit(bids) {
 function isValidEvent(eventType, adUnitCode) {
   if (checkAdUnitConfig()) {
     let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
-    if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
+    if (!includes(initOptions.adUnits, adUnitCode) && includes(validationEvents, eventType)) {
       return false;
     }
   }
