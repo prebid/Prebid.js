@@ -4,7 +4,7 @@ import {spec} from 'modules/consumableBidAdapter';
 import {config} from 'src/config';
 
 const DEFAULT_OAD_CONTENT = '<script>logInfo(\'ad\');</script>';
-const DEFAULT_AD_CONTENT = '<script type=\'text/javascript\'>document.write(\'<div id="unitname-987654">\');</script><script>logInfo(\'ad\');</script><script type=\'text/javascript\'>document.write(\'</div>\');</script><script type=\'text/javascript\'>document.write(\'<div class="unitname"></div>\');</script><script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type="text/javascript" src="https://yummy.consumable.com/987654/unitname/widget/unit.js" charset="utf-8" async></scr\'+\'ipt>\');</script>'
+const DEFAULT_AD_CONTENT = '<script type=\'text/javascript\'>document.write(\'<div id="unitname-987654">\');</script><script>logInfo(\'ad\');</script><script type=\'text/javascript\'>document.write(\'</div>\');</script><script type=\'text/javascript\'>document.write(\'<div class="unitname"></div>\');</script><script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type="text/javascript" src="https://yummy.consumable.com/987654/unitname/widget/unit.js?cb=7654321" charset="utf-8" async></scr\'+\'ipt>\');</script>'
 
 let getDefaultBidResponse = () => {
   return {
@@ -59,8 +59,8 @@ let getPixels = () => {
 };
 
 describe('ConsumableAdapter', () => {
-  const CONSUMABLE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';  
-  const CONSUMABLE_TTL = 60;  
+  const CONSUMABLE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';
+  const CONSUMABLE_TTL = 60;
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -123,7 +123,7 @@ describe('ConsumableAdapter', () => {
       });
     });
 
-    it('should add pixels to ad content when pixels are present in the response', () => {      
+    it('should add pixels to ad content when pixels are present in the response', () => {
       bidResponse.body.ext = {
         pixels: 'pixels-content'
       };
@@ -133,7 +133,7 @@ describe('ConsumableAdapter', () => {
 
       expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + 'pixels-content');
       return true;
-    });    
+    });
   });
 
   describe('buildRequests()', () => {
@@ -170,10 +170,8 @@ describe('ConsumableAdapter', () => {
         let [request] = spec.buildRequests(bidRequest.bids);
         expect(request.url).to.match(/misc=\d+/);
       });
-      
     });
   });
-
 
   describe('getUserSyncs()', () => {
     let bidResponse;

@@ -26,7 +26,7 @@ $$PREBID_GLOBAL$$.consumableGlobals = {
 
 function isInteger(value) {
   return typeof value === 'number' &&
-    isFinite(value) && 
+    isFinite(value) &&
     Math.floor(value) === value;
 }
 
@@ -40,10 +40,6 @@ function template(strings, ...keys) {
     });
     return result.join('');
   };
-}
-
-function isSecureProtocol() {
-  return document.location.protocol === 'https:';
 }
 
 function parsePixelItems(pixels) {
@@ -101,8 +97,8 @@ function formatBidRequest(bid) {
   bidRequest.unitId = bid.params.unitId;
   bidRequest.unitName = bid.params.unitName;
   bidRequest.zoneId = bid.params.zoneId;
-  bidRequest.network = bid.params.network;  
-  
+  bidRequest.network = bid.params.network;
+
   return bidRequest;
 }
 
@@ -116,7 +112,7 @@ export const spec = {
       return formatBidRequest(bid);
     });
   },
-  interpretResponse: function ({body}, bidRequest) {    
+  interpretResponse: function ({body}, bidRequest) {
     if (!body) {
       utils.logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
@@ -149,21 +145,21 @@ export const spec = {
     if (bidData.ext && bidData.ext.encp) {
       cpm = bidData.ext.encp;
     } else {
-      cpm = bidData.price; 
+      cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
         utils.logError('Invalid price in bid response', CONSUMABLE_BIDDER_CODE, bid);
         return;
       }
     }
-    cpm = cpm * (parseFloat(bidRequest.zoneId)/parseFloat(bidRequest.network));
+    cpm = cpm * (parseFloat(bidRequest.zoneId) / parseFloat(bidRequest.network));
 
-    let oad = bidData.adm;  
-    let cb = Math.round(new Date().getTime());  
-    let ad = "<script type='text/javascript'>document.write('<div id=\""+bidRequest.unitName+"-"+bidRequest.unitId+"\">');</script>" + oad;
-    ad += "<script type='text/javascript'>document.write('</div>');</script>";
-    ad += "<script type='text/javascript'>document.write('<div class=\""+bidRequest.unitName+"\"></div>');</script>";
-    ad += "<script type='text/javascript'>document.write('<scr'+'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/"+bidRequest.unitId+"/"+bidRequest.unitName+"/widget/unit.js\" charset=\"utf-8\" async></scr'+'ipt>');</script>"            
+    let oad = bidData.adm;
+    let cb = bidRequest.network === '9599.1' ? 7654321 : Math.round(new Date().getTime());
+    let ad = '<script type=\'text/javascript\'>document.write(\'<div id=\"' + bidRequest.unitName + '-' + bidRequest.unitId + '\">\');</script>' + oad;
+    ad += '<script type=\'text/javascript\'>document.write(\'</div>\');</script>';
+    ad += '<script type=\'text/javascript\'>document.write(\'<div class=\"' + bidRequest.unitName + '\"></div>\');</script>';
+    ad += '<script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/' + bidRequest.unitId + '/' + bidRequest.unitName + '/widget/unit.js?cb=' + cb + '\" charset=\"utf-8\" async></scr\'+\'ipt>\');</script>'
     if (response.ext && response.ext.pixels) {
       if (config.getConfig('consumable.userSyncOn') !== EVENTS.BID_RESPONSE) {
         ad += this._formatPixels(response.ext.pixels);
