@@ -219,7 +219,7 @@ export const spec = {
 
       payload.regs = {
         ext: {
-          gdpr: (bidderRequest.gdprConsent.consentRequired ? 0 : 1)
+          gdpr: (bidderRequest.gdprConsent.consentRequired ? 1 : 0)
         }
       };
     }
