@@ -11,7 +11,7 @@ describe('AdkernelAdn adapter', () => {
       params: {
         pubId: 1
       },
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[300, 250], [300, 200]]
     },
     bid2_pub1 = {
@@ -22,8 +22,8 @@ describe('AdkernelAdn adapter', () => {
       params: {
         pubId: 1
       },
-      placementCode: 'ad-unit-2',
-      sizes: [[300, 250]]
+      adUnitCode: 'ad-unit-2',
+      sizes: [300, 250]
     },
     bid1_pub2 = {
       bidder: 'adkernelAdn',
@@ -34,7 +34,7 @@ describe('AdkernelAdn adapter', () => {
         pubId: 7,
         host: 'dps-test.com'
       },
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_video1 = {
       bidder: 'adkernelAdn',
@@ -43,7 +43,7 @@ describe('AdkernelAdn adapter', () => {
       bidId: 'bidid_4',
       mediaType: 'video',
       sizes: [640, 300],
-      placementCode: 'video_wrapper',
+      adUnitCode: 'video_wrapper',
       params: {
         pubId: 7,
         video: {
@@ -57,9 +57,14 @@ describe('AdkernelAdn adapter', () => {
       transactionId: 'transact3',
       bidderRequestId: 'req1',
       bidId: 'bidid_5',
-      mediaTypes: {video: {context: 'instream'}},
-      sizes: [640, 300],
-      placementCode: 'video_wrapper2',
+      mediaTypes: {
+        video: {
+          playerSize: [1920, 1080],
+          context: 'instream'
+        }
+      },
+
+      adUnitCode: 'video_wrapper2',
       params: {
         pubId: 7,
         video: {
@@ -178,6 +183,12 @@ describe('AdkernelAdn adapter', () => {
       expect(tagRequest.imp[0]).to.have.property('tagid', 'video_wrapper');
       expect(tagRequest.imp[1]).to.have.property('tagid', 'video_wrapper2');
     });
+    it('should have size', () => {
+      expect(tagRequest.imp[0].video).to.have.property('w', 640);
+      expect(tagRequest.imp[0].video).to.have.property('h', 300);
+      expect(tagRequest.imp[1].video).to.have.property('w', 1920);
+      expect(tagRequest.imp[1].video).to.have.property('h', 1080);
+    });
   });
 
   describe('requests routing', () => {
@@ -249,6 +260,10 @@ describe('AdkernelAdn adapter', () => {
       let request = spec.buildRequests([bid1_pub1])[0];
       let resp = spec.interpretResponse({body: usersyncOnlyResponse}, request);
       expect(resp).to.have.length(0);
+    });
+    it('shouldn\' fail in empty response', () => {
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: ''}]);
+      expect(syncs).to.have.length(0);
     });
   });
 });

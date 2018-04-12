@@ -8,7 +8,9 @@ const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
 const TIME_TO_LIVE = 60
+
 let browserParams = {};
+let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams() {
@@ -63,7 +65,7 @@ function _getDigiTrustQueryParams() {
     return {};
   }
   return {
-    'dt': digiTrustId.id
+    dt: digiTrustId.id
   };
 }
 
@@ -106,7 +108,9 @@ function buildRequests (validBidRequests) {
       transactionId
     } = bidRequest;
     const data = {}
-
+    if (pageViewId) {
+      data.pv = pageViewId
+    }
     if (params.inScreen) {
       data.t = params.inScreen;
       data.pi = 2;
@@ -150,10 +154,16 @@ function interpretResponse (serverResponse, bidRequest) {
       id: creativeId,
       markup
     },
-    cw: wrapper
+    cw: wrapper,
+    pag: {
+      pvid
+    }
   } = serverResponseBody
   let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
   let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+
+  // update Page View ID from server response
+  pageViewId = pvid
 
   if (creativeId) {
     bidResponses.push({

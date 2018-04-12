@@ -1,4 +1,3 @@
-
 import {expect} from 'chai';
 import {spec} from 'modules/platformioBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
@@ -8,6 +7,7 @@ describe('Platform.io Adapter Tests', () => {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',
+    mediaType: 'banner',
     params: {
       pubId: '29521',
       siteId: '26047',
@@ -18,6 +18,7 @@ describe('Platform.io Adapter Tests', () => {
   }, {
     placementCode: '/DfpAccount2/slot2',
     bidId: 'bid23456',
+    mediaType: 'banner',
     params: {
       pubId: '29521',
       siteId: '26047',
@@ -29,6 +30,7 @@ describe('Platform.io Adapter Tests', () => {
   const nativeSlotConfig = [{
     placementCode: '/DfpAccount1/slot3',
     bidId: 'bid12345',
+    mediaType: 'native',
     nativeParams: {
       title: { required: true, len: 200 },
       body: {},
@@ -40,6 +42,20 @@ describe('Platform.io Adapter Tests', () => {
       pubId: '29521',
       placementId: '123',
       siteId: '26047'
+    }
+  }];
+  const videoSlotConfig = [{
+    placementCode: '/DfpAccount1/slot4',
+    bidId: 'bid12345678',
+    mediaType: 'video',
+    video: {
+      skippable: true
+    },
+    params: {
+      pubId: '29521',
+      placementId: '1234567',
+      siteId: '26047',
+      size: '640x480'
     }
   }];
 
@@ -111,7 +127,7 @@ describe('Platform.io Adapter Tests', () => {
     expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
-    // // native impression
+    // native impression
     expect(ortbRequest.imp[0].tagid).to.equal('123');
     const nativePart = ortbRequest.imp[0]['native'];
     expect(nativePart).to.not.equal(null);
@@ -194,18 +210,72 @@ describe('Platform.io Adapter Tests', () => {
     expect(nativeBid.impressionTrackers[0]).to.equal('http://rtb.adx1.com/log');
   });
 
+  it('Verify Video request', () => {
+    const request = spec.buildRequests(videoSlotConfig);
+    expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
+    expect(request.method).to.equal('POST');
+    const videoRequest = JSON.parse(request.data);
+    // site object
+    expect(videoRequest.site).to.not.equal(null);
+    expect(videoRequest.site.publisher.id).to.equal('29521');
+    expect(videoRequest.site.ref).to.equal(window.top.document.referrer);
+    expect(videoRequest.site.page).to.equal(getTopWindowLocation().href);
+    // device object
+    expect(videoRequest.device).to.not.equal(null);
+    expect(videoRequest.device.ua).to.equal(navigator.userAgent);
+    // slot 1
+    expect(videoRequest.imp[0].tagid).to.equal('1234567');
+    expect(videoRequest.imp[0].video).to.not.equal(null);
+    expect(videoRequest.imp[0].video.w).to.equal(640);
+    expect(videoRequest.imp[0].video.h).to.equal(480);
+    expect(videoRequest.imp[0].banner).to.equal(null);
+    expect(videoRequest.imp[0].native).to.equal(null);
+  });
+
+  it('Verify parse video response', () => {
+    const request = spec.buildRequests(videoSlotConfig);
+    const videoRequest = JSON.parse(request.data);
+    const videoResponse = {
+      seatbid: [{
+        bid: [{
+          impid: videoRequest.imp[0].id,
+          price: 1.90,
+          adm: 'http://vid.example.com/9876',
+          crid: '510511_754567308'
+        }]
+      }],
+      cur: 'USD'
+    };
+    const bids = spec.interpretResponse({ body: videoResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    // verify first bid
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.90);
+    expect(bid.vastUrl).to.equal('http://vid.example.com/9876');
+    expect(bid.crid).to.equal('510511_754567308');
+    expect(bid.width).to.equal(640);
+    expect(bid.height).to.equal(480);
+    expect(bid.adId).to.equal('bid12345678');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(360);
+  });
+
   it('Verifies bidder code', () => {
     expect(spec.code).to.equal('platformio');
   });
 
   it('Verifies supported media types', () => {
-    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes).to.have.lengthOf(3);
     expect(spec.supportedMediaTypes[0]).to.equal('banner');
     expect(spec.supportedMediaTypes[1]).to.equal('native');
+    expect(spec.supportedMediaTypes[2]).to.equal('video');
   });
 
   it('Verifies if bid request valid', () => {
     expect(spec.isBidRequestValid(slotConfigs[0])).to.equal(true);
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
+    expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
+    expect(spec.isBidRequestValid(videoSlotConfig[0])).to.equal(true);
   });
 });

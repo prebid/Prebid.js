@@ -888,10 +888,15 @@ describe('adapterManager tests', () => {
 
   describe('isValidBidRequest', () => {
     describe('positive tests for validating bid request', () => {
-      beforeEach(() => {});
+      beforeEach(() => {
+        sinon.stub(utils, 'logInfo');
+      });
 
-      afterEach(() => {});
-      it('should main adUnit structure and adUnits.sizes is replaced', () => {
+      afterEach(() => {
+        utils.logInfo.restore();
+      });
+
+      it('should maintain adUnit structure and adUnits.sizes is replaced', () => {
         let fullAdUnit = [{
           sizes: [[300, 250], [300, 600]],
           mediaTypes: {
@@ -899,7 +904,7 @@ describe('adapterManager tests', () => {
               sizes: [[300, 250]]
             },
             video: {
-              playerSize: [640, 480]
+              playerSize: [[640, 480]]
             },
             native: {
               image: {
@@ -913,8 +918,8 @@ describe('adapterManager tests', () => {
           }
         }];
         let result = checkBidRequestSizes(fullAdUnit);
-        expect(result[0].sizes).to.deep.equal([640, 480]);
-        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([640, 480]);
+        expect(result[0].sizes).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
         expect(result[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
         expect(result[0].mediaTypes.native.image.aspect_ratios).to.deep.equal([140, 140]);
@@ -947,7 +952,7 @@ describe('adapterManager tests', () => {
           mediaTypes: {
             video: {
               context: 'outstream',
-              playerSize: [400, 350]
+              playerSize: [[400, 350]]
             },
             native: {
               image: {
@@ -958,8 +963,22 @@ describe('adapterManager tests', () => {
           }
         }];
         result = checkBidRequestSizes(mixedAdUnit);
-        expect(result[0].sizes).to.deep.equal([400, 350]);
+        expect(result[0].sizes).to.deep.equal([[400, 350]]);
         expect(result[0].mediaTypes.video).to.exist;
+
+        let altVideoPlayerSize = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          }
+        }];
+        result = checkBidRequestSizes(altVideoPlayerSize);
+        expect(result[0].sizes).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.calledOnce(utils.logInfo);
       });
     });
 
@@ -990,7 +1009,7 @@ describe('adapterManager tests', () => {
           sizes: [[600, 600]],
           mediaTypes: {
             video: {
-              playerSize: '600x400'
+              playerSize: ['600x400']
             }
           }
         }];
@@ -1004,25 +1023,11 @@ describe('adapterManager tests', () => {
           sizes: [[600, 600]],
           mediaTypes: {
             video: {
-              playerSize: ['300', '200']
+              playerSize: [['300', '200']]
             }
           }
         }];
         result = checkBidRequestSizes(badVideo2);
-        expect(result[0].sizes).to.deep.equal([[600, 600]]);
-        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badVideo3 = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: [[640, 480]]
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badVideo3);
         expect(result[0].sizes).to.deep.equal([[600, 600]]);
         expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
         expect(result[0].mediaTypes.video).to.exist;
