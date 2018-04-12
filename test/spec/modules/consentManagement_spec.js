@@ -20,7 +20,7 @@ describe('consentManagement', function () {
 
       it('should use system default values', () => {
         setConfig({});
-        expect(userCMP).to.be.equal('appnexus');
+        expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
         sinon.assert.callCount(utils.logInfo, 3);
@@ -34,14 +34,14 @@ describe('consentManagement', function () {
       });
       it('results in all user settings overriding system defaults', () => {
         let allConfig = {
-          cmp: 'appnexus',
+          cmpApi: 'iab',
           consentRequired: false,
           timeout: 7500,
           allowAuctionWithoutConsent: false
         };
 
         setConfig(allConfig);
-        expect(userCMP).to.be.equal('appnexus');
+        expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
       });
@@ -50,13 +50,13 @@ describe('consentManagement', function () {
 
   describe('requestBidsHook tests:', () => {
     let goodConfigWithCancelAuction = {
-      cmp: 'appnexus',
+      cmpApi: 'iab',
       timeout: 7500,
       allowAuctionWithoutConsent: false
     };
 
     let goodConfigWithAllowAuction = {
-      cmp: 'appnexus',
+      cmpApi: 'iab',
       consentRequired: true,
       timeout: 7500,
       allowAuctionWithoutConsent: true
@@ -84,10 +84,10 @@ describe('consentManagement', function () {
 
         it('should return Warning message and return to hooked function', () => {
           let badCMPConfig = {
-            cmp: 'bad'
+            cmpApi: 'bad'
           };
           setConfig(badCMPConfig);
-          expect(userCMP).to.be.equal(badCMPConfig.cmp);
+          expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
 
           didHookReturn = false;
 
@@ -101,7 +101,7 @@ describe('consentManagement', function () {
         });
       });
 
-      describe('AppNexus CMP framework not present:', () => {
+      describe('IAB CMP framework not present:', () => {
         beforeEach(() => {
           sinon.stub(utils, 'logWarn');
         });
