@@ -1,10 +1,10 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter';
-import { parse as parseQuery } from 'querystring';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { userSync } from 'src/userSync';
-import { config } from 'src/config';
+import {spec, masSizeOrdering, resetUserSync} from 'modules/rubiconBidAdapter';
+import {parse as parseQuery} from 'querystring';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {userSync} from 'src/userSync';
+import {config} from 'src/config';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -16,6 +16,31 @@ describe('the rubicon adapter', () => {
 
   function createVideoBidderRequest() {
     let bid = bidderRequest.bids[0];
+
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      }
+    };
+
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'playerHeight': 320,
+      'playerWidth': 640,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createLegacyVideoBidderRequest() {
+    let bid = bidderRequest.bids[0];
+
+    // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
     bid.params.video = {
       'language': 'en',
@@ -33,11 +58,61 @@ describe('the rubicon adapter', () => {
 
   function createVideoBidderRequestNoVideo() {
     let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      },
+    };
+    bid.params.video = '';
+  }
+
+  function createLegacyVideoBidderRequestNoVideo() {
+    let bid = bidderRequest.bids[0];
     bid.mediaType = 'video';
     bid.params.video = '';
   }
 
+  function createVideoBidderRequestOutstream() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'outstream'
+      },
+    };
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'playerHeight': 320,
+      'playerWidth': 640,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
   function createVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      },
+    };
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createLegacyVideoBidderRequestNoPlayer() {
     let bid = bidderRequest.bids[0];
     bid.mediaType = 'video';
     bid.params.video = {
@@ -208,7 +283,8 @@ describe('the rubicon adapter', () => {
 
         it('should send digitrust params', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -253,7 +329,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to optout', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -281,7 +358,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to failure', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
@@ -433,12 +511,12 @@ describe('the rubicon adapter', () => {
       });
 
       describe('for video requests', () => {
-        it('should make a well-formed video request', () => {
-          createVideoBidderRequest();
+        it('should make a well-formed video request with legacy mediaType config', () => {
+          createLegacyVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
-            bidderRequest.auctionStart + 100
-          );
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
@@ -493,12 +571,116 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
         });
 
+        it('should make a well-formed video request', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          let url = request.url;
+
+          expect(url).to.equal('//fastlane-adv.rubiconproject.com/v1/auction/video');
+
+          expect(post).to.have.property('page_url').that.is.a('string');
+          expect(post.resolution).to.match(/\d+x\d+/);
+          expect(post.account_id).to.equal('14062');
+          expect(post.integration).to.equal(INTEGRATION);
+          expect(post).to.have.property('timeout').that.is.a('number');
+          expect(post.timeout < 5000).to.equal(true);
+          expect(post.stash_creatives).to.equal(true);
+
+          expect(post).to.have.property('ae_pass_through_parameters');
+          expect(post.ae_pass_through_parameters)
+            .to.have.property('p_aso.video.ext.skip')
+            .that.equals('1');
+          expect(post.ae_pass_through_parameters)
+            .to.have.property('p_aso.video.ext.skipdelay')
+            .that.equals('15');
+
+          expect(post).to.have.property('slots')
+            .with.length.of(1);
+
+          let slot = post.slots[0];
+
+          expect(slot.site_id).to.equal('70608');
+          expect(slot.zone_id).to.equal('335918');
+          expect(slot.position).to.equal('atf');
+          expect(slot.floor).to.equal(0.01);
+          expect(slot.element_id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(slot.name).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(slot.language).to.equal('en');
+          expect(slot.width).to.equal(640);
+          expect(slot.height).to.equal(320);
+          expect(slot.size_id).to.equal(201);
+
+          expect(slot).to.have.property('inventory').that.is.an('object');
+          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('prodtype').that.equals('tech');
+
+          expect(slot).to.have.property('keywords')
+            .that.is.an('array')
+            .of.length(3)
+            .that.deep.equals(['a', 'b', 'c']);
+
+          expect(slot).to.have.property('visitor').that.is.an('object');
+          expect(slot.visitor).to.have.property('ucat').that.equals('new');
+          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+        });
+
+        it('should send request with proper ad position', () => {
+          createVideoBidderRequest();
+          let positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'atf';
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          let post = request.data;
+          let slot = post.slots[0];
+
+          expect(slot.position).to.equal('atf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'btf';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('btf');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'unknown';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = '123';
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+
+          positionBidderRequest = clone(bidderRequest);
+          delete positionBidderRequest.bids[0].params.position;
+          expect(positionBidderRequest.bids[0].params.position).to.equal(undefined);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          post = request.data;
+          slot = post.slots[0];
+
+          expect(slot.position).to.equal('unknown');
+        });
+
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now', () =>
-            bidderRequest.auctionStart + 100
-          );
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
 
           var floorBidderRequest = clone(bidderRequest);
 
@@ -513,32 +695,117 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should not validate bid request when no video object is passed in', () => {
+        it('should not validate bid request when a invalid video object is passed in', () => {
           createVideoBidderRequestNoVideo();
-          sandbox.stub(Date, 'now', () =>
-            bidderRequest.auctionStart + 100
-          );
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest.bids[0]);
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          let result = spec.isBidRequestValid(floorBidderRequest.bids[0]);
+          bidRequestCopy.params.video = {};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          expect(result).to.equal(false);
+          bidRequestCopy.params.video = undefined;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = 123;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          bidRequestCopy.params.video = { size_id: '' };
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          delete bidRequestCopy.params.video;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+        });
+
+        it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoVideo();
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
+
+          const bidderRequestCopy = clone(bidderRequest);
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = {};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = undefined;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          bidderRequestCopy.bids[0].params.video = NaN;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+
+          delete bidderRequestCopy.bids[0].params.video;
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+        });
+
+        it('should not validate bid request when video is outstream', () => {
+          createVideoBidderRequestOutstream();
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
+
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now', () =>
-            bidderRequest.auctionStart + 100
-          );
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
 
-          var floorBidderRequest = clone(bidderRequest);
+          const bidRequestCopy = clone(bidderRequest);
 
-          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
-          let post = request.data;
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
 
-          expect(post.slots[0].width).to.equal(300);
-          expect(post.slots[0].height).to.equal(250);
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
+        });
+
+        it('should get size from bid.sizes too with legacy config mediaType', () => {
+          createLegacyVideoBidderRequestNoPlayer();
+          sandbox.stub(Date, 'now', () => {
+            return bidderRequest.auctionStart + 100
+          });
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+
+          expect(request.data.slots[0].width).to.equal(300);
+          expect(request.data.slots[0].height).to.equal(250);
+        });
+      });
+
+      describe('hasVideoMediaType', () => {
+        it('should return true if mediaType is true', () => {
+          createVideoBidderRequest();
+          const legacyVideoTypeBidRequest = spec.hasVideoMediaType(bidderRequest.bids[0]);
+          expect(legacyVideoTypeBidRequest).is.equal(true);
+        });
+
+        it('should return false if bidRequest.mediaType is not equal to video', () => {
+          expect(spec.hasVideoMediaType({
+            mediaType: 'banner'
+          })).is.equal(false);
+        });
+
+        it('should return false if bidRequest.mediaType is not defined', () => {
+          expect(spec.hasVideoMediaType({})).is.equal(false);
+        });
+
+        it('should return true if bidRequest.mediaTypes.video object exists', () => {
+          expect(spec.hasVideoMediaType({
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [300, 250]
+              }
+            }
+          })).is.equal(true);
         });
       });
     });
@@ -603,7 +870,7 @@ describe('the rubicon adapter', () => {
             ]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -655,7 +922,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -678,7 +945,7 @@ describe('the rubicon adapter', () => {
             'ads': []
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -702,7 +969,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -712,7 +979,7 @@ describe('the rubicon adapter', () => {
         it('should handle an error because of malformed json response', () => {
           let response = '{test{';
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -753,7 +1020,7 @@ describe('the rubicon adapter', () => {
             'account_id': 7780
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
