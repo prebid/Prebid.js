@@ -53,9 +53,7 @@ describe('Adform adapter', () => {
     it('should correctly form bid items', () => {
       let bidList = bids;
       let request = spec.buildRequests(bidList);
-      // console.log('request', request);
       let parsedUrl = parseUrl(request.url);
-      console.log(parsedUrl.items[3]);
       assert.deepEqual(parsedUrl.items, [
         {
           mid: '1',
