@@ -175,7 +175,7 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: validBidRequests => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     let conf = _initConf();
     let payload = _createOrtbTemplate(conf);
 
@@ -210,6 +210,20 @@ export const spec = {
         lon: _parseSlotParam('lon', conf.lon)
       }
     };
+
+    // Attaching GDPR Consent Params
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.user.ext = {
+        consent: bidderRequest.gdprConsent.consentString
+      };
+
+      payload.regs = {
+        ext: {
+          gdpr: (bidderRequest.gdprConsent.consentRequired ? 0 : 1)
+        }
+      };
+    }
+
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
