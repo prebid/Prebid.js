@@ -114,7 +114,7 @@ function outstreamRender(bid) {
       ad_tag_url: bid.vastUrl,
       width: bid.width,
       height: bid.height,
-      expand_in_view: true,
+      expand_in_view: false,
       collapse_on_complete: true
     });
   });
