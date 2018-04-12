@@ -1,15 +1,14 @@
 import * as utils from 'src/utils';
-
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admatic';
 const ENDPOINT_URL = '//ads4.admatic.com.tr/prebid/v3/bidrequest';
 
 export const spec = {
-	code: BIDDER_CODE,
- 	aliases: ['admatic'], // short code
- 	/**
- 	* Determines whether or not the given bid request is valid.
+  code: BIDDER_CODE,
+  aliases: ['admatic'], // short code
+  /**
+  * Determines whether or not the given bid request is valid.
   *
   * @param {BidRequest} bid The bid params to validate.
   * @return boolean True if this is a valid bid, and false otherwise.
