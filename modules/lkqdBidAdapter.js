@@ -173,7 +173,7 @@ function interpretResponse(serverResponse, bidRequest) {
             bidResponse.requestId = bidRequest.data.bidId;
             bidResponse.bidderCode = BIDDER_CODE;
             bidResponse.ad = '';
-            bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].innerHTML);
+            bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].textContent);
             bidResponse.width = bidRequest.data.bidWidth;
             bidResponse.height = bidRequest.data.bidHeight;
             bidResponse.ttl = BID_TTL_DEFAULT;
