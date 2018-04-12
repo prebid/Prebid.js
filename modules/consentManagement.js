@@ -7,6 +7,7 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
+import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_CMP = 'appnexus';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -77,7 +78,7 @@ export function requestBidsHook(config, fn) {
     return exitModule();
   }
 
-  if (!Object.keys(cmpCallMap).includes(userCMP)) {
+  if (!includes(Object.keys(cmpCallMap), userCMP)) {
     utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return nextFn.apply(context, args);
   }
