@@ -53,7 +53,9 @@ describe('Adform adapter', () => {
     it('should correctly form bid items', () => {
       let bidList = bids;
       let request = spec.buildRequests(bidList);
+      // console.log('request', request);
       let parsedUrl = parseUrl(request.url);
+      console.log(parsedUrl.items[3]);
       assert.deepEqual(parsedUrl.items, [
         {
           mid: '1',
@@ -62,8 +64,7 @@ describe('Adform adapter', () => {
         {
           mid: '2',
           someVar: 'someValue',
-          transactionId: '5f33781f-9552-4iuy',
-          priceType: 'gross'
+          transactionId: '5f33781f-9552-4iuy'
         },
         {
           mid: '3',
@@ -166,12 +167,20 @@ describe('Adform adapter', () => {
         assert.equal(result[i].mediaType, expected[i]);
       }
     });
+
+    it('should set default netRevenue as gross', () => {
+      bidRequest.netRevenue = 'gross';
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i].netRevenue, false);
+      }
+    });
   });
 
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', priceType: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
     bids = [
       {
         adUnitCode: placementCode[0],
@@ -285,7 +294,8 @@ describe('Adform adapter', () => {
       bidder: 'adform',
       bids: bids,
       method: 'GET',
-      url: 'url'
+      url: 'url',
+      netRevenue: 'net'
     };
   });
 });
