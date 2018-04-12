@@ -18,8 +18,8 @@ export const spec = {
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.params.pt === 'net') {
-        netRevenue = 'net';
+      if (bid.params.priceType === 'net') {
+        bid.params.pt = netRevenue = 'net';
       }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
