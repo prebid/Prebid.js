@@ -229,12 +229,12 @@ export const spec = {
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.user.ext = {
-        consent: bidderRequest.gdprConsent.consentRequired
+        consent: bidderRequest.gdprConsent.consentString
       };
 
       payload.regs = {
         ext: {
-          gdpr: bidderRequest.gdprConsent.consentString
+          gdpr: (bidderRequest.gdprConsent.consentRequired ? 1 : 0)
         }
       };
     }

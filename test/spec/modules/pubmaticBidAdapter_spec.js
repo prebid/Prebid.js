@@ -151,13 +151,13 @@ describe('PubMatic adapter', () => {
         let bidRequest = {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
-            consentRequired: 0
+            consentRequired: true
           }
         };
   		  let request = spec.buildRequests(bidRequests, bidRequest);
   		  let data = JSON.parse(request.data);
-        expect(data.user.ext.consent).to.equal(0);
-        expect(data.regs.ext.gdpr).to.equal('kjfdniwjnifwenrif3');
+        expect(data.user.ext.consent).to.equal('kjfdniwjnifwenrif3');
+        expect(data.regs.ext.gdpr).to.equal(1);
   		  expect(data.at).to.equal(1); // auction type
   		  expect(data.cur[0]).to.equal('USD'); // currency
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
