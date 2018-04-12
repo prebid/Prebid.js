@@ -63,15 +63,15 @@ export const spec = {
     return cfResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (syncOptions.iframeEnabled){
+    if (syncOptions.iframeEnabled) {
       return [{
-        type: "iframe",
-        url: "https://cdn.doublemax.net/js/capmapping.htm"
+        type: 'iframe',
+        url: 'https://cdn.doublemax.net/js/capmapping.htm'
       }]
-    }else if(syncOptions.pixelEnabled){
+    } else if (syncOptions.pixelEnabled) {
       return [{
-        type: "image",
-        url: "https://c.doublemax.net/cm"
+        type: 'image',
+        url: 'https://c.doublemax.net/cm'
       }]
     }
   }
