@@ -22,11 +22,11 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests:function(validBidRequests){
+  buildRequests: function (validBidRequests) {
     const payload = {
       request: []
     };
-    
+
     for (var i = 0; i < validBidRequests.length; i++) {
       var validBidRequest = validBidRequests[i];
       payload.auctionId = validBidRequest.auctionId;
@@ -35,7 +35,7 @@ export const spec = {
       payload.pid = validBidRequest.params.pid;
       payload.wid = validBidRequest.params.wid;
       payload.url = validBidRequest.params.url;
-      
+
       var request = {
         adUnitCode: validBidRequest.adUnitCode,
         bidId: validBidRequest.bidId,
@@ -43,12 +43,12 @@ export const spec = {
         priceType: validBidRequest.params.priceType,
         sizes: transformSizes(validBidRequest.sizes)
       }
-      
+
       payload.request.push(request);
     }
-    
+
     const payloadString = JSON.stringify(payload);
-    
+
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -57,7 +57,7 @@ export const spec = {
       bids: validBidRequests
     };
   },
-  
+
   /**
   * Unpack the response from the server into a list of bids.
   *
@@ -67,7 +67,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     const bidResponses = [];
-    
+
     if (serverBody) {
       if (serverBody.tags && serverBody.tags.length > 0) {
         serverBody.tags.forEach(serverBid => {
@@ -86,14 +86,14 @@ export const spec = {
                 referrer: serverBid.referrer,
                 ad: serverBid.ad
               };
-              
+
               bidResponses.push(bidResponse);
             }
           }
         });
       }
     }
-    
+
     return bidResponses;
   },
   /**
@@ -111,7 +111,7 @@ export const spec = {
         url: '//ads4.admatic.com.tr/prebid/static/usersync/v3/async_usersync.html'
       });
     }
-    
+
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'image',
@@ -126,7 +126,7 @@ export const spec = {
 function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
-  
+
   if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
@@ -140,7 +140,7 @@ function transformSizes(requestSizes) {
       sizes.push(sizeObj);
     }
   }
-  
+
   return sizes;
 }
 
