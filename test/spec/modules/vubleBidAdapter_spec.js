@@ -174,7 +174,8 @@ describe('VubleAdapter', () => {
         status: 'ok',
         cpm: 5.00,
         creativeId: '2468',
-        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4'
+        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
+        dealId: 'MDB-TEST-1357'
       }
     };
     // bid Request
@@ -200,6 +201,7 @@ describe('VubleAdapter', () => {
       height: '360',
       ttl: 60,
       creativeId: '2468',
+      dealId: 'MDB-TEST-1357',
       netRevenue: true,
       currency: 'USD',
       vastUrl: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
