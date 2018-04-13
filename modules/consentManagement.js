@@ -52,12 +52,11 @@ function lookupIabConsent(cmpSuccess, cmpError) {
     window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
   } else {
     // prebid may be inside an iframe and CMP may exist outside, so we'll use postMessage to interact with CMP
-    let flag = true;
-    if (flag) {
-      window.top.postMessage(getConsentDataReq, '*');
-      window.addEventListener('message', receiveMessage);
-      flag = false;
-    }
+    // if (flag = true) {
+    window.top.postMessage(getConsentDataReq, '*');
+    window.addEventListener('message', receiveMessage);
+    // flag = false;
+    // }
   }
 
   function receiveMessage(event) {
