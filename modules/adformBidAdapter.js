@@ -34,14 +34,14 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
+    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+
+    request.push('stid=' + validBidRequests[0].auctionId);
+
     if (bidderRequest && bidderRequest.gdprConsent) {
       request.push('gdpr=' + bidderRequest.gdprConsent.consentRequired);
       request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     }
-
-    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
-
-    request.push('stid=' + validBidRequests[0].auctionId);
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
