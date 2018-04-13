@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT } from 'modules/beachfrontBidAdapter';
+import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
 
 describe('BeachfrontAdapter', () => {
@@ -91,14 +91,15 @@ describe('BeachfrontAdapter', () => {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         const [ width, height ] = bidRequest.sizes;
+        const topLocation = utils.getTopWindowLocation();
         expect(data.isPrebid).to.equal(true);
         expect(data.appId).to.equal(bidRequest.params.appId);
         expect(data.domain).to.equal(document.location.hostname);
         expect(data.id).to.be.a('string');
-        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].video).to.deep.contain({ w: width, h: height, mimes: DEFAULT_MIMES });
         expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-        expect(data.site).to.deep.equal({ page: utils.getTopWindowLocation().host });
-        expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+        expect(data.site).to.deep.equal({ page: topLocation.href, domain: topLocation.hostname });
+        expect(data.device).to.deep.contain({ ua: navigator.userAgent, language: navigator.language, js: 1 });
         expect(data.cur).to.deep.equal(['USD']);
       });
 
@@ -110,7 +111,7 @@ describe('BeachfrontAdapter', () => {
         bidRequest.mediaTypes = { video: {} };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
 
       it('must parse bid size from a string', () => {
@@ -121,7 +122,7 @@ describe('BeachfrontAdapter', () => {
         bidRequest.mediaTypes = { video: {} };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.equal({ w: width, h: height });
+        expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
 
       it('must handle an empty bid size', () => {
@@ -130,7 +131,17 @@ describe('BeachfrontAdapter', () => {
         bidRequest.mediaTypes = { video: {} };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.equal({ w: undefined, h: undefined });
+        expect(data.imp[0].video).to.deep.contain({ w: undefined, h: undefined });
+      });
+
+      it('must override video targeting params', () => {
+        const bidRequest = bidRequests[0];
+        const mimes = ['video/webm'];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.params.video = { mimes };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.contain({ mimes });
       });
     });
 
