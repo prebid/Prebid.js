@@ -775,6 +775,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
