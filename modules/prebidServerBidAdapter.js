@@ -266,6 +266,20 @@ function _appendSiteAppDevice(request) {
   }
 }
 
+function transformHeightWidth(adUnit) {
+  let sizesObj = [];
+  let sizes = utils.parseSizesInput(adUnit.sizes);
+  sizes.forEach(size => {
+    let heightWidth = size.split('x');
+    let sizeObj = {
+      'w': parseInt(heightWidth[0]),
+      'h': parseInt(heightWidth[1])
+    };
+    sizesObj.push(sizeObj);
+  });
+  return sizesObj;
+}
+
 /*
  * Protocol spec for legacy endpoint
  * e.g., https://<prebid-server-url>/v1/auction
@@ -275,6 +289,7 @@ const LEGACY_PROTOCOL = {
   buildRequest(s2sBidRequest, adUnits) {
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
+      adUnit.sizes = transformHeightWidth(adUnit);
       const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
         adUnit.video = Object.assign({}, videoMediaType);

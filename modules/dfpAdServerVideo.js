@@ -70,7 +70,7 @@ export default function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url);
+    urlComponents = parse(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid);
@@ -126,7 +126,8 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
   const customParams = Object.assign({},
     adserverTargeting,
   );
-  components.search.cust_params = encodeURIComponent(formatQS(customParams));
+  const encodedCustomParams = encodeURIComponent(formatQS(customParams));
+  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
 
   return buildUrl(components);
 }
