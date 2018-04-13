@@ -432,7 +432,6 @@ const OPEN_RTB_PROTOCOL = {
         // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
         this.bidMap[key] = bid;
-
         // check for and store valid aliases to add to the request
         if (adaptermanager.aliasRegistry[bid.bidder]) {
           aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];
@@ -442,7 +441,8 @@ const OPEN_RTB_PROTOCOL = {
       let banner;
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        // const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        const sizeObjects = adUnit.sizes.map(size => ({w: size[0], h: size[1]})); // @TODO: 1.7 changes how sizes are handled, need to make changes in pubfig, THIS IS A HACK
         banner = {format: sizeObjects};
       }
 
@@ -495,7 +495,6 @@ const OPEN_RTB_PROTOCOL = {
     if (digiTrust) {
       request.user = { ext: { digitrust: digiTrust } };
     }
-
     if (!utils.isEmpty(aliases)) {
       request.ext = { prebid: { aliases } };
     }
