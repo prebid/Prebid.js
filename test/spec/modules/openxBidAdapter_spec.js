@@ -1,6 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/openxBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import {expect} from 'chai';
+import {spec} from 'modules/openxBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {BANNER, VIDEO} from 'src/mediaTypes';
+import {userSync} from 'src/userSync';
 
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';
@@ -15,76 +17,100 @@ describe('OpenxAdapter', () => {
   });
 
   describe('isBidRequestValid', () => {
-    const bid = {
-      'bidder': 'openx',
-      'params': {
-        'unit': '12345678',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-      'mediaType': 'banner',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-    };
+    describe('when request is for a banner ad', () => {
+      const bannerBid = {
+        bidder: 'openx',
+        params: {
+          unit: '12345678',
+          delDomain: 'test-del-domain'
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {banner: {}},
+        sizes: [[300, 250], [300, 600]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475'
+      };
 
-    const videoBid = {
-      'bidder': 'openx',
-      'params': {
-        'unit': '12345678',
-        'delDomain': 'test-del-domain',
-        'video': {
-          'be': 'true',
-          'url': 'abc.com',
-          'vtest': '1'
-        }
-      },
-      'adUnitCode': 'adunit-code',
-      'mediaType': 'video',
-      'sizes': [640, 480],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-    };
+      it('should return true when required params found', () => {
+        expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+      });
 
-    it('should return true when required params found for a banner ad', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      it('should return false when there is no delivery domain', () => {
+        let bid = Object.assign({}, bannerBid);
+        bid.params = {'unit': '12345678'};
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when there is no ad unit id ', () => {
+        let bid = Object.assign({}, bannerBid);
+        bid.params = {delDomain: 'test-del-domain'};
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
     });
 
-    it('should return false when required params are not passed for a banner ad', () => {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {'unit': '12345678'};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+    describe('when request is for a video ad', function () {
+      const videoBidWithMediaTypes = {
+        bidder: 'openx',
+        params: {
+          unit: '12345678',
+          delDomain: 'test-del-domain',
+          video: {
+            be: 'true',
+            url: 'abc.com'
+          }
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {video: {}},
+        sizes: [640, 480],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+      };
 
-    it('should return true when required params found for a video ad', () => {
-      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
-    });
+      const videoBidWithMediaType = {
+        'bidder': 'openx',
+        'params': {
+          'unit': '12345678',
+          'delDomain': 'test-del-domain',
+          'video': {
+            'be': 'true',
+            'url': 'abc.com'
+          }
+        },
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': 'video',
+        'sizes': [640, 480],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+      };
+      it('should return true when required params found', () => {
+        expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(true);
+      });
 
-    it('should return false when required params are not passed for a video ad', () => {
-      let videoBid = Object.assign({}, videoBid);
-      delete videoBid.params;
-      videoBid.params = {};
-      expect(spec.isBidRequestValid(videoBid)).to.equal(false);
+      it('should return false when required params are not passed', () => {
+        let videoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+        videoBidWithMediaTypes.params = {};
+        expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+      });
+
+      it('should return true when required params found', () => {
+        expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(true);
+      });
+
+      it('should return false when required params are not passed', () => {
+        let videoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
+        delete videoBidWithMediaType.params;
+        videoBidWithMediaType.params = {};
+        expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
+      });
     });
   });
 
   describe('buildRequests for banner ads', () => {
-    const bidRequestsWithNoMediaType = [{
-      'bidder': 'openx',
-      'params': {
-        'unit': '12345678',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-    }];
     const bidRequestsWithMediaType = [{
       'bidder': 'openx',
       'params': {
@@ -96,7 +122,7 @@ describe('OpenxAdapter', () => {
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      'auctionId': '1d1a030790a475'
     }];
     const bidRequestsWithMediaTypes = [{
       'bidder': 'openx',
@@ -105,39 +131,55 @@ describe('OpenxAdapter', () => {
         'delDomain': 'test-del-domain'
       },
       'adUnitCode': 'adunit-code',
-      'mediaTypes': {banner: {}},
-      'sizes': [[300, 250], [300, 600]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      'auctionId': '1d1a030790a475'
     }];
-
-    it('should send bid request to openx url via GET, even without mediaType specified', () => {
-      const request = spec.buildRequests(bidRequestsWithNoMediaType);
-      expect(request[0].url).to.equal('//' + bidRequestsWithNoMediaType[0].params.delDomain + URLBASE);
-      expect(request[0].method).to.equal('GET');
-    });
 
     it('should send bid request to openx url via GET, with mediaType specified as banner', () => {
       const request = spec.buildRequests(bidRequestsWithMediaType);
-      expect(request[0].url).to.equal('//' + bidRequestsWithNoMediaType[0].params.delDomain + URLBASE);
+      expect(request[0].url).to.equal('//' + bidRequestsWithMediaType[0].params.delDomain + URLBASE);
       expect(request[0].method).to.equal('GET');
     });
 
     it('should send bid request to openx url via GET, with mediaTypes specified with banner type', () => {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
-      expect(request[0].url).to.equal('//' + bidRequestsWithNoMediaType[0].params.delDomain + URLBASE);
+      expect(request[0].url).to.equal('//' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASE);
       expect(request[0].method).to.equal('GET');
     });
 
-    it('should have the correct parameters', () => {
-      const request = spec.buildRequests(bidRequestsWithNoMediaType);
-      const dataParams = request[0].data;
+    describe('when there is a legacy request with no media type', function () {
+      const deprecatedBidRequestsFormatWithNoMediaType = [{
+        'bidder': 'openx',
+        'params': {
+          'unit': '12345678',
+          'delDomain': 'test-del-domain'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
 
-      expect(dataParams.auid).to.exist;
-      expect(dataParams.auid).to.equal('12345678');
-      expect(dataParams.aus).to.exist;
-      expect(dataParams.aus).to.equal('300x250,300x600');
+      let requestData;
+
+      beforeEach(function () {
+        requestData = spec.buildRequests(deprecatedBidRequestsFormatWithNoMediaType)[0].data;
+      });
+
+      it('should have an ad unit id', () => {
+        expect(requestData.auid).to.equal('12345678');
+      });
+
+      it('should have ad sizes', function () {
+        expect(requestData.aus).to.equal('300x250,300x600');
+      });
     });
 
     it('should send out custom params on bids that have customParams specified', () => {
@@ -201,16 +243,20 @@ describe('OpenxAdapter', () => {
   describe('buildRequests for video', () => {
     const bidRequestsWithMediaTypes = [{
       'bidder': 'openx',
-      'mediaTypes': {video: {}},
+      'mediaTypes': {
+        video: {
+          playerSize: [640, 480]
+        }
+      },
       'params': {
         'unit': '12345678',
         'delDomain': 'test-del-domain',
         'video': {
-          'url': 'abc.com',
+          'url': 'abc.com'
         }
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [640, 480],
+
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -224,7 +270,7 @@ describe('OpenxAdapter', () => {
         'unit': '12345678',
         'delDomain': 'test-del-domain',
         'video': {
-          'url': 'abc.com',
+          'url': 'abc.com'
         }
       },
       'adUnitCode': 'adunit-code',
@@ -237,13 +283,13 @@ describe('OpenxAdapter', () => {
 
     it('should send bid request to openx url via GET, with mediaType as video', () => {
       const request = spec.buildRequests(bidRequestsWithMediaType);
-      expect(request[0].url).to.equal('http://' + bidRequestsWithMediaType[0].params.delDomain + URLBASEVIDEO);
+      expect(request[0].url).to.equal('//' + bidRequestsWithMediaType[0].params.delDomain + URLBASEVIDEO);
       expect(request[0].method).to.equal('GET');
     });
 
     it('should send bid request to openx url via GET, with mediaTypes having video parameter', () => {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
-      expect(request[0].url).to.equal('http://' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASEVIDEO);
+      expect(request[0].url).to.equal('//' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASEVIDEO);
       expect(request[0].method).to.equal('GET');
     });
 
@@ -251,14 +297,22 @@ describe('OpenxAdapter', () => {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
       const dataParams = request[0].data;
 
-      expect(dataParams.auid).to.exist;
       expect(dataParams.auid).to.equal('12345678');
-      expect(dataParams.url).to.exist;
       expect(dataParams.url).to.equal('abc.com');
+      expect(dataParams.vht).to.equal(480);
+      expect(dataParams.vwd).to.equal(640);
     });
   });
 
   describe('interpretResponse for banner ads', () => {
+    beforeEach(() => {
+      sinon.spy(userSync, 'registerSync');
+    });
+
+    afterEach(function () {
+      userSync.registerSync.restore();
+    });
+
     const bids = [{
       'bidder': 'openx',
       'params': {
@@ -270,49 +324,51 @@ describe('OpenxAdapter', () => {
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      'auctionId': '1d1a030790a475'
     }];
     const bidRequest = {
       method: 'GET',
-      url: 'url',
+      url: '//openx-d.openx.net/v/1.0/arj',
       data: {},
       payload: {'bids': bids, 'startTime': new Date()}
     };
+
     const bidResponse = {
       'ads':
-      {
-        'version': 1,
-        'count': 1,
-        'pixels': 'http://testpixels.net',
-        'ad': [
-          {
-            'adunitid': 12345678,
-            'adid': 5678,
-            'type': 'html',
-            'html': 'test_html',
-            'framed': 1,
-            'is_fallback': 0,
-            'ts': 'ts',
-            'cpipc': 1000,
-            'pub_rev': '1000',
-            'adv_id': 'adv_id',
-            'brand_id': '',
-            'creative': [
-              {
-                'width': '300',
-                'height': '250',
-                'target': '_blank',
-                'mime': 'text/html',
-                'media': 'test_media',
-                'tracking': {
-                  'impression': 'test_impression',
-                  'inview': 'test_inview',
-                  'click': 'test_click'
+        {
+          'version': 1,
+          'count': 1,
+          'pixels': 'http://testpixels.net',
+          'ad': [
+            {
+              'adunitid': 12345678,
+              'adid': 5678,
+              'type': 'html',
+              'html': 'test_html',
+              'framed': 1,
+              'is_fallback': 0,
+              'ts': 'ts',
+              'cpipc': 1000,
+              'pub_rev': '1000',
+              'adv_id': 'adv_id',
+              'brand_id': '',
+              'creative': [
+                {
+                  'width': '300',
+                  'height': '250',
+                  'target': '_blank',
+                  'mime': 'text/html',
+                  'media': 'test_media',
+                  'tracking': {
+                    'impression': 'http://openx-d.openx.net/v/1.0/ri?ts=ts',
+                    'inview': 'test_inview',
+                    'click': 'test_click'
+                  }
                 }
-              }
-            ]
-          }]
-      }
+              ]
+            }]
+        }
+
     };
     it('should return correct bid response', () => {
       const expectedResponse = [
@@ -337,28 +393,46 @@ describe('OpenxAdapter', () => {
     it('handles nobid responses', () => {
       const bidResponse = {
         'ads':
-        {
-          'version': 1,
-          'count': 1,
-          'pixels': 'http://testpixels.net',
-          'ad': []
-        }
+          {
+            'version': 1,
+            'count': 1,
+            'pixels': 'http://testpixels.net',
+            'ad': []
+          }
       };
 
       const result = spec.interpretResponse({body: bidResponse}, bidRequest);
       expect(result.length).to.equal(0);
     });
+
+    it('should register a user sync', () => {
+      spec.interpretResponse({body: bidResponse}, bidRequest);
+      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
+    });
+
+    it('should register a beacon', () => {
+      spec.interpretResponse({body: bidResponse}, bidRequest);
+      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/\/\/openx-d\.openx\.net.*\/bo\?.*ts=ts/));
+    });
   });
 
   describe('interpretResponse for video ads', () => {
-    const bids = [{
+    beforeEach(() => {
+      sinon.spy(userSync, 'registerSync');
+    });
+
+    afterEach(function () {
+      userSync.registerSync.restore();
+    });
+
+    const bidsWithMediaTypes = [{
       'bidder': 'openx',
-      'mediaType': 'video',
+      'mediaTypes': {video: {}},
       'params': {
         'unit': '12345678',
         'delDomain': 'test-del-domain',
         'video': {
-          'url': 'abc.com',
+          'url': 'abc.com'
         }
       },
       'adUnitCode': 'adunit-code',
@@ -368,22 +442,45 @@ describe('OpenxAdapter', () => {
       'auctionId': '1d1a030790a475',
       'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
     }];
-    const bidRequest = {
+    const bidsWithMediaType = [{
+      'bidder': 'openx',
+      'mediaType': 'video',
+      'params': {
+        'unit': '12345678',
+        'delDomain': 'test-del-domain',
+        'video': {
+          'url': 'abc.com'
+        }
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [640, 480],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+    }];
+    const bidRequestsWithMediaTypes = {
       method: 'GET',
-      url: 'url',
+      url: '//openx-d.openx.net/v/1.0/avjp',
       data: {},
-      payload: {'bid': bids[0], 'startTime': new Date()}
+      payload: {'bid': bidsWithMediaTypes[0], 'startTime': new Date()}
+    };
+    const bidRequestsWithMediaType = {
+      method: 'GET',
+      url: '//openx-d.openx.net/v/1.0/avjp',
+      data: {},
+      payload: {'bid': bidsWithMediaType[0], 'startTime': new Date()}
     };
     const bidResponse = {
       'pub_rev': '1',
       'width': '640',
       'height': '480',
       'adid': '5678',
-      'vastUrl': 'http://testvast.com',
+      'vastUrl': 'http://testvast.com/vastpath?colo=http://test-colo.com&ph=test-ph&ts=test-ts',
       'pixels': 'http://testpixels.net'
     };
 
-    it('should return correct bid response', () => {
+    it('should return correct bid response with MediaTypes', () => {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
@@ -400,14 +497,53 @@ describe('OpenxAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: bidResponse}, bidRequest);
+      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
       expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
     });
 
-    it('handles nobid responses', () => {
+    it('should return correct bid response with MediaType', () => {
+      const expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'bidderCode': 'openx',
+          'cpm': 1,
+          'width': '640',
+          'height': '480',
+          'mediaType': 'video',
+          'creativeId': '5678',
+          'vastUrl': 'http://testvast.com',
+          'ttl': 300,
+          'netRevenue': true,
+          'currency': 'USD'
+        }
+      ];
+
+      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
+      expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
+    });
+
+    it('should handle nobid responses for bidRequests with MediaTypes', () => {
       const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
-      const result = spec.interpretResponse({body: bidResponse}, bidRequest);
+      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
       expect(result.length).to.equal(0);
+    });
+
+    it('should handle nobid responses for bidRequests with MediaType', () => {
+      const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
+      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
+      expect(result.length).to.equal(0);
+    });
+
+    it('should register a user sync', () => {
+      spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
+      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
+    });
+
+    it('should register a beacon', () => {
+      spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
+      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^\/\/test-colo\.com/))
+      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ph=test-ph/));
+      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ts=test-ts/));
     });
   });
 });
