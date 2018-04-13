@@ -20,6 +20,7 @@ describe('eplanning analytics adapter', () => {
   afterEach(() => {
     xhr.restore();
     events.getEvents.restore();
+    eplAnalyticsAdapter.disableAnalytics();
   });
 
   describe('track', () => {
