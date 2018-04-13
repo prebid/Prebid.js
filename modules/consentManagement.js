@@ -10,7 +10,7 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_CMP = 'iab';
-const DEFAULT_CONSENT_TIMEOUT = 10000;
+const DEFAULT_CONSENT_TIMEOUT = 500;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
 export let userCMP;
@@ -40,10 +40,6 @@ const cmpCallMap = {
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
 function lookupIabConsent(cmpSuccess, cmpError) {
-  // if (!window.__cmp) {
-  //   return cmpError('AppNexus CMP not detected.');
-  // }
-
   let callId = 0;
   let getConsentDataReq = {
     __cmp: {
@@ -52,33 +48,23 @@ function lookupIabConsent(cmpSuccess, cmpError) {
     }
   };
 
-  let flag = true;
-  if (flag) {
-    window.top.postMessage(getConsentDataReq, '*');
-    flag = false;
+  if (window.__cmp) {
+    window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
+  } else {
+    // prebid may be inside an iframe and CMP may exist outside, so we'll use postMessage to interact with CMP
+    let flag = true;
+    if (flag) {
+      window.top.postMessage(getConsentDataReq, '*');
+      window.addEventListener('message', receiveMessage);
+      flag = false;
+    }
   }
-  window.top.addEventListener('message', receiveMessage, false);
 
   function receiveMessage(event) {
-    // if (event.origin === window.top) {
     if (event && event.data && event.data.__cmp && event.data.__cmp.result) {
-      consentData = event.data.__cmp.result;
-      console.log(event.data.__cmp.result);
-      // window.top.removeEventListener('message', receiveMessage, false);
+      cmpSuccess(event.data.__cmp.result);
     }
-    // }
   }
-
-  // window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-  //   if (consentString == null) {
-  //     window.__cmp('addEventListener', 'onSubmit', function() {
-  //       // redo lookup to find new string based on user's choices
-  //       window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
-  //     });
-  //   } else {
-  //     cmpSuccess(consentString);
-  //   }
-  // });
 }
 
 /**
