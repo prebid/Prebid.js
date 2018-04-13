@@ -1,6 +1,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { getTopWindowLocation, parseSizesInput } from 'src/utils';
 import * as utils from '../src/utils';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -8,7 +9,7 @@ const PAGEVIEW_ID = utils.generateUUID();
 
 export const spec = {
   code: BIDDER_CODE,
-
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -25,7 +26,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests) => {
     const bids = validBidRequests.map(bid => {
-      let slotIdentifier = _validateSlot(bid)
+      let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier
         return {
@@ -58,16 +59,18 @@ export const spec = {
       method: 'GET',
       url: STR_ENDPOINT,
       withCredentials: true,
-      data: payload
+      data: payload,
+      bidderRequests: validBidRequests
     };
   },
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
+   * @param {*} bidderRequests - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse) => {
+  interpretResponse: (serverResponse, { bidderRequests }) => {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
 
@@ -76,25 +79,41 @@ export const spec = {
     }
 
     Object.keys(bidResponse.slots).forEach(slot => {
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const bidRequest = bidderRequests.find(bidReqest => bidReqest.bidId === bidId);
+      const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
+      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
-
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
+        const [
+          width = 1,
+          height = 1
+        ] = bid.sbi_size.split('x');
         const bids = {
-          requestId: slot.split('|').slice(-1)[0],
+          requestId: bidId,
           cpm: Number(bid.sbi_mouse),
-          width: Number(bid.sbi_size.split('x')[0]) || 1,
-          height: Number(bid.sbi_size.split('x')[1]) || 1,
-          ad: _creative(bidResponse.sbi_dc, bid.sbi_aid),
+          width: Number(width),
+          height: Number(height),
+          ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
           creativeId: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD',
+          currency: 'USD'
         };
 
         if (bid.sbi_dozer) {
           bids.dealId = bid.sbi_dozer;
         }
 
+        const creativeType = bid.sbi_ct;
+        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+          bids.mediaType = 'video';
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          delete bids.ad;
+          delete bids.width;
+          delete bids.height;
+        }
         bidsReturned.push(bids);
       }
     });
@@ -138,9 +157,20 @@ function _validateFloor (bid) {
   return '';
 }
 
-function _creative (sbi_dc, sbi_aid) {
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
+const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
+  if (mediaType === 'video') {
+    return _videoCreative(sbi_dc, sbi_aid)
+  }
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
+}
+
+function _videoCreative(sbi_dc, sbi_aid) {
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+}
+
+function _getBidIdFromTrinityKey (key) {
+  return key.split('|').slice(-1)[0]
 }
 
 registerBidder(spec);
