@@ -40,23 +40,45 @@ const cmpCallMap = {
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
 function lookupIabConsent(cmpSuccess, cmpError) {
-  if (!window.__cmp) {
-    return cmpError('AppNexus CMP not detected.');
+  // if (!window.__cmp) {
+  //   return cmpError('AppNexus CMP not detected.');
+  // }
+
+  let callId = 0;
+  let getConsentDataReq = {
+    __cmp: {
+      callId: 'iframe:' + (++callId),
+      command: 'getConsentData'
+    }
+  };
+
+  let flag = true;
+  if (flag) {
+    window.top.postMessage(getConsentDataReq, '*');
+    flag = false;
+  }
+  window.top.addEventListener('message', receiveMessage, false);
+
+  function receiveMessage(event) {
+    // if (event.origin === window.top) {
+    if (event && event.data && event.data.__cmp && event.data.__cmp.result) {
+      consentData = event.data.__cmp.result;
+      console.log(event.data.__cmp.result);
+      // window.top.removeEventListener('message', receiveMessage, false);
+    }
+    // }
   }
 
-  // first lookup - to determine if new or existing user
-  // if new user, then wait for user to make a choice and then run postLookup method
-  // if existing user, then skip to postLookup method
-  window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-    if (consentString == null) {
-      window.__cmp('addEventListener', 'onSubmit', function() {
-        // redo lookup to find new string based on user's choices
-        window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
-      });
-    } else {
-      cmpSuccess(consentString);
-    }
-  });
+  // window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
+  //   if (consentString == null) {
+  //     window.__cmp('addEventListener', 'onSubmit', function() {
+  //       // redo lookup to find new string based on user's choices
+  //       window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
+  //     });
+  //   } else {
+  //     cmpSuccess(consentString);
+  //   }
+  // });
 }
 
 /**
