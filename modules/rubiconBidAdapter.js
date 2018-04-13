@@ -89,17 +89,31 @@ export const spec = {
       return false;
     }
 
+    // Log warning if context is 'outstream', is not currently supported
+    if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
+      utils.logWarn('Warning: outstream video for Rubicon Client Adapter is not supported yet');
+    }
+
+    // Log warning if mediaTypes contains both 'banner' and 'video'
+    if (spec.hasVideoMediaType(bid) && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+      utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
+    }
+
+    // Bid is invalid if legacy video is set but params video is missing size_id
+    if (bid.mediaType === 'video' && typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+      return false;
+    }
+
+    // Bid is invalid if mediaTypes video is invalid and a mediaTypes banner property is not defined
+    if (bid.mediaTypes && !spec.hasVideoMediaType(bid) && typeof bid.mediaTypes.banner === 'undefined') {
+      return false;
+    }
+
     let parsedSizes = parseSizes(bid);
     if (parsedSizes.length < 1) {
       return false;
     }
 
-    if (spec.hasVideoMediaType(bid)) {
-      // support instream only
-      if ((utils.deepAccess(bid, `mediaTypes.${VIDEO}`) && utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) !== 'instream') || typeof params.video !== 'object' || !params.video.size_id) {
-        return false;
-      }
-    }
     return true;
   },
   /**
@@ -246,7 +260,8 @@ export const spec = {
    * @returns {boolean}
    */
   hasVideoMediaType: function(bidRequest) {
-    return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+    return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
+      (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
   },
   /**
    * @param {*} responseObj
@@ -373,7 +388,7 @@ function parseSizes(bid) {
   let params = bid.params;
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (typeof params.video === 'object' && params.video.playerWidth && params.video.playerHeight) {
+    if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
@@ -384,6 +399,7 @@ function parseSizes(bid) {
     return size;
   }
 
+  // deprecated: temp legacy support
   let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
 
   return masSizeOrdering(sizes);

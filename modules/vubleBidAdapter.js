@@ -100,6 +100,7 @@ export const spec = {
       height: bid.data.height,
       ttl: TTL,
       creativeId: responseBody.creativeId,
+      dealId: responseBody.dealId,
       netRevenue: true,
       currency: CURRENCIES[bid.data.env],
       vastUrl: responseBody.url,

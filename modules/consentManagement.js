@@ -7,8 +7,9 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
+import includes from 'core-js/library/fn/array/includes';
 
-const DEFAULT_CMP = 'appnexus';
+const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
@@ -28,7 +29,7 @@ let haveExited;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
-  'appnexus': lookupAppNexusConsent
+  'iab': lookupIabConsent
 };
 
 /**
@@ -38,7 +39,7 @@ const cmpCallMap = {
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentString (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
-function lookupAppNexusConsent(cmpSuccess, cmpError) {
+function lookupIabConsent(cmpSuccess, cmpError) {
   if (!window.__cmp) {
     return cmpError('AppNexus CMP not detected.');
   }
@@ -77,7 +78,7 @@ export function requestBidsHook(config, fn) {
     return exitModule();
   }
 
-  if (!Object.keys(cmpCallMap).includes(userCMP)) {
+  if (!includes(Object.keys(cmpCallMap), userCMP)) {
     utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return nextFn.apply(context, args);
   }
@@ -188,8 +189,8 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConfig(config) {
-  if (typeof config.cmp === 'string') {
-    userCMP = config.cmp;
+  if (typeof config.cmpApi === 'string') {
+    userCMP = config.cmpApi;
   } else {
     userCMP = DEFAULT_CMP;
     utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
