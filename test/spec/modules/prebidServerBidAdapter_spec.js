@@ -559,7 +559,6 @@ describe('S2S Adapter', () => {
 
       const myRequest = utils.deepClone(REQUEST);
 
-      debugger;//eslint-disable-line
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
 
