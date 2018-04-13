@@ -1,6 +1,7 @@
-
-import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
+import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import includes from 'core-js/library/fn/array/includes';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -10,10 +11,15 @@ const NATIVE_DEFAULTS = {
   ICON_MIN: 50,
 };
 
+const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
+const VIDEO_TARGETING = ['mimes', 'skippable', 'playback_method', 'protocols', 'api'];
+const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
+const DEFAULT_APIS = [1, 2];
+
 export const spec = {
 
   code: 'platformio',
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.pubId && bid.params.siteId)
@@ -69,7 +75,14 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         nurl = nurl.replace(/\$(%7B|\{)AUCTION_BID_ID(%7D|\})/gi, bidResponse.bidid);
         bid['native']['impressionTrackers'] = [nurl];
         bid.mediaType = 'native';
-      } else {
+      } else if (idToImpMap[id]['video']) {
+        bid.vastUrl = idToBidMap[id].adm;
+        bid.vastUrl = bid.vastUrl.replace(/\$(%7B|\{)AUCTION_PRICE(%7D|\})/gi, idToBidMap[id].price);
+        bid.crid = idToBidMap[id].crid;
+        bid.width = idToImpMap[id].video.w;
+        bid.height = idToImpMap[id].video.h;
+        bid.mediaType = 'video';
+      } else if (idToImpMap[id]['banner']) {
         bid.ad = idToBidMap[id].adm;
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_IMP_ID(%7D|\})/gi, idToBidMap[id].impid);
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_AD_ID(%7D|\})/gi, idToBidMap[id].adid);
@@ -78,6 +91,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_BID_ID(%7D|\})/gi, bidResponse.bidid);
         bid.width = idToImpMap[id].banner.w;
         bid.height = idToImpMap[id].banner.h;
+        bid.mediaType = 'banner';
       }
       bids.push(bid);
     }
@@ -87,26 +101,53 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 function impression(slot) {
   return {
     id: slot.bidId,
-    banner: banner(slot),
+    'banner': banner(slot),
     'native': nativeImpression(slot),
+    'video': videoImpression(slot),
     bidfloor: slot.params.bidFloor || '0.000001',
     tagid: slot.params.placementId.toString(),
   };
 }
-function banner(slot) {
-  if (!slot.nativeParams) {
-    const size = slot.params.size.toUpperCase().split('X');
-    const width = parseInt(size[0]);
-    const height = parseInt(size[1]);
-    return {
-      w: width,
-      h: height,
-    };
+
+function getSizes(slot) {
+  const size = slot.params.size.toUpperCase().split('X');
+  return {
+    width: parseInt(size[0]),
+    height: parseInt(size[1]),
   };
 }
 
+function banner(slot) {
+  if (slot.mediaType === 'banner' || utils.deepAccess(slot, 'mediaTypes.banner')) {
+    const sizes = getSizes(slot);
+    return {
+      w: sizes.width,
+      h: sizes.height,
+    };
+  }
+  return null;
+}
+
+function videoImpression(slot) {
+  if (slot.mediaType === 'video' || utils.deepAccess(slot, 'mediaTypes.video')) {
+    const sizes = getSizes(slot);
+    const video = {
+      w: sizes.width,
+      h: sizes.height,
+      mimes: DEFAULT_MIMES,
+      protocols: DEFAULT_PROTOCOLS,
+      api: DEFAULT_APIS,
+    };
+    if (slot.params.video) {
+      Object.keys(slot.params.video).filter(param => includes(VIDEO_TARGETING, param)).forEach(param => video[param] = slot.params.video[param]);
+    }
+    return video;
+  }
+  return null;
+}
+
 function nativeImpression(slot) {
-  if (slot.nativeParams) {
+  if (slot.mediaType === 'native' || utils.deepAccess(slot, 'mediaTypes.native')) {
     const assets = [];
     addAsset(assets, titleAsset(1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
     addAsset(assets, dataAsset(2, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
@@ -169,11 +210,11 @@ function site(bidderRequest) {
   return {
     publisher: {
       id: pubId.toString(),
-      domain: getTopWindowLocation().hostname,
+      domain: utils.getTopWindowLocation().hostname,
     },
     id: siteId.toString(),
-    ref: getTopWindowReferrer(),
-    page: getTopWindowLocation().href,
+    ref: utils.getTopWindowReferrer(),
+    page: utils.getTopWindowLocation().href,
   }
 }
 
