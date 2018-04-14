@@ -1,4 +1,4 @@
-import {logError, getTopWindowLocation, replaceAuctionPrice} from 'src/utils';
+import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { NATIVE } from 'src/mediaTypes';
@@ -167,20 +167,12 @@ function site(bidderRequest) {
         domain: config.getConfig('publisherDomain'),
       },
       id: siteId ? siteId.toString() : pubId.toString(),
-      ref: referrer(),
+      ref: getTopWindowReferrer(),
       page: config.getConfig('pageUrl') || getTopWindowLocation().href,
       domain: getTopWindowLocation().hostname
     }
   }
   return undefined;
-}
-
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 function app(bidderRequest) {
