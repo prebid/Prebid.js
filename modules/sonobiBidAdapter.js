@@ -1,6 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput } from 'src/utils';
-import * as utils from '../src/utils';
+import * as utils from 'src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
@@ -47,7 +46,7 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().host,
+      'ref': utils.getTopWindowLocation().host,
       's': utils.generateUUID(),
       'pv': PAGEVIEW_ID,
     };
@@ -139,9 +138,9 @@ export const spec = {
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
-    return parseSizesInput(bid.params.sizes).join(',');
+    return utils.parseSizesInput(bid.params.sizes).join(',');
   }
-  return parseSizesInput(bid.sizes).join(',');
+  return utils.parseSizesInput(bid.sizes).join(',');
 }
 
 function _validateSlot (bid) {
@@ -162,12 +161,12 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   if (mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + utils.getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
 
 function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${utils.getTopWindowLocation().host}`
 }
 
 function _getBidIdFromTrinityKey (key) {
