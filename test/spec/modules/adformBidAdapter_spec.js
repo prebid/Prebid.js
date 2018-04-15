@@ -91,7 +91,7 @@ describe('Adform adapter', () => {
 
     it('should send GDPR Consent data to adform', () => {
       var resultBids = JSON.parse(JSON.stringify(bids[0]));
-      let request = spec.buildRequests([bids[0]], { gdprConsent: { consentRequired: 1, consentString: 'concentDataString'}});
+      let request = spec.buildRequests([bids[0]], {gdprConsent: {consentRequired: 1, consentString: 'concentDataString'}});
       let parsedUrl = parseUrl(request.url).query;
 
       assert.equal(parsedUrl.gdpr, 1);
