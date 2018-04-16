@@ -238,11 +238,6 @@ function send(eventType, data, sendDataType) {
 
   AWS.config.region = 'us-east-1';
   AWS.config.credentials.get(function(err) {
-  // attach event listener
-    if (err) {
-      utils.logError(err);
-      return;
-    }
     // create kinesis service object
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
@@ -255,10 +250,6 @@ function send(eventType, data, sendDataType) {
     kinesis.putRecords({
       Records: dataList,
       StreamName: 'sample-stream'
-    }, function(err, newdata) {
-      if (err) {
-        console.error(err);
-      }
     });
     if (sendDataType === 'eventStack') {
       flushEventStack();
