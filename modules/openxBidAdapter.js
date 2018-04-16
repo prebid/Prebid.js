@@ -8,17 +8,12 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.0.1';
+const BIDDER_VERSION = '2.0.2';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
-    if (isVideoRequest(bidRequest)) {
-      if (!utils.deepAccess(bidRequest, 'params.video.url')) {
-        return false;
-      }
-    }
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
   },
   buildRequests: function (bidRequests) {
@@ -214,10 +209,10 @@ function registerUserSync(mediaType, responseObj) {
   }
 }
 
-function buildOXBannerRequest(bids) {
+function buildCommonQueryParamsFromBids(bids) {
   const isInIframe = utils.inIframe();
 
-  let queryParams = {
+  return {
     ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
     jr: utils.getTopWindowReferrer(),
     ch: document.charSet || document.characterSet,
@@ -226,12 +221,17 @@ function buildOXBannerRequest(bids) {
     tz: new Date().getTimezoneOffset(),
     tws: getViewportDimensions(isInIframe),
     be: 1,
-    bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
-    nocache: new Date().getTime(),
-    auid: utils._map(bids, bid => bid.params.unit).join(','),
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
-    aus: utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|')
+    nocache: new Date().getTime(),
   };
+}
+
+function buildOXBannerRequest(bids) {
+  let queryParams = buildCommonQueryParamsFromBids(bids);
+
+  queryParams.auid = utils._map(bids, bid => bid.params.unit).join(',');
+  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
+  queryParams.bc = bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
 
   let customParamsForAllBids = [];
   let hasCustomParam = false;
@@ -284,10 +284,10 @@ function buildOXVideoRequest(bid) {
 }
 
 function generateVideoParameters(bid) {
-  let oxVideo = bid.params.video;
+  let queryParams = buildCommonQueryParamsFromBids([bid]);
+  let oxVideoConfig = utils.deepAccess(bid, 'params.video') || {};
   let context = utils.deepAccess(bid, 'mediaTypes.video.context');
   let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let oxVideoParams = {auid: bid.params.unit};
   let width;
   let height;
 
@@ -303,26 +303,31 @@ function generateVideoParameters(bid) {
     height = parseInt(playerSize[1], 10);
   }
 
-  Object.keys(oxVideo).forEach(function (key) {
+  Object.keys(oxVideoConfig).forEach(function (key) {
     if (key === 'openrtb') {
-      oxVideoParams[key] = JSON.stringify(oxVideo[key]);
-    } else {
-      oxVideoParams[key] = oxVideo[key];
+      oxVideoConfig[key].w = width || oxVideoConfig[key].w;
+      oxVideoConfig[key].v = height || oxVideoConfig[key].v;
+      queryParams[key] = JSON.stringify(oxVideoConfig[key]);
+    } else if (!(key in queryParams) && key !== 'url') {
+      // only allow video-related attributes
+      queryParams[key] = oxVideoConfig[key];
     }
   });
 
-  // defaults
-  oxVideoParams.be = '1';
-
+  queryParams.auid = bid.params.unit;
   // override prebid config with openx config if available
-  oxVideoParams.vwd = width || oxVideo.vwd;
-  oxVideoParams.vht = height || oxVideo.vht;
+  queryParams.vwd = width || oxVideoConfig.vwd;
+  queryParams.vht = height || oxVideoConfig.vht;
 
   if (context === 'outstream') {
-    oxVideoParams.vos = '101';
+    queryParams.vos = '101';
   }
 
-  return oxVideoParams;
+  if (oxVideoConfig.mimes) {
+    queryParams.vmimes = oxVideoConfig.mimes;
+  }
+
+  return queryParams;
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
