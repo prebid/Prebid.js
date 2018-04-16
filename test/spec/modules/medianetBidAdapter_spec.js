@@ -69,6 +69,9 @@ let VALID_BID_REQUEST = [{
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
   }],
+  VALID_AUCTIONDATA = {
+    'timeout': config.getConfig('bidderTimeout'),
+  },
   VALID_PAYLOAD_INVALID_BIDFLOOR = {
     'site': {
       'page': 'http://media.net/prebidtest',
@@ -343,17 +346,17 @@ describe('Media.net bid adapter', () => {
 
   describe('buildRequests', () => {
     it('should build valid payload on bid', () => {
-      let requestObj = spec.buildRequests(VALID_BID_REQUEST);
+      let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(requestObj.data)).to.deep.equal(VALID_PAYLOAD);
     });
 
     it('should accept size as a one dimensional array', () => {
-      let bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY);
+      let bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD);
     });
 
     it('should ignore bidfloor if not a valid number', () => {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR);
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
     });
   });
