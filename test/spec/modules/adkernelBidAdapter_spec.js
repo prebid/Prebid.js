@@ -7,37 +7,37 @@ describe('Adkernel adapter', () => {
       bidder: 'adkernel',
       bidId: 'Bid_01',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[300, 250], [300, 200]]
     }, bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {zoneId: 1},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_with_wrong_zoneId = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_video = {
       bidder: 'adkernel',
@@ -51,7 +51,7 @@ describe('Adkernel adapter', () => {
           mimes: ['video/mp4', 'video/webm', 'video/x-flv']
         }
       },
-      placementCode: 'ad-unit-1'
+      adUnitCode: 'ad-unit-1'
     };
 
   const bidResponse1 = {

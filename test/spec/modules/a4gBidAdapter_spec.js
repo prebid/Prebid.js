@@ -109,14 +109,15 @@ describe('a4gAdapterTests', () => {
 
       let requiredKeys = [
         'requestId',
+        'creativeId',
+        'adId',
         'cpm',
         'width',
         'height',
-        'ad',
-        'ttl',
-        'creativeId',
+        'currency',
         'netRevenue',
-        'currency'
+        'ttl',
+        'ad'
       ];
 
       let resultKeys = Object.keys(result[0]);
