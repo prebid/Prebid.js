@@ -186,7 +186,7 @@ export const spec = {
     code: BIDDER_CODE,
     aliases: ['ex'], // short code
     isBidRequestValid: function(bid) {},
-    buildRequests: function(validBidRequests[]) {},
+    buildRequests: function(validBidRequests[], bidderRequest) {},
     interpretResponse: function(serverResponse, request) {},
     getUserSyncs: function(syncOptions, serverResponses) {}
 }
