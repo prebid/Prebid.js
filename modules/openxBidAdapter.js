@@ -40,10 +40,16 @@ export const spec = {
   interpretResponse: function ({body: oxResponseObj}, serverRequest) {
     let mediaType = getMediaTypeFromRequest(serverRequest);
 
-    registerUserSync(mediaType, oxResponseObj);
-
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//u.openx.net/w/1.0/pd'
+      }];
+    }
   }
 };
 
@@ -199,14 +205,6 @@ function partitionByVideoBids(bidRequests) {
 
 function getMediaTypeFromRequest(serverRequest) {
   return /avjp$/.test(serverRequest.url) ? VIDEO : BANNER;
-}
-
-function registerUserSync(mediaType, responseObj) {
-  if (mediaType === VIDEO && responseObj.pixels) {
-    userSync.registerSync('iframe', BIDDER_CODE, responseObj.pixels);
-  } else if (utils.deepAccess(responseObj, 'ads.pixels')) {
-    userSync.registerSync('iframe', BIDDER_CODE, responseObj.ads.pixels);
-  }
 }
 
 function buildCommonQueryParamsFromBids(bids) {

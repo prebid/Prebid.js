@@ -476,11 +476,6 @@ describe('OpenxAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequest);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
-    });
-
     it('should register a beacon', () => {
       spec.interpretResponse({body: bidResponse}, bidRequest);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/\/\/openx-d\.openx\.net.*\/bo\?.*ts=ts/));
@@ -597,11 +592,6 @@ describe('OpenxAdapter', () => {
       const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
       const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
       expect(result.length).to.equal(0);
-    });
-
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
     });
 
     it('should register a beacon', () => {
