@@ -1,9 +1,12 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
+import * as url from 'src/url';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const BID_URL = '//prebid.media.net/rtb/prebid';
+const TIMEOUT_EVENT_NAME = 'client_timeout';
+const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 
 $$PREBID_GLOBAL$$.medianetGlobals = {};
 
@@ -65,13 +68,13 @@ function slotParams(bidRequest) {
   return params;
 }
 
-function generatePayload(bidRequests) {
+function generatePayload(bidRequests, timeout) {
   return {
     site: siteDetails(bidRequests[0].params.site),
     ext: configuredParams(bidRequests[0].params),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
-    tmax: config.getConfig('bidderTimeout')
+    tmax: timeout
   }
 }
 
@@ -86,6 +89,47 @@ function fetchCookieSyncUrls(response) {
   }
 
   return [];
+}
+
+function logEvent (event) {
+  function generateUrl(data) {
+    let getParams = {
+      protocol: 'https',
+      hostname: EVENT_PIXEL_URL,
+      search: getLoggingData(data)
+    };
+
+    return url.format(getParams);
+  }
+
+  function getLoggingData(data = []) {
+    let params = {};
+
+    params.logid = 'kfk';
+    params.evtid = 'projectevents';
+    params.project = 'prebid';
+    params.acid = utils.deepAccess(data, '0.auctionId') || '';
+    params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
+    params.crid = data.map(function(adUnitDetails) {
+      let param = adUnitDetails.params ? adUnitDetails.params.find((param) => param.crid) : '';
+      return param ? param.crid : adUnitDetails.adUnitCode || '';
+    }).toString();
+    params.crid_count = data.length || 0;
+    params.dn = utils.getTopWindowLocation().host || '';
+    params.requrl = utils.getTopWindowUrl() || '';
+    params.event = event.name;
+    params.value = event.value || '';
+
+    return params;
+  }
+
+  function trigger(data) {
+    utils.triggerPixel(generateUrl(data));
+  }
+
+  return {
+    trigger: trigger
+  }
 }
 
 export const spec = {
@@ -120,8 +164,9 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
-    let payload = generatePayload(bidRequests);
+  buildRequests: function(bidRequests, auctionData) {
+    let timeout = auctionData.timeout || config.getConfig('bidderTimeout');
+    let payload = generatePayload(bidRequests, timeout);
 
     return {
       method: 'POST',
@@ -164,6 +209,14 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       return filterUrlsByType(cookieSyncUrls, 'image');
     }
+  },
+
+  onTimeout: function (auctionData) {
+    let eventData = {
+      name: TIMEOUT_EVENT_NAME,
+      value: utils.deepAccess(auctionData, '0.timeout') || config.getConfig('bidderTimeout')
+    };
+    logEvent(eventData).trigger(auctionData);
   }
 };
 registerBidder(spec);
