@@ -238,6 +238,11 @@ function send(eventType, data, sendDataType) {
 
   AWS.config.region = 'us-east-1';
   AWS.config.credentials.get(function(err) {
+    // attach event listener	
+    if (err) {	
+      utils.logError(err);	
+      return;	
+    }
     // create kinesis service object
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
