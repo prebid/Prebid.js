@@ -284,11 +284,9 @@ describe('BeachfrontAdapter', () => {
           cmpId: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse).to.deep.contain({
-          renderer: {
-            id: bidRequest.bidId,
-            url: OUTSTREAM_SRC
-          }
+        expect(bidResponse.renderer).to.deep.contain({
+          id: bidRequest.bidId,
+          url: OUTSTREAM_SRC
         });
       });
     });
