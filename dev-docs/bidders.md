@@ -76,26 +76,30 @@ The following parameters in the `bidResponse` object are common across all bidde
 | Bidder          | Supported Media Types | Prebid 1.0 Support? |
 |-----------------+-----------------------+---------------------|
 | adgeneration    | native                | X                   |
-| adkernelAdn     | video                 | X                   |
 | adkernel        | video                 | X                   |
+| adkernelAdn     | video                 | X                   |
 | admixer         | video                 | X                   |
 | adxcg           | video,native          | X                   |
+| aerserv         | video                 |                     |
 | aol             | video                 | X                   |
 | appnexus        | video,native          | X                   |
 | audienceNetwork | video,native          | X                   |
 | beachfront      | video                 | X                   |
 | conversant      | video                 | X                   |
+| criteo          | native                |                     |
 | freewheelSSP    | video                 | X                   |
 | gamma           | video                 | X                   |
 | getintent       | video                 | X                   |
 | gumgum          | native                | X                   |
+| indexExchange   | video                 |                     |
 | mantis          | video,native          | X                   |
 | mobfox          | video                 | X                   |
 | openx           | video                 | X                   |
 | optimatic       | video                 | X                   |
-| platformio      | native                | X                   |
+| platformio      | video,native          | X                   |
 | prebidServer    | video                 | X                   |
 | pulsepoint      | native                | X                   |
+| pulsepointLite  | native                |                     |
 | quantcast       | video                 | X                   |
 | readpeak        | native                | X                   |
 | rhythmone       | video                 | X                   |
@@ -103,18 +107,13 @@ The following parameters in the `bidResponse` object are common across all bidde
 | rubicon         | video                 | X                   |
 | sekindoUM       | video                 | X                   |
 | sharethrough    | native                | X                   |
-| vertamedia      | video                 | X                   |
-| yieldlab        | video                 | X                   |
-| yieldmo         | native                | X                   |
-| aerserv         | video                 |                     |
-| appnexusAst     | video,native          |                     |
-| criteo          | native                |                     |
-| indexExchange   | video                 |                     |
-| pulsepointLite  | native                |                     |
 | spotx           | video                 |                     |
 | stickyadstv     | native                |                     |
 | tremor          | video                 |                     |
 | unruly          | video,native          |                     |
+| vertamedia      | video                 | X                   |
+| yieldlab        | video                 | X                   |
+| yieldmo         | native                | X                   |
 
 <a name="prebid-server-bidders"></a>
 
