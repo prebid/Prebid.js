@@ -6,6 +6,7 @@ const ENDPOINT = '//s.sspqns.com/hb'
 const REQUEST = {
   'bidder': 'quantum',
   'sizes': [[300, 250]],
+  'renderMode': 'banner',
   'params': {
     placementId: 21546
   }
