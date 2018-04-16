@@ -8,6 +8,7 @@ biddercode: prebidServer
 biddercode_longer_than_12: true
 hide: true
 prebid_1_0_supported : true
+gdpr_supported: true
 ---
 
 ### Sign up
