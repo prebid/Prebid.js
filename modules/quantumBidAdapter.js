@@ -104,7 +104,8 @@ export const spec = {
       bid.sync = serverBody.sync;
       if (bidRequest.renderMode && bidRequest.renderMode === 'banner') {
         bid.width = 300;
-        bid.height = 225;
+        bid.height = 250;
+        bid.mediaType = 'banner';
         if (serverBody.native) {
           const adAssetsUrl = '//cdn.elasticad.net/native/serve/js/quantx/quantumAd/';
           let assets = serverBody.native.assets;
@@ -216,6 +217,7 @@ export const spec = {
         }
       } else {
         // native
+        bid.mediaType = 'native';
         if (bidRequest.mediaType === 'native') {
           if (serverBody.native) {
             let assets = serverBody.native.assets;
