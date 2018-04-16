@@ -7,6 +7,8 @@ import {
   parseSizesInput,
   getTopWindowReferrer
 } from 'src/utils';
+import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.0';
@@ -94,9 +96,9 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        const DEBUG_AD = (window.top.location.hash.split('&').find((val) => {
-          return val.includes('WS_DEBUG_FORCEADID');
-        }) || '').split('=')[1];
+        const DEBUG_AD = (find(window.top.location.hash.split('&'),
+          val => includes(val, 'WS_DEBUG_FORCEADID')
+        ) || '').split('=')[1];
         data.forceAdId = DEBUG_AD;
       }
 
@@ -180,7 +182,7 @@ function getData(name, remove = true) {
   let data = [];
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
-      if (key.includes(name)) {
+      if (key.indexOf(name) > -1) {
         data.push(localStorage.getItem(key));
         if (remove) {
           localStorage.removeItem(key);
@@ -192,7 +194,7 @@ function getData(name, remove = true) {
   if (COOKIE_ENABLED) {
     document.cookie.split(';').forEach((item) => {
       let value = item.split('=');
-      if (value[0].includes(name)) {
+      if (value[0].indexOf(name) > -1) {
         data.push(value[1]);
         if (remove) {
           document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
