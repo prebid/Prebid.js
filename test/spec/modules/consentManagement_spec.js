@@ -148,7 +148,7 @@ describe('consentManagement', function () {
 
     describe('CMP workflow for iframed page', () => {
       let eventStub = sinon.stub();
-      let tmpWindow;
+
       beforeEach(() => {
         didHookReturn = false;
         resetConsentData();
