@@ -227,6 +227,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('h', screen.height);
     expect(payload.device).to.have.property('dnt').that.is.oneOf([0, 1]);
     expect(payload.device).to.have.property('ua', navigator.userAgent);
+
+    expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
   it('Verify interpretResponse', function() {
@@ -278,5 +280,18 @@ describe('Conversant adapter tests', function() {
     expect(response).to.be.an('array').with.lengthOf(0);
     response = spec.interpretResponse({id: '123', seatbid: []}, {});
     expect(response).to.be.an('array').with.lengthOf(0);
+  });
+
+  it('Verify publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests)
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {crumbs: {pubcid: 12345}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests).data;
+    expect(payload).to.have.deep.property('user.ext.fpc', 12345);
   });
 })

@@ -26,7 +26,10 @@ Please reach out to your Technical account manager for more information.
                             domain: 'http://prg.smartadserver.com',
                             siteId: 207435,
                             pageId: 896536,
-                            formatId: 62913
+                            formatId: 62913,
+                            buId: "com.smartadserver.android.dashboard", // optional 
+                            ckId: 1234567890123456789, // optional
+                            appName: "Smart AdServer Preview" // optional
                        }
                    }
                ]

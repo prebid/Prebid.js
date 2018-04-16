@@ -1,9 +1,9 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-const BIDDER_CODE = 'danmarketplace';
-const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
+const BIDDER_CODE = 'sara';
+const ENDPOINT_URL = '//ad.sara.media/hb';
+const ADAPTER_SYNC_URL = '//ad.sara.media/push_sync';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//ads.danmarketplace.com/push_sync';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -23,8 +23,6 @@ const LOG_ERROR_MESS = {
  */
 export const spec = {
   code: BIDDER_CODE,
-
-  aliases: ['DANMarketplace', 'DAN_Marketplace'],
 
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
@@ -60,7 +58,7 @@ export const spec = {
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },

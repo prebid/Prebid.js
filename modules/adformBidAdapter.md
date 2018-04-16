@@ -7,7 +7,7 @@ Maintainer: Scope.FL.Scripts@adform.com
 # Description
 
 Module that connects to Adform demand sources to fetch bids.
-Banner formats are supported.
+Banner and video formats are supported.
 
 # Test Parameters
 ```
@@ -21,7 +21,7 @@ Banner formats are supported.
                        params: {
                            adxDomain: 'adx.adform.net', //optional
                            mid: '292063',
-                           priceType: 'gross' // default is 'net'
+                           priceType: 'net' // default is 'gross'
                        }
                    }
                ]

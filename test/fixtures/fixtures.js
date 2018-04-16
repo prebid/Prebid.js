@@ -1404,3 +1404,41 @@ export function getCurrencyRates() {
     }
   };
 }
+
+export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl}) {
+  let bid = {
+    'bidderCode': bidder,
+    'width': '300',
+    'height': '250',
+    'statusMessage': 'Bid available',
+    'adId': adId,
+    'cpm': cpm,
+    'ad': 'markup',
+    'ad_id': adId,
+    'sizeId': '15',
+    'requestTimestamp': 1454535718610,
+    'responseTimestamp': responseTimestamp,
+    'auctionId': auctionId,
+    'timeToRespond': 123,
+    'pbLg': '0.50',
+    'pbMg': '0.50',
+    'pbHg': '0.53',
+    'adUnitCode': adUnitCode,
+    'bidder': bidder,
+    'size': '300x250',
+    'adserverTargeting': {
+      'hb_bidder': bidder,
+      'hb_adid': adId,
+      'hb_pb': cpm,
+      'foobar': '300x250'
+    },
+    'netRevenue': true,
+    'currency': 'USD',
+    'ttl': (!ttl) ? 300 : ttl
+  };
+
+  if (typeof status !== 'undefined') {
+    bid.status = status;
+  }
+  return bid;
+}
