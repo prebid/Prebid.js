@@ -3,7 +3,7 @@ const utils = require('../src/utils');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch';
+const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -15,7 +15,7 @@ function _createBidResponse(response) {
     height: response.seatbid[0].bid[0].h,
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
-    creativeId: response.seatbid[0].bid[0].ext.rp.advid,
+    creativeId: response.seatbid[0].bid[0].crid,
     currency: response.cur,
     netRevenue: true
   }
@@ -45,10 +45,14 @@ function _createServerRequest(bidRequest) {
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
+  // Finally, set the openRTB 'test' param if this is to be a test bid
+  if (params.test === 1) {
+    ttxRequest.test = 1;
+  }
 
   const options = {
     contentType: 'application/json',
-    withCredentials: false
+    withCredentials: true
   };
 
   if (bidRequest.params.customHeaders) {
