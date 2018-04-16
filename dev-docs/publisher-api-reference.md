@@ -1179,6 +1179,7 @@ The available events are:
 | setTargeting  | Targeting has been set                  |
 | requestBids   | Bids have been requested from adapters  |
 | addAdUnits    | Ad units have been added to the auction |
+| adRenderFailed| Ad rendering failed (added in v1.7)     |
 
 The example below shows how to use these methods:
 
