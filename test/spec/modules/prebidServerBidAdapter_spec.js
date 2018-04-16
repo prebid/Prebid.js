@@ -27,16 +27,7 @@ const REQUEST = {
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
-      'sizes': [
-        {
-          'w': 300,
-          'h': 250
-        },
-        {
-          'w': 300,
-          'h': 600
-        }
-      ],
+      'sizes': [[300, 250], [300, 600]],
       'mediaTypes': {
         'banner': {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
@@ -68,7 +59,7 @@ const VIDEO_REQUEST = {
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
-      'sizes': [{ 'w': 640, 'h': 480 }],
+      'sizes': [640, 480],
       'mediaTypes': {
         'video': {
           'playerSize': [[ 640, 480 ]],
@@ -103,12 +94,7 @@ const BID_REQUESTS = [
         'bid_id': '123',
         'adUnitCode': 'div-gpt-ad-1460505748561-0',
         'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-        'sizes': [
-          {
-            'w': 300,
-            'h': 250
-          }
-        ],
+        'sizes': [300, 250],
         'bidId': '259fb43aaa06c1',
         'bidderRequestId': '3d1063078dfcc8',
         'auctionId': '173afb6d132ba3'
@@ -358,6 +344,15 @@ const RESPONSE_OPENRTB_VIDEO = {
   },
 };
 
+const RESPONSE_UNSUPPORTED_BIDDER = {
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': '33Across',
+    'error': 'Unsupported bidder'
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter,
     addBidResponse = sinon.spy(),
@@ -559,6 +554,7 @@ describe('S2S Adapter', () => {
 
   describe('response handler', () => {
     let server;
+    let logWarnSpy;
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
@@ -569,6 +565,7 @@ describe('S2S Adapter', () => {
       sinon.stub(utils, 'getBidRequest').returns({
         bidId: '123'
       });
+      logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
     afterEach(() => {
@@ -578,6 +575,7 @@ describe('S2S Adapter', () => {
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       cookie.cookieSet.restore();
+      logWarnSpy.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
@@ -809,6 +807,25 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
+    });
+
+    it('should log warning for unsupported bidder', () => {
+      server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));
+
+      const s2sConfig = Object.assign({}, CONFIG, {
+        bidders: ['33Across']
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+      }
+
+      config.setConfig(_config);
+      config.setConfig({s2sConfig: CONFIG});
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(logWarnSpy);
     });
   });
 

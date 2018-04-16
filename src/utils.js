@@ -775,6 +775,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -846,7 +849,21 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };
 }
-
+/**
+ * Returns user configured bidder params from adunit
+ * @param {object} adunits
+ * @param {string} adunit code
+ * @param {string} bidder code
+ * @return {Array} user configured param for the given bidder adunit configuration
+ */
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params || {});
+}
 /**
  * Returns the origin
  */
