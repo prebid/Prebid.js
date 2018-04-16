@@ -47,7 +47,7 @@ Please reach out to your Technical account manager for more information.
                    {
                        bidder: "smart",
                        params: {
-                            domain: 'http://prg.smartadserver.com',
+                            domain: 'http://ww251.smartadserver.com',
                             siteId: 207435,
                             pageId: 896536,
                             formatId: 65906,
