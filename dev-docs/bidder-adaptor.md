@@ -160,6 +160,7 @@ If you're the type that likes to skip to the answer instead of going through a t
 + [Building the Request](#bidder-adaptor-Building-the-Request)
 + [Interpreting the Response](#bidder-adaptor-Interpreting-the-Response)
 + [Registering User Syncs](#bidder-adaptor-Registering-User-Syncs)
++ [Registering on Timeout](#bidder-adaptor-Registering-on-Timout)
 
 <a name="bidder-adaptor-Overview" />
 
@@ -173,6 +174,7 @@ Compared to previous versions of Prebid, the new `BaseAdapter` model saves the a
 * `buildRequests` - Takes an array of valid bid requests, all of which are guaranteed to have passed the `isBidRequestValid()` test.
 * `interpretResponse` - Parse the response and generate one or more bid objects.
 * `getUserSyncs` - If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.  For more information, see [Registering User Syncs](#bidder-adaptor-Registering-User-Syncs) below.
+* `onTimeout` - If the adapter timed out for an auction, the platform will call this function and the adapter may register timeout.  For more information, see [Registering User Syncs](#bidder-adaptor-Registering-User-Syncs) below.
 
 A high level example of the structure:
 
@@ -188,7 +190,8 @@ export const spec = {
     isBidRequestValid: function(bid) {},
     buildRequests: function(validBidRequests[], bidderRequest) {},
     interpretResponse: function(serverResponse, request) {},
-    getUserSyncs: function(syncOptions, serverResponses) {}
+    getUserSyncs: function(syncOptions, serverResponses) {},
+    onTimeout: function(timeoutData) {}
 }
 registerBidder(spec);
 
@@ -332,6 +335,27 @@ See below for an example implementation.  For more examples, search for `getUser
     }
 }
 
+{% endhighlight %}
+
+<a name="bidder-adaptor-Registering-on-Timout" />
+
+### Registering on Timeout 
+
+The `onTimeout` function will be called when an adpater timed out for an auction. Adapter can fire a ajax or pixel call to register a timeout at thier end. 
+
+Sample data received to this function:
+
+{% highlight js %}
+{ 
+  "bidder": "example",
+  "bidId": "51ef8751f9aead",
+  "params": {
+    ...
+  },
+  "adUnitCode": "div-gpt-ad-1460505748561-0",
+  "timeout": 3000,
+  "auctionId": "18fd8b8b0bd757"
+}
 {% endhighlight %}
 
 ## Supporting Video
@@ -589,6 +613,14 @@ export const spec = {
         }
         return syncs;
     }
+
+    /**
+     * Register bidder specific code, which will execute if bidder timed out after an auction
+     * @param {data} Containing timeout specific data
+     */
+    onTimeout: function(data) {
+        // Bidder specifc code
+    }    
 }
 registerBidder(spec);
 
