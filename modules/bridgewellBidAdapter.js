@@ -77,9 +77,14 @@ export const spec = {
         return;
       }
 
+      const anotherFormatSize = []; // for store width and height
       let matchedResponse = find(serverResponse.body, function(res) {
         return !!res && !res.consumed && find(req.sizes, function(size) {
-          return res.width === size[0] && res.height === size[1];
+          let width = res.width;
+          let height = res.height;
+          if (typeof size === 'number') anotherFormatSize.push(size); // if sizes format is Array[Number], push width and height into anotherFormatSize
+          return (width === size[0] && height === size[1]) || // for format Array[Array[Number]] check
+          (width === anotherFormatSize[0] && height === anotherFormatSize[1]); // for foramt Array[Number] check
         });
       });
 
