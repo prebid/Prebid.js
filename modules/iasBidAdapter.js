@@ -3,6 +3,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ias';
 
+const otherBidIds = [];
+
 function isBidRequestValid(bid) {
   const { pubId, adUnitPath } = bid.params;
   return !!(pubId && adUnitPath);
@@ -60,12 +62,22 @@ function buildRequests(bidRequests) {
 
   const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
-  return {
-    method: 'GET',
-    url: IAS_HOST,
-    data: queryString,
-    bidRequest: bidRequests[0]
-  }
+  bidRequests.forEach(function (request){
+    if (bidRequests[0].bidId != request.bidId){
+	  otherBidIds.push(request.bidId);
+    }
+  });
+
+  const results = [
+    {
+      method: 'GET',
+      url: IAS_HOST,
+      data: queryString,
+      bidRequest: bidRequests[0]
+    }
+  ];
+
+  return results;
 }
 
 function getPageLevelKeywords(response) {
@@ -103,6 +115,16 @@ function interpretResponse(serverResponse, request) {
   shallowMerge(commonBidResponse, getPageLevelKeywords(iasResponse));
   commonBidResponse.slots = iasResponse.slots;
   bidResponses.push(commonBidResponse);
+
+  otherBidIds.forEach(function (bidId){
+    var otherResponse = Object.assign({}, commonBidResponse);
+    otherResponse.requestId = bidId;
+    bidResponses.push(otherResponse);
+  });
+
+  if (top.postIASResponse) {
+    postIASResponse(iasResponse);
+  }
   return bidResponses;
 }
 
