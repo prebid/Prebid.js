@@ -442,7 +442,7 @@ const OPEN_RTB_PROTOCOL = {
       let banner;
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
         banner = {format: sizeObjects};
       }
 
