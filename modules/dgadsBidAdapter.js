@@ -77,6 +77,7 @@ function setNativeResponse(ad) {
   }
   nativeResponce.title = ad.title;
   nativeResponce.body = ad.desc;
+  nativeResponce.sponsoredBy = ad.sponsoredBy;
   nativeResponce.clickUrl = ad.clickUrl;
   nativeResponce.clickTrackers = ad.clickTrackers || [];
   nativeResponce.impressionTrackers = ad.impressionTrackers || [];
