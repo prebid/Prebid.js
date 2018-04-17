@@ -853,88 +853,88 @@ describe('adapterManager tests', () => {
         });
       });
 
-      describe('other checks', () => {
-        afterEach(() => {
-          config.resetConfig();
-        });
+      // describe('other checks', () => {
+      //   afterEach(() => {
+      //     config.resetConfig();
+      //   });
 
-        it('checks payment rule field is set for s2s bidders', () => {
-          config.setConfig({
-            s2sConfig: {
-              bidders: ['appnexus', 'rubicon'],
-              enabled: true
-            }
-          });
+      //   it('checks payment rule field is set for s2s bidders', () => {
+      //     config.setConfig({
+      //       s2sConfig: {
+      //         bidders: ['appnexus', 'rubicon'],
+      //         enabled: true
+      //       }
+      //     });
 
-          let adUnits = [{
-            'code': '/19968336/header-bid-tag1',
-            'sizes': [[728, 90], [970, 90]],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '543221',
-                },
+      //     let adUnits = [{
+      //       'code': '/19968336/header-bid-tag1',
+      //       'sizes': [[728, 90], [970, 90]],
+      //       'bids': [
+      //         {
+      //           'bidder': 'appnexus',
+      //           'params': {
+      //             'placementId': '543221',
+      //           },
 
-              }
-            ]
-          }, {
-            'code': '/19968336/header-bid-tag-0',
-            'sizes': [[300, 250], [300, 600]],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '5324321',
-                  'usePaymentRule': true
-                },
+      //         }
+      //       ]
+      //     }, {
+      //       'code': '/19968336/header-bid-tag-0',
+      //       'sizes': [[300, 250], [300, 600]],
+      //       'bids': [
+      //         {
+      //           'bidder': 'appnexus',
+      //           'params': {
+      //             'placementId': '5324321',
+      //             'usePaymentRule': true
+      //           },
 
-              }, {
-                'bidder': 'rubicon',
-                'params': {
-                  'accountId': '123456',
-                  'siteId': '345678',
-                  'zoneId': '234567',
-                  'userId': '12346',
-                  'keywords': ['a', 'b', 'c'],
-                  'inventory': {
-                    'rating': '5-star',
-                    'prodtype': 'tech'
-                  },
-                  'visitor': {
-                    'ucat': 'new',
-                    'search': 'iphone'
-                  },
-                  'sizes': [15, 10],
-                  'usePaymentRule': true
-                },
+      //         }, {
+      //           'bidder': 'rubicon',
+      //           'params': {
+      //             'accountId': '123456',
+      //             'siteId': '345678',
+      //             'zoneId': '234567',
+      //             'userId': '12346',
+      //             'keywords': ['a', 'b', 'c'],
+      //             'inventory': {
+      //               'rating': '5-star',
+      //               'prodtype': 'tech'
+      //             },
+      //             'visitor': {
+      //               'ucat': 'new',
+      //               'search': 'iphone'
+      //             },
+      //             'sizes': [15, 10],
+      //             'usePaymentRule': true
+      //           },
 
-              },
-            ]
-          }];
+      //         },
+      //       ]
+      //     }];
 
-          let bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
+      //     let bidRequests = AdapterManager.makeBidRequests(
+      //       adUnits,
+      //       Date.now(),
+      //       utils.getUniqueIdentifierStr(),
+      //       function callback() {},
+      //       []
+      //     );
 
-          // checks for payment rule field
-          // if usePaymentRule was not present, use_pmt_rule will still be set automatically to false for appnexus bidder
-          expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].params.use_pmt_rule).to.exist.and.to.be.false;
-          expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].params.usePaymentRule).to.be.undefined;
+      //     // checks for payment rule field
+      //     // if usePaymentRule was not present, use_pmt_rule will still be set automatically to false for appnexus bidder
+      //     expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].params.use_pmt_rule).to.exist.and.to.be.false;
+      //     expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].params.usePaymentRule).to.be.undefined;
 
-          // if usePaymentRule was present, should be renamed to use_pmt_rule for appnexus bidder
-          expect(bidRequests[0].adUnitsS2SCopy[1].bids[0].params.use_pmt_rule).to.exist.and.to.be.true;
-          expect(bidRequests[0].adUnitsS2SCopy[1].bids[0].params.usePaymentRule).to.be.undefined;
+      //     // if usePaymentRule was present, should be renamed to use_pmt_rule for appnexus bidder
+      //     expect(bidRequests[0].adUnitsS2SCopy[1].bids[0].params.use_pmt_rule).to.exist.and.to.be.true;
+      //     expect(bidRequests[0].adUnitsS2SCopy[1].bids[0].params.usePaymentRule).to.be.undefined;
 
-          // should not be modified for non-appnexus bidders
-          expect(bidRequests[0].adUnitsS2SCopy[1].bids[1].params.use_pmt_rule).to.be.undefined;
-          expect(bidRequests[0].adUnitsS2SCopy[1].bids[1].params.usePaymentRule).to.exist.and.to.be.true;
-        });
-      });
+      //     // should not be modified for non-appnexus bidders
+      //     expect(bidRequests[0].adUnitsS2SCopy[1].bids[1].params.use_pmt_rule).to.be.undefined;
+      //     expect(bidRequests[0].adUnitsS2SCopy[1].bids[1].params.usePaymentRule).to.exist.and.to.be.true;
+      //   });
+      // });
     });
   });
 

@@ -472,6 +472,9 @@ const OPEN_RTB_PROTOCOL = {
         // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
         // convert all AppNexus keys to underscore format for pbs
         if (bid.bidder === 'appnexus') {
+          bid.params.use_pmt_rule = (typeof bid.params.usePaymentRule === 'boolean') ? bid.params.usePaymentRule : false;
+          if (bid.params.usePaymentRule) { delete bid.params.usePaymentRule; }
+
           Object.keys(bid.params).forEach(paramKey => {
             let convertedKey = utils.convertCamelToUnderscore(paramKey);
             if (convertedKey !== paramKey) {
