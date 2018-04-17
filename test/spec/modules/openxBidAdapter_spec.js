@@ -601,4 +601,32 @@ describe('OpenxAdapter', () => {
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ts=test-ts/));
     });
   });
+
+  describe('user sync', () => {
+    const syncUrl = 'http://testpixels.net';
+
+    it('should register the pixel iframe from banner ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { ads: { pixels: syncUrl } } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the pixel iframe from video ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { pixels: syncUrl } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the default iframe if no pixels available', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        []
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: '//u.openx.net/w/1.0/pd' }]);
+    });
+  });
 });
