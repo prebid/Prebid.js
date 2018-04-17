@@ -469,6 +469,7 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
+        // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
         // convert all AppNexus keys to underscore format for pbs
         if (bid.bidder === 'appnexus') {
           Object.keys(bid.params).forEach(paramKey => {
