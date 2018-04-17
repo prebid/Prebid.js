@@ -84,6 +84,10 @@ describe('dgadsAdapter', () => {
             body: {
               required: true,
               len: 140
+            },
+            sponsoredBy: {
+              required: true,
+              len: 40
             }
           },
         },
@@ -156,6 +160,10 @@ describe('dgadsAdapter', () => {
               body: {
                 required: true,
                 len: 140
+              },
+              sponsoredBy: {
+                required: true,
+                len: 40
               }
             }
           },
@@ -192,6 +200,7 @@ describe('dgadsAdapter', () => {
             cpm: 1.22,
             title: 'title',
             desc: 'description',
+            sponsoredBy: 'sponsoredBy',
             image: 'https://ads-tr.bigmining.com/img/300_250_1.jpg',
             w: 300,
             h: 250,
@@ -235,6 +244,7 @@ describe('dgadsAdapter', () => {
           },
           title: 'title',
           body: 'description',
+          sponsoredBy: 'sponsoredBy',
           clickUrl: 'http://www.garage.co.jp/ja/',
           impressionTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.gif'],
           clickTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.png']
@@ -272,6 +282,7 @@ describe('dgadsAdapter', () => {
       expect(result.referrer).to.equal(bidResponses.native.referrer);
       expect(result.native.title).to.equal(bidResponses.native.native.title);
       expect(result.native.body).to.equal(bidResponses.native.native.body);
+      expect(result.native.sponsoredBy).to.equal(bidResponses.native.native.sponsoredBy);
       expect(result.native.image.url).to.equal(bidResponses.native.native.image.url);
       expect(result.native.image.width).to.equal(bidResponses.native.native.image.width);
       expect(result.native.image.height).to.equal(bidResponses.native.native.image.height);
