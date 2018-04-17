@@ -62,6 +62,7 @@ describe('Adform adapter', () => {
         {
           mid: '2',
           someVar: 'someValue',
+          pt: 'gross',
           transactionId: '5f33781f-9552-4iuy'
         },
         {
@@ -81,10 +82,12 @@ describe('Adform adapter', () => {
         },
         {
           mid: '5',
+          pt: 'net',
           transactionId: '5f33781f-9552-7ev3',
         },
         {
           mid: '6',
+          pt: 'gross',
           transactionId: '5f33781f-9552-7ev3'
         }
       ]);
@@ -198,7 +201,7 @@ describe('Adform adapter', () => {
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, priceType: 'net'}, {mid: 6, priceType: 'gross'}];
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
