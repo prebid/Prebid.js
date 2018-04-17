@@ -27,6 +27,7 @@ loadScript('//www.googletagservices.com/tag/js/gpt.js');
 */
 function initAdserver() {
   if (pbjs.initAdserverSet) return;
+  pbjs.initAdserverSet = true;
     
   googletag.cmd.push(function () {
     pbjs.que.push(function () {
@@ -34,7 +35,6 @@ function initAdserver() {
       googletag.pubads().refresh();
     });
   });
-  pbjs.initAdserverSet = true;
 }
 
 /**
