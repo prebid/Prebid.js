@@ -505,7 +505,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
@@ -533,7 +533,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       // TODO: stub this
@@ -549,6 +549,22 @@ describe('S2S Adapter', () => {
           }
         }
       });
+    });
+
+    it('converts appnexus params to underscore syntax', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      const myRequest = utils.deepClone(REQUEST);
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.imp[0].ext.appnexus).to.exist;
+      expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
+      expect(requestBid.imp[0].ext.appnexus.member).to.exist;
     });
   });
 
