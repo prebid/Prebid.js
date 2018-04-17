@@ -1,14 +1,17 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { Renderer } from 'src/Renderer';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
 const ADAPTER_VERSION = '1.1';
 const ADAPTER_NAME = 'BFIO_PREBID';
+const OUTSTREAM = 'outstream';
 
 export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
+export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
 export const VIDEO_TARGETING = ['mimes'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -53,6 +56,7 @@ export const spec = {
         return [];
       }
       let size = getFirstSize(bidRequest);
+      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
@@ -61,6 +65,7 @@ export const spec = {
         width: size.w,
         height: size.h,
         creativeId: response.cmpId,
+        renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
         currency: 'USD',
         netRevenue: true,
@@ -90,6 +95,30 @@ export const spec = {
     }
   }
 };
+
+function createRenderer(bidRequest) {
+  const renderer = Renderer.install({
+    id: bidRequest.bidId,
+    url: OUTSTREAM_SRC,
+    loaded: false
+  });
+
+  renderer.setRender(outstreamRender);
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.Beachfront.Player(bid.adUnitCode, {
+      ad_tag_url: bid.vastUrl,
+      width: bid.width,
+      height: bid.height,
+      expand_in_view: false,
+      collapse_on_complete: true
+    });
+  });
+}
 
 function getSizes(bid) {
   return utils.parseSizesInput(bid.sizes).map(size => {
