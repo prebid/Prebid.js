@@ -150,6 +150,20 @@ function doBidderSync(type, url, bidder) {
 }
 
 /**
+ * Do client-side syncs for bidders.
+ *
+ * @param {Array} bidders a list of bidder names
+ */
+function doClientSideSyncs(bidders) {
+  bidders.forEach(bidder => {
+    let clientAdapter = adaptermanager.getBidAdapter(bidder);
+    if (clientAdapter && clientAdapter.registerSyncs) {
+      clientAdapter.registerSyncs([]);
+    }
+  });
+}
+
+/**
  * Try to convert a value to a type.
  * If it can't be done, the value will be returned.
  *
@@ -337,14 +351,6 @@ const LEGACY_PROTOCOL = {
           }
         });
       }
-
-      // do client-side syncs if available
-      requestedBidders.forEach(bidder => {
-        let clientAdapter = adaptermanager.getBidAdapter(bidder);
-        if (clientAdapter && clientAdapter.registerSyncs) {
-          clientAdapter.registerSyncs([]);
-        }
-      });
 
       if (result.bids) {
         result.bids.forEach(bidObj => {
@@ -645,6 +651,7 @@ export function PrebidServer() {
     }
 
     done();
+    doClientSideSyncs(requestedBidders);
   }
 
   return Object.assign(this, {
