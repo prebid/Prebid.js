@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/widespaceBidAdapter';
+import includes from 'core-js/library/fn/array/includes';
 
 describe('+widespaceAdatperTest', () => {
   // Dummy bid request
@@ -87,8 +88,11 @@ describe('+widespaceAdatperTest', () => {
   window.document.cookie = `wsPerfData123=${PERF_DATA};path=/;expires=${expDate};`;
 
   // Connect dummy data test
-  navigator.connection.downlinkMax = 80;
-  navigator.connection.type = 'wifi';
+  const CONNECTION = navigator.connection || navigator.webkitConnection;
+  if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
+    navigator.connection.downlinkMax = 80;
+    navigator.connection.type = 'wifi';
+  }
 
   describe('+bidRequestValidity', () => {
     it('bidRequest with sid and currency params', () => {
@@ -145,7 +149,7 @@ describe('+widespaceAdatperTest', () => {
     });
 
     it('-cookie test for wsCustomData ', () => {
-      expect(request[0].data.includes('hb.cd')).to.equal(true);
+      expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
     });
   });
 
@@ -166,7 +170,7 @@ describe('+widespaceAdatperTest', () => {
       ];
       const resultKeys = Object.keys(result[0]);
       requiredKeys.forEach((key) => {
-        expect(resultKeys.includes(key)).to.equal(true);
+        expect(includes(resultKeys, key)).to.equal(true);
       });
 
       // Each value except referrer should not be empty|null|undefined
