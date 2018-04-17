@@ -136,7 +136,7 @@ Demand from the bidders listed below is available via the [Prebid Server integra
 {% for page in bidder_pages %}
 
 <div class="bs-docs-section" markdown="1">
-<h2><a name="{{ page.biddercode }}" />{{ page.title }}</h2>
+<h2><a name="{{ page.biddercode }}" >{{ page.title }}</a></h2>
 
 {% if page.s2s_only == true %}  
 <h3>Note:</h3> This is a S2S adapter only.
