@@ -43,11 +43,14 @@ export const spec = {
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses) {
     if (syncOptions.iframeEnabled) {
+      let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
+                utils.deepAccess(responses, '0.body.pixels') ||
+                '//u.openx.net/w/1.0/pd'
       return [{
         type: 'iframe',
-        url: '//u.openx.net/w/1.0/pd'
+        url: url,
       }];
     }
   }
