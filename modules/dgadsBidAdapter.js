@@ -10,10 +10,6 @@ export const spec = {
   supportedMediaTypes: [ BANNER, NATIVE ],
   isBidRequestValid: function(bid) {
     const params = bid.params;
-    const mediaType = bid.mediaType;
-    if (typeof params !== 'object') {
-      return false;
-    }
     if (!/^\d+$/.test(params.location_id)) {
       return false;
     }
@@ -24,21 +20,15 @@ export const spec = {
   },
   buildRequests: function(bidRequests) {
     if (bidRequests.length === 0) {
-      return;
+      return {};
     }
 
     return bidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const data = {};
 
-      switch (bidRequest.mediaType) {
-        case BANNER:
-        case NATIVE:
-          data['location_id'] = params.location_id;
-          data['site_id'] = params.site_id;
-          break;
-      }
-
+      data['location_id'] = params.location_id;
+      data['site_id'] = params.site_id;
       data['transaction_id'] = bidRequest.transactionId;
       data['bid_id'] = bidRequest.bidId;
 
