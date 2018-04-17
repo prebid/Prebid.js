@@ -47,7 +47,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
                 utils.deepAccess(responses, '0.body.pixels') ||
-                '//u.openx.net/w/1.0/pd'
+                '//u.openx.net/w/1.0/pd';
       return [{
         type: 'iframe',
         url: url,
