@@ -40,27 +40,29 @@ Register Prebid Mobile ad units as early as possible in the application's lifecy
 
 The steps for using Prebid Mobile are as following:
 
-1. Create the ad units with ad unit ids and add sizes for banner ad units
-2. Add a server side configuration for each ad unit to Prebid Server Adapter
-3. Set targeting parameters for the ad units (Optional)
-4. Register the ad units with the adapter to start bid fetching process
+1. Create the ad units with ad unit ids and add sizes for banner ad units.
+2. Add a server side configuration for each ad unit to Prebid Server Adapter.
+3. Set targeting parameters for the ad units. (Optional)
+4. Set the primary adserver for the bid to either DFP or MoPub (the primary ad server is necessary to determine the caching mechanism).
+5. Set the host for the bid. Supported hosts are AppNexus or Rubicon.
+6. Register the ad units with the adapter to start the bid fetching process.
 
-### How to create ad units?
+### How to Create Ad Units
 
 Create the ad units that represent the ad spaces in your app using following APIs:
 
 ```java
 
 ArrayList<AdUnit> adUnits = new ArrayList<AdUnit>();
- 
+
 // Configure a Banner Ad Unit with size 320x50
 BannerAdUnit adUnit1 = new BannerAdUnit("YOUR-AD-UNIT-ID-HERE", "YOUR-CONFIG-ID-HERE");
 adUnit1.addSize(320, 50);
- 
+
 // Configure an Interstitial Ad Unit
 InterstitialAdUnit adUnit2 = new InterstitialAdUnit("YOUR-INTERSTITIAL-AD-UNIT-ID-HERE", "YOUR-INTERSTITIAL-CONFIG-ID-HERE");
- 
-// Add them to the list 
+
+// Add them to the list
 adUnits.add(adUnit1);
 adUnits.add(adUnit2);
 
