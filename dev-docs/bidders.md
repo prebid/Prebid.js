@@ -128,7 +128,6 @@ Demand from the bidders listed below is available via the [Prebid Server integra
 - [pubmatic](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L743)
 - [pulsepoint](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L744)
 - [rubicon](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L745)
-- [audienceNetwork](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L747)
 - [lifestreet](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L748)
 - [conversant](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L749)
 </div>

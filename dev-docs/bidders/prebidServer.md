@@ -26,7 +26,7 @@ To enable prebid server, set the following configuration.
 pbjs.setConfig({
     s2sConfig: {
         accountId : '12345',
-        bidders : ['appnexus','audienceNetwork', 'rubicon'], 
+        bidders : ['appnexus','pubmatic', 'rubicon'], 
         defaultVendor: 'appnexus'
     }
 });
