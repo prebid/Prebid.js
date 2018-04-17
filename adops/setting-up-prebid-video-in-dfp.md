@@ -42,15 +42,21 @@ Be sure to duplicate your line item and video creative for each Prebid price buc
 
 ## Creative Setup
 
-1. For each line item you created above, select **new creative set**.
+1\. For each line item you created above, select **new creative set**.
 
-2. In the dialog that appears, set the **creative set type** to **"Redirect"**
+2\. In the dialog that appears, set the **creative set type** to **"Redirect"**
 
-3. Set the **VAST tag URL** to:
+3\. Set the **VAST tag URL** to:
 
-   ```
+Prebid.js versions 1.6+, 0.34.6+:
+{% highlight html %}
+   https://prebid.adnxs.com/pbc/v1/cache?uuid=%%PATTERN:hb_cache_id%%
+{% endhighlight %}
+
+Prebid.js versions 1.0-1.5, 0.x-0.34.5:
+{% highlight html %}
    https://prebid.adnxs.com/pbc/v1/cache?uuid=%%PATTERN:hb_uuid%%
-   ```
+{% endhighlight %}
 
    {: .alert.alert-warning :}
    This creative URL is **required** in order to show video ads.  It points to
@@ -62,7 +68,13 @@ Be sure to duplicate your line item and video creative for each Prebid price buc
    URL failed.  This is expected, since the creative URL above points
    to a server-side asset cache hosted by Prebid Server.
 
-4. Set the **duration** to **1**
+   {: .alert.alert-warning :}
+   Note that `hb_cache_id` will be the video ad server targeting variable going forward.
+   In previous versions, mobile used `hb_cache_id` and video used `hb_uuid`. There will be a
+   transition period where both of these values are provided to the ad server.
+   Please begin converting video creatives to use `hb_cache_id`.
+
+4\. Set the **duration** to **1**
 
 The resulting creative should look something like the following:
 
@@ -74,11 +86,8 @@ That's it as far as Prebid setup is concerned.  At this point you can add any ot
 ## Further Reading
 
 + [Show Video Ads with DFP]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html) (Engineering setup)
-
 + [Create a Master Video Tag Manually](https://support.google.com/dfp_premium/answer/1068325?hl=en&ref_topic=2480647) (DFP)
-
 + [Add Key-Values to a Master Video Ad Tag](https://support.google.com/dfp_premium/answer/1080597) (DFP)
-
 + [DFP Macros](https://support.google.com/dfp_premium/answer/1242718) (DFP)
 
 </div>

@@ -873,7 +873,16 @@ per adapter as needed. Both scenarios are described below.
 
 **Keyword targeting for all bidders**
 
-The below code snippet is the *default* setting for ad server targeting. For each bidder's bid, Prebid.js will set 6 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`, `hb_source`, `hb_format`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target these keys.
+The below code snippet is the *default* setting for ad server targeting. For each bidder's bid,
+Prebid.js will set 6 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`, `hb_source`, `hb_format`) with their corresponding values.
+In addition, video will receive two additional keys: `hb_cache_id` and `hb_uuid`.
+The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items and creatives to utilize these keys.
+
+   {: .alert.alert-warning :}
+   Note that `hb_cache_id` will be the video ad server targeting variable going forward.
+   In previous versions, mobile used `hb_cache_id` and video used `hb_uuid`. There will be a
+   transition period where both of these values are provided to the ad server.
+   Please begin converting video creatives to use `hb_cache_id`.
 
 If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. *Note* that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly. See the [Ad Ops](../adops.html) documentation for more information.
 
@@ -916,6 +925,16 @@ pbjs.bidderSettings = {
             key: 'hb_format',
             val: function (bidResponse) {
                 return bidResponse.mediaType;
+            }
+        }, {
+            key: 'hb_cache_id',
+            val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
+            }
+        }, {
+            key: 'hb_uuid',
+            val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
             }
         }]
     }
