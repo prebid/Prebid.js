@@ -442,7 +442,7 @@ const OPEN_RTB_PROTOCOL = {
       let banner;
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
         banner = {format: sizeObjects};
       }
 
@@ -469,6 +469,17 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
+        // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
+        // convert all AppNexus keys to underscore format for pbs
+        if (bid.bidder === 'appnexus') {
+          Object.keys(bid.params).forEach(paramKey => {
+            let convertedKey = utils.convertCamelToUnderscore(paramKey);
+            if (convertedKey !== paramKey) {
+              bid.params[convertedKey] = bid.params[paramKey];
+              delete bid.params[paramKey];
+            }
+          });
+        }
         acc[bid.bidder] = bid.params;
         return acc;
       }, {});

@@ -101,6 +101,20 @@ describe('The video cache', () => {
       assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
     });
 
+    it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', () => {
+      const expectedValue = `<VAST version="3.0">
+    <Ad>
+      <Wrapper>
+        <AdSystem>prebid.org wrapper</AdSystem>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
+        <Impression><![CDATA[imptracker.com]]></Impression>
+        <Creatives></Creatives>
+      </Wrapper>
+    </Ad>
+  </VAST>`;
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com' }, expectedValue)
+    });
+
     it('should make the expected request when store() is called on an ad with vastXml', () => {
       const vastXml = '<VAST version="3.0"></VAST>';
       assertRequestMade({ vastXml: vastXml }, vastXml);
