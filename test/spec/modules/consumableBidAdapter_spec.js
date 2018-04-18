@@ -78,7 +78,6 @@ describe('ConsumableAdapter', () => {
     let bidResponse;
     let bidRequest;
     let logWarnSpy;
-    let formatPixelsStub;
 
     beforeEach(() => {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
@@ -88,21 +87,17 @@ describe('ConsumableAdapter', () => {
         unitName: 'unitname',
         unitId: '987654',
         zoneId: '9599.1',
-        network: '9599.1',
-        ttl: 1234
-
+        network: '9599.1'
       };
       bidResponse = {
         body: getDefaultBidResponse()
       };
       logWarnSpy = sinon.spy(utils, 'logWarn');
-      formatPixelsStub = sinon.stub(spec, '_formatPixels');
     });
 
     afterEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
       logWarnSpy.restore();
-      formatPixelsStub.restore();
     });
 
     it('should return formatted bid response with required properties', () => {
@@ -119,19 +114,18 @@ describe('ConsumableAdapter', () => {
         currency: 'USD',
         dealId: 'deal-id',
         netRevenue: true,
-        ttl: bidRequest.ttl
+        ttl: 60
       });
     });
 
-    it('should add pixels to ad content when pixels are present in the response', () => {
+    it('should add formatted pixels to ad content when pixels are present in the response', () => {
       bidResponse.body.ext = {
         pixels: 'pixels-content'
       };
 
-      formatPixelsStub.returns('pixels-content');
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
 
-      expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + 'pixels-content');
+      expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + '<script>var w=window,prebid;for(var i=0;i<10;i++){w = w.parent;prebid=w.pbjs;if(prebid && prebid.consumableGlobals && !prebid.consumableGlobals.pixelsDropped){try{prebid.consumableGlobals.pixelsDropped=true;pixels-contentbreak;}catch(e){continue;}}}</script>');
       return true;
     });
   });
@@ -218,20 +212,4 @@ describe('ConsumableAdapter', () => {
       expect(userSyncs).to.deep.equal([]);
     });
   });
-
-  describe('_formatPixels()', () => {
-    it('should return pixels wrapped for dropping them once and within nested frames ', () => {
-      let pixels = '<script>document.write(\'<pixels-dom-elements/>\');</script>';
-      let formattedPixels = spec._formatPixels(pixels);
-
-      expect(formattedPixels).to.equal(
-        '<script>var w=window,prebid;' +
-        'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
-        'if(prebid && prebid.consumableGlobals && !prebid.consumableGlobals.pixelsDropped){' +
-        'try{prebid.consumableGlobals.pixelsDropped=true;' +
-        'document.write(\'<pixels-dom-elements/>\');break;}' +
-        'catch(e){continue;}' +
-        '}}</script>');
-    });
-  })
 });
