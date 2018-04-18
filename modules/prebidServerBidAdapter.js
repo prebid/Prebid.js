@@ -325,6 +325,7 @@ const LEGACY_PROTOCOL = {
 
   interpretResponse(result, bidRequests, requestedBidders) {
     const bids = [];
+    let responseTimes = {};
 
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
@@ -335,6 +336,8 @@ const LEGACY_PROTOCOL = {
           if (bidder.error) {
             utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
           }
+
+          responseTimes[bidder.bidder] = bidder.response_time_ms;
         });
       }
 
@@ -357,6 +360,9 @@ const LEGACY_PROTOCOL = {
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
           bidObject.cpm = cpm;
+          if (responseTimes[bidObj.bidder]) {
+            bidObject.serverResponseTimeMs = responseTimes[bidObj.bidder];
+          }
           if (bidObj.cache_id) {
             bidObject.cache_id = bidObj.cache_id;
           }
@@ -442,7 +448,7 @@ const OPEN_RTB_PROTOCOL = {
       let banner;
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
         banner = {format: sizeObjects};
       }
 
@@ -469,6 +475,20 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
+        // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
+        // convert all AppNexus keys to underscore format for pbs
+        if (bid.bidder === 'appnexus') {
+          bid.params.use_pmt_rule = (typeof bid.params.usePaymentRule === 'boolean') ? bid.params.usePaymentRule : false;
+          if (bid.params.usePaymentRule) { delete bid.params.usePaymentRule; }
+
+          Object.keys(bid.params).forEach(paramKey => {
+            let convertedKey = utils.convertCamelToUnderscore(paramKey);
+            if (convertedKey !== paramKey) {
+              bid.params[convertedKey] = bid.params[paramKey];
+              delete bid.params[paramKey];
+            }
+          });
+        }
         acc[bid.bidder] = bid.params;
         return acc;
       }, {});
@@ -551,6 +571,11 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.source = TYPE;
           bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
+
+          let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
+          if (serverResponseTimeMs) {
+            bidObject.serverResponseTimeMs = serverResponseTimeMs;
+          }
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;

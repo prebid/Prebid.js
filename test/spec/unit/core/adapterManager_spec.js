@@ -856,7 +856,6 @@ describe('adapterManager tests', () => {
 
     describe('gdpr consent module', () => {
       it('inserts gdprConsent object to bidRequest only when module was enabled', () => {
-        // let gdprAdUnits = utils.deepClone(adUnits);
         AdapterManager.gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
