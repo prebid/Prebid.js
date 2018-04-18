@@ -112,8 +112,6 @@ describe('YuktaMedia analytics adapter', () => {
         'adUnitCode': 'div-gpt-ad-1438287399331-0',
         'requestId': '173209942f8bdd',
         'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'pubcid': '9a2a4e71-f39b-405f-aecc-19efc22b618d',
-        'placementId': '10433394',
         'renderStatus': 2,
         'cpm': 0.5,
         'creativeId': 29681110,
