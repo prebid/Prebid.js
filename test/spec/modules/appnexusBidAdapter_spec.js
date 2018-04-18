@@ -412,6 +412,7 @@ describe('AppNexusAdapter', () => {
           'ads': [{
             'ad_type': 'video',
             'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
             'rtb': {
               'video': {
                 'content': '<!-- Creative -->'
@@ -424,6 +425,7 @@ describe('AppNexusAdapter', () => {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
+      expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
