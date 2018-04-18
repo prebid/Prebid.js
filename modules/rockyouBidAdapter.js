@@ -64,6 +64,9 @@ let extractValidSize = (bidRequest) => {
     requestedSizes = bidRequest.sizes
   }
 
+  // Sort sizes by area, highest to lowest.
+  requestedSizes.sort((size1, size2) => (size2[0] * size2[1]) - (size1[0] * size1[1]));
+
   // Ensure the size array is normalized
   let conformingSize = utils.parseSizesInput(requestedSizes);
 
