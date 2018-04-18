@@ -10,7 +10,7 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_CMP = 'iab';
-const DEFAULT_CONSENT_TIMEOUT = 10000;
+const DEFAULT_CONSENT_TIMEOUT = 500;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
 export let userCMP;
@@ -40,23 +40,27 @@ const cmpCallMap = {
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
 function lookupIabConsent(cmpSuccess, cmpError) {
-  if (!window.__cmp) {
-    return cmpError('AppNexus CMP not detected.');
+  let callId = 0;
+  let getConsentDataReq = {
+    __cmp: {
+      callId: 'iframe:' + (++callId),
+      command: 'getConsentData'
+    }
+  };
+
+  if (window.__cmp) {
+    window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
+  } else {
+    // prebid may be inside an iframe and CMP may exist outside, so we'll use postMessage to interact with CMP
+    window.top.postMessage(getConsentDataReq, '*');
+    window.addEventListener('message', receiveMessage);
   }
 
-  // first lookup - to determine if new or existing user
-  // if new user, then wait for user to make a choice and then run postLookup method
-  // if existing user, then skip to postLookup method
-  window.__cmp('getConsentData', 'vendorConsents', function(consentString) {
-    if (consentString == null) {
-      window.__cmp('addEventListener', 'onSubmit', function() {
-        // redo lookup to find new string based on user's choices
-        window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
-      });
-    } else {
-      cmpSuccess(consentString);
+  function receiveMessage(event) {
+    if (event && event.data && event.data.__cmp && event.data.__cmp.result) {
+      cmpSuccess(event.data.__cmp.result);
     }
-  });
+  }
 }
 
 /**
@@ -150,7 +154,7 @@ function storeConsentData(cmpConsentString) {
  * There are several paths in the module's logic to call this function and we only allow 1 of the 3 potential exits to happen before suppressing others.
  *
  * We prevent multiple exits to avoid conflicting messages in the console depending on certain scenarios.
- * One scenario could be auction was canceled due to timeout with CMP being reached because the user was still interacting with CMP for the first time.
+ * One scenario could be auction was canceled due to timeout with CMP being reached.
  * While the timeout is the accepted exit and runs first, the CMP's callback still tries to process the user's data (which normally leads to a good exit).
  * In this case, the good exit will be suppressed since we already decided to cancel the auction.
  *
