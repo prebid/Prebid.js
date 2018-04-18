@@ -29,6 +29,7 @@ After a transition period, documentation for these methods will be removed from 
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode)
   * [.getHighestCpmBids([adUnitCode])](#module_pbjs.getHighestCpmBids)
   * [.getAllWinningBids()](#module_pbjs.getAllWinningBids)
+  * [.getAllPrebidWinningBids()](#module_pbjs.getAllPrebidWinningBids)
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.setTargetingForAst()](#module_pbjs.setTargetingForAst)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
@@ -318,9 +319,19 @@ Use this method to retrieve an array of winning bids.
 
 ### pbjs.getAllWinningBids() ⇒ `Array`
 
-Use this method to get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+Use this method to get all of the bids that have won their respective auctions and also rendered on the page.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
 
-+ `pbjs.getAllWinningBids()`: returns an array of bid objects that have won their respective auctions.
++ `pbjs.getAllWinningBids()`: returns an array of bid objects that have won their respective auctions and also rendered on the page.
+
+<hr class="full-rule">
+
+<a name="module_pbjs.getAllPrebidWinningBids"></a>
+
+### pbjs.getAllPrebidWinningBids() ⇒ `Array`
+
+Use this method to get all of the bids that have won their respective auctions but not rendered on the page.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+
++ `pbjs.getAllPrebidWinningBids()`: returns an array of bid objects that have won their respective auctions but not rendered on the page.
 
 <hr class="full-rule">
 
