@@ -34,6 +34,7 @@ Prebid.org was developed to bring together the oversight, guidance, and developm
 ### [AdLightning](https://www.adlightning.com/)
 ### [Marfeel](https://www.marfeel.com/)
 ### [Criteo](https://www.criteo.com/for-publishers/products/criteo-direct-bidder/)
+### [Sortable](https://sortable.com/)
 
 
 ## Further Reading
