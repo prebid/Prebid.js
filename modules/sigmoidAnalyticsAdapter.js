@@ -250,7 +250,7 @@ function send(eventType, data, sendDataType) {
     var dataList = [];
     var jsonData = {};
     var ua = window.navigator.userAgent;
-    data["user_agent"] = ua;
+    data['user_agent'] = ua;
     jsonData['Data'] = JSON.stringify(data) + '\n';
     jsonData['PartitionKey'] = 'partition-' + Math.random().toString(36).substring(7);
     dataList.push(jsonData);
