@@ -7,37 +7,37 @@ describe('Adkernel adapter', () => {
       bidder: 'adkernel',
       bidId: 'Bid_01',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-1',
-      sizes: [[300, 250]]
+      adUnitCode: 'ad-unit-1',
+      sizes: [[300, 250], [300, 200]]
     }, bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {zoneId: 1},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_with_wrong_zoneId = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_video = {
       bidder: 'adkernel',
@@ -51,7 +51,7 @@ describe('Adkernel adapter', () => {
           mimes: ['video/mp4', 'video/webm', 'video/x-flv']
         }
       },
-      placementCode: 'ad-unit-1'
+      adUnitCode: 'ad-unit-1'
     };
 
   const bidResponse1 = {
@@ -63,7 +63,9 @@ describe('Adkernel adapter', () => {
           crid: '100_001',
           price: 3.01,
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-          adm: '<!-- admarkup here -->'
+          adm: '<!-- admarkup here -->',
+          w: 300,
+          h: 250
         }]
       }],
       cur: 'USD',
@@ -78,7 +80,9 @@ describe('Adkernel adapter', () => {
           impid: 'Bid_02',
           crid: '100_002',
           price: 1.31,
-          adm: '<!-- admarkup here -->'
+          adm: '<!-- admarkup here -->',
+          w: 300,
+          h: 250
         }]
       }],
       cur: 'USD'
@@ -125,21 +129,19 @@ describe('Adkernel adapter', () => {
 
   describe('banner request building', () => {
     let bidRequest;
-    let mock;
-
     before(() => {
-      mock = sinon.stub(utils, 'getTopWindowLocation', () => {
-        return {
-          protocol: 'https:',
-          hostname: 'example.com',
-          host: 'example.com',
-          pathname: '/index.html',
-          href: 'https://example.com/index.html'
-        };
-      });
+      let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
+        protocol: 'https:',
+        hostname: 'example.com',
+        host: 'example.com',
+        pathname: '/index.html',
+        href: 'https://example.com/index.html'
+      }));
+      let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => true);
       let request = spec.buildRequests([bid1_zone1])[0];
       bidRequest = JSON.parse(request.data.r);
-      mock.restore();
+      wmock.restore();
+      dntmock.restore();
     });
 
     it('should be a first-price auction', () => {
@@ -150,9 +152,9 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.imp[0]).to.have.property('banner');
     });
 
-    it('should have h/w', () => {
-      expect(bidRequest.imp[0].banner).to.have.property('w', 300);
-      expect(bidRequest.imp[0].banner).to.have.property('h', 250);
+    it('should have w/h', () => {
+      expect(bidRequest.imp[0].banner).to.have.property('format');
+      expect(bidRequest.imp[0].banner.format).to.be.eql([{w: 300, h: 250}, {w: 300, h: 200}]);
     });
 
     it('should respect secure connection', () => {
@@ -172,7 +174,8 @@ describe('Adkernel adapter', () => {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
-    })
+      expect(bidRequest.device).to.have.property('dnt', 1);
+    });
   });
 
   describe('video request building', () => {

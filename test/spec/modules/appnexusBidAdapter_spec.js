@@ -1,6 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import { deepClone } from 'src/utils';
+
+const adloader = require('../../../src/adloader');
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
@@ -65,6 +68,24 @@ describe('AppNexusAdapter', () => {
         'auctionId': '1d1a030790a475',
       }
     ];
+
+    it('should parse out private sizes', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            privateSizes: [300, 250]
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].private_sizes).to.exist;
+      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
+    });
 
     it('should add source and verison to the tag', () => {
       const request = spec.buildRequests(bidRequests);
@@ -160,7 +181,7 @@ describe('AppNexusAdapter', () => {
           nativeParams: {
             title: {required: true},
             body: {required: true},
-            image: {required: true, sizes: [{ width: 100, height: 100 }] },
+            image: {required: true, sizes: [{ width: 100, height: 100 }]},
             cta: {required: false},
             sponsoredBy: {required: true}
           }
@@ -173,7 +194,7 @@ describe('AppNexusAdapter', () => {
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
         description: {required: true},
-        main_image: {required: true, sizes: [{ width: 100, height: 100 }] },
+        main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
         ctatext: {required: false},
         sponsored_by: {required: true}
       });
@@ -194,7 +215,7 @@ describe('AppNexusAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {required: true, sizes: [{}] },
+        main_image: {required: true, sizes: [{}]},
       });
     });
 
@@ -288,6 +309,18 @@ describe('AppNexusAdapter', () => {
   })
 
   describe('interpretResponse', () => {
+    let loadScriptStub;
+
+    beforeEach(() => {
+      loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+        args[1]();
+      });
+    });
+
+    afterEach(() => {
+      loadScriptStub.restore();
+    });
+
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -345,7 +378,10 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'appnexus': {
+            'buyerMemberId': 958
+          }
         }
       ];
       let bidderRequest;
@@ -376,6 +412,7 @@ describe('AppNexusAdapter', () => {
           'ads': [{
             'ad_type': 'video',
             'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
             'rtb': {
               'video': {
                 'content': '<!-- Creative -->'
@@ -388,11 +425,12 @@ describe('AppNexusAdapter', () => {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
+      expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
     it('handles native responses', () => {
-      let response1 = Object.assign({}, response);
+      let response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';
       response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
@@ -423,6 +461,27 @@ describe('AppNexusAdapter', () => {
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
       expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
+    });
+
+    it('supports configuring outstream renderers', () => {
+      const outstreamResponse = deepClone(response);
+      outstreamResponse.tags[0].ads[0].rtb.video = {};
+      outstreamResponse.tags[0].ads[0].renderer_url = 'renderer.js';
+
+      const bidderRequest = {
+        bids: [{
+          renderer: {
+            options: {
+              adText: 'configured'
+            }
+          }
+        }]
+      };
+
+      const result = spec.interpretResponse({ body: outstreamResponse }, {bidderRequest});
+      expect(result[0].renderer.config).to.deep.equal(
+        bidderRequest.bids[0].renderer.options
+      );
     });
   });
 });

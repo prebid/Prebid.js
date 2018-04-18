@@ -22,12 +22,15 @@ export const spec = {
    * @return object of parameters for Prebid AJAX request
    */
   buildRequests: function(bidReqs) {
+    const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
+    let iv;
     utils._each(bidReqs, function (bid) {
+      iv = iv || utils.getBidIdParameter('iv', bid.params);
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: utils.getBidIdParameter('tagid', bid.params),
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
         bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
       });
     });
@@ -35,10 +38,12 @@ export const spec = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
-        domain: window.location.host,
-        page: window.location.pathname + location.search + location.hash
+        domain: loc.host,
+        page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
+    if (iv) sovrnBidReq.iv = iv;
+
     return {
       method: 'POST',
       url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
@@ -66,7 +71,7 @@ export const spec = {
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
           creativeId: sovrnBid.id,
-          dealId: sovrnBid.dealId || null,
+          dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,
