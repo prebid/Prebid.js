@@ -325,6 +325,7 @@ const LEGACY_PROTOCOL = {
 
   interpretResponse(result, bidRequests, requestedBidders) {
     const bids = [];
+    let responseTimes = {};
 
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
@@ -335,6 +336,8 @@ const LEGACY_PROTOCOL = {
           if (bidder.error) {
             utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
           }
+
+          responseTimes[bidder.bidder] = bidder.response_time_ms;
         });
       }
 
@@ -357,6 +360,9 @@ const LEGACY_PROTOCOL = {
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
           bidObject.cpm = cpm;
+          if (responseTimes[bidObj.bidder]) {
+            bidObject.serverResponseTimeMs = responseTimes[bidObj.bidder];
+          }
           if (bidObj.cache_id) {
             bidObject.cache_id = bidObj.cache_id;
           }
@@ -536,6 +542,11 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.source = TYPE;
           bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
+
+          let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
+          if (serverResponseTimeMs) {
+            bidObject.serverResponseTimeMs = serverResponseTimeMs;
+          }
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;

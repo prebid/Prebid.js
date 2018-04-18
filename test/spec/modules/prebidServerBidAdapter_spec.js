@@ -613,6 +613,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('cache_id', '7654321');
       expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
       expect(response).to.not.have.property('vastUrl');
+      expect(response).to.have.property('serverResponseTimeMs', 52);
     });
 
     it('registers video bids', () => {
@@ -805,6 +806,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('serverResponseTimeMs', 8);
     });
 
     it('handles OpenRTB video responses', () => {
@@ -825,6 +827,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
+      expect(response).to.have.property('serverResponseTimeMs', 81);
     });
 
     it('should log warning for unsupported bidder', () => {
