@@ -14,14 +14,15 @@ const MODULE_NAME = 'express';
  * @param {Object[]} [adUnits = pbjs.adUnits] - an array of adUnits for express to operate on.
  */
 $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
-
   utils.logMessage('loading ' + MODULE_NAME);
 
   if (adUnits.length === 0) {
     utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
-// put adUnits in a more performant hash lookup by code.
+  // store gpt slots in a more performant hash lookup by elementId (adUnit code)
+  var gptSlotCache = {};
+  // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
       cache[adUnit.code] = adUnit;
@@ -43,7 +44,6 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     }
     utils.logMessage('running');
 
-
     // function to convert google tag slot sizes to [[w,h],...]
     function mapGptSlotSizes(aGPTSlotSizes) {
       var aSlotSizes = [];
@@ -59,9 +59,9 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
 
     // a helper function to verify slots or get slots if not present
     function defaultSlots(slots) {
-      return Array.isArray(slots) ?
-        slots.slice() :
-        googletag.pubads().getSlots().slice();
+      return Array.isArray(slots)
+        ? slots.slice()
+        : googletag.pubads().getSlots().slice();
     }
 
     // maps gpt slots to adUnits, matches are copied to new array and removed from passed array.
@@ -69,12 +69,12 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       var adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
       for (var i = gptSlots.length - 1; i > -1; i--) {
-        var gptSlot = gptSlots[i],
-          elemId = gptSlot.getSlotElementId(),
-          adUnit = adUnitsCache[elemId];
+        const gptSlot = gptSlots[i];
+        const elemId = gptSlot.getSlotElementId();
+        const adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
-          adUnit._gptSlot = gptSlot;
+          gptSlotCache[elemId] = gptSlot; // store by elementId
           adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
@@ -143,14 +143,13 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
               $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
               fGptRefresh.apply(pads(), [
                 adUnits.map(function (adUnit) {
-                  return adUnit._gptSlot;
+                  return gptSlotCache[adUnit.code];
                 })
               ]);
             }
           });
         }
       }
-
     };
 
     // override gpt refresh() function
@@ -160,7 +159,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
       var adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
-        return adUnit._gptSlot._displayed;
+        return gptSlotCache[adUnit.code]._displayed;
       });
 
       if (aGptSlots.length) {
@@ -174,7 +173,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
             $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
             fGptRefresh.apply(pads(), [
               adUnits.map(function (adUnit) {
-                return adUnit._gptSlot
+                return gptSlotCache[adUnit.code];
               }),
               options
             ]);
@@ -205,5 +204,4 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       return fGptEnableSingleRequest.apply(window.googletag.pubads(), arguments);
     };
   });
-
 };

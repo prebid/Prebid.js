@@ -1,79 +1,107 @@
-var CONSTANTS = require('src/constants.json');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var Ajax = require('src/ajax');
-var utils = require('src/utils.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from 'src/utils';
+import {registerBidder} from 'src/adapters/bidderFactory';
 
-/**
- * Adapter for requesting bids from Atomx.
- *
- * @returns {{callBids: _callBids, responseCallback: _responseCallback}}
- */
-var AtomxAdapter = function AtomxAdapter() {
-  function _callBids(data) {
-    if (!window.atomx_prebid) {
-      adloader.loadScript(window.location.protocol + '//s.ato.mx/b.js', function() { _bid(data); }, true);
-    } else {
-      _bid(data);
+const BIDDER_CODE = 'atomx';
+
+function getDomain() {
+  var domain = '';
+
+  try {
+    if ((domain === '') && (window.top == window)) {
+      domain = window.location.href;
     }
-  }
 
-  function _bid(data) {
-    var url = window.atomx_prebid();
-    var bids = data.bids || [];
-    for (var i = 0, ln = bids.length; i < ln; i++) {
-      var bid = bids[i];
-      if (bid.params && bid.params.id) {
-        Ajax.ajax(url, _responseCallback.bind(this, bid), {
-          id: bid.params.id,
-          size: utils.parseSizesInput(bid.sizes)[0],
-          prebid: bid.placementCode
-        }, {method: 'GET'});
-      } else {
-        var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
-        bidObject.bidderCode = 'atomx';
-        bidmanager.addBidResponse(bid.placementCode, bidObject);
-      }
+    if ((domain === '') && (window.top == window.parent)) {
+      domain = document.referrer;
     }
-  }
 
-  function _responseCallback(bid, data) {
-    var bidObject;
-    try {
-      data = JSON.parse(data);
+    if (domain == '') {
+      var atomxt = 'atomxtest';
 
-      if (data.cpm && data.cpm > 0) {
-        bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
-        bidObject.bidderCode = 'atomx';
-        bidObject.cpm = data.cpm * 1000;
-        if (data.adm) {
-          bidObject.ad = data.adm;
-        } else {
-          bidObject.adUrl = data.url;
+      // It should be impossible to change the window.location.ancestorOrigins.
+      window.location.ancestorOrigins[0] = atomxt;
+      if (window.location.ancestorOrigins[0] != atomxt) {
+        var ancestorOrigins = window.location.ancestorOrigins;
+
+        // If the length is 0 we are a javascript tag running in the main domain.
+        // But window.top != window or window.location.hostname is empty.
+        if (ancestorOrigins.length == 0) {
+          // This browser is so fucked up, just return an empty string.
+          return '';
         }
-        bidObject.width = data.width;
-        bidObject.height = data.height;
-        bidmanager.addBidResponse(bid.placementCode, bidObject);
-        return;
-      }
-    } catch (_error) {
-      utils.logError(_error);
-    }
 
-    bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
-    bidObject.bidderCode = 'atomx';
-    bidmanager.addBidResponse(bid.placementCode, bidObject);
+        // ancestorOrigins is an array where [0] is our own window.location
+        // and [length-1] is the top window.location.
+        domain = ancestorOrigins[ancestorOrigins.length - 1];
+      }
+    }
+  } catch (unused) {
   }
 
-  return {
-    callBids: _callBids,
-    responseCallback: _responseCallback
-  };
+  if (domain === '') {
+    domain = document.referrer;
+  }
+
+  if (domain === '') {
+    domain = window.location.href;
+  }
+
+  return domain.substr(0, 512);
+}
+
+export const spec = {
+  code: BIDDER_CODE,
+
+  isBidRequestValid: function(bid) {
+    return bid.params && (!!bid.params.id);
+  },
+
+  buildRequests: function(validBidRequests) {
+    return validBidRequests.map(bidRequest => {
+      return {
+        method: 'GET',
+        url: location.protocol + '//p.ato.mx/placement',
+        data: {
+          v: 12,
+          id: bidRequest.params.id,
+          size: utils.parseSizesInput(bidRequest.sizes)[0],
+          prebid: bidRequest.bidId,
+          b: 0,
+          h: '7t3y9',
+          type: 'javascript',
+          screen: window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth,
+          timezone: new Date().getTimezoneOffset(),
+          domain: getDomain(),
+          r: document.referrer.substr(0, 512),
+        },
+      };
+    });
+  },
+
+  interpretResponse: function (serverResponse, bidRequest) {
+    const body = serverResponse.body;
+    const res = {
+      requestId: body.code,
+      cpm: body.cpm * 1000,
+      width: body.width,
+      height: body.height,
+      creativeId: body.creative_id,
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 60,
+    };
+
+    if (body.adm) {
+      res.ad = body.adm;
+    } else {
+      res.adUrl = body.url;
+    }
+
+    return [res];
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses) {
+    return [];
+  },
 };
-
-
-adaptermanager.registerBidAdapter(new AtomxAdapter, 'atomx');
-
-module.exports = AtomxAdapter;
+registerBidder(spec);

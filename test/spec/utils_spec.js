@@ -1,7 +1,8 @@
-import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { expect } from 'chai';
 
 var assert = require('assert');
-var utils = require('../../src/utils');
+var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -100,7 +101,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -521,7 +522,244 @@ describe('Utils', function () {
       for (var key in arr) {
         count++;
       }
-      assert.equal(arr.length, count, 'Polyfill test fails')
+      assert.equal(arr.length, count, 'Polyfill test fails');
+    });
+  });
+
+  describe('delayExecution', function () {
+    it('should execute the core function after the correct number of calls', function () {
+      const callback = sinon.spy();
+      const delayed = utils.delayExecution(callback, 5);
+      for (let i = 0; i < 4; i++) {
+        delayed();
+      }
+      assert(callback.notCalled);
+      delayed(3);
+      assert(callback.called)
+      assert.equal(callback.firstCall.args[0], 3);
+    });
+  });
+
+  describe('deepAccess', function() {
+    var obj = {
+      1: 2,
+      test: {
+        first: 11
+      }
+    };
+
+    it('should allow deep access of object properties', function() {
+      var value1 = utils.deepAccess(obj, 'test');
+      assert.deepEqual(value1, obj.test);
+
+      var value2 = utils.deepAccess(obj, 'test.first');
+      assert.equal(value2, 11);
+
+      var value3 = utils.deepAccess(obj, 1);
+      assert.equal(value3, 2);
+    });
+
+    it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function() {
+      var value;
+
+      assert.doesNotThrow(function() {
+        value = utils.deepAccess(obj, 'test.second.third');
+      });
+
+      assert.equal(value, undefined);
+    });
+  });
+
+  describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
+    it('should return empty string if url is not passed', function () {
+      var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
+      assert.equal(output, '');
+    });
+
+    it('should have URL in returned value if url is passed', function () {
+      var url = 'https://abcd.com/service?a=1&b=2&c=3';
+      var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
+      var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
+      assert.equal(output, expected);
+    });
+  });
+
+  describe('getDefinedParams', () => {
+    it('builds an object consisting of defined params', () => {
+      const adUnit = {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+        notNeeded: 'do not include',
+      };
+
+      const builtObject = utils.getDefinedParams(adUnit, [
+        'mediaType', 'comeWithMe'
+      ]);
+
+      assert.deepEqual(builtObject, {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+      });
+    });
+  });
+
+  describe('deepClone', () => {
+    it('deep copies objects', () => {
+      const adUnit = [{
+        code: 'swan',
+        mediaTypes: {video: {context: 'outstream'}},
+        renderer: {
+          render: bid => player.render(bid),
+          url: '/video/renderer.js'
+        },
+        bids: [{
+          bidder: 'dharmaInitiative',
+          params: { placementId: '481516', }
+        }],
+      }];
+
+      const adUnitCopy = utils.deepClone(adUnit);
+      expect(adUnitCopy[0].renderer.url).to.be.a('string');
+      expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
+
+  describe('getUserConfiguredParams', () => {
+    const adUnits = [{
+      code: 'adUnit1',
+      bids: [{
+        bidder: 'bidder1',
+        params: {
+          key1: 'value1'
+        }
+      }, {
+        bidder: 'bidder2'
+      }]
+    }];
+
+    it('should return params configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
+      const expected = [{
+        key1: 'value1'
+      }];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return array containting empty object, if bidder present and no params are configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
+      const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if bidder is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if adUnit is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+  });
+
+  describe('getTopWindowLocation', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('returns window.location if not in iFrame', () => {
+      sandbox.stub(utils, 'getWindowLocation').returns({
+        href: 'https://www.google.com/',
+        ancestorOrigins: {},
+        origin: 'https://www.google.com',
+        protocol: 'https',
+        host: 'www.google.com',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/',
+        search: '',
+        hash: ''
+      });
+      let windowSelfAndTopObject = { self: 'is same as top' };
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        windowSelfAndTopObject
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        windowSelfAndTopObject
+      );
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal('');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
+    });
+
+    it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.example.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.example.com');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
+    });
+  });
+
+  describe('convertCamelToUnderscore', () => {
+    it('returns converted string value using underscore syntax instead of camelCase', () => {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
     });
   });
 });

@@ -1,7 +1,35 @@
 var utils = require('./utils');
 let _requestCache = {};
 
-// add a script tag to the page, used to add /jpt call to page
+/**
+ * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
+ * @param {string} url the url to load
+ * @param {string} moduleCode bidderCode or module code of the module requesting this resource
+ */
+exports.loadExternalScript = function(url, moduleCode) {
+  if (!moduleCode || !url) {
+    utils.logError('cannot load external script without url and moduleCode');
+    return;
+  }
+  utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+
+  script.src = url;
+
+  // add the new script tag to the page
+  const target = document.head || document.body;
+  if (target) {
+    target.appendChild(script);
+  }
+};
+
+/**
+ *
+ * @deprecated
+ * Do not use this function. Will be removed in the next release. If external resources are required, use #loadExternalScript instead.
+ */
 exports.loadScript = function (tagSrc, callback, cacheRequest) {
   // var noop = () => {};
   //
@@ -37,16 +65,13 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
           for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {
             _requestCache[tagSrc].callbacks[i]();
           }
-        }
-        catch (e) {
+        } catch (e) {
           utils.logError('Error executing callback', 'adloader.js:loadScript', e);
         }
       });
     }
-  }
-
-  // trigger one time request
-  else {
+  } else {
+    // trigger one time request
     requestResource(tagSrc, callback);
   }
 };

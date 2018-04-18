@@ -1,28 +1,37 @@
-var CONSTANTS = require('src/constants.json');
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+const BIDDER_CODE = 'vertoz';
+const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
 
-function VertozAdapter() {
-  const BASE_URI = '//banner.vrtzads.com/vzhbidder/bid?';
-  const BIDDER_NAME = 'vertoz';
-  const QUERY_PARAM_KEY = 'q';
-
-  function _callBids(params) {
-    var bids = params.bids || [];
-
-    for (var i = 0; i < bids.length; i++) {
-      var bid = bids[i];
+export const spec = {
+  code: BIDDER_CODE,
+  /**
+  * Determines whether or not the given bid request is valid.
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return boolean True if this is a valid bid, and false otherwise.
+  */
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.placementId);
+  },
+  /**
+  * Make a server request from the list of BidRequests.
+  *
+  * @param {validBidRequests[]} - an array of bids
+  * @return ServerRequest Info describing the request to the server.
+  */
+  buildRequests: function(bidRequestsArr) {
+    var bidRequests = bidRequestsArr || [];
+    return bidRequests.map(bid => {
       let slotBidId = utils.getValue(bid, 'bidId');
       let cb = Math.round(new Date().getTime() / 1000);
       let vzEndPoint = BASE_URI;
       let reqParams = bid.params || {};
       let placementId = utils.getValue(reqParams, 'placementId');
+      let cpm = utils.getValue(reqParams, 'cpmFloor');
 
       if (utils.isEmptyStr(placementId)) {
-        utils.logError('missing params:', BIDDER_NAME, 'Enter valid vzPlacementId');
+        utils.logError('missing params:', BIDDER_CODE, 'Enter valid vzPlacementId');
         return;
       }
 
@@ -31,38 +40,47 @@ function VertozAdapter() {
         _vzPlacementId: placementId,
         _rqsrc: reqSrc,
         _cb: cb,
-        _slotBidId: slotBidId
+        _slotBidId: slotBidId,
+        _cpm: cpm,
+        _cbn: '$$PREBID_GLOBAL$$'
       };
-      let queryParamValue = JSON.stringify(vzReq);
-      vzEndPoint = utils.tryAppendQueryString(vzEndPoint, QUERY_PARAM_KEY, queryParamValue);
-      adloader.loadScript(vzEndPoint);
-    }
-  }
 
-  $$PREBID_GLOBAL$$.vzResponse = function (vertozResponse) {
-    var bidRespObj = vertozResponse;
-    var bidObject;
-    var reqBidObj = utils.getBidRequest(bidRespObj.slotBidId);
+      let queryParamValue = encodeURIComponent(JSON.stringify(vzReq));
+
+      return {
+        method: 'POST',
+        data: {q: queryParamValue},
+        url: vzEndPoint
+      };
+    })
+  },
+  /**
+  * Unpack the response from the server into a list of bids.
+  *
+  * @param {ServerResponse} serverResponse A successful response from the server.
+  * @return {Bid[]} An array of bids which were nested inside the server.
+  */
+  interpretResponse: function(serverResponse) {
+    var bidRespObj = serverResponse.body;
+    const bidResponses = [];
 
     if (bidRespObj.cpm) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, reqBidObj);
-      bidObject.cpm = Number(bidRespObj.cpm);
-      bidObject.ad = bidRespObj.ad + utils.createTrackPixelHtml(decodeURIComponent(bidRespObj.nurl));
-      bidObject.width = bidRespObj.adWidth;
-      bidObject.height = bidRespObj.adHeight;
-    } else {
-      let respStatusText = bidRespObj.statusText;
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, reqBidObj);
-      utils.logMessage(respStatusText);
+      const bidResponse = {
+        requestId: bidRespObj.slotBidId,
+        cpm: Number(bidRespObj.cpm),
+        width: Number(bidRespObj.adWidth),
+        height: Number(bidRespObj.adHeight),
+        netRevenue: true,
+        mediaType: 'banner',
+        currency: 'USD',
+        dealId: null,
+        creativeId: null,
+        ttl: 300,
+        ad: bidRespObj.ad + utils.createTrackPixelHtml(decodeURIComponent(bidRespObj.nurl))
+      };
+      bidResponses.push(bidResponse);
     }
-
-    var adSpaceId = reqBidObj.placementCode;
-    bidObject.bidderCode = BIDDER_NAME;
-    bidmanager.addBidResponse(adSpaceId, bidObject);
-  };
-  return { callBids: _callBids };
+    return bidResponses;
+  }
 }
-
-adaptermanager.registerBidAdapter(new VertozAdapter, 'vertoz');
-
-module.exports = VertozAdapter;
+registerBidder(spec);

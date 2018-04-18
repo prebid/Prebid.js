@@ -1,163 +1,87 @@
-var CONSTANTS = require('src/constants.json');
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { BANNER } from 'src/mediaTypes';
+import { REPO_AND_VERSION } from 'src/constants';
 
-/**
- * Adapter for requesting bids from Sovrn
- */
-var SovrnAdapter = function SovrnAdapter() {
-  var sovrnUrl = 'ap.lijit.com/rtb/bid';
+export const spec = {
+  code: 'sovrn',
+  supportedMediaTypes: [BANNER],
 
-  function _callBids(params) {
-    var sovrnBids = params.bids || [];
+  /**
+   * Check if the bid is a valid zone ID in either number or string form
+   * @param {object} bid the Sovrn bid to validate
+   * @return boolean for whether or not a bid is valid
+   */
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid));
+  },
 
-    _requestBids(sovrnBids);
-  }
-
-  function _requestBids(bidReqs) {
-    // build bid request object
-    var domain = window.location.host;
-    var page = window.location.pathname + location.search + location.hash;
-
-    var sovrnImps = [];
-
-    // build impression array for sovrn
+  /**
+   * Format the bid request object for our endpoint
+   * @param {BidRequest[]} bidRequests Array of Sovrn bidders
+   * @return object of parameters for Prebid AJAX request
+   */
+  buildRequests: function(bidReqs) {
+    const loc = utils.getTopWindowLocation();
+    let sovrnImps = [];
+    let iv;
     utils._each(bidReqs, function (bid) {
-      var tagId = utils.getBidIdParameter('tagid', bid.params);
-      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
-      var adW = 0;
-      var adH = 0;
-
-      // sovrn supports only one size per tagid, so we just take the first size if there are more
-      // if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
-      var sizeArrayLength = bidSizes.length;
-      if (sizeArrayLength === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-        adW = bidSizes[0];
-        adH = bidSizes[1];
-      } else {
-        adW = bidSizes[0][0];
-        adH = bidSizes[0][1];
-      }
-
-      var imp =
-        {
-          id: bid.bidId,
-          banner: {
-            w: adW,
-            h: adH
-          },
-          tagid: tagId,
-          bidfloor: bidFloor
-        };
-      sovrnImps.push(imp);
+      iv = iv || utils.getBidIdParameter('iv', bid.params);
+      sovrnImps.push({
+        id: bid.bidId,
+        banner: { w: 1, h: 1 },
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
+        bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
+      });
     });
-
-    // build bid request with impressions
-    var sovrnBidReq = {
+    const sovrnBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
-        domain: domain,
-        page: page
+        domain: loc.host,
+        page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
+    if (iv) sovrnBidReq.iv = iv;
 
-    var scriptUrl = '//' + sovrnUrl + '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
-      '&src=' + CONSTANTS.REPO_AND_VERSION +
-      '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
-    adloader.loadScript(scriptUrl);
-  }
+    return {
+      method: 'POST',
+      url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
+      data: JSON.stringify(sovrnBidReq),
+      options: {contentType: 'text/plain'}
+    };
+  },
 
-  function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
-    if (missing) {
-      missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
-    } else {
-      missing = [];
-    }
-
-    missing.forEach(function (bidRequest) {
-      // Add a no-bid response for this bid request.
-      var bid = {};
-      bid = bidfactory.createBid(2, bidRequest);
-      bid.bidderCode = 'sovrn';
-      bidmanager.addBidResponse(bidRequest.placementCode, bid);
-    });
-  }
-
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.sovrnResponse = function (sovrnResponseObj) {
-    // valid object?
-    if (sovrnResponseObj && sovrnResponseObj.id) {
-      // valid object w/ bid responses?
-      if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
-        var impidsWithBidBack = [];
-        sovrnResponseObj.seatbid[0].bid.forEach(function (sovrnBid) {
-          var responseCPM;
-          var placementCode = '';
-          var id = sovrnBid.impid;
-          var bid = {};
-
-          // try to fetch the bid request we sent Sovrn
-          var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-          .find(bid => bid.bidId === id);
-
-          if (bidObj) {
-            placementCode = bidObj.placementCode;
-            bidObj.status = CONSTANTS.STATUS.GOOD;
-
-            // place ad response on bidmanager._adResponsesByBidderId
-            responseCPM = parseFloat(sovrnBid.price);
-
-            if (responseCPM !== 0) {
-              sovrnBid.placementCode = placementCode;
-              sovrnBid.size = bidObj.sizes;
-              var responseAd = sovrnBid.adm;
-
-              // build impression url from response
-              var responseNurl = '<img src="' + sovrnBid.nurl + '">';
-
-              // store bid response
-              // bid status is good (indicating 1)
-              bid = bidfactory.createBid(1, bidObj);
-              bid.creative_id = sovrnBid.id;
-              bid.bidderCode = 'sovrn';
-              bid.cpm = responseCPM;
-
-              // set ad content + impression url
-              // sovrn returns <script> block, so use bid.ad, not bid.adurl
-              bid.ad = decodeURIComponent(responseAd + responseNurl);
-
-              // Set width and height from response now
-              bid.width = parseInt(sovrnBid.w);
-              bid.height = parseInt(sovrnBid.h);
-
-              bidmanager.addBidResponse(placementCode, bid);
-              impidsWithBidBack.push(id);
-            }
-          }
+  /**
+   * Format Sovrn responses as Prebid bid responses
+   * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
+   * @return {Bid[]} An array of formatted bids.
+  */
+  interpretResponse: function({ body: {id, seatbid} }) {
+    let sovrnBidResponses = [];
+    if (id &&
+      seatbid &&
+      seatbid.length > 0 &&
+      seatbid[0].bid &&
+      seatbid[0].bid.length > 0) {
+      seatbid[0].bid.map(sovrnBid => {
+        sovrnBidResponses.push({
+          requestId: sovrnBid.impid,
+          cpm: parseFloat(sovrnBid.price),
+          width: parseInt(sovrnBid.w),
+          height: parseInt(sovrnBid.h),
+          creativeId: sovrnBid.id,
+          dealId: sovrnBid.dealid || null,
+          currency: 'USD',
+          netRevenue: true,
+          mediaType: BANNER,
+          ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
+          ttl: 60000
         });
-
-        addBlankBidResponses(impidsWithBidBack);
-      } else {
-        // no response data for all requests
-        addBlankBidResponses([]);
-      }
-    } else {
-      // no response data for all requests
-      addBlankBidResponses([]);
+      });
     }
-  }; // sovrnResponse
-
-  return {
-    callBids: _callBids
-  };
+    return sovrnBidResponses;
+  }
 };
 
-adaptermanager.registerBidAdapter(new SovrnAdapter, 'sovrn');
-
-module.exports = SovrnAdapter;
+registerBidder(spec);

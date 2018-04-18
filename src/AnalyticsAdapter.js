@@ -1,23 +1,29 @@
-import CONSTANTS from 'src/constants.json';
-import { loadScript } from 'src/adloader';
-import { ajax } from 'src/ajax';
+import CONSTANTS from './constants';
+import { loadScript } from './adloader';
+import { ajax } from './ajax';
 
-const events = require('src/events');
-const utils = require('src/utils');
+const events = require('./events');
+const utils = require('./utils');
 
-const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
-const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
-const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
-const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
-const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
-const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+const {
+  EVENTS: {
+    AUCTION_INIT,
+    AUCTION_END,
+    BID_REQUESTED,
+    BID_TIMEOUT,
+    BID_RESPONSE,
+    BID_WON,
+    BID_ADJUSTMENT,
+    BIDDER_DONE,
+    SET_TARGETING,
+    AD_RENDER_FAILED
+  }
+} = CONSTANTS;
 
 const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
@@ -81,7 +87,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       _sampled = true;
     }
 
-
     if (_sampled) {
       // first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
@@ -91,9 +96,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
         const { eventType, args } = event;
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType, args });
         }
       });
@@ -106,9 +109,12 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
         [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
+        [BIDDER_DONE]: args => this.enqueue({ eventType: BIDDER_DONE, args }),
+        [SET_TARGETING]: args => this.enqueue({ eventType: SET_TARGETING, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
+        [AD_RENDER_FAILED]: args => this.enqueue({ eventType: AD_RENDER_FAILED, args }),
         [AUCTION_INIT]: args => {
-          args.config = config.options; // enableAnaltyics configuration object
+          args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
         }
       };
@@ -120,8 +126,8 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       utils.logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
 
-
     // finally set this function to return log message, prevents multiple adapter listeners
+    this._oldEnable = this.enableAnalytics;
     this.enableAnalytics = function _enable() {
       return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
@@ -131,6 +137,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     utils._each(_handlers, (handler, event) => {
       events.off(event, handler);
     });
+    this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
   }
 
   function _emptyQueue() {
