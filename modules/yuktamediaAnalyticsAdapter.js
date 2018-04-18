@@ -54,8 +54,6 @@ function mapBidRequests(params) {
         adUnitCode: bid.adUnitCode,
         requestId: bid.bidderRequestId,
         auctionId: bid.auctionId,
-        pubcid: bid.crumbs.pubcid,
-        placementId: bid.params.placementId,
         transactionId: bid.transactionId,
         sizes: utils.parseSizesInput(bid.sizes).toString(),
         renderStatus: 1,
