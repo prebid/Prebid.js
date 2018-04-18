@@ -35,6 +35,29 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
+  it('gets the correct custom bucket strings with irregular increment', () => {
+    let cpm = 14.50908;
+    let customConfig = {
+      'buckets': [{
+        'precision': 4,
+        'min': 0,
+        'max': 4,
+        'increment': 0.01,
+      },
+      {
+        'precision': 4,
+        'min': 4,
+        'max': 18,
+        'increment': 0.3,
+        'cap': true
+      }
+      ]
+    };
+    let expected = '{"low":"5.00","med":"14.50","high":"14.50","auto":"14.50","dense":"14.50","custom":"14.5000"}';
+    let output = getPriceBucketString(cpm, customConfig);
+    expect(JSON.stringify(output)).to.deep.equal(expected);
+  });
+
   it('gets the correct custom bucket strings in non-USD currency', () => {
     let cpm = 16.50908 * 110.49;
     let customConfig = {
