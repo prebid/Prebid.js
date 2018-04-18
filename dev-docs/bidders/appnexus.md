@@ -8,6 +8,7 @@ biddercode: appnexus
 biddercode_longer_than_12: false
 hide: true
 prebid_1_0_supported : true
+media_types: video, native
 gdpr_supported: true
 ---
 

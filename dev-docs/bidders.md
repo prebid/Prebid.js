@@ -72,48 +72,21 @@ The following parameters in the `bidResponse` object are common across all bidde
 ## Bidders with Video and Native Demand
 {: .no_toc }
 
-{: .table .table-bordered .table-striped }
-| Bidder          | Supported Media Types | Prebid 1.0 Support? |
-|-----------------+-----------------------+---------------------|
-| adgeneration    | native                | X                   |
-| adkernel        | video                 | X                   |
-| adkernelAdn     | video                 | X                   |
-| admixer         | video                 | X                   |
-| adxcg           | video,native          | X                   |
-| aerserv         | video                 |                     |
-| aol             | video                 | X                   |
-| appnexus        | video,native          | X                   |
-| audienceNetwork | video,native          | X                   |
-| beachfront      | video                 | X                   |
-| conversant      | video                 | X                   |
-| criteo          | native                |                     |
-| freewheelSSP    | video                 | X                   |
-| gamma           | video                 | X                   |
-| getintent       | video                 | X                   |
-| gumgum          | native                | X                   |
-| indexExchange   | video                 |                     |
-| mantis          | video,native          | X                   |
-| mobfox          | video                 | X                   |
-| openx           | video                 | X                   |
-| optimatic       | video                 | X                   |
-| platformio      | video,native          | X                   |
-| prebidServer    | video                 | X                   |
-| pulsepoint      | native                | X                   |
-| pulsepointLite  | native                |                     |
-| quantcast       | video                 | X                   |
-| readpeak        | native                | X                   |
-| rhythmone       | video                 | X                   |
-| rockyou         | video                 | X                   |
-| rubicon         | video                 | X                   |
-| sekindoUM       | video                 | X                   |
-| sharethrough    | native                | X                   |
-| spotx           | video                 |                     |
-| stickyadstv     | native                |                     |
-| tremor          | video                 |                     |
-| unruly          | video,native          |                     |
-| vertamedia      | video                 | X                   |
-| yieldlab        | video                 | X                   |
-| yieldmo         | native                | X                   |
+{% assign bidder_pages = site.pages | where: "layout", "bidder" %}
+<table class="table table-bordered table-striped">
+<thead><tr>
+<th>Bidder</th>
+<th>Supported Media Types</th>
+<th> Prebid 1.0 Support?</th>
+</tr></thead>
+<tbody>
+{% for page in bidder_pages %}
+{% if page.media_types %}
+<tr><td> {{page.biddercode}} </td><td> {% if page.media_types contains 'video' and page.media_types contains 'native' %} video, native {% elsif page.media_types contains 'native' %} native {% elsif page.media_types contains 'video' %} video {% endif %} </td><td> {% if page.prebid_1_0_supported %}X{% endif %} </td></tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
 
 <a name="prebid-server-bidders"></a>
 

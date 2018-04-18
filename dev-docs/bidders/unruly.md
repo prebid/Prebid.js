@@ -7,6 +7,7 @@ nav_section: reference
 hide: true
 biddercode: unruly
 biddercode_longer_than_12: false
+media_types: native, video
 ---
 
 ### bid params

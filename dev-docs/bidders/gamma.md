@@ -7,6 +7,7 @@ nav_section: reference
 hide: true
 biddercode: gamma
 prebid_1_0_supported : true
+media_types: video
 ---
 
 ### bid params

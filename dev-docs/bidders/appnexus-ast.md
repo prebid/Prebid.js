@@ -8,6 +8,7 @@ hide: true
 biddercode: appnexusAst
 biddercode_longer_than_12: false
 prebid_1_0_supported : false
+media_types: native, video
 ---
 
 Advantages of using the `appnexusAst` adapter over the `appnexus`

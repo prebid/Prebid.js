@@ -13,6 +13,7 @@ biddercode: criteo
 biddercode_longer_than_12: false
 
 bidder_supports_deals: false
+media_types: native
 
 ---
 

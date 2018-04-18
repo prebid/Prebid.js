@@ -11,6 +11,7 @@ hide: true
 biddercode: indexExchange
 
 biddercode_longer_than_12: true
+media_types: video
 
 ---
 

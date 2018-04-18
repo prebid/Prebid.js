@@ -8,6 +8,7 @@ hide: true
 biddercode: mantis
 prebid_1_0_supported : true
 biddercode_longer_than_12: false
+media_types: native, video
 
 ---
 

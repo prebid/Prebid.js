@@ -11,6 +11,7 @@ biddercode: yieldlab
 biddercode_longer_than_12: false
 
 prebid_1_0_supported : true
+media_types: video
 
 ---
 
