@@ -476,11 +476,6 @@ describe('OpenxAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequest);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
-    });
-
     it('should register a beacon', () => {
       spec.interpretResponse({body: bidResponse}, bidRequest);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/\/\/openx-d\.openx\.net.*\/bo\?.*ts=ts/));
@@ -599,16 +594,39 @@ describe('OpenxAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
-    });
-
     it('should register a beacon', () => {
       spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^\/\/test-colo\.com/))
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ph=test-ph/));
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ts=test-ts/));
+    });
+  });
+
+  describe('user sync', () => {
+    const syncUrl = 'http://testpixels.net';
+
+    it('should register the pixel iframe from banner ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { ads: { pixels: syncUrl } } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the pixel iframe from video ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { pixels: syncUrl } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the default iframe if no pixels available', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        []
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: '//u.openx.net/w/1.0/pd' }]);
     });
   });
 });

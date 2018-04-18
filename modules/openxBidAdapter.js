@@ -8,7 +8,7 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.0.2';
+const BIDDER_VERSION = '2.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,10 +40,19 @@ export const spec = {
   interpretResponse: function ({body: oxResponseObj}, serverRequest) {
     let mediaType = getMediaTypeFromRequest(serverRequest);
 
-    registerUserSync(mediaType, oxResponseObj);
-
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
+  },
+  getUserSyncs: function(syncOptions, responses) {
+    if (syncOptions.iframeEnabled) {
+      let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
+                utils.deepAccess(responses, '0.body.pixels') ||
+                '//u.openx.net/w/1.0/pd';
+      return [{
+        type: 'iframe',
+        url: url,
+      }];
+    }
   }
 };
 
@@ -199,14 +208,6 @@ function partitionByVideoBids(bidRequests) {
 
 function getMediaTypeFromRequest(serverRequest) {
   return /avjp$/.test(serverRequest.url) ? VIDEO : BANNER;
-}
-
-function registerUserSync(mediaType, responseObj) {
-  if (mediaType === VIDEO && responseObj.pixels) {
-    userSync.registerSync('iframe', BIDDER_CODE, responseObj.pixels);
-  } else if (utils.deepAccess(responseObj, 'ads.pixels')) {
-    userSync.registerSync('iframe', BIDDER_CODE, responseObj.ads.pixels);
-  }
 }
 
 function buildCommonQueryParamsFromBids(bids) {
