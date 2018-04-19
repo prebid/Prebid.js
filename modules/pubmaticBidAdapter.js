@@ -290,11 +290,19 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: syncOptions => {
+  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+    let syncurl = USYNCURL + publisherId;
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.consentRequired ? 1 : 0);
+      syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: USYNCURL + publisherId
+        url: syncurl
       }];
     } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
