@@ -2,9 +2,8 @@ import {expect} from 'chai';
 import * as utils from 'src/utils';
 import {spec} from 'modules/dgadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {NATIVE} from 'src/mediaTypes';
 
-describe('dgadsAdapter', () => {
+describe('dgadsBidAdapter', () => {
   const adapter = newBidder(spec);
   const VALID_ENDPOINT = 'https://ads-tr.bigmining.com/ad/p/bid';
 
@@ -63,6 +62,7 @@ describe('dgadsAdapter', () => {
       },
       { // native
         bidder: 'dgads',
+        sizes: [[300, 250]],
         params: {
           site_id: '1',
           location_id: '10'
@@ -70,9 +70,7 @@ describe('dgadsAdapter', () => {
         mediaTypes: {
           native: {
             image: {
-              required: true,
-              width: 300,
-              height: 250
+              required: true
             },
             title: {
               required: true,
@@ -149,8 +147,6 @@ describe('dgadsAdapter', () => {
           mediaTypes: {
             native: {
               image: {
-                width: 300,
-                height: 250,
                 required: true
               },
               title: {
