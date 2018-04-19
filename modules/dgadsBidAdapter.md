@@ -30,6 +30,7 @@ This adapter supports Banner and Native.
   // Native
   {
      code: 'native-div',
+     sizes: [[300, 250]],
      mediaTypes: {
        native: {
          title: {
@@ -45,8 +46,7 @@ This adapter supports Banner and Native.
            len: 40
          },
          image: {
-           required: true,
-           sizes: [300, 250]
+           required: true
          },
          clickUrl: {
            required: true
