@@ -139,6 +139,7 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
+      adaptermanager.aliasRegistry[alias] = spec.code;
       putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
@@ -199,6 +200,8 @@ export function newBidder(spec) {
           bid.adUnitCode = bid.placementCode
         }
       });
+      console.log('freestar::', 'validBidRequests', validBidRequests);
+      console.log('freestar::', 'bidRequestMap', bidRequestMap);
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
       if (!requests || requests.length === 0) {

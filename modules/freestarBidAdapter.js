@@ -72,7 +72,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
-    console.log('freestar::', 'buildRequests called', 'serverResponse', serverResponse);
+    console.log('freestar::', 'interpretResponse called', 'serverResponse', serverResponse);
     const bids = [];
     // @TODO: add error handling
     if(serverResponse.winningProvider) {
@@ -82,7 +82,8 @@ export const spec = {
           bids.push(parseBid(Object.assign(
             {},
             {
-              requestId:winner.winningSeat.bid[0].impid,
+              requestId: serverResponse.bidRequest.id,
+              // requestId:winner.winningSeat.bid[0].impid,
               currency: winner.currency
             },
             winner.winningSeat.bid[0],
@@ -93,13 +94,15 @@ export const spec = {
         bids.push(parseBid(Object.assign(
           {},
           {
-            requestId:winner.winningSeat.bid[0].impid,
+            requestId: serverResponse.bidRequest.id,
+            // requestId:winner.winningSeat.bid[0].impid,
             currency: winner.currency
           },
           winner.winningSeat.bid[0],
         )));
       }
     }
+    console.log('freestar::', 'interpretResponse', 'bids', bids);
     return bids;
   },
   // @TODO: How are we doing user sync?

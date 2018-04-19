@@ -213,7 +213,10 @@ const paramTypes = {
 function convertTypes(adUnits) {
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const types = paramTypes[bid.bidder] || [];
+      // aliases use the base bidder's paramTypes
+      const bidder = adaptermanager.aliasRegistry[bid.bidder] || bid.bidder;
+      const types = paramTypes[bidder] || [];
+
       Object.keys(types).forEach(key => {
         if (bid.params[key]) {
           bid.params[key] = types[key](bid.params[key]);
@@ -263,6 +266,20 @@ function _appendSiteAppDevice(request) {
   }
 }
 
+function transformHeightWidth(adUnit) {
+  let sizesObj = [];
+  let sizes = utils.parseSizesInput(adUnit.sizes);
+  sizes.forEach(size => {
+    let heightWidth = size.split('x');
+    let sizeObj = {
+      'w': parseInt(heightWidth[0]),
+      'h': parseInt(heightWidth[1])
+    };
+    sizesObj.push(sizeObj);
+  });
+  return sizesObj;
+}
+
 /*
  * Protocol spec for legacy endpoint
  * e.g., https://<prebid-server-url>/v1/auction
@@ -272,6 +289,7 @@ const LEGACY_PROTOCOL = {
   buildRequest(s2sBidRequest, adUnits) {
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
+      adUnit.sizes = transformHeightWidth(adUnit);
       const videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (videoMediaType) {
         adUnit.video = Object.assign({}, videoMediaType);
@@ -288,7 +306,7 @@ const LEGACY_PROTOCOL = {
       max_bids: _s2sConfig.maxBids,
       timeout_millis: _s2sConfig.timeout,
       secure: _s2sConfig.secure,
-      cache_markup: _s2sConfig.cacheMarkup,
+      cache_markup: _s2sConfig.cacheMarkup === 1 || _s2sConfig.cacheMarkup === 2 ? _s2sConfig.cacheMarkup : 0,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: adUnits,
@@ -313,6 +331,9 @@ const LEGACY_PROTOCOL = {
         result.bidder_status.forEach(bidder => {
           if (bidder.no_cookie) {
             doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
+          }
+          if (bidder.error) {
+            utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
           }
         });
       }
@@ -402,20 +423,26 @@ const OPEN_RTB_PROTOCOL = {
 
   buildRequest(s2sBidRequest, adUnits) {
     let imps = [];
+    let aliases = {};
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
-      // OpenRTB response contains the adunit code and bidder name. These are
-      // combined to create a unique key for each bid since an id isn't returned
       adUnit.bids.forEach(bid => {
+        // OpenRTB response contains the adunit code and bidder name. These are
+        // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
         this.bidMap[key] = bid;
+        // check for and store valid aliases to add to the request
+        if (adaptermanager.aliasRegistry[bid.bidder]) {
+          aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];
+        }
       });
 
       let banner;
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        // const sizeObjects = adUnit.sizes.map(size => ({ w: size.w, h: size.h }));
+        const sizeObjects = adUnit.sizes.map(size => ({w: size[0], h: size[1]})); // @TODO: 1.7 changes how sizes are handled, need to make changes in pubfig, THIS IS A HACK
         banner = {format: sizeObjects};
       }
 
@@ -467,6 +494,9 @@ const OPEN_RTB_PROTOCOL = {
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
       request.user = { ext: { digitrust: digiTrust } };
+    }
+    if (!utils.isEmpty(aliases)) {
+      request.ext = { prebid: { aliases } };
     }
 
     return request;
