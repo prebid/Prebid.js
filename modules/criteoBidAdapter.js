@@ -63,7 +63,9 @@ export const spec = {
       data = buildCdbRequest(context, bidRequests);
     }
 
-    return { method: 'POST', url, data, bidRequests };
+    if (data) {
+      return { method: 'POST', url, data, bidRequests };
+    }
   },
 
   /**
