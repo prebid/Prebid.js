@@ -538,7 +538,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
@@ -566,7 +566,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       // TODO: stub this
@@ -582,6 +582,24 @@ describe('S2S Adapter', () => {
           }
         }
       });
+    });
+
+    it('converts appnexus params to expected format for PBS', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      const myRequest = utils.deepClone(REQUEST);
+      myRequest.ad_units[0].bids[0].params.usePaymentRule = true;
+
+      adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.imp[0].ext.appnexus).to.exist;
+      expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
+      expect(requestBid.imp[0].ext.appnexus.use_pmt_rule).to.exist.and.to.be.true;
+      expect(requestBid.imp[0].ext.appnexus.member).to.exist;
     });
   });
 
@@ -628,6 +646,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('cache_id', '7654321');
       expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
       expect(response).to.not.have.property('vastUrl');
+      expect(response).to.have.property('serverResponseTimeMs', 52);
     });
 
     it('registers video bids', () => {
@@ -820,6 +839,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('serverResponseTimeMs', 8);
     });
 
     it('handles OpenRTB video responses', () => {
@@ -840,6 +860,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
+      expect(response).to.have.property('serverResponseTimeMs', 81);
     });
 
     it('should log warning for unsupported bidder', () => {
