@@ -31,8 +31,6 @@ let sessionTimeout = 60 * 60 * 1000;
 let sessionIdStorageKey = 'session_id';
 let sessionTimeoutKey = 'session_timeout';
 
-var ua = window.navigator.userAgent;
-
 function getParameterByName(param) {
   let vars = {};
   window.location.href.replace(location.hash, '').replace(
@@ -251,7 +249,6 @@ function send(eventType, data, sendDataType) {
     });
     var dataList = [];
     var jsonData = {};
-    data['options']['userAgent'] = ua;
     jsonData['Data'] = JSON.stringify(data) + '\n';
     jsonData['PartitionKey'] = 'partition-' + Math.random().toString(36).substring(7);
     dataList.push(jsonData);
