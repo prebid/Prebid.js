@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
+import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
 
 describe('BeachfrontAdapter', () => {
@@ -267,10 +267,26 @@ describe('BeachfrontAdapter', () => {
           vastUrl: serverResponse.url,
           width: width,
           height: height,
+          renderer: null,
           mediaType: 'video',
           currency: 'USD',
           netRevenue: true,
           ttl: 300
+        });
+      });
+
+      it('should return a renderer for outstream video bids', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: { context: 'outstream' } };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.renderer).to.deep.contain({
+          id: bidRequest.bidId,
+          url: OUTSTREAM_SRC
         });
       });
     });

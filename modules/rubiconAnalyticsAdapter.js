@@ -111,6 +111,7 @@ function sendMessage(auctionId, bidWonId) {
           ? 'server' : 'client'
       },
       'clientLatencyMillis',
+      'serverLatencyMillis',
       'params',
       'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
         'bidPriceUSD',
@@ -386,6 +387,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
+        if (typeof args.serverResponseTimeMs !== 'undefined') {
+          bid.serverLatencyMillis = args.serverResponseTimeMs;
+        }
         bid.bidResponse = parseBidResponse(args);
         break;
       case BIDDER_DONE:

@@ -750,4 +750,16 @@ describe('Utils', function () {
       expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
     });
   });
+
+  describe('convertCamelToUnderscore', () => {
+    it('returns converted string value using underscore syntax instead of camelCase', () => {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
+    });
+  });
 });
