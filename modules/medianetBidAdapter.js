@@ -9,12 +9,46 @@ $$PREBID_GLOBAL$$.medianetGlobals = {};
 
 function siteDetails(site) {
   site = site || {};
-
-  return {
+  let siteData = {
     domain: site.domain || utils.getTopWindowLocation().host,
     page: site.page || utils.getTopWindowUrl(),
     ref: site.ref || utils.getTopWindowReferrer()
-  }
+  };
+  return Object.assign(siteData, getPageMeta());
+}
+
+function getPageMeta() {
+  let canonicalUrl = getUrlFromSelector('link[rel="canonical"]', 'href');
+  let ogUrl = getUrlFromSelector('meta[property="og:url"]', 'content');
+  let twitterUrl = getUrlFromSelector('meta[name="twitter:url"]', 'content');
+
+  return Object.assign({},
+    canonicalUrl && { 'canonical_url': canonicalUrl },
+    ogUrl && { 'og_url': ogUrl },
+    twitterUrl && { 'twitter_url': twitterUrl }
+  );
+}
+
+function getUrlFromSelector(selector, attribute) {
+  let attr = getAttributeFromSelector(selector, attribute);
+  return attr && getAbsoluteUrl(attr);
+}
+
+function getAttributeFromSelector(selector, attribute) {
+  try {
+    let doc = window.top.document;
+    let element = doc.querySelector(selector);
+    if (element !== null && element[attribute]) {
+      return element[attribute];
+    }
+  } catch (e) {}
+}
+
+function getAbsoluteUrl(url) {
+  let aTag = window.top.document.createElement('a');
+  aTag.href = url;
+
+  return aTag.href;
 }
 
 function filterUrlsByType(urls, type) {
