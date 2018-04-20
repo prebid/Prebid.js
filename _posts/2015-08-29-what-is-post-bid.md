@@ -70,4 +70,4 @@ In your ad server's post-bid line item report, you’d only get an aggregated re
 Yes. Check out the example.
 
 ##### 2. How can I get started?
-If you need help, email info@prebid.org.
+If you need help, email support@prebid.org.

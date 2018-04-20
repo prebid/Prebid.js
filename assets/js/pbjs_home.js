@@ -23,7 +23,7 @@ function newVisitor(email, site, iab_vote) {
     },
     error: function(visitor, error) {
       // Show the error message somewhere and let the user try again.
-      console.log("Submit failed :( Please send an email to info@prebid.org. Thank you!" + error);
+      console.log("Submit failed :( Please send an email to support@prebid.org. Thank you!" + error);
       console.log(error);
     }
   });
@@ -55,7 +55,7 @@ function newComment(comment, email, site) {
     },
     error: function(commentObj, error) {
       // Show the error message somewhere and let the user try again.
-      alert("Submit failed :( Please send an email to info@prebid.org. Thank you!");
+      alert("Submit failed :( Please send an email to support@prebid.org. Thank you!");
     }
   });
 
@@ -128,7 +128,7 @@ function newCompany(company_type, name, logo, email, intro) {
     error: function(companyObj, error) {
       // Show the error message somewhere and let the user try again.
       console.log(error);
-      alert("Submit failed :( Please send an email to info@prebid.org. Thank you!");
+      alert("Submit failed :( Please send an email to support@prebid.org. Thank you!");
     }
   });
 }

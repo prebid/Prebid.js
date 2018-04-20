@@ -29,7 +29,7 @@ For Prebid news or general questions, we recommend the Ad Ops Slack Channel, Quo
 {: .alert.alert-success :}
 There are consulting and service companies that will install & maintain Prebid on a publisher's behalf.  
 We're working on getting a comprehensive list of these providers to share here.  
-If you're one of these companies, please email us at [info@prebid.org](mailto:info@prebid.org).
+If you're one of these companies, please email us at [support@prebid.org](mailto:support@prebid.org).
 
 ## Github
 

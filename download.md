@@ -291,7 +291,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
         <div class="alert alert-warning hide" role="alert" id="download-status"></div>
 
         <p>
-        Ran into problems? Email <code>info@prebid.org</code>
+        Ran into problems? Email <code>support@prebid.org</code>
         </p>
 
       </div>
