@@ -2,7 +2,6 @@ import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
-import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
@@ -304,7 +303,7 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);

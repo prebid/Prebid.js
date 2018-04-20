@@ -474,7 +474,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 };
 
 /**
- * Wrapper to adloader.loadScript
+ * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
  * @alias module:pbjs.loadScript

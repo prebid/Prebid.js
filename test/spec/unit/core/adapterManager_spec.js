@@ -851,7 +851,7 @@ describe('adapterManager tests', () => {
           expect(bidRequests[0].bids.length).to.equal(1);
           expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
         });
-      })
+      });
     });
   });
 
