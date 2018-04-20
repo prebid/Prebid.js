@@ -3,7 +3,7 @@
 ```
 Module Name: Digital Garage Ads Platform Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer:ds_dg@dimage.co.jp
+Maintainer:dgads-support@garage.co.jp
 ```
 
 # Description
