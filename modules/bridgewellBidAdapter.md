@@ -87,7 +87,7 @@ Module that connects to Bridgewell demand source to fetch bids.
                     sizes: [150, 50]
                 },
                 icon: {
-                    required: fasle,
+                    required: false,
                     sizes: [50, 50]
                 },
                 clickUrl: {
