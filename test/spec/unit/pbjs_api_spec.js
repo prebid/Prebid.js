@@ -5,7 +5,8 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
-  getAdUnits
+  getAdUnits,
+  createBidReceived
 } from 'test/fixtures/fixtures';
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
 import { targeting, newTargeting } from 'src/targeting';
@@ -680,6 +681,7 @@ describe('Unit: Prebid Module', function () {
     var spyLogError = null;
     var spyLogMessage = null;
     var inIframe = true;
+    let triggerPixelStub;
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
@@ -719,6 +721,7 @@ describe('Unit: Prebid Module', function () {
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     });
 
     afterEach(function () {
@@ -726,6 +729,7 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
       utils.logMessage.restore();
       utils.inIframe.restore();
+      utils.triggerPixel.restore();
     });
 
     it('should require doc and id params', function () {
@@ -809,6 +813,20 @@ describe('Unit: Prebid Module', function () {
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
+    });
+
+    it('fires billing url if present on s2s bid', () => {
+      const burl = 'http://www.example.com/burl';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>',
+        source: 's2s',
+        burl
+      });
+
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+
+      sinon.assert.calledOnce(triggerPixelStub);
+      sinon.assert.calledWith(triggerPixelStub, burl);
     });
   });
 
@@ -1561,8 +1579,7 @@ describe('Unit: Prebid Module', function () {
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
       for (var key in expectedAdserverTargeting) {
-        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
-        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+        newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
       }
 
       targeting.setTargetingForAst();
@@ -1609,6 +1626,31 @@ describe('Unit: Prebid Module', function () {
   describe('The monkey-patched que.push function', function() {
     it('should be the same as the cmd.push function', function() {
       assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
+    });
+  });
+
+  describe('getAllPrebidWinningBids', () => {
+    let auctionManagerStub;
+    beforeEach(() => {
+      auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
+    });
+
+    afterEach(() => {
+      auctionManagerStub.restore();
+    });
+
+    it('should return prebid auction winning bids', () => {
+      let bidsReceived = [
+        createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
+        createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4'}),
+      ];
+      auctionManagerStub.returns(bidsReceived)
+      let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
+
+      expect(bids.length).to.equal(1);
+      expect(bids[0].adId).to.equal('adid-1');
     });
   });
 });

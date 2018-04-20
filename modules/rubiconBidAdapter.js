@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -73,7 +74,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 export const spec = {
   code: 'rubicon',
   aliases: ['rubiconLite'],
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
    * @return boolean
@@ -88,16 +89,31 @@ export const spec = {
       return false;
     }
 
+    // Log warning if context is 'outstream', is not currently supported
+    if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
+      utils.logWarn('Warning: outstream video for Rubicon Client Adapter is not supported yet');
+    }
+
+    // Log warning if mediaTypes contains both 'banner' and 'video'
+    if (spec.hasVideoMediaType(bid) && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+      utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
+    }
+
+    // Bid is invalid if legacy video is set but params video is missing size_id
+    if (bid.mediaType === 'video' && typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+      return false;
+    }
+
+    // Bid is invalid if mediaTypes video is invalid and a mediaTypes banner property is not defined
+    if (bid.mediaTypes && !spec.hasVideoMediaType(bid) && typeof bid.mediaTypes.banner === 'undefined') {
+      return false;
+    }
+
     let parsedSizes = parseSizes(bid);
     if (parsedSizes.length < 1) {
       return false;
     }
 
-    if (bid.mediaType === 'video') {
-      if (typeof params.video !== 'object' || !params.video.size_id) {
-        return false;
-      }
-    }
     return true;
   },
   /**
@@ -118,7 +134,7 @@ export const spec = {
 
       page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
 
-      if (bidRequest.mediaType === 'video') {
+      if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
 
@@ -238,6 +254,16 @@ export const spec = {
     });
   },
   /**
+   * Test if bid has mediaType or mediaTypes set for video.
+   * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  hasVideoMediaType: function(bidRequest) {
+    return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
+      (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
+  },
+  /**
    * @param {*} responseObj
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
@@ -252,7 +278,7 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -287,7 +313,7 @@ export const spec = {
         bid.mediaType = ad.creative_type;
       }
 
-      if (bidRequest.mediaType === 'video') {
+      if (ad.creative_type === VIDEO) {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;
         bid.vastUrl = ad.creative_depot_url;
@@ -360,22 +386,20 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (bid.mediaType === 'video') {
+  if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video.playerWidth && params.video.playerHeight) {
+    if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
       ];
-    } else if (
-      Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-        Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
-    ) {
+    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
     }
     return size;
   }
 
+  // deprecated: temp legacy support
   let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
 
   return masSizeOrdering(sizes);

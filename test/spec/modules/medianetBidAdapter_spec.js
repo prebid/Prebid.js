@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/medianetBidAdapter';
+import { config } from 'src/config';
 
 let VALID_BID_REQUEST = [{
     'bidder': 'medianet',
@@ -68,14 +69,15 @@ let VALID_BID_REQUEST = [{
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
   }],
-  VALID_PAYLOAD = {
+  VALID_PAYLOAD_INVALID_BIDFLOOR = {
     'site': {
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest'
     },
     'ext': {
-      'customer_id': 'customer_id'
+      'customer_id': 'customer_id',
+      'prebid_version': $$PREBID_GLOBAL$$.version
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
@@ -86,7 +88,16 @@ let VALID_BID_REQUEST = [{
       'banner': [{
         'w': 300,
         'h': 250
-      }]
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'bidfloor': 'abcdef',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
     }, {
       'id': '3f97ca71b1e5c2',
       'ext': {
@@ -95,8 +106,65 @@ let VALID_BID_REQUEST = [{
       'banner': [{
         'w': 300,
         'h': 251
-      }]
-    }]
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
+    }],
+    'tmax': config.getConfig('bidderTimeout')
+  },
+  VALID_PAYLOAD = {
+    'site': {
+      'page': 'http://media.net/prebidtest',
+      'domain': 'media.net',
+      'ref': 'http://media.net/prebidtest'
+    },
+    'ext': {
+      'customer_id': 'customer_id',
+      'prebid_version': $$PREBID_GLOBAL$$.version
+    },
+    'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'imp': [{
+      'id': '28f8f8130a583e',
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-0'
+      },
+      'banner': [{
+        'w': 300,
+        'h': 250
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
+    }, {
+      'id': '3f97ca71b1e5c2',
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-123'
+      },
+      'banner': [{
+        'w': 300,
+        'h': 251
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
+    }],
+    'tmax': config.getConfig('bidderTimeout')
   },
   VALID_PARAMS = {
     bidder: 'medianet',
@@ -286,7 +354,7 @@ describe('Media.net bid adapter', () => {
 
     it('should ignore bidfloor if not a valid number', () => {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR);
-      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD);
+      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
     });
   });
 

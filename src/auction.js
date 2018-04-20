@@ -95,7 +95,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _callback = callback;
   let _timer;
   let _timeout = cbTimeout;
-  let _winningBid;
+  let _winningBids = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
@@ -114,9 +114,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -134,6 +135,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
+        // Calling timed out bidders
+        if (timedOutBidders.length) {
+          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+        }
         // Only automatically sync if the publisher has not chosen to "enableOverride"
         let userSyncConfig = config.getConfig('userSync') || {};
         if (!userSyncConfig.enableOverride) {
@@ -152,7 +157,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
 
-      // this is done for cache-enabled video bids in tryAddVideoBids, after the cache is stored
+      // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
       request.doneCbCallCount += 1;
       bidsBackAll();
     }, 1);
@@ -197,8 +202,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     executeCallback,
     callBids,
     bidsBackAll,
-    setWinningBid: (winningBid) => { _winningBid = winningBid },
-    getWinningBid: () => _winningBid,
+    addWinningBid: (winningBid) => { _winningBids = _winningBids.concat(winningBid) },
+    getWinningBids: () => _winningBids,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
