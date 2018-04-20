@@ -69,6 +69,9 @@ let VALID_BID_REQUEST = [{
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
   }],
+  VALID_AUCTIONDATA = {
+    'timeout': config.getConfig('bidderTimeout'),
+  },
   VALID_PAYLOAD_INVALID_BIDFLOOR = {
     'site': {
       'page': 'http://media.net/prebidtest',
@@ -166,6 +169,18 @@ let VALID_BID_REQUEST = [{
     }],
     'tmax': config.getConfig('bidderTimeout')
   },
+  VALID_PAYLOAD_PAGE_META = (() => {
+    let PAGE_META;
+    try {
+      PAGE_META = JSON.parse(JSON.stringify(VALID_PAYLOAD));
+    } catch (e) {}
+    PAGE_META.site = Object.assign(PAGE_META.site, {
+      'canonical_url': 'http://localhost:9999/canonical-test',
+      'twitter_url': 'http://localhost:9999/twitter-test',
+      'og_url': 'http://localhost:9999/fb-test'
+    });
+    return PAGE_META;
+  })(),
   VALID_PARAMS = {
     bidder: 'medianet',
     params: {
@@ -343,18 +358,36 @@ describe('Media.net bid adapter', () => {
 
   describe('buildRequests', () => {
     it('should build valid payload on bid', () => {
-      let requestObj = spec.buildRequests(VALID_BID_REQUEST);
+      let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(requestObj.data)).to.deep.equal(VALID_PAYLOAD);
     });
 
     it('should accept size as a one dimensional array', () => {
-      let bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY);
+      let bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD);
     });
 
     it('should ignore bidfloor if not a valid number', () => {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR);
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
+    });
+    describe('build requests: when page meta-data is available', () => {
+      it('should pass canonical, twitter and fb paramters if available', () => {
+        let sandbox = sinon.sandbox.create();
+        let documentStub = sandbox.stub(window.top.document, 'querySelector');
+        documentStub.withArgs('link[rel="canonical"]').returns({
+          href: 'http://localhost:9999/canonical-test'
+        });
+        documentStub.withArgs('meta[property="og:url"]').returns({
+          content: 'http://localhost:9999/fb-test'
+        });
+        documentStub.withArgs('meta[name="twitter:url"]').returns({
+          content: 'http://localhost:9999/twitter-test'
+        });
+        let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+        expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);
+        sandbox.restore();
+      });
     });
   });
 
