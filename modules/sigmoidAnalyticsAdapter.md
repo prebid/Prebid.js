@@ -16,7 +16,10 @@ https://www.sigmoid.com/
 {
   provider: 'sigmoid',
     options : {
-      publisherIds: ["3gxdf18d32"]
+      publisherIds: ["afxdy18m72"],
+      accessKey:"<your-accesskey>",
+      secretKey:"<your-secretkey>",
+      streamName:"<stream-name>"
     }
 }
 
