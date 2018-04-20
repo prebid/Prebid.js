@@ -8,6 +8,7 @@ hide: true
 biddercode: sonobi
 biddercode_longer_than_12: false
 prebid_1_0_supported : true
+media_types: video
 ---
 
 ### Note:
@@ -32,3 +33,6 @@ The `ad_unit` and `placement_id` are **mutually exclusive** but at least one is 
 If you pass the optional `sizes` Array in your bid params it will override the global config sizes for the Sonobi Adapter only.
 
 The `hfa` parameter requires your Sonobi Account Manager to enable this feature for you. Please contact them for further information.
+
+### Video Example
+[Sonobi Video](http://prebid.org/examples/bidders/sonobi-video-example.html)
