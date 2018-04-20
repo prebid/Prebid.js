@@ -6,5 +6,7 @@
 	"openxBidAdapter",
 	"rubiconBidAdapter",
 	"sovrnBidAdapter",
-	"pubmaticBidAdapter"
+	"pubmaticBidAdapter",
+	"adgenerationBidAdapter",
+	"pubmaticServerBidAdapter"
 ]
