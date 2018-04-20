@@ -85,29 +85,29 @@ export const spec = {
         return;
       }
 
-      const anotherFormatSize = []; // for store width and height
       let matchedResponse = find(serverResponse.body, function(res) {
         let valid = false;
 
         if (!!res && !res.consumed) { // response exists and not consumed
-          let mediaTypes = req.mediaTypes;
-          // for prebid 1.0 and later usage, mediaTypes.banner.sizes
-          let sizes = mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes ? mediaTypes.banner.sizes : req.sizes;
-          if (sizes) {
-            let sizeValid = find(sizes, function(size) { // check response size validation
+          if (res.width && res.height) {
+            let mediaTypes = req.mediaTypes;
+            // for prebid 1.0 and later usage, mediaTypes.banner.sizes
+            let sizes = mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes ? mediaTypes.banner.sizes : req.sizes;
+            if (sizes) {
+              let sizeValid;
               let width = res.width;
               let height = res.height;
-
-              if (typeof size === 'number') { // if sizes format is Array[Number], push width and height into anotherFormatSize
-                anotherFormatSize.push(size);
+              if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
+                sizeValid = width === sizes[0] && height === sizes[1];
+              } else { // for format Array[Array[Number]] check
+                sizeValid = find(sizes, function(size) { // check response size validation
+                  return (width === size[0] && height === size[1]);
+                });
               }
 
-              return (width === size[0] && height === size[1]) || // for format Array[Array[Number]] check
-              (width === anotherFormatSize[0] && height === anotherFormatSize[1]); // for foramt Array[Number] check
-            });
-
-            if (sizeValid || (mediaTypes && mediaTypes.native)) { // dont care native sizes
-              valid = true;
+              if (sizeValid || (mediaTypes && mediaTypes.native)) { // dont care native sizes
+                valid = true;
+              }
             }
           }
         }
@@ -124,6 +124,8 @@ export const spec = {
         } else if (typeof matchedResponse.currency !== 'string') {
           return;
         } else if (typeof matchedResponse.mediaType !== 'string') {
+          return;
+        } else if (typeof matchedResponse.netRevenue !== 'boolean') {
           return;
         }
 

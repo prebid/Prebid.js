@@ -84,10 +84,10 @@ Module that connects to Bridgewell demand source to fetch bids.
                 },
                 image: {
                     required: true,
-                    sizes: [150, 150]
+                    sizes: [150, 50]
                 },
                 icon: {
-                    required: true,
+                    required: fasle,
                     sizes: [50, 50]
                 },
                 clickUrl: {
