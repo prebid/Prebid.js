@@ -8,7 +8,9 @@ const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
 const TIME_TO_LIVE = 60
+
 let browserParams = {};
+let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams() {
@@ -63,7 +65,7 @@ function _getDigiTrustQueryParams() {
     return {};
   }
   return {
-    'dt': digiTrustId.id
+    dt: digiTrustId.id
   };
 }
 
@@ -106,7 +108,9 @@ function buildRequests (validBidRequests) {
       transactionId
     } = bidRequest;
     const data = {}
-
+    if (pageViewId) {
+      data.pv = pageViewId
+    }
     if (params.inScreen) {
       data.t = params.inScreen;
       data.pi = 2;
@@ -144,16 +148,32 @@ function buildRequests (validBidRequests) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+  const defaultResponse = {
+    ad: {
+      price: 0,
+      id: 0,
+      markup: ''
+    },
+    pag: {
+      pvid: 0
+    }
+  }
   const {
     ad: {
       price: cpm,
       id: creativeId,
       markup
     },
-    cw: wrapper
-  } = serverResponseBody
+    cw: wrapper,
+    pag: {
+      pvid
+    }
+  } = Object.assign(defaultResponse, serverResponseBody)
   let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
   let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+
+  // update Page View ID from server response
+  pageViewId = pvid
 
   if (creativeId) {
     bidResponses.push({
@@ -173,11 +193,35 @@ function interpretResponse (serverResponse, bidRequest) {
   return bidResponses
 }
 
+/**
+ * Register the user sync pixels which should be dropped after the auction.
+ *
+ * @param {SyncOptions} syncOptions Which user syncs are allowed?
+ * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @return {UserSync[]} The user syncs which should be dropped.
+ */
+function getUserSyncs (syncOptions, serverResponses) {
+  const responses = serverResponses.map((response) => {
+    return (response.body && response.body.pxs && response.body.pxs.scr) || []
+  })
+  const userSyncs = responses.reduce(function (usersyncs, response) {
+    return usersyncs.concat(response)
+  }, [])
+  const syncs = userSyncs.map((sync) => {
+    return {
+      type: sync.t === 'f' ? 'iframe' : 'image',
+      url: sync.u
+    }
+  })
+  return syncs;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  getUserSyncs
 }
 registerBidder(spec)
