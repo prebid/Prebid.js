@@ -129,7 +129,7 @@ registerBidder(spec);
 function parseBid(bid) {
   console.log('freestar::', 'parseBid called', 'bid', bid);
   const bidResponse = {
-    requestId: bid.requestId,
+    requestId: bid.impid,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
