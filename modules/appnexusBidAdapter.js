@@ -209,6 +209,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
+      vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
     // This supports Outstream Video

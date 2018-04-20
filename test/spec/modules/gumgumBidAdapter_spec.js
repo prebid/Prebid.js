@@ -135,4 +135,26 @@ describe('gumgumAdapter', () => {
       expect(result.length).to.equal(0);
     });
   })
+  describe('getUserSyncs', () => {
+    const syncOptions = {
+      'iframeEnabled': 'true'
+    }
+    const response = {
+      'pxs': {
+        'scr': [
+          {
+            't': 'i',
+            'u': 'https://c.gumgum.com/images/pixel.gif'
+          },
+          {
+            't': 'f',
+            'u': 'https://www.nytimes.com/'
+          }
+        ]
+      }
+    }
+    let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+    expect(result[0].type).to.equal('image')
+    expect(result[1].type).to.equal('iframe')
+  })
 });

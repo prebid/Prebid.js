@@ -217,8 +217,8 @@ export const spec = {
     payload.site.publisher.id = conf.pubId.trim();
     publisherId = conf.pubId.trim();
     payload.ext.wrapper = {};
-    payload.ext.wrapper.profile = conf.profId || UNDEFINED;
-    payload.ext.wrapper.version = conf.verId || UNDEFINED;
+    payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
+    payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
     payload.ext.wrapper.wv = constants.REPO_AND_VERSION;
     payload.ext.wrapper.transactionId = conf.transactionId;
@@ -290,11 +290,19 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: syncOptions => {
+  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+    let syncurl = USYNCURL + publisherId;
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.consentRequired ? 1 : 0);
+      syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: USYNCURL + publisherId
+        url: syncurl
       }];
     } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
