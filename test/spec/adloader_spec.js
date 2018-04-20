@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import { assert } from 'chai';
-import * as adLoader from 'src/adLoader';
+import * as adLoader from 'src/adloader';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;
