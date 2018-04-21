@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import * as utils from 'src/utils';
 import {spec} from 'modules/dgadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
+import { BANNER, NATIVE } from 'src/mediaTypes';
 
 describe('dgadsBidAdapter', () => {
   const adapter = newBidder(spec);
