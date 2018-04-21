@@ -80,7 +80,7 @@ export default function buildDfpVideoUrl(options) {
   const derivedParams = {
     correlator: Date.now(),
     sz: parseSizesInput(adUnit.sizes).join('|'),
-    url: location.href,
+    url: encodeURIComponent(location.href),
   };
   const encodedCustomParams = getCustParams(bid, options);
 
