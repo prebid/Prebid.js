@@ -23,7 +23,7 @@ This adapter supports Banner and Native.
       mediaTypes: 'banner',
       params: {
         location_id: '1',
-        site_id: '1';
+        site_id: '1'
       }
     }]
   },
