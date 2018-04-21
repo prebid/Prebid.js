@@ -247,7 +247,7 @@ describe('dgadsBidAdapter', () => {
         },
         referrer: utils.getTopWindowUrl(),
         creativeid: 'xuidx62944aab4fx37f',
-        isNative: 1
+        mediaType: NATIVE
       }
     };
 

@@ -57,6 +57,7 @@ export const spec = {
       bidResponse.ttl = ad.ttl;
       bidResponse.referrer = utils.getTopWindowUrl();
       if (ad.isNative == 1) {
+        bidResponse.mediaType = NATIVE;
         bidResponse.native = setNativeResponse(ad);
       } else {
         bidResponse.width = parseInt(ad.w);
