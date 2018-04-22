@@ -47,9 +47,16 @@ function lookupIabConsent(cmpSuccess, cmpError) {
       command: 'getConsentData'
     }
   };
+  let cmpSuccessHandler = result => {
+    if (utils.isObject(result)) {
+      cmpSuccess(result.consentData, result.gdprApplies);
+    } else {
+      cmpSuccess(result);
+    }
+  };
 
   if (window.__cmp) {
-    window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
+    window.__cmp('getConsentData', 'vendorConsents', cmpSuccessHandler);
   } else {
     // prebid may be inside an iframe and CMP may exist outside, so we'll use postMessage to interact with CMP
     window.top.postMessage(getConsentDataReq, '*');
@@ -58,7 +65,7 @@ function lookupIabConsent(cmpSuccess, cmpError) {
 
   function receiveMessage(event) {
     if (event && event.data && event.data.__cmp && event.data.__cmp.result) {
-      cmpSuccess(event.data.__cmp.result);
+      cmpSuccessHandler(event.data.__cmp.result);
     }
   }
 }
@@ -105,12 +112,12 @@ export function requestBidsHook(config, fn) {
  * If it's good, then we store the value and exits the module.
  * @param {string} consentString required; encoded string value from CMP representing user's consent choices
  */
-function processCmpData(consentString) {
+function processCmpData(consentString, gdprApplies) {
   if (typeof consentString !== 'string' || consentString === '') {
     cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
   } else {
     clearTimeout(timer);
-    storeConsentData(consentString);
+    storeConsentData(consentString, gdprApplies);
 
     exitModule();
   }
@@ -141,10 +148,10 @@ function cmpFailed(errMsg) {
  * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
  * @param {string} cmpConsentString required; encoded string value representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
-function storeConsentData(cmpConsentString) {
+function storeConsentData(cmpConsentString, gdprApplies) {
   consentData = {
     consentString: cmpConsentString,
-    consentRequired: userConsentRequired
+    consentRequired: utils.isUndefined(gdprApplies) ? userConsentRequired : gdprApplies
   };
   gdprDataHandler.setConsentData(consentData);
 }
