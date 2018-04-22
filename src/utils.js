@@ -11,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -380,6 +381,10 @@ exports.isArray = function (object) {
 
 exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
+};
+
+exports.isObject = function(object) {
+  return this.isA(object, t_Object);
 };
 
 /**
@@ -951,6 +956,14 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Checks value is undefined or not
+ * @param {*} value
+ */
+export function isUndefined(value) {
+  return typeof value === 'undefined';
 }
 
 /**
