@@ -225,9 +225,11 @@ export const spec = {
           method: 'POST',
           ttl: ONE_MOBILE_TTL,
           data: this.buildOpenRtbRequestData(bid, consentData),
-          contentType: 'application/json',
-          customHeaders: {
-            'x-openrtb-version': '2.2'
+          options: {
+            contentType: 'application/json',
+            customHeaders: {
+              'x-openrtb-version': '2.2'
+            }
           }
         };
         break;
@@ -358,7 +360,7 @@ export const spec = {
     let bidResponse = {
       bidderCode: bidRequest.bidderCode,
       requestId: bidRequest.bidId,
-      ad: ad,
+      ad: bidData.adm,
       cpm: cpm,
       width: bidData.w,
       height: bidData.h,

@@ -99,7 +99,6 @@ describe('AolAdapter', () => {
     let logWarnSpy;
     let formatPixelsStub;
     let isOneMobileBidderStub;
-    let formatVastXmlStub;
 
     beforeEach(() => {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
@@ -114,7 +113,6 @@ describe('AolAdapter', () => {
       logWarnSpy = sinon.spy(utils, 'logWarn');
       formatPixelsStub = sinon.stub(spec, 'formatPixels');
       isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
-      formatVastXmlStub = sinon.stub(spec, 'formatVastXml');
     });
 
     afterEach(() => {
@@ -122,7 +120,6 @@ describe('AolAdapter', () => {
       logWarnSpy.restore();
       formatPixelsStub.restore();
       isOneMobileBidderStub.restore();
-      formatVastXmlStub.restore();
     });
 
     it('should return formatted bid response with required properties', () => {
