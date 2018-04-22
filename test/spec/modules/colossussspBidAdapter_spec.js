@@ -52,10 +52,11 @@ describe('ColossussspAdapter', () => {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic');
+        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'sizes');
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
+        expect(placement.sizes).to.be.an('array');
       }
     });
     it('Returns empty data if no valid requests are passed', () => {
