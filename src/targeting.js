@@ -175,6 +175,7 @@ export function newTargeting(auctionManager) {
 
   function getBidsReceived() {
     return auctionManager.getBidsReceived()
+      .filter(isUnusedBid)
       .filter(exports.isBidExpired)
       .filter(getOldestBid)
     ;
