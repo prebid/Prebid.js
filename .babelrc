@@ -1,8 +1,6 @@
 {
-	"presets": ["es2015"],
+	"presets": ["env"],
 	"plugins": [
-		"transform-object-assign",
-		"transform-es3-property-literals",
-		"transform-es3-member-expression-literals"
+		"transform-object-assign"
 	]
 }
