@@ -14,7 +14,6 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     // @TODO: add some validation
-    console.log('freestar::', 'isBidRequestValid called', 'bid', bid);
     return true;
     // return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
@@ -27,7 +26,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    console.log('freestar::', 'buildRequests called', 'validBidRequests', validBidRequests);
     const adUnitsToBidUpon = validBidRequests.map(formatBid),
       payload = {},
       cookie = window.document.cookie.split(';'),
@@ -72,7 +70,6 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
-    console.log('freestar::', 'interpretResponse called', 'serverResponse', serverResponse);
     const bids = [];
     // @TODO: add error handling
     if(serverResponse.winningProvider) {
@@ -102,11 +99,11 @@ export const spec = {
         )));
       }
     }
-    console.log('freestar::', 'interpretResponse', 'bids', bids);
     return bids;
   },
   // @TODO: How are we doing user sync?
   getUserSyncs: function(syncOptions) {
+    console.log('freeestar::', 'getUserSyncs', 'syncOptions', syncOptions);
     // if (syncOptions.iframeEnabled) {
     //   return [{
     //     type: 'iframe',
@@ -127,7 +124,6 @@ registerBidder(spec);
  * @returns {{requestId, cpm, width, height, creativeId: string|string|string|*|string|string, currency, netRevenue: boolean, ttl: number, ad}}
  */
 function parseBid(bid) {
-  console.log('freestar::', 'parseBid called', 'bid', bid);
   const bidResponse = {
     requestId: bid.impid,
     cpm: bid.price,
@@ -150,9 +146,8 @@ function parseBid(bid) {
  * @returns {{}}
  */
 function formatBid(bid) {
-  console.log('freestar::', 'formatBid called', 'bid', bid);
   var str = {}, res = [];
-  str.id = bid.bidId; //@TODO: This id needs to be reflected in the response
+  str.id = bid.bidId;
   str.adUnitCode = bid.adUnitCode;
   str.size = bid.sizes[0].join('x');
   str.promo_sizes = bid.sizes.slice(1).map(function(size) {
