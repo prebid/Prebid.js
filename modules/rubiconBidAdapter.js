@@ -228,6 +228,18 @@ export const spec = {
         'tk_user_key', userId
       ];
 
+      // add GDPR properties if enabled
+      if (config.getConfig('consentManagement')) {
+        if (bidRequest.gdprConsent && typeof bidRequest.gdprConsent === 'object') {
+          if (typeof bidRequest.gdprConsent.consentRequired === 'boolean') {
+            data.push(
+              'gdpr', bidRequest.gdprConsent.consentRequired ? 1 : 0,
+              'gdpr_consent', bidRequest.gdprConsent.consentString
+            );
+          }
+        }
+      }
+
       if (visitor !== null && typeof visitor === 'object') {
         utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));
       }
