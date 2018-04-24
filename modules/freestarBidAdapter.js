@@ -3,6 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
 const ENDPOINT_URL = 'https://openssp.pub.network:8443/open-ssp/HeaderBiddingService';
+const syncURLs = [];
 export const spec = {
   code: BIDDER_CODE,
 
@@ -71,7 +72,6 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
     const bids = [];
-    // @TODO: add error handling
     if(serverResponse.winningProvider) {
       let winners = serverResponse.winningProvider;
       if(winners instanceof Array) {
@@ -80,30 +80,42 @@ export const spec = {
             {},
             {
               requestId: serverResponse.bidRequest.id,
-              // requestId:winner.winningSeat.bid[0].impid,
               currency: winner.currency
             },
             winner.winningSeat.bid[0],
           )));
-        })
+          if(typeof winner.supplier.cookieSync != 'undefined') {
+            syncURLs.push({
+              type: 'image',
+              url: decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]
+            })
+          }
+        });
       } else {
         let winner = winners;
         bids.push(parseBid(Object.assign(
           {},
           {
             requestId: serverResponse.bidRequest.id,
-            // requestId:winner.winningSeat.bid[0].impid,
             currency: winner.currency
           },
           winner.winningSeat.bid[0],
         )));
+        // @TODO: clean up this duplicate code
+        // @TODO: make sure the URL hasnt been insrted before
+        if(typeof winner.supplier.cookieSync != 'undefined') {
+          syncURLs.push({
+            type: 'image',
+            url: decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]
+          })
+        }
       }
     }
     return bids;
   },
   // @TODO: How are we doing user sync?
   getUserSyncs: function(syncOptions) {
-    console.log('freeestar::', 'getUserSyncs', 'syncOptions', syncOptions);
+    return syncURLs;
     // if (syncOptions.iframeEnabled) {
     //   return [{
     //     type: 'iframe',
