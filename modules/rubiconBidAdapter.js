@@ -178,9 +178,9 @@ export const spec = {
 
         data.slots.push(slotData);
 
-        if (bidderRequest && bidRequest.gdprConsent) {
-          data.gdpr = bidRequest.gdprConsent.consentRequired ? 1 : 0;
-          data.gdpr_consent = bidRequest.gdprConsent.consentString;
+        if (bidderRequest && bidderRequest.gdprConsent) {
+          data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+          data.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
 
         return {
@@ -227,6 +227,15 @@ export const spec = {
         'kw', keywords,
         'tk_user_key', userId
       ];
+
+      // add GDPR properties if enabled
+      if (config.getConfig('consentManagement') &&
+        bidderRequest && bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        data.push(
+          'gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+          'gdpr_consent', bidderRequest.gdprConsent.consentString
+        );
+      }
 
       if (visitor !== null && typeof visitor === 'object') {
         utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));

@@ -15,20 +15,22 @@ describe('the rubicon adapter', () => {
   let sandbox,
     bidderRequest;
 
-  function createVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+  function addConsentManagement() {
+    bidderRequest.gdprConsent = {
+      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      'gdprApplies': true
+    }
+  }
 
+  function createVideoBidderRequest() {
+    addConsentManagement();
+
+    let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
         context: 'instream'
       }
     };
-
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
-
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -44,14 +46,11 @@ describe('the rubicon adapter', () => {
   }
 
   function createLegacyVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+    addConsentManagement();
 
+    let bid = bidderRequest.bids[0];
     // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -533,6 +532,80 @@ describe('the rubicon adapter', () => {
 
             // should have called DigiTrust.getUser() once
             expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+          });
+        });
+
+        it('should send GDPR params when enabled', () => {
+          addConsentManagement();
+
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              consentManagement: {
+                cmp: 'iab',
+                waitForConsentTimeout: 4000,
+                lookUpFailureResolution: 'cancel'
+              }
+            };
+            return config[key];
+          });
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          let expectedQuery = {
+            'gdpr': '1',
+            'gdpr_consent': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+          };
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            expect(data[key]).to.equal(value);
+          });
+        });
+
+        it('should not send GDPR params if not enabled', () => {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {};
+            return config[key];
+          });
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          let expectedQuery = {
+            'gdpr': undefined,
+            'gdpr_consent': undefined
+          };
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            expect(data[key]).to.equal(value);
+          });
+        });
+
+        it('should not send GDPR params if gdprConsent is not set in config', () => {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              consentManagement: {
+                cmp: 'iab',
+                waitForConsentTimeout: 4000,
+                lookUpFailureResolution: 'cancel'
+              }
+            };
+            return config[key];
+          });
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          let expectedQuery = {
+            'gdpr': undefined,
+            'gdpr_consent': undefined
+          };
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            expect(data[key]).to.equal(value);
           });
         });
       });
