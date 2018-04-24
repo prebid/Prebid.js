@@ -178,9 +178,9 @@ export const spec = {
 
         data.slots.push(slotData);
 
-        if (bidderRequest && bidRequest.gdprConsent) {
-          data.gdpr = bidRequest.gdprConsent.consentRequired ? 1 : 0;
-          data.gdpr_consent = bidRequest.gdprConsent.consentString;
+        if (bidderRequest && bidderRequest.gdprConsent) {
+          data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+          data.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
 
         return {
@@ -229,15 +229,12 @@ export const spec = {
       ];
 
       // add GDPR properties if enabled
-      if (config.getConfig('consentManagement')) {
-        if (bidRequest.gdprConsent && typeof bidRequest.gdprConsent === 'object') {
-          if (typeof bidRequest.gdprConsent.consentRequired === 'boolean') {
-            data.push(
-              'gdpr', bidRequest.gdprConsent.consentRequired ? 1 : 0,
-              'gdpr_consent', bidRequest.gdprConsent.consentString
-            );
-          }
-        }
+      if (config.getConfig('consentManagement') &&
+        bidderRequest && bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        data.push(
+          'gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+          'gdpr_consent', bidderRequest.gdprConsent.consentString
+        );
       }
 
       if (visitor !== null && typeof visitor === 'object') {

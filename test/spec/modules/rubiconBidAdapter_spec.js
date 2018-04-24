@@ -15,20 +15,22 @@ describe('the rubicon adapter', () => {
   let sandbox,
     bidderRequest;
 
-  function createVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+  function addConsentManagement() {
+    bidderRequest.gdprConsent = {
+      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      'gdprApplies': true
+    }
+  }
 
+  function createVideoBidderRequest() {
+    addConsentManagement();
+
+    let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
         context: 'instream'
       }
     };
-
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
-
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -44,14 +46,11 @@ describe('the rubicon adapter', () => {
   }
 
   function createLegacyVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+    addConsentManagement();
 
+    let bid = bidderRequest.bids[0];
     // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -147,10 +146,6 @@ describe('the rubicon adapter', () => {
       bids: [
         {
           bidder: 'rubicon',
-          gdprConsent: {
-            'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-            'consentRequired': true
-          },
           params: {
             accountId: '14062',
             siteId: '70608',
@@ -541,6 +536,8 @@ describe('the rubicon adapter', () => {
         });
 
         it('should send GDPR params when enabled', () => {
+          addConsentManagement();
+
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {
               consentManagement: {
@@ -586,7 +583,7 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        it('should not send GDPR params if bidRequest does not pass gdprConsent', () => {
+        it('should not send GDPR params if gdprConsent is not set in config', () => {
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {
               consentManagement: {
@@ -597,9 +594,6 @@ describe('the rubicon adapter', () => {
             };
             return config[key];
           });
-
-          // Remove gdprConsent from bidRequest
-          delete bidderRequest.bids[0].gdprConsent;
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
