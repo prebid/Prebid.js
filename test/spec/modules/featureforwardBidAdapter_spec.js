@@ -34,7 +34,6 @@ describe('featureforwardBidAdapter', function() {
       bid.pubId = '000';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
   });
 
   describe('buildRequests', () => {
@@ -123,6 +122,5 @@ describe('featureforwardBidAdapter', function() {
       let result = spec.interpretResponse(response);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
-
   });
 });
