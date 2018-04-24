@@ -1,21 +1,20 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { REPO_AND_VERSION } from 'src/constants';
 
 export const spec = {
   code: 'featureforward',
   supportedMediaTypes: ['banner', 'video', 'native'],
   isBidRequestValid: function isBidRequestValid(bid) {
-    if (bid.pubId == '000'){
-         return false;
+    if (bid.pubId == '000') {
+      return false;
     }
     return true;
   },
   buildRequests: function(bidReqs) {
-    try{
-        var a = getRealDomain();
-    }catch(err){
-        a = " ";
+    try {
+      var a = getRealDomain();
+    } catch (err) {
+      a = ' ';
     }
     let featureforwardImps = [];
     utils._each(bidReqs, function (bid) {
@@ -48,7 +47,7 @@ export const spec = {
   },
 
   interpretResponse: function(body) {
-    //console.log('dan ff response '+ JSON.stringify(body.body));
+    console.log('dan ff response ' + JSON.stringify(body.body));
     var bd = JSON.parse(JSON.stringify(body.body));
     var featureforwardBidResponses = [];
     featureforwardBidResponses.push({
@@ -64,41 +63,42 @@ export const spec = {
       ad: bd.ad,
       ttl: bd.ttl
     });
-    //console.log('proccessed response '+JSON.stringify(featureforwardBidResponses));
+    console.log('proccessed response ' + JSON.stringify(featureforwardBidResponses));
     return featureforwardBidResponses;
   }
 };
 
 function gr(a) {
-    var b = false;
-    if (a.parent !== a) {
-        b=gr(a.parent);
+  var b = false;
+  if (a.parent !== a) {
+    b = gr(a.parent);
+  }
+  if (!b) {
+    try {
+      b = a.document.referrer;
+    } catch (e) {
+      b = false;
     }
-    if (! b) {
-        try {
-            b= a.document.referrer;
-        }catch(e) {
-            b = false;
-        }
-    }
-    return b;
+  }
+  return b;
 }
 
-function getRealDomain(){
-    if (parent !== window) {
+function getRealDomain() {
+  if (parent !== window) {
     var u = gr(this);
     if (window.location.ancestorOrigins) {
-        var u2 = window.location.ancestorOrigins[window.location.ancestorOrigins.length-1];
-        if (u2)
-            if (u.substring(0,u2.length) != u2)
-                u = u2
-    }
-        } else {
-                u = top.location.href;
-                console.log(u);
+      var u2 = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
+      if (u2) {
+        if (u.substring(0, u2.length) != u2) {
+          u = u2
         }
-
-    return u;
+      }
+    }
+  } else {
+    u = top.location.href;
+    console.log(u);
+  }
+  return u;
 }
 
 registerBidder(spec);
