@@ -42,6 +42,8 @@ Save your line item and add a creative.
 
 On the new creative screen, select the **Third party** creative type.
 
+Ensure that the **Serve into a SafeFrame** box is checked.
+
 Enter the below code snippet in the **Code snippet** text area.
 
 {: .alert.alert-success :}
