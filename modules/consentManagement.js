@@ -10,11 +10,10 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_CMP = 'iab';
-const DEFAULT_CONSENT_TIMEOUT = 500;
+const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
 export let userCMP;
-export let userConsentRequired;
 export let consentTimeout;
 export let allowAuction;
 
@@ -33,33 +32,63 @@ const cmpCallMap = {
 };
 
 /**
- * This function handles interacting with the AppNexus CMP to obtain the consentString value of the user.
+ * This function handles interacting with the AppNexus CMP to obtain the consentObject value of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentString (string) from CMP
+ * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
 function lookupIabConsent(cmpSuccess, cmpError) {
-  let callId = 0;
-  let getConsentDataReq = {
-    __cmp: {
-      callId: 'iframe:' + (++callId),
-      command: 'getConsentData'
-    }
-  };
+  // let callId = 0;
 
   if (window.__cmp) {
-    window.__cmp('getConsentData', 'vendorConsents', cmpSuccess);
+    window.__cmp('getVendorConsents', null, cmpSuccess);
   } else {
-    // prebid may be inside an iframe and CMP may exist outside, so we'll use postMessage to interact with CMP
-    window.top.postMessage(getConsentDataReq, '*');
-    window.addEventListener('message', receiveMessage);
-  }
-
-  function receiveMessage(event) {
-    if (event && event.data && event.data.__cmp && event.data.__cmp.result) {
-      cmpSuccess(event.data.__cmp.result);
+    /** START OF STOCK CODE FROM IAB 1.1 CMP SEC */
+    // find the CMP frame
+    let f = window;
+    let cmpFrame;
+    while (!cmpFrame) {
+      try {
+        if (f.frames['__cmpLocator']) cmpFrame = f;
+      } catch (e) {}
+      if (f === window.top) break;
+      f = f.parent;
     }
+
+    let cmpCallbacks = {};
+
+    /* Setup up a __cmp function to do the postMessage and stash the callback.
+      This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
+    window.__cmp = function(cmd, arg, callback) {
+      if (!cmpFrame) {
+        let errmsg = 'CMP not found';
+        // small customization to properly return error
+        return cmpError(errmsg);
+      }
+      let callId = Math.random() + '';
+      let msg = {__cmpCall: {
+        command: cmd,
+        parameter: arg,
+        callId: callId
+      }};
+      cmpCallbacks[callId] = callback;
+      cmpFrame.postMessage(msg, '*');
+    }
+
+    /** when we get the return message, call the stashed callback */
+    window.addEventListener('message', function(event) {
+      // small customization to prevent reading strings from other sources that aren't JSON.stringified
+      let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+      if (json.__cmpReturn) {
+        let i = json.__cmpReturn;
+        cmpCallbacks[i.callId](i.returnValue, i.success);
+        delete cmpCallbacks[i.callId];
+      }
+    }, false);
+
+    /** END OF STOCK CODE FROM IAB 1.1 CMP SEC */
+    window.__cmp('getVendorConsents', null, cmpSuccess);
   }
 }
 
@@ -103,14 +132,14 @@ export function requestBidsHook(config, fn) {
  * This function checks the string value provided by CMP to ensure it's a valid string.
  * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exits the module.
- * @param {string} consentString required; encoded string value from CMP representing user's consent choices
+ * @param {object} consentObject required; object returned by CMP that contains user's consent choices
  */
-function processCmpData(consentString) {
-  if (typeof consentString !== 'string' || consentString === '') {
-    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentString}).`);
+function processCmpData(consentObject) {
+  if (!utils.isObject(consentObject) || typeof consentObject.metadata !== 'string' || consentObject.metadata === '') {
+    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`);
   } else {
     clearTimeout(timer);
-    storeConsentData(consentString);
+    storeConsentData(consentObject);
 
     exitModule();
   }
@@ -139,12 +168,13 @@ function cmpFailed(errMsg) {
 
 /**
  * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
- * @param {string} cmpConsentString required; encoded string value representing user's consent choices (can be undefined in certain use-cases for this function only)
+ * @param {object} cmpConsentObject required; encoded string value representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
-function storeConsentData(cmpConsentString) {
+function storeConsentData(cmpConsentObject) {
   consentData = {
-    consentString: cmpConsentString,
-    consentRequired: userConsentRequired
+    consentString: (cmpConsentObject) ? cmpConsentObject.metadata : undefined,
+    vendorData: cmpConsentObject,
+    gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : undefined
   };
   gdprDataHandler.setConsentData(consentData);
 }
@@ -200,10 +230,6 @@ export function setConfig(config) {
     utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
   }
 
-  if (typeof config.consentRequired === 'boolean') {
-    userConsentRequired = config.consentRequired;
-  }
-
   if (typeof config.timeout === 'number') {
     consentTimeout = config.timeout;
   } else {
@@ -211,7 +237,7 @@ export function setConfig(config) {
     utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
 
-  if (typeof config.allowAuctionWithoutConsent !== 'undefined') {
+  if (typeof config.allowAuctionWithoutConsent === 'boolean') {
     allowAuction = config.allowAuctionWithoutConsent;
   } else {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;

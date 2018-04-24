@@ -78,7 +78,7 @@ export const spec = {
       // note - objects for impbus use underscore instead of camelCase
       payload.gdpr_consent = {
         consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.consentRequired
+        consent_required: bidderRequest.gdprConsent.gdprApplies
       };
     }
 
