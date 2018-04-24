@@ -126,7 +126,6 @@ describe('consentManagement', function () {
           args[2](testConsentString);
         });
         setConfig(goodConfigWithAllowAuction);
-        debugger; //eslint-disable-line
         requestBidsHook({}, () => {});
         cmpStub.restore();
 
