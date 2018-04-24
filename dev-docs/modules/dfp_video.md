@@ -6,6 +6,7 @@ top_nav_section: dev_docs
 nav_section: modules
 module_code : dfpAdServerVideo
 display_name : DFP Video
+enable_download : true
 ---
 
 <div class="bs-docs-section" markdown="1">

@@ -6,6 +6,7 @@ top_nav_section: dev_docs
 nav_section: modules
 module_code : consentManagement
 display_name : GDPR ConsentManagement
+enable_download : false
 ---
 
 <div class="bs-docs-section" markdown="1">
