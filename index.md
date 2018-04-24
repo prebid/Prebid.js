@@ -67,6 +67,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Index Exchange</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Sovrn</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>SpotX</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>LKQD</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>PulsePoint</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>TripleLift</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>SpringServe</h3></div>
