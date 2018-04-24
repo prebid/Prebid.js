@@ -117,8 +117,7 @@ function includesSize(sizeArray, size) {
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
   const curRegex = /^[A-Z]{3}$/;
 
-  return Boolean(typeof bidFloor === 'number' && typeof bidFloorCur === 'string'
-  && bidFloorCur.match(curRegex));
+  return Boolean(typeof bidFloor === 'number' && typeof bidFloorCur === 'string' && bidFloorCur.match(curRegex));
 }
 
 export const spec = {
@@ -149,8 +148,7 @@ export const spec = {
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
 
     if (hasBidFloor || hasBidFloorCur) {
-      return hasBidFloor && hasBidFloorCur
-        && isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur);
+      return hasBidFloor && hasBidFloorCur && isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur);
     }
 
     return true;
@@ -171,8 +169,7 @@ export const spec = {
       validBidRequest = validBidRequests[i];
 
       // If the bid request is for banner, then transform the bid request based on banner format
-      if (utils.deepAccess(validBidRequest, 'mediaTypes.banner')
-        || validBidRequest.mediaType === 'banner') {
+      if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') || validBidRequest.mediaType === 'banner') {
         bannerImp = bidToBannerImp(validBidRequest);
         bannerImps.push(bannerImp);
       }
