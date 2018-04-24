@@ -98,7 +98,8 @@ function prepareJSON (requests) {
       zone: request.params.zone,
       reqId: request.bidId,
       type: request.params.type,
-      sizes: request.sizes
+      sizes: request.sizes,
+      transactionId: request.transactionId
     }
     if (request.params.exclude) {
       req.exclude = request.params.exclude
