@@ -1,7 +1,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { getTopWindowLocation, parseSizesInput } from 'src/utils';
+import * as utils from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -46,9 +46,10 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': utils.getTopWindowLocation().host,
+      'ref': getTopWindowLocation().host,
       's': utils.generateUUID(),
       'pv': PAGEVIEW_ID,
+      'vp': _getPlatform()
     };
 
     if (validBidRequests[0].params.hfa) {
@@ -80,7 +81,7 @@ export const spec = {
 
     Object.keys(bidResponse.slots).forEach(slot => {
       const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
+      const bidRequest = bidderRequests.find(bidReqest => bidReqest.bidId === bidId);
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
       const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
       const createCreative = _creative(mediaType);
@@ -138,9 +139,9 @@ export const spec = {
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
-    return utils.parseSizesInput(bid.params.sizes).join(',');
+    return parseSizesInput(bid.params.sizes).join(',');
   }
-  return utils.parseSizesInput(bid.sizes).join(',');
+  return parseSizesInput(bid.sizes).join(',');
 }
 
 function _validateSlot (bid) {
@@ -161,16 +162,42 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   if (mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + utils.getTopWindowLocation().host;
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
 
 function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${utils.getTopWindowLocation().host}`
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
 }
 
 function _getBidIdFromTrinityKey (key) {
   return key.split('|').slice(-1)[0]
+}
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export const _isInbounds = (context = window) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export function _getPlatform(context = window) {
+  const isInBounds = _isInbounds(context);
+  const MOBILE_VIEWPORT = {
+    lt: 768
+  };
+  const TABLET_VIEWPORT = {
+    lt: 992,
+    ge: 768
+  };
+  if (isInBounds(0, MOBILE_VIEWPORT.lt)) {
+    return 'mobile'
+  }
+  if (isInBounds(TABLET_VIEWPORT.ge, TABLET_VIEWPORT.lt)) {
+    return 'tablet'
+  }
+  return 'desktop';
 }
 
 registerBidder(spec);
