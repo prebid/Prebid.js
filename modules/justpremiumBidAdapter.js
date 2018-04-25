@@ -40,11 +40,13 @@ export const spec = {
       let bid = findBid(adUnit.params, body)
       if (bid) {
         let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
+        let width = bid.adType === 'iab' ? bid.width : (size[0] || bid.width)
+        let height = bid.adType === 'iab' ? bid.height : (size[1] || bid.height)
         let bidResponse = {
-          requestId: adUnit.bidId,
+          requestId: bid.rid,
           creativeId: bid.id,
-          width: size[0] || bid.width,
-          height: size[1] || bid.height,
+          width: width,
+          height: height,
           ad: bid.adm,
           cpm: bid.price,
           netRevenue: true,
@@ -97,7 +99,7 @@ function prepareJSON (requests) {
     let req = {
       zone: request.params.zone,
       reqId: request.bidId,
-      type: request.params.type,
+      adType: request.params.adType,
       sizes: request.sizes,
       transactionId: request.transactionId
     }
@@ -109,14 +111,23 @@ function prepareJSON (requests) {
     }
     requestCondition.push(req)
   })
-  return requestCondition;
+  return requestCondition
 }
 
-function findBid (params, bids) {
+function findBid (adUnit, bids) {
+  let params = adUnit.params
   let len = bids.length
   while (len--) {
-    if (passCond(params, bids[len])) {
-      return bids.splice(len, 1).pop()
+    const bid = bids[len]
+    if (bid.adType === 'iab') {
+      if (adUnit.bidId === bid.rid) {
+        return bids.splice(len, 1).pop()
+      }
+      return false
+    } else {
+      if (passCond(params, bid)) {
+        return bids.splice(len, 1).pop()
+      }
     }
   }
 
