@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/openxBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO} from 'src/mediaTypes';
 import {userSync} from 'src/userSync';
 
 const URLBASE = '/w/1.0/arj';
@@ -55,14 +54,11 @@ describe('OpenxAdapter', () => {
         params: {
           unit: '12345678',
           delDomain: 'test-del-domain',
-          video: {
-            be: 'true',
-            url: 'abc.com'
-          }
         },
         adUnitCode: 'adunit-code',
-        mediaTypes: {video: {}},
-        sizes: [640, 480],
+        mediaTypes: {video: {
+          playerSize: [640, 480]
+        }},
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
@@ -73,11 +69,7 @@ describe('OpenxAdapter', () => {
         'bidder': 'openx',
         'params': {
           'unit': '12345678',
-          'delDomain': 'test-del-domain',
-          'video': {
-            'be': 'true',
-            'url': 'abc.com'
-          }
+          'delDomain': 'test-del-domain'
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': 'video',
@@ -250,10 +242,7 @@ describe('OpenxAdapter', () => {
       },
       'params': {
         'unit': '12345678',
-        'delDomain': 'test-del-domain',
-        'video': {
-          'url': 'abc.com'
-        }
+        'delDomain': 'test-del-domain'
       },
       'adUnitCode': 'adunit-code',
 
@@ -268,10 +257,7 @@ describe('OpenxAdapter', () => {
       'mediaType': 'video',
       'params': {
         'unit': '12345678',
-        'delDomain': 'test-del-domain',
-        'video': {
-          'url': 'abc.com'
-        }
+        'delDomain': 'test-del-domain'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [640, 480],
@@ -298,9 +284,94 @@ describe('OpenxAdapter', () => {
       const dataParams = request[0].data;
 
       expect(dataParams.auid).to.equal('12345678');
-      expect(dataParams.url).to.equal('abc.com');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+    });
+
+    describe('when using the video param', function () {
+      let videoBidRequest;
+
+      beforeEach(function () {
+        videoBidRequest = {
+          'bidder': 'openx',
+          'mediaTypes': {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480]
+            }
+          },
+          'params': {
+            'unit': '12345678',
+            'delDomain': 'test-del-domain',
+          },
+          'adUnitCode': 'adunit-code',
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        }
+      });
+
+      it('should not allow you to set a url', function () {
+        videoBidRequest.params.video = {
+          url: 'test-url'
+        };
+        const request = spec.buildRequests([videoBidRequest]);
+
+        expect(request[0].data.url).to.be.undefined;
+      });
+
+      it('should not allow you to override the javascript url', function () {
+        let myUrl = 'my-url';
+        videoBidRequest.params.video = {
+          ju: myUrl
+        };
+        const request = spec.buildRequests([videoBidRequest]);
+
+        expect(request[0].data.ju).to.not.equal(myUrl);
+      });
+
+      describe('when using the openRtb param', function () {
+        it('should covert the param to a JSON string', function () {
+          let myOpenRTBObject = {};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const request = spec.buildRequests([videoBidRequest]);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(myOpenRTBObject));
+        });
+
+        it("should use the bidRequest's playerSize when it is available", function () {
+          const width = 200;
+          const height = 100;
+          const myOpenRTBObject = {v: height, w: width};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const request = spec.buildRequests([videoBidRequest]);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+
+          expect(openRtbRequestParams.w).to.not.equal(width);
+          expect(openRtbRequestParams.v).to.not.equal(height);
+        });
+
+        it('should use the the openRTB\'s sizing when the bidRequest\'s playerSize is not available', function () {
+          const width = 200;
+          const height = 100;
+          const myOpenRTBObject = {v: height, w: width};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          videoBidRequest.mediaTypes.video.playerSize = undefined;
+
+          const request = spec.buildRequests([videoBidRequest]);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+
+          expect(openRtbRequestParams.w).to.equal(width);
+          expect(openRtbRequestParams.v).to.equal(height);
+        });
+      });
     });
   });
 
@@ -405,11 +476,6 @@ describe('OpenxAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequest);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
-    });
-
     it('should register a beacon', () => {
       spec.interpretResponse({body: bidResponse}, bidRequest);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/\/\/openx-d\.openx\.net.*\/bo\?.*ts=ts/));
@@ -430,10 +496,7 @@ describe('OpenxAdapter', () => {
       'mediaTypes': {video: {}},
       'params': {
         'unit': '12345678',
-        'delDomain': 'test-del-domain',
-        'video': {
-          'url': 'abc.com'
-        }
+        'delDomain': 'test-del-domain'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [640, 480],
@@ -447,10 +510,7 @@ describe('OpenxAdapter', () => {
       'mediaType': 'video',
       'params': {
         'unit': '12345678',
-        'delDomain': 'test-del-domain',
-        'video': {
-          'url': 'abc.com'
-        }
+        'delDomain': 'test-del-domain'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [640, 480],
@@ -534,16 +594,39 @@ describe('OpenxAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('should register a user sync', () => {
-      spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
-      sinon.assert.calledWith(userSync.registerSync, 'iframe', 'openx', 'http://testpixels.net');
-    });
-
     it('should register a beacon', () => {
       spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^\/\/test-colo\.com/))
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ph=test-ph/));
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ts=test-ts/));
+    });
+  });
+
+  describe('user sync', () => {
+    const syncUrl = 'http://testpixels.net';
+
+    it('should register the pixel iframe from banner ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { ads: { pixels: syncUrl } } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the pixel iframe from video ad response', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { pixels: syncUrl } }]
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
+    });
+
+    it('should register the default iframe if no pixels available', () => {
+      let syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        []
+      );
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: '//u.openx.net/w/1.0/pd' }]);
     });
   });
 });

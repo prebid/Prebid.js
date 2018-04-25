@@ -50,7 +50,8 @@ export const spec = {
         pageDomain: utils.getTopWindowUrl(),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
-        bidId: bid.bidId
+        bidId: bid.bidId,
+        prebidVersion: '$prebid.version$'
       };
       var payloadString = JSON.stringify(payload);
       return {

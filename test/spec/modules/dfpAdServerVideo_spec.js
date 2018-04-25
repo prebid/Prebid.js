@@ -148,6 +148,8 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('section', 'blog');
     expect(customParams).to.have.property('mykey', 'myvalue');
+    expect(customParams).to.have.property('hb_uuid', 'abc');
+    expect(customParams).to.have.property('hb_cache_id', 'abc');
   });
 
   it('should not overwrite an existing description_url for object input and cache disabled', () => {
