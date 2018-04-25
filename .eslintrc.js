@@ -3,6 +3,13 @@ module.exports = {
     "browser": true,
     "commonjs": true
   },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": ["node_modules", "./"]
+      }
+    }
+  },
   "extends": "standard",
   "globals": {
     "$$PREBID_GLOBAL$$": false

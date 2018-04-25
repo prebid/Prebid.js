@@ -151,7 +151,27 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    return [];
+    const userSyncs = [];
+
+    if (syncOptions.pixelEnabled) {
+      userSyncs.push({
+        type: 'image',
+        url: 'https://e.serverbid.com/udb/9969/match?redir=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fpool%2Fset%2Fi.gif%3FpoolId%3D9969%26poolKey%3D'
+      });
+      userSyncs.push({
+        type: 'image',
+        url: 'https://ssum.casalemedia.com/usermatchredir?s=185638&cb=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fsync%2Fi.gif%3FpartnerId%3D1%26userId%3D'
+      });
+    }
+
+    if (syncOptions.iframeEnabled) {
+      userSyncs.push({
+        type: 'iframe',
+        url: 'https://ssum-sec.casalemedia.com/usermatch?s=184665&cb=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fsync%2Fi.gif%3FpartnerId%3D1%26userId%3D'
+      });
+    }
+
+    return userSyncs;
   }
 };
 
