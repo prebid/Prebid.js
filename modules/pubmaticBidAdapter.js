@@ -19,6 +19,11 @@ const CUSTOM_PARAMS = {
   'verId': '' // OpenWrap Legacy: version ID
 };
 const NET_REVENUE = false;
+const dealChannelValues = {
+  1: 'PMP',
+  5: 'PREF',
+  6: 'PMPG'
+};
 
 let publisherId = 0;
 
@@ -278,6 +283,11 @@ export const spec = {
             referrer: utils.getTopWindowUrl(),
             ad: bid.adm
           };
+
+          if (bid.ext && bid.ext.deal_channel) {
+            newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+          }
+
           bidResponses.push(newBid);
         });
       }

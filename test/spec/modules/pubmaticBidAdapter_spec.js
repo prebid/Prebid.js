@@ -44,7 +44,10 @@ describe('PubMatic adapter', () => {
             'price': 1.3,
             'adm': 'image3.pubmatic.com Layer based creative',
             'h': 250,
-            'w': 300
+            'w': 300,
+            'ext': {
+              'deal_channel': 6
+            }
           }]
         }]
       }
@@ -210,6 +213,13 @@ describe('PubMatic adapter', () => {
         expect(response[0].ttl).to.equal(300);
         expect(response[0].referrer).to.include(utils.getTopWindowUrl());
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+      });
+
+      it('should check for dealChannel value selection', () => {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(bidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].dealChannel).to.equal('PMPG');
       });
     });
   });
