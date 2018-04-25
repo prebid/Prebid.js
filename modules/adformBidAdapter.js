@@ -39,7 +39,7 @@ export const spec = {
     request.push('stid=' + validBidRequests[0].auctionId);
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      request.push('gdpr=' + bidderRequest.gdprConsent.consentRequired);
+      request.push('gdpr=' + bidderRequest.gdprConsent.gdprApplies);
       request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     }
 
