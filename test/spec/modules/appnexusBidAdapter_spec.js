@@ -316,7 +316,7 @@ describe('AppNexusAdapter', () => {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          consentRequired: true
+          gdprApplies: true
         }
       };
       bidderRequest.bids = bidRequests;
