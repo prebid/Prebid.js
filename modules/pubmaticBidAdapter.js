@@ -234,7 +234,7 @@ export const spec = {
 
       payload.regs = {
         ext: {
-          gdpr: (bidderRequest.gdprConsent.consentRequired ? 1 : 0)
+          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
         }
       };
     }
@@ -295,7 +295,7 @@ export const spec = {
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.consentRequired ? 1 : 0);
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
 

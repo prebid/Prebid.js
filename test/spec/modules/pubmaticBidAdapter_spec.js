@@ -151,7 +151,7 @@ describe('PubMatic adapter', () => {
         let bidRequest = {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
-            consentRequired: true
+            gdprApplies: true
           }
         };
   		  let request = spec.buildRequests(bidRequests, bidRequest);
