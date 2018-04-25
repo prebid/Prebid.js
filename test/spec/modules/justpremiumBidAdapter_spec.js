@@ -7,7 +7,7 @@ describe('justpremium adapter', () => {
       bidder: 'justpremium',
       params: {
         zone: 28313,
-        type: 'iab',
+        adType: 'iab',
         allow: ['lb', 'wp']
       }
     },
@@ -25,7 +25,7 @@ describe('justpremium adapter', () => {
       bidder: 'justpremium',
       params: {
         zone: 28313,
-        type: 'iab',
+        adType: 'iab',
         exclude: ['sa']
       }
     },
@@ -80,6 +80,7 @@ describe('justpremium adapter', () => {
         'width': 970,
         'price': 0.52,
         'format': 'lb',
+        'adType': 'iab',
         'adm': 'creative code',
         'zid': 34364
       }]

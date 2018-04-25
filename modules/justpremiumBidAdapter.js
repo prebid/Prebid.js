@@ -18,7 +18,7 @@ export const spec = {
     let bidRest = []
     let reqTab = []
     validBidRequests.forEach(el => {
-      if (el.params.type && el.params.type === 'iab') {
+      if (el.params.adType && el.params.adType === 'iab') {
         bidIab.push(el)
       } else {
         bidRest.push(el)
@@ -37,7 +37,7 @@ export const spec = {
     const body = serverResponse.body
     let bidResponses = []
     bidRequests.bids.forEach(adUnit => {
-      let bid = findBid(adUnit.params, body)
+      let bid = findBid(adUnit, body)
       if (bid) {
         let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
         let width = bid.adType === 'iab' ? bid.width : (size[0] || bid.width)
