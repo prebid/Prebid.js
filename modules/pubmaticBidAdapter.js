@@ -217,8 +217,8 @@ export const spec = {
     payload.site.publisher.id = conf.pubId.trim();
     publisherId = conf.pubId.trim();
     payload.ext.wrapper = {};
-    payload.ext.wrapper.profile = conf.profId || UNDEFINED;
-    payload.ext.wrapper.version = conf.verId || UNDEFINED;
+    payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
+    payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
     payload.ext.wrapper.wv = constants.REPO_AND_VERSION;
     payload.ext.wrapper.transactionId = conf.transactionId;
@@ -234,7 +234,7 @@ export const spec = {
 
       payload.regs = {
         ext: {
-          gdpr: (bidderRequest.gdprConsent.consentRequired ? 1 : 0)
+          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
         }
       };
     }
@@ -295,7 +295,7 @@ export const spec = {
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.consentRequired ? 1 : 0);
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
 
