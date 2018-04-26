@@ -775,6 +775,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -948,4 +951,12 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }

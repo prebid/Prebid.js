@@ -22,7 +22,7 @@ export function ajaxBuilder(timeout = 3000) {
       let useXDomainRequest = false;
       let method = options.method || (data ? 'POST' : 'GET');
 
-      let callbacks = typeof callback === 'object' ? callback : {
+      let callbacks = typeof callback === 'object' && callback !== null ? callback : {
         success: function() {
           utils.logMessage('xhr success');
         },
