@@ -26,10 +26,11 @@ Designed to support the EU General Data Protection Regulation ([GDPR](https://ww
 
 This module will perform its tasks with the CMP prior to the auction starting.  A rough synopsis of this interaction process would be:
 
-1. Fetch the user's encoded consent string from the CMP.
-2. With a valid consent string, we will incorporate this data into the auction objects (for adapters to collect) and then allow the auction to proceed.
+1. Fetch the user's consent data from the CMP (see note below regarding a workflow variance for new users).
+2. With a valid set of consent information, we will incorporate this data into the auction objects (for adapters to collect) and then allow the auction to proceed.
 
-There are timeout settings in place in the module to permit this interaction with the CMP a specified length of time to operate before it's unacceptable or assumed an issue has occurred.  
+Note - In the the case of a new user, the CMP will respond only once there is consent information available; ie the user picked their consent choices.  Given this can take some time for the average user, coupled into the module is a timeout setting.
+For those unfamiliar with this timeout setting in place, the CMP will be permitted a specified amount of time to operate before it's deemed unacceptable or it's assumed an issue has occurred.
 
 When either this timeout occurs or if an error from the CMP is thrown, one of two options are taken; either:
 
@@ -45,7 +46,7 @@ To utilize this module, a separate CMP needs to be implemented onto the site to 
 
 The actual implementation details of this CMP are not covered by this page; any questions on that implemenation should be referred to the CMP in question.  However, we would recommend to have the CMP's code located before the prebid code in the head of the page, in order to ensure their framework is implemented before the prebid code starts to execute.
 
-The module currently supports any CMP that conforms to the IAB standard ([more info here](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework)).
+The module currently supports any CMP that conforms to the IAB standard for the 1.1 CMP spec ([more info here](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework)).
 
 Once the CMP is implemented, simply include the module in your build and add a `consentManagement` object in the `setConfig()` call.  Adapters that support this feature will be able to retrieve the consent information and incorporate it in their requests.
 
@@ -53,13 +54,10 @@ Once the CMP is implemented, simply include the module in your build and add a `
 | Param | Type | Description | Example |
 | --- | --- | --- | --- |
 | cmpApi | `string` | The ID for the CMP in use on the page.  Default is `'iab'` | `'iab'` |
-| consentRequired | `boolean` | An override type setting to indicate if GDPR consent is required or not.  See note in regards to default. | `true` or `false` |
-| timeout | `integer` | Length of time (in milliseconds) to allow the CMP to perform its tasks before aborting the process. Default is `500` | `500` |
+| timeout | `integer` | Length of time (in milliseconds) to allow the CMP to perform its tasks before aborting the process. Default is `10000` | `10000` |
 | allowAuctionWithoutConsent | `boolean` | A setting to determine what will happen when obtaining consent information from the CMP fails; either allow the auction to proceed (**true**) or cancel the auction (**false**). Default is `true` | `true` or `false` |
 
-* Note - Some SSPs can determine whether a given request is in GDPR scope or not. If the page specifies `consentRequired`, it will override any dynamic determination and force the bidders to use this override value -- i.e. tell the SSP whether the consent string must be enforced for this user. Each bidder adapter supporting GDPR will default to the proper setting for the backend SSP, so it's not recommended to set this value unless override is what's desired.
-
-Example: IAB CMP using the custom timeout and cancel auction options with the consentRequired field not defined.
+Example: IAB CMP using the custom timeout and cancel auction options.
 
 {% highlight js %}
      var pbjs = pbjs || {};
@@ -68,7 +66,7 @@ Example: IAB CMP using the custom timeout and cancel auction options with the co
         pbjs.setConfig({
           consentManagement: {
             cmpApi: 'iab',
-            timeout: 1000,
+            timeout: 8000,
             allowAuctionWithoutConsent: false
           }
         });
@@ -122,7 +120,8 @@ Below is a sample of how the data is structured in the `bidderRequest` object:
   "timeout": 3000,
   "gdprConsent": {
     "consentString": "BOJ/P2HOJ/P2HABABMAAAAAZ+A==",
-    "consentRequired": true
+    "vendorData": {...},
+    "gdprApplies": true
   },
   "start": 1520001292884,
   "doneCbCallCount": 0
@@ -135,9 +134,13 @@ Below is a sample of how the data is structured in the `bidderRequest` object:
 
 This field contains the user's choices on consent, represented as an encoded string value.  In certain scenarios, this field may come to you with an `undefined` value; normally this happens when there was an error during the CMP interaction and the publisher had the config option `allowAuctionWithoutConsent` set to `true`.  If you wish to set your own value for this scenario rather than pass along `undefined` to your system, you can check for the `undefined` value in the field and replace it accordingly.  The code sample provided in the *consentRequried* section below provides a possible approach to perform this type of check/replacement.
 
-**_consentRequired_**
+**_vendorData_**
 
-As described earlier in this page - if the publisher didn't set their own value for `consentRequired` in the prebid `setConfig` code, each adapter has the opportunity to set their own value for this field.
+This field contains the raw vendor data in relation to the user's choices on consent.  This object will contain a map of all available vendors for any potential adapters that may wish to read the data directly.  One use-case for reading this data could be if an adapter wished to be omitted in a request if they knew if consent wasn't given for them.  Adapters will need to read through the object to find their appropriate information.
+
+**_gdprApplies_**
+
+This boolean represents if the user in question belonged to an area where GDPR applies.  This field comes from the CMP itself; it's comes included in the response when a request is made to the CMP API.  In the odd chance for some reason this value isn't defined by the CMP, each adapter has the opportunity to set their own value for this field.
 There are two general approaches that can be taken by the adapter to populate this field:
 
 - Set a hardcoded default value.
@@ -152,8 +155,8 @@ buildRequests: function (bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     adapterRequest.gdpr_consent = {
       consent_string: bidderRequest.gdprConsent.consentString,
-      // will check if the consentRequired field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
-      consent_required: (typeof bidderRequest.gdprConsent.consentRequired === 'boolean') ? bidderRequest.gdprConsent.consentRequired : true
+      // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+      consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
     }
   }
   ...
@@ -161,9 +164,9 @@ buildRequests: function (bidRequests, bidderRequest) {
 ...
 {% endhighlight %}
 
-The implementation of the latter option is up to the adapter, but the general premise should be the same.  You would check to see if the `bidderRequest.gdprConsent.consentRequired` field is undefined and if so, set the derived value from your independent system.  Otherwise, you would use the publisher's value that was set in the `bidderRequest.gdprConsent.consentRequired` field.
+The implementation of the latter option is up to the adapter, but the general premise should be the same.  You would check to see if the `bidderRequest.gdprConsent.gdprApplies` field is undefined and if so, set the derived value from your independent system.
 
-If neither option are taken, then there is a chance this field's value will be undefined on certain requests.  As long as that acceptable, this could be a potential third option.
+If neither option are taken, then there is the remote chance this field's value will be undefined.  As long as that acceptable, this could be a potential third option.
 
 ### UserSync Integration
 
