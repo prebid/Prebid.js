@@ -168,6 +168,18 @@ let VALID_BID_REQUEST = [{
     }],
     'tmax': config.getConfig('bidderTimeout')
   },
+  VALID_PAYLOAD_PAGE_META = (() => {
+    let PAGE_META;
+    try {
+      PAGE_META = JSON.parse(JSON.stringify(VALID_PAYLOAD));
+    } catch (e) {}
+    PAGE_META.site = Object.assign(PAGE_META.site, {
+      'canonical_url': 'http://localhost:9999/canonical-test',
+      'twitter_url': 'http://localhost:9999/twitter-test',
+      'og_url': 'http://localhost:9999/fb-test'
+    });
+    return PAGE_META;
+  })(),
   VALID_PARAMS = {
     bidder: 'medianet',
     params: {
@@ -358,6 +370,24 @@ describe('Media.net bid adapter', () => {
     it('should ignore bidfloor if not a valid number', () => {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
+    });
+    describe('build requests: when page meta-data is available', () => {
+      it('should pass canonical, twitter and fb paramters if available', () => {
+        let sandbox = sinon.sandbox.create();
+        let documentStub = sandbox.stub(window.top.document, 'querySelector');
+        documentStub.withArgs('link[rel="canonical"]').returns({
+          href: 'http://localhost:9999/canonical-test'
+        });
+        documentStub.withArgs('meta[property="og:url"]').returns({
+          content: 'http://localhost:9999/fb-test'
+        });
+        documentStub.withArgs('meta[name="twitter:url"]').returns({
+          content: 'http://localhost:9999/twitter-test'
+        });
+        let bidReq = spec.buildRequests(VALID_BID_REQUEST);
+        expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);
+        sandbox.restore();
+      });
     });
   });
 
