@@ -402,7 +402,7 @@ describe('S2S Adapter', () => {
       let gdprBidRequest = utils.deepClone(BID_REQUESTS);
       gdprBidRequest[0].gdprConsent = {
         consentString: 'abc123',
-        consentRequired: true
+        gdprApplies: true
       };
 
       adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);

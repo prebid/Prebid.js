@@ -1,14 +1,8 @@
-<!--
-  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
-  Prebid with the Google Publisher Tag.
-  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
-  bids array inside the adUnits, and it will use your adapter to load an ad.
-  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
-  set an alias in your /etc/hosts file so that you can load this page from a different domain.
--->
-
 <html>
   <head>
+      <script>window.__cmp = {config: {logging: 'debug'}}</script>
+      <script src="//acdn.adnxs.com/cmp/cmp.complete.bundle.js" async></script>
+
       <script>
         var PREBID_TIMEOUT = 700;
   
@@ -44,14 +38,12 @@
           pbjs.setConfig({
             consentManagement: {
               cmpApi: 'iab',
-              consentRequired: false,
-              timeout: 500,
+              timeout: 5000,
               allowAuctionWithoutConsent: true
             },
             pubcid: {
               enable: false
-            },
-            debug: true
+            }
           });
           pbjs.requestBids({
             bidsBackHandler: sendAdserverRequest
@@ -71,6 +63,7 @@
   
         // setTimeout(function() {
         //   sendAdserverRequest();
+        //   console.log('timeout in main pbjs fired');
         // }, PREBID_TIMEOUT);
   
       </script>

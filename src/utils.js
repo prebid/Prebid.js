@@ -385,7 +385,7 @@ exports.isNumber = function(object) {
 
 exports.isObject = function(object) {
   return this.isA(object, t_Object);
-};
+}
 
 /**
  * Return if the object is "empty";
@@ -956,14 +956,6 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
-}
-
-/**
- * Checks value is undefined or not
- * @param {*} value
- */
-export function isUndefined(value) {
-  return typeof value === 'undefined';
 }
 
 /**
