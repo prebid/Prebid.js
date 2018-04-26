@@ -1,4 +1,4 @@
-import { loadScript } from 'src/adloader';
+import { loadExternalScript } from 'src/adloader';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { EVENTS } from 'src/constants';
 import { parse } from 'src/url';
@@ -47,7 +47,7 @@ export const spec = {
 
       // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
       setTimeout(() => {
-        loadScript(PUBLISHER_TAG_URL);
+        loadExternalScript(PUBLISHER_TAG_URL, BIDDER_CODE);
       }, bidderRequest.timeout);
     }
 
