@@ -47,33 +47,9 @@ Ensure that the **Serve into a SafeFrame** box is checked.
 Enter the below code snippet in the **Code snippet** text area.
 
 {: .alert.alert-success :}
-You can always get the latest version of the creative code below from [the AMP example creative file in our GitHub repo](https://github.com/prebid/prebid-universal-creative/blob/master/template/amp/dfp-creative.js).
+You can always get the latest version of the creative code below from [the AMP example creative file in our GitHub repo](https://github.com/prebid/prebid-universal-creative/blob/master/template/amp/dfp-creative.html).
 
-{% highlight html %}
-
-    <script src = "https://cdn.jsdelivr.net/npm/prebid-universal-creative@0.1.2/dist/creative.js"></script>
-    <script>
-    var adId = "%%PATTERN:hb_adid%%";
-    var cacheHost = "%%PATTERN:hb_cache_host%%";
-    var cachePath = "%%PATTERN:hb_cache_path%%";
-    var uuid = "%%PATTERN:hb_cache_id%%";
-    var mediaType = "%%PATTERN:hb_format%%";
-    var pubUrl = "%%PATTERN:url%%";
-
-    try {
-        pbjs.renderAd(document, adId, {
-            cacheHost: cacheHost,
-            cachePath: cachePath,
-            uuid: uuid,
-            mediaType: mediaType,
-            pubUrl: pubUrl
-        });
-    } catch (e) {
-        console.log(e);
-    }
-    </script>
-
-{% endhighlight %}
+{% include dev-docs/amp-creative.md %}
 
 ## Further Reading
 
