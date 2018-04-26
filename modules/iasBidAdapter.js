@@ -39,11 +39,11 @@ function stringifySlot(bidRequest) {
 }
 
 function stringifyWindowSize() {
-  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
+  return [ window.innerWidth || -1, window.innerHeight || -1 ].join('.');
 }
 
 function stringifyScreenSize() {
-  return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
+  return [ (window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1 ].join('.');
 }
 
 function buildRequests(bidRequests) {
@@ -62,22 +62,18 @@ function buildRequests(bidRequests) {
 
   const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
-  bidRequests.forEach(function (request){
-    if (bidRequests[0].bidId != request.bidId){
-	  otherBidIds.push(request.bidId);
+  bidRequests.forEach(function (request) {
+    if (bidRequests[0].bidId != request.bidId) {
+      otherBidIds.push(request.bidId);
     }
   });
 
-  const results = [
-    {
-      method: 'GET',
-      url: IAS_HOST,
-      data: queryString,
-      bidRequest: bidRequests[0]
-    }
-  ];
-
-  return results;
+  return {
+    method: 'GET',
+    url: IAS_HOST,
+    data: queryString,
+    bidRequest: bidRequests[0]
+  };
 }
 
 function getPageLevelKeywords(response) {
@@ -116,7 +112,7 @@ function interpretResponse(serverResponse, request) {
   commonBidResponse.slots = iasResponse.slots;
   bidResponses.push(commonBidResponse);
 
-  otherBidIds.forEach(function (bidId){
+  otherBidIds.forEach(function (bidId) {
     var otherResponse = Object.assign({}, commonBidResponse);
     otherResponse.requestId = bidId;
     bidResponses.push(otherResponse);
