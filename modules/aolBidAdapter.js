@@ -327,7 +327,7 @@ export const spec = {
     return openRtbObject;
   },
   isConsentRequired(consentData) {
-    return !!(consentData && consentData.consentString && consentData.consentRequired);
+    return !!(consentData && consentData.consentString && consentData.gdprApplies);
   },
   formatMarketplaceConsentData(consentData) {
     let consentRequired = this.isConsentRequired(consentData);

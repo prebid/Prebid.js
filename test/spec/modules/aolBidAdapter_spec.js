@@ -576,28 +576,28 @@ describe('AolAdapter', () => {
       expect(spec.isConsentRequired(null)).to.be.false;
     });
 
-    it('should return false when consentRequired equals true and consentString is not present', () => {
+    it('should return false when gdprApplies equals true and consentString is not present', () => {
       let consentData = {
         consentString: null,
-        consentRequired: true
+        gdprApplies: true
       };
 
       expect(spec.isConsentRequired(consentData)).to.be.false;
     });
 
-    it('should return false when consentString is present and consentRequired equals false', () => {
+    it('should return false when consentString is present and gdprApplies equals false', () => {
       let consentData = {
         consentString: 'consent-string',
-        consentRequired: false
+        gdprApplies: false
       };
 
       expect(spec.isConsentRequired(consentData)).to.be.false;
     });
 
-    it('should return true when consentString is present and consentRequired equals true', () => {
+    it('should return true when consentString is present and gdprApplies equals true', () => {
       let consentData = {
         consentString: 'consent-string',
-        consentRequired: true
+        gdprApplies: true
       };
 
       expect(spec.isConsentRequired(consentData)).to.be.true;
