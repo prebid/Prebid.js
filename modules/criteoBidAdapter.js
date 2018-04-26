@@ -110,6 +110,16 @@ export const spec = {
 
     return bids;
   },
+
+  /**
+   * @param {TimedOutBid} timeoutData
+   */
+  onTimeout: (timeoutData) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
+      adapter.handleBidTimeout();
+    }
+  },
 };
 
 /**
@@ -259,15 +269,6 @@ function registerEventHandlers() {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);
     }
-  });
-
-  events.on(EVENTS.BID_TIMEOUT, (timedOutBidders) => {
-    timedOutBidders
-      .filter(bidder => bidder.bidder === 'criteo')
-      .map(bidder => {
-        const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bidder.auctionId);
-        adapter.handleBidTimeout();
-      });
   });
 
   events.on(EVENTS.SET_TARGETING, () => {
