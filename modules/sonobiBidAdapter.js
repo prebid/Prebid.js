@@ -49,6 +49,8 @@ export const spec = {
       'ref': utils.getTopWindowLocation().host,
       's': utils.generateUUID(),
       'pv': PAGEVIEW_ID,
+      'lib_name': 'prebid',
+      'lib_v': window.pbjs.version
     };
 
     if (validBidRequests[0].params.hfa) {
