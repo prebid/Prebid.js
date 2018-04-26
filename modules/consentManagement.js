@@ -32,19 +32,30 @@ const cmpCallMap = {
 };
 
 /**
- * This function handles interacting with the AppNexus CMP to obtain the consentObject value of the user.
+ * This function handles interacting with an IAB compliant CMP to obtain the consentObject value of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
  */
 function lookupIabConsent(cmpSuccess, cmpError) {
-  // let callId = 0;
+  let cmpCallbacks;
 
-  if (window.__cmp) {
+  // check if the CMP is located on the same window level as the prebid code.
+  // if it's found, directly call the CMP via it's API and call the cmpSuccess callback.
+  // if it's not found, assume the prebid code may be inside an iframe and the CMP code is located in a higher parent window.
+  // in this case, use the IAB's iframe locator sample code (which is slightly cutomized) to try to find the CMP and use postMessage() to communicate with the CMP.
+  if (utils.isFn(window.__cmp)) {
     window.__cmp('getVendorConsents', null, cmpSuccess);
   } else {
-    /** START OF STOCK CODE FROM IAB 1.1 CMP SEC */
+    callCmpWhileInIframe();
+  }
+
+  function callCmpWhileInIframe() {
+    /**
+     * START OF STOCK CODE FROM IAB 1.1 CMP SPEC
+    */
+
     // find the CMP frame
     let f = window;
     let cmpFrame;
@@ -56,12 +67,14 @@ function lookupIabConsent(cmpSuccess, cmpError) {
       f = f.parent;
     }
 
-    let cmpCallbacks = {};
+    cmpCallbacks = {};
 
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window.__cmp = function(cmd, arg, callback) {
       if (!cmpFrame) {
+        removePostMessageListener();
+
         let errmsg = 'CMP not found';
         // small customization to properly return error
         return cmpError(errmsg);
@@ -77,18 +90,34 @@ function lookupIabConsent(cmpSuccess, cmpError) {
     }
 
     /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', function(event) {
-      // small customization to prevent reading strings from other sources that aren't JSON.stringified
-      let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
-      if (json.__cmpReturn) {
-        let i = json.__cmpReturn;
-        cmpCallbacks[i.callId](i.returnValue, i.success);
-        delete cmpCallbacks[i.callId];
-      }
-    }, false);
+    // small customization to remove this eventListener later in module
+    window.addEventListener('message', readPostMessageResponse, false);
 
-    /** END OF STOCK CODE FROM IAB 1.1 CMP SEC */
-    window.__cmp('getVendorConsents', null, cmpSuccess);
+    /**
+     * END OF STOCK CODE FROM IAB 1.1 CMP SPEC
+     */
+
+    // call CMP
+    window.__cmp('getVendorConsents', null, cmpIframeCallback);
+  }
+
+  function readPostMessageResponse(event) {
+    // small customization to prevent reading strings from other sources that aren't JSON.stringified
+    let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+    if (json.__cmpReturn) {
+      let i = json.__cmpReturn;
+      cmpCallbacks[i.callId](i.returnValue, i.success);
+      delete cmpCallbacks[i.callId];
+    }
+  }
+
+  function removePostMessageListener() {
+    window.removeEventListener('message', readPostMessageResponse, false);
+  }
+
+  function cmpIframeCallback(consentObject) {
+    removePostMessageListener();
+    cmpSuccess(consentObject);
   }
 }
 
@@ -135,7 +164,7 @@ export function requestBidsHook(config, fn) {
  * @param {object} consentObject required; object returned by CMP that contains user's consent choices
  */
 function processCmpData(consentObject) {
-  if (!utils.isObject(consentObject) || typeof consentObject.metadata !== 'string' || consentObject.metadata === '') {
+  if (!utils.isPlainObject(consentObject) || !utils.isStr(consentObject.metadata) || consentObject.metadata === '') {
     cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`);
   } else {
     clearTimeout(timer);
@@ -223,14 +252,14 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConfig(config) {
-  if (typeof config.cmpApi === 'string') {
+  if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
     userCMP = DEFAULT_CMP;
     utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
   }
 
-  if (typeof config.timeout === 'number') {
+  if (utils.isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
