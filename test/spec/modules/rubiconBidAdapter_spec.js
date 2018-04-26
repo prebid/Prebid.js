@@ -1201,7 +1201,7 @@ describe('the rubicon adapter', () => {
   });
 
   describe('user sync', () => {
-    const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
     beforeEach(() => {
       resetUserSync();
