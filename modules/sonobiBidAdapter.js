@@ -14,7 +14,7 @@ var SonobiAdapter = function SonobiAdapter() {
     var bidderRequestId = request.bidderRequestId;
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
     var libName = '&lib_name=prebid';
-    var libVersion = '&lib_v' + window.pbjs.version;
+    var libVersion = '&lib_v' + '$prebid.version$';
     adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + libName + libVersion);
   }
 
