@@ -182,9 +182,9 @@ describe('E-Planning Adapter', () => {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
-    it('should return true when bid does not have ci parameter but is a test bid'), () => {
-      expect(spec.isBidRequestValid(testBid).to.equal(true));
-    }
+    it('should return true when bid does not have ci parameter but is a test bid', () => {
+      expect(spec.isBidRequestValid(testBid)).to.equal(true);
+    });
   });
 
   describe('buildRequests', () => {
@@ -252,11 +252,11 @@ describe('E-Planning Adapter', () => {
 
     it('should return fr parameter when there is a referrer', () => {
       const referrer = 'thisisafakereferrer';
-      const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer').returns(referrer);
-      after(() => stubGetReferrer.restore());
-
+      const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer');
+      stubGetReferrer.returns(referrer);
       const fr = spec.buildRequests(bidRequests).data.fr;
       expect(fr).to.equal(referrer);
+      stubGetReferrer.restore()
     });
 
     it('should return the testing url when the request has the t parameter', () => {

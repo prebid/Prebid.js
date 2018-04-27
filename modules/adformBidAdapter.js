@@ -1,24 +1,25 @@
 'use strict';
 
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'adform';
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [],
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
   buildRequests: function (validBidRequests) {
     var i, l, j, k, bid, _key, _value, reqParams;
     var request = [];
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
-    var netRevenue = 'net';
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'pt', null ] ];
+    var netRevenue = 'gross';
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.params.priceType === 'gross') {
-        netRevenue = 'gross';
+      if (bid.params.priceType === 'net') {
+        bid.params.pt = netRevenue = 'net';
       }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
@@ -35,7 +36,7 @@ export const spec = {
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
-    request.push('stid=' + validBidRequests[0].requestId);
+    request.push('stid=' + validBidRequests[0].auctionId);
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
@@ -65,14 +66,20 @@ export const spec = {
     }
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    var bidObject, response, bid;
+    const VALID_RESPONSES = {
+      banner: 1,
+      vast_content: 1,
+      vast_url: 1
+    };
+    var bidObject, response, bid, type;
     var bidRespones = [];
     var bids = bidRequest.bids;
     var responses = serverResponse.body;
     for (var i = 0; i < responses.length; i++) {
       response = responses[i];
+      type = response.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
-      if (response.response === 'banner' && verifySize(response, bid.sizes)) {
+      if (VALID_RESPONSES[response.response] && (verifySize(response, bid.sizes) || type === VIDEO)) {
         bidObject = {
           requestId: bid.bidId,
           cpm: response.win_bid,
@@ -85,7 +92,10 @@ export const spec = {
           ttl: 360,
           ad: response.banner,
           bidderCode: bidRequest.bidder,
-          transactionId: bid.transactionId
+          transactionId: bid.transactionId,
+          vastUrl: response.vast_url,
+          vastXml: response.vast_content,
+          mediaType: type
         };
         bidRespones.push(bidObject);
       }

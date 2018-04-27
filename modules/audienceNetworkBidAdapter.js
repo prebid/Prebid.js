@@ -4,7 +4,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
-import { getTopWindowUrl } from 'src/utils';
+import { generateUUID, getTopWindowUrl, isSafariBrowser } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -12,9 +12,10 @@ const code = 'audienceNetwork';
 const currency = 'USD';
 const method = 'GET';
 const url = 'https://an.facebook.com/v2/placementbid.json';
-const supportedMediaTypes = ['video'];
+const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hb_bidder = 'fan';
+const pbv = '$prebid.version$';
 
 /**
  * Does this bid request contain valid parameters?
@@ -26,7 +27,8 @@ const isBidRequestValid = bid =>
   typeof bid.params.placementId === 'string' &&
   bid.params.placementId.length > 0 &&
   Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-  (isVideo(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
+  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).some(size => size === '300x250') : true) &&
+  (isValidNonSizedFormat(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 
 /**
  * Flattens a 2-element [W, H] array as a 'WxH' string,
@@ -52,11 +54,35 @@ const expandSize = size => size.split('x').map(Number);
 const isValidSize = size => includes(['300x250', '320x50'], size);
 
 /**
+ * Is this a valid, non-sized format?
+ * @param {String} size
+ * @returns {Boolean}
+ */
+const isValidNonSizedFormat = format => includes(['video', 'native'], format);
+
+/**
+ * Is this a valid size and format?
+ * @param {String} size
+ * @returns {Boolean}
+ */
+const isValidSizeAndFormat = (size, format) =>
+  (isFullWidth(format) && flattenSize(size) === '300x250') ||
+  isValidNonSizedFormat(format) ||
+  isValidSize(flattenSize(size));
+
+/**
  * Is this a video format?
  * @param {String} format
  * @returns {Boolean}
  */
 const isVideo = format => format === 'video';
+
+/**
+ * Is this a fullwidth format?
+ * @param {String} format
+ * @returns {Boolean}
+ */
+const isFullWidth = format => format === 'fullwidth';
 
 /**
  * Which SDK version should be used for this format?
@@ -120,7 +146,7 @@ const buildRequests = bids => {
 
   bids.forEach(bid => bid.sizes
     .map(flattenSize)
-    .filter(size => isValidSize(size) || isVideo(bid.params.format))
+    .filter(size => isValidSizeAndFormat(size, bid.params.format))
     .slice(0, 1)
     .forEach(size => {
       placementids.push(bid.params.placementId);
@@ -139,11 +165,15 @@ const buildRequests = bids => {
     adformats,
     testmode,
     pageurl,
-    sdk
+    sdk,
+    pbv
   };
   const video = findIndex(adformats, isVideo);
   if (video !== -1) {
-    [search.playerwidth, search.playerheight] = sizes[video].split('x').map(Number)
+    [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
+  }
+  if (isSafariBrowser()) {
+    search.cb = generateUUID();
   }
   const data = formatQS(search);
 
@@ -162,51 +192,50 @@ const buildRequests = bids => {
 const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
   const ttl = Number(config.getConfig().bidderTimeout);
 
-  return body.errors && body.errors.length
-    ? []
-    : Object.keys(body.bids)
-      // extract Array of bid responses
-      .map(placementId => body.bids[placementId])
-      // flatten
-      .reduce((a, b) => a.concat(b), [])
-      // transform to bidResponse
-      .map((bid, i) => {
-        const {
-          bid_id: fb_bidid,
-          placement_id: creativeId,
-          bid_price_cents: cpm
-        } = bid;
+  const { bids = {} } = body;
+  return Object.keys(bids)
+    // extract Array of bid responses
+    .map(placementId => bids[placementId])
+    // flatten
+    .reduce((a, b) => a.concat(b), [])
+    // transform to bidResponse
+    .map((bid, i) => {
+      const {
+        bid_id: fb_bidid,
+        placement_id: creativeId,
+        bid_price_cents: cpm
+      } = bid;
 
-        const format = adformats[i];
-        const [width, height] = expandSize(flattenSize(sizes[i]));
-        const ad = createAdHtml(creativeId, format, fb_bidid);
-        const requestId = requestIds[i];
+      const format = adformats[i];
+      const [width, height] = expandSize(flattenSize(sizes[i]));
+      const ad = createAdHtml(creativeId, format, fb_bidid);
+      const requestId = requestIds[i];
 
-        const bidResponse = {
-          // Prebid attributes
-          requestId,
-          cpm: cpm / 100,
-          width,
-          height,
-          ad,
-          ttl,
-          creativeId,
-          netRevenue,
-          currency,
-          // Audience Network attributes
-          hb_bidder,
-          fb_bidid,
-          fb_format: format,
-          fb_placementid: creativeId
-        };
-        // Video attributes
-        if (isVideo(format)) {
-          const pageurl = getTopWindowUrlEncoded();
-          bidResponse.mediaType = 'video';
-          bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
-        }
-        return bidResponse;
-      });
+      const bidResponse = {
+        // Prebid attributes
+        requestId,
+        cpm: cpm / 100,
+        width,
+        height,
+        ad,
+        ttl,
+        creativeId,
+        netRevenue,
+        currency,
+        // Audience Network attributes
+        hb_bidder,
+        fb_bidid,
+        fb_format: format,
+        fb_placementid: creativeId
+      };
+      // Video attributes
+      if (isVideo(format)) {
+        const pageurl = getTopWindowUrlEncoded();
+        bidResponse.mediaType = 'video';
+        bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
+      }
+      return bidResponse;
+    });
 };
 
 export const spec = {
