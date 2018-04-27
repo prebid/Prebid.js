@@ -155,7 +155,6 @@ describe('SonobiBidAdapter', () => {
     it('should return null if there is nothing to bid on', () => {
       const bidRequests = spec.buildRequests([{params: {}}])
       expect(bidRequests).to.equal(null);
-
     })
   })
 
