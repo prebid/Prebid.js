@@ -15,7 +15,12 @@ var SonobiAdapter = function SonobiAdapter() {
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
     var libName = '&lib_name=prebid';
     var libVersion = '&lib_v' + '$prebid.version$';
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + libName + libVersion);
+    var vp = '&vp=' + _getPlatform();
+    var key_maker = _keymaker(adSlots);
+    if (utils.isEmpty(key_maker)) {
+      return null;
+    }
+    return adloader.loadScript(trinity + JSON.stringify(key_maker) + '&cv=' + _operator(bidderRequestId) + ref + vp + libVersion + libName);
   }
 
   function _keymaker(adSlots) {
@@ -106,12 +111,48 @@ var SonobiAdapter = function SonobiAdapter() {
     return '<script type="text/javascript" src="' + src + '"></script>';
   }
 
+  /**
+   * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+   */
+  function _isInBounds(context) {
+    context = context || window;
+    return function (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) {
+      return context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+    }
+  }
+
+  /**
+   * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+   */
+  function _getPlatform(context = window) {
+    context = context || window;
+
+    var isInBounds = _isInBounds(context);
+    var MOBILE_VIEWPORT = {
+      lt: 768
+    };
+    var TABLET_VIEWPORT = {
+      lt: 992,
+      ge: 768
+    };
+    if (isInBounds(0, MOBILE_VIEWPORT.lt)) {
+      return 'mobile'
+    }
+    if (isInBounds(TABLET_VIEWPORT.ge, TABLET_VIEWPORT.lt)) {
+      return 'tablet'
+    }
+    return 'desktop';
+  }
+
   return {
     callBids: _phone_in,
     formRequest: _keymaker,
     parseResponse: _trinity,
     success: _success,
-    failure: _failure
+    failure: _failure,
+    // export helper functions for testing purposes
+    _isInBounds: _isInBounds,
+    _getPlatform: _getPlatform
   };
 };
 

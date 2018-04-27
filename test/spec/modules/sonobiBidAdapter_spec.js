@@ -165,7 +165,6 @@ describe('Sonobi adapter tests', () => {
       }
     }]
   };
-  //  You guys surprise me all the time new and exciting ways to break this simple adapter.
   const adUnit_m1hb = {
     bidderCode: 'sonobi',
     bids: [{
@@ -287,8 +286,13 @@ describe('Sonobi adapter tests', () => {
 
       it('should attempt to call bidder for: ' + adUnitName, () => {
         adapter.callBids(adUnit);
+        expect(stubLoadScript.args[0][0].indexOf('vp=tablet')).to.not.equal(-1);
         expect(stubLoadScript.callCount).to.equal(1);
         expect(stubFailBid.callCount).to.equal(0);
+      });
+      it('should return null if an empty bid request object is formed', () => {
+        let emptyKeymaker = adapter.callBids({bids: [], bidderRequestId: 'someId'});
+        expect(emptyKeymaker).to.equal(null);
       });
     });
   });
@@ -386,4 +390,19 @@ describe('Sonobi adapter tests', () => {
       expect(stubGoodBid.callCount).to.equal(0);
     });
   });
+
+  describe('_getPlatform', () => {
+    it('should return mobile', () => {
+      const adapter = new Adapter();
+      expect(adapter._getPlatform({innerWidth: 767})).to.equal('mobile')
+    })
+    it('should return tablet', () => {
+      const adapter = new Adapter();
+      expect(adapter._getPlatform({innerWidth: 800})).to.equal('tablet')
+    })
+    it('should return desktop', () => {
+      const adapter = new Adapter();
+      expect(adapter._getPlatform({innerWidth: 1000})).to.equal('desktop')
+    })
+  })
 });
