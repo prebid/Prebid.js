@@ -50,13 +50,13 @@ describe('consentManagement', function () {
   describe('requestBidsHook tests:', () => {
     let goodConfigWithCancelAuction = {
       cmpApi: 'iab',
-      timeout: 750,
+      timeout: 7500,
       allowAuctionWithoutConsent: false
     };
 
     let goodConfigWithAllowAuction = {
       cmpApi: 'iab',
-      timeout: 750,
+      timeout: 7500,
       allowAuctionWithoutConsent: true
     };
 
@@ -117,13 +117,13 @@ describe('consentManagement', function () {
       });
 
       it('should bypass CMP and simply use previously stored consentData', () => {
-        let testConsentString = {
+        let testConsentData = {
           gdprApplies: true,
           metadata: 'xyz'
         };
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testConsentString);
+          args[2](testConsentData);
         });
         setConfig(goodConfigWithAllowAuction);
         requestBidsHook({}, () => {});
@@ -131,7 +131,7 @@ describe('consentManagement', function () {
 
         // reset the stub to ensure it wasn't called during the second round of calls
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testConsentString);
+          args[2](testConsentData);
         });
 
         requestBidsHook({}, () => {
@@ -140,7 +140,7 @@ describe('consentManagement', function () {
         let consent = gdprDataHandler.getConsentData();
 
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentString.metadata);
+        expect(consent.consentString).to.equal(testConsentData.metadata);
         expect(consent.gdprApplies).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
@@ -163,13 +163,14 @@ describe('consentManagement', function () {
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
         eventStub.restore();
         cmpStub.restore();
+        delete window.__cmp;
         utils.logError.restore();
         utils.logWarn.restore();
         gdprDataHandler.consentData = null;
       });
 
       it('should return the consent string from a postmessage + addEventListener response', () => {
-        let testConsentString = {
+        let testConsentData = {
           data: {
             __cmpReturn: {
               returnValue: {
@@ -180,7 +181,7 @@ describe('consentManagement', function () {
           }
         };
         eventStub = sinon.stub(window, 'addEventListener').callsFake((...args) => {
-          args[1](testConsentString);
+          args[1](testConsentData);
         });
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2]({
@@ -226,12 +227,12 @@ describe('consentManagement', function () {
       });
 
       it('performs lookup check and stores consentData for a valid existing user', () => {
-        let testConsentString = {
+        let testConsentData = {
           gdprApplies: true,
           metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
         };
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testConsentString);
+          args[2](testConsentData);
         });
 
         setConfig(goodConfigWithAllowAuction);
@@ -244,15 +245,15 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentString.metadata);
+        expect(consent.consentString).to.equal(testConsentData.metadata);
         expect(consent.gdprApplies).to.be.true;
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
-        let testConsentString = null;
+        let testConsentData = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testConsentString);
+          args[2](testConsentData);
         });
 
         setConfig(goodConfigWithCancelAuction);
@@ -268,10 +269,10 @@ describe('consentManagement', function () {
       });
 
       it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', () => {
-        let testConsentString = null;
+        let testConsentData = null;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2](testConsentString);
+          args[2](testConsentData);
         });
 
         setConfig(goodConfigWithAllowAuction);

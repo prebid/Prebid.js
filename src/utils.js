@@ -393,7 +393,7 @@ exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
 
-exports.isObject = function(object) {
+exports.isPlainObject = function(object) {
   return this.isA(object, t_Object);
 }
 
