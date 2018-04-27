@@ -104,4 +104,24 @@ describe('ClickforceAdapter', () => {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs function', () => {
+    it('should register type is iframe', () => {
+      const syncOptions = {
+        'iframeEnabled': 'true'
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      expect(userSync[0].url).to.equal('https://cdn.doublemax.net/js/capmapping.htm');
+    });
+
+    it('should register type is image', () => {
+      const syncOptions = {
+        'pixelEnabled': 'true'
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('image');
+      expect(userSync[0].url).to.equal('https://c.doublemax.net/cm');
+    });
+  });
 });
