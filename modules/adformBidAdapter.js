@@ -10,7 +10,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, j, k, bid, _key, _value, reqParams;
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'pt', null ] ];
@@ -37,6 +37,11 @@ export const spec = {
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
     request.push('stid=' + validBidRequests[0].auctionId);
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      request.push('gdpr=' + bidderRequest.gdprConsent.gdprApplies);
+      request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];

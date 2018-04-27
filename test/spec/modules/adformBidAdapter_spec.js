@@ -87,6 +87,15 @@ describe('Adform adapter', () => {
       let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
     });
+
+    it('should send GDPR Consent data to adform', () => {
+      var resultBids = JSON.parse(JSON.stringify(bids[0]));
+      let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: 1, consentString: 'concentDataString'}});
+      let parsedUrl = parseUrl(request.url).query;
+
+      assert.equal(parsedUrl.gdpr, 1);
+      assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
+    });
   });
 
   describe('interpretResponse', () => {
