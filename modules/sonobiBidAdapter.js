@@ -55,6 +55,11 @@ export const spec = {
       payload.hfa = validBidRequests[0].params.hfa;
     }
 
+    // If there is no key_maker data, then dont make the request.
+    if (utils.isEmpty(data)) {
+      return null;
+    }
+
     return {
       method: 'GET',
       url: STR_ENDPOINT,
