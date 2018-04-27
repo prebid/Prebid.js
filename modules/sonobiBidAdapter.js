@@ -67,7 +67,7 @@ export const spec = {
     }
 
     // If there is no key_maker data, then dont make the request.
-    if (utils.isEmpty(data)) {
+    if (isEmpty(data)) {
       return null;
     }
 
