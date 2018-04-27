@@ -50,7 +50,7 @@ export const spec = {
       's': utils.generateUUID(),
       'pv': PAGEVIEW_ID,
       'lib_name': 'prebid',
-      'lib_v': window.pbjs.version
+      'lib_v': '$prebid.version$'
     };
 
     if (validBidRequests[0].params.hfa) {
