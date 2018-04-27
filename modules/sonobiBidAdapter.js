@@ -1,5 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess } from '../src/utils';
+import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'sonobi';
@@ -58,7 +58,7 @@ export const spec = {
     }
 
     // If there is no key_maker data, then dont make the request.
-    if (utils.isEmpty(data)) {
+    if (isEmpty(data)) {
       return null;
     }
 
