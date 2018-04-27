@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec, resetBoPixel} from 'modules/openxBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
+import {config} from 'src/config';
 import * as utils from 'src/utils';
 
 const URLBASE = '/w/1.0/arj';
@@ -342,6 +343,186 @@ describe('OpenxAdapter', () => {
 
       expect(dataParams.bc).to.exist;
       expect(dataParams.bc).to.equal('hb_override');
+    });
+
+    it('should not send any consent management properties', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes);
+      expect(request[0].data.gdpr).to.equal(undefined);
+      expect(request[0].data.gdpr_consent).to.equal(undefined);
+      expect(request[0].data.x_gdpr_f).to.equal(undefined);
+    });
+
+    describe('when there is a consent management framework', () => {
+      let bidRequests;
+      let mockConfig;
+      let bidderRequest;
+      const IAB_CONSENT_FRAMEWORK_CODE = 1;
+
+      beforeEach(() => {
+        bidRequests = [{
+          bidder: 'openx',
+          params: {
+            unit: '12345678-banner',
+            delDomain: 'test-del-domain'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          bidId: 'test-bid-id',
+          bidderRequestId: 'test-bidder-request-id',
+          auctionId: 'test-auction-id'
+        }, {
+          'bidder': 'openx',
+          'mediaTypes': {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+          'params': {
+            'unit': '12345678-video',
+            'delDomain': 'test-del-domain'
+          },
+          'adUnitCode': 'adunit-code',
+
+          bidId: 'test-bid-id',
+          bidderRequestId: 'test-bidder-request-id',
+          auctionId: 'test-auction-id',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        }];
+      });
+
+      afterEach(function () {
+        config.getConfig.restore();
+      });
+
+      describe('when GDPR applies', function () {
+        beforeEach(function () {
+          bidderRequest = {
+            gdprConsent: {
+              consentString: 'test-gdpr-consent-string',
+              gdprApplies: true
+            }
+          };
+
+          mockConfig = {
+            consentManagement: {
+              cmpApi: 'iab',
+              timeout: 1111,
+              allowAuctionWithoutConsent: 'cancel'
+            }
+          };
+
+          sinon.stub(config, 'getConfig').callsFake((key) => {
+            return utils.deepAccess(mockConfig, key);
+          });
+        });
+
+        it('should send a signal to specify that GDPR applies to this request', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.gdpr).to.equal(1);
+          expect(request[1].data.gdpr).to.equal(1);
+        });
+
+        it('should send the consent string', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
+          expect(request[1].data.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
+        });
+
+        it('should send the consent management framework code', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.x_gdpr_f).to.equal(IAB_CONSENT_FRAMEWORK_CODE);
+          expect(request[1].data.x_gdpr_f).to.equal(IAB_CONSENT_FRAMEWORK_CODE);
+        });
+      });
+
+      describe('when GDPR does not apply', function () {
+        beforeEach(function () {
+          bidderRequest = {
+            gdprConsent: {
+              consentString: 'test-gdpr-consent-string',
+              gdprApplies: false
+            }
+          };
+
+          mockConfig = {
+            consentManagement: {
+              cmpApi: 'iab',
+              timeout: 1111,
+              allowAuctionWithoutConsent: 'cancel'
+            }
+          };
+
+          sinon.stub(config, 'getConfig').callsFake((key) => {
+            return utils.deepAccess(mockConfig, key);
+          });
+        });
+
+        it('should not send a signal to specify that GDPR does not apply to this request', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.gdpr).to.equal(0);
+          expect(request[1].data.gdpr).to.equal(0);
+        });
+
+        it('should send the consent string', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
+          expect(request[1].data.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
+        });
+
+        it('should send the consent management framework code', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.x_gdpr_f).to.equal(IAB_CONSENT_FRAMEWORK_CODE);
+          expect(request[1].data.x_gdpr_f).to.equal(IAB_CONSENT_FRAMEWORK_CODE);
+        });
+      });
+
+      describe('when GDPR consent has undefined data', function () {
+        beforeEach(function () {
+          bidderRequest = {
+            gdprConsent: {
+              consentString: 'test-gdpr-consent-string',
+              gdprApplies: true
+            }
+          };
+
+          mockConfig = {
+            consentManagement: {
+              cmpApi: 'iab',
+              timeout: 1111,
+              allowAuctionWithoutConsent: 'cancel'
+            }
+          };
+
+          sinon.stub(config, 'getConfig').callsFake((key) => {
+            return utils.deepAccess(mockConfig, key);
+          });
+        });
+
+        it('should not send a signal to specify whether GDPR applies to this request, when GDPR application is undefined', function () {
+          delete bidderRequest.gdprConsent.gdprApplies;
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data).to.not.have.property('gdpr');
+          expect(request[1].data).to.not.have.property('gdpr');
+        });
+
+        it('should not send the consent string, when consent string is undefined', function () {
+          delete bidderRequest.gdprConsent.consentString;
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data).to.not.have.property('gdpr_consent');
+          expect(request[1].data).to.not.have.property('gdpr_consent');
+        });
+
+        it('should not send the consent management framework code, when format is undefined', function () {
+          delete mockConfig.consentManagement.cmpApi;
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data).to.not.have.property('x_gdpr_f');
+          expect(request[1].data).to.not.have.property('x_gdpr_f');
+        });
+      });
     });
   });
 
