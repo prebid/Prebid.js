@@ -165,7 +165,6 @@ describe('Sonobi adapter tests', () => {
       }
     }]
   };
-  //  You guys surprise me all the time new and exciting ways to break this simple adapter.
   const adUnit_m1hb = {
     bidderCode: 'sonobi',
     bids: [{
@@ -289,6 +288,10 @@ describe('Sonobi adapter tests', () => {
         adapter.callBids(adUnit);
         expect(stubLoadScript.callCount).to.equal(1);
         expect(stubFailBid.callCount).to.equal(0);
+      });
+      it('should return null if an empty bid request object is formed', () => {
+        let emptyKeymaker = adapter.callBids({bids: [], bidderRequestId: 'someId'});
+        expect(emptyKeymaker).to.equal(null);
       });
     });
   });

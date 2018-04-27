@@ -13,7 +13,11 @@ var SonobiAdapter = function SonobiAdapter() {
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
+    var key_maker = _keymaker(adSlots);
+    if (utils.isEmpty(key_maker)) {
+      return null;
+    }
+    return adloader.loadScript(trinity + JSON.stringify(key_maker) + '&cv=' + _operator(bidderRequestId) + ref);
   }
 
   function _keymaker(adSlots) {
