@@ -13,7 +13,9 @@ var SonobiAdapter = function SonobiAdapter() {
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
+    var libName = '&lib_name=prebid';
+    var libVersion = '&lib_v' + window.pbjs.version;
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + libName + libVersion);
   }
 
   function _keymaker(adSlots) {
