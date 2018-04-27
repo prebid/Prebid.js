@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/readpeakBidAdapter';
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 describe('ReadPeakAdapter', () => {
   let bidRequest
@@ -161,7 +162,7 @@ describe('ReadPeakAdapter', () => {
       expect(data.site).to.deep.equal({
         publisher: {
           id: bidRequest.params.publisherId,
-          domain: 'http://localhost:9876',
+          domain: config.getConfig('publisherDomain'),
         },
         id: bidRequest.params.siteId,
         ref: window.top.document.referrer,
