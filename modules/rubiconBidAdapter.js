@@ -134,6 +134,9 @@ export const spec = {
 
       page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
 
+      // GDPR reference, for use by 'banner' and 'video'
+      const gdprConsent = bidderRequest.gdprConsent;
+
       if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
         let size = parseSizes(bidRequest);
@@ -178,9 +181,12 @@ export const spec = {
 
         data.slots.push(slotData);
 
-        if (bidderRequest && bidderRequest.gdprConsent) {
-          data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-          data.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        if (gdprConsent) {
+          // add 'gdpr' only if 'gdprApplies' is defined
+          if (typeof gdprConsent.gdprApplies === 'boolean') {
+            data.gdpr = Number(gdprConsent.gdprApplies);
+          }
+          data.gdpr_consent = gdprConsent.consentString;
         }
 
         return {
@@ -228,13 +234,12 @@ export const spec = {
         'tk_user_key', userId
       ];
 
-      // add GDPR properties if enabled
-      if (config.getConfig('consentManagement') &&
-        bidderRequest && bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        data.push(
-          'gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          'gdpr_consent', bidderRequest.gdprConsent.consentString
-        );
+      if (gdprConsent) {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          data.push('gdpr', Number(gdprConsent.gdprApplies));
+        }
+        data.push('gdpr_consent', gdprConsent.consentString);
       }
 
       if (visitor !== null && typeof visitor === 'object') {
