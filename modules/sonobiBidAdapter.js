@@ -124,7 +124,6 @@ var SonobiAdapter = function SonobiAdapter() {
    * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
    */
   function _getPlatform(context = window) {
-
     var isInBounds = _isInBounds(context);
     var MOBILE_VIEWPORT = {
       lt: 768
