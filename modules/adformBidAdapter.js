@@ -11,15 +11,14 @@ export const spec = {
     return !!(bid.params.mid);
   },
   buildRequests: function (validBidRequests) {
-    var i, l, j, k, bid, _key, _value, reqParams;
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue;
     var request = [];
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'pt', null ] ];
-    var netRevenue = 'gross';
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.params.priceType === 'net') {
-        bid.params.pt = netRevenue = 'net';
+      if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
+        netRevenue = 'net';
       }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
@@ -35,7 +34,8 @@ export const spec = {
     }
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
-
+    netRevenue = netRevenue || 'gross';
+    request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
 
     for (i = 1, l = globalParams.length; i < l; i++) {
