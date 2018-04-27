@@ -514,8 +514,8 @@ describe('OpenxAdapter', () => {
         pub_rev: '10000',
         html: '<div>OpenX Ad</div>'
       };
-      const adUnit = mockAdUnit(adUnitOverride, creativeOverride);
-      const bidResponse = mockArjResponse(undefined, [adUnit]);
+      let adUnit;
+      let bidResponse;
 
       let bid;
       let bidRequest;
@@ -543,6 +543,8 @@ describe('OpenxAdapter', () => {
           payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
         };
 
+        adUnit = mockAdUnit(adUnitOverride, creativeOverride);
+        bidResponse = mockArjResponse(undefined, [adUnit]);
         bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
       });
 
@@ -593,8 +595,8 @@ describe('OpenxAdapter', () => {
       const adUnitOverride = {
         deal_id: 'ox-1000'
       };
-      const adUnit = mockAdUnit(adUnitOverride);
-      const bidResponse = mockArjResponse(null, [adUnit]);
+      let adUnit;
+      let bidResponse;
 
       let bid;
       let bidRequestConfigs;
@@ -621,6 +623,8 @@ describe('OpenxAdapter', () => {
           data: {},
           payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
         };
+        adUnit = mockAdUnit(adUnitOverride);
+        bidResponse = mockArjResponse(null, [adUnit]);
         bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
         mockArjResponse();
       });
@@ -927,22 +931,17 @@ describe('OpenxAdapter', () => {
    * @param {Object} override Object with keys that overrides the default
    * @param {Object} contract Original object contains the default fields
    * @param {string} typeName Name of the type we're checking for error messages
-   * @throws {Error}
+   * @throws {AssertionError}
    */
   function overrideKeyCheck(override, contract, typeName) {
-    let invalidKey = Object.keys(override)
-      .find(key => !(key in contract));
-
-    if (invalidKey) {
-      throw new Error(`Mock Error: INVALID_KEY.  Key:${invalidKey} does not exist in type: ${typeName}`);
-    }
+    expect(contract).to.include.all.keys(Object.keys(override));
   }
 
   /**
    * Creates a mock ArjResponse
    * @param {OxArjResponse=} response
    * @param {Array<OxArjAdUnit>=} adUnits
-   * @param {Array<OxArjCreative>=} creatives
+   * @throws {AssertionError}
    * @return {OxArjResponse}
    */
   function mockArjResponse(response, adUnits = []) {
@@ -969,6 +968,7 @@ describe('OpenxAdapter', () => {
    * Creates a mock ArjAdUnit
    * @param {OxArjAdUnit=} adUnit
    * @param {OxArjCreative=} creative
+   * @throws {AssertionError}
    * @return {OxArjAdUnit}
    */
   function mockAdUnit(adUnit, creative) {
