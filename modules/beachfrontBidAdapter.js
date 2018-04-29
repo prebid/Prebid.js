@@ -1,13 +1,20 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { Renderer } from 'src/Renderer';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.0';
+const ADAPTER_VERSION = '1.1';
 const ADAPTER_NAME = 'BFIO_PREBID';
+const OUTSTREAM = 'outstream';
 
 export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
+export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
+
+export const VIDEO_TARGETING = ['mimes'];
+export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const spec = {
   code: 'beachfront',
@@ -49,6 +56,7 @@ export const spec = {
         return [];
       }
       let size = getFirstSize(bidRequest);
+      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
@@ -57,6 +65,7 @@ export const spec = {
         width: size.w,
         height: size.h,
         creativeId: response.cmpId,
+        renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
         currency: 'USD',
         netRevenue: true,
@@ -87,8 +96,35 @@ export const spec = {
   }
 };
 
+function createRenderer(bidRequest) {
+  const renderer = Renderer.install({
+    id: bidRequest.bidId,
+    url: OUTSTREAM_SRC,
+    loaded: false
+  });
+
+  renderer.setRender(outstreamRender);
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.Beachfront.Player(bid.adUnitCode, {
+      ad_tag_url: bid.vastUrl,
+      width: bid.width,
+      height: bid.height,
+      expand_in_view: false,
+      collapse_on_complete: true
+    });
+  });
+}
+
 function getSizes(bid) {
-  return utils.parseSizesInput(bid.sizes).map(size => {
+  let sizes = (isVideoBid(bid)
+    ? utils.deepAccess(bid, 'mediaTypes.video.playerSize')
+    : utils.deepAccess(bid, 'mediaTypes.banner.sizes')) || bid.sizes;
+  return utils.parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
@@ -139,8 +175,18 @@ function isVideoBid(bid) {
   return bid.mediaTypes && bid.mediaTypes.video;
 }
 
+function getVideoParams(bid) {
+  return Object.keys(Object(bid.params.video))
+    .filter(param => includes(VIDEO_TARGETING, param))
+    .reduce((obj, param) => {
+      obj[ param ] = bid.params.video[ param ];
+      return obj;
+    }, {});
+}
+
 function createVideoRequestData(bid) {
   let size = getFirstSize(bid);
+  let video = getVideoParams(bid);
   let topLocation = utils.getTopWindowLocation();
   return {
     isPrebid: true,
@@ -148,18 +194,24 @@ function createVideoRequestData(bid) {
     domain: document.location.hostname,
     id: utils.getUniqueIdentifierStr(),
     imp: [{
-      video: {
+      video: Object.assign({
         w: size.w,
-        h: size.h
-      },
-      bidfloor: bid.params.bidfloor
+        h: size.h,
+        mimes: DEFAULT_MIMES
+      }, video),
+      bidfloor: bid.params.bidfloor,
+      secure: topLocation.protocol === 'https:' ? 1 : 0
     }],
     site: {
-      page: topLocation.host
+      page: topLocation.href,
+      domain: topLocation.hostname
     },
     device: {
       ua: navigator.userAgent,
+      language: navigator.language,
       devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
+      dnt: getDoNotTrack() ? 1 : 0,
+      js: 1,
       geo: {}
     },
     cur: ['USD']

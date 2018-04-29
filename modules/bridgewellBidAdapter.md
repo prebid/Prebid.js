@@ -34,6 +34,17 @@ Module that connects to Bridgewell demand source to fetch bids.
                        }
                    }
                ]
+           },{
+               code: 'test-div',
+               sizes: [728, 90],
+               bids: [
+                   {
+                       bidder: 'bridgewell',
+                       params: {
+                           ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+                       }
+                   }
+               ]
            }
        ];
 ```
