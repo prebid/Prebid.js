@@ -92,6 +92,8 @@ Note that there are more dynamic ways of combining these components for publishe
 
 ## Adapter Integration
 
+_Note - for any adapters submitting changes to make themselves compliant, please also submit a PR to the [docs repo](https://github.com/prebid/prebid.github.io) to add a `gdpr_supported: true` variable to your respective page in the [bidders directory](https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders).  This will have your adapter's name automatically appear on the list of GDPR compliant adapters (at the bottom of this page)._
+
 ### BuildRequests Integration
 
 To find the GDPR consent information to pass along to your system, adapters should look for the `bidderRequest.gdprConsent` field in their buildRequests() method. 
