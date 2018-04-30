@@ -30,7 +30,7 @@ describe('Adform adapter', () => {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
-      assert.lengthOf(parsedUrl.items, 5);
+      assert.lengthOf(parsedUrl.items, 7);
     });
 
     it('should handle global request parameters', () => {
@@ -62,6 +62,7 @@ describe('Adform adapter', () => {
         {
           mid: '2',
           someVar: 'someValue',
+          pt: 'gross',
           transactionId: '5f33781f-9552-4iuy'
         },
         {
@@ -78,6 +79,16 @@ describe('Adform adapter', () => {
           mid: '3',
           pdom: 'home',
           transactionId: '5f33781f-9552-7ev3'
+        },
+        {
+          mid: '5',
+          pt: 'net',
+          transactionId: '5f33781f-9552-7ev3',
+        },
+        {
+          mid: '6',
+          pt: 'gross',
+          transactionId: '5f33781f-9552-7ev3'
         }
       ]);
     });
@@ -86,6 +97,18 @@ describe('Adform adapter', () => {
       var resultBids = JSON.parse(JSON.stringify(bids[0]));
       let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
+    });
+
+    it('should set gross to the request, if there is any gross priceType', () => {
+      let request = spec.buildRequests([bids[5], bids[5]]);
+      let parsedUrl = parseUrl(request.url);
+
+      assert.equal(parsedUrl.query.pt, 'net');
+
+      request = spec.buildRequests([bids[4], bids[3]]);
+      parsedUrl = parseUrl(request.url);
+
+      assert.equal(parsedUrl.query.pt, 'gross');
     });
   });
 
@@ -178,7 +201,7 @@ describe('Adform adapter', () => {
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
@@ -233,6 +256,28 @@ describe('Adform adapter', () => {
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
         params: params[2],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[4],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[3],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[4],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[4],
         placementCode: placementCode[2],
         sizes: [],
         transactionId: '5f33781f-9552-7ev3'

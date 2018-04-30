@@ -29,3 +29,13 @@ joey@clickforce.com.tw (MR. Joey)
     }]
   }];
 ```
+### Configuration
+
+CLICKFORCE recommend the UserSync configuration below. It's can be optimize the CPM for the request.
+```javascript
+pbjs.setConfig({
+   userSync: {
+    iframeEnabled: true,
+    syncDelay: 1000
+}});
+```

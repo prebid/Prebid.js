@@ -205,6 +205,10 @@ const paramTypes = {
     'secure': tryConvertNumber,
     'mobile': tryConvertNumber
   },
+  'openx': {
+    'unit': tryConvertString,
+    'customFloor': tryConvertNumber
+  },
 };
 
 /*
