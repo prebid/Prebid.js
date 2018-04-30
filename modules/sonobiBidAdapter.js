@@ -1,11 +1,10 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
-const PAGEVIEW_ID = utils.generateUUID();
+const PAGEVIEW_ID = generateUUID();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -37,7 +36,7 @@ export const spec = {
           [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}`
         }
       } else {
-        utils.logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
+        logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
       }
     });
 
@@ -46,13 +45,21 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': utils.getTopWindowLocation().host,
-      's': utils.generateUUID(),
+      'ref': getTopWindowLocation().host,
+      's': generateUUID(),
       'pv': PAGEVIEW_ID,
+      'vp': _getPlatform(),
+      'lib_name': 'prebid',
+      'lib_v': '$prebid.version$'
     };
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
+    }
+
+    // If there is no key_maker data, then dont make the request.
+    if (isEmpty(data)) {
+      return null;
     }
 
     return {
@@ -80,8 +87,8 @@ export const spec = {
 
     Object.keys(bidResponse.slots).forEach(slot => {
       const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
-      const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      const bidRequest = bidderRequests.find(bidReqest => bidReqest.bidId === bidId);
+      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
       const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
       const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
@@ -138,9 +145,9 @@ export const spec = {
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
-    return utils.parseSizesInput(bid.params.sizes).join(',');
+    return parseSizesInput(bid.params.sizes).join(',');
   }
-  return utils.parseSizesInput(bid.sizes).join(',');
+  return parseSizesInput(bid.sizes).join(',');
 }
 
 function _validateSlot (bid) {
@@ -161,16 +168,42 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   if (mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + utils.getTopWindowLocation().host;
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
 }
 
 function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${utils.getTopWindowLocation().host}`
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
 }
 
 function _getBidIdFromTrinityKey (key) {
   return key.split('|').slice(-1)[0]
+}
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export const _isInbounds = (context = window) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export function _getPlatform(context = window) {
+  const isInBounds = _isInbounds(context);
+  const MOBILE_VIEWPORT = {
+    lt: 768
+  };
+  const TABLET_VIEWPORT = {
+    lt: 992,
+    ge: 768
+  };
+  if (isInBounds(0, MOBILE_VIEWPORT.lt)) {
+    return 'mobile'
+  }
+  if (isInBounds(TABLET_VIEWPORT.ge, TABLET_VIEWPORT.lt)) {
+    return 'tablet'
+  }
+  return 'desktop';
 }
 
 registerBidder(spec);

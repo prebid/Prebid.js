@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/sonobiBidAdapter'
+import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
 
 describe('SonobiBidAdapter', () => {
@@ -139,6 +139,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
+      expect(bidRequests.data.vp).to.equal('tablet');
     })
 
     it('should return a properly formatted request with hfa', () => {
@@ -150,6 +151,10 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
+    })
+    it('should return null if there is nothing to bid on', () => {
+      const bidRequests = spec.buildRequests([{params: {}}])
+      expect(bidRequests).to.equal(null);
     })
   })
 
@@ -285,6 +290,17 @@ describe('SonobiBidAdapter', () => {
 
     it('should return an empty array', () => {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
+    })
+  })
+  describe('_getPlatform', () => {
+    it('should return mobile', () => {
+      expect(_getPlatform({innerWidth: 767})).to.equal('mobile')
+    })
+    it('should return tablet', () => {
+      expect(_getPlatform({innerWidth: 800})).to.equal('tablet')
+    })
+    it('should return desktop', () => {
+      expect(_getPlatform({innerWidth: 1000})).to.equal('desktop')
     })
   })
 })
