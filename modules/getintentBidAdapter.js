@@ -1,4 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { isInteger } from 'src/utils';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -142,7 +143,7 @@ function parseSize(s) {
  * */
 function produceSize (sizes) {
   function sizeToStr(s) {
-    if (Array.isArray(s) && s.length === 2 && Number.isInteger(s[0]) && Number.isInteger(s[1])) {
+    if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {
       return s.join('x');
     } else {
       throw "Malformed parameter 'sizes'";
