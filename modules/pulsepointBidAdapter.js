@@ -310,7 +310,7 @@ function adSize(slot) {
  */
 function applyGdpr(bidRequest, ortbRequest) {
   if (bidRequest && bidRequest.length > 0 && bidRequest[0].gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: bidRequest[0].gdprConsent.consentRequired ? 1 : 0 } };
+    ortbRequest.regs = { ext: { gdpr: bidRequest[0].gdprConsent.gdprApplies ? 1 : 0 } };
     ortbRequest.user = { ext: { consent: bidRequest[0].gdprConsent.consentString } };
   }
 }

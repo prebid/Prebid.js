@@ -276,7 +276,7 @@ describe('PulsePoint Adapter Tests', () => {
 
   it('Verify GDPR', () => {
     slotConfigs[0].gdprConsent = {
-      consentRequired: true,
+      gdprApplies: true,
       consentString: 'serialized_gpdr_data'
     };
     const request = spec.buildRequests(slotConfigs);
