@@ -19,6 +19,11 @@ const CUSTOM_PARAMS = {
   'verId': '' // OpenWrap Legacy: version ID
 };
 const NET_REVENUE = false;
+const dealChannelValues = {
+  1: 'PMP',
+  5: 'PREF',
+  6: 'PMPG'
+};
 
 let publisherId = 0;
 
@@ -195,7 +200,7 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: validBidRequests => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
     validBidRequests.forEach(bid => {
@@ -217,14 +222,28 @@ export const spec = {
     payload.site.publisher.id = conf.pubId.trim();
     publisherId = conf.pubId.trim();
     payload.ext.wrapper = {};
-    payload.ext.wrapper.profile = conf.profId || UNDEFINED;
-    payload.ext.wrapper.version = conf.verId || UNDEFINED;
+    payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
+    payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
     payload.ext.wrapper.wv = constants.REPO_AND_VERSION;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+
+    // Attaching GDPR Consent Params
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.user.ext = {
+        consent: bidderRequest.gdprConsent.consentString
+      };
+
+      payload.regs = {
+        ext: {
+          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+        }
+      };
+    }
+
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
@@ -264,6 +283,11 @@ export const spec = {
             referrer: utils.getTopWindowUrl(),
             ad: bid.adm
           };
+
+          if (bid.ext && bid.ext.deal_channel) {
+            newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+          }
+
           bidResponses.push(newBid);
         });
       }
@@ -276,11 +300,19 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: syncOptions => {
+  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+    let syncurl = USYNCURL + publisherId;
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: USYNCURL + publisherId
+        url: syncurl
       }];
     } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
