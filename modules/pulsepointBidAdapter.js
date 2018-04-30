@@ -306,7 +306,7 @@ function adSize(slot) {
 }
 
 /**
- * Applies GDPR parameters to rqeeust.
+ * Applies GDPR parameters to request.
  */
 function applyGdpr(bidRequest, ortbRequest) {
   if (bidRequest && bidRequest.length > 0 && bidRequest[0].gdprConsent) {
