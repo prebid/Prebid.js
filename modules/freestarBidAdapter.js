@@ -101,13 +101,8 @@ export const spec = {
           },
           winner.winningSeat.bid[0],
         )));
-        // @TODO: clean up this duplicate code
-        // @TODO: make sure the URL hasnt been insrted before
         if(typeof winner.supplier.cookieSync != 'undefined') {
-          syncURLs.push({
-            type: 'image',
-            url: decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]
-          })
+          syncURLs.push(decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]);
         }
       }
     }
@@ -116,15 +111,11 @@ export const spec = {
   // @TODO: How are we doing user sync?
   getUserSyncs: function(syncOptions) {
     if(syncURLs.length > 0) {
-      return syncURLs;
+      let tmp = syncURLs.filter((elm, pos, arr) => {
+        console.log('freestar::', 'elm, pos, arr', elm, pos, arr);
+      });
     }
     return false;
-    // if (syncOptions.iframeEnabled) {
-    //   return [{
-    //     type: 'iframe',
-    //     url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-    //   }];
-    // }
   }
 }
 
