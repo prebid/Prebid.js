@@ -4,6 +4,7 @@
     "appnexusBidAdapter",
     "audienceNetworkBidAdapter",
     "conversantBidAdapter",
+    "criteoBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
     "gumgumBidAdapter",
