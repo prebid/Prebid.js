@@ -3,18 +3,53 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const BID_URL = '//prebid.media.net/rtb/prebid';
 
 $$PREBID_GLOBAL$$.medianetGlobals = {};
 
 function siteDetails(site) {
   site = site || {};
-
-  return {
+  let siteData = {
     domain: site.domain || utils.getTopWindowLocation().host,
     page: site.page || utils.getTopWindowUrl(),
     ref: site.ref || utils.getTopWindowReferrer()
-  }
+  };
+
+  return Object.assign(siteData, getPageMeta());
+}
+
+function getPageMeta() {
+  let canonicalUrl = getUrlFromSelector('link[rel="canonical"]', 'href');
+  let ogUrl = getUrlFromSelector('meta[property="og:url"]', 'content');
+  let twitterUrl = getUrlFromSelector('meta[name="twitter:url"]', 'content');
+
+  return Object.assign({},
+    canonicalUrl && { 'canonical_url': canonicalUrl },
+    ogUrl && { 'og_url': ogUrl },
+    twitterUrl && { 'twitter_url': twitterUrl }
+  );
+}
+
+function getUrlFromSelector(selector, attribute) {
+  let attr = getAttributeFromSelector(selector, attribute);
+  return attr && getAbsoluteUrl(attr);
+}
+
+function getAttributeFromSelector(selector, attribute) {
+  try {
+    let doc = utils.getWindowTop().document;
+    let element = doc.querySelector(selector);
+    if (element !== null && element[attribute]) {
+      return element[attribute];
+    }
+  } catch (e) {}
+}
+
+function getAbsoluteUrl(url) {
+  let aTag = utils.getWindowTop().document.createElement('a');
+  aTag.href = url;
+
+  return aTag.href;
 }
 
 function filterUrlsByType(urls, type) {
@@ -65,13 +100,13 @@ function slotParams(bidRequest) {
   return params;
 }
 
-function generatePayload(bidRequests) {
+function generatePayload(bidRequests, timeout) {
   return {
     site: siteDetails(bidRequests[0].params.site),
     ext: configuredParams(bidRequests[0].params),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
-    tmax: config.getConfig('bidderTimeout')
+    tmax: timeout
   }
 }
 
@@ -120,8 +155,9 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
-    let payload = generatePayload(bidRequests);
+  buildRequests: function(bidRequests, auctionData) {
+    let timeout = auctionData.timeout || config.getConfig('bidderTimeout');
+    let payload = generatePayload(bidRequests, timeout);
 
     return {
       method: 'POST',
