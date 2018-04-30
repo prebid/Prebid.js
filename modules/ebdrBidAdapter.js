@@ -105,6 +105,24 @@ export const spec = {
       ebdrResponseImps.push(response);
     });
     return ebdrResponseImps;
+  },
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = []
+    if (syncOptions.pixelEnabled) {
+      const ebdrResponseObj = serverResponses.body;
+      if (!ebdrResponseObj || !ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
+        return [];
+      }
+      ebdrResponseObj.seatbid[0].bid.forEach(ebdrBid => {
+        if (ebdrBid.iurl && ebdrBid.iurl.length > 0) {
+          syncs.push({
+            type: 'image',
+            url: ebdrBid.iurl
+          });
+        }
+      });
+    }
+    return syncs;
   }
 }
 function getWidthAndHeight(bid) {

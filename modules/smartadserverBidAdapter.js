@@ -39,6 +39,9 @@ export const spec = {
         currencyCode: config.getConfig('currency.adServerCurrency'),
         bidfloor: bid.params.bidfloor || 0.0,
         targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
+        buid: bid.params.buId && bid.params.buId != '' ? bid.params.buId : undefined,
+        appname: bid.params.appName && bid.params.appName != '' ? bid.params.appName : undefined,
+        ckid: bid.params.ckId || 0,
         tagId: bid.adUnitCode,
         sizes: bid.sizes.map(size => ({
           w: size[0],
@@ -47,7 +50,8 @@ export const spec = {
         pageDomain: utils.getTopWindowUrl(),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
-        bidId: bid.bidId
+        bidId: bid.bidId,
+        prebidVersion: '$prebid.version$'
       };
       var payloadString = JSON.stringify(payload);
       return {
@@ -85,9 +89,26 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      console.log('Error while parsing smart server response');
+      utils.logError('Error while parsing smart server response', error);
     }
     return bidResponses;
+  },
+  /**
+   * User syncs.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {Syncs[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = []
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+      syncs.push({
+        type: 'iframe',
+        url: serverResponses[0].body.cSyncUrl
+      });
+    }
+    return syncs;
   }
 }
 registerBidder(spec);

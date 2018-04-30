@@ -712,7 +712,29 @@ describe('the rubicon adapter', () => {
           expect(floor).to.equal(3.25);
         });
 
-        it('should not validate bid request when a invalid video object is passed in', () => {
+        it('should validate bid request with invalid video if a mediaTypes banner property is defined', () => {
+          const bidRequest = {
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              },
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            params: {
+              accountId: 1001,
+              video: {}
+            },
+            sizes: [[300, 250]]
+          }
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+          expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+        });
+
+        it('should not validate bid request when a invalid video object and no banner object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
@@ -730,7 +752,7 @@ describe('the rubicon adapter', () => {
           bidRequestCopy.params.video = 123;
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = { size_id: '' };
+          bidRequestCopy.params.video = { size_id: undefined };
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           delete bidRequestCopy.params.video;
@@ -798,10 +820,20 @@ describe('the rubicon adapter', () => {
       });
 
       describe('hasVideoMediaType', () => {
-        it('should return true if mediaType is true', () => {
+        it('should return true if mediaType is video and size_id is set', () => {
           createVideoBidderRequest();
           const legacyVideoTypeBidRequest = spec.hasVideoMediaType(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(true);
+        });
+
+        it('should return false if mediaType is video and size_id is not defined', () => {
+          expect(spec.hasVideoMediaType({
+            bid: 99,
+            mediaType: 'video',
+            params: {
+              video: {}
+            }
+          })).is.equal(false);
         });
 
         it('should return false if bidRequest.mediaType is not equal to video', () => {
@@ -814,15 +846,32 @@ describe('the rubicon adapter', () => {
           expect(spec.hasVideoMediaType({})).is.equal(false);
         });
 
-        it('should return true if bidRequest.mediaTypes.video object exists', () => {
+        it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', () => {
           expect(spec.hasVideoMediaType({
             mediaTypes: {
               video: {
-                context: 'outstream',
-                playerSize: [300, 250]
+                context: 'instream'
+              }
+            },
+            params: {
+              video: {
+                size_id: 7
               }
             }
           })).is.equal(true);
+        });
+
+        it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', () => {
+          expect(spec.hasVideoMediaType({
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              }
+            },
+            params: {
+              video: {}
+            }
+          })).is.equal(false);
         });
       });
     });

@@ -82,22 +82,14 @@ export default function buildDfpVideoUrl(options) {
     sz: parseSizesInput(adUnit.sizes).join('|'),
     url: location.href,
   };
-
-  const adserverTargeting = (bid && bid.adserverTargeting) || {};
-
-  const customParams = Object.assign({},
-    adserverTargeting,
-    { hb_uuid: bid && bid.videoCacheKey },
-    // hb_uuid will be deprecated and replaced by hb_cache_id
-    {hb_cache_id: bid && bid.videoCacheKey},
-    options.params.cust_params);
+  const encodedCustomParams = getCustParams(bid, options);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodeURIComponent(formatQS(customParams)) }
+    { cust_params: encodedCustomParams }
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
@@ -122,11 +114,7 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const adserverTargeting = (bid && bid.adserverTargeting) || {};
-  const customParams = Object.assign({},
-    adserverTargeting,
-  );
-  const encodedCustomParams = encodeURIComponent(formatQS(customParams));
+  const encodedCustomParams = getCustParams(bid);
   components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
 
   return buildUrl(components);
@@ -149,6 +137,25 @@ function getDescriptionUrl(bid, components, prop) {
   } else {
     logError(`input cannnot contain description_url`);
   }
+}
+
+/**
+ * Returns the encoded `cust_params` from the bid.adserverTargeting and adds the `hb_uuid`, and `hb_cache_id`. Optionally the options.params.cust_params
+ * @param {AdapterBidResponse} bid
+ * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
+ * @return {Object} Encoded key value pairs for cust_params
+ */
+function getCustParams(bid, options) {
+  const adserverTargeting = (bid && bid.adserverTargeting) || {};
+  const optCustParams = deepAccess(options, 'params.cust_params');
+  let customParams = Object.assign({},
+    adserverTargeting,
+    { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    {hb_cache_id: bid && bid.videoCacheKey},
+    optCustParams,
+  );
+  return encodeURIComponent(formatQS(customParams));
 }
 
 registerVideoSupport('dfp', {
