@@ -42,6 +42,7 @@ export const spec = {
       app: app(bidRequests),
       device: device(),
     };
+    applyGdpr(bidRequests, request);
     return {
       method: 'POST',
       url: '//bid.contextweb.com/header/ortb',
@@ -302,6 +303,16 @@ function adSize(slot) {
     return [width, height];
   }
   return [1, 1];
+}
+
+/**
+ * Applies GDPR parameters to rqeeust.
+ */
+function applyGdpr(bidRequest, ortbRequest) {
+  if (bidRequest && bidRequest.length > 0 && bidRequest[0].gdprConsent) {
+    ortbRequest.regs = { ext: { gdpr: bidRequest[0].gdprConsent.consentRequired ? 1 : 0 } };
+    ortbRequest.user = { ext: { consent: bidRequest[0].gdprConsent.consentString } };
+  }
 }
 
 /**
