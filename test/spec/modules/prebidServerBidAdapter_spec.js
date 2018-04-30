@@ -722,6 +722,26 @@ describe('S2S Adapter', () => {
       adapterManager.getBidAdapter.restore();
     });
 
+    it('registers client user syncs when using OpenRTB endpoint', () => {
+      let rubiconAdapter = {
+        registerSyncs: sinon.spy()
+      };
+      sinon.stub(adapterManager, 'getBidAdapter').returns(rubiconAdapter);
+
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
+
+      adapterManager.getBidAdapter.restore();
+    });
+
     it('registers bid responses when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
