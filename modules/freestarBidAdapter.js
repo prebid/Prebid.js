@@ -115,7 +115,10 @@ export const spec = {
   },
   // @TODO: How are we doing user sync?
   getUserSyncs: function(syncOptions) {
-    return syncURLs;
+    if(syncURLs.length > 0) {
+      return syncURLs;
+    }
+    return false;
     // if (syncOptions.iframeEnabled) {
     //   return [{
     //     type: 'iframe',
