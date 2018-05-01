@@ -1,5 +1,4 @@
 [
-    "freestarAnalyticsAdapter",
     "adyoulikeBidAdapter",
     "aolBidAdapter",
     "appnexusBidAdapter",
@@ -7,6 +6,7 @@
     "conversantBidAdapter",
     "criteoBidAdapter",
     "freestarAnalyticsAdapter",
+    "freestarBidAdapter",
     "gumgumBidAdapter",
     "justpremiumBidAdapter",
     "komoonaBidAdapter",
