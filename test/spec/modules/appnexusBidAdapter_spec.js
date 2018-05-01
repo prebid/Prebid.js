@@ -173,7 +173,7 @@ describe('AppNexusAdapter', () => {
       });
     });
 
-    it('should attache native params to the request', () => {
+    it('should attach native params to the request', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -290,7 +290,7 @@ describe('AppNexusAdapter', () => {
       }]);
     });
 
-    it('should should add payment rules to the request', () => {
+    it('should add payment rules to the request', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -305,6 +305,28 @@ describe('AppNexusAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
+    });
+
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_consent).to.exist;
+      expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
+      expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
   })
 

@@ -6,6 +6,7 @@ import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
+import { requestBidsHook } from 'modules/consentManagement';
 
 let CONFIG = {
   accountId: '1',
@@ -389,6 +390,38 @@ describe('S2S Adapter', () => {
       expect(requestBid).to.have.property('cache_markup', 2);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+    });
+
+    it('adds gdpr consent information to ortb2 request depending on module use', () => {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'abc123',
+        gdprApplies: true
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.regs.ext.gdpr).is.equal(1);
+      expect(requestBid.user.ext.consent).is.equal('abc123');
+
+      config.resetConfig();
+      config.setConfig({s2sConfig: CONFIG});
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid.regs).to.not.exist;
+      expect(requestBid.user).to.not.exist;
+
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
     });
 
     it('sets invalid cacheMarkup value to 0', () => {

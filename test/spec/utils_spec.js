@@ -359,6 +359,33 @@ describe('Utils', function () {
     });
   });
 
+  describe('isPlainObject', function () {
+    it('should return false with input string', function () {
+      var output = utils.isPlainObject(obj_string);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input number', function () {
+      var output = utils.isPlainObject(obj_number);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return true with input object', function () {
+      var output = utils.isPlainObject(obj_object);
+      assert.deepEqual(output, true);
+    });
+
+    it('should return false with input array', function () {
+      var output = utils.isPlainObject(obj_array);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input function', function () {
+      var output = utils.isPlainObject(obj_function);
+      assert.deepEqual(output, false);
+    });
+  });
+
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
       var output = utils.isEmpty(obj_object);
