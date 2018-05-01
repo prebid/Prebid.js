@@ -16,7 +16,11 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 ## Release Process
 
-1. Make Sure all browserstack tests are passing. Check the last travis build for master branch. If failing please fix the failing tests or skip the test and create issue if it takes too long to fix the failed unit test.
+1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build for master branch will show you detailed results.
+  
+   In case of failure do following, 
+     - Try to fix the failing tests.
+     - If you are not able to fix tests in time. Skip the test, create issue and tag contributor.
 
    #### How to run tests in browserstack
 
@@ -29,7 +33,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
    gulp test --browserstack >> prebid_test.log
    
-   vim prebid_test.log
+   vim prebid_test.log // Will show the test results
 
 
 2. Prepare Prebid Code
@@ -41,17 +45,19 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
    git push
    ```
 
-3. Publish Release
+3. Verify Release
 
-   Make sure your Prebid code is clean and up to date
+   Make sure your there are no more merges to master branch. Prebid code is clean and up to date.
 
 4. Create a GitHub release
 
    Edit the most recent release notes draft and make sure the correct tag is in the dropdown. Click `Publish`. GitHub will create release tag. 
    
-   Pull these changes locally
+   Pull these changes locally and verify the tag.
 
 5. Update coveralls
+
+   We use https://coveralls.io/ to show parts of code covered by unit tests.
 
    Set the environment variables. You may want to add these to your `~/.bashrc` for convenience.
    ```
