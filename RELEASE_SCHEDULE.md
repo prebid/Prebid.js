@@ -28,7 +28,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
    ```
    export BROWSERSTACK_USERNAME="my browserstack username"
-   export BROWSERSTACK_KEY="my browserstack access key"
+   export BROWSERSTACK_ACCESS_KEY="my browserstack access key"
    ```
 
    gulp test --browserstack >> prebid_test.log
