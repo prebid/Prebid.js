@@ -359,6 +359,33 @@ describe('Utils', function () {
     });
   });
 
+  describe('isPlainObject', function () {
+    it('should return false with input string', function () {
+      var output = utils.isPlainObject(obj_string);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input number', function () {
+      var output = utils.isPlainObject(obj_number);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return true with input object', function () {
+      var output = utils.isPlainObject(obj_object);
+      assert.deepEqual(output, true);
+    });
+
+    it('should return false with input array', function () {
+      var output = utils.isPlainObject(obj_array);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input function', function () {
+      var output = utils.isPlainObject(obj_function);
+      assert.deepEqual(output, false);
+    });
+  });
+
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
       var output = utils.isEmpty(obj_object);
@@ -748,6 +775,18 @@ describe('Utils', function () {
       // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
       expect(topWindowLocation.port).to.be.oneOf([0, 443]);
       expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
+    });
+  });
+
+  describe('convertCamelToUnderscore', () => {
+    it('returns converted string value using underscore syntax instead of camelCase', () => {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
     });
   });
 });

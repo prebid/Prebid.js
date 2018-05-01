@@ -16,13 +16,14 @@ Please reach out to your account team or hello@readpeak.com for more information
 # Test Parameters
 ```javascript
     var adUnits = [{
-        code: 'test-native',
+        code: '/19968336/prebid_native_example_2',
         mediaTypes: { native: { type: 'image' } },
         bids: [{
             bidder: 'readpeak',
             params: {
                 bidfloor: 5.00,
-                publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+                publisherId: 'test',
+                siteId: 'test'
             },
         }]
     }];
