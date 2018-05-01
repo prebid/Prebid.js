@@ -70,21 +70,10 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
   }
   for (let i = 0; i < adUnits.length; i++) {
     let adUnit = adUnits[i];
+    let adUnitIdx = parseInt(adUnit.idx, 10);
     let bidResponse = {};
-    if (adUnits.length === bids.length) {
-      // request and response length match, directly assign the request id based on positioning
-      bidResponse.requestId = bids[i].bidId;
-    } else {
-      for (let j = i; j < bids.length; j++) {
-        let bid = bids[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !bid.matched) {
-          // ad unit and size match, this is the correct bid response to bid
-          bidResponse.requestId = bid.bidId;
-          bid.matched = true;
-          break;
-        }
-      }
-    }
+
+    bidResponse.requestId = bids[adUnitIdx].bidId;
 
     if (adUnit.pub_rev) {
       bidResponse.cpm = Number(adUnit.pub_rev) / 1000;
@@ -132,27 +121,6 @@ function buildQueryStringFromParams(params) {
   }
   return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
     .join('&');
-}
-
-function adUnitHasValidSizeFromBid(adUnit, bid) {
-  let sizes = utils.parseSizesInput(bid.sizes);
-  if (!sizes) {
-    return false;
-  }
-  let found = false;
-  let creative = adUnit.creative && adUnit.creative[0];
-  let creative_size = String(creative.width) + 'x' + String(creative.height);
-
-  if (utils.isArray(sizes)) {
-    for (let i = 0; i < sizes.length; i++) {
-      let size = sizes[i];
-      if (String(size) === String(creative_size)) {
-        found = true;
-        break;
-      }
-    }
-  }
-  return found;
 }
 
 function getViewportDimensions(isIfr) {
