@@ -443,6 +443,22 @@ exports.setS2STestingModule = function (module) {
   s2sTestingModule = module;
 };
 
+exports.callRenderFailBidder = function(bid) {
+  const bidder = bid.bidderCode || '';
+  try {
+    const adapter = _bidderRegistry[bidder];
+    const spec = adapter.getSpec();
+    if (spec && spec.onRenderFail && typeof spec.onRenderFail === 'function') {
+      utils.logInfo(`Invoking ${bidder}.onRenderFail`);
+      spec.onRenderFail(bid);
+    }
+  } catch (e) {
+    if (bidder !== '') {
+      utils.logWarn(`Error calling onTimeout of ${bidder}`);
+    }
+  }
+}
+
 exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = timedOutBidders.map((timedOutBidder) => {
     // Adding user configured params & timeout to timeout event data
