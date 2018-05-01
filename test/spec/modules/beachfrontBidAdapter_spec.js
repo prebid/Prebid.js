@@ -280,6 +280,7 @@ describe('BeachfrontAdapter', () => {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
+      });
 
       it('must add GDPR consent data to the request', () => {
         const bidRequest = bidRequests[0];
