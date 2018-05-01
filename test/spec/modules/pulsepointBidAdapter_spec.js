@@ -275,11 +275,13 @@ describe('PulsePoint Adapter Tests', () => {
   });
 
   it('Verify GDPR', () => {
-    slotConfigs[0].gdprConsent = {
-      gdprApplies: true,
-      consentString: 'serialized_gpdr_data'
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gpdr_data'
+      }
     };
-    const request = spec.buildRequests(slotConfigs);
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
