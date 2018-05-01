@@ -132,8 +132,6 @@ export const spec = {
         page_url = utils.getTopWindowUrl();
       }
 
-      page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
-
       // GDPR reference, for use by 'banner' and 'video'
       const gdprConsent = bidderRequest.gdprConsent;
 
