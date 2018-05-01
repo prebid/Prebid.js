@@ -4,14 +4,14 @@ Using `mediaTypes.native.image.sizes` (or `mediaTypes.native.icon.sizes` for ico
 
 {% highlight js %}
 
-        mediaTypes: {
-            native: {
-                image: {
-                    required: true,
-                    sizes: [150, 50]
-                }
-            }
+mediaTypes: {
+    native: {
+        image: {
+            required: true,
+            sizes: [150, 50]
         }
+    }
+}
 
 {% endhighlight %}
 
@@ -19,17 +19,17 @@ Using `mediaTypes.native.image.aspect_ratios` (or `mediaTypes.native.icon.aspect
 
 {% highlight js %}
 
-        mediaTypes: {
-            native: {
-                image: {
-                    required: true,
-                    aspect_ratios: [{
-                        min_width: 300,        /* Optional */
-                        ratio_width: 2,        /* Required */
-                        ratio_height: 3,       /* Required */
-                 }]
-                }
-            }
+mediaTypes: {
+    native: {
+        image: {
+            required: true,
+            aspect_ratios: [{
+                min_width: 300,        /* Optional */
+                ratio_width: 2,        /* Required */
+                ratio_height: 3,       /* Required */
+         }]
         }
+    }
+}
 
 {% endhighlight %}

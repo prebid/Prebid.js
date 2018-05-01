@@ -113,7 +113,7 @@ The `amp-ad` elements in the page body need to be set up as shown below, especia
     <amp-ad width="300" height="250"
             type="doubleclick"
             data-slot="/19968336/universal_creative"
-            rtc-config='{"vendors": {"prebidappnexus": {"PLACEMENT_ID": "12345679"}}, "timeoutMillis": 500}'>
+            rtc-config='{"vendors": {"prebidappnexus": {"PLACEMENT_ID": "13144370"}}, "timeoutMillis": 500}'>
     </amp-ad>
 
 {% endhighlight %}

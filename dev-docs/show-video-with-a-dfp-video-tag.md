@@ -15,7 +15,7 @@ nav_section: prebid-video
 
 In this tutorial, we'll show how to set up Prebid to show a video ad
 from DFP.  We'll use the [Video.js](http://videojs.com/) player and
-the AppNexus AST bidder, but the principles are the same across
+the AppNexus bidder, but the principles are the same across
 different video players and video-enabled bidders.
 
 * TOC
@@ -33,11 +33,11 @@ Also, you need to make sure to build Prebid.js with:
 + Support for at least one video-enabled bidder
 + Support for the `dfpAdServerVideo` ad server adapter, which will provide the video ad support
 
-For example, to build with the AppNexus AST bidder adapter and the DFP
+For example, to build with the AppNexus bidder adapter and the DFP
 Video ad server adapter, use the following command:
 
 ```bash
-gulp build --modules=dfpAdServerVideo,appnexusAstBidAdapter
+gulp build --modules=dfpAdServerVideo,appnexusBidAdapter
 ```
 
 For more information about how to build with modules, see the [Prebid.js project README](https://github.com/prebid/Prebid.js/blob/master/README.md#build-optimization).
@@ -66,9 +66,9 @@ var videoAdUnit = {
         },
     },
     bids: [{
-        bidder: 'appnexusAst',
+        bidder: 'appnexus',
         params: {
-            placementId: '9333431',
+            placementId: 13232361,
             video: {
                 skippable: true,
                 playback_methods: ['auto_play_sound_off']

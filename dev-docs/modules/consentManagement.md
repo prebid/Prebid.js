@@ -108,7 +108,7 @@ Below is a sample of how the data is structured in the `bidderRequest` object:
     {
       "bidder": "appnexus",
       "params": {
-        "placementId": "10433394"
+        "placementId": "13144370"
       },
       "adUnitCode": "ad-unit-code",
       "transactionId": "0e8c6732-0999-4ca8-b44f-8fe514f53cc3",

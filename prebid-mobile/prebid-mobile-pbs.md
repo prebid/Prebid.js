@@ -47,7 +47,7 @@ Example config with AppNexus demand source:
     {
     	"bidder": "appnexus",
     	"params": {
-    	    "placementId": 10433394
+    	    "placementId": 13144370
         }
     }
 ]
