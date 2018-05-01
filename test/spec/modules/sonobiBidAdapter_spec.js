@@ -286,7 +286,18 @@ describe('Sonobi adapter tests', () => {
 
       it('should attempt to call bidder for: ' + adUnitName, () => {
         adapter.callBids(adUnit);
-        expect(stubLoadScript.args[0][0].indexOf('vp=tablet')).to.not.equal(-1);
+        let hasVpParam = false;
+        let trinityRequest = stubLoadScript.args[0][0];
+        if (trinityRequest.indexOf('vp=mobile') > -1) {
+          hasVpParam = true;
+        }
+        if (trinityRequest.indexOf('vp=tablet') > -1) {
+          hasVpParam = true;
+        }
+        if (trinityRequest.indexOf('vp=desktop') > -1) {
+          hasVpParam = true;
+        }
+        expect(hasVpParam).to.equal(true);
         expect(stubLoadScript.callCount).to.equal(1);
         expect(stubFailBid.callCount).to.equal(0);
       });
