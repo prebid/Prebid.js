@@ -20,14 +20,15 @@ Project Management Committees are established by resolution of the Board, to be 
 
 **GitHub Repository:** https://github.com/prebid/prebid.js
 
-**PMC Chair:** Matt Kendall
+**PMC Chair:** Matt Kendall (AppNexus)
 
 **PMC Members:**
 
-* Bret Gorsline
-* Eric Harper
-* Rich Snapp
-* Nate Cozy
+* Bret Gorsline (Rubicon)
+* Eric Harper (Rubicon)
+* Rich Snapp (Rubicon)
+* Jaimin Panchal (AppNexus)
+* Mike Chowla (PubMatic)
 
 
 ## Further Reading
