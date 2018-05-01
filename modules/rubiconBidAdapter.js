@@ -147,6 +147,7 @@ export const spec = {
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
+          rp_secure: bidRequest.params.secure !== false,
           slots: []
         };
 

@@ -55,6 +55,7 @@ describe('the rubicon adapter', () => {
         'p_aso.video.ext.skipdelay': '15'
       }
     };
+    bid.params.secure = false;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -548,6 +549,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(false);
 
           expect(post).to.have.property('ae_pass_through_parameters');
           expect(post.ae_pass_through_parameters)
@@ -609,6 +611,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(true);
 
           expect(post).to.have.property('ae_pass_through_parameters');
           expect(post.ae_pass_through_parameters)
