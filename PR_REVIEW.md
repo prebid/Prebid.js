@@ -34,6 +34,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
 - Adapters may not globally override or default the standard ad server targeting values: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
+- After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
 
 ## Ticket Coordinator
 
