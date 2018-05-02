@@ -51,7 +51,7 @@ export const spec = {
     // throw it all into an object and pass it along
     payload['id'] = uid();
     payload['adUnitsToBidUpon'] = adUnitsToBidUpon;
-    payload['site'] = location.hostname;
+    payload['site'] = (typeof freestar.fsdata != 'undefined') ? freestar.fsdata.siteId : location.hostname;
     payload['page'] = location.pathname;
     for (var key in cookieObj) {
       payload[key] = cookieObj[key];
