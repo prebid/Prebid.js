@@ -511,22 +511,22 @@ export function masSizeOrdering(sizes) {
     }, [])
     .sort((first, second) => {
     // sort by MAS_SIZE_PRIORITY priority order
-    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
-    if (firstPriority > -1 || secondPriority > -1) {
-      if (firstPriority === -1) {
-        return 1;
+      if (firstPriority > -1 || secondPriority > -1) {
+        if (firstPriority === -1) {
+          return 1;
+        }
+        if (secondPriority === -1) {
+          return -1;
+        }
+        return firstPriority - secondPriority;
       }
-      if (secondPriority === -1) {
-        return -1;
-      }
-      return firstPriority - secondPriority;
-    }
 
-    // and finally ascending order
-    return first - second;
-  });
+      // and finally ascending order
+      return first - second;
+    });
 }
 
 function parsePosition(position) {
