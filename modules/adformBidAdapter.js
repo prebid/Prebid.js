@@ -10,16 +10,15 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
-  buildRequests: function (validBidRequests) {
-    var i, l, j, k, bid, _key, _value, reqParams;
+  buildRequests: function (validBidRequests, bidderRequest) {
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue;
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
-    var netRevenue = 'net';
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.params.priceType === 'gross') {
-        netRevenue = 'gross';
+      if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
+        netRevenue = 'net';
       }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
@@ -35,8 +34,14 @@ export const spec = {
     }
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
-
+    netRevenue = netRevenue || 'gross';
+    request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      request.push('gdpr=' + bidderRequest.gdprConsent.gdprApplies);
+      request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];

@@ -35,14 +35,14 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
-      auction.setWinningBid(bid);
+      auction.addWinningBid(bid);
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
   }
 
   auctionManager.getAllWinningBids = function() {
-    return _auctions.map(auction => auction.getWinningBid())
+    return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
   }
 

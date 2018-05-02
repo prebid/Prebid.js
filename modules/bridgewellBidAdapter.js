@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx';
+const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -15,7 +15,25 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return bid && bid.params && !!bid.params.ChannelID;
+    let valid = false;
+    let typeOfCpmWeight;
+
+    if (bid && bid.params) {
+      if (bid.params.ChannelID) {
+        // cpmWeight is optinal parameter and should above than zero
+        typeOfCpmWeight = typeof bid.params.cpmWeight;
+        if (typeOfCpmWeight === 'undefined') {
+          bid.params.cpmWeight = 1;
+          valid = true;
+        } else if (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0) {
+          valid = true;
+        } else {
+          valid = false;
+        }
+      }
+    }
+
+    return valid;
   },
 
   /**
@@ -25,17 +43,23 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    const channelIDs = [];
-
+    const adUnits = [];
     utils._each(validBidRequests, function(bid) {
-      channelIDs.push(bid.params.ChannelID);
+      adUnits.push({
+        ChannelID: bid.params.ChannelID,
+        mediaTypes: bid.mediaTypes || {
+          banner: {
+            sizes: bid.sizes
+          }
+        }
+      });
     });
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: REQUEST_ENDPOINT,
       data: {
-        'ChannelID': channelIDs.join(',')
+        adUnits: adUnits
       },
       validBidRequests: validBidRequests
     };
@@ -60,9 +84,34 @@ export const spec = {
       }
 
       let matchedResponse = find(serverResponse.body, function(res) {
-        return !!res && !res.consumed && find(req.sizes, function(size) {
-          return res.width === size[0] && res.height === size[1];
-        });
+        let valid = false;
+
+        if (!!res && !res.consumed) { // response exists and not consumed
+          if (res.width && res.height) {
+            let mediaTypes = req.mediaTypes;
+            // for prebid 1.0 and later usage, mediaTypes.banner.sizes
+            let sizes = mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes ? mediaTypes.banner.sizes : req.sizes;
+            if (sizes) {
+              let sizeValid;
+              let width = res.width;
+              let height = res.height;
+              // check response size validation
+              if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
+                sizeValid = width === sizes[0] && height === sizes[1];
+              } else { // for format Array[Array[Number]] check
+                sizeValid = find(sizes, function(size) {
+                  return (width === size[0] && height === size[1]);
+                });
+              }
+
+              if (sizeValid) { // dont care native sizes
+                valid = true;
+              }
+            }
+          }
+        }
+
+        return valid;
       });
 
       if (matchedResponse) {
@@ -71,24 +120,22 @@ export const spec = {
         // check required parameters
         if (typeof matchedResponse.cpm !== 'number') {
           return;
-        } else if (typeof matchedResponse.width !== 'number' || typeof matchedResponse.height !== 'number') {
-          return;
         } else if (typeof matchedResponse.ad !== 'string') {
           return;
-        } else if (typeof matchedResponse.net_revenue === 'undefined') {
+        } else if (typeof matchedResponse.netRevenue !== 'boolean') {
           return;
         } else if (typeof matchedResponse.currency !== 'string') {
           return;
         }
 
         bidResponse.requestId = req.bidId;
-        bidResponse.cpm = matchedResponse.cpm;
+        bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
         bidResponse.ad = matchedResponse.ad;
         bidResponse.ttl = matchedResponse.ttl;
         bidResponse.creativeId = matchedResponse.id;
-        bidResponse.netRevenue = matchedResponse.net_revenue === 'true';
+        bidResponse.netRevenue = matchedResponse.netRevenue;
         bidResponse.currency = matchedResponse.currency;
 
         bidResponses.push(bidResponse);
