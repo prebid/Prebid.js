@@ -40,7 +40,6 @@ export const spec = {
    */
   buildRequests: function(bids) {
     return bids.map(bid => {
-      console.log(getRequestData(bid));
       return {
         method: 'POST',
         url: location.protocol + spec.ENDPOINT + bid.params.pubId,
@@ -60,7 +59,6 @@ export const spec = {
     let bid;
     let size;
     let bidResponse;
-    console.log(response);
     try {
       response = response.body;
       bid = response.seatbid[0].bid[0];
@@ -89,7 +87,6 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-    console.log(bidResponse);
     return bidResponse;
   },
   /**
@@ -131,7 +128,6 @@ function getSize(sizes) {
 }
 
 function getRequestData(bid) {
-  console.log(bid);
   let loc = utils.getTopWindowLocation();
   let global = (window.top) ? window.top : window;
   let page = (bid.params.site.page) ? (bid.params.site.page) : (loc.href);

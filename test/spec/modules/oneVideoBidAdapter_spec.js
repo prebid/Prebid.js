@@ -12,8 +12,8 @@ describe('OneVideoBidAdapter', () => {
       bidId: '30b3efwfwe1e',
       params: {
         video: {
-          playerWidth: 480,
-          playerHeight: 640,
+          playerWidth: 640,
+          playerHeight: 480,
           mimes: ['video/mp4', 'application/javascript'],
           protocols: [2, 5],
           api: [2],
@@ -73,6 +73,25 @@ describe('OneVideoBidAdapter', () => {
     it('should attach the bid request object', () => {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].bidRequest).to.equal(bidRequest);
+    });
+
+    it('should attach request data', () => {
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      const [ width, height ] = bidRequest.sizes;
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
+      expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+    });
+
+    it('must parse bid size from a nested array', () => {
+      const width = 640;
+      const height = 480;
+      bidRequest.sizes = [[ width, height ]];
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
     });
   });
 
