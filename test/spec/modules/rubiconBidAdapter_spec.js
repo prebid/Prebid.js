@@ -1,10 +1,10 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter';
-import { parse as parseQuery } from 'querystring';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { userSync } from 'src/userSync';
-import { config } from 'src/config';
+import {spec, masSizeOrdering, resetUserSync} from 'modules/rubiconBidAdapter';
+import {parse as parseQuery} from 'querystring';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {userSync} from 'src/userSync';
+import {config} from 'src/config';
 import * as utils from 'src/utils';
 
 var CONSTANTS = require('src/constants.json');
@@ -15,15 +15,31 @@ describe('the rubicon adapter', () => {
   let sandbox,
     bidderRequest;
 
-  function createVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+  /**
+   * @param {boolean} [gdprApplies]
+   */
+  function createGdprBidderRequest(gdprApplies) {
+    if (typeof gdprApplies === 'boolean') {
+      bidderRequest.gdprConsent = {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'gdprApplies': gdprApplies
+      };
+    } else {
+      bidderRequest.gdprConsent = {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      };
+    }
+  }
 
+  function createVideoBidderRequest() {
+    createGdprBidderRequest(true);
+
+    let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
         context: 'instream'
       }
     };
-
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -39,8 +55,9 @@ describe('the rubicon adapter', () => {
   }
 
   function createLegacyVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+    createGdprBidderRequest(true);
 
+    let bid = bidderRequest.bids[0];
     // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
     bid.params.video = {
@@ -246,7 +263,7 @@ describe('the rubicon adapter', () => {
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
 
           let origGetConfig = config.getConfig;
-          sandbox.stub(config, 'getConfig').callsFake(function(key) {
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
             if (key === 'pageUrl') {
               return 'http://www.rubiconproject.com';
             }
@@ -301,7 +318,8 @@ describe('the rubicon adapter', () => {
 
         it('should send digitrust params', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
@@ -346,7 +364,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to optout', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
@@ -374,7 +393,8 @@ describe('the rubicon adapter', () => {
 
         it('should not send digitrust params due to failure', () => {
           window.DigiTrust = {
-            getUser: function() {}
+            getUser: function () {
+            }
           };
           sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
             ({
@@ -523,6 +543,46 @@ describe('the rubicon adapter', () => {
             expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
           });
         });
+
+        describe('GDPR consent config', () => {
+          it('should send "gdpr" and "gdpr_consent", when gdprConsent defines consentString and gdprApplies', () => {
+            createGdprBidderRequest(true);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr']).to.equal('1');
+            expect(data['gdpr_consent']).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          });
+
+          it('should send only "gdpr_consent", when gdprConsent defines only consentString', () => {
+            createGdprBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr_consent']).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+            expect(data['gdpr']).to.equal(undefined);
+          });
+
+          it('should not send GDPR params if gdprConsent is not defined', () => {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr']).to.equal(undefined);
+            expect(data['gdpr_consent']).to.equal(undefined);
+          });
+
+          it('should set "gdpr" value as 1 or 0, using "gdprApplies" value of either true/false', () => {
+            createGdprBidderRequest(true);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+            expect(data['gdpr']).to.equal('1');
+
+            createGdprBidderRequest(false);
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            data = parseQuery(request.data);
+            expect(data['gdpr']).to.equal('0');
+          });
+        });
       });
 
       describe('for video requests', () => {
@@ -548,6 +608,8 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.gdpr).to.equal(1);
 
           expect(post).to.have.property('ae_pass_through_parameters');
           expect(post.ae_pass_through_parameters)
@@ -609,6 +671,8 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.gdpr).to.equal(1);
 
           expect(post).to.have.property('ae_pass_through_parameters');
           expect(post.ae_pass_through_parameters)
@@ -752,7 +816,7 @@ describe('the rubicon adapter', () => {
           bidRequestCopy.params.video = 123;
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = { size_id: undefined };
+          bidRequestCopy.params.video = {size_id: undefined};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
           delete bidRequestCopy.params.video;
@@ -936,7 +1000,7 @@ describe('the rubicon adapter', () => {
             ]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -992,7 +1056,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -1015,7 +1079,7 @@ describe('the rubicon adapter', () => {
             'ads': []
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -1039,7 +1103,7 @@ describe('the rubicon adapter', () => {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -1049,7 +1113,7 @@ describe('the rubicon adapter', () => {
         it('should handle an error because of malformed json response', () => {
           let response = '{test{';
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -1090,7 +1154,7 @@ describe('the rubicon adapter', () => {
             'account_id': 7780
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -1112,7 +1176,7 @@ describe('the rubicon adapter', () => {
   });
 
   describe('user sync', () => {
-    const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
     beforeEach(() => {
       resetUserSync();

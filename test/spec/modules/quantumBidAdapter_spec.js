@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory'
 const ENDPOINT = '//s.sspqns.com/hb'
 const REQUEST = {
   'bidder': 'quantum',
-  'sizes': [[300, 225]],
+  'sizes': [[300, 250]],
   'renderMode': 'banner',
   'params': {
     placementId: 21546
@@ -245,6 +245,7 @@ describe('quantumBidAdapter', () => {
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').to.be.below(2)
       expect(result[0]).to.have.property('height').to.be.below(2)
+      expect(result[0]).to.have.property('mediaType').equal('native')
       expect(result[0]).to.have.property('native')
     })
 
@@ -252,8 +253,8 @@ describe('quantumBidAdapter', () => {
       const result = spec.interpretResponse({body: serverResponse}, REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').equal(300)
-      expect(result[0]).to.have.property('height').equal(225)
-      // expect(result[0]).to.have.property('native');
+      expect(result[0]).to.have.property('height').equal(250)
+      expect(result[0]).to.have.property('mediaType').equal('banner')
       expect(result[0]).to.have.property('ad')
     })
 

@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx';
+const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -43,17 +43,23 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    const channelIDs = [];
-
+    const adUnits = [];
     utils._each(validBidRequests, function(bid) {
-      channelIDs.push(bid.params.ChannelID);
+      adUnits.push({
+        ChannelID: bid.params.ChannelID,
+        mediaTypes: bid.mediaTypes || {
+          banner: {
+            sizes: bid.sizes
+          }
+        }
+      });
     });
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: REQUEST_ENDPOINT,
       data: {
-        'ChannelID': channelIDs.join(',')
+        adUnits: adUnits
       },
       validBidRequests: validBidRequests
     };
@@ -77,15 +83,35 @@ export const spec = {
         return;
       }
 
-      const anotherFormatSize = []; // for store width and height
       let matchedResponse = find(serverResponse.body, function(res) {
-        return !!res && !res.consumed && find(req.sizes, function(size) {
-          let width = res.width;
-          let height = res.height;
-          if (typeof size === 'number') anotherFormatSize.push(size); // if sizes format is Array[Number], push width and height into anotherFormatSize
-          return (width === size[0] && height === size[1]) || // for format Array[Array[Number]] check
-          (width === anotherFormatSize[0] && height === anotherFormatSize[1]); // for foramt Array[Number] check
-        });
+        let valid = false;
+
+        if (!!res && !res.consumed) { // response exists and not consumed
+          if (res.width && res.height) {
+            let mediaTypes = req.mediaTypes;
+            // for prebid 1.0 and later usage, mediaTypes.banner.sizes
+            let sizes = mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes ? mediaTypes.banner.sizes : req.sizes;
+            if (sizes) {
+              let sizeValid;
+              let width = res.width;
+              let height = res.height;
+              // check response size validation
+              if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
+                sizeValid = width === sizes[0] && height === sizes[1];
+              } else { // for format Array[Array[Number]] check
+                sizeValid = find(sizes, function(size) {
+                  return (width === size[0] && height === size[1]);
+                });
+              }
+
+              if (sizeValid) { // dont care native sizes
+                valid = true;
+              }
+            }
+          }
+        }
+
+        return valid;
       });
 
       if (matchedResponse) {
@@ -94,11 +120,9 @@ export const spec = {
         // check required parameters
         if (typeof matchedResponse.cpm !== 'number') {
           return;
-        } else if (typeof matchedResponse.width !== 'number' || typeof matchedResponse.height !== 'number') {
-          return;
         } else if (typeof matchedResponse.ad !== 'string') {
           return;
-        } else if (typeof matchedResponse.net_revenue === 'undefined') {
+        } else if (typeof matchedResponse.netRevenue !== 'boolean') {
           return;
         } else if (typeof matchedResponse.currency !== 'string') {
           return;
@@ -111,7 +135,7 @@ export const spec = {
         bidResponse.ad = matchedResponse.ad;
         bidResponse.ttl = matchedResponse.ttl;
         bidResponse.creativeId = matchedResponse.id;
-        bidResponse.netRevenue = matchedResponse.net_revenue === 'true';
+        bidResponse.netRevenue = matchedResponse.netRevenue;
         bidResponse.currency = matchedResponse.currency;
 
         bidResponses.push(bidResponse);
