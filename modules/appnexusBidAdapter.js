@@ -73,6 +73,15 @@ export const spec = {
     if (member > 0) {
       payload.member_id = member;
     }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      // note - objects for impbus use underscore instead of camelCase
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -200,6 +209,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
+      vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
     // This supports Outstream Video
