@@ -16,7 +16,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 ## Release Process
 
-1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build for master branch will show you detailed results.
+1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build [here](https://travis-ci.org/prebid/Prebid.js/branches) for master branch will show you detailed results. 
   
    In case of failure do following, 
      - Try to fix the failing tests.
@@ -30,10 +30,12 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
    export BROWSERSTACK_USERNAME="my browserstack username"
    export BROWSERSTACK_ACCESS_KEY="my browserstack access key"
    ```
-
+   
+   ```
    gulp test --browserstack >> prebid_test.log
    
    vim prebid_test.log // Will show the test results
+   ```
 
 
 2. Prepare Prebid Code
@@ -41,7 +43,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
    Update the package.json version to become the current release. Then commit your changes.
 
    ```
-   git ci -m "Prebid 1.x.x Release"
+   git commit -m "Prebid 1.x.x Release"
    git push
    ```
 
@@ -51,9 +53,14 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 4. Create a GitHub release
 
-   Edit the most recent release notes draft and make sure the correct tag is in the dropdown. Click `Publish`. GitHub will create release tag. 
+   Edit the most recent [release notes](https://github.com/prebid/Prebid.js/releases) draft and make sure the correct tag is in the dropdown. Click `Publish`. GitHub will create release tag. 
    
-   Pull these changes locally and verify the tag.
+   Pull these changes locally by running command 
+   ```
+   git pull
+   ``` 
+   
+   and verify the tag.
 
 5. Update coveralls
 
