@@ -150,6 +150,15 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
+  function hasVideoBids(bids) {
+    const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
+    const videoBid = bidsArray.some(bid => !!(utils.deepAccess(bid.mediaTypes, ['video'])));
+    const cacheEnabled = !!(config.getConfig('cache.url'));
+
+    // video bids with cache enabled need to be cached first before they are considered done
+    return (videoBid && cacheEnabled);
+  }
+
   function done(bidRequestId) {
     const innerBidRequestId = bidRequestId;
     return delayExecution(function() {
@@ -157,9 +166,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
 
+      events.emit(CONSTANTS.EVENTS.BIDDER_DONE, request);
       // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
-      request.doneCbCallCount += 1;
-      bidsBackAll();
+      if (!hasVideoBids(request.bids)) {
+        request.doneCbCallCount += 1;
+        bidsBackAll();
+      }
     }, 1);
   }
 
