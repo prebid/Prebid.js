@@ -75,7 +75,7 @@ describe('AudienceNetwork adapter', () => {
     it('fullwidth', () => {
       expect(isBidRequestValid({
         bidder,
-        sizes: [[300, 250]],
+        sizes: [[300, 250], [336, 280]],
         params: {
           placementId,
           format: 'fullwidth'
