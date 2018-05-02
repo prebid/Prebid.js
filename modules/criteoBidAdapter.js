@@ -9,6 +9,7 @@ var events = require('src/events');
 const ADAPTER_VERSION = 4;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
+const CRITEO_VENDOR_ID = 91;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
@@ -60,7 +61,7 @@ export const spec = {
     } else {
       const context = buildContext(bidRequests);
       url = buildCdbUrl(context);
-      data = buildCdbRequest(context, bidRequests);
+      data = buildCdbRequest(context, bidRequests, bidderRequest);
     }
 
     if (data) {
@@ -181,7 +182,7 @@ function buildCdbUrl(context) {
  * @param {BidRequest[]} bidRequests
  * @return {*}
  */
-function buildCdbRequest(context, bidRequests) {
+function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   const request = {
     publisher: {
@@ -209,6 +210,14 @@ function buildCdbRequest(context, bidRequests) {
   };
   if (networkId) {
     request.publisher.networkid = networkId;
+  }
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    request.gdprConsent = {
+      gdprApplies: !!(bidderRequest.gdprConsent.gdprApplies),
+      consentData: bidderRequest.gdprConsent.consentString,
+      consentGiven: !!(bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+        bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]),
+    };
   }
   return request;
 }

@@ -48,7 +48,17 @@ describe('The Criteo bidding adapter', () => {
   });
 
   describe('buildRequests', () => {
-    const bidderRequest = { timeout: 3000 };
+    const bidderRequest = { timeout: 3000,
+      gdprConsent: {
+        gdprApplies: 1,
+        consentString: 'concentDataString',
+        vendorData: {
+          vendorConsents: {
+            '1': 1
+          },
+        },
+      },
+    };
 
     it('should properly build a zoneId request', () => {
       const bidRequests = [
@@ -73,9 +83,24 @@ describe('The Criteo bidding adapter', () => {
       expect(ortbRequest.slots[0].sizes).to.have.lengthOf(1);
       expect(ortbRequest.slots[0].sizes[0]).to.equal('728x90');
       expect(ortbRequest.slots[0].zoneid).to.equal(123);
+      expect(ortbRequest.gdprConsent.consentData).to.equal('concentDataString');
+      expect(ortbRequest.gdprConsent.gdprApplies).to.equal(true);
+      expect(ortbRequest.gdprConsent.consentGiven).to.equal(true);
     });
 
     it('should properly build a networkId request', () => {
+      const bidderRequest = {
+        timeout: 3000,
+        gdprConsent: {
+          gdprApplies: 0,
+          consentString: undefined,
+          vendorData: {
+            vendorConsents: {
+              '1': 0
+            },
+          },
+        },
+      };
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -99,9 +124,13 @@ describe('The Criteo bidding adapter', () => {
       expect(ortbRequest.slots[0].sizes).to.have.lengthOf(2);
       expect(ortbRequest.slots[0].sizes[0]).to.equal('300x250');
       expect(ortbRequest.slots[0].sizes[1]).to.equal('728x90');
+      expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
+      expect(ortbRequest.gdprConsent.gdprApplies).to.equal(false);
+      expect(ortbRequest.gdprConsent.consentGiven).to.equal(false);
     });
 
     it('should properly build a mixed request', () => {
+      const bidderRequest = { timeout: 3000 };
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -138,6 +167,7 @@ describe('The Criteo bidding adapter', () => {
       expect(ortbRequest.slots[1].sizes).to.have.lengthOf(2);
       expect(ortbRequest.slots[1].sizes[0]).to.equal('300x250');
       expect(ortbRequest.slots[1].sizes[1]).to.equal('728x90');
+      expect(ortbRequest.gdprConsent).to.equal(undefined);
     });
   });
 
