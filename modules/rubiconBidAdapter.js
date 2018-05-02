@@ -218,9 +218,9 @@ export const spec = {
           bidsInGroup = bidsInGroup.slice(0, 10);
         }
 
-        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map((bidRequest => {
+        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
           return spec.createSlotParams(bidRequest, bidderRequest);
-        })));
+        }));
 
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
@@ -416,8 +416,8 @@ export const spec = {
         bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
           .reduce((memo, item) => {
             memo[item.key] = item.values[0];
-          return memo;
-        }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
+            return memo;
+          }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
 
         bids.push(bid);
       } else {

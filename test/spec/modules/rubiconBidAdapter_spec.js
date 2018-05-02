@@ -80,17 +80,17 @@ describe('the rubicon adapter', () => {
 
     return {
       'status': getProp('status', 'ok'),
-      'cpm': getProp('cpm', i/100),
-      'zone_id': getProp('zone_id', i+1),
+      'cpm': getProp('cpm', i / 100),
+      'zone_id': getProp('zone_id', i + 1),
       'size_id': sizeId,
       'impression_id': getProp('impression_id', `1-${i}`),
-      'ad_id': getProp('ad_id', i+1),
-      'advertiser': i+1,
-      'network': i+1,
+      'ad_id': getProp('ad_id', i + 1),
+      'advertiser': i + 1,
+      'network': i + 1,
       'creative_id': getProp('creative_id', `crid-${i}`),
       'type': 'script',
       'script': 'alert(\'foo\')',
-      'campaign_id': i+1,
+      'campaign_id': i + 1,
       'targeting': [
         {
           'key': getProp('targeting_key', `rpfl_${i}`),
@@ -111,7 +111,7 @@ describe('the rubicon adapter', () => {
       params: {
         accountId: '14062',
         siteId: '70608',
-        zoneId: (i+1).toString(),
+        zoneId: (i + 1).toString(),
         userId: '12346',
         position: 'atf',
         referrer: 'localhost'
@@ -298,19 +298,19 @@ describe('the rubicon adapter', () => {
     };
 
     sizeMap = [
-      {sizeId:1, size: '468x60'},
-      {sizeId:2, size: '728x90'},
-      {sizeId:5, size: '120x90'},
-      {sizeId:8, size: '120x600'},
-      {sizeId:9, size: '160x600'},
-      {sizeId:10, size: '300x600'},
-      {sizeId:13, size: '200x200'},
-      {sizeId:14, size: '250x250'},
-      {sizeId:15, size: '300x250'},
-      {sizeId:16, size: '336x280'},
-      {sizeId:19, size: '300x100'},
-      {sizeId:31, size: '980x120'},
-      {sizeId:32, size: '250x360'}
+      {sizeId: 1, size: '468x60'},
+      {sizeId: 2, size: '728x90'},
+      {sizeId: 5, size: '120x90'},
+      {sizeId: 8, size: '120x600'},
+      {sizeId: 9, size: '160x600'},
+      {sizeId: 10, size: '300x600'},
+      {sizeId: 13, size: '200x200'},
+      {sizeId: 14, size: '250x250'},
+      {sizeId: 15, size: '300x250'},
+      {sizeId: 16, size: '336x280'},
+      {sizeId: 19, size: '300x100'},
+      {sizeId: 31, size: '980x120'},
+      {sizeId: 32, size: '250x360'}
       // Create convenience properties for [sizeAsArray, width, height] by parsing the size string
     ].map(item => {
       const sizeAsArray = item.size.split('x').map(s => parseInt(s));
@@ -815,8 +815,7 @@ describe('the rubicon adapter', () => {
                     params.forEach(paramItem => {
                       expect(paramItem).to.match(expectedQuery[key]);
                     });
-                  }
-                  else {
+                  } else {
                     expect(params).to.contain(expectedQuery[key]);
                   }
                 }
