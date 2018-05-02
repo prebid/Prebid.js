@@ -1,8 +1,14 @@
-var utils = require('./utils');
-let _requestCache = {};
+import includes from 'core-js/library/fn/array/includes';
+import * as utils from './utils';
+
+const _requestCache = {};
+const _vendorWhitelist = [
+  'criteo',
+]
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
+ * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  */
@@ -11,18 +17,23 @@ exports.loadExternalScript = function(url, moduleCode) {
     utils.logError('cannot load external script without url and moduleCode');
     return;
   }
+  if (!includes(_vendorWhitelist, moduleCode)) {
+    utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
+    return;
+  }
+  // only load each asset once
+  if (_requestCache[url]) {
+    return;
+  }
+
   utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.async = true;
-
   script.src = url;
 
-  // add the new script tag to the page
-  const target = document.head || document.body;
-  if (target) {
-    target.appendChild(script);
-  }
+  utils.insertElement(script);
+  _requestCache[url] = true;
 };
 
 /**

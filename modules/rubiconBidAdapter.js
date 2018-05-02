@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import {config} from 'src/config';
+import {BANNER, VIDEO} from 'src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -12,7 +12,7 @@ function isSecure() {
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
-const SYNC_ENDPOINT = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const TIMEOUT_BUFFER = 500;
 
@@ -79,7 +79,7 @@ export const spec = {
    * @param {object} bid
    * @return boolean
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (typeof bid.params !== 'object') {
       return false;
     }
@@ -121,7 +121,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest[]
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
@@ -133,6 +133,9 @@ export const spec = {
       }
 
       page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
+
+      // GDPR reference, for use by 'banner' and 'video'
+      const gdprConsent = bidderRequest.gdprConsent;
 
       if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
@@ -177,6 +180,14 @@ export const spec = {
         }
 
         data.slots.push(slotData);
+
+        if (gdprConsent) {
+          // add 'gdpr' only if 'gdprApplies' is defined
+          if (typeof gdprConsent.gdprApplies === 'boolean') {
+            data.gdpr = Number(gdprConsent.gdprApplies);
+          }
+          data.gdpr_consent = gdprConsent.consentString;
+        }
 
         return {
           method: 'POST',
@@ -223,6 +234,14 @@ export const spec = {
         'tk_user_key', userId
       ];
 
+      if (gdprConsent) {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          data.push('gdpr', Number(gdprConsent.gdprApplies));
+        }
+        data.push('gdpr_consent', gdprConsent.consentString);
+      }
+
       if (visitor !== null && typeof visitor === 'object') {
         utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));
       }
@@ -259,7 +278,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @returns {boolean}
    */
-  hasVideoMediaType: function(bidRequest) {
+  hasVideoMediaType: function (bidRequest) {
     return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
       (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
   },
@@ -268,7 +287,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
    */
-  interpretResponse: function(responseObj, {bidRequest}) {
+  interpretResponse: function (responseObj, {bidRequest}) {
     responseObj = responseObj.body
     let ads = responseObj.ads;
 
@@ -336,7 +355,7 @@ export const spec = {
       return bids;
     }, []);
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function (syncOptions) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       hasSynced = true;
       return {
@@ -360,6 +379,7 @@ function _getDigiTrustQueryParams() {
     let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
+
   let digiTrustId = getDigiTrustId();
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
@@ -407,7 +427,7 @@ function parseSizes(bid) {
 
 function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
-    // map sizes while excluding non-matches
+  // map sizes while excluding non-matches
     .reduce((result, size) => {
       let mappedSize = parseInt(sizeMap[size], 10);
       if (mappedSize) {
@@ -448,6 +468,7 @@ export function masSizeOrdering(sizes) {
 }
 
 var hasSynced = false;
+
 export function resetUserSync() {
   hasSynced = false;
 }

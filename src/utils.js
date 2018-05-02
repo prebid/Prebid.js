@@ -11,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -381,6 +382,10 @@ exports.isArray = function (object) {
 exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
+
+exports.isPlainObject = function(object) {
+  return this.isA(object, t_Object);
+}
 
 /**
  * Return if the object is "empty";
