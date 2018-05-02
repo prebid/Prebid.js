@@ -61,7 +61,10 @@ export const spec = {
       method: 'POST',
       url: REQUEST_ENDPOINT,
       data: {
-        version: '$prebid.version$',
+        version: {
+          prebid: '$prebid.version$',
+          bridgewell: '0.0.1'
+        },
         adUnits: adUnits
       },
       validBidRequests: validBidRequests
