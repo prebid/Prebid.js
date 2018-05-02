@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/openxBidAdapter';
+import {spec, resetBoPixel} from 'modules/openxBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
 import * as utils from 'src/utils';
@@ -586,6 +586,7 @@ describe('OpenxAdapter', () => {
       });
 
       it('should register a beacon', () => {
+        resetBoPixel();
         spec.interpretResponse({body: bidResponse}, bidRequest);
         sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(new RegExp(`\/\/openx-d\.openx\.net.*\/bo\?.*ts=${adUnitOverride.ts}`)));
       });
@@ -882,6 +883,7 @@ describe('OpenxAdapter', () => {
     });
 
     it('should register a beacon', () => {
+      resetBoPixel();
       spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^\/\/test-colo\.com/))
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ph=test-ph/));
