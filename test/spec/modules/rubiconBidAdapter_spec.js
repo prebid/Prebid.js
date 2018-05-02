@@ -15,20 +15,31 @@ describe('the rubicon adapter', () => {
   let sandbox,
     bidderRequest;
 
-  function createVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+  /**
+   * @param {boolean} [gdprApplies]
+   */
+  function createGdprBidderRequest(gdprApplies) {
+    if (typeof gdprApplies === 'boolean') {
+      bidderRequest.gdprConsent = {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'gdprApplies': gdprApplies
+      };
+    } else {
+      bidderRequest.gdprConsent = {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      };
+    }
+  }
 
+  function createVideoBidderRequest() {
+    createGdprBidderRequest(true);
+
+    let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
         context: 'instream'
       }
     };
-
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
-
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -44,14 +55,11 @@ describe('the rubicon adapter', () => {
   }
 
   function createLegacyVideoBidderRequest() {
-    let bid = bidderRequest.bids[0];
+    createGdprBidderRequest(true);
 
+    let bid = bidderRequest.bids[0];
     // Legacy property (Prebid <1.0)
     bid.mediaType = 'video';
-    bid.gdprConsent = {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'consentRequired': true
-    };
     bid.params.video = {
       'language': 'en',
       'p_aso.video.ext.skip': true,
@@ -64,6 +72,7 @@ describe('the rubicon adapter', () => {
         'p_aso.video.ext.skipdelay': '15'
       }
     };
+    bid.params.secure = false;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -266,7 +275,7 @@ describe('the rubicon adapter', () => {
 
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', () => {
@@ -535,6 +544,46 @@ describe('the rubicon adapter', () => {
             expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
           });
         });
+
+        describe('GDPR consent config', () => {
+          it('should send "gdpr" and "gdpr_consent", when gdprConsent defines consentString and gdprApplies', () => {
+            createGdprBidderRequest(true);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr']).to.equal('1');
+            expect(data['gdpr_consent']).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          });
+
+          it('should send only "gdpr_consent", when gdprConsent defines only consentString', () => {
+            createGdprBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr_consent']).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+            expect(data['gdpr']).to.equal(undefined);
+          });
+
+          it('should not send GDPR params if gdprConsent is not defined', () => {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gdpr']).to.equal(undefined);
+            expect(data['gdpr_consent']).to.equal(undefined);
+          });
+
+          it('should set "gdpr" value as 1 or 0, using "gdprApplies" value of either true/false', () => {
+            createGdprBidderRequest(true);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+            expect(data['gdpr']).to.equal('1');
+
+            createGdprBidderRequest(false);
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            data = parseQuery(request.data);
+            expect(data['gdpr']).to.equal('0');
+          });
+        });
       });
 
       describe('for video requests', () => {
@@ -560,6 +609,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(false);
           expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.gdpr).to.equal(1);
 
@@ -623,6 +673,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(true);
           expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.gdpr).to.equal(1);
 
@@ -1128,7 +1179,7 @@ describe('the rubicon adapter', () => {
   });
 
   describe('user sync', () => {
-    const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
     beforeEach(() => {
       resetUserSync();

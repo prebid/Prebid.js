@@ -12,7 +12,7 @@ function isSecure() {
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
-const SYNC_ENDPOINT = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const TIMEOUT_BUFFER = 500;
 
@@ -132,7 +132,8 @@ export const spec = {
         page_url = utils.getTopWindowUrl();
       }
 
-      page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
+      // GDPR reference, for use by 'banner' and 'video'
+      const gdprConsent = bidderRequest.gdprConsent;
 
       if (spec.hasVideoMediaType(bidRequest)) {
         let params = bidRequest.params;
@@ -147,6 +148,7 @@ export const spec = {
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
+          rp_secure: bidRequest.params.secure !== false,
           slots: []
         };
 
@@ -178,9 +180,12 @@ export const spec = {
 
         data.slots.push(slotData);
 
-        if (bidderRequest && bidRequest.gdprConsent) {
-          data.gdpr = bidRequest.gdprConsent.consentRequired ? 1 : 0;
-          data.gdpr_consent = bidRequest.gdprConsent.consentString;
+        if (gdprConsent) {
+          // add 'gdpr' only if 'gdprApplies' is defined
+          if (typeof gdprConsent.gdprApplies === 'boolean') {
+            data.gdpr = Number(gdprConsent.gdprApplies);
+          }
+          data.gdpr_consent = gdprConsent.consentString;
         }
 
         return {
@@ -227,6 +232,14 @@ export const spec = {
         'kw', keywords,
         'tk_user_key', userId
       ];
+
+      if (gdprConsent) {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          data.push('gdpr', Number(gdprConsent.gdprApplies));
+        }
+        data.push('gdpr_consent', gdprConsent.consentString);
+      }
 
       if (visitor !== null && typeof visitor === 'object') {
         utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));
