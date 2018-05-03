@@ -11,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -381,6 +382,10 @@ exports.isArray = function (object) {
 exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
+
+exports.isPlainObject = function(object) {
+  return this.isA(object, t_Object);
+}
 
 /**
  * Return if the object is "empty";
@@ -775,6 +780,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -846,7 +854,21 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };
 }
-
+/**
+ * Returns user configured bidder params from adunit
+ * @param {object} adunits
+ * @param {string} adunit code
+ * @param {string} bidder code
+ * @return {Array} user configured param for the given bidder adunit configuration
+ */
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params || {});
+}
 /**
  * Returns the origin
  */
@@ -934,4 +956,12 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }

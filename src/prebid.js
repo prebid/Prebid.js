@@ -7,26 +7,23 @@ import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
+import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
-var $$PREBID_GLOBAL$$ = getGlobal();
-
+const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
-var utils = require('./utils.js');
-var adaptermanager = require('./adaptermanager');
-var bidfactory = require('./bidfactory');
-var events = require('./events');
+const utils = require('./utils.js');
+const adaptermanager = require('./adaptermanager');
+const bidfactory = require('./bidfactory');
+const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-
-const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
-var eventValidators = {
+const eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
@@ -111,7 +108,8 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode, auctionManager.getBidsReceived());
+  let bidsReceived = auctionManager.getBidsReceived();
+  return targeting.getAllTargeting(adUnitCode, bidsReceived);
 };
 
 /**
@@ -177,7 +175,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.setTargetingForGPT(targetingSet);
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targetingSet);
 };
 
 /**
@@ -194,7 +192,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   targeting.setTargetingForAst();
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
 function emitAdRenderFail(reason, message, bid) {
@@ -476,7 +474,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 };
 
 /**
- * Wrapper to adloader.loadScript
+ * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
  * @alias module:pbjs.loadScript
@@ -557,11 +555,21 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 */
 
 /**
- * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return auctionManager.getAllWinningBids()
+    .map(removeRequestId);
+};
+
+/**
+ * Get all of the bids that have won their respective auctions.
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ */
+$$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
+  return auctionManager.getBidsReceived()
+    .filter(bid => bid.status === BID_TARGETING_SET)
     .map(removeRequestId);
 };
 
@@ -573,7 +581,8 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode, auctionManager.getBidsReceived())
+  let bidsReceived = auctionManager.getBidsReceived().filter(getOldestBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
 };
 
