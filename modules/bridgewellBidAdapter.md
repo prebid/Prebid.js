@@ -10,41 +10,50 @@ Module that connects to Bridgewell demand source to fetch bids.
 
 # Test Parameters
 ```
-    var adUnits = [
-           {
-               code: 'test-div',
-               sizes: [[300, 250]],
-               bids: [
-                   {
-                       bidder: 'bridgewell',
-                       params: {
-                           ChannelID: 'CgUxMjMzOBIBNiIFcGVubnkqCQisAhD6ARoBOQ'
-                       }
-                   }
-               ]
-           },{
-               code: 'test-div',
-               sizes: [[728, 90]],
-               bids: [
-                   {
-                       bidder: 'bridgewell',
-                       params: {
-                           ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
-                           cpmWeight: 1.5
-                       }
-                   }
-               ]
-           },{
-               code: 'test-div',
-               sizes: [728, 90],
-               bids: [
-                   {
-                       bidder: 'bridgewell',
-                       params: {
-                           ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
-                       }
-                   }
-               ]
-           }
-       ];
+    var adUnits = [{
+        code: 'test-div',
+        sizes: [
+            [300, 250]
+        ],
+        bids: [{
+            bidder: 'bridgewell',
+            params: {
+                ChannelID: 'CgUxMjMzOBIBNiIFcGVubnkqCQisAhD6ARoBOQ'
+            }
+        }]
+    }, {
+        code: 'test-div',
+        sizes: [
+            [728, 90]
+        ],
+        bids: [{
+            bidder: 'bridgewell',
+            params: {
+                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
+                cpmWeight: 1.5
+            }
+        }]
+    }, {
+        code: 'test-div',
+        sizes: [728, 90],
+        bids: [{
+            bidder: 'bridgewell',
+            params: {
+                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+            }
+        }]
+    }, {
+        code: 'test-div',
+        mediaTypes: {
+            banner: {
+                sizes: [728, 90]
+            }
+        },
+        bids: [{
+            bidder: 'bridgewell',
+            params: {
+                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+            }
+        }]
+    }];
 ```

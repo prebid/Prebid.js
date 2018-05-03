@@ -121,7 +121,10 @@ function outstreamRender(bid) {
 }
 
 function getSizes(bid) {
-  return utils.parseSizesInput(bid.sizes).map(size => {
+  let sizes = (isVideoBid(bid)
+    ? utils.deepAccess(bid, 'mediaTypes.video.playerSize')
+    : utils.deepAccess(bid, 'mediaTypes.banner.sizes')) || bid.sizes;
+  return utils.parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,

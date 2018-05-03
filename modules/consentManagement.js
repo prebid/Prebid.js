@@ -124,9 +124,9 @@ function lookupIabConsent(cmpSuccess, cmpError) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object and gets transferred to adaptermanager's gdprDataHandler object.
+ * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
- * @param {object} config required; This is the same param that's used in pbjs.requestBids.  The config.adunits will be updated.
+ * @param {object} config required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function requestBidsHook(config, fn) {
@@ -158,7 +158,7 @@ export function requestBidsHook(config, fn) {
 }
 
 /**
- * This function checks the string value provided by CMP to ensure it's a valid string.
+ * This function checks the consent data provided by CMP to ensure it's in an expected state.
  * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exits the module.
  * @param {object} consentObject required; object returned by CMP that contains user's consent choices
@@ -197,7 +197,7 @@ function cmpFailed(errMsg) {
 
 /**
  * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
- * @param {object} cmpConsentObject required; encoded string value representing user's consent choices (can be undefined in certain use-cases for this function only)
+ * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
 function storeConsentData(cmpConsentObject) {
   consentData = {
