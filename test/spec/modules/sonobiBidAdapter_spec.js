@@ -281,6 +281,9 @@ describe('SonobiBidAdapter', () => {
         url: 'https://pixel-test'
       }]);
     })
+    it('should return an empty array when sync is enabled but there are no bidResponses', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+    })
 
     it('should return an empty array when sync is enabled but no sync pixel returned', () => {
       const pixel = Object.assign({}, bidResponse);
