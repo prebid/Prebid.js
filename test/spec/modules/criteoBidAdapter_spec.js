@@ -54,7 +54,7 @@ describe('The Criteo bidding adapter', () => {
         consentString: 'concentDataString',
         vendorData: {
           vendorConsents: {
-            '1': 1
+            '91': 1
           },
         },
       },

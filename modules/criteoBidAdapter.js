@@ -1,10 +1,7 @@
 import { loadExternalScript } from 'src/adloader';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { EVENTS } from 'src/constants';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
-
-var events = require('src/events');
 
 const ADAPTER_VERSION = 4;
 const BIDDER_CODE = 'criteo';
@@ -56,8 +53,6 @@ export const spec = {
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
-
-      registerEventHandlers();
     } else {
       const context = buildContext(bidRequests);
       url = buildCdbUrl(context);
@@ -262,30 +257,6 @@ function tryGetCriteoFastBid() {
     // Unable to get fast bid
   }
   return false;
-}
-
-// Register events to know when Criteo won the bid or timeouted
-let registeredEvents = false;
-function registerEventHandlers() {
-  if (registeredEvents) {
-    return;
-  }
-
-  registeredEvents = true;
-
-  events.on(EVENTS.BID_WON, (bid) => {
-    if (bid.bidderCode === 'criteo') {
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleBidWon(bid);
-    }
-  });
-
-  events.on(EVENTS.SET_TARGETING, () => {
-    const adapters = Criteo.PubTag.Adapters.Prebid.GetAllAdapters();
-    for (const k in adapters) {
-      adapters[k].handleSetTargeting();
-    }
-  });
 }
 
 registerBidder(spec);
