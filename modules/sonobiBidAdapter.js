@@ -1,6 +1,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -87,7 +88,7 @@ export const spec = {
 
     Object.keys(bidResponse.slots).forEach(slot => {
       const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = bidderRequests.find(bidReqest => bidReqest.bidId === bidId);
+      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
       const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
       const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
       const createCreative = _creative(mediaType);

@@ -150,6 +150,20 @@ function doBidderSync(type, url, bidder) {
 }
 
 /**
+ * Do client-side syncs for bidders.
+ *
+ * @param {Array} bidders a list of bidder names
+ */
+function doClientSideSyncs(bidders) {
+  bidders.forEach(bidder => {
+    let clientAdapter = adaptermanager.getBidAdapter(bidder);
+    if (clientAdapter && clientAdapter.registerSyncs) {
+      clientAdapter.registerSyncs([]);
+    }
+  });
+}
+
+/**
  * Try to convert a value to a type.
  * If it can't be done, the value will be returned.
  *
@@ -290,7 +304,7 @@ function transformHeightWidth(adUnit) {
  */
 const LEGACY_PROTOCOL = {
 
-  buildRequest(s2sBidRequest, adUnits) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits) {
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
       adUnit.sizes = transformHeightWidth(adUnit);
@@ -344,14 +358,6 @@ const LEGACY_PROTOCOL = {
           responseTimes[bidder.bidder] = bidder.response_time_ms;
         });
       }
-
-      // do client-side syncs if available
-      requestedBidders.forEach(bidder => {
-        let clientAdapter = adaptermanager.getBidAdapter(bidder);
-        if (clientAdapter && clientAdapter.registerSyncs) {
-          clientAdapter.registerSyncs([]);
-        }
-      });
 
       if (result.bids) {
         result.bids.forEach(bidObj => {
@@ -431,7 +437,7 @@ const OPEN_RTB_PROTOCOL = {
 
   bidMap: {},
 
-  buildRequest(s2sBidRequest, adUnits) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
     let aliases = {};
 
@@ -522,6 +528,35 @@ const OPEN_RTB_PROTOCOL = {
 
     if (!utils.isEmpty(aliases)) {
       request.ext = { prebid: { aliases } };
+    }
+
+    if (bidRequests && bidRequests[0].gdprConsent) {
+      // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
+      let gdprApplies;
+      if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
+        gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
+      }
+
+      if (request.regs) {
+        if (request.regs.ext) {
+          request.regs.ext.gdpr = gdprApplies;
+        } else {
+          request.regs.ext = { gdpr: gdprApplies };
+        }
+      } else {
+        request.regs = { ext: { gdpr: gdprApplies } };
+      }
+
+      let consentString = bidRequests[0].gdprConsent.consentString;
+      if (request.user) {
+        if (request.user.ext) {
+          request.user.ext.consent = consentString;
+        } else {
+          request.user.ext = { consent: consentString };
+        }
+      } else {
+        request.user = { ext: { consent: consentString } };
+      }
     }
 
     return request;
@@ -631,7 +666,7 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
-    const request = protocolAdapter().buildRequest(s2sBidRequest, adUnitsWithSizes);
+    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
     const requestJson = JSON.stringify(request);
 
     ajax(
@@ -674,6 +709,7 @@ export function PrebidServer() {
     }
 
     done();
+    doClientSideSyncs(requestedBidders);
   }
 
   return Object.assign(this, {

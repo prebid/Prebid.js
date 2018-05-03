@@ -139,7 +139,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
-      expect(bidRequests.data.vp).to.equal('tablet');
+      expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
     it('should return a properly formatted request with hfa', () => {
