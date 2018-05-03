@@ -119,8 +119,8 @@ describe('jcmAdapter', () => {
   describe('getUserSyncs', () => {
     it('Verifies sync iframe option', () => {
       expect(spec.getUserSyncs({})).to.be.undefined;
-      expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
-      const options = spec.getUserSyncs({ iframeEnabled: true});
+      expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
+      const options = spec.getUserSyncs({ iframeEnabled: true });
       expect(options).to.not.be.undefined;
       expect(options).to.have.lengthOf(1);
       expect(options[0].type).to.equal('iframe');
@@ -128,8 +128,8 @@ describe('jcmAdapter', () => {
     });
 
     it('Verifies sync image option', () => {
-      expect(spec.getUserSyncs({ image: false})).to.be.undefined;
-      const options = spec.getUserSyncs({ image: true});
+      expect(spec.getUserSyncs({ image: false })).to.be.undefined;
+      const options = spec.getUserSyncs({ image: true });
       expect(options).to.not.be.undefined;
       expect(options).to.have.lengthOf(1);
       expect(options[0].type).to.equal('image');

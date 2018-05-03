@@ -1,4 +1,4 @@
-import { expect} from 'chai';
+import { expect } from 'chai';
 import { spec } from 'modules/a4gBidAdapter';
 
 describe('a4gAdapterTests', () => {
@@ -109,14 +109,15 @@ describe('a4gAdapterTests', () => {
 
       let requiredKeys = [
         'requestId',
+        'creativeId',
+        'adId',
         'cpm',
         'width',
         'height',
-        'ad',
-        'ttl',
-        'creativeId',
+        'currency',
         'netRevenue',
-        'currency'
+        'ttl',
+        'ad'
       ];
 
       let resultKeys = Object.keys(result[0]);

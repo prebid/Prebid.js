@@ -25,11 +25,17 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     var pubUrl = null;
-    if (parent !== window) {
-      pubUrl = document.referrer;
-    } else {
-      pubUrl = window.location.href;
-    }
+    try {
+      if (window.top == window) {
+        pubUrl = window.location.href;
+      } else {
+        try {
+          pubUrl = window.top.location.href;
+        } catch (e2) {
+          pubUrl = document.referrer;
+        }
+      }
+    } catch (e1) {}
 
     return validBidRequests.map(bidRequest => {
       var subId = utils.getBidIdParameter('subId', bidRequest.params);
@@ -104,14 +110,6 @@ export const spec = {
 
     bidResponses.push(bidResponse);
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
-    }
   }
 }
 registerBidder(spec);

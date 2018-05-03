@@ -100,8 +100,8 @@ describe('VidazooBidAdapter', () => {
     let sandbox;
     before(() => {
       sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl', () => 'http://www.greatsite.com');
-      sandbox.stub(Date, 'now', () => 1000);
+      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.greatsite.com');
+      sandbox.stub(Date, 'now').returns(1000);
     });
 
     it('should build request for each size', () => {

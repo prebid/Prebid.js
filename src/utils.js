@@ -2,7 +2,8 @@ import { config } from './config';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-var CONSTANTS = require('./constants');
+import { parse } from './url';
+const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
@@ -10,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -157,17 +159,55 @@ export function parseGPTSingleSizeArray(singleSize) {
   }
 };
 
-exports.getTopWindowLocation = function () {
-  let location;
-  try {
-    // force an exception in x-domain enviornments. #1509
-    window.top.location.toString();
-    location = window.top.location;
-  } catch (e) {
-    location = window.location;
+exports.getTopWindowLocation = function() {
+  if (exports.inIframe()) {
+    let loc;
+    try {
+      loc = exports.getAncestorOrigins() || exports.getTopFrameReferrer();
+    } catch (e) {
+      logInfo('could not obtain top window location', e);
+    }
+    if (loc) return parse(loc, {'decodeSearchAsString': true});
   }
+  return exports.getWindowLocation();
+}
 
-  return location;
+exports.getTopFrameReferrer = function () {
+  try {
+    // force an exception in x-domain environments. #1509
+    window.top.location.toString();
+    let referrerLoc = '';
+    let currentWindow;
+    do {
+      currentWindow = currentWindow ? currentWindow.parent : window;
+      if (currentWindow.document && currentWindow.document.referrer) {
+        referrerLoc = currentWindow.document.referrer;
+      }
+    }
+    while (currentWindow !== window.top);
+    return referrerLoc;
+  } catch (e) {
+    return window.document.referrer;
+  }
+};
+
+exports.getAncestorOrigins = function () {
+  if (window.document.location && window.document.location.ancestorOrigins &&
+    window.document.location.ancestorOrigins.length >= 1) {
+    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
+  }
+};
+
+exports.getWindowTop = function () {
+  return window.top;
+};
+
+exports.getWindowSelf = function () {
+  return window.self;
+};
+
+exports.getWindowLocation = function () {
+  return window.location;
 };
 
 exports.getTopWindowUrl = function () {
@@ -343,6 +383,10 @@ exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
 
+exports.isPlainObject = function(object) {
+  return this.isA(object, t_Object);
+}
+
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
@@ -467,6 +511,12 @@ exports.insertElement = function(elm, doc, target) {
 exports.triggerPixel = function (url) {
   const img = new Image();
   img.src = url;
+};
+
+exports.callBurl = function({ source, burl }) {
+  if (source === CONSTANTS.S2S.SRC && burl) {
+    exports.triggerPixel(burl);
+  }
 };
 
 /**
@@ -652,7 +702,7 @@ export function deepClone(obj) {
 
 export function inIframe() {
   try {
-    return window.self !== window.top;
+    return exports.getWindowSelf() !== exports.getWindowTop();
   } catch (e) {
     return true;
   }
@@ -671,8 +721,13 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function cookiesAreEnabled() {
+export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+}
+export function cookiesAreEnabled() {
+  if (exports.checkCookieSupport()) {
     return true;
   }
   window.document.cookie = 'prebid.cookieTest';
@@ -725,6 +780,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -796,7 +854,21 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };
 }
-
+/**
+ * Returns user configured bidder params from adunit
+ * @param {object} adunits
+ * @param {string} adunit code
+ * @param {string} bidder code
+ * @return {Array} user configured param for the given bidder adunit configuration
+ */
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params || {});
+}
 /**
  * Returns the origin
  */
@@ -807,6 +879,13 @@ export function getOrigin() {
   } else {
     return window.location.origin;
   }
+}
+
+/**
+ * Returns Do Not Track state
+ */
+export function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
 const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
@@ -877,4 +956,12 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }

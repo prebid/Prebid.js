@@ -51,7 +51,7 @@ describe('Somo Audience Adapter Tests', () => {
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid(bidderBadSet[0])).to.equal(false);
     expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
-    expect(spec.isBidRequestValid({ params: { placementId: '12345' }})).to.equal(true);
+    expect(spec.isBidRequestValid({ params: { placementId: '12345' } })).to.equal(true);
   });
 
   it('Verifies buildRequests', () => {
