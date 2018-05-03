@@ -72,7 +72,7 @@ function sendAll() {
 
 function trackAuctionInit(args) {
   analyticsAdapter.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, 'init', undefined, args.auctionId);
+  const event = createHbEvent(undefined, 'init', undefined, args.auctionId, undefined, analyticsAdapter.context.auctionTimeStart);
   return [event];
 }
 
@@ -97,7 +97,7 @@ function trackAuctionEnd(args) {
   return [event];
 }
 
-function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
+function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTime) {
   let ev = {ev: event};
   if (bidder) {
     ev.n = bidder
@@ -108,11 +108,11 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
   if (auctionId) {
     ev.aid = auctionId;
   }
+  if (startTime) {
+    ev.st = startTime;
+  }
   if (timeToRespond) {
     ev.ttr = timeToRespond;
-  }
-  if (args) {
-    ev.args = args;
   }
   return ev;
 }
