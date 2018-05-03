@@ -9,6 +9,7 @@ import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
+import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
@@ -26,6 +27,9 @@ const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISS
 const eventValidators = {
   bidWon: checkDefinedPlacement
 };
+
+// initialize existing debugging sessions if present
+sessionLoader();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
