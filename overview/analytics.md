@@ -24,6 +24,7 @@ There are several analytics adapter plugins available to track header bidding pe
 | PubWise                                                          | Free & Paid, see [pricing](https://pubwise.io/pricing/)                                    | [Website](https://pubwise.io/pubwise/)                                   |          0.24 |
 | Assertive Yield (contact for adapter) | Free to try (Large accounts $0.002 CPM or sampled < 10mm/m imp.) | [Website](https://yield.assertcom.de) | |
 | Vuble                                                            | Contact vendor                                                                      | [Website](https://vuble.tv/us/prebid/)                           |               |
+| YuktaMedia Analytics                                                      | Contact vendor                                                                      | [website](https://yuktamedia.com/publishers/prebid/)                                        | 1.0.0 |
 
 None of these analytics options are endorsed or supported by Prebid.org.
 
