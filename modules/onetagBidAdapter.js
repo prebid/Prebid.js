@@ -43,7 +43,7 @@ function buildRequests(validBidRequests) {
   const bidObject = {'bids': bids};
   const pageInfo = getPageInfo();
 
-  const payload = mergeObjects(bidObject, pageInfo);
+  const payload = Object.assign(bidObject, pageInfo);
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -73,7 +73,7 @@ function interpretResponse(serverResponse, request) {
     body.bids.forEach(function(bid) {
       bids.push({
         requestId: bid.requestId,
-        cpm: 0.5,
+        cpm: bid.cpm,
         width: bid.width,
         height: bid.height,
         creativeId: bid.creativeId,
@@ -88,9 +88,6 @@ function interpretResponse(serverResponse, request) {
   }
 
   return bids;
-}
-
-function getUserSyncs(syncOptions, serverResponses) {
 }
 
 /**
@@ -157,54 +154,17 @@ function requestsToBids(bid) {
   return toRet;
 }
 
-/**
- * Merges two objects into one, overrides properties with the same key
- * Returns empty object if a parameters is not an object
- * @param a
- * @param b
- * @returns { {} }
- */
-function mergeObjects(a, b) {
-  if (typeof a !== 'object' || typeof b !== 'object') {
-    return {};
-  }
-
-  const keys = Object.keys(a);
-  for (var i = 0, lenght = keys.length; i < lenght; i++) {
-    var key = keys[i];
-    b[key] = a[key];
-  }
-
-  return b;
-}
-
 // Va bene così, questo file va aggiunto a prebidmaster
 export const spec = {
 
   code: BIDDER_CODE,
-  aliases: [],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs,
 
 };
 
 // Starting point
 registerBidder(spec);
-
-/**
- Required Adapter Conventions
- In order to provide a fast and safe header bidding environment for publishers, the Prebid.org team reviews all adapters for the following required conventions:
-
- Support multiple instances: All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
- No loading of external libraries: All code must be present in the adapter, not loaded at runtime.
- Must support HTTPS: Within a secure page context, the request to the bidder’s server must also be secure.
- Compressed responses: All bid responses from the bidder’s server must be gzipped.
- Bid responses may not use JSONP: All requests must be AJAX with JSON responses.
- All user-sync activity must be registered via the provided functions: The platform will place all registered syncs in the page after the auction is complete, subject to publisher configuration.
- Adapters may not use the $$PREBID_GLOBAL$$ variable: Instead, they must load any necessary functions and call them directly.
- Adapters may not override standard ad server targeting: Do not override, or set default values for any of the standard targeting variables: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
- */
