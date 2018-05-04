@@ -10,7 +10,6 @@ const NATIVE_DEFAULTS = {
   IMG_MIN: 150,
   ICON_MIN: 50,
 };
-
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const VIDEO_TARGETING = ['mimes', 'skippable', 'playback_method', 'protocols', 'api'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
@@ -22,7 +21,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: bid => (
-    !!(bid && bid.params && bid.params.pubId && bid.params.siteId)
+    !!(bid && bid.params && bid.params.pubId && bid.params.placementId)
   ),
   buildRequests: bidRequests => {
     const request = {
@@ -30,7 +29,8 @@ export const spec = {
       at: 2,
       imp: bidRequests.map(slot => impression(slot)),
       site: site(bidRequests),
-      device: device(),
+      app: app(bidRequests),
+      device: device(bidRequests),
     };
     return {
       method: 'POST',
@@ -101,6 +101,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 function impression(slot) {
   return {
     id: slot.bidId,
+    secure: window.location.protocol === 'https:' ? 1 : 0,
     'banner': banner(slot),
     'native': nativeImpression(slot),
     'video': videoImpression(slot),
@@ -110,10 +111,16 @@ function impression(slot) {
 }
 
 function getSizes(slot) {
-  const size = slot.params.size.toUpperCase().split('X');
+  if (slot.params.size) {
+    const size = slot.params.size.toUpperCase().split('X');
+    return {
+      width: parseInt(size[0]),
+      height: parseInt(size[1]),
+    };
+  }
   return {
-    width: parseInt(size[0]),
-    height: parseInt(size[1]),
+    width: 1,
+    height: 1,
   };
 }
 
@@ -207,25 +214,57 @@ function dataAsset(id, params, type, defaultLen) {
 function site(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.pubId : '0';
   const siteId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.siteId : '0';
-  return {
-    publisher: {
-      id: pubId.toString(),
-      domain: utils.getTopWindowLocation().hostname,
-    },
-    id: siteId.toString(),
-    ref: utils.getTopWindowReferrer(),
-    page: utils.getTopWindowLocation().href,
+  const appParams = bidderRequest[0].params.app;
+  if (!appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+        domain: utils.getTopWindowLocation().hostname,
+      },
+      id: siteId.toString(),
+      ref: utils.getTopWindowReferrer(),
+      page: utils.getTopWindowLocation().href,
+    }
   }
+  return null;
 }
 
-function device() {
+function app(bidderRequest) {
+  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.pubId : '0';
+  const appParams = bidderRequest[0].params.app;
+  if (appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      id: appParams.id,
+      name: appParams.name,
+      bundle: appParams.bundle,
+      storeurl: appParams.storeUrl,
+      domain: appParams.domain,
+    }
+  }
+  return null;
+}
+
+function device(bidderRequest) {
+  const lat = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.latitude : '';
+  const lon = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.longitude : '';
+  const ifa = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.ifa : '';
   return {
+    dnt: utils.getDNT() ? 1 : 0,
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
     w: (window.screen.width || window.innerWidth),
     h: (window.screen.height || window.innerHeigh),
+    geo: {
+      lat: lat,
+      lon: lon,
+    },
+    ifa: ifa,
   };
 }
+
 function parse(rawResponse) {
   try {
     if (rawResponse) {
