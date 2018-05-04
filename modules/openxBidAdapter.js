@@ -10,6 +10,11 @@ const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
 const BIDDER_VERSION = '2.1.0';
 
+let shouldSendBoPixel = true;
+export function resetBoPixel() {
+  shouldSendBoPixel = true;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -63,28 +68,12 @@ function isVideoRequest(bidRequest) {
 function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
   let adUnits = oxResponseObj.ads.ad;
   let bidResponses = [];
-  let shouldSendBoPixel = bids[0].params.sendBoPixel;
-  if (shouldSendBoPixel === undefined) {
-    // Not specified, default to turned on
-    shouldSendBoPixel = true;
-  }
   for (let i = 0; i < adUnits.length; i++) {
     let adUnit = adUnits[i];
+    let adUnitIdx = parseInt(adUnit.idx, 10);
     let bidResponse = {};
-    if (adUnits.length === bids.length) {
-      // request and response length match, directly assign the request id based on positioning
-      bidResponse.requestId = bids[i].bidId;
-    } else {
-      for (let j = i; j < bids.length; j++) {
-        let bid = bids[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !bid.matched) {
-          // ad unit and size match, this is the correct bid response to bid
-          bidResponse.requestId = bid.bidId;
-          bid.matched = true;
-          break;
-        }
-      }
-    }
+
+    bidResponse.requestId = bids[adUnitIdx].bidId;
 
     if (adUnit.pub_rev) {
       bidResponse.cpm = Number(adUnit.pub_rev) / 1000;
@@ -114,10 +103,9 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
     }
     bidResponse.ts = adUnit.ts;
 
-    if (shouldSendBoPixel && adUnit.ts) {
-      registerBeacon(BANNER, adUnit, startTime);
-    }
     bidResponses.push(bidResponse);
+
+    registerBeacon(BANNER, adUnit, startTime);
   }
   return bidResponses;
 }
@@ -132,27 +120,6 @@ function buildQueryStringFromParams(params) {
   }
   return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
     .join('&');
-}
-
-function adUnitHasValidSizeFromBid(adUnit, bid) {
-  let sizes = utils.parseSizesInput(bid.sizes);
-  if (!sizes) {
-    return false;
-  }
-  let found = false;
-  let creative = adUnit.creative && adUnit.creative[0];
-  let creative_size = String(creative.width) + 'x' + String(creative.height);
-
-  if (utils.isArray(sizes)) {
-    for (let i = 0; i < sizes.length; i++) {
-      let size = sizes[i];
-      if (String(size) === String(creative_size)) {
-        found = true;
-        break;
-      }
-    }
-  }
-  return found;
 }
 
 function getViewportDimensions(isIfr) {
@@ -332,11 +299,6 @@ function generateVideoParameters(bid) {
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
-  let shouldSendBoPixel = bid.params.sendBoPixel;
-  if (shouldSendBoPixel === undefined) {
-    // Not specified, default to turned on
-    shouldSendBoPixel = true;
-  }
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
@@ -361,16 +323,21 @@ function createVideoBidResponses(response, {bid, startTime}) {
     response.colo = vastQueryParams.colo;
     response.ts = vastQueryParams.ts;
 
-    if (shouldSendBoPixel && response.ts) {
-      registerBeacon(VIDEO, response, startTime)
-    }
     bidResponses.push(bidResponse);
+
+    registerBeacon(VIDEO, response, startTime)
   }
 
   return bidResponses;
 }
 
 function registerBeacon(mediaType, adUnit, startTime) {
+  // only register beacon once
+  if (!shouldSendBoPixel) {
+    return;
+  }
+  shouldSendBoPixel = false;
+
   let bt = config.getConfig('bidderTimeout');
   let beaconUrl;
   if (window.PREBID_TIMEOUT) {
