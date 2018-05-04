@@ -141,7 +141,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
-      expect(bidRequests.data.referrer).to.equal('overrides_top_window_location');
+      expect(bidRequests.data.ref).to.equal('overrides_top_window_location');
       expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
