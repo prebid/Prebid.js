@@ -57,6 +57,9 @@ export const spec = {
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
     }
+    if (validBidRequests[0].params.referrer) {
+      payload.ref = validBidRequests[0].params.referrer;
+    }
 
     // If there is no key_maker data, then dont make the request.
     if (isEmpty(data)) {
