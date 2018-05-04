@@ -3,7 +3,7 @@ import { config } from 'src/config';
 import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from 'src/utils';
 import { addBidResponse } from 'src/auction';
 
-const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:bidderOverrides';
+const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
 export let boundHook;
 
@@ -62,20 +62,20 @@ export function addBidResponseHook(overrides, adUnitCode, bid, next) {
   next(adUnitCode, bid);
 }
 
-export function getConfig(bidderOverrides) {
-  if (!bidderOverrides.enabled) {
+export function getConfig(debugging) {
+  if (!debugging.enabled) {
     disableOverrides();
     try {
       sessionStorage.removeItem(OVERRIDE_KEY);
     } catch (e) {}
   } else {
     try {
-      sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(bidderOverrides));
+      sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(debugging));
     } catch (e) {}
-    enableOverrides(bidderOverrides);
+    enableOverrides(debugging);
   }
 }
-config.getConfig('bidderOverrides', ({bidderOverrides}) => getConfig(bidderOverrides));
+config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 
 export function sessionLoader() {
   let overrides;
