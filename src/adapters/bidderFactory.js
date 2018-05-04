@@ -330,8 +330,8 @@ export function newBidder(spec) {
   function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
       let syncs = spec.getUserSyncs({
-        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
+        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || config.getConfig('userSync.filterSettings.iframe')),
+        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || config.getConfig('userSync.filterSettings.image')),
       }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {

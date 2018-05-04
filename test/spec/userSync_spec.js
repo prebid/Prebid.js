@@ -192,4 +192,125 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
+
+  it('should register image and iframe pixels with basic filterSettings config', () => {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: ['atestBidder'],
+          filter: 'include'
+        },
+        iframe: {
+          bidders: ['*'],
+          filter: 'include'
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should register iframe and not register image pixels based on filterSettings config', () => {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: ['*'],
+          filter: 'exclude'
+        },
+        iframe: {
+          bidders: ['testBidder'],
+          filter: 'include'
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.be.null;
+    expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should throw a warning and default to basic resgistration rules when filterSettings config is invalid', () => {
+    // invalid config - passed invalid filter option
+    const userSync1 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder'],
+          filter: 'included'
+        }
+      }
+    });
+    userSync1.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync1.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync1.syncUsers();
+    expect(logWarnStub.getCall(0).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - bidders is not an array of strings
+    const userSync2 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder', 0],
+          filter: 'include'
+        }
+      }
+    });
+    userSync2.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync2.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync2.syncUsers();
+    expect(logWarnStub.getCall(1).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - bidders is not an array of strings
+    const userSync3 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder', '*'],
+          filter: 'include'
+        }
+      }
+    });
+    userSync3.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync3.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync3.syncUsers();
+    expect(logWarnStub.getCall(2).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(2)).to.not.be.null;
+    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+  });
+
+  it('should overwrite logic of deprecated fields when filterSettings is defined', () => {
+    const userSync = newTestUserSync({
+      pixelsEnabled: false,
+      iframeEnabled: true,
+      enabledBidders: ['ctestBidder'],
+      filterSettings: {
+        image: {
+          bidders: ['*'],
+          filter: 'include'
+        },
+        iframe: {
+          bidders: ['testBidder'],
+          filter: 'exclude'
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(logWarnStub.getCall(0).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+  });
 });

@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
+import includes from 'core-js/library/fn/array/includes';
 
 // Set userSync default values
 config.setDefaults({
@@ -27,6 +28,12 @@ export function newUserSync(userSyncDependencies) {
   let hasFired = false;
   // How many bids for each adapter
   let numAdapterBids = {};
+
+  // for now - default both to false in case filterSettings config is absent/misconfigured
+  let permittedPixels = {
+    image: false,
+    iframe: false
+  }
 
   // Use what is in config by default
   let usConfig = userSyncDependencies.config;
@@ -77,7 +84,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireImagePixels() {
-    if (!usConfig.pixelEnabled) {
+    if (!(usConfig.pixelEnabled || permittedPixels.image)) {
       return;
     }
     // Randomize the order of the pixels before firing
@@ -97,7 +104,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function loadIframes() {
-    if (!usConfig.iframeEnabled) {
+    if (!(usConfig.iframeEnabled || permittedPixels.iframe)) {
       return;
     }
     // Randomize the order of these syncs just like the pixels above
@@ -148,13 +155,74 @@ export function newUserSync(userSyncDependencies) {
     if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
       return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
-    // All bidders are enabled by default. If specified only register for enabled bidders.
-    let hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
-    if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
-      return utils.logWarn(`Bidder "${bidder}" not supported`);
+
+    if (usConfig.filterSettings) {
+      // read the config options based on requested pixel type
+      let typeFilterConfig = usConfig.filterSettings[type];
+
+      // apply the filter check if the config object is there (if filterSettings.iframe exists) and if the config object is properly setup
+      if (typeFilterConfig && checkFilterConfig(typeFilterConfig)) {
+        let filterBidders = typeFilterConfig.bidders;
+        let filterType = typeFilterConfig.filter;
+
+        // check if filterSettings.bidders has the 'all-bidders' flag (ie '*')
+        // if not, apply appropriate filter logic against the provided list of bidders
+        if (filterBidders[0] === '*') {
+          // only block bidder from registering if the 'exclude' option is present, do nothing if it's 'include'
+          if (filterType === 'exclude') {
+            return utils.logWarn(`Bidder '${bidder}' is not permitted to register their userSync ${type} pixels as per filterSettings config.`);
+          }
+        } else {
+          // we want to return true if the bidder is either: not part the include (ie outside the whitelist) or part of the exclude (ie inside the blacklist)
+          const filterFn = {
+            'include': (bidders, bidder) => !includes(bidders, bidder),
+            'exclude': (bidders, bidder) => includes(bidders, bidder)
+          }
+
+          // if above filter check returns true - throw error and prevent registration of pixel
+          if (filterFn[filterType](filterBidders, bidder)) {
+            return utils.logWarn(`Bidder '${bidder}' is not permitted to register their userSync ${type} pixels as per filterSettings config.`);
+          }
+        }
+      }
+    } else {
+      // old functionality that will be eventually deprecated; ideally in 2.x
+
+      // All bidders are enabled by default. If specified only register for enabled bidders.
+      let hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
+      if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
+        return utils.logWarn(`Bidder "${bidder}" not permitted to register their userSync pixels.`);
+      }
     }
+
+    // the bidder's pixel has passed all checks and is allowed to register
     queue[type].push([bidder, url]);
     numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
+
+    // validate fitlerSettings field are proper
+    function checkFilterConfig(filterConfig) {
+      if (filterConfig.filter !== 'include' && filterConfig.filter !== 'exclude') {
+        utils.logWarn(`User sync "filterSettings.${type}.filter" setting '${filterConfig.filter}' is not a valid option; use either 'include' or 'exclude'.`);
+        return false;
+      }
+
+      if (!(Array.isArray(filterConfig.bidders) && filterConfig.bidders.every(bidder => utils.isStr(bidder)))) {
+        utils.logWarn(`User sync "filterSettings.${type}.bidders" is not an array of strings.`);
+        return false;
+      }
+
+      // if '*' exists, it has to be in first slot and only as *
+      // if (filterConfig.bidders.some(bidder => bidder === '*') || (filterConfig.bidders[0] === '*' && filterConfig.bidders.length > 1)) {
+      if (filterConfig.bidders.some(bidder => bidder.indexOf('*') >= 0) && (filterConfig.bidders.length !== 1 || !includes(filterConfig.bidders, '*'))) {
+        utils.logWarn(`Detected an invalid setup in "filterSettings.${type}.bidders"; use either '*' (to represent all bidders) or a specific list of bidders.`);
+        return false;
+      }
+
+      // config has been validated, so allow the pixel type to drop
+      permittedPixels[type] = true;
+
+      return true;
+    }
   };
 
   /**
