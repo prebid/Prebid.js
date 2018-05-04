@@ -28,16 +28,13 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
         case CONSTANTS.EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
           break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
-          handler = trackBidTimeout;
-          break;
         case CONSTANTS.EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
       }
       if (handler) {
         let events = handler(args);
-        if (analyticsAdapter.context.queue) {
+        if (events && analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
         if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
@@ -72,23 +69,21 @@ function sendAll() {
 
 function trackAuctionInit(args) {
   analyticsAdapter.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, 'init', undefined, args.auctionId);
+  const event = createHbEvent(undefined, 'init', undefined, args.auctionId, undefined, analyticsAdapter.context.auctionTimeStart);
   return [event];
 }
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, 'request', bid.adUnitCode));
+    createHbEvent(args.bidderCode, 'request', bid.adUnitCode, undefined, undefined, args.start, bid.bidId));
 }
 
 function trackBidResponse(args) {
-  const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond);
-  return [event];
-}
-
-function trackBidTimeout(args) {
-  const timeToRespond = Date.now() - analyticsAdapter.context.auctionTimeStart;
-  return args.map(bid => createHbEvent(bid.bidder, 'timeout', bid.adUnitCode, undefined, timeToRespond));
+  if (args.statusMessage === 'Bid available') {
+    const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond, undefined, args.requestId, args.cpm, args.currency, args.netRevenue, args.adId, args.creativeId, args.size, args.dealId);
+    return [event];
+  }
+  return null;
 }
 
 function trackAuctionEnd(args) {
@@ -97,7 +92,7 @@ function trackAuctionEnd(args) {
   return [event];
 }
 
-function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
+function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTime, bidId, cpm, currency, netRevenue, adId, creativeId, adSize, dealId) {
   let ev = {ev: event};
   if (bidder) {
     ev.n = bidder
@@ -108,11 +103,35 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, args) {
   if (auctionId) {
     ev.aid = auctionId;
   }
+  if (bidId) {
+    ev.bid = bidId
+  }
+  if (cpm) {
+    ev.cpm = cpm;
+  }
+  if (currency) {
+    ev.cry = currency;
+  }
+  if (netRevenue) {
+    ev.net = netRevenue;
+  }
+  if (adId) {
+    ev.did = adId;
+  }
+  if (creativeId) {
+    ev.cid = creativeId;
+  }
+  if (adSize) {
+    ev.sz = adSize;
+  }
+  if (dealId) {
+    ev.lid = dealId;
+  }
+  if (startTime) {
+    ev.st = startTime;
+  }
   if (timeToRespond) {
     ev.ttr = timeToRespond;
-  }
-  if (args) {
-    ev.args = args;
   }
   return ev;
 }
