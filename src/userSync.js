@@ -212,7 +212,6 @@ export function newUserSync(userSyncDependencies) {
       }
 
       // if '*' exists, it has to be in first slot and only as *
-      // if (filterConfig.bidders.some(bidder => bidder === '*') || (filterConfig.bidders[0] === '*' && filterConfig.bidders.length > 1)) {
       if (filterConfig.bidders.some(bidder => bidder.indexOf('*') >= 0) && (filterConfig.bidders.length !== 1 || !includes(filterConfig.bidders, '*'))) {
         utils.logWarn(`Detected an invalid setup in "filterSettings.${type}.bidders"; use either '*' (to represent all bidders) or a specific list of bidders.`);
         return false;
