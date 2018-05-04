@@ -7,10 +7,10 @@
 /**
  * @typedef {Object} AuctionManager
  *
- * @property {function(): Array} getBidsRequested - returns cosolidated bid requests
- * @property {function(): Array} getBidsReceived - returns cosolidated bid received
- * @property {function(): Array} getAdUnits - returns cosolidated adUnits
- * @property {function(): Array} getAdUnitCodes - returns cosolidated adUnitCodes
+ * @property {function(): Array} getBidsRequested - returns consolidated bid requests
+ * @property {function(): Array} getBidsReceived - returns consolidated bid received
+ * @property {function(): Array} getAdUnits - returns consolidated adUnits
+ * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
  * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
