@@ -35,7 +35,7 @@ export const spec = {
     const bidResponses = [];
     let bidObj = bidRequest.bidRequest;
 
-    if (!serverResponse || !bidObj) {
+    if (!serverResponse || !serverResponse.body || !bidObj) {
       utils.logWarn(`No valid bids from ${spec.code} bidder!`);
       return [];
     }
