@@ -39,17 +39,18 @@ export const spec = {
       utils.logWarn(`No valid bids from ${spec.code} bidder!`);
       return [];
     }
-    let cpm = serverResponse.cpm;
+    let adData = serverResponse.body;
+    let cpm = adData.cpm;
     if (!cpm) return [];
 
     let host = spec.getBidderHost(bidObj);
-    let adm = '<scr' + 'ipt>window.inDapIF=false</scr' + 'ipt><scr' + 'ipt src="//' + host + SCRIPT_URL + '"></scr' + 'ipt>' + '<ins id="' + bidObj.adspiritConId + '"></ins>' + serverResponse.adm;
+    let adm = '<scr' + 'ipt>window.inDapIF=false</scr' + 'ipt><scr' + 'ipt src="//' + host + SCRIPT_URL + '"></scr' + 'ipt>' + '<ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
     const bidResponse = {
       requestId: bidRequest.bidId,
       cpm: cpm,
-      width: serverResponse.w,
-      height: serverResponse.h,
-      creativeId: serverResponse.placement_id,
+      width: adData.w,
+      height: adData.h,
+      creativeId: adData.placement_id,
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
