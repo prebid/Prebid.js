@@ -57,28 +57,34 @@ describe('Adspirit adapter tests', () => {
     ];
     serverResponses = [
       {
-        status: 'SUCCESS',
-        cpm: 1.5,
-        w: 300,
-        h: 250,
-        placement_id: 1,
-        adm: '<script type="text/javascript" language="JavaScript">\r\n<!--\r\n\r\n//-->\r\n</script>'
+        headers: {},
+        body: {
+          cpm: 1.5,
+          w: 300,
+          h: 250,
+          placement_id: 1,
+          adm: '<script type="text/javascript" language="JavaScript">\r\n<!--\r\n\r\n//-->\r\n</script>'
+        }
       },
       {
-        status: 'SUCCESS',
-        cpm: 0,
-        w: 0,
-        h: 0,
-        placement_id: 1,
-        adm: '<script type="text/javascript" language="JavaScript">\r\n<!--\r\n\r\n//-->\r\n</script>'
+        headers: {},
+        body: {
+          cpm: 0,
+          w: 0,
+          h: 0,
+          placement_id: 1,
+          adm: '<script type="text/javascript" language="JavaScript">\r\n<!--\r\n\r\n//-->\r\n</script>'
+        }
       },
       {
-        status: 'FAIL',
-        cpm: 0,
-        w: 0,
-        h: 0,
-        placement_id: 0,
-        adm: ''
+        headers: {},
+        body: {
+          cpm: 0,
+          w: 0,
+          h: 0,
+          placement_id: 0,
+          adm: ''
+        }
       }
     ]
   });
