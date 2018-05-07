@@ -106,22 +106,26 @@ describe('sovrnBidAdapter', function() {
   });
 
   describe('interpretResponse', () => {
-    let response = {
-      body: {
-        'id': '37386aade21a71',
-        'seatbid': [{
-          'bid': [{
-            'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
-            'impid': '263c448586f5a1',
-            'price': 0.45882675,
-            'nurl': '<!-- NURL -->',
-            'adm': '<!-- Creative -->',
-            'h': 90,
-            'w': 728
+    let response;
+    beforeEach(() => {
+      response = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': [{
+            'bid': [{
+              'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+              'crid': 'creativelycreatedcreativecreative',
+              'impid': '263c448586f5a1',
+              'price': 0.45882675,
+              'nurl': '<!-- NURL -->',
+              'adm': '<!-- Creative -->',
+              'h': 90,
+              'w': 728
+            }]
           }]
-        }]
-      }
-    };
+        }
+      };
+    });
 
     it('should get the correct bid response', () => {
       let expectedResponse = [{
@@ -129,7 +133,27 @@ describe('sovrnBidAdapter', function() {
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
-        'creativeId': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+        'creativeId': 'creativelycreatedcreativecreative',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
+        'ttl': 60000
+      }];
+
+      let result = spec.interpretResponse(response);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
+
+    it('crid should default to the bid id if not on the response', () => {
+      delete response.body.seatbid[0].bid[0].crid;
+      let expectedResponse = [{
+        'requestId': '263c448586f5a1',
+        'cpm': 0.45882675,
+        'width': 728,
+        'height': 90,
+        'creativeId': response.body.seatbid[0].bid[0].id,
         'dealId': null,
         'currency': 'USD',
         'netRevenue': true,
@@ -150,7 +174,7 @@ describe('sovrnBidAdapter', function() {
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
-        'creativeId': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+        'creativeId': 'creativelycreatedcreativecreative',
         'dealId': 'baking',
         'currency': 'USD',
         'netRevenue': true,

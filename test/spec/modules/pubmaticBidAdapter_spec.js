@@ -221,6 +221,17 @@ describe('PubMatic adapter', () => {
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].dealChannel).to.equal('PMPG');
       });
+
+      it('should check for unexpected dealChannel value selection', () => {
+        let request = spec.buildRequests(bidRequests);
+        let updateBiResponse = bidResponses;
+        updateBiResponse.body.seatbid[0].bid[0].ext.deal_channel = 11;
+
+        let response = spec.interpretResponse(updateBiResponse, request);
+
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].dealChannel).to.equal(null);
+      });
     });
   });
 });
