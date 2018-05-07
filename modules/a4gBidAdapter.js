@@ -28,7 +28,6 @@ export const spec = {
     const sizeParams = [];
     const zoneIds = [];
 
-
     utils._each(validBidRequests, function(bid) {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;

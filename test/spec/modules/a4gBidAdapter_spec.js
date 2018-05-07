@@ -96,9 +96,7 @@ describe('a4gAdapterTests', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr.applies).to.exist.and.to.be.true;
       expect(request.data.gdpr.consent).to.exist.and.to.equal(consentString);
-
     });
-
   });
 
   describe('interpretResponse', () => {
