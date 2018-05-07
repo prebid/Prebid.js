@@ -166,6 +166,22 @@ describe('BeachfrontAdapter', () => {
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes });
       });
+
+      it('must add GDPR consent data to the request', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const bidderRequest = {
+          gdprConsent: {
+            consentRequired: true,
+            consentString
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.gdpr).to.equal(1);
+        expect(data.user.ext.consent).to.equal(consentString);
+      });
     });
 
     describe('for banner bids', () => {
@@ -264,6 +280,22 @@ describe('BeachfrontAdapter', () => {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
+      });
+
+      it('must add GDPR consent data to the request', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const bidderRequest = {
+          gdprConsent: {
+            consentRequired: true,
+            consentString
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.gdpr).to.equal(1);
+        expect(data.gdprConsent).to.equal(consentString);
       });
     });
   });
