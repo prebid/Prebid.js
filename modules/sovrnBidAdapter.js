@@ -70,7 +70,7 @@ export const spec = {
           cpm: parseFloat(sovrnBid.price),
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
-          creativeId: sovrnBid.id,
+          creativeId: sovrnBid.crid || sovrnBid.id,
           dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,
