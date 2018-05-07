@@ -74,9 +74,8 @@ function createCategoryParam(bid) {
 }
 
 function createSubIdParam(bid) {
-    return bid.params[SUB_ID] || null;
+  return bid.params[SUB_ID] || null;
 }
-
 
 function isEngineResponseValid(response) {
   return !!response.cpm && !!response.ad;
