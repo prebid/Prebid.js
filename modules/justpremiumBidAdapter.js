@@ -123,7 +123,6 @@ function findBid (adUnit, bids) {
       if (adUnit.bidId === bid.rid) {
         return bids.splice(len, 1).pop()
       }
-      return false
     } else {
       if (passCond(params, bid)) {
         return bids.splice(len, 1).pop()
