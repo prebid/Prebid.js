@@ -39,7 +39,9 @@ function buildRequest(bid, topWindowUrl, size) {
     }
   }
 
-  Object.entries(ext).forEach(entry => dto.data['ext.' + entry[0]] = entry[1]);
+  utils._each(ext, (value, key) => {
+    dto.data['ext.' + key] = value;
+  });
 
   return dto;
 }
