@@ -85,30 +85,30 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bid) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const responseBody = serverResponse.body;
 
     if (typeof responseBody !== 'object' || responseBody.status !== 'ok') {
       return [];
     }
 
-    let responses = [];
-    let reponse = {
-      requestId: bid.data.bid_id,
+    let bids = [];
+    let bid = {
+      requestId: bidRequest.data.bid_id,
       cpm: responseBody.cpm,
-      width: bid.data.width,
-      height: bid.data.height,
+      width: bidRequest.data.width,
+      height: bidRequest.data.height,
       ttl: TTL,
       creativeId: responseBody.creativeId,
       dealId: responseBody.dealId,
       netRevenue: true,
-      currency: CURRENCIES[bid.data.env],
+      currency: CURRENCIES[bidRequest.data.env],
       vastUrl: responseBody.url,
       mediaType: 'video'
     };
-    responses.push(reponse);
+    bids.push(bid);
 
-    return responses;
+    return bids;
   },
 
   /**
