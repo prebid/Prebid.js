@@ -45,30 +45,30 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests) {
-    return validBidRequests.map(bid => {
+    return validBidRequests.map(bidRequest => {
       // We take the first size
-      let size = utils.parseSizesInput(bid.sizes)[0].split('x');
+      let size = utils.parseSizesInput(bidRequest.sizes)[0].split('x');
 
       // Get the page's url
       let referrer = utils.getTopWindowUrl();
-      if (bid.params.referrer) {
-        referrer = bid.params.referrer;
+      if (bidRequest.params.referrer) {
+        referrer = bidRequest.params.referrer;
       }
 
       // Get Video Context
-      let context = utils.deepAccess(bid, 'mediaTypes.video.context');
+      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
 
-      let url = '//player.mediabong.' + bid.params.env + '/prebid/request';
+      let url = '//player.mediabong.' + bidRequest.params.env + '/prebid/request';
       let data = {
         width: size[0],
         height: size[1],
-        pub_id: bid.params.pubId,
-        zone_id: bid.params.zoneId,
+        pub_id: bidRequest.params.pubId,
+        zone_id: bidRequest.params.zoneId,
         context: context,
-        floor_price: bid.params.floorPrice ? bid.params.floorPrice : 0,
+        floor_price: bidRequest.params.floorPrice ? bidRequest.params.floorPrice : 0,
         url: referrer,
-        env: bid.params.env,
-        bid_id: bid.bidId
+        env: bidRequest.params.env,
+        bid_id: bidRequest.bidId
       };
 
       return {
