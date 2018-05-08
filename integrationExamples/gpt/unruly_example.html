@@ -7,31 +7,34 @@
     var PREBID_TIMEOUT = 3000;
 
     var adUnits = [{
-        code: 'div-gpt-ad-1460505661639-0',
-        sizes: [[728, 90]],
-        bids: [
-        {
-            bidder: 'pollux',
+        code: 'ad-slot',
+        sizes: [[728, 90], [300, 250]],
+        mediaType: 'video',
+        bids: [{
+            bidder: 'unruly',
             params: {
-               zone: '276'
-            }
-        },
-        {
-            bidder: 'pollux',
-            params: {
-               zone: '1806'
+                targetingUUID: '6f15e139-5f18-49a1-b52f-87e5e69ee65e',
+                siteId: 1081534
             }
         }
-    ]
+        ]
     }];
-
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
+
+    (function() {
+        var pbjsEl = document.createElement("script");
+        pbjsEl.type = "text/javascript";
+        pbjsEl.async = true;
+        pbjsEl.src = '/build/dev/prebid.js';
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+    })();
+
     </script>
     <!-- Prebid Config Section END -->
 
     <!-- Prebid Boilerplate Section START. No Need to Edit. -->
-    <script type="text/javascript" src="//cdn-assetsx.plxnt.com/assets/public/js/prebid.js" async></script>
     <script>
       var googletag = googletag || {};
       googletag.cmd = googletag.cmd || [];
@@ -39,27 +42,35 @@
           googletag.pubads().disableInitialLoad();
       });
 
+
       pbjs.que.push(function() {
           pbjs.addAdUnits(adUnits);
           pbjs.requestBids({
-              bidsBackHandler: sendAdserverRequest
-          });
-      });
+                bidsBackHandler: sendAdserverRequest
+            });
+            pbjs.setConfig({
+                "currency": {
+                    "adServerCurrency": "USD",
+                }
+            });
+        });
 
-      function sendAdserverRequest() {
-          if (pbjs.adserverRequestSent) return;
-          pbjs.adserverRequestSent = true;
-          googletag.cmd.push(function() {
-              pbjs.que.push(function() {
-                  pbjs.setTargetingForGPTAsync();
-                  googletag.pubads().refresh();
-              });
-          });
-      };
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent)
+                return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+        ;
 
-      setTimeout(function() {
-          sendAdserverRequest();
-      }, PREBID_TIMEOUT);
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, PREBID_TIMEOUT);
 
     </script>
     <!-- Prebid Boilerplate Section END -->
@@ -79,7 +90,7 @@
 
     <script>
       googletag.cmd.push(function () {
-          googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90]], 'div-gpt-ad-1460505661639-0').addService(googletag.pubads());
+          googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90], [300, 250]], 'ad-slot').addService(googletag.pubads());
           googletag.pubads().enableSingleRequest();
           googletag.enableServices();
       });
@@ -95,10 +106,11 @@
 </head>
 
 <body>
-<div id='div-gpt-ad-1460505661639-0'>
+<div id='ad-slot'>
     <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505661639-0'); });
+        googletag.cmd.push(function() { googletag.display('ad-slot'); });
     </script>
 </div>
+
 </body>
 </html>

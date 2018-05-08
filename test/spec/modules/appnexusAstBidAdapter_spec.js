@@ -76,6 +76,30 @@ describe('AppNexusAdapter', () => {
       });
     });
 
+    it('should populate the ad_types array on all requests', () => {
+      ['banner', 'video', 'native'].forEach(type => {
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        bidRequest.mediaTypes = {};
+        bidRequest.mediaTypes[type] = {};
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].ad_types).to.deep.equal([type]);
+      });
+    });
+
+    it('should populate the ad_types array on outstream requests', () => {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
@@ -321,7 +345,10 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'appnexus': {
+            'buyerMemberId': 958
+          }
         }
       ];
       let bidderRequest;
@@ -364,7 +391,6 @@ describe('AppNexusAdapter', () => {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
-      expect(result[0]).to.have.property('descriptionUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -399,7 +425,7 @@ describe('AppNexusAdapter', () => {
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
-      expect(result[0].native.image).to.equal('http://cdn.adnxs.com/img.png');
+      expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
     });
   });
 });

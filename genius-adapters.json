@@ -3,5 +3,6 @@
   "appnexusAstBidAdapter",
   "indexExchangeBidAdapter",
   "prebidServerBidAdapter",
-  "rubiconBidAdapter"
+  "rubiconBidAdapter",
+  "undertoneBidAdapter"
 ]

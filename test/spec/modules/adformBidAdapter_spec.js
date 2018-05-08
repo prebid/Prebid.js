@@ -29,6 +29,7 @@ describe('Adform adapter', () => {
       assert.equal(_query.tid, 145);
       assert.equal(_query.rp, 4);
       assert.equal(_query.fd, 1);
+      assert.equal(_query.auctionId, '4db6ddaa-ec86-459e-99aa-f7ffe940c473');
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
 
@@ -117,6 +118,8 @@ describe('Adform adapter', () => {
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
     _adformAdapter.callBids({
+      bidderRequestId: '1a2b3c',
+      requestId: '4db6ddaa-ec86-459e-99aa-f7ffe940c473',
       bids: [
         {
           bidId: 'abc',
@@ -180,8 +183,7 @@ function fromBase64(input) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split('');
   let bc = 0, bs, buffer, idx = 0, output = '';
   for (; buffer = input.charAt(idx++);
-    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-      bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
   ) {
     buffer = chars.indexOf(buffer);
   }

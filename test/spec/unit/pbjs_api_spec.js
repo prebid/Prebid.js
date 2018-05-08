@@ -779,7 +779,7 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.callBids.restore();
     });
 
-    it('should not callBids if a video adUnit has non-video bidders', () => {
+    it('should only request video bidders on video adunits', () => {
       sinon.spy(adaptermanager, 'callBids');
       const videoAdaptersBackup = adaptermanager.videoAdapters;
       adaptermanager.videoAdapters = ['appnexusAst'];
@@ -793,7 +793,35 @@ describe('Unit: Prebid Module', function () {
       }];
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      sinon.assert.notCalled(adaptermanager.callBids);
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
+
+      adaptermanager.callBids.restore();
+      adaptermanager.videoAdapters = videoAdaptersBackup;
+    });
+
+    it('should only request video bidders on video adunits configured with mediaTypes', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      const videoAdaptersBackup = adaptermanager.videoAdapters;
+      adaptermanager.videoAdapters = ['appnexusAst'];
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaTypes: {video: {context: 'instream'}},
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
 
       adaptermanager.callBids.restore();
       adaptermanager.videoAdapters = videoAdaptersBackup;
@@ -1580,7 +1608,6 @@ describe('Unit: Prebid Module', function () {
           'creative_id': 29681110,
           'cpm': 10,
           'vastUrl': 'http://www.simplevideoad.com/',
-          'descriptionUrl': 'http://www.simplevideoad.com/',
           'responseTimestamp': 1462919239340,
           'requestTimestamp': 1462919238919,
           'bidder': 'appnexus',
@@ -1720,8 +1747,7 @@ describe('Unit: Prebid Module', function () {
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
       for (var key in expectedAdserverTargeting) {
-        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
-        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+        newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
       }
 
       $$PREBID_GLOBAL$$.setTargetingForAst();

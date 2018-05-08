@@ -1,4 +1,5 @@
 import { config } from './config';
+import clone from 'just-clone';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -178,6 +179,14 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowReferrer = function() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+};
+
 exports.logWarn = function (msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
@@ -206,12 +215,11 @@ function hasConsoleLogger() {
   return (window.console && window.console.log);
 }
 
-exports.hasConsoleLogger = hasConsoleLogger;
+function hasConsoleError() {
+  return (window.console && window.console.error);
+}
 
-var errLogFn = (function (hasLogger) {
-  if (!hasLogger) return '';
-  return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
+exports.hasConsoleLogger = hasConsoleLogger;
 
 var debugTurnedOn = function () {
   if (config.getConfig('debug') === false && _loggingChecked === false) {
@@ -225,10 +233,12 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
-  var errCode = code || 'ERROR';
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn](console, errCode + ': ' + msg, exception || '');
+/**
+ * Wrapper to console.error. Takes N arguments to log the same as console.error.
+ */
+exports.logError = function () {
+  if (debugTurnedOn() && hasConsoleError()) {
+    console.error.apply(console, arguments);
   }
 };
 
@@ -634,8 +644,8 @@ export function isSrcdocSupported(doc) {
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
-export function cloneJson(obj) {
-  return JSON.parse(JSON.stringify(obj));
+export function deepClone(obj) {
+  return clone(obj);
 }
 
 export function inIframe() {
@@ -731,6 +741,19 @@ export function deepAccess(obj, path) {
 }
 
 /**
+ * Returns content for a friendly iframe to execute a URL in script tag
+ * @param {url} URL to be executed in a script tag in a friendly iframe
+ * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
+ */
+export function createContentToExecuteExtScriptInFriendlyFrame(url) {
+  if (!url) {
+    return '';
+  }
+
+  return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
+}
+
+/**
  * Build an object consisting of only defined parameters to avoid creating an
  * object with defined keys and undefined values.
  * @param {object} object The object to pick defined params out of
@@ -770,4 +793,21 @@ export function isValidMediaTypes(mediaTypes) {
   }
 
   return true;
+}
+
+/**
+ * Constructs warning message for when unsupported bidders are dropped from an adunit
+ * @param {Object} adUnit ad unit from which the bidder is being dropped
+ * @param {Array} unSupportedBidders arrary of bidder codes that are not compatible with the adUnit
+ * @return {string} warning message to display when condition is met
+ */
+export function unsupportedBidderMessage(adUnit, unSupportedBidders) {
+  const mediaType = adUnit.mediaType || Object.keys(adUnit.mediaTypes).join(', ');
+  const plural = unSupportedBidders.length === 1 ? 'This bidder' : 'These bidders';
+
+  return `
+    ${adUnit.code} is a ${mediaType} ad unit
+    containing bidders that don't support ${mediaType}: ${unSupportedBidders.join(', ')}.
+    ${plural} won't fetch demand.
+  `;
 }

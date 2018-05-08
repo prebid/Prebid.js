@@ -641,7 +641,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       }
 
       var usingSizeSpecificSiteID = false;
-      // Check for size defined in bidder params 
+      // Check for size defined in bidder params
       if (bid.params.size && utils.isArray(bid.params.size)) {
         if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) {
           passOnBid(bid.placementCode);
@@ -907,7 +907,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           bid.width = cygnusRequest.video.w;
           bid.height = cygnusRequest.video.h;
           bid.vastUrl = cygnusBid.ext.vasturl;
-          bid.descriptionUrl = cygnusBid.ext.vasturl;
           bid.mediaType = 'video';
 
           bidmanager.addBidResponse(prebidRequest.placementCode, bid);
