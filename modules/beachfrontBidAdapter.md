@@ -15,10 +15,10 @@ Module that connects to Beachfront's demand sources
     var adUnits = [
         {
             code: 'test-video',
-            sizes: [[640, 360]],
             mediaTypes: {
                 video: {
-                    context: 'instream'
+                    context: 'instream',
+                    playerSize: [ 640, 360 ]
                 }
             },
             bids: [
@@ -28,14 +28,18 @@ Module that connects to Beachfront's demand sources
                         bidfloor: 0.01,
                         appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
                         video: {
-                            mimes: ['video/mp4', 'application/javascript']
+                            mimes: [ 'video/mp4', 'application/javascript' ]
                         }
                     }
                 }
             ]
         }, {
             code: 'test-banner',
-            sizes: [300, 250],
+            mediaTypes: {
+                banner: {
+                    sizes: [ 300, 250 ]
+                }
+            },
             bids: [
                 {
                     bidder: 'beachfront',
