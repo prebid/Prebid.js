@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 [![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
 
-# Prebid.js
+# Prebid.js 1.9
 
 > A free and open source library for publishers to quickly implement header bidding.
 
