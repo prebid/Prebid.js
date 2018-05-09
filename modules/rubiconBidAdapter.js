@@ -132,8 +132,6 @@ export const spec = {
         page_url = utils.getTopWindowUrl();
       }
 
-      page_url = bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
-
       // GDPR reference, for use by 'banner' and 'video'
       const gdprConsent = bidderRequest.gdprConsent;
 
@@ -150,6 +148,7 @@ export const spec = {
           timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
           stash_creatives: true,
           ae_pass_through_parameters: params.video.aeParams,
+          rp_secure: bidRequest.params.secure !== false,
           slots: []
         };
 

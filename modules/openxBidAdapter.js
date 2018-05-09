@@ -10,6 +10,11 @@ const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
 const BIDDER_VERSION = '2.1.0';
 
+let shouldSendBoPixel = true;
+export function resetBoPixel() {
+  shouldSendBoPixel = true;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -63,11 +68,6 @@ function isVideoRequest(bidRequest) {
 function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
   let adUnits = oxResponseObj.ads.ad;
   let bidResponses = [];
-  let shouldSendBoPixel = bids[0].params.sendBoPixel;
-  if (shouldSendBoPixel === undefined) {
-    // Not specified, default to turned on
-    shouldSendBoPixel = true;
-  }
   for (let i = 0; i < adUnits.length; i++) {
     let adUnit = adUnits[i];
     let adUnitIdx = parseInt(adUnit.idx, 10);
@@ -103,10 +103,9 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
     }
     bidResponse.ts = adUnit.ts;
 
-    if (shouldSendBoPixel && adUnit.ts) {
-      registerBeacon(BANNER, adUnit, startTime);
-    }
     bidResponses.push(bidResponse);
+
+    registerBeacon(BANNER, adUnit, startTime);
   }
   return bidResponses;
 }
@@ -300,11 +299,6 @@ function generateVideoParameters(bid) {
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
-  let shouldSendBoPixel = bid.params.sendBoPixel;
-  if (shouldSendBoPixel === undefined) {
-    // Not specified, default to turned on
-    shouldSendBoPixel = true;
-  }
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
@@ -329,16 +323,21 @@ function createVideoBidResponses(response, {bid, startTime}) {
     response.colo = vastQueryParams.colo;
     response.ts = vastQueryParams.ts;
 
-    if (shouldSendBoPixel && response.ts) {
-      registerBeacon(VIDEO, response, startTime)
-    }
     bidResponses.push(bidResponse);
+
+    registerBeacon(VIDEO, response, startTime)
   }
 
   return bidResponses;
 }
 
 function registerBeacon(mediaType, adUnit, startTime) {
+  // only register beacon once
+  if (!shouldSendBoPixel) {
+    return;
+  }
+  shouldSendBoPixel = false;
+
   let bt = config.getConfig('bidderTimeout');
   let beaconUrl;
   if (window.PREBID_TIMEOUT) {

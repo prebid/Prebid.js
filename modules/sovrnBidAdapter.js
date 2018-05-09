@@ -21,7 +21,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
    */
-  buildRequests: function(bidReqs) {
+  buildRequests: function(bidReqs, bidderRequest) {
     const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
     let iv;
@@ -43,6 +43,17 @@ export const spec = {
       }
     };
     if (iv) sovrnBidReq.iv = iv;
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      sovrnBidReq.regs = {
+        ext: {
+          gdpr: +bidderRequest.gdprConsent.gdprApplies
+        }};
+      sovrnBidReq.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString
+        }};
+    }
 
     return {
       method: 'POST',

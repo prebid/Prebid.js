@@ -22,7 +22,7 @@ export const spec = {
     return bid.params && !!bid.params.zoneId;
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let deliveryUrl = '';
     const idParams = [];
     const sizeParams = [];
@@ -41,16 +41,25 @@ export const spec = {
       deliveryUrl = A4G_DEFAULT_BID_URL;
     }
 
+    let data = {
+      [IFRAME_PARAM_NAME]: 0,
+      [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
+      [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
+      [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
+      [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR)
+    };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.gdpr = {
+        applies: bidderRequest.gdprConsent.gdprApplies,
+        consent: bidderRequest.gdprConsent.consentString
+      };
+    }
+
     return {
       method: 'GET',
       url: deliveryUrl,
-      data: {
-        [IFRAME_PARAM_NAME]: 0,
-        [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
-        [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
-        [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
-        [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR)
-      }
+      data: data
     };
   },
 

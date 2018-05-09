@@ -306,7 +306,7 @@ export const spec = {
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
 
     if (syncOptions.iframeEnabled) {
