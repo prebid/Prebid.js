@@ -13,7 +13,7 @@ Module that connects to a RTK.io Ad Units to fetch bids.
     var adUnits = [{
       mediaTypes: {
           banner: {
-              sizes: [[300, 250], [300,600]],
+              sizes: [[300, 250]],
           }
       },
       code: 'div-gpt-ad-1460505748561-0',
@@ -21,8 +21,8 @@ Module that connects to a RTK.io Ad Units to fetch bids.
       bids: [{
         bidder: 'aardvark',
         params: {
-          ai: '7Dwb',
-          sc: 'WygO'
+          ai: '0000',
+          sc: '1234'
         }
       }]
 
