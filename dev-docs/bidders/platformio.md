@@ -16,11 +16,14 @@ media_types: native, video
 {: .table .table-bordered .table-striped }
 | Name           | Scope    | Description                         | Example |
 | :------------- | :------- | :---------------------------------- | :------ |
-| `pubId`        | required | The publisher account ID            | `28082` |
-| `siteId`       | required | The publisher site ID               | `26047` |
-| `size`         | required | Ad size identifier                  | `300X250` |
-| `placementId`  | required | Identifies specific ad placement    | `17394` |
-| `bidFloor`     | optional | The bid floor                       | `0.001` |
+| `pubId`        | required | The publisher account ID            | `'28082'` |
+| `siteId`       | required | The publisher site ID               | `'26047'` |
+| `size`         | required | Ad size identifier                  | `'300X250'` |
+| `placementId`  | required | Identifies specific ad placement    | `'17394'` |
+| `bidFloor`     | optional | The bid floor                       | `'0.001'` |
+| `ifa`          | optional | IFA ID                              | `'XXX-XXX'` |
+| `latitude`     | optional | Latitude                            | `'40.712775'` |
+| `longitude`    | optional | Longitude                           | `'-74.005973'` |
 
 ### test params
 
