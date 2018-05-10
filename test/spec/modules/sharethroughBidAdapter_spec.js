@@ -100,6 +100,14 @@ describe('sharethrough adapter spec', () => {
         'http://btlr.sharethrough.com/header-bid/v1')
       expect(bidRequests[0].method).to.eq('GET');
     });
+
+    it('should add consent parameters if gdprConsent is present', () => {
+      const gdprConsent = { consentString: 'consent_string123', gdprApplies: true };
+      const fakeBidRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidderRequest, fakeBidRequest)[0];
+      expect(bidRequest.data.consent_string).to.eq('consent_string123');
+      expect(bidRequest.data.consent_required).to.eq(true);
+    });
   });
 
   describe('.interpretResponse', () => {
@@ -117,6 +125,21 @@ describe('sharethrough adapter spec', () => {
         });
     });
 
+    it('returns a blank array if there are no creatives', () => {
+      const bidResponse = { body: { creatives: [] } };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
+    it('returns a blank array if body object is empty', () => {
+      const bidResponse = { body: {} };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
+    it('returns a blank array if body is null', () => {
+      const bidResponse = { body: null };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
     it('correctly sends back a sfp script tag', () => {
       const adMarkup = spec.interpretResponse(bidderResponse, prebidRequest[0])[0].ad;
       let resp = null;
@@ -132,6 +155,25 @@ describe('sharethrough adapter spec', () => {
         /sfp_js.src = "\/\/native.sharethrough.com\/assets\/sfp.js";/);
       expect(adMarkup).to.match(
         /window.top.document.getElementsByTagName\('body'\)\[0\].appendChild\(sfp_js\);/)
+    });
+  });
+
+  describe('.getUserSyncs', () => {
+    const cookieSyncs = ['cookieUrl1', 'cookieUrl2', 'cookieUrl3'];
+    const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
+
+    it('returns an array of correctly formatted user syncs', () => {
+      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
+      expect(syncArray).to.deep.equal([
+        { type: 'image', url: 'cookieUrl1' },
+        { type: 'image', url: 'cookieUrl2' },
+        { type: 'image', url: 'cookieUrl3' }]
+      );
+    });
+
+    it('returns an empty array if pixels are not enabled', () => {
+      const syncArray = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
+      expect(syncArray).to.be.an('array').that.is.empty;
     });
   });
 });

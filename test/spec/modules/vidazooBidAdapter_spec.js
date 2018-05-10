@@ -6,7 +6,11 @@ const BID = {
   'params': {
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
-    'bidFloor': 0.1
+    'bidFloor': 0.1,
+    'ext': {
+      'param1': 'loremipsum',
+      'param2': 'dolorsitamet'
+    }
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
@@ -117,7 +121,9 @@ describe('VidazooBidAdapter', () => {
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
-          publisherId: '59ac17c192832d0011283fe3'
+          publisherId: '59ac17c192832d0011283fe3',
+          'ext.param1': 'loremipsum',
+          'ext.param2': 'dolorsitamet',
         }
       });
       expect(requests[1]).to.deep.equal({
@@ -130,7 +136,9 @@ describe('VidazooBidAdapter', () => {
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
-          publisherId: '59ac17c192832d0011283fe3'
+          publisherId: '59ac17c192832d0011283fe3',
+          'ext.param1': 'loremipsum',
+          'ext.param2': 'dolorsitamet',
         }
       });
     });
