@@ -416,7 +416,7 @@ describe('Sonobi adapter tests', () => {
       expect(adapter._getPlatform({innerWidth: 1000})).to.equal('desktop')
     })
   })
-  describe('_getPlatform', () => {
+  describe('_getReferrer', () => {
     it('should return the referrer from the adunit params', () => {
       const adapter = new Adapter();
       const adunit = {
