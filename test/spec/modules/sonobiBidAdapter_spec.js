@@ -432,7 +432,7 @@ describe('Sonobi adapter tests', () => {
           }
         }]
       };
-      expect(adapter._getReferrer(adunit)).to.equal('test');
+      expect(adapter._getReferrer(adunit.bids)).to.equal('test');
     })
   })
 });
