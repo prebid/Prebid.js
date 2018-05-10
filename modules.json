@@ -8,6 +8,7 @@
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
     "gumgumBidAdapter",
+    "ixBidAdapter",
     "justpremiumBidAdapter",
     "komoonaBidAdapter",
     "openxBidAdapter",
