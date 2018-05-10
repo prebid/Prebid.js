@@ -58,7 +58,6 @@ Whether your Ad Ops setup [sends all bids to the ad server](/adops/send-all-bids
 
 For each header bidding partner you work with, create a keyword in the format of `hb_deal_BIDDERCODE`, e.g., `hb_deal_pubmatic`. For more examples of the keyword format, see the [API Reference for `pbjs.getAdserverTargeting`]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.getAdserverTargeting).
 
-Note that due to [DFP's character length limit on keys](https://support.google.com/dfp_premium/answer/1628457?hl=en#Key-values), Index Exchange's key is truncated to `hb_deal_indexExchang`.
 <br>
 
 {: .pb-img.pb-lg-img :}
@@ -77,7 +76,7 @@ Enter all the **Inventory sizes** for your deal (or deals):
 
 <br />
 
-Set the **priority** to the level you prefer. 
+Set the **priority** to the level you prefer.
 
 {: .pb-img.pb-lg-img :}
 ![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/deals/deal-priority.png)
@@ -101,7 +100,7 @@ Then you'll need to target the **inventory** that you want to this deal to run o
 
 There are two ways to target deal IDs using *Key-values* targeting:
 
-1. If you would like the deals to have the same priority and target the same inventory, you can include multiple deal IDs (as shown below). 
+1. If you would like the deals to have the same priority and target the same inventory, you can include multiple deal IDs (as shown below).
 2. Otherwise, you must create a separate line item for each deal ID you want to target.
 
 {: .pb-img.pb-lg-img :}

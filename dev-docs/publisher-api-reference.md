@@ -14,7 +14,7 @@ pid: 10
 This page has documentation for the public API methods of Prebid.js.
 
 {: .alert.alert-danger :}
-Methods marked as deprecated were removed in version 1.0.  For more information about the changes, see [the release announcement]({{site.baseurl}}/blog/prebid-1-is-released).  
+Methods marked as deprecated were removed in version 1.0.  For more information about the changes, see [the release announcement]({{site.baseurl}}/blog/prebid-1-is-released).
 After a transition period, documentation for these methods will be removed from Prebid.org (likely early 2018).
 
 <a name="module_pbjs"></a>
@@ -399,9 +399,9 @@ After this method is called, `pbjs.getAdserverTargeting()` will give you the bel
 
 {% highlight js %}
 {
-  "hb_adid_indexExchang": "129a7ed7a6fb40e",
-  "hb_pb_indexExchange": "10.00",
-  "hb_size_indexExchang": "300x250",
+  "hb_adid_ix": "129a7ed7a6fb40e",
+  "hb_pb_ix": "10.00",
+  "hb_size_ix": "300x250",
   "hb_adid_triplelift": "1663076dadb443d",
   "hb_pb_triplelift": "10.00",
   "hb_size_triplelift": "0x0",
@@ -833,7 +833,7 @@ pbjs.bidderSettings = {
     standard: {
          [...]
     },
-    indexExchange: {
+    ix: {
          [...]
     },
     rubicon: {
@@ -1667,7 +1667,7 @@ labelAll: ["A", "B"]
 Only one conditional may be specified on a given AdUnit or bid -- if both `labelAny` and `labelAll` are specified, only the first one will be utilized and an error will be logged to the console. It is allowable for an AdUnit to have one condition and a bid to have another.
 
 {: .alert.alert-warning :}
-If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`. 
+If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`.
 
 Label targeting on the ad unit looks like the following:
 
