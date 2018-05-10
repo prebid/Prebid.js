@@ -168,6 +168,33 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
+  describe('GDPR absence conformity', () => {
+    const bidRequests = [{
+      bidder: 'aardvark',
+      params: {
+        ai: 'xiby',
+        sc: 'TdAx',
+      },
+      adUnitCode: 'aaa',
+      transactionId: '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
+      sizes: [300, 250],
+      bidId: '1abgs362e0x48a8',
+      bidderRequestId: '70deaff71c281d',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337'
+    }];
+
+    const bidderRequest = {
+      gdprConsent: undefined
+    };
+
+    it('should transmit correct data', () => {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].data.gdpr).to.be.undefined;
+      expect(requests[0].data.consent).to.be.undefined;
+    });
+  });
+
   describe('interpretResponse', () => {
     it('should handle bid responses', () => {
       const serverResponse = {
@@ -182,7 +209,6 @@ describe('aardvarkAdapterTest', () => {
             adm: '</tag1>',
             dealId: 'dealing',
             ttl: 200,
-            ex: 'exchange1'
           },
           {
             media: 'banner',
@@ -193,7 +219,6 @@ describe('aardvarkAdapterTest', () => {
             cid: '1abgs362e0x48a8',
             adm: '</tag2>',
             ttl: 200,
-            ex: 'exchange2'
           }
         ],
         headers: {}
@@ -209,7 +234,6 @@ describe('aardvarkAdapterTest', () => {
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(200);
       expect(result[0].dealId).to.equal('dealing');
-      expect(result[0].exchange).to.equal('exchange1');
       expect(result[0].ad).to.not.be.undefined;
 
       expect(result[1].requestId).to.equal('1abgs362e0x48a8');
@@ -218,7 +242,6 @@ describe('aardvarkAdapterTest', () => {
       expect(result[1].height).to.equal(250);
       expect(result[1].currency).to.equal('USD');
       expect(result[1].ttl).to.equal(200);
-      expect(result[1].exchange).to.equal('exchange2');
       expect(result[1].ad).to.not.be.undefined;
     });
 

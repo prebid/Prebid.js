@@ -61,7 +61,9 @@ export const spec = {
           if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
             rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
           }
-          rMap.payload.consent = bidderRequest.gdprConsent.consentString;
+          if (rMap.payload.gdpr) {
+            rMap.payload.consent = bidderRequest.gdprConsent.consentString;
+          }
         }
 
         requestsMap[b.params.ai] = rMap;
