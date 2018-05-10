@@ -18,13 +18,14 @@ implementing our adapter please don't hesitate to contact us at apex.prebid@sono
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name           | Scope    | Description                                  | Type          | Example                          |
-|:---------------|:---------|:---------------------------------------------|:--------------|:---------------------------------|
-| `placement_id` | required | The placement ID                             | String        | `'1a2b3c4d5e6f1a2b3c4d'`         |
-| `ad_unit`      | required | The adunit ID                                | String        | `'/1234567/example/adUnit/code'` |
-| `floor`        | optional | Bid floor for this placement in USD          | Integer       | `0.50`                           |
-| `sizes`        | optional | Adunit sizes that will override global sizes | Array[String] | `[[300, 250], [300, 600]]`       |
-| `hfa`          | optional | Publisher Unique Identifier                  | String        | `'123985'`                       |
+| Name           | Scope    | Description                                                    | Type          | Example                          |
+|:---------------|:---------|:---------------------------------------------------------------|:--------------|:---------------------------------|
+| `placement_id` | required | The placement ID                                               | String        | `'1a2b3c4d5e6f1a2b3c4d'`         |
+| `ad_unit`      | required | The adunit ID                                                  | String        | `'/1234567/example/adUnit/code'` |
+| `floor`        | optional | Bid floor for this placement in USD                            | Integer       | `0.50`                           |
+| `sizes`        | optional | Adunit sizes that will override global sizes                   | Array[String] | `[[300, 250], [300, 600]]`       |
+| `hfa`          | optional | Publisher Unique Identifier                                    | String        | `'123985'`                       |
+| `referrer`     | optional | Overrides the default value for the ref param in a bid request | String        | `'prebid.org'`                       |
 
 ### Configuration
 
