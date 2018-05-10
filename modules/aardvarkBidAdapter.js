@@ -7,7 +7,7 @@ const SYNC_ENDPOINT = 'sync.rtk.io';
 const AARDVARK_TTL = 300;
 const AARDVARK_CURRENCY = 'USD';
 
-var hasSynced = false;
+let hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
@@ -28,8 +28,8 @@ export const spec = {
     var referer = utils.getTopWindowUrl();
     var pageCategories = [];
 
-    if (window.rtkcategories && Array.isArray(window.rtkcategories)) {
-      pageCategories = window.rtkcategories;
+    if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
+      pageCategories = window.top.rtkcategories;
     }
 
     utils._each(validBidRequests, function(b) {
@@ -57,7 +57,10 @@ export const spec = {
         }
 
         if (bidderRequest && bidderRequest.gdprConsent) {
-          rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+          rMap.payload.gdpr = false;
+          if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+            rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+          }
           rMap.payload.consent = bidderRequest.gdprConsent.consentString;
         }
 
@@ -102,7 +105,6 @@ export const spec = {
         currency: rawBid.currency ? rawBid.currency : AARDVARK_CURRENCY,
         netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
         ttl: rawBid.ttl ? rawBid.ttl : AARDVARK_TTL,
-        exchange: rawBid.ex,
         creativeId: rawBid.creativeId || 0
       };
 
@@ -128,8 +130,8 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
     var url = '//' + SYNC_ENDPOINT + '/cs';
-    var gdprApplies = true;
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
+    var gdprApplies = false;
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
     }
 
