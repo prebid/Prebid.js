@@ -1,7 +1,7 @@
 ---
 layout: bidder
-title: rtbdemandadk
-description: Prebid rtbdemandadk Bidder Adaptor
+title: Rtbdemandadk
+description: Prebid RtbdemandAdk Bidder Adaptor
 top_nav_section: dev_docs
 nav_section: reference
 hide: true
@@ -12,7 +12,7 @@ prebid_1_0_supported : true
 
 ### Note:
 
-The Andbeyond Bidding adaptor requires setup and approval before beginning. Please reach out to <pankil@andbeyond.com> for more details
+The RtbdemandAdk Bidding adaptor requires setup and approval before beginning. Please reach out to <shreyanschopra@rtbdemand.com> for more details
 
 ### bid params
 
