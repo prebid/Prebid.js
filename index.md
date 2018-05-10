@@ -122,6 +122,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>AdOcean</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Media.net</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Peak226</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Nano Interactive</h3></div>
 
     <!-- END BIDDERS -->
     </div>
