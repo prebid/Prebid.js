@@ -41,7 +41,6 @@ describe('Polymorph adapter test', () => {
   });
 
   describe('isBidRequestValid', () => {
-
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
@@ -70,10 +69,10 @@ describe('Polymorph adapter test', () => {
   describe('buildRequests', () => {
     it('payload test', () => {
       const requests = spec.buildRequests(bidRequests);
-      var payload1 = {}; 
+      var payload1 = {};
       requests[0].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
-          payload1[decodeURIComponent(key)] = decodeURIComponent(value);
-      }); 
+        payload1[decodeURIComponent(key)] = decodeURIComponent(value);
+      });
       expect(payload1.ref).to.not.be.undefined;
       expect(payload1.url).to.not.be.undefined;
       expect(payload1.hb).to.equal('1');
@@ -81,11 +80,10 @@ describe('Polymorph adapter test', () => {
       expect(payload1.zid).to.equal(PLACEMENT_ID);
       expect(payload1.sizes).to.equal('300,250,300,600');
 
-      var payload2 = {}; 
+      var payload2 = {};
       requests[1].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
-          payload2[decodeURIComponent(key)] = decodeURIComponent(value);
-      }); 
-      //expect(requests[1].data).to.equal('1');
+        payload2[decodeURIComponent(key)] = decodeURIComponent(value);
+      });
       expect(payload2.ref).to.not.be.undefined;
       expect(payload2.url).to.not.be.undefined;
       expect(payload2.hb).to.equal('1');
@@ -125,7 +123,8 @@ describe('Polymorph adapter test', () => {
           'ad': {
             'html': '<div></div>'
           }
-        },{
+        },
+        {
           'crid': '5ISP4996',
           'ad': {
             'html': '<div></div>'
