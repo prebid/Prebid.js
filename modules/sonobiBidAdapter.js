@@ -12,7 +12,7 @@ var SonobiAdapter = function SonobiAdapter() {
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
+    var ref = '&ref=' + _getReferrer(adSlots)
     var libName = '&lib_name=prebid';
     var libVersion = '&lib_v=$prebid.version$';
     var vp = '&vp=' + _getPlatform();
@@ -141,6 +141,18 @@ var SonobiAdapter = function SonobiAdapter() {
     return 'desktop';
   }
 
+  function _getReferrer(bids) {
+    let ref = encodeURI(utils.getTopWindowLocation().host);
+    try {
+      if (bids[0].params.referrer) {
+        ref = bids[0].params.referrer
+      }
+    } catch (e) {
+      utils.logError(e)
+    }
+    return ref;
+  }
+
   return {
     callBids: _phone_in,
     formRequest: _keymaker,
@@ -149,7 +161,8 @@ var SonobiAdapter = function SonobiAdapter() {
     failure: _failure,
     // export helper functions for testing purposes
     _isInBounds: _isInBounds,
-    _getPlatform: _getPlatform
+    _getPlatform: _getPlatform,
+    _getReferrer: _getReferrer
   };
 };
 
