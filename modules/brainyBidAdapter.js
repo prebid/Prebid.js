@@ -55,7 +55,7 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.acountID && bid.params.slotID);
+    return !!(bid && bid.params && bid.params.accountID && bid.params.slotID);
   },
 
   /**
@@ -72,14 +72,14 @@ export const spec = {
     var bidRequests = [];
     for (var i = 0, len = validBidRequests.length; i < len; i++) {
       var bid = validBidRequests[i];
-      var acountID = utils.getBidIdParameter('acountID', bid.params);
+      var accountID = utils.getBidIdParameter('accountID', bid.params);
       var slotID = utils.getBidIdParameter('slotID', bid.params);
       var url = utils.getTopWindowUrl();
       var flash = _getFlash();
       var nocache = new Date().getTime() + Math.floor(Math.random() * 100000000);
       var requestURL;
 
-      requestURL = '_aid=' + acountID + '&';
+      requestURL = '_aid=' + accountID + '&';
       requestURL += '_slot=' + slotID + '&';
       requestURL += '_url=' + url + '&';
       requestURL += '_flash=' + flash + '&';
