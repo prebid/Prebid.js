@@ -7,7 +7,7 @@ const BIDDER_CODE = 'brainy';
 const validBidReq = {
   bidder: BIDDER_CODE,
   params: {
-    acountID: '12345',
+    accountID: '12345',
     slotID: '12345'
   }
 };
@@ -15,7 +15,7 @@ const validBidReq = {
 const invalidBidReq = {
   bidder: BIDDER_CODE,
   params: {
-    acountID: '',
+    accountID: '',
     slotID: ''
   }
 };
@@ -23,13 +23,13 @@ const invalidBidReq = {
 const bidReq = [{
   bidder: BIDDER_CODE,
   params: {
-    acountID: '12345',
+    accountID: '12345',
     slotID: '12345'
   }
 }];
 
 const correctReq = {
-  acountID: '12345',
+  accountID: '12345',
   slotID: '12345'
 }
 
@@ -55,7 +55,7 @@ describe('brainy Adapter', () => {
       const request = spec.buildRequests(bidReq);
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(URL);
-      expect(request[0].data).to.match(new RegExp(`${correctReq.acountID}`));
+      expect(request[0].data).to.match(new RegExp(`${correctReq.accountID}`));
       expect(request[0].data).to.match(new RegExp(`${correctReq.slotID}`));
     });
   });
