@@ -185,7 +185,7 @@ The `native` object contains the following properties that correspond to the ass
 {: .table .table-bordered .table-striped }
 | Name             | Scope       | Type                   | Description                                                                                                                                                         |
 |------------------+-------------+------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `context`        | Optional    | String                 | The video context, either `"instream"` or `"outstream"`.  Example: `context: "outstream"`                                                                           |
+| `context`        | Optional    | String                 | The video context, either `'instream'` or `'outstream'`.  Example: `context: 'outstream'`                                                                           |
 | `playerSize`     | Optional    | Array[Integer,Integer] | The size (width, height) of the video player on the page, in pixels.  Example: `playerSize: [640, 480]`                                                             |
 | `mimes`          | Recommended | Array[String]          | Content MIME types supported, e.g., `"video/x-ms-wmv"`, `"video/mp4"`. **Required by OpenRTB when using [Prebid Server][pbServer]**.                                |
 | `protocols`      | Optional    | Array[Integer]         | Array of supported video protocols.  For list, see [OpenRTB spec][openRTB]. **Required by OpenRTB when using [Prebid Server][pbServer]**.                           |
@@ -236,7 +236,7 @@ pbjs.addAdUnits({
     code: slot.code,
     mediaTypes: {
         video: {
-            context: "instream",
+            context: 'instream',
             playerSize: [640, 480],
         },
     },
@@ -260,7 +260,7 @@ pbjs.addAdUnits({
     code: slot.code,
     mediaTypes: {
         video: {
-            context: "outstream",
+            context: 'outstream',
             playerSize: [640, 480]
         }
     },

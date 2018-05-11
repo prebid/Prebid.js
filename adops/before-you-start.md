@@ -42,7 +42,7 @@ Our recommendation is to start with $1 or 10 cent granularity until you're more 
 Note that DFP has an order [object limits](https://support.google.com/dfp_premium/answer/1628457?hl=en#Trafficking) of containing up to 450 line items (including archived line items). If you are designing your own granularity setup, make sure you do not exceed that amount. Or, you can find the recommended pre-configured granularities [here](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
 
 {: .alert.alert-success :}
-**Action Item:** Once you have decided the price granularity, review this [example page](/dev-docs/examples/simplified-price-bucket-setup.html) with your dev team to learn how to set price granularity on the page.
+**Action Item:** See the [Publisher API Reference](/dev-docs/publisher-api-reference.html#setConfig-Price-Granularity) for more detail.
 
 ### Step 2. One set of line items for all bidders vs. a set of line items for each bidder
 

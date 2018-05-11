@@ -390,13 +390,13 @@ For examples of video parameters accepted by different adapters, see [the list o
 
 #### Ingesting the Video Context
 
-Video ad units have a publisher-defined video context, which can be either `"instream"` or `"outstream"`.  Video demand partners can choose to ingest this signal for targeting purposes.  For example, the ad unit shown below has the outstream video context:
+Video ad units have a publisher-defined video context, which can be either `'instream'` or `'outstream'`.  Video demand partners can choose to ingest this signal for targeting purposes.  For example, the ad unit shown below has the outstream video context:
 
 ```javascript
 ...
 mediaTypes: {
     video: {
-        context: "outstream"
+        context: 'outstream'
     },
 },
 ...

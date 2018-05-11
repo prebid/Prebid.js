@@ -1,110 +1,124 @@
-  <header class="navbar navbar-static-top bs-docs-nav" id="top">
+<header class="navbar navbar-static-top bs-docs-nav" id="top">
     <div class="container">
-      <div class="navbar-header" role="banner">
-        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="{{site.baseurl}}/">{{site.name}}</a>
-      </div>
+        <div class="navbar-header" role="banner">
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{site.baseurl}}/">{{site.name}}</a>
+        </div>
 
-      <nav class="collapse navbar-collapse" id="bs-example-navbar-collapse-1" role="navigation">
-        <ul class="nav navbar-nav">
+        <nav class="collapse navbar-collapse" id="bs-example-navbar-collapse-1" role="navigation">
+            <ul class="nav navbar-nav">
 
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              About
-              <span class="caret" />
-            </a>
-            <ul class="dropdown-menu">
-              <li><a href="{{site.baseurl}}/overview/intro.html">What is Prebid?</a></li>
-              <li><a href="{{site.baseurl}}/overview/what-is-prebid-org.html">What is Prebid.org?</a></li>
-              <li><a href="{{site.baseurl}}/overview/prebid-members.html">Prebid.org Membership</a></li>
-              <li><a href="{{site.baseurl}}/overview/prebid-management-committees.html">Prebid Management Committees</a></li>
-              <li><a href="{{site.baseurl}}/wrapper_code_of_conduct.html">Wrapper Code of Conduct</a></li>
-              <li><a href="{{site.baseurl}}/principles.html">Project Principles</a></li>
-              <li><a href="{{site.baseurl}}/overview/getting-started.html">Getting Started</a></li>
-              <li><a href="{{site.baseurl}}/dev-docs/faq.html">FAQ</a></li>
-              <li><a href="{{site.baseurl}}/blog.html">Blog</a></li>
+                <li class="dropdown">
+
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        About
+                        <span class="caret" />
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li><a href="{{site.baseurl}}/overview/intro.html">What is Prebid?</a></li>
+                        <li><a href="{{site.baseurl}}/overview/what-is-prebid-org.html">What is Prebid.org?</a></li>
+                        <li><a href="{{site.baseurl}}/overview/prebid-members.html">Prebid.org Membership</a></li>
+                        <li><a href="{{site.baseurl}}/overview/prebid-management-committees.html">Prebid Management Committees</a></li>
+                        <li><a href="{{site.baseurl}}/wrapper_code_of_conduct.html">Wrapper Code of Conduct</a></li>
+                        <li><a href="{{site.baseurl}}/principles.html">Project Principles</a></li>
+                        <li><a href="{{site.baseurl}}/overview/getting-started.html">Getting Started</a></li>
+                        <li><a href="{{site.baseurl}}/dev-docs/faq.html">FAQ</a></li>
+                        <li><a href="{{site.baseurl}}/blog.html">Blog</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        Docs
+                        <span class="caret" />
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-submenu">
+                            <a href="{{site.baseurl}}/overview/getting-started.html">Prebid.js for web</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{site.baseurl}}/dev-docs/docs-by-format.html">Docs by Format</a></li>
+                                <li><a href="{{site.baseurl}}/adops/docs-by-ad-server.html">Docs by Ad Server</a></li>
+                                <li><a href="{{site.baseurl}}/dev-docs/examples/basic-example.html">Examples</a></li>
+                                <li><a href="{{site.baseurl}}/dev-docs/modules/index.html">Modules</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="{{site.baseurl}}/dev-docs/get-started-with-prebid-server.html">Prebid Server</a></li>
+                        <li><a href="{{site.baseurl}}/prebid-mobile/prebid-mobile.html">Prebid Mobile for apps</a></li>
+                        <li><a href="{{site.baseurl}}/adops.html">For Ad Ops</a></li>
+                        <li><a href="{{site.baseurl}}/dev-docs/getting-started.html">For Developers</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        Tools &amp; Analytics
+                        <span class="caret" />
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li><a href="https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop">Chrome Extension</a></li>
+                        <li><a href="{{site.baseurl}}/overview/analytics.html">Analytics</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        Support
+                        <span class="caret" />
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li><a href="{{site.baseurl}}/support/">Get Help</a></li>
+                        <li><a href="{{site.baseurl}}/dev-docs/prebid-troubleshooting-guide.html">Troubleshooting</a></li>
+                        <li><a href="{{site.baseurl}}/videos/">Videos</a></li>
+                        <li><a href="http://stackoverflow.com/questions/tagged/prebid.js">Stack Overflow</a></li>
+                        <li><a href="https://reddit.com/r/adops">Ad Ops Reddit</a></li>
+                        <li><a href="https://redditadops.slack.com/messages/C0HVALS8P"><strong>#headerbidding</strong> channel (Reddit Ad Ops Slack)</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        Contribute
+                        <span class="caret" />
+                    </a>
+
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-submenu">
+                            <a href="#">Repos</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="https://github.com/prebid/Prebid.js/">Prebid.js</a></li>
+                                <li><a href="https://github.com/prebid/prebid-server">Prebid Server</a></li>
+                                <li><a href="https://github.com/prebid/prebid-mobile-ios">Prebid Mobile for iOS apps</a></li>
+                                <li><a href="https://github.com/prebid/prebid-mobile-android">Prebid Mobile for Android apps</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="{{site.baseurl}}/dev-docs/bidder-adaptor.html">Add an Adapter</a></li>
+                        <li><a href="{{site.baseurl}}/dev-docs/release-notes.html">Release Notes</a></li>
+                    </ul>
+                </li>
+
+                <li>
+
+                    <a href="{{site.baseurl}}/download.html">
+                        Download
+                    </a>
+
+                </li>
+
             </ul>
-          </li>
 
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              Docs
-              <span class="caret" />
-            </a>
-            <ul class="dropdown-menu">
-              <li class="dropdown-submenu">
-                <a href="{{site.baseurl}}/overview/getting-started.html">Prebid.js for web</a>
-                <ul class="dropdown-menu">
-                  <li><a href="{{site.baseurl}}/dev-docs/docs-by-format.html">Docs by Format</a></li>
-                  <li><a href="{{site.baseurl}}/adops/docs-by-ad-server.html">Docs by Ad Server</a></li>
-                  <li><a href="{{site.baseurl}}/dev-docs/examples/basic-example.html">Examples</a></li>
-                  <li><a href="{{site.baseurl}}/dev-docs/modules/index.html">Modules</a></li>
-                </ul>
-              </li>
-              <li><a href="{{site.baseurl}}/dev-docs/get-started-with-prebid-server.html">Prebid Server</a></li>
-              <li><a href="{{site.baseurl}}/prebid-mobile/prebid-mobile.html">Prebid Mobile for apps</a></li>
-              <li><a href="{{site.baseurl}}/adops.html">For Ad Ops</a></li>
-              <li><a href="{{site.baseurl}}/dev-docs/getting-started.html">For Developers</a></li>
-            </ul>
-          </li>
-
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              Tools &amp; Analytics
-              <span class="caret" />
-            </a>
-            <ul class="dropdown-menu">
-              <li><a href="https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop">Chrome Extension</a></li>
-              <li><a href="{{site.baseurl}}/overview/analytics.html">Analytics</a></li>
-            </ul>
-          </li>
-
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              Support
-              <span class="caret" />
-            </a>
-            <ul class="dropdown-menu">
-              <li><a href="{{site.baseurl}}/support/">Get Help</a></li>
-              <li><a href="{{site.baseurl}}/dev-docs/prebid-troubleshooting-guide.html">Troubleshooting</a></li>
-              <li><a href="{{site.baseurl}}/videos/">Videos</a></li>
-              <li><a href="http://stackoverflow.com/questions/tagged/prebid.js">Stack Overflow</a></li>
-              <li><a href="https://reddit.com/r/adops">Ad Ops Reddit</a></li>
-              <li><a href="https://redditadops.slack.com/messages/C0HVALS8P"><strong>#headerbidding</strong> channel (Reddit Ad Ops Slack)</a></li>
-            </ul>
-          </li>
-
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              Contribute
-              <span class="caret" />
-            </a>
-            <ul class="dropdown-menu" role="menu">
-              <li class="dropdown-submenu">
-                <a href="#">Repos</a>
-                <ul class="dropdown-menu">
-                  <li><a href="https://github.com/prebid/Prebid.js/">Prebid.js</a></li>
-                  <li><a href="https://github.com/prebid/prebid-server">Prebid Server</a></li>
-                  <li><a href="https://github.com/prebid/prebid-mobile-ios">Prebid Mobile for iOS apps</a></li>
-                  <li><a href="https://github.com/prebid/prebid-mobile-android">Prebid Mobile for Android apps</a></li>
-                </ul>
-              </li>
-              <li><a href="{{site.baseurl}}/dev-docs/bidder-adaptor.html">Add an Adapter</a></li>
-              <li><a href="{{site.baseurl}}/dev-docs/release-notes.html">Release Notes</a></li>
-            </ul>
-          </li>
-
-          <li>
-            <a href="{{site.baseurl}}/download.html">Download</a>
-          </li>
-
-        </ul>
-
-      </nav>
+        </nav>
     </div>
-  </header>
+</header>

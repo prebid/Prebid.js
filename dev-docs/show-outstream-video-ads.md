@@ -189,8 +189,4 @@ Below, find links to end-to-end "working examples" demonstrating Prebid Outstrea
 + [Outstream without an Ad Server]({{site.github.url}}/examples/video/outstream/outstream-no-adserver.html)
 + [Prebid Video Examples]({{site.github.url}}/examples/video)
 
-## Related Topics
-
-+ [Outstream Video Example]({{site.github.url}}/dev-docs/examples/outstream-video-example.html)
-
 </div>

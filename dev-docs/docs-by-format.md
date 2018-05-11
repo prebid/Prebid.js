@@ -29,7 +29,7 @@ For ad ops and other ad server-related information, see [our Ad Ops documentatio
 | *Video* (instream)                                                  | [Show Video Ads with a DFP Video Tag]({{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html) (With lots of examples) |
 |                                                                     | [How to Add a New Video Bidder Adapter]({{site.github.url}}/dev-docs/how-to-add-a-new-video-bidder-adaptor.html)                 |
 | *Video* (outstream)                                                 | [Show Outstream Video Ads]({{site.github.url}}/dev-docs/show-outstream-video-ads.html)                                           |
-|                                                                     | [Outstream Video Example]({{site.github.url}}/dev-docs/examples/outstream-video-example.html)                                    |
+|                                                                     | [Outstream Video Example]({{site.github.url}}/examples/video/outstream/outstream-dfp.html)                                    |
 | *Standard Display*                                                  | [Basic Prebid.js Example]({{site.github.url}}/dev-docs/examples/basic-example.html)                                              |
 |                                                                     | [Getting Started]({{site.github.url}}/dev-docs/getting-started.html)                                                             |
 |                                                                     | [Ad Unit Refresh / Infinite Scroll Example]({{site.github.url}}/dev-docs/examples/adunit-refresh.html)                           |

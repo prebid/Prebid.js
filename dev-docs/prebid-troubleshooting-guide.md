@@ -71,8 +71,6 @@ To see what values Prebid.js intends to send to the ad server, open your browser
 {: .pb-lg-img :}
 ![pbjs.getAdserverTargeting() in browser console]({{site.github.url}}/assets/images/overview/prebid-troubleshooting-guide/ad-server-target.png "pbjs.getAdserverTargeting()")
 
-If your ad server has specific orders for each bidder, make sure to [send all bids to the ad server]({{site.github.url}}/dev-docs/examples/send-all-bids.html).
-
 {: .alert.alert-danger :}
 Note that if no bids are returned, no key-values will be set. You may need to increase your timeout setting or reach out to your bidder partners to determine why no bid responses are being sent.
 
@@ -100,9 +98,9 @@ To make sure your ad server is set up correctly, answer the following questions:
 
 + **Are there other higher priority campaigns running within your ad server?** Higher priority campaigns will prevent Prebid ads with a higher CPM bid from winning in the ad server's auction. For testing purposes, you may want to pause these campaigns or have them excluded when the prebid key values are present.
 
-+ **Is there other remnant inventory in the ad server with a higher CPM that is winning?** To test for this, you may want to use a test creative set up within a bidder partner that has a high CPM or create artificial demand with a [bidCPMadjustment]({{site.github.url}}/dev-docs/examples/adjust-price.html).
++ **Is there other remnant inventory in the ad server with a higher CPM that is winning?** To test for this, you may want to use a test creative set up within a bidder partner that has a high CPM or create artificial demand with a [bidCPMadjustment]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings).
 
-+ **Have you set up all of the line items in the ad server to match the [setPriceGranularity setting]({{site.github.url}}/dev-docs/examples/custom-price-bucket-using-setpricegranularity.html) within Prebid.js?**  All of the line items that correspond to your price granularity settings must be set up in your ad server.  When there are gaps in the price granularity of your line item setup, bids will be reduced according to the size of the gap.  For example, with [dense granularity]({{site.github.url}}/dev-docs/publisher-api-reference.html#dense-granularity), a $3.32 bid will be sent to the ad server as $3.30.
++ **Have you set up all of the line items in the ad server to match the [setPriceGranularity setting]({{site.github.url}}/dev-docs/examples/custom-price-buckets.html) within Prebid.js?**  All of the line items that correspond to your price granularity settings must be set up in your ad server.  When there are gaps in the price granularity of your line item setup, bids will be reduced according to the size of the gap.  For example, with [dense granularity]({{site.github.url}}/dev-docs/publisher-api-reference.html#dense-granularity), a $3.32 bid will be sent to the ad server as $3.30.
 
 ## Look for the Winning Bid
 

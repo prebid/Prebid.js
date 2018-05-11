@@ -27,5 +27,5 @@ This feature allows the publisher to adjust the bidding price before the bids ta
 
 ### How to use the feature
 
-Follow this [line by line example](/dev-docs/examples/adjust-price.html) to implement this feature.
+See the [Publisher API Reference](/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings) for more details.
 

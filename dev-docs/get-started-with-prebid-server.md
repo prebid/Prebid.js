@@ -144,7 +144,7 @@ var adUnit1 = {
     code: 'videoAdUnit',
     mediaTypes: {
         video: {
-            context: "instream",
+            context: 'instream',
             mimes: ['video/mp4'],
             playerSize: [400, 600],
             minduration: 1,

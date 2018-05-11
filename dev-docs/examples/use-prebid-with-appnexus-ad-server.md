@@ -9,10 +9,8 @@ hide: true
 
 about:
 - An example showing how to use Prebid.js with AppNexus Publisher Ad Server
-- ... including how to use the <a href="https://wiki.appnexus.com/x/JAUIBQ">AppNexus Seller Tag</a>
+- See the <a href="https://wiki.appnexus.com/x/JAUIBQ">AppNexus Seller Tag documentation</a> for more information
 
-jsfiddle_link: jsfiddle.net/gqvoj5pk/36/embedded/html,result
-code_lines: 120
-code_height: 2850
-use_old_example_style: false
+jsfiddle_link: jsfiddle.net/prebid_org/7hc1gm8h/embedded/html,result
+code_height: 2404
 ---

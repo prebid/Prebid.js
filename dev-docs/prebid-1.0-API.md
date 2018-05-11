@@ -231,7 +231,7 @@ adUnit = {
     "code": "unique_code_for_placement"
     "mediaTypes": { // New field to replace `mediaType`. Defaults to `banner` if not specified.
         video: {
-            context: "outstream",
+            context: 'outstream',
             playerSize: [600, 480]
         },
         banner: { 
