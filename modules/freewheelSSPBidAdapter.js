@@ -223,17 +223,17 @@ export const spec = {
       componentId: getComponentId(currentBidRequest.params.format)
     };
 
-    if(typeof currentBidRequest.params.gdpr !== "undefined") {
+    if (typeof currentBidRequest.params.gdpr !== 'undefined') {
       requestParams._fw_gdpr = currentBidRequest.params.gdpr;
       requestParams._fw_gdpr_consent = currentBidRequest.params.gdpr_consent;
     }
 
     var vastParams = currentBidRequest.params.vastUrlParams;
-    if(typeof vastParams === "object") {
-      for(kye in vastParams){
-        
-        if(vastParams.hasOwnProperty(key))
+    if (typeof vastParams === 'object') {
+      for (kye in vastParams) {
+        if (vastParams.hasOwnProperty(key)) {
           requestParams[key] = vastParams[key];
+        }
       }
     }
 
