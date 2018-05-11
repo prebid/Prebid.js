@@ -49,6 +49,18 @@ describe('PubMatic adapter', () => {
               'deal_channel': 6
             }
           }]
+        }, {
+          'bid': [{
+            'id': '74858439-49D7-4169-BA5D-44A046315BEF',
+            'impid': '22bddb28db77e',
+            'price': 1.7,
+            'adm': 'image3.pubmatic.com Layer based creative',
+            'h': 250,
+            'w': 300,
+            'ext': {
+              'deal_channel': 5
+            }
+          }]
         }]
       }
     };
@@ -213,6 +225,22 @@ describe('PubMatic adapter', () => {
         expect(response[0].ttl).to.equal(300);
         expect(response[0].referrer).to.include(utils.getTopWindowUrl());
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+
+        expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
+        expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+        expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
+        expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
+        if (bidResponses.body.seatbid[1].bid[0].crid) {
+          expect(response[1].creativeId).to.equal(bidResponses.body.seatbid[1].bid[0].crid);
+        } else {
+          expect(response[1].creativeId).to.equal(bidResponses.body.seatbid[1].bid[0].id);
+        }
+        expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
+        expect(response[1].currency).to.equal('USD');
+        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].ttl).to.equal(300);
+        expect(response[1].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
       });
 
       it('should check for dealChannel value selection', () => {
@@ -220,6 +248,7 @@ describe('PubMatic adapter', () => {
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].dealChannel).to.equal('PMPG');
+        expect(response[1].dealChannel).to.equal('PREF');
       });
 
       it('should check for unexpected dealChannel value selection', () => {
