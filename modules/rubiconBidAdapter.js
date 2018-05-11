@@ -206,7 +206,8 @@ export const spec = {
         keywords,
         visitor,
         inventory,
-        userId
+        userId,
+        latLong: [latitude, longitude] = [],
       } = bidRequest.params;
 
       // defaults
@@ -230,7 +231,9 @@ export const spec = {
         'x_source.tid', bidRequest.transactionId,
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
-        'tk_user_key', userId
+        'tk_user_key', userId,
+        'p_geo.latitude', parseFloat(latitude).toFixed(4),
+        'p_geo.longitude', parseFloat(longitude).toFixed(4)
       ];
 
       if (gdprConsent) {
@@ -258,7 +261,7 @@ export const spec = {
 
       data = data.reduce(
         (memo, curr, index) =>
-          index % 2 === 0 && data[index + 1] !== undefined
+          index % 2 === 0 && data[index + 1] !== undefined && !isNaN(data[index + 1])
             ? memo + curr + '=' + encodeURIComponent(data[index + 1]) + '&' : memo,
         ''
       ).slice(0, -1); // remove trailing &
@@ -287,7 +290,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, {bidRequest}) {
-    responseObj = responseObj.body
+    responseObj = responseObj.body;
     let ads = responseObj.ads;
 
     // check overall response
@@ -470,6 +473,11 @@ var hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
+}
+
+function isNaN(value) {
+  // eslint-disable-next-line no-self-compare
+  return value !== value;
 }
 
 registerBidder(spec);
