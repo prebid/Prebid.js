@@ -3,8 +3,6 @@ import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
-const adloader = require('../../../src/adloader');
-
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
 describe('AppNexusAdapter', () => {
@@ -173,7 +171,7 @@ describe('AppNexusAdapter', () => {
       });
     });
 
-    it('should attache native params to the request', () => {
+    it('should attach native params to the request', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -290,7 +288,7 @@ describe('AppNexusAdapter', () => {
       }]);
     });
 
-    it('should should add payment rules to the request', () => {
+    it('should add payment rules to the request', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -306,21 +304,31 @@ describe('AppNexusAdapter', () => {
 
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
+
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_consent).to.exist;
+      expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
+      expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
+    });
   })
 
   describe('interpretResponse', () => {
-    let loadScriptStub;
-
-    beforeEach(() => {
-      loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-        args[1]();
-      });
-    });
-
-    afterEach(() => {
-      loadScriptStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -412,6 +420,7 @@ describe('AppNexusAdapter', () => {
           'ads': [{
             'ad_type': 'video',
             'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
             'rtb': {
               'video': {
                 'content': '<!-- Creative -->'
@@ -424,6 +433,7 @@ describe('AppNexusAdapter', () => {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
+      expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 

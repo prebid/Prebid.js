@@ -10,14 +10,29 @@ var CONSTANTS = require('./constants.json');
 var pbTargetingKeys = [];
 
 export const BID_TARGETING_SET = 'targetingSet';
+export const RENDERED = 'rendered';
 
 const MAX_DFP_KEYLENGTH = 20;
+const TTL_BUFFER = 1000;
 
 // return unexpired bids
-export const isBidExpired = (bid) => (timestamp() - bid.responseTimestamp) < bid.ttl * 1000;
+export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && bid.status === BID_TARGETING_SET) || !bid.status);
+const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
+
+// If two bids are found for same adUnitCode, we will use the latest one to take part in auction
+// This can happen in case of concurrent auctions
+export const getOldestBid = function(bid, i, arr) {
+  let oldestBid = true;
+  arr.forEach((val, j) => {
+    if (i === j) return;
+    if (bid.bidder === val.bidder && bid.adUnitCode === val.adUnitCode && bid.responseTimestamp > val.responseTimestamp) {
+      oldestBid = false;
+    }
+  });
+  return oldestBid;
+}
 
 /**
  * @typedef {Object.<string,string>} targeting
@@ -162,6 +177,8 @@ export function newTargeting(auctionManager) {
     return auctionManager.getBidsReceived()
       .filter(isUnusedBid)
       .filter(exports.isBidExpired)
+      .filter(getOldestBid)
+    ;
   }
 
   /**
@@ -193,9 +210,7 @@ export function newTargeting(auctionManager) {
         // setKeywords supports string and array as value
         if (utils.isStr(astTargeting[targetId][key]) || utils.isArray(astTargeting[targetId][key])) {
           let keywordsObj = {};
-          let input = 'hb_adid';
-          let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
-          keywordsObj[nKey] = astTargeting[targetId][key];
+          keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
           window.apntag.setKeywords(targetId, keywordsObj);
         }
       })
@@ -328,7 +343,11 @@ export function newTargeting(auctionManager) {
     });
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
-      if (bid.adserverTargeting) {
+      if (
+        bid.adserverTargeting && adUnitCodes &&
+        ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
+        (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes))
+      ) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined')

@@ -11,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -382,6 +383,10 @@ exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
 
+exports.isPlainObject = function(object) {
+  return this.isA(object, t_Object);
+}
+
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
@@ -515,6 +520,38 @@ exports.callBurl = function({ source, burl }) {
 };
 
 /**
+ * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
+ * (though could be for other purposes)
+ * @param {string} htmlCode snippet of HTML code used for tracking purposes
+ */
+exports.insertHtmlIntoIframe = function(htmlCode) {
+  if (!htmlCode) {
+    return;
+  }
+
+  let iframe = document.createElement('iframe');
+  iframe.id = exports.getUniqueIdentifierStr();
+  iframe.width = 0;
+  iframe.height = 0;
+  iframe.hspace = '0';
+  iframe.vspace = '0';
+  iframe.marginWidth = '0';
+  iframe.marginHeight = '0';
+  iframe.style.display = 'none';
+  iframe.style.height = '0px';
+  iframe.style.width = '0px';
+  iframe.scrolling = 'no';
+  iframe.frameBorder = '0';
+  iframe.allowtransparency = 'true';
+
+  exports.insertElement(iframe, document, 'body');
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(htmlCode);
+  iframe.contentWindow.document.close();
+}
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
@@ -566,7 +603,7 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
       allowtransparency="true"
       marginheight="0" marginwidth="0"
       width="0" hspace="0" vspace="0" height="0"
-      style="height:0p;width:0p;display:none;"
+      style="height:0px;width:0px;display:none;"
       scrolling="no"
       src="${url}">
     </iframe>`;
@@ -775,6 +812,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -846,7 +886,21 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };
 }
-
+/**
+ * Returns user configured bidder params from adunit
+ * @param {object} adunits
+ * @param {string} adunit code
+ * @param {string} bidder code
+ * @return {Array} user configured param for the given bidder adunit configuration
+ */
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params || {});
+}
 /**
  * Returns the origin
  */
@@ -934,4 +988,12 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }
