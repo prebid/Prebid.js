@@ -4,7 +4,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
-import { getTopWindowUrl } from 'src/utils';
+import { generateUUID, getTopWindowUrl, isSafariBrowser } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -15,6 +15,7 @@ const url = 'https://an.facebook.com/v2/placementbid.json';
 const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hb_bidder = 'fan';
+const pbv = '$prebid.version$';
 
 /**
  * Does this bid request contain valid parameters?
@@ -26,7 +27,7 @@ const isBidRequestValid = bid =>
   typeof bid.params.placementId === 'string' &&
   bid.params.placementId.length > 0 &&
   Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).every(size => size === '300x250') : true) &&
+  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).some(size => size === '300x250') : true) &&
   (isValidNonSizedFormat(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 
 /**
@@ -164,11 +165,15 @@ const buildRequests = bids => {
     adformats,
     testmode,
     pageurl,
-    sdk
+    sdk,
+    pbv
   };
   const video = findIndex(adformats, isVideo);
   if (video !== -1) {
     [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
+  }
+  if (isSafariBrowser()) {
+    search.cb = generateUUID();
   }
   const data = formatQS(search);
 

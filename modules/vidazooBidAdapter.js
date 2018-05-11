@@ -21,11 +21,11 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, size) {
   const {params, bidId} = bid;
-  const {bidFloor, cId, pId} = params;
+  const {bidFloor, cId, pId, ext} = params;
   // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
   const [width, height] = size.split('x');
 
-  return {
+  const dto = {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
@@ -38,6 +38,12 @@ function buildRequest(bid, topWindowUrl, size) {
       height
     }
   }
+
+  utils._each(ext, (value, key) => {
+    dto.data['ext.' + key] = value;
+  });
+
+  return dto;
 }
 
 function buildRequests(validBidRequests) {

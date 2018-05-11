@@ -32,18 +32,20 @@ import { config } from '../src/config';
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param {string} uri The URI where the VAST content can be found.
+ * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri) {
+function wrapURI(uri, impUrl) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
+  let vastImp = (impUrl) ? `<![CDATA[${impUrl}]]>` : ``;
   return `<VAST version="3.0">
     <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>
-        <Impression></Impression>
+        <Impression>${vastImp}</Impression>
         <Creatives></Creatives>
       </Wrapper>
     </Ad>
@@ -57,7 +59,7 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl);
+  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
   return {
     type: 'xml',
     value: vastValue
