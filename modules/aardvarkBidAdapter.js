@@ -95,7 +95,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     var bidResponses = [];
     utils._each(serverResponse.body, function(rawBid) {
-      if (!rawBid.cpm) {
+      if (!rawBid.cpm || !(+rawBid.cpm)) {
         return;
       }
 
