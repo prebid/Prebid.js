@@ -268,10 +268,11 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     try {
-      if (response.body && response.body.seatbid) {
+      if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
+          utils.isArray(seatbidder.bid) &&
           seatbidder.bid.forEach(bid => {
             let newBid = {
               requestId: bid.impid,
