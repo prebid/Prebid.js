@@ -1,4 +1,4 @@
-import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
+import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 export const nativeAdapters = [];
@@ -145,6 +145,10 @@ export function fireNativeTrackers(message, adObject) {
     trackers = adObject['native'] && adObject['native'].clickTrackers;
   } else {
     trackers = adObject['native'] && adObject['native'].impressionTrackers;
+
+    if (adObject['native'] && adObject['native'].javascriptTrackers) {
+      insertHtmlIntoIframe(adObject['native'].javascriptTrackers);
+    }
   }
 
   (trackers || []).forEach(triggerPixel);
