@@ -2,6 +2,7 @@
 
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { Renderer } from 'src/Renderer';
 
 const BIDDER_CODE = 'vuble';
 
@@ -11,6 +12,38 @@ const CURRENCIES = {
   net: 'USD'
 };
 const TTL = 60;
+
+const outstreamRender = bid => {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: {
+        showBigPlayButton: false,
+        showProgressBar: true,
+        allowFullscreen: false,
+        skippable: false,
+      }
+    });
+  });
+}
+
+const createRenderer = (bid, serverResponse) => {
+  const renderer = Renderer.install({
+    id: serverResponse.renderer_id,
+    url: serverResponse.renderer_url,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -68,7 +101,8 @@ export const spec = {
         floor_price: bidRequest.params.floorPrice ? bidRequest.params.floorPrice : 0,
         url: referrer,
         env: bidRequest.params.env,
-        bid_id: bidRequest.bidId
+        bid_id: bidRequest.bidId,
+        adUnitCode: bidRequest.adUnitCode
       };
 
       return {
@@ -106,6 +140,23 @@ export const spec = {
       vastUrl: responseBody.url,
       mediaType: 'video'
     };
+
+    if (responseBody.renderer_url) {
+      let adResponse = {
+        ad: {
+          video: {
+            content: responseBody.content
+          }
+        }
+      };
+
+      Object.assign(bid, {
+        adResponse: adResponse,
+        adUnitCode: bidRequest.data.adUnitCode,
+        renderer: createRenderer(bid, responseBody)
+      });
+    }
+
     bids.push(bid);
 
     return bids;
