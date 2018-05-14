@@ -138,10 +138,10 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   }
 
   renderer.setEventHandlers({
-    impression: () => utils.logMessage('AppNexus outstream video impression event'),
-    loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+    impression: () => utils.logMessage('PlaygroundXYZ outstream video impression event'),
+    loaded: () => utils.logMessage('PlaygroundXYZ outstream video loaded event'),
     ended: () => {
-      utils.logMessage('AppNexus outstream renderer video event');
+      utils.logMessage('PlaygroundXYZ outstream renderer video event');
       document.querySelector(`#${adUnitCode}`).style.display = 'none';
     }
   });
