@@ -54,7 +54,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
       };
 
-      if(bid.gdprConsent) {
+      if (bid.gdprConsent) {
         payload.gdpr_consent = bid.gdprConsent.consentString;
         payload.gdpr = bid.gdprConsent.gdprApplies; //we're handling the undefined case server side
       }
