@@ -189,7 +189,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     currency: 'USD',
     netRevenue: true,
     ttl: 300,
-    appnexus: {
+    playgroundxyz: {
       buyerMemberId: rtbBid.buyer_member_id
     }
   };

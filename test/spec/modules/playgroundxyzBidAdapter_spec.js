@@ -309,7 +309,7 @@ describe('playgroundxyzBidAdapter', () => {
           'currency': 'USD',
           'ttl': 300,
           'netRevenue': true,
-          'appnexus': {
+          'playgroundxyz': {
             'buyerMemberId': 958
           }
         }
