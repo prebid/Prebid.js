@@ -51,8 +51,14 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
-        prebidVersion: '$prebid.version$'
+        prebidVersion: '$prebid.version$',
       };
+
+      if(bid.gdprConsent) {
+        payload.gdpr_consent = bid.gdprConsent.consentString;
+        payload.gdpr = bid.gdprConsent.gdprApplies; //we're handling the undefined case server side
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',

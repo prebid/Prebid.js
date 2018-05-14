@@ -55,6 +55,48 @@ describe('Smart bid adapter tests', () => {
     requestId: 'efgh5678'
   }];
 
+  // Default params without optional and with GPDR
+  var DEFAULT_PARAMS_WO_OPTIONAL_GDPR = [{
+    adUnitCode: 'sas_42',
+    bidId: 'abcd1234',
+    sizes: [
+      [300, 250],
+      [300, 200]
+    ],
+    bidder: 'smartadserver',
+    params: {
+      domain: 'http://prg.smartadserver.com',
+      siteId: '1234',
+      pageId: '5678',
+      formatId: '90'
+    },
+    requestId: 'efgh5678',
+    gdprConsent: {
+      consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
+      gdprApplies: true
+    }
+  }];
+
+  var DEFAULT_PARAMS_WO_OPTIONAL_GDPR_WITHOUT_GDPRAPPLIES = [{
+    adUnitCode: 'sas_42',
+    bidId: 'abcd1234',
+    sizes: [
+      [300, 250],
+      [300, 200]
+    ],
+    bidder: 'smartadserver',
+    params: {
+      domain: 'http://prg.smartadserver.com',
+      siteId: '1234',
+      pageId: '5678',
+      formatId: '90'
+    },
+    requestId: 'efgh5678',
+    gdprConsent: {
+      consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
+    }
+  }];
+
   var BID_RESPONSE = {
     body: {
       cpm: 12,
@@ -98,6 +140,42 @@ describe('Smart bid adapter tests', () => {
     expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
+
+  it('Verify build request with GDPR', () => {
+    config.setConfig({
+      'currency': {
+        'adServerCurrency': 'EUR'
+      },
+      consentManagement: {
+        cmp: 'iab',
+        consentRequired: true,
+        timeout: 1000,
+        allowAuctionWithoutConsent: true
+      }
+    });
+    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL_GDPR);
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('gdpr').and.to.equal(true);
+    expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+  });  
+
+  it('Verify build request with GDPR without gdprApplies', () => {
+    config.setConfig({
+      'currency': {
+        'adServerCurrency': 'EUR'
+      },
+      consentManagement: {
+        cmp: 'iab',
+        consentRequired: true,
+        timeout: 1000,
+        allowAuctionWithoutConsent: true
+      }
+    });
+    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL_GDPR_WITHOUT_GDPRAPPLIES);
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.not.have.property('gdpr');
+    expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+  });  
 
   it('Verify parse response', () => {
     const request = spec.buildRequests(DEFAULT_PARAMS);
