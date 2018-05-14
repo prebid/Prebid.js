@@ -267,6 +267,33 @@ describe('playgroundxyzBidAdapter', () => {
               'content_source': 'rtb',
               'ad_type': 'banner',
               'buyer_member_id': 958,
+              'creative_id': 333333,
+              'media_type_id': 1,
+              'media_subtype_id': 1,
+              'cpm': 0.3,
+              'cpm_publisher_currency': 0.5,
+              'publisher_currency_code': '$',
+              'client_initiated_ad_counting': true,
+              'rtb': {
+                'banner': {
+                  'content': '<!-- Creative -->',
+                  'width': 300,
+                  'height': 250
+                },
+                'trackers': [
+                  {
+                    'impression_urls': [
+                      'http://lax1-ib.adnxs.com/impression'
+                    ],
+                    'video_events': {}
+                  }
+                ]
+              }
+            },
+            {
+              'content_source': 'rtb',
+              'ad_type': 'banner',
+              'buyer_member_id': 958,
               'creative_id': 29681110,
               'media_type_id': 1,
               'media_subtype_id': 1,
