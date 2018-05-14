@@ -1221,7 +1221,7 @@ describe('the rubicon adapter', () => {
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=0&gdpr_consent=foo`
       });
-    })
+    });
 
     it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
@@ -1231,11 +1231,17 @@ describe('the rubicon adapter', () => {
       });
     });
 
+    it('should pass no params if gdpr consentString is not defined', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
     it('should pass no params if gdpr is not defined', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
       });
-    })
+    });
   });
 });
 
