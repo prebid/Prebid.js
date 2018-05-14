@@ -52,7 +52,7 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
-        prebidVersion: '$prebid.version$',
+        prebidVersion: '$prebid.version$'
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
