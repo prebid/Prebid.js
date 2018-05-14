@@ -5,17 +5,8 @@ import adaptermanager from 'src/adaptermanager';
 import { logInfo } from 'src/utils';
 
 const analyticsType = 'endpoint';
-const DEFAULT_HOST = 'integrations.rivr.simplaex.net/prebid/auctions';
+const DEFAULT_HOST = 'integrations.rivr.simplaex.net/prebid';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
-
-const RIVR_HB_EVENTS = {
-  AUCTION_INIT: 'auctionInit',
-  BID_REQUEST: 'bidRequested',
-  BID_RESPONSE: 'bidResponse',
-  BID_WON: 'bidWon',
-  AUCTION_END: 'auctionEnd',
-  TIMEOUT: 'adapterTimedOut'
-};
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
@@ -26,8 +17,8 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
     let handler = null;
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
-        if (rivrAnalytics.context.queue) {
-          rivrAnalytics.context.queue.init();
+        if (rivrAnalytics.context.impressionsQueue) {
+          rivrAnalytics.context.impressionsQueue.init();
         }
         handler = trackAuctionInit;
         break;
@@ -48,83 +39,196 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         break;
     }
     if (handler) {
-      let events = handler(args);
-      if (rivrAnalytics.context.queue) {
-        rivrAnalytics.context.queue.push(events);
-      }
-      if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
-        sendAll();
+      if (handler == trackBidWon) {
+        let impressions = handler(args);
+        if (rivrAnalytics.context.impressionsQueue) {
+          rivrAnalytics.context.impressionsQueue.push(impressions);
+        }
+      } else {
+        handler(args)
       }
     }
   }
 });
 
 function sendAll() {
-  let events = rivrAnalytics.context.queue.popAll();
-  if (events.length !== 0) {
-    let req = Object.assign({}, {hb_ev: events});
-    logInfo('sending request to analytics => ', req);
-    ajax(`http://${rivrAnalytics.context.host}`, () => {
-    }, JSON.stringify(req));
+  let impressions = rivrAnalytics.context.impressionsQueue.popAll();
+  let auctionObject = rivrAnalytics.context.auctionObject
+  let req = Object.assign({}, {Auction: auctionObject});
+  auctionObject = createAuctionObject();
+  logInfo('sending request to analytics => ', req);
+  ajax(`http://${rivrAnalytics.context.host}/auctions`, () => {
+  }, JSON.stringify(req));
+
+  if (impressions.length !== 0) {
+    let impressionsReq = Object.assign({}, {impressions});
+    logInfo('sending impressions request to analytics => ', impressionsReq);
+    ajax(`http://${rivrAnalytics.context.host}/impressions`, () => {
+    }, JSON.stringify(impressionsReq));
   }
 }
 
-function trackAuctionInit() {
+function trackAuctionInit(args) {
   rivrAnalytics.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, RIVR_HB_EVENTS.AUCTION_INIT);
-  return [event];
+  rivrAnalytics.context.auctionObject.id = args.auctionId
 }
 
 function trackBidRequest(args) {
-  return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, RIVR_HB_EVENTS.BID_REQUEST, bid.adUnitCode));
+  setCurrentUserId(args);
 }
 
 function trackBidResponse(args) {
-  const event = createHbEvent(args.bidderCode, RIVR_HB_EVENTS.BID_RESPONSE,
-    args.adUnitCode, args.cpm, args.timeToRespond / 1000);
-  return [event];
+  let bidResponse = createBidResponse(args);
+  rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse)
 }
 
 function trackBidWon(args) {
-  const event = createHbEvent(args.bidderCode, RIVR_HB_EVENTS.BID_WON, args.adUnitCode, args.cpm);
-  return [event];
+  let auctionObject = rivrAnalytics.context.auctionObject;
+  let bidResponse = createBidResponse(args)
+  let impression = createImpression(args)
+  let imp = createImp(args);
+  auctionObject.bidResponses.push(bidResponse)
+  auctionObject.imp.push(imp)
+
+  return [impression];
 }
 
 function trackAuctionEnd(args) {
-  const event = createHbEvent(undefined, RIVR_HB_EVENTS.AUCTION_END, undefined,
-    undefined, (Date.now() - rivrAnalytics.context.auctionTimeStart) / 1000);
-  return [event];
+  rivrAnalytics.context.auctionTimeEnd = Date.now();
 }
 
 function trackBidTimeout(args) {
-  return args.map(bidderName => createHbEvent(bidderName, RIVR_HB_EVENTS.TIMEOUT));
+  return [args]
 }
 
-function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  let ev = { event: event };
-  if (adapter) {
-    ev.adapter = adapter
+function setCurrentUserId(bidRequested) {
+  let user = rivrAnalytics.context.auctionObject.user
+  if (!user.id) {
+    rivrAnalytics.context.pubId ? user.id = rivrAnalytics.context.pubId : user.id = bidRequested.bids[0].crumbs.pubcid
   }
-  if (tagid) {
-    ev.tagid = tagid;
-  }
-  if (value) {
-    ev.val = value;
-  }
-  if (time) {
-    ev.time = time;
-  }
-  return ev;
 }
 
+function createBidResponse(bidResponseEvent) {
+  return {
+    timestamp: bidResponseEvent.responseTimestamp,
+    status: bidResponseEvent.getStatusCode(),
+    total_duration: bidResponseEvent.timeToRespond,
+    bidderId: null,
+    bidder_name: bidResponseEvent.bidder,
+    cur: bidResponseEvent.currency,
+    seatid: [
+      {
+        seat: null,
+        bid: [
+          {
+            status: bidResponseEvent.getStatusCode(),
+            clear_price: bidResponseEvent.cpm,
+            attr: [],
+            crid: bidResponseEvent.creativeId,
+            cid: null,
+            id: null,
+            adid: bidResponseEvent.adId,
+            adomain: [],
+            iurl: null
+          }
+        ]
+      }
+    ]
+  }
+}
+
+function createImpression(bidWonEvent) {
+  return {
+    timestamp: bidWonEvent.responseTimestamp,
+    requestId: bidWonEvent.auctionId,
+    chargePrice: bidWonEvent.adserverTargeting.hb_pb,
+    publisherRevenue: bidWonEvent.cpm
+  }
+}
+
+function createImp(bidWonEvent) {
+  return {
+    tagid: bidWonEvent.adUnitCode,
+    displaymanager: null,
+    displaymanagerver: null,
+    secure: null,
+    bidfloor: null,
+    banner: {
+      w: bidWonEvent.width,
+      h: bidWonEvent.height,
+      pos: null,
+      expandable: [],
+      api: []
+    }
+  }
+}
+
+function createAuctionObject() {
+  return {
+    id: null,
+    timestamp: null,
+    at: null,
+    bcat: [],
+    imp: [],
+    app: {
+      id: null,
+      name: null,
+      domain: null,
+      bundle: null,
+      cat: [],
+      publisher: {
+        id: null,
+        name: null
+      }
+    },
+    site: {
+      id: null,
+      name: null,
+      domain: null,
+      cat: [],
+      publisher: {
+        id: null,
+        name: null
+      }
+    },
+    device: {
+      geo: {
+        city: null,
+        country: null,
+        region: null,
+        zip: null,
+        type: null,
+        metro: null
+      },
+      connectiontype: null,
+      devicetype: null,
+      osv: null,
+      os: null,
+      model: null,
+      make: null,
+      carrier: null,
+      ip: null,
+      didsha1: null,
+      dpidmd5: null,
+      ext: {
+        uid: null
+      }
+    },
+    user: {
+      id: null,
+      yob: null,
+      gender: null,
+    },
+    bidResponses: []
+  }
+}
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
  * @param callback
  * @param ttl
  * @constructor
  */
-export function ExpiringQueue(callback, ttl) {
+export function ExpiringQueue(callback, ttl, log) {
   let queue = [];
   let timeoutId;
 
@@ -143,7 +247,6 @@ export function ExpiringQueue(callback, ttl) {
     reset();
     return result;
   };
-
   /**
    * For test/debug purposes only
    * @return {Array}
@@ -174,7 +277,8 @@ rivrAnalytics.enableAnalytics = (config) => {
   rivrAnalytics.context = {
     host: config.options.host || DEFAULT_HOST,
     pubId: config.options.pubId,
-    queue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
+    auctionObject: createAuctionObject(),
+    impressionsQueue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
   rivrAnalytics.originEnableAnalytics(config);
