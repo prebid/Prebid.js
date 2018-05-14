@@ -1237,6 +1237,30 @@ describe('the rubicon adapter', () => {
       });
     });
 
+    it('should pass no params if gdpr consentString is a number', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 0
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: null
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: {}
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
     it('should pass no params if gdpr is not defined', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
