@@ -213,7 +213,7 @@ describe('aardvarkAdapterTest', () => {
           {
             media: 'banner',
             nurl: 'http://www.nurl.com/1',
-            cpm: 0.09,
+            cpm: 0.19,
             width: 300,
             height: 250,
             cid: '1abgs362e0x48a8',
@@ -237,7 +237,7 @@ describe('aardvarkAdapterTest', () => {
       expect(result[0].ad).to.not.be.undefined;
 
       expect(result[1].requestId).to.equal('1abgs362e0x48a8');
-      expect(result[1].cpm).to.equal(0.09);
+      expect(result[1].cpm).to.equal(0.19);
       expect(result[1].width).to.equal(300);
       expect(result[1].height).to.equal(250);
       expect(result[1].currency).to.equal('USD');
@@ -246,17 +246,19 @@ describe('aardvarkAdapterTest', () => {
     });
 
     it('should handle nobid responses', () => {
-      var emptyResponse = {
+      var emptyResponse = [{
         nurl: '',
         cid: '9e5a09319e18f1',
         media: 'banner',
         error: 'No bids received for 9DgF',
         adm: '',
         id: '9DgF',
-        cpm: '0.00'
-      };
+        cpm: 0.00
+      }];
+
       var result = spec.interpretResponse({ body: emptyResponse }, {});
-      expect(result.length).to.equal(0);
+      expect(result.length).to.equal(1);
+      expect(result[0].cpm).to.equal(0.0);
     });
   });
 });

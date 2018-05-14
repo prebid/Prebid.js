@@ -94,14 +94,15 @@ export const spec = {
 
   interpretResponse: function(serverResponse, bidRequest) {
     var bidResponses = [];
-    utils._each(serverResponse.body, function(rawBid) {
-      if (!rawBid.cpm || !(+rawBid.cpm)) {
-        return;
-      }
 
+    if (!Array.isArray(serverResponse.body)) {
+      serverResponse.body = [serverResponse.body];
+    }
+
+    utils._each(serverResponse.body, function(rawBid) {
       var bidResponse = {
         requestId: rawBid.cid,
-        cpm: rawBid.cpm,
+        cpm: rawBid.cpm || 0,
         width: rawBid.width || 0,
         height: rawBid.height || 0,
         currency: rawBid.currency ? rawBid.currency : AARDVARK_CURRENCY,
