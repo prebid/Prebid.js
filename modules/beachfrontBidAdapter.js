@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { deepAccess } from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { Renderer } from 'src/Renderer';
 import { VIDEO, BANNER } from 'src/mediaTypes';
@@ -21,17 +22,17 @@ export const spec = {
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && bid.params.appId && bid.params.bidfloor);
+    return !!(isVideoBidValid(bid) || isBannerBidValid(bid));
   },
 
   buildRequests(bids, bidderRequest) {
     let requests = [];
-    let videoBids = bids.filter(bid => isVideoBid(bid));
-    let bannerBids = bids.filter(bid => !isVideoBid(bid));
+    let videoBids = bids.filter(bid => isVideoBidValid(bid));
+    let bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
       requests.push({
         method: 'POST',
-        url: VIDEO_ENDPOINT + bid.params.appId,
+        url: VIDEO_ENDPOINT + getVideoBidParam(bid, 'appId'),
         data: createVideoRequestData(bid, bidderRequest),
         bidRequest: bid
       });
@@ -56,7 +57,7 @@ export const spec = {
         return [];
       }
       let size = getFirstSize(bidRequest);
-      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+      let context = deepAccess(bidRequest, 'mediaTypes.video.context');
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
@@ -122,8 +123,8 @@ function outstreamRender(bid) {
 
 function getSizes(bid) {
   let sizes = (isVideoBid(bid)
-    ? utils.deepAccess(bid, 'mediaTypes.video.playerSize')
-    : utils.deepAccess(bid, 'mediaTypes.banner.sizes')) || bid.sizes;
+    ? deepAccess(bid, 'mediaTypes.video.playerSize')
+    : deepAccess(bid, 'mediaTypes.banner.sizes')) || bid.sizes;
   return utils.parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
@@ -172,10 +173,30 @@ function getDoNotTrack() {
 }
 
 function isVideoBid(bid) {
-  return bid.mediaTypes && bid.mediaTypes.video;
+  return deepAccess(bid, 'mediaTypes.video');
 }
 
-function getVideoParams(bid) {
+function isBannerBid(bid) {
+  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+}
+
+function getVideoBidParam(bid, key) {
+  return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
+}
+
+function getBannerBidParam(bid, key) {
+  return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
+}
+
+function isVideoBidValid(bid) {
+  return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
+}
+
+function isBannerBidValid(bid) {
+  return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoTargetingParams(bid) {
   return Object.keys(Object(bid.params.video))
     .filter(param => includes(VIDEO_TARGETING, param))
     .reduce((obj, param) => {
@@ -186,11 +207,13 @@ function getVideoParams(bid) {
 
 function createVideoRequestData(bid, bidderRequest) {
   let size = getFirstSize(bid);
-  let video = getVideoParams(bid);
+  let video = getVideoTargetingParams(bid);
+  let appId = getVideoBidParam(bid, 'appId');
+  let bidfloor = getVideoBidParam(bid, 'bidfloor');
   let topLocation = utils.getTopWindowLocation();
   let payload = {
     isPrebid: true,
-    appId: bid.params.appId,
+    appId: appId,
     domain: document.location.hostname,
     id: utils.getUniqueIdentifierStr(),
     imp: [{
@@ -199,7 +222,7 @@ function createVideoRequestData(bid, bidderRequest) {
         h: size.h,
         mimes: DEFAULT_MIMES
       }, video),
-      bidfloor: bid.params.bidfloor,
+      bidfloor: bidfloor,
       secure: topLocation.protocol === 'https:' ? 1 : 0
     }],
     site: {
@@ -234,8 +257,8 @@ function createBannerRequestData(bids, bidderRequest) {
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
-      id: bid.params.appId,
-      bidfloor: bid.params.bidfloor,
+      id: getBannerBidParam(bid, 'appId'),
+      bidfloor: getBannerBidParam(bid, 'bidfloor'),
       sizes: getSizes(bid)
     };
   });

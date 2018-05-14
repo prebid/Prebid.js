@@ -63,6 +63,64 @@ describe('BeachfrontAdapter', () => {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
+
+    describe('for multi-format bids', () => {
+      it('should return true when the required params are passed for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+
+      it('should return true when the required params are passed for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+    });
   });
 
   describe('spec.buildRequests', () => {
