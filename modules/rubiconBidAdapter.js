@@ -363,7 +363,7 @@ export const spec = {
       // data is only assigned if params are available to pass to SYNC_ENDPOINT
       let params = '';
 
-      if (gdprConsent && typeof gdprConsent.consentString !== 'undefined') {
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {
           params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
