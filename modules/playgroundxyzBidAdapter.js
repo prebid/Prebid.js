@@ -7,7 +7,6 @@ import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'playgroundxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid';
-//const URL = 'https://localhost:4430/host-config/prebid';
 
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
