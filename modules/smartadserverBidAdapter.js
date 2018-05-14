@@ -22,9 +22,10 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param {bidderRequest} - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
 
     // if your bidder supports multiple currencies, use config.getConfig(currency)
@@ -54,9 +55,9 @@ export const spec = {
         prebidVersion: '$prebid.version$',
       };
 
-      if (bid.gdprConsent) {
-        payload.gdpr_consent = bid.gdprConsent.consentString;
-        payload.gdpr = bid.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
 
       var payloadString = JSON.stringify(payload);
