@@ -5,12 +5,9 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-// TODO: fix this
-// const BIDDER_CODE = 'appnexus';
 const BIDDER_CODE = 'playgroundxyz';
-// const URL = '//ib.adnxs.com/ut/v3/prebid';
-const URL = 'https://localhost:4430/host-config/prebid';
-// /TODO:
+const URL = 'https://ads.playground.xyz/host-config/prebid';
+
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];

@@ -8,7 +8,7 @@ Maintainer: info@prebid.org
 
 # Description
 
-Connects to Appnexus exchange for bids.
+Connects to playgroundxyz ad server for bids.
 
 Appnexus bid adapter supports Banner, Video (instream and outstream) and Native.
 
@@ -20,7 +20,7 @@ var adUnits = [
        code: 'banner-div',
        sizes: [[300, 250], [300,600]],
        bids: [{
-         bidder: 'appnexus',
+         bidder: 'playgroundxyz',
          params: {
            placementId: '10433394'
          }
@@ -51,7 +51,7 @@ var adUnits = [
         }
       },
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'playgroundxyz',
         params: {
           placementId: '9880618'
         }
