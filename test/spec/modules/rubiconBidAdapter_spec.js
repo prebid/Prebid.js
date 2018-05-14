@@ -171,7 +171,8 @@ describe('the rubicon adapter', () => {
               lastsearch: 'iphone'
             },
             position: 'atf',
-            referrer: 'localhost'
+            referrer: 'localhost',
+            latLong: [40.7608, '111.8910']
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',
@@ -239,7 +240,9 @@ describe('the rubicon adapter', () => {
             'tg_v.lastsearch': 'iphone',
             'tg_i.rating': '5-star',
             'tg_i.prodtype': 'tech',
-            'rf': 'localhost'
+            'rf': 'localhost',
+            'p_geo.latitude': '40.7608',
+            'p_geo.longitude': '111.8910'
           };
 
           // test that all values above are both present and correct

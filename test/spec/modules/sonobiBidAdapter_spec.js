@@ -107,6 +107,7 @@ describe('SonobiBidAdapter', () => {
         'placement_id': '1a2b3c4d5e6f1a2b3c4d',
         'sizes': [[300, 250], [300, 600]],
         'floor': '1.25',
+        'referrer': 'overrides_top_window_location'
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
@@ -117,6 +118,7 @@ describe('SonobiBidAdapter', () => {
       'params': {
         'ad_unit': '/7780971/sparks_prebid_LB',
         'sizes': [[300, 250], [300, 600]],
+        'referrer': 'overrides_top_window_location'
       },
       'adUnitCode': 'adunit-code-2',
       'sizes': [[120, 600], [300, 600], [160, 600]],
@@ -139,6 +141,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
+      expect(bidRequests.data.ref).to.equal('overrides_top_window_location');
       expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
@@ -280,6 +283,9 @@ describe('SonobiBidAdapter', () => {
         type: 'image',
         url: 'https://pixel-test'
       }]);
+    })
+    it('should return an empty array when sync is enabled but there are no bidResponses', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
     })
 
     it('should return an empty array when sync is enabled but no sync pixel returned', () => {

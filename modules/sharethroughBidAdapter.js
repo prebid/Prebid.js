@@ -7,23 +7,32 @@ const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/heade
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
-  buildRequests: (bidRequests) => {
+  buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
+      let query = {
+        bidId: bid.bidId,
+        placement_key: bid.params.pkey,
+        hbVersion: '$prebid.version$',
+        strVersion: VERSION,
+        hbSource: 'prebid'
+      };
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        query.consent_string = bidderRequest.gdprConsent.consentString;
+        query.consent_required = bidderRequest.gdprConsent.gdprApplies;
+      }
+
       return {
         method: 'GET',
         url: STR_ENDPOINT,
-        data: {
-          bidId: bid.bidId,
-          placement_key: bid.params.pkey,
-          hbVersion: '$prebid.version$',
-          strVersion: VERSION,
-          hbSource: 'prebid'
-        }
+        data: query
       };
     })
   },
   interpretResponse: ({ body }, req) => {
-    if (!Object.keys(body).length) return [];
+    if (!body || !Object.keys(body).length || !body.creatives.length) {
+      return [];
+    }
 
     const creative = body.creatives[0];
 
@@ -39,6 +48,15 @@ export const sharethroughAdapterSpec = {
       ttl: 360,
       ad: generateAd(body, req)
     }];
+  },
+  getUserSyncs: (syncOptions, serverResponses) => {
+    const syncs = [];
+    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      serverResponses[0].body.cookieSyncUrls.forEach(url => {
+        syncs.push({ type: 'image', url: url });
+      });
+    }
+    return syncs;
   }
 }
 
