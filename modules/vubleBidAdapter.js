@@ -21,7 +21,7 @@ const outstreamRender = bid => {
       adResponse: bid.adResponse,
       rendererOptions: {
         showBigPlayButton: false,
-        showProgressBar: true,
+        showProgressBar: 'bar',
         allowFullscreen: false,
         skippable: false,
       }
