@@ -358,12 +358,24 @@ export const spec = {
       return bids;
     }, []);
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT
+        url: SYNC_ENDPOINT + params
       };
     }
   }

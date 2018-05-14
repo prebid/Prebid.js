@@ -1206,6 +1206,66 @@ describe('the rubicon adapter', () => {
       syncs = spec.getUserSyncs();
       expect(syncs).to.equal(undefined);
     });
+
+    it('should pass gdpr params if consent is true', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: true, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr params if consent is false', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=0&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is not defined', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a number', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 0
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: null
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: {}
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr is not defined', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}`
+      });
+    });
   });
 });
 
