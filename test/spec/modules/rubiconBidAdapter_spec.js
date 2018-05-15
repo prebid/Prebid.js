@@ -172,7 +172,7 @@ describe('the rubicon adapter', () => {
             },
             position: 'atf',
             referrer: 'localhost',
-            latLong: [40.7608, '111.8910']
+            latLong: [40.7607823, '111.8910325']
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',
@@ -244,6 +244,66 @@ describe('the rubicon adapter', () => {
             'p_geo.latitude': '40.7608',
             'p_geo.longitude': '111.8910'
           };
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            if (value instanceof RegExp) {
+              expect(data[key]).to.match(value);
+            } else {
+              expect(data[key]).to.equal(value);
+            }
+          });
+        });
+
+        it('should make a well-formed request object without latLong', () => {
+          let expectedQuery = {
+            'account_id': '14062',
+            'site_id': '70608',
+            'zone_id': '335918',
+            'size_id': '15',
+            'alt_size_ids': '43',
+            'p_pos': 'atf',
+            'rp_floor': '0.01',
+            'rp_secure': /[01]/,
+            'rand': '0.1',
+            'tk_flint': INTEGRATION,
+            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'p_screen_res': /\d+x\d+/,
+            'tk_user_key': '12346',
+            'kw': 'a,b,c',
+            'tg_v.ucat': 'new',
+            'tg_v.lastsearch': 'iphone',
+            'tg_i.rating': '5-star',
+            'tg_i.prodtype': 'tech',
+            'rf': 'localhost',
+            'p_geo.latitude': undefined,
+            'p_geo.longitude': undefined
+          };
+
+          sandbox.stub(Math, 'random').callsFake(() => 0.1);
+
+          delete bidderRequest.bids[0].params.latLong;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+
+          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            if (value instanceof RegExp) {
+              expect(data[key]).to.match(value);
+            } else {
+              expect(data[key]).to.equal(value);
+            }
+          });
+
+          bidderRequest.bids[0].params.latLong = [];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+
+          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {

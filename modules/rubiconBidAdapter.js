@@ -233,8 +233,8 @@ export const spec = {
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
         'tk_user_key', userId,
-        'p_geo.latitude', parseFloat(latitude).toFixed(4),
-        'p_geo.longitude', parseFloat(longitude).toFixed(4)
+        'p_geo.latitude', isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
+        'p_geo.longitude', isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4)
       ];
 
       if (gdprConsent) {
