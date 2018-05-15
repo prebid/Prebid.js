@@ -38,7 +38,7 @@ describe('RockYouAdapter', () => {
       'auctionId': '18fd8b8b0bd757',
       'mediaTypes': {
         banner: {
-          'sizes': [[320, 50], [300, 250], [300, 600]]
+          'sizes': [[320, 50], [300, 600], [300, 250]]
         }
       }
     };
@@ -168,8 +168,8 @@ describe('RockYouAdapter', () => {
 
       let bannerData = firstImp.banner;
 
-      expect(bannerData.w).to.equal(320);
-      expect(bannerData.h).to.equal(50);
+      expect(bannerData.w).to.equal(300);
+      expect(bannerData.h).to.equal(600);
     });
 
     it('generates a banner request using a singular adSize instead of an array', () => {
