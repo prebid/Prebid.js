@@ -28,7 +28,7 @@ export const spec = {
     const bids = validBidRequests.map(bid => {
       let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
-        slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier
+        slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
           [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}`
         }
@@ -41,7 +41,7 @@ export const spec = {
       }
     });
 
-    let data = {}
+    let data = {};
     bids.forEach((bid) => { Object.assign(data, bid); });
 
     const payload = {
@@ -56,6 +56,9 @@ export const spec = {
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
+    }
+    if (validBidRequests[0].params.referrer) {
+      payload.ref = validBidRequests[0].params.referrer;
     }
 
     // If there is no key_maker data, then dont make the request.
@@ -132,17 +135,21 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses[0].body.sbi_px) {
-      serverResponses[0].body.sbi_px.forEach(pixel => {
-        syncs.push({
-          type: pixel.type,
-          url: pixel.url
+    try {
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.sbi_px.forEach(pixel => {
+          syncs.push({
+            type: pixel.type,
+            url: pixel.url
+          });
         });
-      });
+      }
+    } catch (e) {
+      logError(e)
     }
     return syncs;
   }
-}
+};
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
@@ -171,7 +178,7 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   }
   const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
   return '<script type="text/javascript" src="' + src + '"></script>';
-}
+};
 
 function _videoCreative(sbi_dc, sbi_aid) {
   return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`

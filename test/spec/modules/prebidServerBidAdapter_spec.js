@@ -982,7 +982,7 @@ describe('S2S Adapter', () => {
       expect(vendorConfig.cookieSet).to.be.false;
       expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
+      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });

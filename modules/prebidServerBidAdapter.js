@@ -37,7 +37,7 @@ const availVendorDefaults = {
     adapter: 'prebidServer',
     cookieSet: false,
     enabled: true,
-    endpoint: '//prebid.adnxs.com/pbs/v1/auction',
+    endpoint: '//prebid.adnxs.com/pbs/v1/openrtb2/auction',
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
     timeout: 1000
   },
@@ -637,7 +637,7 @@ const OPEN_RTB_PROTOCOL = {
  * const bids = protocol().interpretResponse(response, bidRequests, requestedBidders);
  */
 const protocolAdapter = () => {
-  const OPEN_RTB_PATH = 'openrtb2/auction';
+  const OPEN_RTB_PATH = '/openrtb2/';
 
   const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
   const isOpenRtb = ~endpoint.indexOf(OPEN_RTB_PATH);
