@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { PrebidServer as Adapter } from 'modules/prebidServerBidAdapter';
+import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter';
 import adapterManager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
@@ -375,6 +375,7 @@ describe('S2S Adapter', () => {
       requests = [];
       xhr.onCreate = request => requests.push(request);
       config.resetConfig();
+      resetSyncedStatus();
     });
 
     afterEach(() => xhr.restore());
@@ -392,11 +393,11 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
-    it('adds gdpr consent information to ortb2 request depending on module use', () => {
+    it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
 
-      let consentConfig = { consentManagement: { cmp: 'iab' }, s2sConfig: ortb2Config };
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
       config.setConfig(consentConfig);
 
       let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -422,6 +423,67 @@ describe('S2S Adapter', () => {
 
       config.resetConfig();
       $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+    });
+
+    it('check gdpr info gets added into cookie_sync request: have consent data', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'abc123def',
+        gdprApplies: true
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.equal(1);
+      expect(requestBid.gdpr_consent).is.equal('abc123def');
+    });
+
+    it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'xyz789abcc',
+        gdprApplies: false
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.equal(0);
+      expect(requestBid.gdpr_consent).is.undefined;
+    });
+
+    it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: undefined,
+        gdprApplies: undefined
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.undefined;
+      expect(requestBid.gdpr_consent).is.undefined;
     });
 
     it('sets invalid cacheMarkup value to 0', () => {
@@ -792,31 +854,6 @@ describe('S2S Adapter', () => {
 
       const bid_request_passed = addBidResponse.firstCall.args[1];
       expect(bid_request_passed).to.have.property('adId', '123');
-    });
-
-    it('does cookie sync when no_cookie response', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-
-      sinon.assert.calledOnce(utils.triggerPixel);
-      sinon.assert.calledWith(utils.triggerPixel, 'https://pixel.rubiconproject.com/exchange/sync.php?p=prebid');
-      sinon.assert.calledOnce(utils.insertUserSyncIframe);
-      sinon.assert.calledWith(utils.insertUserSyncIframe, '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=https%3A%2F%2Fprebid.adnxs.com%2Fpbs%2Fv1%2Fsetuid%3Fbidder%3Dpubmatic%26uid%3D');
-    });
-
-    it('logs error when no_cookie response is missing type or url', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE_ERROR));
-
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-
-      sinon.assert.notCalled(utils.triggerPixel);
-      sinon.assert.notCalled(utils.insertUserSyncIframe);
-      sinon.assert.calledTwice(utils.logError);
     });
 
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
