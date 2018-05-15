@@ -1,5 +1,4 @@
 import * as utils from 'src/utils';
-import { deepAccess } from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { Renderer } from 'src/Renderer';
 import { VIDEO, BANNER } from 'src/mediaTypes';
@@ -58,7 +57,7 @@ export const spec = {
       }
       let sizes = getVideoSizes(bidRequest);
       let firstSize = getFirstSize(sizes);
-      let context = deepAccess(bidRequest, 'mediaTypes.video.context');
+      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
@@ -137,11 +136,11 @@ function parseSizes(sizes) {
 }
 
 function getVideoSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
 function getBannerSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 function getOsVersion() {
@@ -178,19 +177,19 @@ function getDoNotTrack() {
 }
 
 function isVideoBid(bid) {
-  return deepAccess(bid, 'mediaTypes.video');
+  return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
 function isBannerBid(bid) {
-  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
 function getVideoBidParam(bid, key) {
-  return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
+  return utils.deepAccess(bid, 'params.video.' + key) || utils.deepAccess(bid, 'params.' + key);
 }
 
 function getBannerBidParam(bid, key) {
-  return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
+  return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
 }
 
 function isVideoBidValid(bid) {
