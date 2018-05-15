@@ -115,7 +115,7 @@ function queueSync(bidderCodes, gdprConsent) {
   }
   _synced = true;
 
-  let payload = {
+  const payload = {
     uuid: utils.generateUUID(),
     bidders: bidderCodes
   };
@@ -684,7 +684,8 @@ export function PrebidServer() {
       .filter(utils.uniques);
 
     if (_s2sConfig && _s2sConfig.syncEndpoint) {
-      queueSync(_s2sConfig.bidders, bidRequests[0].gdprConsent);
+      let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
+      queueSync(_s2sConfig.bidders, consent);
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);

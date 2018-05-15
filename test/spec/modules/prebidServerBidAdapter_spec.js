@@ -375,6 +375,7 @@ describe('S2S Adapter', () => {
       requests = [];
       xhr.onCreate = request => requests.push(request);
       config.resetConfig();
+      resetSyncedStatus();
     });
 
     afterEach(() => xhr.restore());
@@ -424,7 +425,7 @@ describe('S2S Adapter', () => {
       $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
     });
 
-    it('check gdpr info gets added into cookie_sync request', () => {
+    it('check gdpr info gets added into cookie_sync request: have consent data', () => {
       let cookieSyncConfig = utils.deepClone(CONFIG);
       cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -433,7 +434,6 @@ describe('S2S Adapter', () => {
 
       let gdprBidRequest = utils.deepClone(BID_REQUESTS);
 
-      // check scenario if gdprApplies and we got consent information CMP fine
       gdprBidRequest[0].gdprConsent = {
         consentString: 'abc123def',
         gdprApplies: true
@@ -444,33 +444,43 @@ describe('S2S Adapter', () => {
 
       expect(requestBid.gdpr).is.equal(1);
       expect(requestBid.gdpr_consent).is.equal('abc123def');
+    });
 
-      // check scenario if gdprApplies is false
-      resetSyncedStatus();
-      requests = [];
+    it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
       gdprBidRequest[0].gdprConsent = {
         consentString: 'xyz789abcc',
         gdprApplies: false
       };
 
       adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      requestBid = JSON.parse(requests[0].requestBody);
+      let requestBid = JSON.parse(requests[0].requestBody);
 
       expect(requestBid.gdpr).is.equal(0);
       expect(requestBid.gdpr_consent).is.undefined;
+    });
 
-      // check scenario if we didn't consent information from CMP appropriately (ie timeout)
-      resetSyncedStatus();
-      requests = [];
+    it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
       gdprBidRequest[0].gdprConsent = {
         consentString: undefined,
         gdprApplies: undefined
       };
 
       adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      requestBid = JSON.parse(requests[0].requestBody);
+      let requestBid = JSON.parse(requests[0].requestBody);
 
       expect(requestBid.gdpr).is.undefined;
       expect(requestBid.gdpr_consent).is.undefined;
