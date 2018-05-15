@@ -7,6 +7,7 @@ import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
+import find from 'core-js/library/fn/array/find';
 
 const adloader = require('../../src/adloader');
 var assert = require('assert');
@@ -669,7 +670,7 @@ describe('auctionmanager.js', function () {
 
         auction.callBids();
 
-        const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode == ADUNIT_CODE);
+        const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
     });
