@@ -22,6 +22,7 @@ const outstreamRender = bid => {
       rendererOptions: {
         showBigPlayButton: false,
         showProgressBar: 'bar',
+        showVolume: false,
         allowFullscreen: false,
         skippable: false,
       }
