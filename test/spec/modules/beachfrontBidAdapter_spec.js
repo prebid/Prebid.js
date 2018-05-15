@@ -356,6 +356,36 @@ describe('BeachfrontAdapter', () => {
         expect(data.gdprConsent).to.equal(consentString);
       });
     });
+
+    describe('for multi-format bids', () => {
+      it('should create a POST request for each bid format', () => {
+        const width = 300;
+        const height = 250;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          },
+          banner: {
+            sizes: [ width, height ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests.length).to.equal(2);
+        expect(requests[0].url).to.contain(VIDEO_ENDPOINT);
+        expect(requests[1].url).to.contain(BANNER_ENDPOINT);
+      });
+    });
   });
 
   describe('spec.interpretResponse', () => {
