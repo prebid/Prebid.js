@@ -2,7 +2,7 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
-const ENDPOINT_URL = 'https://ssp.pub.network/ssp-server/HeaderBiddingService';
+const ENDPOINT_URL = (window.location.search.indexOf('fsdebug') === -1) ? 'https://ssp.pub.network/ssp-server/HeaderBiddingService' : 'https://dev-ssp.pub.network/ssp-server/HeaderBiddingService';
 const syncURLs = [];
 export const spec = {
   code: BIDDER_CODE,
@@ -102,7 +102,10 @@ export const spec = {
           winner.winningSeat.bid[0],
         )));
         if(typeof winner.supplier.cookieSync != 'undefined') {
-          syncURLs.push(decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]);
+          syncURLs.push({
+            type: 'image',
+            url: decodeURIComponent(winner.supplier.cookieSync).split('\'')[1]
+          });
         }
       }
     }
@@ -111,8 +114,8 @@ export const spec = {
   // @TODO: How are we doing user sync?
   getUserSyncs: function(syncOptions) {
     if(syncURLs.length > 0) {
-      let tmp = syncURLs.filter((elm, pos, arr) => {
-        console.log('freestar::', 'elm, pos, arr', elm, pos, arr);
+      let tmp = syncURLs.filter((syncURL) => {
+        console.log('freestar::', 'syncURL', syncURL);
       });
     }
     return false;
@@ -130,9 +133,13 @@ registerBidder(spec);
  * @returns {{requestId, cpm, width, height, creativeId: string|string|string|*|string|string, currency, netRevenue: boolean, ttl: number, ad}}
  */
 function parseBid(bid) {
+  let adUnit = bid.adm, cpm = (window.location.search.indexOf('fsbidprice') === -1) ? bid.price : 25.00;
+  if(typeof bid.nurl != 'undefined') {
+    adUnit = `<img src="${bid.nurl.replace('${AUCTION_PRICE}', cpm)}" width="0" height="0" style="display:none">` + adUnit;
+  }
   const bidResponse = {
     requestId: bid.impid,
-    cpm: bid.price,
+    cpm: cpm,
     width: bid.w,
     height: bid.h,
     creativeId: bid.cid, //@TODO: verify
@@ -140,7 +147,7 @@ function parseBid(bid) {
     currency: bid.currency,
     netRevenue: true,
     ttl: 60, //@TODO: verify
-    ad: bid.adm
+    ad: adUnit
   };
   return bidResponse;
 }
