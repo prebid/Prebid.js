@@ -385,6 +385,31 @@ describe('BeachfrontAdapter', () => {
         expect(requests[0].url).to.contain(VIDEO_ENDPOINT);
         expect(requests[1].url).to.contain(BANNER_ENDPOINT);
       });
+
+      it('must parse bid sizes for each bid format', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ 640, 360 ]
+          },
+          banner: {
+            sizes: [ 300, 250 ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].data.imp[0].video).to.deep.contain({ w: 640, h: 360 });
+        expect(requests[1].data.slots[0].sizes).to.deep.equal([{ w: 300, h: 250 }]);
+      });
     });
   });
 
