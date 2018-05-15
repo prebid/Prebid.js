@@ -119,7 +119,7 @@ describe('LifestreetAdapter', () => {
     it('should contain the right version of adapter', () => {
       expect(request.url).to.contain('__hbver=' + ADAPTER_VERSION);
     });
-    
+
     it('should contain __gdpr and __consent parameters', () => {
       const options = {
         gdprConsent: {
