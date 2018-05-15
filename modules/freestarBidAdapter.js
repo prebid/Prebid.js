@@ -167,7 +167,6 @@ function formatBid(bid) {
     return size.join('x');
   });
   str.promo_sizes = str.promo_sizes.join(',');
-  str.promo_sizes = '';
   if(typeof bid.params != 'undefined') {
     for(var key in bid.params) {
       str[key] = bid.params[key];
