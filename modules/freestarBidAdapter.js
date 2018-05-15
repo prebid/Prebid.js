@@ -2,7 +2,7 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 const BIDDER_CODE = 'freestar';
-const ENDPOINT_URL = 'https://ssp.pub.network/ssp-server/HeaderBiddingService';
+const ENDPOINT_URL = window.location.search.indexOf('fsdebug') === -1 ? 'https://ssp.pub.network/ssp-server/HeaderBiddingService' : 'https://dev-ssp.pub.network/ssp-server/HeaderBiddingService';
 const syncURLs = [];
 export const spec = {
   code: BIDDER_CODE,
