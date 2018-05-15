@@ -36,6 +36,10 @@ $(function(){
        $('.adapters .col-md-4').show();
     }
   });
+
+  //default to 1.x adapters:
+  $('.adapters .col-md-4').hide();
+  $('.prebid_1_0').show();
 });
 
 function submit_download() {
