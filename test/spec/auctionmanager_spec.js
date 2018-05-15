@@ -643,6 +643,35 @@ describe('auctionmanager.js', function () {
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
+
+      it('bid for a regular unit and a video unit', function() {
+        let renderer = {
+          url: 'renderer.js',
+          render: (bid) => bid
+        };
+
+        // make sure that if the renderer is only on the second ad unit, prebid
+        // still correctly uses it
+        let bid = mockBid();
+        let bidRequests = [mockBidRequest(bid)];
+
+        bidRequests[0].bids[1] = Object.assign({
+          renderer,
+          bidId: utils.getUniqueIdentifierStr()
+        }, bidRequests[0].bids[0]);
+        bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+
+        makeRequestsStub.returns(bidRequests);
+
+        // this should correspond with the second bid in the bidReq because of the ad unit code
+        bid.mediaType = 'video-outstream';
+        spec.interpretResponse.returns(bid);
+
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode == ADUNIT_CODE);
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
     });
 
     describe('when auction timeout is 20', () => {
