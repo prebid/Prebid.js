@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from 'src/mediaTypes';
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
 const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
-const VERSION = '2.2.1';
+const VERSION = '2.2.2';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -54,6 +54,7 @@ export const spec = {
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
     let requestId = '';
+    let pubcid = null;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
@@ -95,6 +96,10 @@ export const spec = {
         imp.banner = banner;
       }
 
+      if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
+      }
+
       return imp;
     });
 
@@ -109,6 +114,14 @@ export const spec = {
       device: getDevice(),
       at: 1
     };
+
+    if (pubcid) {
+      payload.user = {
+        ext: {
+          fpc: pubcid
+        }
+      };
+    }
 
     return {
       method: 'POST',

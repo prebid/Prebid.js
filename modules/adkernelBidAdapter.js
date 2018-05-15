@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
-const VERSION = '1.1';
+const VERSION = '1.2';
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -105,30 +105,47 @@ registerBidder(spec);
 /**
  *  Builds parameters object for single impression
  */
-function buildImp(bid) {
-  const sizes = bid.sizes;
+function buildImp(bidRequest) {
   const imp = {
-    'id': bid.bidId,
-    'tagid': bid.placementCode
+    'id': bidRequest.bidId,
+    'tagid': bidRequest.adUnitCode
   };
 
-  if (bid.mediaType === 'video') {
-    imp.video = {w: sizes[0], h: sizes[1]};
-    if (bid.params.video) {
-      Object.keys(bid.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bid.params.video[param]);
-    }
-  } else {
+  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
+    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
+    let sizes = canonicalizeSizesArray(utils.deepAccess(bidRequest, `mediaTypes.banner.sizes`) || bidRequest.sizes);
     imp.banner = {
       format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
       topframe: 0
     };
+  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    let size = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || canonicalizeSizesArray(bidRequest.sizes)[0];
+    imp.video = {
+      w: size[0],
+      h: size[1]
+    };
+    if (bidRequest.params.video) {
+      Object.keys(bidRequest.params.video)
+        .filter(param => includes(VIDEO_TARGETING, param))
+        .forEach(param => imp.video[param] = bidRequest.params.video[param]);
+    }
   }
   if (utils.getTopWindowLocation().protocol === 'https:') {
     imp.secure = 1;
   }
   return imp;
+}
+
+/**
+ * Convert input array of sizes to canonical form Array[Array[Number]]
+ * @param sizes
+ * @return Array[Array[Number]]
+ */
+function canonicalizeSizesArray(sizes) {
+  if (sizes.length == 2 && !utils.isArray(sizes[0])) {
+    return [sizes];
+  }
+  return sizes;
 }
 
 /**

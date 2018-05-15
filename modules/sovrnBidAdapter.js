@@ -21,7 +21,8 @@ export const spec = {
    * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
    */
-  buildRequests: function(bidReqs) {
+  buildRequests: function(bidReqs, bidderRequest) {
+    const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
     let iv;
     utils._each(bidReqs, function (bid) {
@@ -29,7 +30,7 @@ export const spec = {
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: utils.getBidIdParameter('tagid', bid.params),
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
         bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
       });
     });
@@ -37,11 +38,22 @@ export const spec = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
-        domain: window.location.host,
-        page: window.location.host + window.location.pathname + location.search + location.hash
+        domain: loc.host,
+        page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
     if (iv) sovrnBidReq.iv = iv;
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      sovrnBidReq.regs = {
+        ext: {
+          gdpr: +bidderRequest.gdprConsent.gdprApplies
+        }};
+      sovrnBidReq.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString
+        }};
+    }
 
     return {
       method: 'POST',
@@ -69,7 +81,7 @@ export const spec = {
           cpm: parseFloat(sovrnBid.price),
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
-          creativeId: sovrnBid.id,
+          creativeId: sovrnBid.crid || sovrnBid.id,
           dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,

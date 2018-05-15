@@ -12,7 +12,7 @@ Connects to Gamma exchange for bids.
 
 Gamma bid adapter supports Banner, Video.
 
-# Test Parameters
+# Test Parameters: For Banner
 ```
 var adUnits = [{
           code: 'gamma-hb-ad-123456-0',
@@ -24,6 +24,23 @@ var adUnits = [{
             params: {
 				siteId: '1465446377',
 				zoneId: '1515999290'
+            }
+          }]
+  
+        }];
+```
+# Test Parameters: For Video
+```
+var adUnits = [{
+          code: 'gamma-hb-ad-78910-0',
+          sizes: [[640, 480]],
+  
+          // Replace this object to test a new Adapter!
+          bids: [{
+			bidder: 'gamma',
+            params: {
+				siteId: '1465446377',
+				zoneId: '1493280341'
             }
           }]
   

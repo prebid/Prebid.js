@@ -155,7 +155,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
-      const options = { contentType: 'application/json'};
+      const options = { contentType: 'application/json' };
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
