@@ -91,21 +91,13 @@ export const spec = {
       utils.logError(errorMessage);
       return bids;
     }
-
     if (serverResponse.tags) {
-      // sort tags by cpm
-      serverResponse.tags.sort(function (x, y) {
-        return y.cpm - x.cpm;
-      });
-
       serverResponse.tags.forEach((serverBid, index) => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
           if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
-            // set cpm to 0 if it's not the first one
-            bid.cpm = index === 0 ? bid.cpm : 0;
             bids.push(bid);
           }
         }
