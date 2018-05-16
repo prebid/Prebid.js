@@ -82,7 +82,30 @@ describe('sovrnBidAdapter', function() {
       const request = spec.buildRequests(ivBidRequests);
 
       expect(request.data).to.contain('"iv":"vet"')
-    })
+    });
+
+    it('sends gdpr info if exists', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'sovrn',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(payload.regs.ext.gdpr).to.equal(1);
+      expect(payload.user.ext.consent).to.exist.and.to.be.a('string');
+      expect(payload.user.ext.consent).to.equal(consentString);
+    });
 
     it('converts tagid to string', () => {
       const ivBidRequests = [{
