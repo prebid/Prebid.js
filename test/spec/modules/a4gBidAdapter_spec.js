@@ -77,6 +77,26 @@ describe('a4gAdapterTests', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.data.zoneId).to.equal('59304;59354');
     });
+
+    it('bidRequest gdpr consent', () => {
+      const consentString = 'consentString';
+      const bidderRequest = {
+        bidderCode: 'a4g',
+        auctionId: '18fd8b8b0bd757',
+        bidderRequestId: '418b37f85e772c',
+        timeout: 3000,
+        gdprConsent: {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.applies).to.exist.and.to.be.true;
+      expect(request.data.gdpr.consent).to.exist.and.to.equal(consentString);
+    });
   });
 
   describe('interpretResponse', () => {

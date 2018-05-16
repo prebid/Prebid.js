@@ -72,6 +72,7 @@ describe('the rubicon adapter', () => {
         'p_aso.video.ext.skipdelay': '15'
       }
     };
+    bid.params.secure = false;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -274,7 +275,7 @@ describe('the rubicon adapter', () => {
 
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', () => {
@@ -608,6 +609,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(false);
           expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.gdpr).to.equal(1);
 
@@ -671,6 +673,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
+          expect(post.rp_secure).to.equal(true);
           expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.gdpr).to.equal(1);
 

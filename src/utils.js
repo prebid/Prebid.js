@@ -520,6 +520,38 @@ exports.callBurl = function({ source, burl }) {
 };
 
 /**
+ * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
+ * (though could be for other purposes)
+ * @param {string} htmlCode snippet of HTML code used for tracking purposes
+ */
+exports.insertHtmlIntoIframe = function(htmlCode) {
+  if (!htmlCode) {
+    return;
+  }
+
+  let iframe = document.createElement('iframe');
+  iframe.id = exports.getUniqueIdentifierStr();
+  iframe.width = 0;
+  iframe.height = 0;
+  iframe.hspace = '0';
+  iframe.vspace = '0';
+  iframe.marginWidth = '0';
+  iframe.marginHeight = '0';
+  iframe.style.display = 'none';
+  iframe.style.height = '0px';
+  iframe.style.width = '0px';
+  iframe.scrolling = 'no';
+  iframe.frameBorder = '0';
+  iframe.allowtransparency = 'true';
+
+  exports.insertElement(iframe, document, 'body');
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(htmlCode);
+  iframe.contentWindow.document.close();
+}
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
@@ -571,7 +603,7 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
       allowtransparency="true"
       marginheight="0" marginwidth="0"
       width="0" hspace="0" vspace="0" height="0"
-      style="height:0p;width:0p;display:none;"
+      style="height:0px;width:0px;display:none;"
       scrolling="no"
       src="${url}">
     </iframe>`;
