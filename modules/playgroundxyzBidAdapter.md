@@ -10,7 +10,7 @@ Maintainer: info@prebid.org
 
 Connects to playgroundxyz ad server for bids.
 
-Appnexus bid adapter supports Banner, Video (instream and outstream) and Native.
+Appnexus bid adapter supports Banner, Video (instream and outstream).
 
 # Test Parameters
 ```
@@ -26,37 +26,6 @@ var adUnits = [
          }
        }]
    },
-   // Native adUnit
-   {
-      code: 'native-div',
-      sizes: [[300, 250], [300,600]],
-      mediaTypes: {
-        native: {
-          title: {
-            required: true,
-            len: 80
-          },
-          body: {
-            required: true
-          },
-          brand: {
-            required: true
-          },
-          image: {
-            required: true
-          },
-          clickUrl: {
-            required: true
-          },
-        }
-      },
-      bids: [{
-        bidder: 'playgroundxyz',
-        params: {
-          placementId: '9880618'
-        }
-      }]
-   },
    // Video instream adUnit
    {
       code: 'video-instream',
@@ -67,7 +36,7 @@ var adUnits = [
         },
       },
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'playgroundxyz',
         params: {
           placementId: '9333431',
           video: {
@@ -88,7 +57,7 @@ var adUnits = [
      },
      bids: [
        {
-         bidder: 'appnexus',
+         bidder: 'playgroundxyz',
          params: {
            placementId: '5768085',
            video: {
