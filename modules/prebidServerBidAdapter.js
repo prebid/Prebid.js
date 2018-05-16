@@ -2,12 +2,13 @@ import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS, S2S } from 'src/constants';
+import { STATUS, S2S, EVENTS } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
+import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
@@ -716,6 +717,10 @@ export function PrebidServer() {
         if (isValid(adUnit, bid, bidRequests)) {
           addBidResponse(adUnit, bid);
         }
+      });
+
+      bidRequests.forEach((bidRequest) => {
+        events.emit(EVENTS.BIDDER_DONE, bidRequest);
       });
 
       if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
