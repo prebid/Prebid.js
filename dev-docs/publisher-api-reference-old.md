@@ -1,20 +1,18 @@
 ---
 layout: page
-title: Publisher API Reference
-description: Publisher API Reference for Prebid.js Header Bidding
-top_nav_section: dev_docs
-nav_section: reference
+title: Publisher API Reference - DEPRECATED
+description: Publisher API Reference for Prebid.js Header Bidding - DEPRECATED
 pid: 10
 ---
 
 <div class="bs-docs-section" markdown="1">
 
-# Publisher API Reference
+# Publisher API Reference - DEPRECATED
 
-This page has documentation for the public API methods of Prebid.js.
+This page has documentation for the pre-1.0 public API methods of Prebid.js.
 
-{: .alert.alert-warning :}
-Some methods were deprecated in Prebid 1.0. [Archived pre-1.0 documentation]({{site.baseurl}}/dev-docs/publisher-api-reference-old.html) is available.
+{: .alert.alert-danger :}
+Warning: do not use this API reference for new Prebid.js implementations. This document is kept for users on old (Pre-1.0) versions of Prebid.js who need to maintain their pages.
 
 <a name="module_pbjs"></a>
 
@@ -31,29 +29,24 @@ Some methods were deprecated in Prebid 1.0. [Archived pre-1.0 documentation]({{s
   * [.getAllPrebidWinningBids()](#module_pbjs.getAllPrebidWinningBids)
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.setTargetingForAst()](#module_pbjs.setTargetingForAst)
+  * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
+  * [.enableSendAllBids()](#module_pbjs.enableSendAllBids) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
+  * [.setPriceGranularity(granularity)](#module_pbjs.setPriceGranularity) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
   * [.addAdUnits(Array\|Object)](#module_pbjs.addAdUnits)
+  * [.addBidResponse(adUnitCode, bid)](#module_pbjs.addBidResponse) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.bidderSettings](#module_pbjs.bidderSettings)
+  * [.addCallback(event, func)](#module_pbjs.addCallback) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
+  * [.removeCallback(cbId)](#module_pbjs.removeCallback) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
+  * [.buildMasterVideoTagFromAdserverTag(adserverTag, options)](#module_pbjs.buildMasterVideoTagFromAdserverTag) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
+  * [.setBidderSequence(order)](#module_pbjs.setBidderSequence) <strong style="background-color:#fcf8f2;border-color:#f0ad4e">Deprecated; will be removed in 1.0</strong>
   * [.onEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.offEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.enableAnalytics(config)](#module_pbjs.enableAnalytics)
   * [.aliasBidder(adapterName, aliasedName)](#module_pbjs.aliasBidder)
   * [.setConfig(options)](#module_pbjs.setConfig)
-    * [debugging](#setConfig-Debugging)
-    * [bidderTimeout](#setConfig-Bidder-Timeouts)
-    * [bidderOrder](#setConfig-Bidder-Order)
-    * [enableSendAllBids](#setConfig-Send-All-Bids)
-    * [publisherDomain](#setConfig-Publisher-Domain)
-    * [priceGranularity](#setConfig-Price-Granularity)
-    * [mediaTypePriceGranularity](#setConfig-MediaType-Price-Granularity)
-    * [cookieSyncDelay](#setConfig-Cookie-Sync-Delay)
-    * [s2sConfig](#setConfig-Server-to-Server) (server-to-server config)
-    * [userSync](#setConfig-Configure-User-Syncing)
-    * [sizeConfig and labels](#setConfig-Configure-Responsive-Ads) (responsive ads)
-    * [Generic Configuration](#setConfig-Generic-Configuration)
-    * [Troubleshooting your config](#setConfig-Troubleshooting-your-configuration)
   * [.getConfig([string])](#module_pbjs.getConfig)
   * [.adServers.dfp.buildVideoUrl(options)](#module_pbjs.adServers.dfp.buildVideoUrl)
 
@@ -365,6 +358,145 @@ Set query string targeting on all AST ([AppNexus Seller Tag](https://wiki.appnex
 
 <hr class="full-rule">
 
+<a name="module_pbjs.allBidsAvailable"></a>
+
+### pbjs.allBidsAvailable() ⇒ `bool`
+
+{: .alert.alert-danger :}
+This method is deprecated and will be removed in version 1.0 (scheduled for release Q4 2017).
+
+Returns a bool if all the bids have returned or timed out
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `bool` - all bids available
+
+<hr class="full-rule">
+
+<a name="module_pbjs.enableSendAllBids"></a>
+
+### pbjs.enableSendAllBids()
+
+{: .alert.alert-info :}
+Added in version 0.9.2
+
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0 and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`setConfig`](#module_pbjs.setConfig) instead.
+
+After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server.
+
+With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win. Some ad servers, such as DFP, can then generate reporting on historical bid prices from all bidders.
+
+Note that this method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
+
+After this method is called, `pbjs.getAdserverTargeting()` will give you the below JSON (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the JSON to GPT (example below)
+
+
+{% include send-all-bids-keyword-targeting.md %}
+
+{% highlight js %}
+{
+  "hb_adid_indexExchang": "129a7ed7a6fb40e",
+  "hb_pb_indexExchange": "10.00",
+  "hb_size_indexExchang": "300x250",
+  "hb_adid_triplelift": "1663076dadb443d",
+  "hb_pb_triplelift": "10.00",
+  "hb_size_triplelift": "0x0",
+  "hb_adid_appnexus": "191f4aca0c0be8",
+  "hb_pb_appnexus": "10.00",
+  "hb_size_appnexus": "300x250",
+  // original ones (also attached):
+  "hb_bidder": "appnexus",
+  "hb_adid": "191f4aca0c0be8",
+  "hb_pb": "10.00",
+  "hb_size": "300x250",
+}
+{% endhighlight %}
+
+<hr class="full-rule">
+
+<a name="module_pbjs.setPriceGranularity"></a>
+
+### pbjs.setPriceGranularity
+
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0 and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`setConfig`](#module_pbjs.setConfig) instead.
+
+This method is used to configure which price bucket is used for the `hb_pb` keyword.  For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
+
+Accepted values:
+
++ `"low"`: $0.50 increments, capped at $5 CPM
++ `"medium"`: $0.10 increments, capped at $20 CPM (the default)
++ `"high"`: $0.01 increments, capped at $20 CPM
++ `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
++ `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
++ `customConfigObject`: If you pass in a custom config object (as shown in the [Custom CPM Bucket Sizing](#customCPMObject) example below), you can have much finer control over CPM bucket sizes, precision, and caps.
+
+<div class="alert alert-danger" role="alert">
+  <p>
+  If you define 'adserverTargeting' in your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
+  </p>
+</div>
+
+<a name="autoGranularityBucket"></a>
+
+#### Auto Granularity
+
+{: .table .table-bordered .table-striped }
+| CPM                 | 	Granularity                  |  Example |
+|---------------------+----------------------------------+--------|
+| CPM <= $5            | 	$0.05 increments             | $1.87 floored to $1.85 |
+| CPM <= $10 and > $5  | 	$0.10 increments             | $5.09 floored to $5.00 |
+| CPM <= $20 and > $10 | 	$0.50 increments             | $14.26 floored to $14.00 |
+| CPM > $20           | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
+
+<a name="denseGranularityBucket"></a>
+
+#### Dense Granularity
+
+{: .table .table-bordered .table-striped }
+| CPM        | 	Granularity                  | Example |
+|------------+-------------------------------+---------|
+| CPM <= $3  | 	$0.01 increments             | $1.87 floored to $1.87 |
+| CPM <= $8 and >$3  | 	$0.05 increments             | $5.09 floored to $5.05 |
+| CPM <= $20 and >$8 | 	$0.50 increments             | $14.26 floored to $14.00 |
+| CPM >  $20 | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
+
+<a name="customCPMObject"></a>
+
+#### Custom CPM Bucket Sizing
+
+To set up your own custom CPM buckets, create an object like the following, and pass it into `setPriceGranularity`:
+
+```javascript
+const customConfigObject = {
+  "buckets" : [{
+      "precision": 2,  //default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
+      "min" : 0,
+      "max" : 5,
+      "increment" : 0.01
+    },
+    {
+      "precision": 2,
+      "min" : 5,
+      "max" : 8,
+      "increment" : 0.05
+    },
+    {
+      "precision": 2,
+      "min" : 8,
+      "max" : 20,
+      "increment" : 0.5
+    }]
+};
+
+//set custom config object
+pbjs.setPriceGranularity(customConfigObject);
+```
+
+<hr class="full-rule">
+
 <a name="module_pbjs.renderAd"></a>
 
 ### pbjs.renderAd(doc, id)
@@ -540,7 +672,7 @@ pbjs.addAdUnits({
     code: slot.code,
     mediaTypes: {
         video: {
-            context: 'instream',
+            context: "instream",
             playerSize: [640, 480]
         },
     },
@@ -672,6 +804,17 @@ pbjs.addAdUnits({
 
 <hr class="full-rule">
 
+<a name="module_pbjs.addBidResponse"></a>
+
+### pbjs.addBidResponse(adUnitCode, bid)
+
+{: .alert.alert-danger :}
+This method is deprecated and will be removed in version 1.0 (scheduled for release Q4 2017).
+
+This function should be called by the bidder adapter to register a bid response for the auction.  It will also run any callbacks added using [`pbjs.addCallback`](#module_pbjs.addCallback).
+
+<hr class="full-rule">
+
 <a name="module_pbjs.bidderSettings"></a>
 
 ### pbjs.bidderSettings
@@ -687,7 +830,7 @@ pbjs.bidderSettings = {
     standard: {
          [...]
     },
-    ix: {
+    indexExchange: {
          [...]
     },
     rubicon: {
@@ -716,11 +859,17 @@ Some sample scenarios where publishers may wish to alter the default settings:
 | sendStandardTargeting | adapter-specific | 0.13.0 | true | If adapter-specific targeting is specified, can be used to suppress the standard targeting for that adapter. |
 | suppressEmptyKeys | standard or adapter-specific | 0.13.0 | false | If custom adserverTargeting functions are specified that may generate empty keys, this can be used to suppress them. |
 
+<div class="alert alert-danger" role="alert">
+  <p>
+  If you define 'adserverTargeting' in your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
+  </p>
+</div>
+
 ##### 2.1. alwaysUseBid
 
 By default, only the winning bid (with the highest cpm) will be sent to the ad server.
 However, if you're working with a Prebid partner that's not returning a CPM value, it
-won't be able to compete against the other bids. One option is to use [enableSendAllBids()](publisher-api-reference.html#setConfig-Send-All-Bids). But if you want to send the highest CPM
+won't be able to compete against the other bids. One option is to use [enableSendAllBids()](publisher-api-reference.html#module_pbjs.enableSendAllBids). But if you want to send the highest CPM
 bid along with all non-CPM bids, just specify this flag and the adapter-specific adserverTargeting object will always be sent to the ad server.
 
 ##### 2.2. adserverTargeting
@@ -909,16 +1058,126 @@ See the [example above](#key-targeting-specific-bidder) for example usage.
 
 If a custom adServerTargeting function can return an empty value, this boolean flag can be used to avoid sending those empty values to the ad server.
 
+<hr class="full-rule">
+
+<a name="module_pbjs.addCallback"></a>
+
+### pbjs.addCallback(event, func) ⇒ `String`
+
+{: .alert.alert-danger :}
+This method is deprecated and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`onEvent`](#module_pbjs.onEvent) or [`offEvent`](#module_pbjs.onEvent) instead.
+
+Add a callback event
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `String` - id for callback
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| event | `String` | event to attach callback to Options: `adUnitBidsBack` |
+| func | `function` | function to execute. Parameters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
+
+<hr class="full-rule">
+
+<a name="module_pbjs.removeCallback"></a>
+
+### pbjs.removeCallback(cbId) ⇒ `String`
+
+{: .alert.alert-danger :}
+This method is deprecated and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`onEvent`](#module_pbjs.onEvent) or [`offEvent`](#module_pbjs.onEvent) instead.
+
+Remove a callback event
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `String` - id for callback
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| cbId | `string` | id of the callback to remove |
+
+<hr class="full-rule" />
+
+<a name="module_pbjs.buildMasterVideoTagFromAdserverTag"></a>
+
+### pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options) ⇒ `String`
+
+{: .alert.alert-danger :}
+This method is deprecated as of version [0.26.0](https://github.com/prebid/Prebid.js/releases/tag/0.26.0) and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`pbjs.adServers.dfp.buildVideoUrl`](#module_pbjs.adServers.dfp.buildVideoUrl) instead.
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `String` - Video ad tag
+
+{: .table .table-bordered .table-striped }
+| Param       | Type     | Description                                        |
+| ---         | ---      | ---                                                |
+| adserverTag | `String` | Ad tag for your video ad server.                   |
+| options     | `Object` | Object describing the ad server and video ad code. |
+
+For example, if you're using DFP, your `adserverTag` might be
+something like this example taken from the
+[DFP help page on master video tags](https://support.google.com/dfp_premium/answer/1068325):
+
+```
+http://pubads.g.doubleclick.net/gampad/ads?env=vp&gdfp_req=1&impl=s&output=vast&iu=/6062/video-demo&sz=400x300&unviewed_position_start=1&url=http://www.simplevideoad.com&ciu_szs=728x90,300x250&correlator=7105
+```
+
+While your `options` object might look something like:
+
+```javascript
+var options = {
+  'adserver': 'dfp',
+  'code': 'video1' // Must match the `code` of the video adUnit declared elsewhere
+};
+```
+
+For an example showing how to use this method, see [Show Video Ads with a DFP Video Tag]({{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html).
+
+<hr class="full-rule" />
+
+<a name="module_pbjs.setBidderSequence"></a>
+
+### pbjs.setBidderSequence(order)
+
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0 and will be removed in version 1.0 (scheduled for release Q4 2017).  Please use [`setConfig`](#module_pbjs.setConfig) instead.
+
+{: .alert.alert-danger :}
+**BREAKING CHANGE**
+As of version 0.27.0, To encourage fairer auctions, Prebid will randomize the order bidders are called by default. To replicate legacy behavior, call `pbjs.setBidderSequence('fixed')`.
+
+This method shuffles the order in which bidders are called.
+
+It takes an argument `order` that currently accepts the following strings:
+
+- `"random"`: shuffle the sequence bidders are called in
+- `"fixed"`: bidders are called in the order they are defined within the `adUnit.bids` array on page
+
+Example use:
+
+```javascript
+pbjs.setBidderSequence('fixed'); /* defaults to 'random' as of 0.27.0 */
+```
+
 <hr class="full-rule" />
 
 <a name="module_pbjs.onEvent"></a>
 
 ### pbjs.onEvent(event, handler, id)
 
-### pbjs.offEvent(event, handler, id)
+**pbjs.offEvent(event, handler, id)**
 
 The methods `onEvent` and `offEvent` are provided for you to register
 a callback to handle a Prebid.js event.
+
+They replace the following deprecated methods:
+
+- [.addCallback(event, func)](#module_pbjs.addCallback)
+- [.removeCallback(cbId)](#module_pbjs.removeCallback)
 
 The optional `id` parameter provides more finely-grained event
 callback registration.  This makes it possible to register callback
@@ -1034,7 +1293,10 @@ If you define an alias and are using `pbjs.sendAllBids`, you must also set up ad
 
 ### pbjs.setConfig(options)
 
-`setConfig` supports a number of advanced configuration options:
+{: .alert.alert-info :}
+Added in version 0.27.0
+
+`setConfig` is designed to allow for advanced configuration while reducing the surface area of the public API.  For more information about the move to `setConfig` (and the resulting deprecations of some other public methods), see [the Prebid 1.0 public API proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
 
 See below for usage examples.
 
@@ -1084,35 +1346,10 @@ For more information about the asynchronous event loop and `setTimeout`, see [Ho
 
 #### Send All Bids
 
-Sending all bids is the default, but should you wish to turn it off: 
+Turn on enable send all bids mode:
 
 {% highlight js %}
-pbjs.setConfig({ enableSendAllBids: false })
-{% endhighlight %}
-
-When sendAllBids mode is on, your page will send keywords for all bidders to your ad server. The ad server will then make the decision on which will win. Some ad servers, such as DFP, can then generate reporting on historical bid prices from all bidders.
-
-Note that this config must be set before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
-
-After this method is called, `pbjs.getAdserverTargeting()` will give you the below JSON (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the JSON to GPT (example below)
-
-
-{% include send-all-bids-keyword-targeting.md %}
-
-{% highlight bash %}
-{
-  "hb_adid_audienceNetw": "1663076dadb443d",
-  "hb_pb_audienceNetwor": "9.00",
-  "hb_size_audienceNetw": "300x250",
-  "hb_adid_appnexus": "191f4aca0c0be8",
-  "hb_pb_appnexus": "10.00",
-  "hb_size_appnexus": "300x250",
-  // also sends the highest bid in the these variables:
-  "hb_bidder": "appnexus",
-  "hb_adid": "191f4aca0c0be8",
-  "hb_pb": "10.00",
-  "hb_size": "300x250",
-}
+pbjs.setConfig({ enableSendAllBids: true })
 {% endhighlight %}
 
 <a name="setConfig-Bidder-Order" />
@@ -1145,113 +1382,34 @@ Set a delay (in milliseconds) for requesting cookie sync to stay out of the crit
 pbjs.setConfig({ cookieSyncDelay: 100 )
 {% endhighlight %}
 
-
 <a name="setConfig-Price-Granularity" />
 
 #### Price Granularity
 
-This config is used to configure which price bucket is used for the `hb_pb` keyword. 
-For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
+Set a default price granularity scheme:
 
 {% highlight js %}
 pbjs.setConfig({ priceGranularity: "medium" })
 {% endhighlight %}
 
-Standard values:
+{: .alert.alert-info :}
+Note that the allowed values for `priceGranularity` have not changed: string values, or the custom CPM bucket object.
 
-+ `"low"`: $0.50 increments, capped at $5 CPM
-+ `"medium"`: $0.10 increments, capped at $20 CPM (the default)
-+ `"high"`: $0.01 increments, capped at $20 CPM
-+ `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
-+ `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
-+ `customConfigObject`: If you pass in a custom config object (as shown in the [Custom CPM Bucket Sizing](#customCPMObject) example below), you can have much finer control over CPM bucket sizes, precision, and caps.
-
-<a name="autoGranularityBucket"></a>
-
-##### Auto Granularity
-
-{: .table .table-bordered .table-striped }
-| CPM                 | 	Granularity                  |  Example |
-|---------------------+----------------------------------+--------|
-| CPM <= $5            | 	$0.05 increments             | $1.87 floored to $1.85 |
-| CPM <= $10 and > $5  | 	$0.10 increments             | $5.09 floored to $5.00 |
-| CPM <= $20 and > $10 | 	$0.50 increments             | $14.26 floored to $14.00 |
-| CPM > $20           | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
-
-<a name="denseGranularityBucket"></a>
-
-##### Dense Granularity
-
-{: .table .table-bordered .table-striped }
-| CPM        | 	Granularity                  | Example |
-|------------+-------------------------------+---------|
-| CPM <= $3  | 	$0.01 increments             | $1.87 floored to $1.87 |
-| CPM <= $8 and >$3  | 	$0.05 increments             | $5.09 floored to $5.05 |
-| CPM <= $20 and >$8 | 	$0.50 increments             | $14.26 floored to $14.00 |
-| CPM >  $20 | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
-
-<a name="customCPMObject"></a>
-
-##### Custom CPM Bucket Sizing
-
-To set up your own custom CPM buckets, create an object like the following, and pass it into `setConfig`:
-
-```javascript
-const customConfigObject = {
-  "buckets" : [{
-      "precision": 2,  //default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
-      "min" : 0,
-      "max" : 5,
-      "increment" : 0.01  // from $0 to $5, 1-cent increments
-    },
-    {
-      "precision": 2,
-      "min" : 5,
-      "max" : 8,
-      "increment" : 0.05  // from $5 to $8, round down to the previous 5-cent increment
-    },
-    {
-      "precision": 2,
-      "min" : 8,
-      "max" : 40,
-      "increment" : 0.5   // from $8 to $40, round down to the previous 50-cent increment
-    }]
-};
-
-//set custom config object
-pbjs.setConfig({
-    priceGranularity: customConfigObject
-})
-```
-
-<a name="setConfig-MediaType-Price-Granularity" />
-
-#### Media Type Price Granularity
-
-The default [Prebid price granularities](#setConfig-Price-Granularity) cap out at $20, which isn't always convenient for video ads, which can command more than $20. One solution is to just set up a
-custom price
-granularity as described above. As of PBJS 1.12, another approach is that the
-`mediaTypePriceGranularity` config may be set to define granularities for each of the three media types:
-banner, video, and native. e.g.
+Set a custom price granularity scheme:
 
 {% highlight js %}
-const customPriceGranularity = {
-            'buckets': [
-              { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.25 },
-              { 'precision': 2, 'min': 6, 'max': 20, 'increment': 0.5 },
-              { 'precision': 2, 'min': 21, 'max': 100, 'increment': 1 }
-            ]
+const customGranularity = {
+  'buckets': [{
+      'min': 0,
+      'max': 3,
+      'increment': 0.01
+  }]
 };
 
-pbjs.setConfig({'mediaTypePriceGranularity': {
-          'video': customPriceGranularity,
-          'banner': 'medium',
-          'native': 'medium'
-        }
-});
+pbjs.setConfig({
+    priceGranularity: customGranularity
+})
 {% endhighlight %}
-
-Any `mediaTypePriceGranularity` setting takes precedence over `priceGranularity`.
 
 <a name="setConfig-Server-to-Server" />
 
@@ -1506,7 +1664,7 @@ labelAll: ["A", "B"]
 Only one conditional may be specified on a given AdUnit or bid -- if both `labelAny` and `labelAll` are specified, only the first one will be utilized and an error will be logged to the console. It is allowable for an AdUnit to have one condition and a bid to have another.
 
 {: .alert.alert-warning :}
-If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`.
+If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`. 
 
 Label targeting on the ad unit looks like the following:
 
@@ -1570,7 +1728,7 @@ See [Conditional Ad Units]({{site.baseurl}}/dev-docs/conditional-ad-units.html) 
 
 #### Generic setConfig Configuration
 
-Some adapters may support other options, as defined in their documentation. To set arbitrary configuration values:
+Set arbitrary configuration values:
 
 `pbjs.setConfig({ <key>: <value> });`
 
@@ -1597,6 +1755,9 @@ If you don't see that message, you can assume the config object is valid.
 <a name="module_pbjs.getConfig"></a>
 
 ### pbjs.getConfig([string])
+
+{: .alert.alert-info :}
+Added in version 0.27.0
 
 The `getConfig` function is for retrieving the current configuration object or subscribing to configuration updates. When called with no parameters, the entire config object is returned. When called with a string parameter, a single configuration property matching that parameter is returned.
 
@@ -1631,7 +1792,7 @@ unsubscribe(); // no longer listening
 ### pbjs.adServers.dfp.buildVideoUrl(options)
 
 {: .alert.alert-info :}
-The DFP implementation of this function requires including the `dfpAdServerVideo` module in your Prebid.js build.
+This method was added in [0.26.0](https://github.com/prebid/Prebid.js/releases/tag/0.26.0).
 
 This method combines publisher-provided parameters with Prebid.js targeting parameters to build a DFP video ad tag URL that can be used by a video player.
 
