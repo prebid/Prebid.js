@@ -37,6 +37,7 @@ var sizeMap = {
   43: '320x50',
   44: '300x50',
   48: '300x300',
+  53: '1024x768',
   54: '300x1050',
   55: '970x90',
   57: '970x250',
@@ -232,8 +233,8 @@ export const spec = {
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
         'tk_user_key', userId,
-        'p_geo.latitude', parseFloat(latitude).toFixed(4),
-        'p_geo.longitude', parseFloat(longitude).toFixed(4)
+        'p_geo.latitude', isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
+        'p_geo.longitude', isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4)
       ];
 
       if (gdprConsent) {
@@ -357,12 +358,24 @@ export const spec = {
       return bids;
     }, []);
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT
+        url: SYNC_ENDPOINT + params
       };
     }
   }
