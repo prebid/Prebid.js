@@ -5,46 +5,37 @@
 * This is the optimized way of loading prebid.js. It loads both DFP and Prebid concurrently.
 * Publishers may wish to tweak the the MAX_RETRIES  and polling interval ms as desired to mitigate issue https://github.com/prebid/Prebid.js/issues/419
 */
-
+    
 //timeout to control how long bidders have to respond.
 var PREBID_TIMEOUT = 700;
-//how many times to attempt to load DFP if services have not been enabled
-var MAX_RETRIES = 20;
 
 var pbjs = pbjs || {};
 pbjs.que = pbjs.que || [];
-pbjs.retries = 0;
 var googletag = googletag || {};
 googletag.cmd = googletag.cmd || [];
 googletag.cmd.push(function () {
     googletag.pubads().disableInitialLoad();
 });
+
+// Load the Prebid Javascript Library Async. We recommend loading ASAP in page
+loadScript('//acdn.adnxs.com/prebid/not-for-prod/prebid.js');
+//load DFP async.
+loadScript('//www.googletagservices.com/tag/js/gpt.js');
+    
 /* initAdserver will be called either when all bids are back, or
    when the timeout is reached.
 */
 function initAdserver() {
   if (pbjs.initAdserverSet) return;
-
-  //we don't want to call DFP before it is ready
-  if(!googletag.pubadsReady && pbjs.retries <= MAX_RETRIES) {
-    setTimeout(initAdserver, 50); //poll ms can be adjusted as desired.
-    pbjs.retries++;
-    return;
-  }
+  pbjs.initAdserverSet = true;
+    
   googletag.cmd.push(function () {
     pbjs.que.push(function () {
       pbjs.setTargetingForGPTAsync();
+      googletag.pubads().refresh();
     });
-    googletag.pubads().refresh();
   });
-  pbjs.initAdserverSet = true;
 }
-
-//load DFP async.
-loadScript('//www.googletagservices.com/tag/js/gpt.js');
-
-// Load the Prebid Javascript Library Async. We recommend loading ASAP in page
-loadScript('//acdn.adnxs.com/prebid/not-for-prod/prebid.js');
 
 /**
  * Loads the given script async
@@ -247,7 +238,6 @@ pbjs.que.push(function() {
   };
 
 });  //end push command
-
 
 </script>
 <script>
