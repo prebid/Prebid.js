@@ -6,8 +6,8 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'playgroundxyz';
-const URL = 'https://ads.playground.xyz/host-config/prebid';
-
+//const URL = 'https://ads.playground.xyz/host-config/prebid';
+const URL = 'https://localhost:4430/host-config/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -98,16 +98,19 @@ export const spec = {
       serverResponse.tags.sort(function (x, y) {
         return y.cpm - x.cpm;
       });
-      // get only the first tag
-      let serverBid = serverResponse.tags[0];
-      const rtbBid = getRtbBid(serverBid);
-      if (rtbBid) {
-        if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-          const bid = newBid(serverBid, rtbBid, bidderRequest);
-          bid.mediaType = parseMediaType(rtbBid);
-          bids.push(bid);
+
+      serverResponse.tags.forEach((serverBid, index) => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid) {
+          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+            const bid = newBid(serverBid, rtbBid, bidderRequest);
+            bid.mediaType = parseMediaType(rtbBid);
+            // set cpm to 0 if it's not the first one
+            bid.cpm = index === 0 ? bid.cpm : 0;
+            bids.push(bid);
+          }
         }
-      }
+      });
     }
     return bids;
   },
