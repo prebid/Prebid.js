@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/rtbdemandAdkBidAdapter';
+import {spec} from 'modules/rtbdemandadkBidAdapter';
 import * as utils from 'src/utils';
 
 describe('RtbdemandAdk adapter', () => {
