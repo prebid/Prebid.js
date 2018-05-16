@@ -10,6 +10,7 @@ describe('user sync', () => {
   let timeoutStub;
   let shuffleStub;
   let getUniqueIdentifierStrStub;
+  let insertUserSyncIframeStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
@@ -23,13 +24,21 @@ describe('user sync', () => {
       browserSupportsCookies: !disableBrowserCookies,
     })
   }
+  let clock;
+  before(() => {
+    clock = sinon.useFakeTimers();
+  });
+
+  after(() => {
+    clock.restore();
+  });
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
-    shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
-    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
-    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
+    insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
   });
 
   afterEach(() => {
@@ -37,7 +46,7 @@ describe('user sync', () => {
     logWarnStub.restore();
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
-    timeoutStub.restore();
+    insertUserSyncIframeStub.restore();
   });
 
   it('should register and fire a pixel URL', () => {
@@ -59,7 +68,8 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     // This implicitly tests cookie and browser support
     userSync.syncUsers(999);
-    expect(timeoutStub.getCall(0).args[1]).to.equal(999);
+    clock.tick(1000);
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
   });
 
   it('should register and fires multiple pixel URLs', () => {
@@ -85,9 +95,7 @@ describe('user sync', () => {
     const userSync = newTestUserSync({iframeEnabled: true});
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
-    let iframe = window.document.getElementById(idPrefix + lastId);
-    expect(iframe).to.exist;
-    expect(iframe.src).to.equal('http://example.com/iframe');
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
   it('should only trigger syncs once per page', () => {

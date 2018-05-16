@@ -19,7 +19,7 @@ module.exports = {
     ],
   },
   output: {
-    jsonpFunction: 'pbjsChunk'
+    jsonpFunction: prebid.globalVarName+"Chunk"
   },
   module: {
     rules: [
@@ -29,9 +29,6 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: ['es2015']
-            }
           }
         ]
       },
@@ -41,9 +38,6 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: ['es2015']
-            }
           }
         ],
       },

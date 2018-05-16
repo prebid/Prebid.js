@@ -3,7 +3,6 @@ import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
 var Adapter = require('modules/conversantBidAdapter');
-var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -23,7 +22,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 250]],
       bidId: 'bid000',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -35,7 +34,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[468, 60]],
       bidId: 'bid001',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -49,7 +48,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 600], [160, 600]],
       bidId: 'bid002',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -69,7 +68,7 @@ describe('Conversant adapter tests', function() {
       sizes: [640, 480],
       bidId: 'bid003',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }];
 
   const bidResponses = {
@@ -117,8 +116,8 @@ describe('Conversant adapter tests', function() {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(1);
     expect(spec.aliases[0]).to.equal('cnvr');
-    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('video');
+    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(2);
+    expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
   it('Verify user syncs', function() {
@@ -205,8 +204,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
     expect(payload.imp[3].video).to.not.have.property('pos');
-    expect(payload.imp[3].video).to.have.property('format');
-    expect(payload.imp[3].video.format).to.deep.equal([{w: 640, h: 480}]);
+    expect(payload.imp[3].video).to.have.property('w', 640);
+    expect(payload.imp[3].video).to.have.property('h', 480);
     expect(payload.imp[3].video).to.have.property('mimes');
     expect(payload.imp[3].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
     expect(payload.imp[3].video).to.have.property('protocols');
@@ -220,7 +219,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.site).to.have.property('id', siteId);
     expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
     const loc = utils.getTopWindowLocation();
-    const page = loc.pathname + loc.search + loc.hash;
+    const page = loc.href;
     expect(payload.site).to.have.property('page', page);
 
     expect(payload).to.have.property('device');
@@ -228,6 +227,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('h', screen.height);
     expect(payload.device).to.have.property('dnt').that.is.oneOf([0, 1]);
     expect(payload.device).to.have.property('ua', navigator.userAgent);
+
+    expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
   it('Verify interpretResponse', function() {
@@ -243,6 +244,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 250);
     expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
 
     // There is no bid001 because cpm is $0
 
@@ -254,6 +257,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 600);
     expect(bid).to.have.property('ad', 'markup002<img src="notify002" />');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
 
     bid = response[2];
     expect(bid).to.have.property('requestId', 'bid003');
@@ -264,6 +269,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('height', 480);
     expect(bid).to.have.property('vastUrl', 'markup003');
     expect(bid).to.have.property('mediaType', 'video');
+    expect(bid).to.have.property('ttl', 300);
+    expect(bid).to.have.property('netRevenue', true);
   });
 
   it('Verify handling of bad responses', function() {
@@ -273,5 +280,18 @@ describe('Conversant adapter tests', function() {
     expect(response).to.be.an('array').with.lengthOf(0);
     response = spec.interpretResponse({id: '123', seatbid: []}, {});
     expect(response).to.be.an('array').with.lengthOf(0);
+  });
+
+  it('Verify publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests)
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {crumbs: {pubcid: 12345}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests).data;
+    expect(payload).to.have.deep.property('user.ext.fpc', 12345);
   });
 })

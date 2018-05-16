@@ -1,95 +1,95 @@
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER } from 'src/mediaTypes';
 
-const VER = 'ADGENT_PREBID-2017051801';
+const VER = 'ADGENT_PREBID-2018011501';
+const BID_REQUEST_BASE_URL = '//hb.aralego.com/header';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
-function UcfunnelAdapter() {
-  function _callBids(params) {
-    let bids = params.bids || [];
+export const spec = {
+  code: UCFUNNEL_BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
+  /**
+   * Check if the bid is a valid zone ID in either number or string form
+   * @param {object} bid the ucfunnel bid to validate
+   * @return boolean for whether or not a bid is valid
+   */
+  isBidRequestValid: function(bid) {
+    return !!(bid && bid.params && bid.params.adid && typeof bid.params.adid === 'string');
+  },
 
-    bids.forEach((bid) => {
-      try {
-        ajax(buildOptimizedCall(bid), bidCallback, undefined, { withCredentials: true });
-      } catch (err) {
-        utils.logError('Error sending ucfunnel request for placement code ' + bid.placementCode, null, err);
-      }
+  /**
+   * Format the bid request object for our endpoint
+   * @param {BidRequest[]} bidRequests Array of ucfunnel bidders
+   * @return object of parameters for Prebid AJAX request
+   */
+  buildRequests: function(validBidRequests) {
+    var bidRequests = [];
+    for (var i = 0; i < validBidRequests.length; i++) {
+      var bid = validBidRequests[i];
 
-      function bidCallback(responseText) {
-        try {
-          utils.logMessage('XHR callback function called for placement code: ' + bid.placementCode);
-          handleRpCB(responseText, bid);
-        } catch (err) {
-          if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing ucfunnel response for placement code ${bid.placementCode}`);
-          } else {
-            utils.logError('Error processing ucfunnel response for placement code ' + bid.placementCode, null, err);
-          }
+      var ucfunnelUrlParams = buildUrlParams(bid);
 
-          // indicate that there is no bid for this placement
-          let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-          badBid.bidderCode = bid.bidder;
-          badBid.error = err;
-          bidmanager.addBidResponse(bid.placementCode, badBid);
-        }
-      }
+      bidRequests.push({
+        method: 'GET',
+        url: BID_REQUEST_BASE_URL,
+        bidRequest: bid,
+        data: ucfunnelUrlParams
+      });
+    }
+    return bidRequests;
+  },
+
+  /**
+   * Format ucfunnel responses as Prebid bid responses
+   * @param {ucfunnelResponseObj} ucfunnelResponse A successful response from ucfunnel.
+   * @return {Bid[]} An array of formatted bids.
+  */
+  interpretResponse: function (ucfunnelResponseObj, request) {
+    var bidResponses = [];
+    var bidRequest = request.bidRequest;
+    var responseBody = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
+
+    bidResponses.push({
+      requestId: bidRequest.bidId,
+      cpm: responseBody.cpm || 0,
+      width: responseBody.width,
+      height: responseBody.height,
+      creativeId: responseBody.ad_id,
+      dealId: responseBody.deal || null,
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 1000,
+      mediaType: BANNER,
+      ad: responseBody.adm
     });
+
+    return bidResponses;
   }
-
-  function buildOptimizedCall(bid) {
-    bid.startTime = new Date().getTime();
-
-    const host = utils.getTopWindowLocation().host;
-    const page = utils.getTopWindowLocation().pathname;
-    const refer = document.referrer;
-    const language = navigator.language;
-    const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
-
-    let queryString = [
-      'ifr', 0,
-      'bl', language,
-      'je', 1,
-      'dnt', dnt,
-      'host', host,
-      'u', page,
-      'ru', refer,
-      'adid', bid.params.adid,
-      'ver', VER
-    ];
-
-    return queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined
-          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
-          : memo,
-      '//agent.aralego.com/header?'
-    ).slice(0, -1);
-  }
-
-  function handleRpCB(responseText, bidRequest) {
-    let ad = JSON.parse(responseText); // can throw
-
-    let bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-    bid.creative_id = ad.ad_id;
-    bid.bidderCode = UCFUNNEL_BIDDER_CODE;
-    bid.cpm = ad.cpm || 0;
-    bid.ad = ad.adm;
-    bid.width = ad.width;
-    bid.height = ad.height;
-    bid.dealId = ad.deal;
-
-    bidmanager.addBidResponse(bidRequest.placementCode, bid);
-  }
-
-  return {
-    callBids: _callBids
-  };
 };
+registerBidder(spec);
 
-adaptermanager.registerBidAdapter(new UcfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
+function buildUrlParams(bid) {
+  const host = utils.getTopWindowLocation().host;
+  const page = utils.getTopWindowLocation().pathname;
+  const refer = document.referrer;
+  const language = navigator.language;
+  const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
 
-module.exports = UcfunnelAdapter;
+  let queryString = [
+    'ifr', '0',
+    'bl', language,
+    'je', '1',
+    'dnt', dnt,
+    'host', host,
+    'u', page,
+    'ru', refer,
+    'adid', utils.getBidIdParameter('adid', bid.params),
+    'ver', VER
+  ];
+
+  return queryString.reduce(
+    (memo, curr, index) =>
+      index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo, ''
+  ).slice(0, -1);
+}

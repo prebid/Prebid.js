@@ -1,118 +1,217 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var utils = require('src/utils');
-var adaptermanager = require('src/adaptermanager');
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import find from 'core-js/library/fn/array/find';
 
-var SonobiAdapter = function SonobiAdapter() {
-  var keymakerAssoc = {}; //  Remember placement codes for callback mapping
-  var bidReqAssoc = {}; //  Remember bids for bid complete reporting
+const BIDDER_CODE = 'sonobi';
+const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
+const PAGEVIEW_ID = generateUUID();
 
-  function _phone_in(request) {
-    var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
-    var adSlots = request.bids || [];
-    var bidderRequestId = request.bidderRequestId;
-    var ref = '&ref=' + encodeURI(utils.getTopWindowLocation().host);
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
-  }
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid - The bid params to validate.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: bid => !!(bid.params && (bid.params.ad_unit || bid.params.placement_id) && (bid.params.sizes || bid.sizes)),
 
-  function _keymaker(adSlots) {
-    var keyring = {};
-    utils._each(adSlots, function(bidRequest) {
-      if (bidRequest.params) {
-        //  Optional
-        var floor = (bidRequest.params.floor) ? bidRequest.params.floor : null;
-        //  Mandatory
-        var slotIdentifier = (bidRequest.params.ad_unit) ? bidRequest.params.ad_unit : (bidRequest.params.placement_id) ? bidRequest.params.placement_id : null;
-        var sizes = (bidRequest.params.sizes) ? bidRequest.params.sizes : bidRequest.sizes || null;
-        sizes = utils.parseSizesInput(sizes).toString();
-
-        if (utils.isEmpty(sizes)) {
-          utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return {object} ServerRequest - Info describing the request to the server.
+   */
+  buildRequests: (validBidRequests) => {
+    const bids = validBidRequests.map(bid => {
+      let slotIdentifier = _validateSlot(bid);
+      if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
+        slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
+        return {
+          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}`
         }
-
-        var bidId = bidRequest.bidId;
-
-        var args = (sizes) ? ((floor) ? (sizes + '|f=' + floor) : (sizes)) : (floor) ? ('f=' + floor) : '';
-        if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
-          slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
-          keyring[slotIdentifier + '|' + bidId] = args;
-          keymakerAssoc[slotIdentifier + '|' + bidId] = bidRequest.placementCode;
-          bidReqAssoc[bidRequest.placementCode] = bidRequest;
-        } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
-          keyring[bidId] = slotIdentifier + '|' + args;
-          keymakerAssoc[bidId] = bidRequest.placementCode;
-          bidReqAssoc[bidRequest.placementCode] = bidRequest;
-        } else {
-          keymakerAssoc[bidId] = bidRequest.placementCode;
-          bidReqAssoc[bidRequest.placementCode] = bidRequest;
-          _failure(bidRequest.placementCode);
-          utils.logError('The ad unit code or Sonobi Placement id for slot ' + bidRequest.placementCode + ' is invalid');
+      } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
+        return {
+          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}`
         }
-      }
-    });
-    return keyring;
-  }
-
-  function _operator(bidderRequestId) {
-    var cb_name = 'sbi_' + bidderRequestId;
-    window[cb_name] = _trinity;
-    return cb_name;
-  }
-
-  function _trinity(response) {
-    var slots = response.slots || {};
-    var sbi_dc = response.sbi_dc || '';
-    utils._each(slots, function(bid, slot_id) {
-      var placementCode = keymakerAssoc[slot_id];
-      if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
-        _success(placementCode, sbi_dc, bid);
       } else {
-        _failure(placementCode);
+        logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
       }
-      delete keymakerAssoc[slot_id];
     });
-  }
 
-  function _seraph(placementCode) {
-    var theOne = bidReqAssoc[placementCode];
-    delete bidReqAssoc[placementCode];
-    return theOne;
-  }
+    let data = {};
+    bids.forEach((bid) => { Object.assign(data, bid); });
 
-  function _success(placementCode, sbi_dc, bid) {
-    var goodBid = bidfactory.createBid(1, _seraph(placementCode));
-    if (bid.sbi_dozer) {
-      goodBid.dealId = bid.sbi_dozer;
+    const payload = {
+      'key_maker': JSON.stringify(data),
+      'ref': getTopWindowLocation().host,
+      's': generateUUID(),
+      'pv': PAGEVIEW_ID,
+      'vp': _getPlatform(),
+      'lib_name': 'prebid',
+      'lib_v': '$prebid.version$'
+    };
+
+    if (validBidRequests[0].params.hfa) {
+      payload.hfa = validBidRequests[0].params.hfa;
     }
-    goodBid.bidderCode = 'sonobi';
-    goodBid.ad = _creative(sbi_dc, bid.sbi_aid);
-    goodBid.cpm = Number(bid.sbi_mouse);
-    goodBid.width = Number(bid.sbi_size.split('x')[0]) || 1;
-    goodBid.height = Number(bid.sbi_size.split('x')[1]) || 1;
-    bidmanager.addBidResponse(placementCode, goodBid);
-  }
+    if (validBidRequests[0].params.referrer) {
+      payload.ref = validBidRequests[0].params.referrer;
+    }
 
-  function _failure(placementCode) {
-    var failBid = bidfactory.createBid(2, _seraph(placementCode));
-    failBid.bidderCode = 'sonobi';
-    bidmanager.addBidResponse(placementCode, failBid);
-  }
+    // If there is no key_maker data, then dont make the request.
+    if (isEmpty(data)) {
+      return null;
+    }
 
-  function _creative(sbi_dc, sbi_aid) {
-    var src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
-    return '<script type="text/javascript" src="' + src + '"></script>';
-  }
+    return {
+      method: 'GET',
+      url: STR_ENDPOINT,
+      withCredentials: true,
+      data: payload,
+      bidderRequests: validBidRequests
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param {*} bidderRequests - Info describing the request to the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: (serverResponse, { bidderRequests }) => {
+    const bidResponse = serverResponse.body;
+    const bidsReturned = [];
 
-  return {
-    callBids: _phone_in,
-    formRequest: _keymaker,
-    parseResponse: _trinity,
-    success: _success,
-    failure: _failure
-  };
+    if (Object.keys(bidResponse.slots).length === 0) {
+      return bidsReturned;
+    }
+
+    Object.keys(bidResponse.slots).forEach(slot => {
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
+      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
+      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
+      const createCreative = _creative(mediaType);
+      const bid = bidResponse.slots[slot];
+      if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
+        const [
+          width = 1,
+          height = 1
+        ] = bid.sbi_size.split('x');
+        const bids = {
+          requestId: bidId,
+          cpm: Number(bid.sbi_mouse),
+          width: Number(width),
+          height: Number(height),
+          ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
+          ttl: 500,
+          creativeId: bid.sbi_aid,
+          netRevenue: true,
+          currency: 'USD'
+        };
+
+        if (bid.sbi_dozer) {
+          bids.dealId = bid.sbi_dozer;
+        }
+
+        const creativeType = bid.sbi_ct;
+        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+          bids.mediaType = 'video';
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          delete bids.ad;
+          delete bids.width;
+          delete bids.height;
+        }
+        bidsReturned.push(bids);
+      }
+    });
+    return bidsReturned;
+  },
+  /**
+   * Register User Sync.
+   */
+  getUserSyncs: (syncOptions, serverResponses) => {
+    const syncs = [];
+    try {
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.sbi_px.forEach(pixel => {
+          syncs.push({
+            type: pixel.type,
+            url: pixel.url
+          });
+        });
+      }
+    } catch (e) {
+      logError(e)
+    }
+    return syncs;
+  }
 };
 
-adaptermanager.registerBidAdapter(new SonobiAdapter(), 'sonobi');
+function _validateSize (bid) {
+  if (bid.params.sizes) {
+    return parseSizesInput(bid.params.sizes).join(',');
+  }
+  return parseSizesInput(bid.sizes).join(',');
+}
 
-module.exports = SonobiAdapter;
+function _validateSlot (bid) {
+  if (bid.params.ad_unit) {
+    return bid.params.ad_unit;
+  }
+  return bid.params.placement_id;
+}
+
+function _validateFloor (bid) {
+  if (bid.params.floor) {
+    return `|f=${bid.params.floor}`;
+  }
+  return '';
+}
+
+const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
+  if (mediaType === 'video') {
+    return _videoCreative(sbi_dc, sbi_aid)
+  }
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  return '<script type="text/javascript" src="' + src + '"></script>';
+};
+
+function _videoCreative(sbi_dc, sbi_aid) {
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+}
+
+function _getBidIdFromTrinityKey (key) {
+  return key.split('|').slice(-1)[0]
+}
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export const _isInbounds = (context = window) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+
+/**
+ * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
+ */
+export function _getPlatform(context = window) {
+  const isInBounds = _isInbounds(context);
+  const MOBILE_VIEWPORT = {
+    lt: 768
+  };
+  const TABLET_VIEWPORT = {
+    lt: 992,
+    ge: 768
+  };
+  if (isInBounds(0, MOBILE_VIEWPORT.lt)) {
+    return 'mobile'
+  }
+  if (isInBounds(TABLET_VIEWPORT.ge, TABLET_VIEWPORT.lt)) {
+    return 'tablet'
+  }
+  return 'desktop';
+}
+
+registerBidder(spec);

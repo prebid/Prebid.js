@@ -1,16 +1,16 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { VIDEO } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
 const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
-const VERSION = '2.2.0';
+const VERSION = '2.2.2';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['cnvr'], // short code
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -50,17 +50,18 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const loc = utils.getTopWindowLocation();
-    const page = loc.pathname + loc.search + loc.hash;
+    const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
     let requestId = '';
+    let pubcid = null;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
-      requestId = bid.requestId;
+      requestId = bid.auctionId;
 
       const format = convertSizes(bid.sizes);
 
@@ -75,7 +76,10 @@ export const spec = {
       copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
 
       if (isVideoRequest(bid)) {
-        const video = {format: format};
+        const video = {
+          w: format[0].w,
+          h: format[0].h
+        };
 
         copyOptProperty(bid.params, 'position', video, 'pos');
         copyOptProperty(bid.params, 'mimes', video);
@@ -92,6 +96,10 @@ export const spec = {
         imp.banner = banner;
       }
 
+      if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
+      }
+
       return imp;
     });
 
@@ -106,6 +114,14 @@ export const spec = {
       device: getDevice(),
       at: 1
     };
+
+    if (pubcid) {
+      payload.user = {
+        ext: {
+          fpc: pubcid
+        }
+      };
+    }
 
     return {
       method: 'POST',
@@ -141,17 +157,16 @@ export const spec = {
               requestId: conversantBid.impid,
               currency: serverResponse.cur || 'USD',
               cpm: responseCPM,
-              creativeId: conversantBid.crid || ''
+              creativeId: conversantBid.crid || '',
+              ttl: 300,
+              netRevenue: true
             };
 
             if (request.video) {
               bid.vastUrl = responseAd;
               bid.mediaType = 'video';
-
-              if (request.video.format.length >= 1) {
-                bid.width = request.video.format[0].w;
-                bid.height = request.video.format[0].h;
-              }
+              bid.width = request.video.w;
+              bid.height = request.video.h;
             } else {
               bid.ad = responseAd + '<img src="' + responseNurl + '" />';
               bid.width = conversantBid.w;

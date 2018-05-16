@@ -82,6 +82,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('auids must not be duplicated', () => {
@@ -91,6 +92,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('pt parameter must be "gross" if params.priceType === "gross"', () => {
@@ -101,6 +103,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
 
@@ -112,6 +115,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
   });

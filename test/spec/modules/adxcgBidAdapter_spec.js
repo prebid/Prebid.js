@@ -54,7 +54,7 @@ describe('AdxcgAdapter', () => {
 
       let query = parsedRequestUrl.search;
       expect(query.renderformat).to.equal('javascript');
-      expect(query.ver).to.equal('r20171019PB10');
+      expect(query.ver).to.equal('r20171102PB10');
       expect(query.source).to.equal('pbjs10');
       expect(query.pbjs).to.equal('$prebid.version$');
       expect(query.adzoneid).to.equal('1');
@@ -218,7 +218,6 @@ describe('AdxcgAdapter', () => {
       expect(result[0].creativeId).to.equal(42);
       expect(result[0].cpm).to.equal(0.45);
       expect(result[0].vastUrl).to.equal('vastContentUrl');
-      expect(result[0].descriptionUrl).to.equal('vastContentUrl');
       expect(result[0].currency).to.equal('USD');
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].ttl).to.equal(300);
