@@ -55,8 +55,8 @@ export const spec = {
     if (userObjBid) {
       userObj = {};
       Object.keys(userObjBid.params.user)
-      .filter(param => includes(USER_PARAMS, param))
-      .forEach(param => userObj[param] = userObjBid.params.user[param]);
+        .filter(param => includes(USER_PARAMS, param))
+        .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
     const memberIdBid = find(bidRequests, hasMemberId);
@@ -338,8 +338,8 @@ function bidToTag(bid) {
     tag.video = {};
     // place any valid video params on the tag
     Object.keys(bid.params.video)
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .forEach(param => tag.video[param] = bid.params.video[param]);
+      .filter(param => includes(VIDEO_TARGETING, param))
+      .forEach(param => tag.video[param] = bid.params.video[param]);
   }
 
   if (
