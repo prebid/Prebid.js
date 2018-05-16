@@ -22,6 +22,7 @@ let consentData;
 let context;
 let args;
 let nextFn;
+let bidsBackHandler;
 
 let timer;
 let haveExited;
@@ -163,6 +164,7 @@ export function requestBidsHook(config, fn) {
   nextFn = fn;
   haveExited = false;
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
+  bidsBackHandler = config.bidsBackHandler;
 
   // in case we already have consent (eg during bid refresh)
   if (consentData) {
@@ -262,6 +264,11 @@ function exitModule(errMsg) {
         nextFn.apply(context, args);
       } else {
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.');
+        if (typeof bidsBackHandler === 'function') {
+          bidsBackHandler();
+        } else {
+          utils.logError('Error executing bidsBackHandler');
+        }
       }
     } else {
       nextFn.apply(context, args);
