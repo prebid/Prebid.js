@@ -20,6 +20,10 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         if (rivrAnalytics.context.impressionsQueue) {
           rivrAnalytics.context.impressionsQueue.init();
         }
+        if (rivrAnalytics.context.auctionObject) {
+          rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+          fetchLocalization();
+        }
         handler = trackAuctionInit;
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
@@ -55,7 +59,7 @@ function sendAll() {
   let impressions = rivrAnalytics.context.impressionsQueue.popAll();
   let auctionObject = rivrAnalytics.context.auctionObject
   let req = Object.assign({}, {Auction: auctionObject});
-  auctionObject = createAuctionObject();
+  auctionObject = fulfillAuctionObject();
   logInfo('sending request to analytics => ', req);
   ajax(`http://${rivrAnalytics.context.host}/auctions`, () => {
   }, JSON.stringify(req));
@@ -116,6 +120,27 @@ function setCurrentPublisherId(bidRequested) {
   }
 };
 
+function fetchLocalization() {
+  ajax(`https://ipapi.co/json`, (rawLocalization) => {
+    let deviceLocation = rivrAnalytics.context.auctionObject.device.geo
+    let location = JSON.parse(rawLocalization)
+    deviceLocation.city = location.city;
+    deviceLocation.country = location.country
+    deviceLocation.region = location.region
+    deviceLocation.zip = location.postal
+  });
+};
+
+function getPlatformType() {
+  if (navigator.userAgent.match(/mobile/i)) {
+    return 'Mobile';
+  } else if (navigator.userAgent.match(/iPad|Android|Touch/i)) {
+    return 'Tablet';
+  } else {
+    return 'Desktop';
+  }
+}
+
 function createBidResponse(bidResponseEvent) {
   return {
     timestamp: bidResponseEvent.responseTimestamp,
@@ -171,7 +196,7 @@ function createImp(bidWonEvent) {
   }
 };
 
-function createAuctionObject() {
+function fulfillAuctionObject() {
   return {
     id: null,
     timestamp: null,
@@ -192,7 +217,7 @@ function createAuctionObject() {
     site: {
       id: null,
       name: null,
-      domain: null,
+      domain: window.location.hostname,
       cat: [],
       publisher: {
         id: null,
@@ -208,8 +233,8 @@ function createAuctionObject() {
         type: null,
         metro: null
       },
-      connectiontype: null,
-      devicetype: null,
+      connectiontype: navigator.connection.effectiveType,
+      devicetype: getPlatformType(),
       osv: null,
       os: null,
       model: null,
@@ -285,7 +310,7 @@ rivrAnalytics.enableAnalytics = (config) => {
   rivrAnalytics.context = {
     host: config.options.host || DEFAULT_HOST,
     pubId: config.options.pubId,
-    auctionObject: createAuctionObject(),
+    auctionObject: {},
     impressionsQueue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
