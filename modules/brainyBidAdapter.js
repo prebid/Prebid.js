@@ -85,16 +85,11 @@ export const spec = {
       requestURL += '_flash=' + flash + '&';
       requestURL += '_nocache=' + nocache;
 
-      const options = {
-        withCredentials: false
-      };
-
       bidRequests.push({
         method: 'GET',
         url: BASE_URL,
         data: requestURL,
-        bidRequest: bid,
-        options: options
+        bidRequest: bid
       })
     }
     return bidRequests;
