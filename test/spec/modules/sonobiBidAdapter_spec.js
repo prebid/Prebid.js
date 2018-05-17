@@ -130,6 +130,14 @@ describe('SonobiBidAdapter', () => {
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600',
     };
 
+    let bidderRequests = {
+      'gdprConsent': {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'vendorData': {},
+        'gdprApplies': true
+      },
+    };
+
     it('should return a properly formatted request', () => {
       const bidRequests = spec.buildRequests(bidRequest)
       const bidRequestsPageViewID = spec.buildRequests(bidRequest)
@@ -145,6 +153,23 @@ describe('SonobiBidAdapter', () => {
       expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
+    it('should return a properly formatted request with GDPR applies set to true', () => {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('true')
+      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+    })
+
+    it('should return a properly formatted request with GDPR applies set to false', () => {
+      bidderRequests.gdprConsent.gdprApplies = false;
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('false')
+      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+    })
+
     it('should return a properly formatted request with hfa', () => {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'
@@ -155,6 +180,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
     it('should return null if there is nothing to bid on', () => {
       const bidRequests = spec.buildRequests([{params: {}}])
       expect(bidRequests).to.equal(null);
