@@ -37,6 +37,7 @@ var sizeMap = {
   43: '320x50',
   44: '300x50',
   48: '300x300',
+  53: '1024x768',
   54: '300x1050',
   55: '970x90',
   57: '970x250',
@@ -221,7 +222,6 @@ export const spec = {
         const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
           return spec.createSlotParams(bidRequest, bidderRequest);
         }));
-
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
           method: 'GET',
@@ -429,12 +429,24 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT
+        url: SYNC_ENDPOINT + params
       };
     }
   }
@@ -555,6 +567,11 @@ var hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
+}
+
+function isNaN(value) {
+  // eslint-disable-next-line no-self-compare
+  return value !== value;
 }
 
 registerBidder(spec);
