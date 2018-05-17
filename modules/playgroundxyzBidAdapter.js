@@ -68,10 +68,16 @@ export const spec = {
     }
     const payloadString = JSON.stringify(payload);
 
+    const options = {
+      contentType: 'application/json',
+      withCredentials: false
+    };
+
     return {
       method: 'POST',
       url: URL,
       data: payloadString,
+      options,
       bidderRequest
     };
   },
