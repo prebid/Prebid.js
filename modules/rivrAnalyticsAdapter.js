@@ -66,47 +66,55 @@ function sendAll() {
     ajax(`http://${rivrAnalytics.context.host}/impressions`, () => {
     }, JSON.stringify(impressionsReq));
   }
-}
+};
 
 function trackAuctionInit(args) {
   rivrAnalytics.context.auctionTimeStart = Date.now();
-  rivrAnalytics.context.auctionObject.id = args.auctionId
-}
+  rivrAnalytics.context.auctionObject.id = args.auctionId;
+};
 
 function trackBidRequest(args) {
-  setCurrentUserId(args);
-}
+  setCurrentPublisherId(args);
+};
 
 function trackBidResponse(args) {
   let bidResponse = createBidResponse(args);
-  rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse)
-}
+  rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse);
+};
 
 function trackBidWon(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
-  let bidResponse = createBidResponse(args)
-  let impression = createImpression(args)
+  let bidResponse = createBidResponse(args);
+  let impression = createImpression(args);
   let imp = createImp(args);
-  auctionObject.bidResponses.push(bidResponse)
-  auctionObject.imp.push(imp)
+  auctionObject.bidResponses.push(bidResponse);
+  auctionObject.imp.push(imp);
 
   return [impression];
 }
 
 function trackAuctionEnd(args) {
   rivrAnalytics.context.auctionTimeEnd = Date.now();
-}
+};
 
 function trackBidTimeout(args) {
-  return [args]
-}
+  return [args];
+};
 
-function setCurrentUserId(bidRequested) {
-  let user = rivrAnalytics.context.auctionObject.user
-  if (!user.id) {
-    rivrAnalytics.context.pubId ? user.id = rivrAnalytics.context.pubId : user.id = bidRequested.bids[0].crumbs.pubcid
+function setCurrentPublisherId(bidRequested) {
+  let site = rivrAnalytics.context.auctionObject.site;
+  let app = rivrAnalytics.context.auctionObject.app;
+  let pubId = rivrAnalytics.context.pubId;
+  if (!site.publisher.id || app.publisher.id) {
+    if (pubId) {
+      site.publisher.id = pubId;
+      app.publisher.id = pubId;
+    } else {
+      site.publisher.id = bidRequested.bids[0].crumbs.pubcid;
+      app.publisher.id = bidRequested.bids[0].crumbs.pubcid;
+    }
   }
-}
+};
 
 function createBidResponse(bidResponseEvent) {
   return {
@@ -135,7 +143,7 @@ function createBidResponse(bidResponseEvent) {
       }
     ]
   }
-}
+};
 
 function createImpression(bidWonEvent) {
   return {
@@ -144,7 +152,7 @@ function createImpression(bidWonEvent) {
     chargePrice: bidWonEvent.adserverTargeting.hb_pb,
     publisherRevenue: bidWonEvent.cpm
   }
-}
+};
 
 function createImp(bidWonEvent) {
   return {
@@ -161,7 +169,7 @@ function createImp(bidWonEvent) {
       api: []
     }
   }
-}
+};
 
 function createAuctionObject() {
   return {
@@ -221,7 +229,7 @@ function createAuctionObject() {
     },
     bidResponses: []
   }
-}
+};
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
  * @param callback
@@ -267,7 +275,7 @@ export function ExpiringQueue(callback, ttl, log) {
       }
     }, ttl);
   }
-}
+};
 
 // save the base class function
 rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
