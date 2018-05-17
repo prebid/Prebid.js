@@ -156,9 +156,10 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
+ * @param {function(object)} customSlotMatching gets a GoogleTag slot and returns a filter function.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -172,7 +173,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargetingForGPT(targetingSet);
+  targeting.setTargetingForGPT(targetingSet, customSlotMatching);
 
   // emit event
   events.emit(SET_TARGETING, targetingSet);
