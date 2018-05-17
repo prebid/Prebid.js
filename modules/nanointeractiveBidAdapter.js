@@ -9,6 +9,7 @@ export const DATA_PARTNER_PIXEL_ID = 'pid';
 export const NQ = 'nq';
 export const NQ_NAME = 'name';
 export const CATEGORY = 'category';
+export const SUB_ID = 'subId';
 
 export const spec = {
 
@@ -43,6 +44,7 @@ function createSingleBidRequest(bid) {
   return {
     [DATA_PARTNER_PIXEL_ID]: bid.params[DATA_PARTNER_PIXEL_ID],
     [NQ]: [createNqParam(bid), createCategoryParam(bid)],
+    [SUB_ID]: createSubIdParam(bid),
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
     cors: utils.getOrigin()
@@ -69,6 +71,10 @@ function createNqParam(bid) {
 
 function createCategoryParam(bid) {
   return bid.params[CATEGORY] || null;
+}
+
+function createSubIdParam(bid) {
+  return bid.params[SUB_ID] || null;
 }
 
 function isEngineResponseValid(response) {
