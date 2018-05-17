@@ -1,12 +1,15 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import {BANNER, NATIVE} from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
+const BIDDER_VERSION = '0.0.1';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -59,6 +62,10 @@ export const spec = {
       method: 'POST',
       url: REQUEST_ENDPOINT,
       data: {
+        version: {
+          prebid: '$prebid.version$',
+          bridgewell: BIDDER_VERSION
+        },
         adUnits: adUnits
       },
       validBidRequests: validBidRequests
@@ -104,7 +111,7 @@ export const spec = {
                 });
               }
 
-              if (sizeValid) { // dont care native sizes
+              if (sizeValid || (mediaTypes && mediaTypes.native)) { // dont care native sizes
                 valid = true;
               }
             }
@@ -120,11 +127,11 @@ export const spec = {
         // check required parameters
         if (typeof matchedResponse.cpm !== 'number') {
           return;
-        } else if (typeof matchedResponse.ad !== 'string') {
-          return;
         } else if (typeof matchedResponse.netRevenue !== 'boolean') {
           return;
         } else if (typeof matchedResponse.currency !== 'string') {
+          return;
+        } else if (typeof matchedResponse.mediaType !== 'string') {
           return;
         }
 
@@ -132,11 +139,121 @@ export const spec = {
         bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
-        bidResponse.ad = matchedResponse.ad;
         bidResponse.ttl = matchedResponse.ttl;
         bidResponse.creativeId = matchedResponse.id;
         bidResponse.netRevenue = matchedResponse.netRevenue;
         bidResponse.currency = matchedResponse.currency;
+        bidResponse.mediaType = matchedResponse.mediaType;
+
+        // check required parameters by matchedResponse.mediaType
+        switch (matchedResponse.mediaType) {
+          case BANNER:
+            // check banner required parameters
+            if (typeof matchedResponse.ad !== 'string') {
+              return;
+            }
+
+            bidResponse.ad = matchedResponse.ad;
+            break;
+          case NATIVE:
+            // check native required parameters
+            if (!matchedResponse.native) {
+              return;
+            }
+
+            let req_nativeLayout = req.mediaTypes.native;
+            let res_native = matchedResponse.native;
+
+            // check title
+            let title = req_nativeLayout.title;
+            if (title && title.required) {
+              if (typeof res_native.title !== 'string') {
+                return;
+              } else if (title.len && title.len < res_native.title.length) {
+                return;
+              }
+            }
+
+            // check body
+            let body = req_nativeLayout.body;
+            if (body && body.required) {
+              if (typeof res_native.body !== 'string') {
+                return;
+              }
+            }
+
+            // check image
+            let image = req_nativeLayout.image;
+            if (image && image.required) {
+              if (res_native.image) {
+                if (typeof res_native.image.url !== 'string') { // check image url
+                  return;
+                } else {
+                  if (res_native.image.width !== image.sizes[0] || res_native.image.height !== image.sizes[1]) { // check image sizes
+                    return;
+                  }
+                }
+              } else {
+                return;
+              }
+            }
+
+            // check sponsoredBy
+            let sponsoredBy = req_nativeLayout.sponsoredBy;
+            if (sponsoredBy && sponsoredBy.required) {
+              if (typeof res_native.sponsoredBy !== 'string') {
+                return;
+              }
+            }
+
+            // check icon
+            let icon = req_nativeLayout.icon;
+            if (icon && icon.required) {
+              if (res_native.icon) {
+                if (typeof res_native.icon.url !== 'string') { // check icon url
+                  return;
+                } else {
+                  if (res_native.icon.width !== icon.sizes[0] || res_native.icon.height !== icon.sizes[0]) { // check image sizes
+                    return;
+                  }
+                }
+              } else {
+                return;
+              }
+            }
+
+            // check clickUrl
+            if (typeof res_native.clickUrl !== 'string') {
+              return;
+            }
+
+            // check clickTracker
+            let clickTrackers = res_native.clickTrackers;
+            if (clickTrackers) {
+              if (clickTrackers.length === 0) {
+                return;
+              }
+            } else {
+              return;
+            }
+
+            // check impressionTrackers
+            let impressionTrackers = res_native.impressionTrackers;
+            if (impressionTrackers) {
+              if (impressionTrackers.length === 0) {
+                return;
+              }
+            } else {
+              return;
+            }
+
+            bidResponse.native = matchedResponse.native;
+
+            break;
+
+          default: // response mediaType is not supported
+            return;
+        }
 
         bidResponses.push(bidResponse);
       }

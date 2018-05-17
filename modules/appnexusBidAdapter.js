@@ -236,6 +236,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers,
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
