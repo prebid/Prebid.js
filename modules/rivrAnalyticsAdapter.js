@@ -57,7 +57,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
 
 function sendAll() {
   let impressions = rivrAnalytics.context.impressionsQueue.popAll();
-  let auctionObject = rivrAnalytics.context.auctionObject
+  let auctionObject = rivrAnalytics.context.auctionObject;
   let req = Object.assign({}, {Auction: auctionObject});
   auctionObject = fulfillAuctionObject();
   logInfo('sending request to analytics => ', req);
@@ -121,13 +121,10 @@ function setCurrentPublisherId(bidRequested) {
 };
 
 function fetchLocalization() {
-  ajax(`https://ipapi.co/json`, (rawLocalization) => {
-    let deviceLocation = rivrAnalytics.context.auctionObject.device.geo
-    let location = JSON.parse(rawLocalization)
-    deviceLocation.city = location.city;
-    deviceLocation.country = location.country
-    deviceLocation.region = location.region
-    deviceLocation.zip = location.postal
+  navigator.geolocation.getCurrentPosition((position) => {
+    let deviceLocation = rivrAnalytics.context.auctionObject.device.geo;
+    deviceLocation.lat = position.coords.latitude;
+    deviceLocation.long = position.coords.longitude;
   });
 };
 
