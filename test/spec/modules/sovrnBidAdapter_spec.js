@@ -63,25 +63,69 @@ describe('sovrnBidAdapter', function() {
     it('attaches source and version to endpoint URL as query params', () => {
       expect(request.url).to.equal(ENDPOINT)
     });
+
+    it('sends \'iv\' as query param if present', () => {
+      const ivBidRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': '403370',
+          'iv': 'vet'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(ivBidRequests);
+
+      expect(request.data).to.contain('"iv":"vet"')
+    })
+
+    it('converts tagid to string', () => {
+      const ivBidRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': 403370,
+          'iv': 'vet'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(ivBidRequests);
+
+      expect(request.data).to.contain('"tagid":"403370"')
+    })
   });
 
   describe('interpretResponse', () => {
-    let response = {
-      body: {
-        'id': '37386aade21a71',
-        'seatbid': [{
-          'bid': [{
-            'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
-            'impid': '263c448586f5a1',
-            'price': 0.45882675,
-            'nurl': '<!-- NURL -->',
-            'adm': '<!-- Creative -->',
-            'h': 90,
-            'w': 728
+    let response;
+    beforeEach(() => {
+      response = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': [{
+            'bid': [{
+              'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+              'crid': 'creativelycreatedcreativecreative',
+              'impid': '263c448586f5a1',
+              'price': 0.45882675,
+              'nurl': '<!-- NURL -->',
+              'adm': '<!-- Creative -->',
+              'h': 90,
+              'w': 728
+            }]
           }]
-        }]
-      }
-    };
+        }
+      };
+    });
 
     it('should get the correct bid response', () => {
       let expectedResponse = [{
@@ -89,7 +133,7 @@ describe('sovrnBidAdapter', function() {
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
-        'creativeId': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+        'creativeId': response.body.seatbid[0].bid[0].crid,
         'dealId': null,
         'currency': 'USD',
         'netRevenue': true,
@@ -110,7 +154,27 @@ describe('sovrnBidAdapter', function() {
         'cpm': 0.45882675,
         'width': 728,
         'height': 90,
-        'creativeId': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+        'creativeId': response.body.seatbid[0].bid[0].crid,
+        'dealId': 'baking',
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
+        'ttl': 60000
+      }];
+
+      let result = spec.interpretResponse(response);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
+
+    it('crid should default to the bid id if not on the response', () => {
+      delete response.body.seatbid[0].bid[0].crid;
+      let expectedResponse = [{
+        'requestId': '263c448586f5a1',
+        'cpm': 0.45882675,
+        'width': 728,
+        'height': 90,
+        'creativeId': response.body.seatbid[0].bid[0].id,
         'dealId': 'baking',
         'currency': 'USD',
         'netRevenue': true,

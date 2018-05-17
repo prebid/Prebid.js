@@ -1,19 +1,18 @@
 import { expect } from 'chai';
-import { spec } from 'modules/serverbidBidAdapter';
+import { spec } from 'modules/inskinBidAdapter';
 
 var bidFactory = require('src/bidfactory.js');
 
-const ENDPOINT = 'https://e.serverbid.com/api/v2';
-const SMARTSYNC_CALLBACK = 'serverbidCallBids';
+const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
 
 const REQUEST = {
-  'bidderCode': 'serverbid',
-  'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d',
+  'bidderCode': 'inskin',
+  'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d',
   'bidderRequestId': '109f2a181342a9',
   'bidRequest': [{
-    'bidder': 'serverbid',
+    'bidder': 'inskin',
     'params': {
-      'networkId': 9969,
+      'networkId': 9874,
       'siteId': 730181
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
@@ -23,12 +22,12 @@ const REQUEST = {
     ],
     'bidId': '2b0f82502298c9',
     'bidderRequestId': '109f2a181342a9',
-    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+    'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   },
   {
-    'bidder': 'serverbid',
+    'bidder': 'inskin',
     'params': {
-      'networkId': 9969,
+      'networkId': 9874,
       'siteId': 730181
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
@@ -38,7 +37,7 @@ const REQUEST = {
     ],
     'bidId': '123',
     'bidderRequestId': '109f2a181342a9',
-    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+    'requestId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   }],
   'start': 1487883186070,
   'auctionStart': 1487883186069,
@@ -55,8 +54,8 @@ const RESPONSE = {
         'creativeId': 1950991,
         'flightId': 2788300,
         'campaignId': 542982,
-        'clickUrl': 'https://e.serverbid.com/r',
-        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'clickUrl': 'https://mfad.inskinad.com/r',
+        'impressionUrl': 'https://mfad.inskinad.com/i.gif',
         'contents': [{
           'type': 'html',
           'body': '<html></html>',
@@ -78,8 +77,8 @@ const RESPONSE = {
         'creativeId': 1950991,
         'flightId': 2788300,
         'campaignId': 542982,
-        'clickUrl': 'https://e.serverbid.com/r',
-        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'clickUrl': 'https://mfad.inskinad.com/r',
+        'impressionUrl': 'https://mfad.inskinad.com/i.gif',
         'contents': [{
           'type': 'html',
           'body': '<html></html>',
@@ -100,22 +99,22 @@ const RESPONSE = {
   }
 };
 
-describe('Serverbid BidAdapter', () => {
+describe('InSkin BidAdapter', () => {
   let bidRequests;
   let adapter = spec;
 
   beforeEach(() => {
     bidRequests = [
       {
-        bidder: 'serverbid',
+        bidder: 'inskin',
         params: {
-          networkId: '9969',
-          siteId: '730181'
+          networkId: '9874',
+          siteId: 'xxxxx'
         },
         placementCode: 'header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
         bidId: '23acc48ad47af5',
-        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
@@ -125,10 +124,10 @@ describe('Serverbid BidAdapter', () => {
   describe('bid request validation', () => {
     it('should accept valid bid requests', () => {
       let bid = {
-        bidder: 'serverbid',
+        bidder: 'inskin',
         params: {
-          networkId: '9969',
-          siteId: '123'
+          networkId: '9874',
+          siteId: 'xxxxx'
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -136,11 +135,11 @@ describe('Serverbid BidAdapter', () => {
 
     it('should accept valid bid requests with extra fields', () => {
       let bid = {
-        bidder: 'serverbid',
+        bidder: 'inskin',
         params: {
-          networkId: '9969',
-          siteId: '123',
-          zoneId: '123'
+          networkId: '9874',
+          siteId: 'xxxxx',
+          zoneId: 'xxxxx'
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -148,9 +147,9 @@ describe('Serverbid BidAdapter', () => {
 
     it('should reject bid requests without siteId', () => {
       let bid = {
-        bidder: 'serverbid',
+        bidder: 'inskin',
         params: {
-          networkId: '9969'
+          networkId: '9874'
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -158,9 +157,9 @@ describe('Serverbid BidAdapter', () => {
 
     it('should reject bid requests without networkId', () => {
       let bid = {
-        bidder: 'serverbid',
+        bidder: 'inskin',
         params: {
-          siteId: '9969'
+          siteId: '9874'
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -174,10 +173,10 @@ describe('Serverbid BidAdapter', () => {
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('request to serverbid should contain a url', () => {
+    it('request to inskin should contain a url', () => {
       let request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.have.string('serverbid.com');
+      expect(request.url).to.have.string('inskinad.com');
     });
 
     it('requires valid bids to make request', () => {
@@ -196,7 +195,7 @@ describe('Serverbid BidAdapter', () => {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
       let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
 
-      expect(bid.bidderCode).to.equal('serverbid');
+      expect(bid.bidderCode).to.equal('inskin');
     });
 
     it('response should include objects for all bids', () => {
@@ -237,18 +236,24 @@ describe('Serverbid BidAdapter', () => {
     });
   });
   describe('getUserSyncs', () => {
-    let syncOptions = {'iframeEnabled': true};
-
     it('handles empty sync options', () => {
       let opts = spec.getUserSyncs({});
 
       expect(opts).to.be.empty;
     });
 
-    it('should return a sync url if iframe syncs are enabled', () => {
+    it('should return two sync urls if pixel syncs are enabled', () => {
+      let syncOptions = {'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions);
 
-      expect(opts.length).to.equal(1);
+      expect(opts.length).to.equal(2);
+    });
+
+    it('should return three sync urls if pixel and iframe syncs are enabled', () => {
+      let syncOptions = {'iframeEnabled': true, 'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(3);
     });
   });
 });

@@ -46,9 +46,16 @@ describe('smartadserver adapter tests', function () {
     ]
   };
 
-  var BID_RESPONSE = {
+  var BID_RESPONSE_AD = {
     cpm: 0.42,
     ad: 'fake ad content',
+    width: 300,
+    height: 250
+  };
+
+  var BID_RESPONSE_ADURL = {
+    cpm: 0.42,
+    adUrl: 'fakeAdUrl.com',
     width: 300,
     height: 250
   };
@@ -125,13 +132,13 @@ describe('smartadserver adapter tests', function () {
     stubAddBidResponse.restore();
   });
 
-  it('creates a bid response if bid is returned', function() {
+  it('creates a bid response if bid is returned with ad', function() {
     var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
       var bidUrl = stubLoadScript.getCall(0).args[0];
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
 
-      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE);
+      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE_AD);
     });
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
@@ -143,10 +150,37 @@ describe('smartadserver adapter tests', function () {
     expect(bidResponsePlacementCode).to.equal(DEFAULT_PARAMS.bids[0].placementCode);
     expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
     expect(bidResponseAd).to.have.property('bidderCode').and.to.equal('smartadserver');
-    expect(bidResponseAd).to.have.property('cpm').and.to.equal(BID_RESPONSE.cpm);
-    expect(bidResponseAd).to.have.property('ad').and.to.equal(BID_RESPONSE.ad);
-    expect(bidResponseAd).to.have.property('width').and.to.equal(BID_RESPONSE.width);
-    expect(bidResponseAd).to.have.property('height').and.to.equal(BID_RESPONSE.height);
+    expect(bidResponseAd).to.have.property('cpm').and.to.equal(BID_RESPONSE_AD.cpm);
+    expect(bidResponseAd).to.have.property('ad').and.to.equal(BID_RESPONSE_AD.ad);
+    expect(bidResponseAd).to.have.property('width').and.to.equal(BID_RESPONSE_AD.width);
+    expect(bidResponseAd).to.have.property('height').and.to.equal(BID_RESPONSE_AD.height);
+
+    stubLoadScript.restore();
+    stubAddBidResponse.restore();
+  });
+
+  it('creates a bid response if bid is returned with adUrl', function() {
+    var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
+      var bidUrl = stubLoadScript.getCall(0).args[0];
+      var parsedBidUrl = urlParse(bidUrl);
+      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
+
+      $$PREBID_GLOBAL$$[parsedBidUrlQueryString.pbjscbk.split('.')[1]](BID_RESPONSE_ADURL);
+    });
+    var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+    adapter().callBids(DEFAULT_PARAMS);
+
+    var bidResponsePlacementCode = stubAddBidResponse.getCall(0).args[0];
+    var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
+
+    expect(bidResponsePlacementCode).to.equal(DEFAULT_PARAMS.bids[0].placementCode);
+    expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+    expect(bidResponseAd).to.have.property('bidderCode').and.to.equal('smartadserver');
+    expect(bidResponseAd).to.have.property('cpm').and.to.equal(BID_RESPONSE_ADURL.cpm);
+    expect(bidResponseAd).to.have.property('adUrl').and.to.equal(BID_RESPONSE_ADURL.adUrl);
+    expect(bidResponseAd).to.have.property('width').and.to.equal(BID_RESPONSE_ADURL.width);
+    expect(bidResponseAd).to.have.property('height').and.to.equal(BID_RESPONSE_ADURL.height);
 
     stubLoadScript.restore();
     stubAddBidResponse.restore();

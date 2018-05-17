@@ -40,14 +40,22 @@ const bidderResponse = {
       'cpm': 12.34,
       'creative': {
         'deal_id': 'aDealId',
-        'creative_key': 'aCreativeId'
+        'creative_key': 'aCreativeId',
+        'title': '✓ à la mode'
       }
     }],
     'stxUserId': ''
   },
   header: { get: (header) => header }
 };
-
+// Mirrors the one in modules/sharethroughBidAdapter.js as the function is unexported
+const b64EncodeUnicode = (str) => {
+  return btoa(
+    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      function toSolidBytes(match, p1) {
+        return String.fromCharCode('0x' + p1);
+      }));
+}
 describe('sharethrough adapter spec', () => {
   describe('.code', () => {
     it('should return a bidder code of sharethrough', () => {
@@ -111,8 +119,10 @@ describe('sharethrough adapter spec', () => {
 
     it('correctly sends back a sfp script tag', () => {
       const adMarkup = spec.interpretResponse(bidderResponse, prebidRequest[0])[0].ad;
-      const resp = btoa(JSON.stringify(bidderResponse));
+      let resp = null;
 
+      expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
+      expect(() => resp = b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
       expect(adMarkup).to.match(
         /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);

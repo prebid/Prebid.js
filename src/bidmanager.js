@@ -216,7 +216,7 @@ function addBidToAuction(bid) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(bid) {
-  if (config.getConfig('usePrebidCache')) {
+  if (config.getConfig('usePrebidCache') && !bid.videoCacheKey) {
     store([bid], function(error, cacheIds) {
       if (error) {
         utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);

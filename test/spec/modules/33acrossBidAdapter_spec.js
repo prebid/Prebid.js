@@ -145,7 +145,7 @@ describe('33acrossBidAdapter:', function () {
         data: JSON.stringify(ttxRequest),
         options: {
           contentType: 'application/json',
-          withCredentials: false
+          withCredentials: true
         }
       }
       const builtServerRequests = buildRequests(this.bidRequests);
@@ -198,7 +198,7 @@ describe('33acrossBidAdapter:', function () {
         data: JSON.stringify(ttxRequest),
         options: {
           contentType: 'application/json',
-          withCredentials: false,
+          withCredentials: true,
           customHeaders: {
             foo: 'bar'
           }
@@ -227,14 +227,10 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: '23455'
               }]
             }
           ]
@@ -248,7 +244,7 @@ describe('33acrossBidAdapter:', function () {
           height: 250,
           ad: '<html><h3>I am an ad</h3></html>',
           ttl: 60,
-          creativeId: 1,
+          creativeId: '23455',
           currency: 'USD',
           netRevenue: true
         }
@@ -281,26 +277,18 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 1
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0940
+                price: 0.0940,
+                crid: 1
               },
               {
                 id: '2',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 2
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: 2
               }
               ]
             },
@@ -308,14 +296,10 @@ describe('33acrossBidAdapter:', function () {
               bid: [{
                 id: '3',
                 adm: '<html><h3>I am an ad</h3></html>',
-                ext: {
-                  rp: {
-                    advid: 3
-                  }
-                },
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                crid: 3
               }]
             }
           ]
@@ -361,14 +345,14 @@ describe('33acrossBidAdapter:', function () {
           params: {
             site: { id: 'id1' },
             productId: 'p1',
-            syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch'
+            syncUrl: 'https://foo.com/v2?m=xch'
           }
         },
         {
           params: {
             site: { id: 'id2' },
             productId: 'p1',
-            syncUrl: 'https://staging-de.tynt.com/deb/v2?m=xch'
+            syncUrl: 'https://foo.com/v2?m=xch'
           }
         }
       ];
@@ -376,22 +360,22 @@ describe('33acrossBidAdapter:', function () {
       this.syncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&id=id1'
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&id=id2'
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
         },
       ];
 
       this.testSyncs = [
         {
           type: 'iframe',
-          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id1'
+          url: 'https://foo.com/v2?m=xch&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://staging-de.tynt.com/deb/v2?m=xch&id=id2'
+          url: 'https://foo.com/v2?m=xch&id=id2'
         },
       ];
     });
