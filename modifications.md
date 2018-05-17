@@ -6,7 +6,6 @@ These are the ways in which the Guardian optimised build differs from the [gener
     * -1 if the auction timed out without a winning bid and still waiting for at least one bid response 
     * otherwise not passed at all
 ## Bid adapters
-* We have built our own custom [Index Exchange adapter](https://github.com/guardian/Prebid.js/blob/master/modules/guIndexExchangeBidAdapter.js) 
 * The [Sonobi adapter](https://github.com/guardian/Prebid.js/blob/master/modules/sonobiBidAdapter.js):
     * has an extra request parameter, `gmgt`, holding AppNexus targeting key-values
     * has a customised `pv` parameter, holding the Ophan-generated pageview ID
