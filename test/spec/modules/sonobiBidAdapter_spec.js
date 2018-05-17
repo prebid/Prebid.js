@@ -416,4 +416,23 @@ describe('Sonobi adapter tests', () => {
       expect(adapter._getPlatform({innerWidth: 1000})).to.equal('desktop')
     })
   })
+  describe('_getReferrer', () => {
+    it('should return the referrer from the adunit params', () => {
+      const adapter = new Adapter();
+      const adunit = {
+        bidderCode: 'sonobi',
+        bids: [{
+          bidId: 'testbid',
+          bidder: 'sonobi',
+          placementCode: 'adUnit_p',
+          sizes: [[300, 250], [300, 600]],
+          params: {
+            placement_id: '1a2b3c4d5e6f1a2b3c4d',
+            referrer: 'test'
+          }
+        }]
+      };
+      expect(adapter._getReferrer(adunit.bids)).to.equal('test');
+    })
+  })
 });
