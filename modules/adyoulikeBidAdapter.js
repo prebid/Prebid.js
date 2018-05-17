@@ -49,7 +49,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: bidderRequest.gdprConsent.gdprApplies
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
     }
 
