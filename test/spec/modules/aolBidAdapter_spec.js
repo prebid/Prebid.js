@@ -3,6 +3,8 @@ import * as utils from 'src/utils';
 import {spec} from 'modules/aolBidAdapter';
 import {config} from 'src/config';
 
+const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
+
 let getDefaultBidResponse = () => {
   return {
     id: '245730051428950632',
@@ -12,7 +14,7 @@ let getDefaultBidResponse = () => {
         id: 1,
         impid: '245730051428950632',
         price: 0.09,
-        adm: '<script>logInfo(\'ad\');</script>',
+        adm: DEFAULT_AD_CONTENT,
         crid: 'creative-id',
         h: 90,
         w: 728,
@@ -54,14 +56,14 @@ let getNexagePostBidParams = () => {
 let getDefaultBidRequest = () => {
   return {
     bidderCode: 'aol',
-    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+    auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
     bidderRequestId: '7101db09af0db2',
     start: new Date().getTime(),
     bids: [{
       bidder: 'aol',
       bidId: '84ab500420319d',
       bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+      auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
       placementCode: 'foo',
       params: getMarketplaceBidParams()
     }]
@@ -74,8 +76,10 @@ let getPixels = () => {
 };
 
 describe('AolAdapter', () => {
-  const MARKETPLACE_URL = 'adserver-us.adtech.advertising.com/pubapi/3.0/';
-  const NEXAGE_URL = 'hb.nexage.com/bidRequest?';
+  const MARKETPLACE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';
+  const NEXAGE_URL = '//hb.nexage.com/bidRequest?';
+  const ONE_DISPLAY_TTL = 60;
+  const ONE_MOBILE_TTL = 3600;
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -93,22 +97,29 @@ describe('AolAdapter', () => {
     let bidResponse;
     let bidRequest;
     let logWarnSpy;
+    let formatPixelsStub;
+    let isOneMobileBidderStub;
 
     beforeEach(() => {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
       bidRequest = {
         bidderCode: 'test-bidder-code',
-        bidId: 'bid-id'
+        bidId: 'bid-id',
+        ttl: 1234
       };
       bidResponse = {
         body: getDefaultBidResponse()
       };
       logWarnSpy = sinon.spy(utils, 'logWarn');
+      formatPixelsStub = sinon.stub(spec, 'formatPixels');
+      isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
     });
 
     afterEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
       logWarnSpy.restore();
+      formatPixelsStub.restore();
+      isOneMobileBidderStub.restore();
     });
 
     it('should return formatted bid response with required properties', () => {
@@ -116,7 +127,7 @@ describe('AolAdapter', () => {
       expect(formattedBidResponse).to.deep.equal({
         bidderCode: bidRequest.bidderCode,
         requestId: 'bid-id',
-        ad: '<script>logInfo(\'ad\');</script>',
+        ad: DEFAULT_AD_CONTENT,
         cpm: 0.09,
         width: 728,
         height: 90,
@@ -125,23 +136,19 @@ describe('AolAdapter', () => {
         currency: 'USD',
         dealId: 'deal-id',
         netRevenue: true,
-        ttl: 300
+        ttl: bidRequest.ttl
       });
     });
 
-    it('should return formatted bid response including pixels', () => {
+    it('should add pixels to ad content when pixels are present in the response', () => {
       bidResponse.body.ext = {
-        pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
+        pixels: 'pixels-content'
       };
 
+      formatPixelsStub.returns('pixels-content');
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
 
-      expect(formattedBidResponse.ad).to.equal(
-        '<script>logInfo(\'ad\');</script>' +
-        '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
-        'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' +
-        'document.write(\'<img src="pixel.gif">\');}</script>'
-      );
+      expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + 'pixels-content');
     });
 
     it('should show warning in the console', function() {
@@ -355,6 +362,13 @@ describe('AolAdapter', () => {
         let [request] = spec.buildRequests(bidRequest.bids);
         expect(request.url).to.contain('kvage=25;kvheight=3.42;kvtest=key');
       });
+
+      it('should return request object for One Display when configuration is present', () => {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.method).to.equal('GET');
+        expect(request.ttl).to.equal(ONE_DISPLAY_TTL);
+      });
     });
 
     describe('One Mobile', () => {
@@ -454,6 +468,7 @@ describe('AolAdapter', () => {
         let [request] = spec.buildRequests(bidRequest.bids);
         expect(request.url).to.contain(NEXAGE_URL);
         expect(request.method).to.equal('POST');
+        expect(request.ttl).to.equal(ONE_MOBILE_TTL);
         expect(request.data).to.deep.equal(bidConfig);
         expect(request.options).to.deep.equal({
           contentType: 'application/json',
@@ -519,6 +534,139 @@ describe('AolAdapter', () => {
 
       expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.false;
       expect(userSyncs).to.deep.equal([]);
+    });
+  });
+
+  describe('formatPixels()', () => {
+    it('should return pixels wrapped for dropping them once and within nested frames ', () => {
+      let pixels = '<script>document.write(\'<pixels-dom-elements/>\');</script>';
+      let formattedPixels = spec.formatPixels(pixels);
+
+      expect(formattedPixels).to.equal(
+        '<script>var w=window,prebid;' +
+        'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
+        'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
+        'try{prebid.aolGlobals.pixelsDropped=true;' +
+        'document.write(\'<pixels-dom-elements/>\');break;}' +
+        'catch(e){continue;}' +
+        '}}</script>');
+    });
+  });
+
+  describe('isOneMobileBidder()', () => {
+    it('should return false when when bidderCode is not present', () => {
+      expect(spec.isOneMobileBidder(null)).to.be.false;
+    });
+
+    it('should return false for unknown bidder code', () => {
+      expect(spec.isOneMobileBidder('unknownBidder')).to.be.false;
+    });
+
+    it('should return true for aol bidder code', () => {
+      expect(spec.isOneMobileBidder('aol')).to.be.true;
+    });
+
+    it('should return true for one mobile bidder code', () => {
+      expect(spec.isOneMobileBidder('onemobile')).to.be.true;
+    });
+  });
+
+  describe('isConsentRequired()', () => {
+    it('should return false when consentData object is not present', () => {
+      expect(spec.isConsentRequired(null)).to.be.false;
+    });
+
+    it('should return false when gdprApplies equals true and consentString is not present', () => {
+      let consentData = {
+        consentString: null,
+        gdprApplies: true
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.false;
+    });
+
+    it('should return false when consentString is present and gdprApplies equals false', () => {
+      let consentData = {
+        consentString: 'consent-string',
+        gdprApplies: false
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.false;
+    });
+
+    it('should return true when consentString is present and gdprApplies equals true', () => {
+      let consentData = {
+        consentString: 'consent-string',
+        gdprApplies: true
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.true;
+    });
+  });
+
+  describe('formatMarketplaceConsentData()', () => {
+    let consentRequiredStub;
+
+    beforeEach(() => {
+      consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
+    });
+
+    afterEach(() => {
+      consentRequiredStub.restore();
+    });
+
+    it('should return empty string when consent is not required', () => {
+      consentRequiredStub.returns(false);
+      expect(spec.formatMarketplaceConsentData()).to.be.equal('');
+    });
+
+    it('should return formatted consent data when consent is required', () => {
+      consentRequiredStub.returns(true);
+      let formattedConsentData = spec.formatMarketplaceConsentData({
+        consentString: 'test-consent'
+      });
+      expect(formattedConsentData).to.be.equal(';euconsent=test-consent;gdpr=1');
+    });
+  });
+
+  describe('formatOneMobileDynamicParams()', () => {
+    let consentRequiredStub;
+    let secureProtocolStub;
+
+    beforeEach(() => {
+      consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
+      secureProtocolStub = sinon.stub(spec, 'isSecureProtocol');
+    });
+
+    afterEach(() => {
+      consentRequiredStub.restore();
+      secureProtocolStub.restore();
+    });
+
+    it('should return empty string when params are not present', () => {
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('');
+    });
+
+    it('should return formatted params when params are present', () => {
+      let params = {
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      };
+      expect(spec.formatOneMobileDynamicParams(params)).to.contain('&param1=val1&param2=val2&param3=val3');
+    });
+
+    it('should return formatted gdpr params when isConsentRequired returns true', () => {
+      let consentData = {
+        consentString: 'test-consent'
+      };
+      consentRequiredStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&euconsent=test-consent&gdpr=1');
+    });
+
+    it('should return formatted secure param when isSecureProtocol returns true', () => {
+      secureProtocolStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('&secure=1');
     });
   });
 });

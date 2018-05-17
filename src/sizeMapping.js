@@ -1,4 +1,5 @@
 import { config } from 'src/config';
+import { logWarn } from 'src/utils';
 import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
@@ -64,17 +65,20 @@ function evaluateSizeConfig(configs) {
   return configs.reduce((results, config) => {
     if (
       typeof config === 'object' &&
-      typeof config.mediaQuery === 'string' &&
-      matchMedia(config.mediaQuery).matches
+      typeof config.mediaQuery === 'string'
     ) {
-      if (Array.isArray(config.sizesSupported)) {
-        results.shouldFilter = true;
+      if (matchMedia(config.mediaQuery).matches) {
+        if (Array.isArray(config.sizesSupported)) {
+          results.shouldFilter = true;
+        }
+        ['labels', 'sizesSupported'].forEach(
+          type => (config[type] || []).forEach(
+            thing => results[type][thing] = true
+          )
+        );
       }
-      ['labels', 'sizesSupported'].forEach(
-        type => (config[type] || []).forEach(
-          thing => results[type][thing] = true
-        )
-      );
+    } else {
+      logWarn('sizeConfig rule missing required property "mediaQuery"');
     }
     return results;
   }, {

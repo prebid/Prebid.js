@@ -1,11 +1,12 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.0.0',
+  version: '4.1.0',
   code: BIDDER_CODE,
   aliases: ['id'],
 
@@ -113,6 +114,7 @@ function getNormalizedBidRequest(bid) {
   let localSize = utils.getBidIdParameter('size', bid.params) || null;
   let bidId = utils.getBidIdParameter('bidId', bid);
   let transactionId = utils.getBidIdParameter('transactionId', bid);
+  const currency = config.getConfig('currency.adServerCurrency');
 
   let normalizedBidRequest = {};
   if (placementId) {
@@ -143,6 +145,9 @@ function getNormalizedBidRequest(bid) {
   if (transactionId) {
     normalizedBidRequest.transactionId = transactionId;
   }
+  if (currency) {
+    normalizedBidRequest.currency = currency;
+  }
   return normalizedBidRequest;
 }
 registerBidder(spec);
@@ -160,7 +165,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ad.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-4.2.0',
+    CLIENT_VERSION: 'JS-4.3.3',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       BAD_HTTP_REQUEST_TYPE_PARAM: 1,
@@ -336,6 +341,9 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (placementObject.adUnitId) {
       outputObject.adUnitId = placementObject.adUnitId;
+    }
+    if (placementObject.currency) {
+      impressionObject.currency = placementObject.currency.toUpperCase();
     }
     if (placementObject.placementId) {
       impressionObject.pid = placementObject.placementId;

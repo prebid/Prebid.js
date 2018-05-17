@@ -146,7 +146,7 @@ export function newUserSync(userSyncDependencies) {
       return utils.logWarn(`Bidder is required for registering sync`);
     }
     if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
-      return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
+      return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
     // All bidders are enabled by default. If specified only register for enabled bidders.
     let hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
@@ -165,7 +165,7 @@ export function newUserSync(userSyncDependencies) {
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {
-      return window.setTimeout(fireSyncs, Number(timeout));
+      return setTimeout(fireSyncs, Number(timeout));
     }
     fireSyncs();
   };

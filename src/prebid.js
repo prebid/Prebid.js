@@ -1,34 +1,29 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
-import { videoAdUnit, videoBidder, hasNonVideoBidder } from './video';
-import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
+import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targeting';
+import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
-var $$PREBID_GLOBAL$$ = getGlobal();
-
-var CONSTANTS = require('./constants.json');
-var utils = require('./utils.js');
-var adaptermanager = require('./adaptermanager');
-var bidfactory = require('./bidfactory');
-var events = require('./events');
+const $$PREBID_GLOBAL$$ = getGlobal();
+const CONSTANTS = require('./constants.json');
+const utils = require('./utils.js');
+const adaptermanager = require('./adaptermanager');
+const bidfactory = require('./bidfactory');
+const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
+const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
-const RENDERED = 'rendered';
-var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
-var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
-
-var eventValidators = {
+const eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
@@ -113,7 +108,8 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode);
+  let bidsReceived = auctionManager.getBidsReceived();
+  return targeting.getAllTargeting(adUnitCode, bidsReceived);
 };
 
 /**
@@ -127,16 +123,17 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
   const responses = auctionManager.getBidsReceived()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
-  // find the last requested id to get responses for most recent auction only
-  const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
+  // find the last auction id to get responses for most recent auction only
+  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
 
-  return responses.map(bid => bid.adUnitCode)
+  return responses
+    .map(bid => bid.adUnitCode)
     .filter(uniques).map(adUnitCode => responses
-      .filter(bid => bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode))
+      .filter(bid => bid.auctionId === currentAuctionId && bid.adUnitCode === adUnitCode))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids }
+        [bids[0].adUnitCode]: { bids: bids.map(removeRequestId) }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -152,7 +149,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
   return {
-    bids: bids
+    bids: bids.map(removeRequestId)
   };
 };
 
@@ -178,7 +175,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.setTargetingForGPT(targetingSet);
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targetingSet);
 };
 
 /**
@@ -195,9 +192,21 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   targeting.setTargetingForAst();
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
+function emitAdRenderFail(reason, message, bid) {
+  const data = {};
+
+  data.reason = reason;
+  data.message = message;
+  if (bid) {
+    data.bid = bid;
+  }
+
+  utils.logError(message);
+  events.emit(AD_RENDER_FAILED, data);
+}
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -208,6 +217,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
 $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
+
   if (doc && id) {
     try {
       // lookup ad by ad Id
@@ -225,14 +235,19 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
+        const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+        utils.insertElement(creativeComment, doc, 'body');
+
         if (renderer && renderer.url) {
           renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
-          utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
+          const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
+          emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
         } else if (ad) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else if (adUrl) {
           const iframe = utils.createInvisibleIframe();
           iframe.height = height;
@@ -243,17 +258,22 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
           utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
+          utils.callBurl(bid);
         } else {
-          utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
+          const message = `Error trying to write ad. No ad for bid response id: ${id}`;
+          emitAdRenderFail(NO_AD, message, bid);
         }
       } else {
-        utils.logError('Error trying to write ad. Cannot find ad by given id : ' + id);
+        const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
+        emitAdRenderFail(CANNOT_FIND_AD, message);
       }
     } catch (e) {
-      utils.logError('Error trying to write ad Id :' + id + ' to the page:' + e.message);
+      const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
+      emitAdRenderFail(EXCEPTION, message);
     }
   } else {
-    utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
+    const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
+    emitAdRenderFail(MISSING_DOC_OR_ADID, message);
   }
 };
 
@@ -282,8 +302,8 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
-  events.emit('requestBids');
+$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+  events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
@@ -297,24 +317,34 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // for video-enabled adUnits, only request bids for bidders that support video
-  adUnits.filter(videoAdUnit).filter(hasNonVideoBidder).forEach(adUnit => {
-    const nonVideoBidders = adUnit.bids
-      .filter(bid => !videoBidder(bid))
-      .map(bid => bid.bidder);
+  /*
+   * for a given adunit which supports a set of mediaTypes
+   * and a given bidder which supports a set of mediaTypes
+   * a bidder is eligible to participate on the adunit
+   * if it supports at least one of the mediaTypes on the adunit
+   */
+  adUnits.forEach(adUnit => {
+    // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonVideoBidders));
-    adUnit.bids = adUnit.bids.filter(videoBidder);
-  });
+    // get the bidder's mediaTypes
+    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const bidderRegistry = adaptermanager.bidderRegistry;
 
-  // for native-enabled adUnits, only request bids for bidders that support native
-  adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
-    const nonNativeBidders = adUnit.bids
-      .filter(bid => !nativeBidder(bid))
-      .map(bid => bid.bidder);
+    bidders.forEach(bidder => {
+      const adapter = bidderRegistry[bidder];
+      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      // banner is default if not specified in spec
+      const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
-    utils.logWarn(utils.unsupportedBidderMessage(adUnit, nonNativeBidders));
-    adUnit.bids = adUnit.bids.filter(nativeBidder);
+      // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
+      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      if (!bidderEligible) {
+        // drop the bidder from the ad unit if it's not compatible
+        utils.logWarn(utils.unsupportedBidderMessage(adUnit, bidder));
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+      }
+    });
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -332,7 +362,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
   auction.callBids();
-};
+  return auction;
+});
 
 /**
  *
@@ -443,7 +474,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 };
 
 /**
- * Wrapper to adloader.loadScript
+ * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
  * @alias module:pbjs.loadScript
@@ -524,11 +555,22 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 */
 
 /**
- * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids();
+  return auctionManager.getAllWinningBids()
+    .map(removeRequestId);
+};
+
+/**
+ * Get all of the bids that have won their respective auctions.
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ */
+$$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
+  return auctionManager.getBidsReceived()
+    .filter(bid => bid.status === BID_TARGETING_SET)
+    .map(removeRequestId);
 };
 
 /**
@@ -539,7 +581,9 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode);
+  let bidsReceived = auctionManager.getBidsReceived().filter(getOldestBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
+    .map(removeRequestId);
 };
 
 /**

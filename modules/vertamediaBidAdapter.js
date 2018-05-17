@@ -1,16 +1,20 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {VIDEO} from 'src/mediaTypes';
+import {VIDEO, BANNER} from 'src/mediaTypes';
 import {Renderer} from 'src/Renderer';
+import findIndex from 'core-js/library/fn/array/find-index';
 
-const URL = '//rtb.vertamedia.com/hb/';
+const URL = '//hb2.vertamedia.com/auction/';
+const OUTSTREAM_SRC = '//player.vertamedia.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'vertamedia';
+const OUTSTREAM = 'outstream';
+const DISPLAY = 'display';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
-    return Boolean(bid && bid.params && bid.params.aid);
+    return bid && bid.params && bid.params.aid;
   },
 
   /**
@@ -19,14 +23,12 @@ export const spec = {
    * @param bidderRequest
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    return bidRequests.map((bid) => {
-      return {
-        data: prepareRTBRequestParams(bid),
-        bidderRequest,
-        method: 'GET',
-        url: URL
-      }
-    });
+    return {
+      data: bidToTag(bidRequests),
+      bidderRequest,
+      method: 'GET',
+      url: URL
+    };
   },
 
   /**
@@ -37,93 +39,123 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, {bidderRequest}) {
     serverResponse = serverResponse.body;
-    const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
-    const videoMediaType = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video');
-    const context = utils.deepAccess(bidderRequest.bids[0], 'mediaTypes.video.context');
-    const isMediaTypeOutstream = (videoMediaType && context === 'outstream');
-
     let bids = [];
 
-    if (isInvalidValidResp) {
-      let extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
-
-      utils.logError(errorMessage);
-
-      return bids;
+    if (!utils.isArray(serverResponse)) {
+      return parseRTBResponse(serverResponse, bidderRequest);
     }
 
-    serverResponse.bids.forEach(serverBid => {
-      if (serverBid.cpm !== 0) {
-        const bid = createBid(isMediaTypeOutstream, serverBid);
-        bids.push(bid);
-      }
+    serverResponse.forEach(serverBidResponse => {
+      bids = utils.flatten(bids, parseRTBResponse(serverBidResponse, bidderRequest));
     });
 
     return bids;
-  },
+  }
 };
 
+function parseRTBResponse(serverResponse, bidderRequest) {
+  const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
+
+  let bids = [];
+
+  if (isInvalidValidResp) {
+    let extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
+    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
+
+    utils.logError(errorMessage);
+
+    return bids;
+  }
+
+  serverResponse.bids.forEach(serverBid => {
+    const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
+      return bidRequest.bidId === serverBid.requestId;
+    });
+
+    if (serverBid.cpm !== 0 && requestId !== -1) {
+      const bid = createBid(serverBid, getMediaType(bidderRequest.bids[requestId]));
+
+      bids.push(bid);
+    }
+  });
+
+  return bids;
+}
+
+function bidToTag(bidRequests) {
+  let tag = {
+    domain: utils.getTopWindowLocation().hostname
+  };
+
+  for (let i = 0, length = bidRequests.length; i < length; i++) {
+    Object.assign(tag, prepareRTBRequestParams(i, bidRequests[i]));
+  }
+
+  return tag;
+}
+
 /**
- * Prepare all parameters for request
+ * Parse mediaType
+ * @param _index {number}
  * @param bid {object}
  * @returns {object}
  */
-function prepareRTBRequestParams(bid) {
-  let size = getSize(bid.sizes);
+function prepareRTBRequestParams(_index, bid) {
+  const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
+  const index = !_index ? '' : `${_index + 1}`;
 
   return {
-    domain: utils.getTopWindowLocation().hostname,
-    callbackId: bid.bidId,
-    aid: bid.params.aid,
-    h: size.height,
-    w: size.width
+    ['callbackId' + index]: bid.bidId,
+    ['aid' + index]: bid.params.aid,
+    ['ad_type' + index]: mediaType,
+    ['sizes' + index]: utils.parseSizesInput(bid.sizes).join()
   };
 }
 
 /**
- * Prepare size for request
- * @param requestSizes {array}
- * @returns {object} bid The bid to validate
+ * Prepare all parameters for request
+ * @param bidderRequest {object}
+ * @returns {object}
  */
-function getSize(requestSizes) {
-  const size = utils.parseSizesInput(requestSizes)[0];
-  const parsed = {};
+function getMediaType(bidderRequest) {
+  const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+  const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
 
-  if (typeof size !== 'string') {
-    return parsed;
-  }
-
-  let parsedSize = size.toUpperCase().split('X');
-
-  return {
-    height: parseInt(parsedSize[1], 10) || undefined,
-    width: parseInt(parsedSize[0], 10) || undefined
-  };
+  return !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
 }
 
 /**
  * Configure new bid by response
- * @param isMediaTypeOutstream {boolean}
  * @param bidResponse {object}
+ * @param mediaType {Object}
  * @returns {object}
  */
-function createBid(isMediaTypeOutstream, bidResponse) {
+function createBid(bidResponse, mediaType) {
   let bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
-    vastUrl: bidResponse.vastUrl,
     height: bidResponse.height,
     currency: bidResponse.cur,
     width: bidResponse.width,
     cpm: bidResponse.cpm,
-    mediaType: 'video',
     netRevenue: true,
+    mediaType,
     ttl: 3600
   };
 
-  if (isMediaTypeOutstream) {
+  if (mediaType === DISPLAY) {
+    return Object.assign(bid, {
+      ad: bidResponse.ad
+    });
+  }
+
+  Object.assign(bid, {
+    vastUrl: bidResponse.vastUrl
+  });
+
+  if (mediaType === OUTSTREAM) {
     Object.assign(bid, {
+      mediaType: 'video',
       adResponse: bidResponse,
       renderer: newRenderer(bidResponse.requestId)
     });
@@ -132,11 +164,16 @@ function createBid(isMediaTypeOutstream, bidResponse) {
   return bid;
 }
 
+/**
+ * Create Vertamedia renderer
+ * @param requestId
+ * @returns {*}
+ */
 function newRenderer(requestId) {
   const renderer = Renderer.install({
     id: requestId,
-    url: '//player.vertamedia.com/outstream-unit/2.01/outstream.min.js',
-    loaded: false,
+    url: OUTSTREAM_SRC,
+    loaded: false
   });
 
   renderer.setRender(outstreamRender);
@@ -144,6 +181,10 @@ function newRenderer(requestId) {
   return renderer;
 }
 
+/**
+ * Initialise Vertamedia outstream
+ * @param bid
+ */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.VOutstreamAPI.initOutstreams([{

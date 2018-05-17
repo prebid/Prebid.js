@@ -14,7 +14,7 @@ describe('UnderdogMedia adapter', () => {
         adUnitCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
         bidId: '23acc48ad47af5',
-        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
@@ -68,7 +68,7 @@ describe('UnderdogMedia adapter', () => {
             params: {
               siteId: '12143'
             },
-            requestId: '10b327aa396609',
+            auctionId: '10b327aa396609',
             adUnitCode: '/123456/header-bid-tag-1'
           }
         ];
@@ -86,7 +86,7 @@ describe('UnderdogMedia adapter', () => {
             params: {
               siteId: '12143'
             },
-            requestId: '10b327aa396609',
+            auctionId: '10b327aa396609',
             adUnitCode: '/123456/header-bid-tag-1'
           }
         ];

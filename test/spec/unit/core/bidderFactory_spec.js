@@ -5,13 +5,14 @@ import { expect } from 'chai';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
   bids: [
     {
       bidId: 1,
-      requestId: 'first-bid-id',
+      auctionId: 'first-bid-id',
       adUnitCode: 'mock/placement',
       params: {
         param: 5
@@ -19,7 +20,7 @@ const MOCK_BIDS_REQUEST = {
     },
     {
       bidId: 2,
-      requestId: 'second-bid-id',
+      auctionId: 'second-bid-id',
       adUnitCode: 'mock/placement2',
       params: {
         badParam: 6
@@ -66,7 +67,7 @@ describe('bidders created by newBidder', () => {
       spec.getUserSyncs.returns([]);
 
       bidder.callBids({});
-      bidder.callBids({ bids: 'nothing useful' });
+      bidder.callBids({ bids: 'nothing useful' }, addBidResponseStub, doneStub, ajaxStub);
 
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.called).to.equal(false);
@@ -154,7 +155,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
-      const options = { contentType: 'application/json'};
+      const options = { contentType: 'application/json' };
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
@@ -264,13 +265,13 @@ describe('bidders created by newBidder', () => {
     let logErrorSpy;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });
       });
       addBidResponseStub.reset();
-      doneStub.reset();
+      doneStub.resetBehavior();
       userSyncStub = sinon.stub(userSync, 'registerSync')
       logErrorSpy = sinon.spy(utils, 'logError');
     });
@@ -432,7 +433,7 @@ describe('bidders created by newBidder', () => {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         callbacks.error('ajax call failed.');
       });
       addBidResponseStub.reset();
@@ -592,7 +593,7 @@ describe('validate bid response: ', () => {
 
     addBidResponseStub = sinon.stub();
     doneStub = sinon.stub();
-    ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
+    ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
       const fakeResponse = sinon.stub();
       fakeResponse.returns('headerContent');
       callbacks.success('response body', { getResponseHeader: fakeResponse });
@@ -609,7 +610,7 @@ describe('validate bid response: ', () => {
     let bidRequest = {
       bids: [{
         bidId: 1,
-        requestId: 'first-bid-id',
+        auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
           param: 5
@@ -646,7 +647,7 @@ describe('validate bid response: ', () => {
     let bidRequest = {
       bids: [{
         bidId: 1,
-        requestId: 'first-bid-id',
+        auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
           param: 5
@@ -682,7 +683,7 @@ describe('validate bid response: ', () => {
     let bidRequest = {
       bids: [{
         bidId: 1,
-        requestId: 'first-bid-id',
+        auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
           param: 5
@@ -717,7 +718,7 @@ describe('validate bid response: ', () => {
       bids: [{
         bidder: CODE,
         bidId: 1,
-        requestId: 'first-bid-id',
+        auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
           param: 5

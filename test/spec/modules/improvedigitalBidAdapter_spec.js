@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter';
+import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 
 describe('Improve Digital Adapter Tests', function () {
@@ -129,6 +130,15 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
     });
 
+    it('should add currency', () => {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      expect(params.bid_request.imp[0].currency).to.equal('JPY');
+      getConfigStub.restore();
+    });
+
     it('should return 2 requests', () => {
       const requests = spec.buildRequests([
         simpleBidRequest,
@@ -140,6 +150,14 @@ describe('Improve Digital Adapter Tests', function () {
   });
 
   describe('interpretResponse', () => {
+    let registerSyncStub;
+    beforeEach(() => {
+      registerSyncStub = sinon.stub(userSync, 'registerSync');
+    });
+
+    afterEach(() => {
+      registerSyncStub.restore();
+    });
     const serverResponse = {
       'body': {
         'id': '687a06c541d8d1',
@@ -236,10 +254,9 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should register user syncs', () => {
-      const registerSyncSpy = sinon.spy(userSync, 'registerSync');
       const bids = spec.interpretResponse(serverResponse);
-      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
-      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
+      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
+      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
     });
 
     it('should set dealId correctly', () => {

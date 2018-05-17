@@ -10,14 +10,29 @@ var CONSTANTS = require('./constants.json');
 var pbTargetingKeys = [];
 
 export const BID_TARGETING_SET = 'targetingSet';
+export const RENDERED = 'rendered';
 
 const MAX_DFP_KEYLENGTH = 20;
+const TTL_BUFFER = 1000;
 
 // return unexpired bids
-export const isBidExpired = (bid) => (timestamp() - bid.responseTimestamp) < bid.ttl * 1000;
+export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && bid.status === BID_TARGETING_SET) || !bid.status);
+const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
+
+// If two bids are found for same adUnitCode, we will use the latest one to take part in auction
+// This can happen in case of concurrent auctions
+export const getOldestBid = function(bid, i, arr) {
+  let oldestBid = true;
+  arr.forEach((val, j) => {
+    if (i === j) return;
+    if (bid.bidder === val.bidder && bid.adUnitCode === val.adUnitCode && bid.responseTimestamp > val.responseTimestamp) {
+      oldestBid = false;
+    }
+  });
+  return oldestBid;
+}
 
 /**
  * @typedef {Object.<string,string>} targeting
@@ -54,14 +69,14 @@ export function newTargeting(auctionManager) {
    * @param {string=} adUnitCode
    * @return {Object.<string,targeting>} targeting
    */
-  targeting.getAllTargeting = function(adUnitCode) {
+  targeting.getAllTargeting = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
     // Get targeting for the winning bid. Add targeting for any bids that have
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-    var targeting = getWinningBidTargeting(adUnitCodes)
-      .concat(getCustomBidTargeting(adUnitCodes))
-      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
+    var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
+      .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : []);
 
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
@@ -162,6 +177,8 @@ export function newTargeting(auctionManager) {
     return auctionManager.getBidsReceived()
       .filter(isUnusedBid)
       .filter(exports.isBidExpired)
+      .filter(getOldestBid)
+    ;
   }
 
   /**
@@ -169,15 +186,15 @@ export function newTargeting(auctionManager) {
    * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
    * @return {[type]}            [description]
    */
-  targeting.getWinningBids = function(adUnitCode) {
+  targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
-    return getBidsReceived()
+    return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
-      .map(adUnitCode => getBidsReceived()
+      .map(adUnitCode => bidsReceived
         .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
         .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
   };
@@ -193,9 +210,7 @@ export function newTargeting(auctionManager) {
         // setKeywords supports string and array as value
         if (utils.isStr(astTargeting[targetId][key]) || utils.isArray(astTargeting[targetId][key])) {
           let keywordsObj = {};
-          let input = 'hb_adid';
-          let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
-          keywordsObj[nKey] = astTargeting[targetId][key];
+          keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
           window.apntag.setKeywords(targetId, keywordsObj);
         }
       })
@@ -207,8 +222,8 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    AdUnit code array
    * @return {targetingArray}   winning bids targeting
    */
-  function getWinningBidTargeting(adUnitCodes) {
-    let winners = targeting.getWinningBids(adUnitCodes);
+  function getWinningBidTargeting(adUnitCodes, bidsReceived) {
+    let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
     winners.forEach((winner) => {
       winner.status = BID_TARGETING_SET;
     });
@@ -302,8 +317,8 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    AdUnit code array
    * @return {targetingArray}   bids with custom targeting defined in bidderSettings
    */
-  function getCustomBidTargeting(adUnitCodes) {
-    return getBidsReceived()
+  function getCustomBidTargeting(adUnitCodes, bidsReceived) {
+    return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .map(bid => Object.assign({}, bid))
       .reduce(mergeAdServerTargeting, [])
@@ -316,11 +331,11 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    AdUnit code array
    * @return {targetingArray}   all non-winning bids targeting
    */
-  function getBidLandscapeTargeting(adUnitCodes) {
+  function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
     const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
     const bids = [];
     // bucket by adUnitcode
-    let buckets = groupBy(getBidsReceived(), 'adUnitCode');
+    let buckets = groupBy(bidsReceived, 'adUnitCode');
     // filter top bid for each bucket by bidder
     Object.keys(buckets).forEach(bucketKey => {
       let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
@@ -328,7 +343,11 @@ export function newTargeting(auctionManager) {
     });
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
-      if (bid.adserverTargeting) {
+      if (
+        bid.adserverTargeting && adUnitCodes &&
+        ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
+        (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes))
+      ) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined')

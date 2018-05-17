@@ -2,6 +2,16 @@ import {spec} from '../../../modules/rhythmoneBidAdapter';
 var assert = require('assert');
 
 describe('rhythmone adapter tests', function () {
+  describe('auditBeacon', function() {
+    var z = spec;
+    var beaconURL = z.getUserSyncs({pixelEnabled: true})[0];
+
+    it('should contain the correct path', function() {
+      var u = '//hbevents.1rx.io/audit?'
+      assert.equal(beaconURL.url.substring(0, u.length), u);
+    });
+  });
+
   describe('rhythmoneResponse', function () {
     var z = spec;
 
