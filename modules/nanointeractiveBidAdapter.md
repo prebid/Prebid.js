@@ -31,7 +31,7 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
-            pid: '58bfec94eb0a1916fa380163'
+            pid: '5afaa0280ae8996eb578de53'
          }
        }]
    },
@@ -42,7 +42,7 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
-            pid: '58bfec94eb0a1916fa380163',
+            pid: '5afaa0280ae8996eb578de53',
             nq: 'user search'
          }
        }]
@@ -54,7 +54,7 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
-            pid: '58bfec94eb0a1916fa380163',
+            pid: '5afaa0280ae8996eb578de53',
             name: 'search'
          }
        }]
