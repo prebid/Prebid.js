@@ -186,7 +186,6 @@ describe('consentManagement', function () {
         });
 
         setConfig(goodConfigWithAllowAuction);
-        debugger; //eslint-disable-line
         requestBidsHook({adUnits: [{ sizes: [[300, 250]] }]}, () => {
           didHookReturn = true;
         });
