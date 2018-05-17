@@ -1,6 +1,6 @@
 [
   "sonobiBidAdapter",
-  "guIndexExchangeBidAdapter",
+  "ixBidAdapter",
   "trustxBidAdapter",
   "improvedigitalBidAdapter",
   "appnexusBidAdapter",
