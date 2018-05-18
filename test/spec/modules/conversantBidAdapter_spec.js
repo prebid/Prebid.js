@@ -144,7 +144,7 @@ describe('Conversant adapter tests', function() {
   it('Verify buildRequest', function() {
     const request = spec.buildRequests(bidRequests);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('//media.msg.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('//web.hb.ad.cpe.dotomi.com/s2s/header/24');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');

@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
-const URL = '//media.msg.dotomi.com/s2s/header/24';
+const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
 const VERSION = '2.2.3';
 
 export const spec = {
