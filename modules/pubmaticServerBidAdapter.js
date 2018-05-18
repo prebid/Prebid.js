@@ -285,7 +285,7 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
     let serverResponse;
     let urls = [];
     // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
@@ -295,6 +295,12 @@ export const spec = {
     if (serverResponse && serverResponse.ext && serverResponse.ext.bidderstatus && utils.isArray(serverResponse.ext.bidderstatus)) {
       serverResponse.ext.bidderstatus.forEach(bidder => {
         if (bidder.usersync && bidder.usersync.url) {
+          // Attaching GDPR Consent Params in UserSync urls
+          if (gdprConsent) {
+            bidder.usersync.url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+            bidder.usersync.url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+          }
+
           if (bidder.usersync.type === IFRAME) {
             if (syncOptions.iframeEnabled) {
               urls.push({
