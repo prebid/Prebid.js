@@ -155,16 +155,16 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
  * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
- * @param {object} config required; This is the same param that's used in pbjs.requestBids.
+ * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(config, fn) {
+export function requestBidsHook(reqBidsConfigObj, fn) {
   context = this;
   args = arguments;
   nextFn = fn;
   haveExited = false;
-  let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
-  bidsBackHandler = config.bidsBackHandler;
+  let adUnits = reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits;
+  bidsBackHandler = reqBidsConfigObj.bidsBackHandler;
 
   // in case we already have consent (eg during bid refresh)
   if (consentData) {
