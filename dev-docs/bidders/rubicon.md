@@ -31,6 +31,7 @@ The Rubicon Project adapter requires setup and approval from the Rubicon Project
 | `position` | 0.6.0 | optional | Set the page position. Valid values are "atf" and "btf". | `"atf"` |
 | `userId` | 0.6.0 | optional | Site-specific user ID may be reflected back in creatives for analysis. Note that userId needs to be the same for all slots. | `"12345abc"` |
 | `floor` | 0.19.0 | optional | Sets the global floor -- no bids will be made under this value. | `0.50` |
+| `latLong` | 1.10.0 | optional | Sets the latitude and longitude for the visitor | `[40.7608, 111.8910]` |
 | `video` | 0.19.0 | required for video | Video targeting parameters. See the [video section below](#rubicon-video). | `{"language": "en", "playerHeight": "360", "playerWidth": "640", "size_id": "201"}` |
 
 <a name="rubicon-video"></a>
