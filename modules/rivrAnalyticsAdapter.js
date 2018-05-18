@@ -2,10 +2,10 @@ import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import { logInfo } from 'src/utils';
+import { logInfo, generateUUID } from 'src/utils';
 
 const analyticsType = 'endpoint';
-const DEFAULT_HOST = 'integrations.rivr.simplaex.net/prebid';
+const DEFAULT_HOST = 'integrations.rivr.simplaex.net';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
@@ -89,13 +89,13 @@ function trackBidResponse(args) {
 function trackBidWon(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
   let bidResponse = createBidResponse(args);
-  let impression = createImpression(args);
-  let imp = createImp(args);
+  let standaloneImpression = createStandaloneImpression(args);
+  let auctionImpression = createAuctionImpression(args);
   auctionObject.bidResponses.push(bidResponse);
-  auctionObject.imp.push(imp);
+  auctionObject.imp.push(auctionImpression);
 
-  return [impression];
-}
+  return [standaloneImpression];
+};
 
 function trackAuctionEnd(args) {
   rivrAnalytics.context.auctionTimeEnd = Date.now();
@@ -136,7 +136,7 @@ function getPlatformType() {
   } else {
     return 'Desktop';
   }
-}
+};
 
 function createBidResponse(bidResponseEvent) {
   return {
@@ -167,7 +167,7 @@ function createBidResponse(bidResponseEvent) {
   }
 };
 
-function createImpression(bidWonEvent) {
+function createStandaloneImpression(bidWonEvent) {
   return {
     timestamp: bidWonEvent.responseTimestamp,
     requestId: bidWonEvent.auctionId,
@@ -176,7 +176,7 @@ function createImpression(bidWonEvent) {
   }
 };
 
-function createImp(bidWonEvent) {
+function createAuctionImpression(bidWonEvent) {
   return {
     tagid: bidWonEvent.adUnitCode,
     displaymanager: null,
@@ -191,6 +191,38 @@ function createImp(bidWonEvent) {
       api: []
     }
   }
+};
+
+function reportClickEvent(event) {
+  let link = event.currentTarget.getElementsByTagName('a')[0];
+  let clickUrl;
+  if (link) {
+    clickUrl = link.getAttribute('href');
+  }
+  let timestamp = new Date().toISOString();
+  let requestId = generateUUID();
+  let req = {
+    timestamp,
+    'request_id': requestId,
+    'click_url': clickUrl
+  };
+  logInfo('Sending click events with parameters: ', req);
+  ajax(`http://${rivrAnalytics.context.host}/${window.location.href}/clicks`, () => {
+  }, JSON.stringify(req));
+};
+
+function clickHandler(bannersIds) {
+  setTimeout(function () {
+    bannersIds.forEach(function (bannerId) {
+      var doc = document.getElementById(bannerId);
+      if (doc) {
+        var iframe = doc.getElementsByTagName('iframe')[0];
+        if (iframe) {
+          iframe.contentDocument.addEventListener('click', reportClickEvent);
+        }
+      }
+    });
+  }, 1500);
 };
 
 function fulfillAuctionObject() {
@@ -310,6 +342,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     auctionObject: {},
     impressionsQueue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
+  clickHandler(config.options.bannersIds);
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
   rivrAnalytics.originEnableAnalytics(config);
 };
