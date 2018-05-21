@@ -11,7 +11,7 @@ export const spec = {
     return !!(bid.params.mid);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var i, l, j, k, bid, _key, _value, reqParams, netRevenue;
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
@@ -38,9 +38,13 @@ export const spec = {
     request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      request.push('gdpr=' + bidderRequest.gdprConsent.gdprApplies);
-      request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      gdprObject = {
+        gdpr: bidderRequest.gdprConsent.gdprApplies,
+        gdpr_consent: bidderRequest.gdprConsent.consentString
+      };
+      request.push('gdpr=' + gdprObject.gdpr);
+      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
     }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
@@ -56,7 +60,8 @@ export const spec = {
       url: request.join('&'),
       bids: validBidRequests,
       netRevenue: netRevenue,
-      bidder: 'adform'
+      bidder: 'adform',
+      gdpr: gdprObject
     };
 
     function formRequestUrl(reqData) {
@@ -102,6 +107,10 @@ export const spec = {
           vastXml: response.vast_content,
           mediaType: type
         };
+        if (bidRequest.gdpr) {
+          bidObject.gdpr = bidRequest.gdpr.gdpr;
+          bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
+        }
         bidRespones.push(bidObject);
       }
     }
