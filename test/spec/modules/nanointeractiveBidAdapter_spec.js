@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils';
 
 import {
-  BIDDER_CODE, CATEGORY, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME,
+  BIDDER_CODE, CATEGORY, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME, SUB_ID,
   spec
 } from '../../../modules/nanointeractiveBidAdapter';
 
@@ -23,6 +23,7 @@ describe('nanointeractive adapter tests', function () {
           [NQ]: SEARCH_QUERY,
           [NQ_NAME]: null,
           [CATEGORY]: null,
+          [SUB_ID]: null,
         }
       })(),
       placementCode: 'div-gpt-ad-1460505748561-0',
@@ -37,6 +38,7 @@ describe('nanointeractive adapter tests', function () {
   const SINGLE_BID_REQUEST = {
     [DATA_PARTNER_PIXEL_ID]: 'pid1',
     [NQ]: [SEARCH_QUERY, null],
+    [SUB_ID]: null,
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
     cors: 'http://localhost'

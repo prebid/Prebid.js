@@ -21,7 +21,7 @@ export const spec = {
   isBidRequestValid: function (bidRequest) {
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
   },
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
       return [];
     }
@@ -31,12 +31,12 @@ export const spec = {
 
     // build banner requests
     if (bannerBids.length > 0) {
-      requests.push(buildOXBannerRequest(bannerBids));
+      requests.push(buildOXBannerRequest(bannerBids, bidderRequest));
     }
     // build video requests
     if (videoBids.length > 0) {
       videoBids.forEach(videoBid => {
-        requests.push(buildOXVideoRequest(videoBid))
+        requests.push(buildOXVideoRequest(videoBid, bidderRequest))
       });
     }
 
@@ -177,10 +177,11 @@ function getMediaTypeFromRequest(serverRequest) {
   return /avjp$/.test(serverRequest.url) ? VIDEO : BANNER;
 }
 
-function buildCommonQueryParamsFromBids(bids) {
+function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   const isInIframe = utils.inIframe();
+  let defaultParams;
 
-  return {
+  defaultParams = {
     ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
     jr: utils.getTopWindowReferrer(),
     ch: document.charSet || document.characterSet,
@@ -190,12 +191,30 @@ function buildCommonQueryParamsFromBids(bids) {
     tws: getViewportDimensions(isInIframe),
     be: 1,
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
-    nocache: new Date().getTime(),
+    nocache: new Date().getTime()
   };
+
+  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+    let gdprConsentConfig = bidderRequest.gdprConsent;
+
+    if (gdprConsentConfig.consentString !== undefined) {
+      defaultParams.gdpr_consent = gdprConsentConfig.consentString;
+    }
+
+    if (gdprConsentConfig.gdprApplies !== undefined) {
+      defaultParams.gdpr = gdprConsentConfig.gdprApplies ? 1 : 0;
+    }
+
+    if (config.getConfig('consentManagement.cmpApi') === 'iab') {
+      defaultParams.x_gdpr_f = 1;
+    }
+  }
+
+  return defaultParams;
 }
 
-function buildOXBannerRequest(bids) {
-  let queryParams = buildCommonQueryParamsFromBids(bids);
+function buildOXBannerRequest(bids, bidderRequest) {
+  let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
 
   queryParams.auid = utils._map(bids, bid => bid.params.unit).join(',');
   queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
@@ -240,9 +259,9 @@ function buildOXBannerRequest(bids) {
   };
 }
 
-function buildOXVideoRequest(bid) {
+function buildOXVideoRequest(bid, bidderRequest) {
   let url = `//${bid.params.delDomain}/v/1.0/avjp`;
-  let oxVideoParams = generateVideoParameters(bid);
+  let oxVideoParams = generateVideoParameters(bid, bidderRequest);
   return {
     method: 'GET',
     url: url,
@@ -251,8 +270,8 @@ function buildOXVideoRequest(bid) {
   };
 }
 
-function generateVideoParameters(bid) {
-  let queryParams = buildCommonQueryParamsFromBids([bid]);
+function generateVideoParameters(bid, bidderRequest) {
+  let queryParams = buildCommonQueryParamsFromBids([bid], bidderRequest);
   let oxVideoConfig = utils.deepAccess(bid, 'params.video') || {};
   let context = utils.deepAccess(bid, 'mediaTypes.video.context');
   let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
