@@ -321,6 +321,7 @@ describe('Sonobi adapter tests', () => {
         {
           'sbi_size': '300x250',
           'sbi_apoc': 'premium',
+          'sbi_crid': 'abcd1234',
           'sbi_aid': '159.60.7533347',
           'sbi_mouse': 4.20
         }
