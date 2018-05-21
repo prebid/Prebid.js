@@ -38,7 +38,7 @@ const availVendorDefaults = {
     adapter: 'prebidServer',
     cookieSet: false,
     enabled: true,
-    endpoint: '//prebid.adnxs.com/pbs/v1/openrtb2/auction',
+    endpoint: '//ib.adnxs.com/openrtb2/prebid',
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
     timeout: 1000
   },
