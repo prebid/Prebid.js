@@ -13,7 +13,7 @@ export const spec = {
     return !!(bid && bid.params && bid.params.zone)
   },
 
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
     const payload = {
@@ -38,6 +38,14 @@ export const spec = {
       sizes[zone] = sizes[zone] || []
       sizes[zone].push.apply(sizes[zone], b.sizes)
     })
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
