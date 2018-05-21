@@ -101,18 +101,13 @@ describe('gjirafaAdapterTest', () => {
       expect(requests[0].data.sizes).to.equal('728x90;980x200;980x150;970x90;970x250');
       expect(requests[1].data.sizes).to.equal('300x250');
     });
-	
-	it('should add GDPR data', () => {
+
+    it('should add GDPR data', () => {
       const requests = spec.buildRequests(bidRequests);
 	  expect(requests[0].data.consent_string).to.exists;
-	  expect(requests[0].data.consent_string).to.equal('consentString');
+	  expect(requests[0].data.consent_required).to.exists;
 	  expect(requests[1].data.consent_string).to.exists;
-	  expect(requests[1].data.consent_string).to.equal('consentString');
-      // requests.forEach(function(requestItem) {
-        // expect(requestItem.data.consent_string).to.exists;
-        // expect(requestItem.data.consent_string).to.equal('consentString');
-        // expect(requestItem.data.consent_required).to.equal('true');
-      // });
+	  expect(requests[1].data.consent_required).to.exists;
     });
   });
 
