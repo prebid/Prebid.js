@@ -55,7 +55,7 @@ describe('gjirafaAdapterTest', () => {
       'bidderRequestId': '70deaff71c281d',
       'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc',
 	  'consent_string': 'consentString',
-	  'consent_required': true
+	  'consent_required': 'true'
     },
     {
       'bidder': 'gjirafa',
@@ -105,8 +105,8 @@ describe('gjirafaAdapterTest', () => {
 	it('should add GDPR data', () => {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
-        expect(requestItem.consent_string).to.equal('consentString');
-        expect(requestItem.consent_required).to.equal('true');
+        expect(requestItem.data.consent_string).to.equal('consentString');
+        expect(requestItem.data.consent_required).to.equal('true');
       });
     });
   });
