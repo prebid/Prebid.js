@@ -2,7 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.1/t/xhr'
 const pixels = []
 
 export const spec = {
@@ -85,7 +85,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       pixels.push({
         type: 'iframe',
-        src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
+        url: '//pre.ads.justpremium.com/v/1.0/t/sync'
       })
     }
     return pixels
