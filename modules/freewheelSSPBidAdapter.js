@@ -223,9 +223,13 @@ export const spec = {
       componentId: getComponentId(currentBidRequest.params.format)
     };
 
-    if (typeof currentBidRequest.params.gdpr !== 'undefined') {
-      requestParams._fw_gdpr = currentBidRequest.params.gdpr;
-      requestParams._fw_gdpr_consent = currentBidRequest.params.gdpr_consent;
+    // Add GDPR flag and consent string
+    if (currentBidRequest.gdprConsent) {    
+      requestParams._fw_gdpr_consent = currentBidRequest.gdprConsent.consentString;
+
+      if (typeof currentBidRequest.gdprConsent.gdprApplies === 'boolean') {
+        requestParams._fw_gdpr = currentBidRequest.gdprConsent.gdprApplies;
+      }
     }
 
     var vastParams = currentBidRequest.params.vastUrlParams;

@@ -52,6 +52,10 @@ describe('freewheelSSP BidAdapter Test', () => {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'gdprConsent': {
+          'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'gdprApplies': true
+        }
       }
     ];
 
@@ -63,6 +67,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+      expect(payload._fw_gdpr).to.equal(true);
+      expect(payload._fw_gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
