@@ -41,7 +41,8 @@ gulp.task('default', ['webpack']);
 
 gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
-gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
+// gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
+gulp.task('serve-nw', ['build-bundle-dev']);
 
 gulp.task('run-tests', ['lint', 'test-coverage']);
 
@@ -71,17 +72,12 @@ function nodeBundle(modules) {
   });
 }
 
-// these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
-var explicitModules = [
-  'pre1api'
-];
-
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
-    modules = allModules.filter(module => !explicitModules.includes(module));
+    modules = allModules;
   } else {
     var diff = _.difference(modules, allModules);
     if(diff.length !== 0) {
@@ -124,11 +120,7 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      if (argv.browserstack) {
-        process.exit(0);
-      } else {
-        done();
-      }
+      done();
     }
   }
 }
