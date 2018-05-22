@@ -3,6 +3,7 @@
     "aolBidAdapter",
     "appnexusBidAdapter",
     "audienceNetworkBidAdapter",
+    "beachfrontBidAdapter",
     "conversantBidAdapter",
     "criteoBidAdapter",
     "freestarAnalyticsAdapter",
