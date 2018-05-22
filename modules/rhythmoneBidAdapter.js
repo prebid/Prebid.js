@@ -80,7 +80,7 @@ function RhythmOneBidAdapter() {
 
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.0.0';
+  let version = '1.0.1.0';
   let loadStart = Date.now();
 
   this.buildRequests = function (BRs, bidderRequest) {
