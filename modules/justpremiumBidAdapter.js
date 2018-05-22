@@ -3,7 +3,7 @@ import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = 1.1
+const JP_ADAPTER_VERSION = '1.1'
 const pixels = []
 
 export const spec = {
