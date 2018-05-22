@@ -208,7 +208,7 @@ export const spec = {
   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     // var currency = config.getConfig(currency);
 
     var currentBidRequest = bidRequests[0];
@@ -224,8 +224,8 @@ export const spec = {
     };
 
     // Add GDPR flag and consent string
-    if (currentBidRequest.gdprConsent) {    
-      requestParams._fw_gdpr_consent = currentBidRequest.gdprConsent.consentString;
+    if (bidderRequest.gdprConsent) {    
+      requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
 
       if (typeof currentBidRequest.gdprConsent.gdprApplies === 'boolean') {
         requestParams._fw_gdpr = currentBidRequest.gdprConsent.gdprApplies;

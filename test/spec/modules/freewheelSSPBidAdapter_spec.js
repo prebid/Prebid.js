@@ -60,7 +60,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     ];
 
     it('should add parameters to the tag', () => {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidRequests[0]);
       const payload = request.data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
@@ -72,7 +72,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidRequests[0]);
       expect(request.url).to.contain(ENDPOINT);
       expect(request.method).to.equal('GET');
     });
@@ -145,7 +145,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     let formattedAd = '<div id="freewheelssp_prebid_target"></div><script type=\'text/javascript\'>(function() {  var st = document.createElement(\'script\'); st.type = \'text/javascript\'; st.async = true;  st.src = \'http://cdn.stickyadstv.com/prime-time/floorad.min.js\';  st.onload = function(){    var vastLoader = new window.com.stickyadstv.vast.VastLoader();    var vast = vastLoader.getVast();    var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();    vast.setXmlString(topWindow.freeheelssp_cache["adunit-code"]);    vastLoader.parseAds(vast, {      onSuccess: function() {var config = {  preloadedVast:vast,  ASLoader:new window.com.stickyadstv.tools.ASLoader(277225, \'floorad\'),domId:"adunit-code"};window.com.stickyadstv.floorad.start(config); }    });  };  document.head.appendChild(st);})();</script>';
 
     it('should get correct bid response', () => {
-      var request = spec.buildRequests(bidRequests);
+      var request = spec.buildRequests(formattedBidRequests, formattedBidRequests[0]);
 
       let expectedResponse = [
         {
@@ -166,7 +166,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should get correct bid response with formated ad', () => {
-      var request = spec.buildRequests(formattedBidRequests);
+      var request = spec.buildRequests(formattedBidRequests, formattedBidRequests[0]);
 
       let expectedResponse = [
         {
@@ -187,7 +187,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('handles nobid responses', () => {
-      var reqest = spec.buildRequests(formattedBidRequests);
+      var reqest = spec.buildRequests(formattedBidRequests, formattedBidRequests[0]);
       let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
 
       let result = spec.interpretResponse(response, reqest);
