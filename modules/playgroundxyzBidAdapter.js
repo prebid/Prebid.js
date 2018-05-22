@@ -27,8 +27,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const topLocation = utils.getTopWindowLocation();
     const payload = JSON.stringify({
       id: bidRequests[0].auctionId,
+      site: {
+        domain: window.location.protocol + '//' + topLocation.hostname,
+        name: topLocation.hostname,
+        page: topLocation.href,
+      },
+      device: {
+        ua: navigator.userAgent,
+        language: navigator.language,
+        devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
+      },
       imp: bidRequests.map(mapImpression)
     });
 
@@ -136,6 +147,14 @@ function mapSizes(bidSizes) {
     });
   });
   return format;
+}
+
+function isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
 }
 
 registerBidder(spec);
