@@ -269,6 +269,7 @@ describe('consentManagement', function () {
             if (messageListener && args[0] && args[0].__cmpCall) {
               // take the callId from request and stamp it on the response.
               testConsentData.data.__cmpReturn.callId = args[0].__cmpCall.callId;
+              // serialize the data part to String if requested
               messageListener(messageFormatString ? {
                 data: JSON.stringify(testConsentData.data)
               } : testConsentData);
