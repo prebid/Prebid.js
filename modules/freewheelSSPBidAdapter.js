@@ -224,7 +224,7 @@ export const spec = {
     };
 
     // Add GDPR flag and consent string
-    if (bidderRequest.gdprConsent) { 
+    if (bidderRequest.gdprConsent) {
       requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
 
       if (typeof currentBidRequest.gdprConsent.gdprApplies === 'boolean') {
