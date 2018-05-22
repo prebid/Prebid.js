@@ -194,7 +194,7 @@ function reportClickEvent(event) {
   }, JSON.stringify(req));
 };
 
-function clickHandler(bannersIds) {
+function addClickHandlers(bannersIds) {
   setTimeout(function () {
     bannersIds.forEach(function (bannerId) {
       let doc = document.getElementById(bannerId);
@@ -353,7 +353,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     clientURL: window.location.href,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
-  clickHandler(config.options.bannersIds);
+  addClickHandlers(config.options.bannersIds);
   displayedImpressionHandler(config.options.bannersIds);
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
   rivrAnalytics.originEnableAnalytics(config);
