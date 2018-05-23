@@ -92,18 +92,29 @@ describe('CoxBidAdapter', () => {
   })
 
   describe('interpretResponse', () => {
-    const BID_INFO = [{
+    const BID_INFO_1 = [{
       'bidder': 'cox',
       'params': {
         'id': '2000005657007',
         'siteId': '2000101880180',
         'size': '728x90'
       },
-      'transactionId': 'tId-foo',
-      'bidId': 'bId-a-bar'
+      'transactionId': 'foo_1',
+      'bidId': 'bar_1'
     }];
 
-    const RESPONSE = { body: {
+    const BID_INFO_2 = [{
+      'bidder': 'cox',
+      'params': {
+        'id': '2000005658887',
+        'siteId': '2000101880180',
+        'size': '300x250'
+      },
+      'transactionId': 'foo_2',
+      'bidId': 'bar_2'
+    }];
+
+    const RESPONSE_1 = { body: {
       'zones': {
         'as2000005657007': {
           'price': 1.88,
@@ -112,49 +123,77 @@ describe('CoxBidAdapter', () => {
           'adid': '7007-728-90'
         }}}};
 
-    it('should return correct pbjs bid', () => {
-      let expectedBid = {
-        'requestId': 'bId-a-bar',
-        'cpm': 1.88,
-        'width': '728',
-        'height': '90',
-        'creativeId': '7007-728-90',
-        'dealId': 'AA128460',
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 300,
-        'ad': '<H1>2000005657007<br/>728x90</H1>'
-      };
-      let hokey = spec.buildRequests(BID_INFO);
+    const RESPONSE_2 = { body: {
+      'zones': {
+        'as2000005658887': {
+          'price': 2.88,
+          'ad': '<H1>2000005658887<br/>300x250</H1>',
+          'adid': '888-88'
+        }}}};
 
-      let result = spec.interpretResponse(RESPONSE);
-      expect(result[0]).to.eql(expectedBid);
+    const PBJS_BID_1 = {
+      'requestId': 'bar_1',
+      'cpm': 1.88,
+      'width': '728',
+      'height': '90',
+      'creativeId': '7007-728-90',
+      'dealId': 'AA128460',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 300,
+      'ad': '<H1>2000005657007<br/>728x90</H1>'
+    };
+
+    const PBJS_BID_2 = {
+      'requestId': 'bar_2',
+      'cpm': 2.88,
+      'width': '300',
+      'height': '250',
+      'creativeId': '888-88',
+      'dealId': undefined,
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 300,
+      'ad': '<H1>2000005658887<br/>300x250</H1>'
+    };
+
+    it('should return correct pbjs bid', () => {
+      let result = spec.interpretResponse(RESPONSE_2, spec.buildRequests(BID_INFO_2));
+      expect(result[0]).to.eql(PBJS_BID_2);
+    });
+
+    it('should handle multiple bid instances', () => {
+      let request1 = spec.buildRequests(BID_INFO_1);
+      let request2 = spec.buildRequests(BID_INFO_2);
+
+      let result2 = spec.interpretResponse(RESPONSE_2, request2);
+      expect(result2[0]).to.eql(PBJS_BID_2);
+
+      let result1 = spec.interpretResponse(RESPONSE_1, request1);
+      expect(result1[0]).to.eql(PBJS_BID_1);
     });
 
     it('should return empty when price is zero', () => {
-      let clone = deepClone(RESPONSE);
+      let clone = deepClone(RESPONSE_1);
       clone.body.zones.as2000005657007.price = 0;
-      let hokey = spec.buildRequests(BID_INFO);
 
-      let result = spec.interpretResponse(clone);
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
       expect(result).to.be.an('array').that.is.empty;
     });
 
     it('should return empty when there is no ad', () => {
-      let clone = deepClone(RESPONSE);
+      let clone = deepClone(RESPONSE_1);
       clone.body.zones.as2000005657007.ad = null;
-      let hokey = spec.buildRequests(BID_INFO);
 
-      let result = spec.interpretResponse(clone);
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
       expect(result).to.be.an('array').that.is.empty;
     });
 
     it('should return empty when there is no ad unit info', () => {
-      let clone = deepClone(RESPONSE);
+      let clone = deepClone(RESPONSE_1);
       delete (clone.body.zones.as2000005657007);
-      let hokey = spec.buildRequests(BID_INFO);
 
-      let result = spec.interpretResponse(clone);
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
       expect(result).to.be.an('array').that.is.empty;
     });
   });
@@ -183,6 +222,11 @@ describe('CoxBidAdapter', () => {
       delete (clone[0].body.tpCookieSync);
 
       let syncs = spec.getUserSyncs({ pixelEnabled: true }, clone);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty when response is empty', () => {
+      let syncs = spec.getUserSyncs({ pixelEnabled: true }, [{}]);
       expect(syncs).to.be.an('array').that.is.empty;
     });
   });
