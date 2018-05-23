@@ -179,7 +179,7 @@ describe('The Criteo bidding adapter', () => {
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response', () => {
+    it('should properly parse a bid response with a networkId', () => {
       const response = {
         body: {
           slots: [{
@@ -195,6 +195,71 @@ describe('The Criteo bidding adapter', () => {
         bidRequests: [{
           adUnitCode: 'test-requestId',
           bidId: 'test-bidId',
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].width).to.equal(728);
+      expect(bids[0].height).to.equal(90);
+    });
+
+    it('should properly parse a bid responsewith with a zoneId', () => {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            width: 728,
+            height: 90,
+            zoneid: 123,
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            zoneId: 123,
+          },
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].width).to.equal(728);
+      expect(bids[0].height).to.equal(90);
+    });
+
+    it('should properly parse a bid responsewith with a zoneId passed as a string', () => {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            width: 728,
+            height: 90,
+            zoneid: 123,
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            zoneId: '123',
+          },
         }]
       };
       const bids = spec.interpretResponse(response, request);
