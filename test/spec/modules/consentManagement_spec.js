@@ -302,6 +302,7 @@ describe('consentManagement', function () {
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
         let testConsentData = null;
+        let bidsBackHandlerReturn = false;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
@@ -309,13 +310,14 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithCancelAuction);
 
-        requestBidsHook({}, () => {
+        requestBidsHook({ bidsBackHandler: () => bidsBackHandlerReturn = true }, () => {
           didHookReturn = true;
         });
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.calledOnce(utils.logError);
         expect(didHookReturn).to.be.false;
+        expect(bidsBackHandlerReturn).to.be.true;
         expect(consent).to.be.null;
       });
 
