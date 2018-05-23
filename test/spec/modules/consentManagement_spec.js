@@ -119,7 +119,7 @@ describe('consentManagement', function () {
       it('should bypass CMP and simply use previously stored consentData', () => {
         let testConsentData = {
           gdprApplies: true,
-          metadata: 'xyz'
+          consentData: 'xyz'
         };
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
@@ -140,7 +140,7 @@ describe('consentManagement', function () {
         let consent = gdprDataHandler.getConsentData();
 
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentData.metadata);
+        expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
@@ -176,7 +176,7 @@ describe('consentManagement', function () {
           data: {
             msgName: 'cmpReturn',
             vendorConsents: {
-              metadata: 'abc123def',
+              consentData: 'abc123def',
               gdprApplies: true
             }
           }
@@ -227,7 +227,7 @@ describe('consentManagement', function () {
             __cmpReturn: {
               returnValue: {
                 gdprApplies: true,
-                metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+                consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
               }
             }
           }
@@ -238,7 +238,7 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2]({
             gdprApplies: true,
-            metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+            consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
           });
         });
 
@@ -280,7 +280,7 @@ describe('consentManagement', function () {
       it('performs lookup check and stores consentData for a valid existing user', () => {
         let testConsentData = {
           gdprApplies: true,
-          metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+          consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
         };
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
@@ -296,7 +296,7 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentData.metadata);
+        expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
       });
 

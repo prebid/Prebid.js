@@ -33,7 +33,7 @@ const cmpCallMap = {
 };
 
 /**
- * This function handles interacting with an IAB compliant CMP to obtain the consentObject value of the user.
+ * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
@@ -42,27 +42,42 @@ const cmpCallMap = {
  */
 function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
   let cmpCallbacks;
+  let cmpResponse = {};
+
+  // to collect the consent information from the user, we perform two calls to the CMP:
+  // first to collect the user's consent choices represented in an encoded string (via getConsentData)
+  // second to collect the user's full unparsed consent information (via getVendorConsents)
+  callIabCMP('getConsentData', function (consentResponse) {
+    cmpResponse.getConsentData = consentResponse;
+
+    callIabCMP('getVendorConsents', function (consentResponse) {
+      cmpResponse.getVendorConsents = consentResponse;
+      cmpSuccess(cmpResponse);
+    });
+  });
 
   // check if the CMP is located on the same window level as the prebid code.
   // if it's found, directly call the CMP via it's API and call the cmpSuccess callback.
   // if it's not found, assume the prebid code may be inside an iframe and the CMP code is located in a higher parent window.
   // in this case, use the IAB's iframe locator sample code (which is slightly cutomized) to try to find the CMP and use postMessage() to communicate with the CMP.
-  if (utils.isFn(window.__cmp)) {
-    window.__cmp('getVendorConsents', null, cmpSuccess);
-  } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
-    callCmpWhileInSafeFrame();
-  } else {
-    callCmpWhileInIframe();
+  function callIabCMP(commandName, cb) {
+    if (utils.isFn(window.__cmp)) {
+      window.__cmp(commandName, null, cb);
+    } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
+      callCmpWhileInSafeFrame(commandName, cb);
+    } else {
+      callCmpWhileInIframe(commandName, cb);
+    }
   }
 
   function inASafeFrame() {
     return !!(window.$sf && window.$sf.ext);
   }
 
-  function callCmpWhileInSafeFrame() {
+  function callCmpWhileInSafeFrame(commandName, callback) {
     function sfCallback(msgName, data) {
       if (msgName === 'cmpReturn') {
-        cmpSuccess(data.vendorConsents);
+        callback(data.vendorConsents);
       }
     }
 
@@ -77,10 +92,10 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     }
 
     window.$sf.ext.register(width, height, sfCallback);
-    window.$sf.ext.cmp('getVendorConsents');
+    window.$sf.ext.cmp(commandName);
   }
 
-  function callCmpWhileInIframe() {
+  function callCmpWhileInIframe(commandName, moduleCallback) {
     /**
      * START OF STOCK CODE FROM IAB 1.1 CMP SPEC
     */
@@ -127,26 +142,26 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
      */
 
     // call CMP
-    window.__cmp('getVendorConsents', null, cmpIframeCallback);
-  }
+    window.__cmp(commandName, null, cmpIframeCallback);
 
-  function readPostMessageResponse(event) {
+    function readPostMessageResponse(event) {
     // small customization to prevent reading strings from other sources that aren't JSON.stringified
-    let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
-    if (json.__cmpReturn) {
-      let i = json.__cmpReturn;
-      cmpCallbacks[i.callId](i.returnValue, i.success);
-      delete cmpCallbacks[i.callId];
+      let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+      if (json.__cmpReturn) {
+        let i = json.__cmpReturn;
+        cmpCallbacks[i.callId](i.returnValue, i.success);
+        delete cmpCallbacks[i.callId];
+      }
     }
-  }
 
-  function removePostMessageListener() {
-    window.removeEventListener('message', readPostMessageResponse, false);
-  }
+    function removePostMessageListener() {
+      window.removeEventListener('message', readPostMessageResponse, false);
+    }
 
-  function cmpIframeCallback(consentObject) {
-    removePostMessageListener();
-    cmpSuccess(consentObject);
+    function cmpIframeCallback(consentObject) {
+      removePostMessageListener();
+      moduleCallback(consentObject);
+    }
   }
 }
 
@@ -195,7 +210,7 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
  * @param {object} consentObject required; object returned by CMP that contains user's consent choices
  */
 function processCmpData(consentObject) {
-  if (!utils.isPlainObject(consentObject) || !utils.isStr(consentObject.metadata) || consentObject.metadata === '') {
+  if (!utils.isPlainObject(consentObject) || !utils.isPlainObject(consentObject.getVendorConsents) || !utils.isPlainObject(consentObject.getVendorConsents)) {
     cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`);
   } else {
     clearTimeout(timer);
@@ -232,9 +247,9 @@ function cmpFailed(errMsg) {
  */
 function storeConsentData(cmpConsentObject) {
   consentData = {
-    consentString: (cmpConsentObject) ? cmpConsentObject.metadata : undefined,
-    vendorData: cmpConsentObject,
-    gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : undefined
+    consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
+    vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
+    gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
   };
   gdprDataHandler.setConsentData(consentData);
 }
