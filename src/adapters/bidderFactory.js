@@ -9,7 +9,7 @@ import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
+import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -164,10 +164,11 @@ export function newBidder(spec) {
       }
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
+      function addBidWithCode(adUnitCode, bid, last) {
         adUnitCodesHandled[adUnitCode] = true;
+        bidderRequest.doneTime = timestamp();
         if (isValid(adUnitCode, bid, [bidderRequest])) {
-          addBidResponse(adUnitCode, bid);
+          addBidResponse(adUnitCode, bid, last);
         }
       }
 
@@ -295,16 +296,16 @@ export function newBidder(spec) {
             if (bids.forEach) {
               bids.forEach(addBidUsingRequestMap);
             } else {
-              addBidUsingRequestMap(bids);
+              addBidUsingRequestMap(bids, 0, [bids]);//fake triggering last element
             }
           }
           onResponse(bids);
 
-          function addBidUsingRequestMap(bid) {
+          function addBidUsingRequestMap(bid, index, array) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
               const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.adUnitCode, prebidBid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid, array.length - 1 === index);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }

@@ -13,7 +13,8 @@
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
     "GOOD": 1,
-    "NO_BID": 2
+    "NO_BID": 2,
+    "TIMEOUT": 3
   },
   "CB": {
     "TYPE": {
@@ -35,6 +36,7 @@
     "SET_TARGETING": "setTargeting",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
+    "AD_UNIT_COMPLETE": "adUnitComplete",
     "AD_RENDER_FAILED" : "adRenderFailed"
   },
   "AD_RENDER_FAILED_REASON" : {

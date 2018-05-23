@@ -97,7 +97,13 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
-  let adUnitsCopy = utils.deepClone(adUnits);
+  let adUnitsCopy = utils.deepClone(adUnits,(obj, result, key, clone) =>{
+    if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
+      result[key] = obj[key];
+      return true;
+    }
+    return false;//normal clone
+  });
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
@@ -117,7 +123,13 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
-  let adUnitsClientCopy = utils.deepClone(adUnits);
+  let adUnitsClientCopy = utils.deepClone(adUnits,(obj, result, key, clone) =>{
+    if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
+      result[key] = obj[key];
+      return true;
+    }
+    return false;//normal clone
+  });
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = adUnit.bids.filter((bid) => {
@@ -346,6 +358,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
       bidRequest.doneCbCallCount = 0;
+      bidRequest.doneTime = null;
       let done = doneCb(bidRequest.bidderRequestId);
       adapter.callBids(bidRequest, addBidResponse, done, ajax);
     } else {

@@ -1,5 +1,22 @@
 import { config } from './config';
-import clone from 'just-clone';
+
+import clone from 'just-clone';//NOTE: made custom clone method, to allow an additional callback, to filter properties
+/*
+function clone(obj, cb) {
+  var result = Array.isArray(obj) ? [] : {};
+  for (var key in obj) {
+    if(cb && cb.call && cb(obj, result, key, clone)) continue; //allow callback for special property handling
+    // include prototype properties    
+    var value = obj[key];
+    if (value && typeof value == 'object') {
+      result[key] = clone(value, cb);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+*/
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
@@ -494,18 +511,20 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
 exports.insertElement = function(elm, doc, target) {
   doc = doc || document;
   let elToAppend;
-  if (target) {
-    elToAppend = doc.getElementsByTagName(target);
-  } else {
-    elToAppend = doc.getElementsByTagName('head');
-  }
-  try {
-    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      elToAppend.insertBefore(elm, elToAppend.firstChild);
+  if(doc.getElementsByTagName){//in case an mocked document is passed without getElementsByTagName
+    if (target) {
+      elToAppend = doc.getElementsByTagName(target);
+    } else {
+      elToAppend = doc.getElementsByTagName('head');
     }
-  } catch (e) {}
+    try {
+      elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
+      if (elToAppend.length) {
+        elToAppend = elToAppend[0];
+        elToAppend.insertBefore(elm, elToAppend.firstChild);
+      }
+    } catch (e) {}
+  }
 };
 
 exports.triggerPixel = function (url) {
@@ -728,8 +747,8 @@ export function isSrcdocSupported(doc) {
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
-export function deepClone(obj) {
-  return clone(obj);
+export function deepClone(obj, cb) {
+  return clone(obj, cb);
 }
 
 export function inIframe() {

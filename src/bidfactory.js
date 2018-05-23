@@ -44,6 +44,13 @@ function Bid(statusCode, bidRequest) {
     return _statusCode;
   };
 
+  this.adjustCPM = function (cpm) {    
+    if(this.origCPM == null && this.cpm && this.cpm != cpm){
+      this.origCPM = this.cpm;
+    }
+    this.cpm = cpm;
+  };
+
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
     return this.width + 'x' + this.height;

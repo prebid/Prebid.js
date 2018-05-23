@@ -48,12 +48,13 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
+import { uniques, flatten, groupBy, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
+import bidfactory from 'src/bidfactory';
 import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
 import find from 'core-js/library/fn/array/find';
@@ -89,6 +90,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _adUnitCodes = adUnitCodes;
   let _bidderRequests = [];
   let _bidsReceived = [];
+  let _adUnitsDone = {};// adUnitId->[bool]
   let _auctionStart;
   let _auctionId = utils.generateUUID();
   let _auctionStatus;
@@ -98,7 +100,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _winningBids = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
-  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived) };
 
   function startAuctionTimer() {
     const timedOut = true;
@@ -107,17 +109,25 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     _timer = timer;
   }
 
+  function getBidRequestsByAdUnit(adUnits) { 
+    return _bidderRequests.map(bid => (bid.bids && bid.bids.filter(adUnitsFilter.bind(this, adUnits)) || [])).reduce(flatten,[]); 
+  }
+  function getBidResponsesByAdUnit(adUnits) { 
+    return _bidsReceived.filter(adUnitsFilter.bind(this, adUnits)); 
+  }
+
   function executeCallback(timedOut, cleartimer) {
     // clear timer when done calls executeCallback
     if (cleartimer) {
       clearTimeout(_timer);
     }
 
-    if (_callback != null) {
+    if (_callback != null) {//not sure why this is dependent on the existance of a callback? is it used as state, since it's resetted after this call
       let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
         timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        bidsBackAdUnit(timedOutBidders);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -159,14 +169,124 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
       // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
       request.doneCbCallCount += 1;
+      request.doneTime = timestamp();
+      
+      bidsBackAdUnit();
       bidsBackAll();
     }, 1);
+  }
+
+  function bidsBackAdUnit(timedOutBidders){
+    //debugger;
+    const bidReq = _bidderRequests;
+    const bidRes = _bidsReceived;
+    const bidTmo = (timedOutBidders && timedOutBidders.length) ?
+    timedOutBidders.reduce((tmo, bid) => {
+      if(!tmo[bid.adUnitCode]){
+        tmo[bid.adUnitCode] = {};        
+      }
+      if(!tmo[bid.adUnitCode][bid.bidder]){
+        tmo[bid.adUnitCode][bid.bidder] = true;
+      }
+      return tmo;
+    },{}) : {};
+    
+    const bidsInFlight = _bidderRequests.reduce((inFlight, bidder)=>{
+      if(!bidder.doneCbCallCount 
+        && find(_bidsReceived, (bid) => bid.bidderCode == bidder.bidderCode)){//very ineffiecent as we need to loop through all received bids for every bidder
+        inFlight[bidder.bidderCode] = true;
+      }
+      return inFlight;
+    },{});//when a bid response triggers a timeout, the bidRequest isn't flagged on the doneCbCallCount property, filter out those bidSets
+
+    const plcDone = _bidderRequests.reduce((placements,bidder) => {
+      if(bidder.bids && bidder.bids.length){
+        bidder.bids.reduce((placements,bid) =>{
+          if(_adUnitsDone[bid.adUnitCode]){
+            return placements;//this placement has been flagged as done earlier..it's possible bids arrived late in thise case. TODO: deal with late arrivals
+          }
+          if(!placements[bid.adUnitCode]){
+            placements[bid.adUnitCode] = {
+              requests:0,
+              responses:0,
+              timeouts:0,
+              bidders:{},
+            }
+          }
+          if(!placements[bid.adUnitCode].bidders[bidder.bidderCode]){
+            placements[bid.adUnitCode].bidders[bidder.bidderCode] = { bids: []};
+          }
+
+          placements[bid.adUnitCode].requests++;          
+          placements[bid.adUnitCode].bidders[bidder.bidderCode].bids.push(bid);
+
+          console.log(bid.adUnitCode+" "+bid.bidder+"/"+bid.bidderCode+" "+placements[bid.adUnitCode].requests+" "+placements[bid.adUnitCode].responses+" "+placements[bid.adUnitCode].timeouts);
+          if(bidder.doneCbCallCount || bidsInFlight[bidder.bidderCode]){
+            placements[bid.adUnitCode].responses++;
+          }else if(bidTmo[bid.adUnitCode] && bidTmo[bid.adUnitCode][bid.bidder]){
+            placements[bid.adUnitCode].timeouts++;
+          }else{
+            console.log("bid neither done or timeout", bid);
+          }
+          return placements;
+        },placements);        
+      }
+      return placements;
+    },{});
+
+    console.log(plcDone, bidTmo, bidsInFlight);
+
+    const bidsResps = _bidsReceived.reduce(groupByPlacement, {});
+
+    for(let i in plcDone){
+      if(plcDone[i].requests <= plcDone[i].responses + plcDone[i].timeouts){
+        _adUnitsDone[i] = true;
+        const bidResp = {};
+        bidResp[i] = { bids: [] };
+        let availBids = {};
+        if(bidsResps[i] && bidsResps[i].bids){
+          bidResp[i].bids.splice.apply(bidResp[i].bids, [bidResp[i].bids.length, 0].concat(bidsResps[i].bids));
+          availBids = groupBy(bidResp[i].bids, "bidderCode");
+        }
+        for(let j=0;j<_bidderRequests.length;j++){
+          const bid=_bidderRequests[j];
+          const baseBid = (plcDone[i].bidders[bid.bidderCode] && plcDone[i].bidders[bid.bidderCode].bids[0] || { bidder: bid.bidderCode, timeToRespond: (bid.doneTime - bid.start) });
+          let bidRsp;
+          if(availBids[bid.bidderCode]) continue;
+          if(bidTmo[i] && bidTmo[i][bid.bidderCode]){
+            bidRsp = bidfactory.createBid(CONSTANTS.STATUS.TIMEOUT, baseBid);
+          }else{
+            if(!baseBid.timeToRespond && (bid && bid.doneTime && bid.start)){
+              baseBid.timeToRespond = bid.doneTime - bid.start;
+            }
+            bidRsp = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, baseBid);
+            if(!bidRsp.timeToRespond){
+              bidRsp.timeToRespond = baseBid.timeToRespond;
+            }
+          }
+          bidRsp.cpm = 0;
+          bidResp[i].bids.push(bidRsp);
+        }
+        events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, bidResp, [i]);
+      }
+    }
+    //const bidsReqForAdUnit = getBidRequestsByAdUnit([request.adUnitCode]).filter(bid => bid.auctionId === request.auctionId);
+    //const bidsRspForAdUnit = getBidResponsesByAdUnit([request.adUnitCode]).filter(bid => bid.auctionId === request.auctionId);
+
+
+    //console.log(bidsReqForAdUnit, bidsRspForAdUnit);
+    /*if (bidsForAdUnit.every((bid)=>{bid.doneCbCallCount>=1})){
+      const bidsResps = auctionInstance.getBidResponsesByAdUnit([bidResponse.adUnitCode])    
+      .reduce(groupByPlacement, {});
+      bidsRespObj[bidResponse.adUnitCode] = {bids: bidsResps};
+      events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, [bidsRespObj], [bidResponse.adUnitCode]);
+    }*/
   }
 
   /**
    * Execute bidBackHandler if all bidders have called done.
    */
-  function bidsBackAll() {
+  function bidsBackAll() {    
     if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
       // when all bidders have called done callback atleast once it means auction is complete
       utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
@@ -211,21 +331,25 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
+    getBidRequestsByAdUnit: getBidRequestsByAdUnit, 
+    getBidResponsesByAdUnit: getBidResponsesByAdUnit,
   }
 }
 
-function doCallbacksIfTimedout(auctionInstance, bidResponse) {
-  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
+function doCallbacksIfTimedout(auctionInstance, bidResponse, last) {
+  //TODO: make this configurable, as this tries to steal the JS-(micro)task in favour of just waiting for the timeout to be called
+  if (last && bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
     auctionInstance.executeCallback(true);
   }
 }
 
 // Add a bid to the auction.
-function addBidToAuction(auctionInstance, bidResponse) {
+function addBidToAuction(auctionInstance, bidResponse, last) {
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
-  doCallbacksIfTimedout(auctionInstance, bidResponse);
+  doCallbacksIfTimedout(auctionInstance, bidResponse, last);
+  
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -260,7 +384,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
   }
 }
 
-export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
+export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid, last) {
   let auctionInstance = this;
   let bidRequests = auctionInstance.getBidRequests();
   let auctionId = auctionInstance.getAuctionId();
@@ -271,7 +395,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   if (bidResponse.mediaType === 'video') {
     tryAddVideoBid(auctionInstance, bidResponse, bidRequest);
   } else {
-    addBidToAuction(auctionInstance, bidResponse);
+    addBidToAuction(auctionInstance, bidResponse, last);
   }
 }, 'addBidResponse');
 

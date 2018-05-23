@@ -29,6 +29,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
+var plumber = require('gulp-plumber');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -51,6 +52,7 @@ gulp.task('clean', function () {
   return gulp.src(['build'], {
       read: false
     })
+    .pipe(plumber())
     .pipe(clean());
 });
 
@@ -150,6 +152,7 @@ gulp.task('devpack', ['clean'], function () {
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(plumber())
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
@@ -240,6 +243,25 @@ gulp.task('watch', function () {
     root: './',
     livereload: true
   });
+});
+
+gulp.task('watch-dev', function () {
+  gulp.watch([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'test/spec/**/*.js',
+    '!test/spec/loaders/**/*.js'
+  ], [/*'lint',*/ 'build-bundle-dev' /*, 'test'*//*'devpack','bundle'*/]);
+  gulp.watch([
+    'loaders/**/*.js',
+    'test/spec/loaders/**/*.js'
+  ], ['lint']);
+  /*connect.server({
+    https: argv.https,
+    port: port,
+    root: './',
+    livereload: true
+  });*/
 });
 
 gulp.task('lint', () => {
