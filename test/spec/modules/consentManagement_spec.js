@@ -176,6 +176,10 @@ describe('consentManagement', function () {
           data: {
             msgName: 'cmpReturn',
             vendorConsents: {
+              metadata: 'abc123def',
+              gdprApplies: true
+            },
+            vendorConsentData: {
               consentData: 'abc123def',
               gdprApplies: true
             }

@@ -77,7 +77,8 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
   function callCmpWhileInSafeFrame(commandName, callback) {
     function sfCallback(msgName, data) {
       if (msgName === 'cmpReturn') {
-        callback(data.vendorConsents);
+        let responseObj = (commandName === 'getConsentData') ? data.vendorConsentData : data.vendorConsents;
+        callback(responseObj);
       }
     }
 
@@ -159,7 +160,10 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     }
 
     function cmpIframeCallback(consentObject) {
+      // will delete the local version of the window.__cmp function and the eventlistener that was created from the iframe CMP code
+      delete window.__cmp;
       removePostMessageListener();
+
       moduleCallback(consentObject);
     }
   }
