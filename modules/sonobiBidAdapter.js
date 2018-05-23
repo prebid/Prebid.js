@@ -66,11 +66,6 @@ export const spec = {
       return null;
     }
 
-    // If there is no key_maker data, then dont make the request.
-    if (isEmpty(data)) {
-      return null;
-    }
-
     return {
       method: 'GET',
       url: STR_ENDPOINT,
