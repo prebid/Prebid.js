@@ -25,21 +25,17 @@ const helper = (() => {
     return Math.round(Math.random() * 100000000);
   };
 
-  // State variables
-  let env = '';
-  let tag = {};
-  let placementMap = {};
-
   return {
     ingest: function(rawBids = []) {
       const adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl', 'dealId'];
       const otherKeys = ['siteId', 'wrapper', 'referrerUrl'];
+      let state = this.createState();
 
       rawBids.forEach(oneBid => {
         let params = oneBid.params || {};
 
-        tag.auctionId = oneBid.auctionId;
-        tag.responseJSON = true;
+        state.tag.auctionId = oneBid.auctionId;
+        state.tag.responseJSON = true;
 
         if (params.id && (/^\d+x\d+$/).test(params.size)) {
           let adZoneKey = 'as' + params.id;
@@ -47,32 +43,33 @@ const helper = (() => {
 
           zone.transactionId = oneBid.transactionId;
           zone.bidId = oneBid.bidId;
-          tag.zones = tag.zones || {};
-          tag.zones[adZoneKey] = zone;
+          state.tag.zones = state.tag.zones || {};
+          state.tag.zones[adZoneKey] = zone;
 
           adZoneAttributeKeys.forEach(key => { if (params[key]) zone[key] = params[key]; });
-          otherKeys.forEach(key => { if (params[key]) tag[key] = params[key]; });
+          otherKeys.forEach(key => { if (params[key]) state.tag[key] = params[key]; });
 
           // Check for an environment setting
-          if (params.env) env = params.env;
+          if (params.env) state.env = params.env;
 
           // Update the placement map
           let [x, y] = (params.size).split('x');
-          placementMap[adZoneKey] = {
+          state.placementMap[adZoneKey] = {
             'b': oneBid.bidId,
             'w': x,
             'h': y
           };
         }
       });
+      return state;
     },
 
-    transform: function(coxRawBids = {}) {
+    transform: function(coxRawBids = {}, state) {
       const pbjsBids = [];
 
-      for (let adZoneKey in placementMap) {
+      for (let adZoneKey in state.placementMap) {
         let responded = coxRawBids[adZoneKey]
-        let ingested = placementMap[adZoneKey];
+        let ingested = state.placementMap[adZoneKey];
 
         utils.logInfo('coxBidAdapter.transform', adZoneKey, responded, ingested);
 
@@ -94,26 +91,32 @@ const helper = (() => {
       return pbjsBids;
     },
 
-    getUrl: function() {
+    getUrl: state => {
       // Bounce if the tag is invalid
-      if (!tag.zones) return null;
+      if (!state.tag.zones) return null;
 
-      let src = (document.location.protocol === 'https:' ? 'https://' : 'http://') + (!env || env === 'PRD' ? '' : env === 'PPE' ? 'ppe-' : env === 'STG' ? 'staging-' : '') + 'ad.afy11.net/ad' + '?mode=11' + '&ct=' + srTestCapabilities() + '&nif=0' + '&sf=0' + '&sfd=0' + '&ynw=0' + '&rand=' + getRand() + '&hb=1' + '&rk1=' + getRand() + '&rk2=' + new Date().valueOf() / 1000;
+      let src = (document.location.protocol === 'https:' ? 'https://' : 'http://') +
+        (!state.env || state.env === 'PRD' ? '' : state.env === 'PPE' ? 'ppe-' : state.env === 'STG' ? 'staging-' : '') +
+        'ad.afy11.net/ad?mode=11&nif=0&sf=0&sfd=0&ynw=0&hb=1' +
+        '&ct=' + srTestCapabilities() +
+        '&rand=' + getRand() +
+        '&rk1=' + getRand() +
+        '&rk2=' + new Date().valueOf() / 1000;
 
-      tag.pageUrl = config.getConfig('pageUrl') || utils.getTopWindowUrl();
-      tag.puTop = true;
+      state.tag.pageUrl = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+      state.tag.puTop = true;
 
       // Attach the serialized tag to our string
-      src += '&ab=' + encodeURIComponent(JSON.stringify(tag));
+      src += '&ab=' + encodeURIComponent(JSON.stringify(state.tag));
 
       return src;
     },
 
-    resetState: function() {
-      env = '';
-      tag = {};
-      placementMap = {};
-    }
+    createState: () => ({
+      env: '',
+      tag: {},
+      placementMap: {}
+    })
   };
 })();
 
@@ -126,24 +129,30 @@ export const spec = {
   },
 
   buildRequests: function(validBidReqs) {
-    helper.resetState();
-    helper.ingest(validBidReqs);
-    let url = helper.getUrl();
+    let state = helper.ingest(validBidReqs);
+    let url = helper.getUrl(state);
 
     return !url ? {} : {
       method: 'GET',
-      url: url
+      url: url,
+      state
     };
   },
 
-  interpretResponse: function({ body: { zones: coxRawBids } }) {
-    let bids = helper.transform(coxRawBids);
+  interpretResponse: function({ body: { zones: coxRawBids } }, { state }) {
+    let bids = helper.transform(coxRawBids, state);
 
     utils.logInfo('coxBidAdapter.interpretResponse', bids);
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, [{ body: { tpCookieSync: urls = [] } }]) {
+  getUserSyncs: function(syncOptions, thing) {
+    try {
+      var [{ body: { tpCookieSync: urls = [] } }] = thing;
+    } catch (ignore) {
+      return [];
+    }
+
     let syncs = [];
     if (syncOptions.pixelEnabled && urls.length > 0) {
       syncs = urls.map((url) => ({ type: 'image', url: url }))
