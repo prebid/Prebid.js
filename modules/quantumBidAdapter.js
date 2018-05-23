@@ -99,12 +99,15 @@ export const spec = {
       if (serverBody.cobj) {
         bid.cobj = serverBody.cobj;
       }
+      if (bidRequest.sizes) {
+        bid.width = bidRequest.sizes[0][0];
+        bid.height = bidRequest.sizes[0][1];
+      }
 
       bid.nurl = serverBody.nurl;
       bid.sync = serverBody.sync;
       if (bidRequest.renderMode && bidRequest.renderMode === 'banner') {
-        bid.width = 300;
-        bid.height = 225;
+        bid.mediaType = 'banner';
         if (serverBody.native) {
           const adAssetsUrl = '//cdn.elasticad.net/native/serve/js/quantx/quantumAd/';
           let assets = serverBody.native.assets;
@@ -216,6 +219,7 @@ export const spec = {
         }
       } else {
         // native
+        bid.mediaType = 'native';
         if (bidRequest.mediaType === 'native') {
           if (serverBody.native) {
             let assets = serverBody.native.assets;

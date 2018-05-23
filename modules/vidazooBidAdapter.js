@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER} from 'src/mediaTypes';
-export const URL = '//prebid.cliipa.com';
+export const URL = '//prebid.nininin.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
@@ -21,11 +21,11 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, size) {
   const {params, bidId} = bid;
-  const {bidFloor, cId, pId} = params;
+  const {bidFloor, cId, pId, ext} = params;
   // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
   const [width, height] = size.split('x');
 
-  return {
+  const dto = {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
@@ -38,6 +38,12 @@ function buildRequest(bid, topWindowUrl, size) {
       height
     }
   }
+
+  utils._each(ext, (value, key) => {
+    dto.data['ext.' + key] = value;
+  });
+
+  return dto;
 }
 
 function buildRequests(validBidRequests) {
@@ -85,7 +91,7 @@ function getUserSyncs(syncOptions, responses) {
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: '//static.cliipa.com/basev/sync/user_sync.html'
+      url: '//static.nininin.com/basev/sync/user_sync.html'
     }];
   }
 

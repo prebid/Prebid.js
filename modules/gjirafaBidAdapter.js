@@ -45,6 +45,10 @@ export const spec = {
       if (document.referrer) {
         body.referrer = document.referrer;
       }
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        body.consent_string = bidderRequest.gdprConsent.consentString;
+        body.consent_required = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
+      }
       return {
         method: 'GET',
         url: ENDPOINT_URL,

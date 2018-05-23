@@ -125,17 +125,17 @@ describe('vertamediaBidAdapter', () => {
     const videoRequest = spec.buildRequests(videoBidRequests, {});
 
     it('sends bid request to ENDPOINT via GET', () => {
-      expect(videoRequest[0].method).to.equal('GET');
-      expect(displayRequest[0].method).to.equal('GET');
+      expect(videoRequest.method).to.equal('GET');
+      expect(displayRequest.method).to.equal('GET');
     });
 
     it('sends bid request to correct ENDPOINT', () => {
-      expect(videoRequest[0].url).to.equal(ENDPOINT);
-      expect(displayRequest[0].url).to.equal(ENDPOINT);
+      expect(videoRequest.url).to.equal(ENDPOINT);
+      expect(displayRequest.url).to.equal(ENDPOINT);
     });
 
     it('sends correct video bid parameters', () => {
-      const bid = Object.assign({}, videoRequest[0].data);
+      const bid = Object.assign({}, videoRequest.data);
       delete bid.domain;
 
       const eq = {
@@ -149,7 +149,7 @@ describe('vertamediaBidAdapter', () => {
     });
 
     it('sends correct display bid parameters', () => {
-      const bid = Object.assign({}, displayRequest[0].data);
+      const bid = Object.assign({}, displayRequest.data);
       delete bid.domain;
 
       const eq = {

@@ -88,9 +88,9 @@ function sendEvent(eventType, data) {
     debug: configOptions.debug ? 1 : 0,
   };
 
+  dataBag = enrichWithMetrics(dataBag);
   // for certain events, track additional info
   if (eventType == CONSTANTS.EVENTS.AUCTION_INIT) {
-    dataBag = enrichWithMetrics(dataBag);
     dataBag = enrichWithUTM(dataBag);
   }
 

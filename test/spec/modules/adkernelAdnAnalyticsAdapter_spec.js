@@ -154,7 +154,7 @@ describe('', () => {
     bids: [{
       bidder: 'adapter',
       params: {},
-      placementCode: 'container-1',
+      adUnitCode: 'container-1',
       transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
       sizes: [[300, 250]],
       bidId: '208750227436c1',
