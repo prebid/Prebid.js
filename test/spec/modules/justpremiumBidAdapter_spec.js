@@ -7,6 +7,7 @@ describe('justpremium adapter', () => {
       bidder: 'justpremium',
       params: {
         zone: 28313,
+        adType: 'iab',
         allow: ['lb', 'wp']
       }
     },
@@ -15,6 +16,23 @@ describe('justpremium adapter', () => {
       params: {
         zone: 32831,
         exclude: ['sa']
+      }
+    },
+  ]
+
+  let adUnitsSec = [
+    {
+      bidder: 'justpremium',
+      params: {
+        zone: 28313,
+        adType: 'iab',
+        exclude: ['sa']
+      }
+    },
+    {
+      bidder: 'justpremium',
+      params: {
+        zone: 32831
       }
     },
   ]
@@ -34,44 +52,48 @@ describe('justpremium adapter', () => {
 
   describe('buildRequests', () => {
     it('Verify build request and parameters', () => {
-      const request = spec.buildRequests(adUnits)
+      const request = spec.buildRequests(adUnits)[0]
+
       expect(request.method).to.equal('POST')
-      expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/)
+      expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.1\/t\/xhr/)
 
       const jpxRequest = JSON.parse(request.data)
       expect(jpxRequest).to.not.equal(null)
-      expect(jpxRequest.zone).to.not.equal('undefined')
       expect(jpxRequest.hostname).to.equal(top.document.location.hostname)
       expect(jpxRequest.protocol).to.equal(top.document.location.protocol.replace(':', ''))
       expect(jpxRequest.sw).to.equal(window.top.screen.width)
       expect(jpxRequest.sh).to.equal(window.top.screen.height)
       expect(jpxRequest.ww).to.equal(window.top.innerWidth)
       expect(jpxRequest.wh).to.equal(window.top.innerHeight)
-      expect(jpxRequest.c).to.not.equal('undefined')
-      expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
     })
   })
 
   describe('interpretResponse', () => {
-    const request = spec.buildRequests(adUnits)
+    const request = spec.buildRequests(adUnits)[0]
+    const requestSec = spec.buildRequests(adUnitsSec)[0]
+
     it('Verify server response', () => {
-      let response = {
-        'bid': {
-          '28313': [{
-            'id': 3213123,
-            'height': 250,
-            'width': 970,
-            'price': 0.52,
-            'format': 'lb',
-            'adm': 'creative code'
-          }]
-        },
-        'pass': {
-          '28313': false
-        },
-        'deals': {}
-      }
+      let response = [{
+        'id': 3213123,
+        'height': 250,
+        'width': 970,
+        'price': 0.52,
+        'format': 'lb',
+        'adType': 'iab',
+        'adm': 'creative code',
+        'zid': 34364
+      }]
+
+      let responseSec = [{
+        'id': 3213123,
+        'height': 250,
+        'width': 970,
+        'price': 0.52,
+        'format': 'lb',
+        'adm': 'creative code',
+        'zid': 34364
+      }]
 
       let expectedResponse = [
         {
@@ -99,6 +121,19 @@ describe('justpremium adapter', () => {
       expect(result[0].ttl).to.equal(60000)
       expect(result[0].creativeId).to.equal(3213123)
       expect(result[0].netRevenue).to.equal(true)
+
+      let resultSec = spec.interpretResponse({body: responseSec}, requestSec)
+      expect(Object.keys(resultSec[0])).to.deep.equal(Object.keys(expectedResponse[0]))
+
+      expect(resultSec[0]).to.not.equal(null)
+      expect(resultSec[0].width).to.equal(970)
+      expect(resultSec[0].height).to.equal(250)
+      expect(resultSec[0].ad).to.equal('creative code')
+      expect(resultSec[0].cpm).to.equal(0.52)
+      expect(resultSec[0].currency).to.equal('USD')
+      expect(resultSec[0].ttl).to.equal(60000)
+      expect(resultSec[0].creativeId).to.equal(3213123)
+      expect(resultSec[0].netRevenue).to.equal(true)
     })
 
     it('Verify wrong server response', () => {
