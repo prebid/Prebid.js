@@ -188,6 +188,63 @@ $(function(){
 });
 </script>
 
+## Publishers not using an IAB-Compliant CMP
+
+Prebid.js and much of the ad industry rely on the IAB CMP standard for GDPR support, but there are some publishers who may have
+implemented different approach to meeting the privacy rules. Those publishers may utilize Prebid.js and the whole header bidding ecosystem if they build a translation layer between their consent method and the IAB method.
+
+At a high level this looks like:
+- build a window.__cmp() function which will be seen by Prebid
+- build a message receiver function if safeframes are in use
+- format consent data in a string according to the [IAB standard](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework)
+
+Below is sample code for implementing the stub functions. Sample code for formatting the consent string may be obtained [here](https://github.com/appnexus/cmp).
+
+{% highlight js %}
+window.__cmp = function(command, version, callback) {
+    var iabConsentData;  // build the IAB consent string
+    var gdprApplies;     // true if gdpr Applies to the user, else false
+    var responseCode;    // false if there was an error, else true
+    if (command === 'getConsentData') {
+        callback({consentData: iabConsentData, gdprApplies: gdprApplies}, responseCode);
+    } else if (command === 'getVendorConsents') {
+        callback({metadata: iabConsentData, gdprApplies: gdprApplies}, responseCode);
+    } else {
+        callback(undefined, false);
+    }
+};
+
+// for framed scenarios
+window.addEventListener('message', function(event) {
+    try {
+        var call = event.data.__cmpCall;
+        if (call) {
+            window.__cmp(call.command, call.parameter, function(retValue, success) {
+                var returnMsg = {
+                    __cmpReturn: {
+                        returnValue: retValue, success: success, callId: call.callId
+                    }
+                };
+                event.source.postMessage(returnMsg, '*');
+            });
+        }
+    } catch (e) {} // do nothing
+});
+{% endhighlight %}
+
+### Explanation of Parameters
+**iabConsentData**
+For how to generate the IAB consent string see the [IAB CMP 1.1 Spec](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework).
+
+**gdprApplies**
+How to generate the gdprApplies field:
+- True if the current user is in the European Economic Area (EEA) OR if the publisher wants to have all traffic considered in-scope for GDPR
+- False if it's known that the user is outside the EEA
+- Leave the attribute unspecified if user's location is unknown
+
+**responseCode**
+This should be false if there was some error in the consent data, true otherwise.  False is the same as calling the callback with no parameters.
+
 ## List of GDPR compliant Adapters
 
 Below is a list of Adapters that currently support GDPR:
