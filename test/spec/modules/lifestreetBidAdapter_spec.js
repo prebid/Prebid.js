@@ -109,9 +109,50 @@ describe('LifestreetAdapter', () => {
     it('should include gzip', () => {
       expect(request.url).to.contain('__gz=1');
     });
+    it('should not contain __gdpr parameter', () => {
+      expect(request.url).to.not.contain('__gdpr');
+    });
+    it('should not contain __concent parameter', () => {
+      expect(request.url).to.not.contain('__consent');
+    });
 
     it('should contain the right version of adapter', () => {
       expect(request.url).to.contain('__hbver=' + ADAPTER_VERSION);
+    });
+
+    it('should contain __gdpr and __consent parameters', () => {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'test',
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.contain('__gdpr=1');
+      expect(request.url).to.contain('__consent=test');
+    });
+    it('should contain __gdpr parameters', () => {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.contain('__gdpr=1');
+      expect(request.url).to.not.contain('__consent');
+    });
+    it('should contain __consent parameters', () => {
+      const options = {
+        gdprConsent: {
+          consentString: 'test',
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.not.contain('__gdpr');
+      expect(request.url).to.contain('__consent=test');
     });
   });
   describe('interpretResponse()', () => {

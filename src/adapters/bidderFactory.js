@@ -2,7 +2,6 @@ import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
-import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
@@ -192,7 +191,7 @@ export function newBidder(spec) {
         // As soon as that is refactored, we can move this emit event where it should be, within the done function.
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
 
-        registerSyncs(responses);
+        registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -304,7 +303,7 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
@@ -328,12 +327,12 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses) {
+  function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
       let syncs = spec.getUserSyncs({
         iframeEnabled: config.getConfig('userSync.iframeEnabled'),
         pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-      }, responses);
+      }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];

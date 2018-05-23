@@ -22,7 +22,7 @@ export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + T
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
 
 // If two bids are found for same adUnitCode, we will use the latest one to take part in auction
-// This can happen in case of concurrent autions
+// This can happen in case of concurrent auctions
 export const getOldestBid = function(bid, i, arr) {
   let oldestBid = true;
   arr.forEach((val, j) => {

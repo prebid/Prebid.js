@@ -11,6 +11,7 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -105,6 +106,35 @@ exports.transformAdServerTargetingObj = function (targeting) {
     return '';
   }
 };
+
+/**
+ * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
+ * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
+ * @param {object} adUnit one adUnit object from the normal list of adUnits
+ * @returns {array[array[number]]} array of arrays containing numeric sizes
+ */
+export function getAdUnitSizes(adUnit) {
+  if (!adUnit) {
+    return;
+  }
+
+  let sizes = [];
+  if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
+    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    if (Array.isArray(bannerSizes[0])) {
+      sizes = bannerSizes;
+    } else {
+      sizes.push(bannerSizes);
+    }
+  } else if (Array.isArray(adUnit.sizes)) {
+    if (Array.isArray(adUnit.sizes[0])) {
+      sizes = adUnit.sizes;
+    } else {
+      sizes.push(adUnit.sizes);
+    }
+  }
+  return sizes;
+}
 
 /**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
@@ -382,6 +412,10 @@ exports.isNumber = function(object) {
   return this.isA(object, t_Numb);
 };
 
+exports.isPlainObject = function(object) {
+  return this.isA(object, t_Object);
+}
+
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
@@ -515,6 +549,38 @@ exports.callBurl = function({ source, burl }) {
 };
 
 /**
+ * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
+ * (though could be for other purposes)
+ * @param {string} htmlCode snippet of HTML code used for tracking purposes
+ */
+exports.insertHtmlIntoIframe = function(htmlCode) {
+  if (!htmlCode) {
+    return;
+  }
+
+  let iframe = document.createElement('iframe');
+  iframe.id = exports.getUniqueIdentifierStr();
+  iframe.width = 0;
+  iframe.height = 0;
+  iframe.hspace = '0';
+  iframe.vspace = '0';
+  iframe.marginWidth = '0';
+  iframe.marginHeight = '0';
+  iframe.style.display = 'none';
+  iframe.style.height = '0px';
+  iframe.style.width = '0px';
+  iframe.scrolling = 'no';
+  iframe.frameBorder = '0';
+  iframe.allowtransparency = 'true';
+
+  exports.insertElement(iframe, document, 'body');
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(htmlCode);
+  iframe.contentWindow.document.close();
+}
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
@@ -566,7 +632,7 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
       allowtransparency="true"
       marginheight="0" marginwidth="0"
       width="0" hspace="0" vspace="0" height="0"
-      style="height:0p;width:0p;display:none;"
+      style="height:0px;width:0px;display:none;"
       scrolling="no"
       src="${url}">
     </iframe>`;
@@ -775,6 +841,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -948,4 +1017,12 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }

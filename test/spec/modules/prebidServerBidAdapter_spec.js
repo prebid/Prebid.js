@@ -1,11 +1,12 @@
 import { expect } from 'chai';
-import { PrebidServer as Adapter } from 'modules/prebidServerBidAdapter';
+import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter';
 import adapterManager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
+import { requestBidsHook } from 'modules/consentManagement';
 
 let CONFIG = {
   accountId: '1',
@@ -374,6 +375,7 @@ describe('S2S Adapter', () => {
       requests = [];
       xhr.onCreate = request => requests.push(request);
       config.resetConfig();
+      resetSyncedStatus();
     });
 
     afterEach(() => xhr.restore());
@@ -389,6 +391,99 @@ describe('S2S Adapter', () => {
       expect(requestBid).to.have.property('cache_markup', 2);
       expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+    });
+
+    it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'abc123',
+        gdprApplies: true
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.regs.ext.gdpr).is.equal(1);
+      expect(requestBid.user.ext.consent).is.equal('abc123');
+
+      config.resetConfig();
+      config.setConfig({s2sConfig: CONFIG});
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid.regs).to.not.exist;
+      expect(requestBid.user).to.not.exist;
+
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+    });
+
+    it('check gdpr info gets added into cookie_sync request: have consent data', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'abc123def',
+        gdprApplies: true
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.equal(1);
+      expect(requestBid.gdpr_consent).is.equal('abc123def');
+    });
+
+    it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: 'xyz789abcc',
+        gdprApplies: false
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.equal(0);
+      expect(requestBid.gdpr_consent).is.undefined;
+    });
+
+    it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+      gdprBidRequest[0].gdprConsent = {
+        consentString: undefined,
+        gdprApplies: undefined
+      };
+
+      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.gdpr).is.undefined;
+      expect(requestBid.gdpr_consent).is.undefined;
     });
 
     it('sets invalid cacheMarkup value to 0', () => {
@@ -505,7 +600,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
@@ -533,7 +628,7 @@ describe('S2S Adapter', () => {
         params: { placementId: '123456' }
       };
 
-      const request = Object.assign({}, REQUEST);
+      const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
       // TODO: stub this
@@ -549,6 +644,24 @@ describe('S2S Adapter', () => {
           }
         }
       });
+    });
+
+    it('converts appnexus params to expected format for PBS', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      const myRequest = utils.deepClone(REQUEST);
+      myRequest.ad_units[0].bids[0].params.usePaymentRule = true;
+
+      adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.imp[0].ext.appnexus).to.exist;
+      expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
+      expect(requestBid.imp[0].ext.appnexus.use_pmt_rule).to.exist.and.to.be.true;
+      expect(requestBid.imp[0].ext.appnexus.member).to.exist;
     });
   });
 
@@ -595,6 +708,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('cache_id', '7654321');
       expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
       expect(response).to.not.have.property('vastUrl');
+      expect(response).to.have.property('serverResponseTimeMs', 52);
     });
 
     it('registers video bids', () => {
@@ -703,6 +817,26 @@ describe('S2S Adapter', () => {
       adapterManager.getBidAdapter.restore();
     });
 
+    it('registers client user syncs when using OpenRTB endpoint', () => {
+      let rubiconAdapter = {
+        registerSyncs: sinon.spy()
+      };
+      sinon.stub(adapterManager, 'getBidAdapter').returns(rubiconAdapter);
+
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
+
+      adapterManager.getBidAdapter.restore();
+    });
+
     it('registers bid responses when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
@@ -720,31 +854,6 @@ describe('S2S Adapter', () => {
 
       const bid_request_passed = addBidResponse.firstCall.args[1];
       expect(bid_request_passed).to.have.property('adId', '123');
-    });
-
-    it('does cookie sync when no_cookie response', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-
-      sinon.assert.calledOnce(utils.triggerPixel);
-      sinon.assert.calledWith(utils.triggerPixel, 'https://pixel.rubiconproject.com/exchange/sync.php?p=prebid');
-      sinon.assert.calledOnce(utils.insertUserSyncIframe);
-      sinon.assert.calledWith(utils.insertUserSyncIframe, '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=https%3A%2F%2Fprebid.adnxs.com%2Fpbs%2Fv1%2Fsetuid%3Fbidder%3Dpubmatic%26uid%3D');
-    });
-
-    it('logs error when no_cookie response is missing type or url', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE_ERROR));
-
-      config.setConfig({s2sConfig: CONFIG});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-
-      sinon.assert.notCalled(utils.triggerPixel);
-      sinon.assert.notCalled(utils.insertUserSyncIframe);
-      sinon.assert.calledTwice(utils.logError);
     });
 
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
@@ -787,6 +896,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('serverResponseTimeMs', 8);
     });
 
     it('handles OpenRTB video responses', () => {
@@ -807,6 +917,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
+      expect(response).to.have.property('serverResponseTimeMs', 81);
     });
 
     it('should log warning for unsupported bidder', () => {
@@ -908,7 +1019,7 @@ describe('S2S Adapter', () => {
       expect(vendorConfig.cookieSet).to.be.false;
       expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/auction');
+      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
