@@ -125,158 +125,220 @@ export const spec = {
    * @return ServerRequest[]
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    return bidRequests.map(bidRequest => {
+    // separate video bids because the requests are structured differently
+    let requests = [];
+    const videoRequests = bidRequests.filter(spec.hasVideoMediaType).map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let page_url = config.getConfig('pageUrl');
-      if (bidRequest.params.referrer) {
-        page_url = bidRequest.params.referrer;
-      } else if (!page_url) {
-        page_url = utils.getTopWindowUrl();
+      let params = bidRequest.params;
+      let size = parseSizes(bidRequest);
+
+      let data = {
+        page_url: _getPageUrl(bidRequest),
+        resolution: _getScreenResolution(),
+        account_id: params.accountId,
+        integration: INTEGRATION,
+        'x_source.tid': bidRequest.transactionId,
+        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
+        stash_creatives: true,
+        ae_pass_through_parameters: params.video.aeParams,
+        slots: []
+      };
+
+      // Define the slot object
+      let slotData = {
+        site_id: params.siteId,
+        zone_id: params.zoneId,
+        position: parsePosition(params.position),
+        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
+        element_id: bidRequest.adUnitCode,
+        name: bidRequest.adUnitCode,
+        language: params.video.language,
+        width: size[0],
+        height: size[1],
+        size_id: params.video.size_id
+      };
+
+      if (params.inventory && typeof params.inventory === 'object') {
+        slotData.inventory = params.inventory;
       }
 
-      // GDPR reference, for use by 'banner' and 'video'
-      const gdprConsent = bidderRequest.gdprConsent;
-
-      if (spec.hasVideoMediaType(bidRequest)) {
-        let params = bidRequest.params;
-        let size = parseSizes(bidRequest);
-
-        let data = {
-          page_url,
-          resolution: _getScreenResolution(),
-          account_id: params.accountId,
-          integration: INTEGRATION,
-          'x_source.tid': bidRequest.transactionId,
-          timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-          stash_creatives: true,
-          ae_pass_through_parameters: params.video.aeParams,
-          rp_secure: bidRequest.params.secure !== false,
-          slots: []
-        };
-
-        // Define the slot object
-        let slotData = {
-          site_id: params.siteId,
-          zone_id: params.zoneId,
-          position: parsePosition(params.position),
-          floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-          element_id: bidRequest.adUnitCode,
-          name: bidRequest.adUnitCode,
-          language: params.video.language,
-          width: size[0],
-          height: size[1],
-          size_id: params.video.size_id
-        };
-
-        if (params.inventory && typeof params.inventory === 'object') {
-          slotData.inventory = params.inventory;
-        }
-
-        if (params.keywords && Array.isArray(params.keywords)) {
-          slotData.keywords = params.keywords;
-        }
-
-        if (params.visitor && typeof params.visitor === 'object') {
-          slotData.visitor = params.visitor;
-        }
-
-        data.slots.push(slotData);
-
-        if (gdprConsent) {
-          // add 'gdpr' only if 'gdprApplies' is defined
-          if (typeof gdprConsent.gdprApplies === 'boolean') {
-            data.gdpr = Number(gdprConsent.gdprApplies);
-          }
-          data.gdpr_consent = gdprConsent.consentString;
-        }
-
-        return {
-          method: 'POST',
-          url: VIDEO_ENDPOINT,
-          data,
-          bidRequest
-        }
+      if (params.keywords && Array.isArray(params.keywords)) {
+        slotData.keywords = params.keywords;
       }
 
-      // non-video request builder
-      let {
-        accountId,
-        siteId,
-        zoneId,
-        position,
-        floor,
-        keywords,
-        visitor,
-        inventory,
-        userId,
-        latLong: [latitude, longitude] = [],
-      } = bidRequest.params;
+      if (params.visitor && typeof params.visitor === 'object') {
+        slotData.visitor = params.visitor;
+      }
 
-      // defaults
-      floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
-      position = position || 'btf';
+      data.slots.push(slotData);
 
-      // use rubicon sizes if provided, otherwise adUnit.sizes
-      let parsedSizes = parseSizes(bidRequest);
-
-      // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
-      let data = [
-        'account_id', accountId,
-        'site_id', siteId,
-        'zone_id', zoneId,
-        'size_id', parsedSizes[0],
-        'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
-        'p_pos', position,
-        'rp_floor', floor,
-        'rp_secure', isSecure() ? '1' : '0',
-        'tk_flint', INTEGRATION,
-        'x_source.tid', bidRequest.transactionId,
-        'p_screen_res', _getScreenResolution(),
-        'kw', keywords,
-        'tk_user_key', userId,
-        'p_geo.latitude', isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
-        'p_geo.longitude', isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4)
-      ];
-
-      if (gdprConsent) {
+      if (bidderRequest.gdprConsent) {
         // add 'gdpr' only if 'gdprApplies' is defined
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          data.push('gdpr', Number(gdprConsent.gdprApplies));
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          data.gdpr = Number(bidderRequest.gdprConsent.gdprApplies);
         }
-        data.push('gdpr_consent', gdprConsent.consentString);
+        data.gdpr_consent = bidderRequest.gdprConsent.consentString;
       }
-
-      if (visitor !== null && typeof visitor === 'object') {
-        utils._each(visitor, (item, key) => data.push(`tg_v.${key}`, item));
-      }
-
-      if (inventory !== null && typeof inventory === 'object') {
-        utils._each(inventory, (item, key) => data.push(`tg_i.${key}`, item));
-      }
-
-      data.push(
-        'rand', Math.random(),
-        'rf', page_url
-      );
-
-      data = data.concat(_getDigiTrustQueryParams());
-
-      data = data.reduce(
-        (memo, curr, index) =>
-          index % 2 === 0 && data[index + 1] !== undefined && !isNaN(data[index + 1])
-            ? memo + curr + '=' + encodeURIComponent(data[index + 1]) + '&' : memo,
-        ''
-      ).slice(0, -1); // remove trailing &
 
       return {
-        method: 'GET',
-        url: FASTLANE_ENDPOINT,
+        method: 'POST',
+        url: VIDEO_ENDPOINT,
         data,
         bidRequest
-      };
+      }
     });
+
+    if (config.getConfig('rubicon.singleRequest') !== true) {
+      // bids are not grouped if single request mode is not enabled
+      requests = videoRequests.concat(bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest)).map(bidRequest => {
+        const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
+        return {
+          method: 'GET',
+          url: FASTLANE_ENDPOINT,
+          data: Object.keys(bidParams).reduce((paramString, key) => {
+            const propValue = bidParams[key];
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+          }, '') + `slots=1&rand=${Math.random()}`,
+          bidRequest
+        };
+      }));
+    } else {
+      // single request requires bids to be grouped by site id into a single request
+      // note: utils.groupBy wasn't used because deep property access was needed
+      const nonVideoRequests = bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest));
+      const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
+        (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
+        return groupedBids;
+      }, {});
+
+      requests = videoRequests.concat(Object.keys(groupedBidRequests).map(bidGroupKey => {
+        let bidsInGroup = groupedBidRequests[bidGroupKey];
+
+        // fastlane SRA has a limit of 10 slots
+        if (bidsInGroup.length > 10) {
+          utils.logWarn(`single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
+          bidsInGroup = bidsInGroup.slice(0, 10);
+        }
+
+        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
+          return spec.createSlotParams(bidRequest, bidderRequest);
+        }));
+        // SRA request returns grouped bidRequest arrays not a plain bidRequest
+        return {
+          method: 'GET',
+          url: FASTLANE_ENDPOINT,
+          data: Object.keys(combinedSlotParams).reduce((paramString, key) => {
+            const propValue = combinedSlotParams[key];
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+          }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
+          bidRequest: bidsInGroup,
+        };
+      }));
+    }
+    return requests;
   },
+
+  /**
+   * @summary combines param values from an array of slots into a single semicolon delineated value
+   * or just one value if they are all the same.
+   * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
+   * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
+   */
+  combineSlotUrlParams: function(aSlotUrlParams) {
+    // if only have params for one slot, return those params
+    if (aSlotUrlParams.length === 1) {
+      return aSlotUrlParams[0];
+    }
+
+    // reduce param values from all slot objects into an array of values in a single object
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function(param) {
+        if (!oCombinedParams.hasOwnProperty(param)) {
+          oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
+        }
+        // insert into the proper element of the array
+        oCombinedParams[param].splice(iIndex, 1, oSlotUrlParams[param]);
+      });
+
+      return oCombinedParams;
+    }, {});
+
+    // convert arrays into semicolon delimited strings
+    const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
+
+    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
+      const sValues = oCombinedSlotUrlParams[param].join(';');
+      // consolidate param values into one value if they are all the same
+      const match = sValues.match(re);
+      oCombinedSlotUrlParams[param] = match ? match[1] : sValues;
+    });
+
+    return oCombinedSlotUrlParams;
+  },
+
+  /**
+   * @param {BidRequest} bidRequest
+   * @param {Object} bidderRequest
+   * @returns {Object} - object key values named and formatted as slot params
+   */
+  createSlotParams: function(bidRequest, bidderRequest) {
+    bidRequest.startTime = new Date().getTime();
+
+    const params = bidRequest.params;
+
+    // use rubicon sizes if provided, otherwise adUnit.sizes
+    const parsedSizes = parseSizes(bidRequest);
+
+    const data = {
+      'account_id': params.accountId,
+      'site_id': params.siteId,
+      'zone_id': params.zoneId,
+      'size_id': parsedSizes[0],
+      'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
+      'p_pos': parsePosition(params.position),
+      'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
+      'rp_secure': isSecure() ? '1' : '0',
+      'tk_flint': INTEGRATION,
+      'x_source.tid': bidRequest.transactionId,
+      'p_screen_res': _getScreenResolution(),
+      'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
+      'tk_user_key': params.userId,
+      'tg_fl.eid': bidRequest.code,
+      'rf': _getPageUrl(bidRequest)
+    };
+
+    if (bidderRequest.gdprConsent) {
+      // add 'gdpr' only if 'gdprApplies' is defined
+      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        data['gdpr'] = Number(bidderRequest.gdprConsent.gdprApplies);
+      }
+      data['gdpr_consent'] = bidderRequest.gdprConsent.consentString;
+    }
+
+    // visitor properties
+    if (params.visitor !== null && typeof params.visitor === 'object') {
+      Object.keys(params.visitor).forEach((key) => {
+        data[`tg_v.${key}`] = params.visitor[key];
+      });
+    }
+
+    // inventory properties
+    if (params.inventory !== null && typeof params.inventory === 'object') {
+      Object.keys(params.inventory).forEach((key) => {
+        data[`tg_i.${key}`] = params.inventory[key];
+      });
+    }
+
+    // digitrust properties
+    const digitrustParams = _getDigiTrustQueryParams();
+    Object.keys(digitrustParams).forEach(paramKey => {
+      data[paramKey] = digitrustParams[paramKey];
+    });
+
+    return data;
+  },
+
   /**
    * Test if bid has mediaType or mediaTypes set for video.
    * note: 'mediaType' has been deprecated, however support will remain for a transitional period
@@ -287,22 +349,25 @@ export const spec = {
     return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
       (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
   },
+
   /**
    * @param {*} responseObj
-   * @param {BidRequest} bidRequest
+   * @param {BidRequest|Object.<string, BidRequest[]>} bidRequest - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
+   * non-SRA responses return a plain BidRequest object
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, {bidRequest}) {
     responseObj = responseObj.body;
-    let ads = responseObj.ads;
 
     // check overall response
-    if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
+    if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
 
+    let ads = responseObj.ads;
+
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -311,54 +376,60 @@ export const spec = {
       return [];
     }
 
-    // if there are multiple ads, sort by CPM
-    ads = ads.sort(_adCpmSort);
-
-    return ads.reduce((bids, ad) => {
+    return ads.reduce((bids, ad, i) => {
       if (ad.status !== 'ok') {
-        return [];
+        return bids;
       }
 
-      let bid = {
-        requestId: bidRequest.bidId,
-        currency: 'USD',
-        creativeId: ad.creative_id,
-        cpm: ad.cpm || 0,
-        dealId: ad.deal,
-        ttl: 300, // 5 minutes
-        netRevenue: config.getConfig('rubicon.netRevenue') || false,
-        rubicon: {
-          advertiserId: ad.advertiser,
-          networkId: ad.network
+      // associate bidRequests; assuming ads matches bidRequest
+      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
+
+      if (associatedBidRequest && typeof associatedBidRequest === 'object') {
+        let bid = {
+          requestId: associatedBidRequest.bidId,
+          currency: 'USD',
+          creativeId: ad.creative_id,
+          mediaType: ad.creative_type,
+          cpm: ad.cpm || 0,
+          dealId: ad.deal,
+          ttl: 300, // 5 minutes
+          netRevenue: config.getConfig('rubicon.netRevenue') || false,
+          rubicon: {
+            advertiserId: ad.advertiser, networkId: ad.network
+          }
+        };
+
+        if (ad.creative_type) {
+          bid.mediaType = ad.creative_type;
         }
-      };
 
-      if (ad.creative_type) {
-        bid.mediaType = ad.creative_type;
-      }
+        if (ad.creative_type === VIDEO) {
+          bid.width = associatedBidRequest.params.video.playerWidth;
+          bid.height = associatedBidRequest.params.video.playerHeight;
+          bid.vastUrl = ad.creative_depot_url;
+          bid.impression_id = ad.impression_id;
+          bid.videoCacheKey = ad.impression_id;
+        } else {
+          bid.ad = _renderCreative(ad.script, ad.impression_id);
+          [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        }
 
-      if (ad.creative_type === VIDEO) {
-        bid.width = bidRequest.params.video.playerWidth;
-        bid.height = bidRequest.params.video.playerHeight;
-        bid.vastUrl = ad.creative_depot_url;
-        bid.impression_id = ad.impression_id;
-        bid.videoCacheKey = ad.impression_id;
+        // add server-side targeting
+        bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
+          .reduce((memo, item) => {
+            memo[item.key] = item.values[0];
+            return memo;
+          }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
+
+        bids.push(bid);
       } else {
-        bid.ad = _renderCreative(ad.script, ad.impression_id);
-        [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        utils.logError(`bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
-
-      // add server-side targeting
-      bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
-        .reduce((memo, item) => {
-          memo[item.key] = item.values[0];
-          return memo;
-        }, {'rpfl_elemid': bidRequest.adUnitCode});
-
-      bids.push(bid);
 
       return bids;
-    }, []);
+    }, []).sort((adA, adB) => {
+      return (adB.cpm || 0.0) - (adA.cpm || 0.0);
+    });
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
@@ -383,10 +454,6 @@ export const spec = {
   }
 };
 
-function _adCpmSort(adA, adB) {
-  return (adB.cpm || 0.0) - (adA.cpm || 0.0);
-}
-
 function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
 }
@@ -402,11 +469,25 @@ function _getDigiTrustQueryParams() {
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return [];
   }
-  return [
-    'dt.id', digiTrustId.id,
-    'dt.keyv', digiTrustId.keyv,
-    'dt.pref', 0
-  ];
+  return {
+    'dt.id': digiTrustId.id,
+    'dt.keyv': digiTrustId.keyv,
+    'dt.pref': 0
+  };
+}
+
+/**
+ * @param {BidRequest} bidRequest
+ * @returns {string}
+ */
+function _getPageUrl(bidRequest) {
+  let page_url = config.getConfig('pageUrl');
+  if (bidRequest.params.referrer) {
+    page_url = bidRequest.params.referrer;
+  } else if (!page_url) {
+    page_url = utils.getTopWindowUrl();
+  }
+  return bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
 }
 
 function _renderCreative(script, impId) {
@@ -488,11 +569,6 @@ var hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
-}
-
-function isNaN(value) {
-  // eslint-disable-next-line no-self-compare
-  return value !== value;
 }
 
 registerBidder(spec);

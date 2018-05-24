@@ -685,8 +685,16 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id, bidsRequested) {
-  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
+export function getBidRequest(id, bidderRequests) {
+  let bidRequest;
+  bidderRequests.some(bidderRequest => {
+    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    if (result) {
+      bidRequest = result;
+    }
+    return result;
+  });
+  return bidRequest;
 }
 
 export function getKeys(obj) {
