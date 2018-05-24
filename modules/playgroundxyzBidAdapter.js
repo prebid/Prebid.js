@@ -75,7 +75,7 @@ export const spec = {
     }
 
     if (!utils.isArray(serverResponse.seatbid)) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
       utils.logError(errorMessage += 'Malformed seatbid response');
       return bids;
     }
