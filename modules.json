@@ -4,6 +4,7 @@
     "appnexusBidAdapter",
     "audienceNetworkBidAdapter",
     "beachfrontBidAdapter",
+    "consentManagement",
     "conversantBidAdapter",
     "criteoBidAdapter",
     "freestarAnalyticsAdapter",
