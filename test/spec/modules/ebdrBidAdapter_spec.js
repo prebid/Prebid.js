@@ -206,4 +206,30 @@ describe('ebdrBidAdapter', () => {
       });
     });
   });
+  describe('spec.getUserSyncs', () => {
+    let syncOptions
+    beforeEach(() => {
+      syncOptions = {
+        enabledBidders: ['ebdr'], // only these bidders are allowed to sync
+        pixelEnabled: true
+      }
+    });
+    it('sucess with usersync url', () => {
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '//match.bnmla.com/usersync?sspid=59&redir=', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const result = [];
+      result.push({type: 'image', url: '//match.bnmla.com/usersync?sspid=59&redir='});
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
+    });
+
+    it('sucess without usersync url', () => {
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
+    });
+    it('empty response', () => {
+      const serverResponse = {};
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
+    });
+  });
 });
