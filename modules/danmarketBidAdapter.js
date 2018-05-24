@@ -96,11 +96,20 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.pixelEnabled) {
+      var query = [];
+      if (gdprConsent) {
+        if (gdprConsent.consentString) {
+          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+        }
+        query.push('gdpr_applies=' + encodeURIComponent(
+          (typeof gdprConsent.gdprApplies === 'boolean')
+            ? Number(gdprConsent.gdprApplies) : 1));
+      }
       return [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
+        url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
   }
