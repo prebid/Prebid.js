@@ -506,7 +506,9 @@ function parseSizes(bid) {
   let params = bid.params;
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+    if (Array.isArray(bid.mediaTypes.video.playerSize) && bid.mediaTypes.video.playerSize.length === 1) {
+      size = bid.mediaTypes.video.playerSize;
+    } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
@@ -518,7 +520,14 @@ function parseSizes(bid) {
   }
 
   // deprecated: temp legacy support
-  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+  let sizes = [];
+  if (typeof utils.deepAccess(bid, 'mediaTypes.' + _mediaTypes.BANNER) !== 'undefined') {
+    if (Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0 && Array.isArray(bid.mediaTypes.banner.sizes[0]) && bid.mediaTypes.banner.sizes[0].length > 1) {
+      sizes = mapSizes(bid.mediaTypes.banner.sizes);
+    } 
+  } else {
+    sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+  }
 
   return masSizeOrdering(sizes);
 }
