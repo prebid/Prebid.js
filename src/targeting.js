@@ -224,11 +224,6 @@ export function newTargeting(auctionManager) {
    */
   function getWinningBidTargeting(adUnitCodes, bidsReceived) {
     let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
-    winners.forEach((winner) => {
-      winner.status = BID_TARGETING_SET;
-    });
-
-    // TODO : Add losing bids to pool from here ?
     let standardKeys = getStandardKeys();
 
     winners = winners.map(winner => {

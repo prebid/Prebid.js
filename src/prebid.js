@@ -174,6 +174,14 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   // now set new targeting keys
   targeting.setTargetingForGPT(targetingSet);
 
+  Object.keys(targeting).forEach((key) => {
+    Object.keys(targeting[key]).forEach((key2) => {
+      if (key2 === 'hb_adid') {
+        auctionManager.setStatusForBids(targeting[key][key2], BID_TARGETING_SET);
+      }
+    });
+  });
+
   // emit event
   events.emit(SET_TARGETING, targetingSet);
 };
