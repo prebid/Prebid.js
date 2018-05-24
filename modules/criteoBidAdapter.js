@@ -2,6 +2,7 @@ import { loadExternalScript } from 'src/adloader';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
+import find from 'core-js/library/fn/array/find';
 
 const ADAPTER_VERSION = 7;
 const BIDDER_CODE = 'criteo';
@@ -83,7 +84,7 @@ export const spec = {
 
     if (body && body.slots && utils.isArray(body.slots)) {
       body.slots.forEach(slot => {
-        const bidRequest = request.bidRequests.find(b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
+        const bidRequest = find(request.bidRequests, b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
