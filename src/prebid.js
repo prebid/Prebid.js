@@ -11,6 +11,8 @@ import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targetin
 import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
+foobar();
+
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
