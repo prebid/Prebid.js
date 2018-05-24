@@ -53,7 +53,7 @@ function sendAuction() {
   let req = Object.assign({}, {Auction: auctionObject});
   auctionObject = fulfillAuctionObject();
   logInfo('sending request to analytics => ', req);
-  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientURL}/auctions`, () => {
+  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`, () => {
   }, JSON.stringify(req));
 };
 
@@ -190,7 +190,7 @@ function reportClickEvent(event) {
     'click_url': clickUrl
   };
   logInfo('Sending click events with parameters: ', req);
-  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientURL}/clicks`, () => {
+  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`, () => {
   }, JSON.stringify(req));
 };
 
@@ -370,7 +370,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     host: config.options.host || DEFAULT_HOST,
     pubId: config.options.pubId,
     auctionObject: {},
-    clientURL: window.location.href,
+    clientID: config.options.clientID,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
   addHandlers(config.options.bannersIds);
