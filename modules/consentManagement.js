@@ -52,6 +52,7 @@ function lookupIabConsent(cmpSuccess, cmpError) {
   }
 
   function callCmpWhileInIframe() {
+    //TODO: improve lookup by first walking the parent tree, to see if a friendly __cmp exists before checking for the __cmpLocator
     /**
      * START OF STOCK CODE FROM IAB 1.1 CMP SPEC
     */

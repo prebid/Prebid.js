@@ -90,7 +90,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _adUnitCodes = adUnitCodes;
   let _bidderRequests = [];
   let _bidsReceived = [];
-  let _adUnitsDone = {};// adUnitId->[bool]
+  let _adUnitsDone = {};// adUnitId->[response count]
   let _auctionStart;
   let _auctionId = utils.generateUUID();
   let _auctionStatus;
@@ -202,9 +202,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     const plcDone = _bidderRequests.reduce((placements,bidder) => {
       if(bidder.bids && bidder.bids.length){
         bidder.bids.reduce((placements,bid) =>{
-          if(_adUnitsDone[bid.adUnitCode]){
+          /*if(_adUnitsDone[bid.adUnitCode]){
             return placements;//this placement has been flagged as done earlier..it's possible bids arrived late in thise case. TODO: deal with late arrivals
-          }
+          }*/
           if(!placements[bid.adUnitCode]){
             placements[bid.adUnitCode] = {
               requests:0,
@@ -240,7 +240,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     for(let i in plcDone){
       if(plcDone[i].requests <= plcDone[i].responses + plcDone[i].timeouts){
-        _adUnitsDone[i] = true;
+        //_adUnitsDone[i] = true;
         const bidResp = {};
         bidResp[i] = { bids: [] };
         let availBids = {};
@@ -267,7 +267,14 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           bidRsp.cpm = 0;
           bidResp[i].bids.push(bidRsp);
         }
-        events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, bidResp, [i]);
+        if(!_adUnitsDone[i]){
+          events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, bidResp, [i]);
+        }else if(_adUnitsDone[i] != plcDone[i].responses){
+          debugger;
+          //the responses changed probably late arrivals, emit changed event
+          events.emit(CONSTANTS.EVENTS.AD_UNIT_UPDATED, bidResp, [i]);
+        }
+        _adUnitsDone[i] = plcDone[i].responses;
       }
     }
     //const bidsReqForAdUnit = getBidRequestsByAdUnit([request.adUnitCode]).filter(bid => bid.auctionId === request.auctionId);

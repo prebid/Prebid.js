@@ -37,6 +37,7 @@
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
     "AD_UNIT_COMPLETE": "adUnitComplete",
+    "AD_UNIT_UPDATED": "adUnitUpdated",
     "AD_RENDER_FAILED" : "adRenderFailed"
   },
   "AD_RENDER_FAILED_REASON" : {
