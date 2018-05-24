@@ -166,7 +166,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   }
 
   // get our ad unit codes
-  var targetingSet = targeting.getAllTargeting(adUnit);
+  let targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
   targeting.resetPresetTargeting(adUnit);
@@ -174,10 +174,10 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   // now set new targeting keys
   targeting.setTargetingForGPT(targetingSet);
 
-  Object.keys(targeting).forEach((key) => {
-    Object.keys(targeting[key]).forEach((key2) => {
-      if (key2 === 'hb_adid') {
-        auctionManager.setStatusForBids(targeting[key][key2], BID_TARGETING_SET);
+  Object.keys(targetingSet).forEach((adUnitCode) => {
+    Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
+      if (targetingKey === 'hb_adid') {
+        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_TARGETING_SET);
       }
     });
   });
