@@ -3,6 +3,7 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
 var utils = require('src/utils');
 var adaptermanager = require('src/adaptermanager');
+const { BANNER, VIDEO } = require('src/mediaTypes');
 
 var SonobiAdapter = function SonobiAdapter() {
   var keymakerAssoc = {}; //  Remember placement codes for callback mapping
@@ -34,9 +35,9 @@ var SonobiAdapter = function SonobiAdapter() {
         var sizes = (bidRequest.params.sizes) ? bidRequest.params.sizes : bidRequest.sizes || null;
         sizes = utils.parseSizesInput(sizes).toString();
 
-        if (utils.isEmpty(sizes)) {
-          utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
-        }
+        // if (utils.isEmpty(sizes)) {
+        //   utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
+        // }
 
         var bidId = bidRequest.bidId;
 
@@ -88,16 +89,27 @@ var SonobiAdapter = function SonobiAdapter() {
   }
 
   function _success(placementCode, sbi_dc, bid) {
-    var goodBid = bidfactory.createBid(1, _seraph(placementCode));
+    const adunitConfig = _seraph(placementCode);
+    var createCreative = _creative(bid.sbi_ct, _getReferrer([adunitConfig]));
+    var goodBid = bidfactory.createBid(1, adunitConfig);
     if (bid.sbi_dozer) {
       goodBid.dealId = bid.sbi_dozer;
     }
     goodBid.bidderCode = 'sonobi';
-    goodBid.ad = _creative(sbi_dc, bid.sbi_aid);
+    goodBid.ad = createCreative(sbi_dc, bid.sbi_aid);
     goodBid.creativeId = bid.sbi_crid || bid.sbi_aid;
     goodBid.cpm = Number(bid.sbi_mouse);
     goodBid.width = Number(bid.sbi_size.split('x')[0]) || 1;
     goodBid.height = Number(bid.sbi_size.split('x')[1]) || 1;
+    goodBid.aid = bid.sbi_aid;
+    if (bid.sbi_ct === 'video') {
+      goodBid.mediaType = 'video';
+      goodBid.vastUrl = createCreative(sbi_dc, bid.sbi_aid);
+      delete goodBid.ad;
+      delete goodBid.width;
+      delete goodBid.height;
+    }
+
     bidmanager.addBidResponse(placementCode, goodBid);
   }
 
@@ -107,9 +119,15 @@ var SonobiAdapter = function SonobiAdapter() {
     bidmanager.addBidResponse(placementCode, failBid);
   }
 
-  function _creative(sbi_dc, sbi_aid) {
-    var src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null';
-    return '<script type="text/javascript" src="' + src + '"></script>';
+  function _creative(mediaType, referrer) {
+    console.log(referrer)
+    return function (sbi_dc, sbi_aid) {
+      if (mediaType === 'video') {
+        return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${referrer}`;
+      }
+      const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null&ref=' + referrer;
+      return '<script type="text/javascript" src="' + src + '"></script>';
+    }
   }
 
   /**
@@ -167,6 +185,6 @@ var SonobiAdapter = function SonobiAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SonobiAdapter(), 'sonobi');
+adaptermanager.registerBidAdapter(new SonobiAdapter(), 'sonobi', {supportedMediaTypes: [BANNER, VIDEO]});
 
 module.exports = SonobiAdapter;
