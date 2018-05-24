@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
 
-const ADAPTER_VERSION = 5;
+const ADAPTER_VERSION = 7;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
