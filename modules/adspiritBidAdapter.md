@@ -6,7 +6,7 @@
 
 # Description
 
-Module that connects to an AdSpirit zone to fetch bids.
+Module that connects to an AdSpirit zone to fetch bids. 
 
 # Test Parameters
 ```
