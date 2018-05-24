@@ -524,7 +524,7 @@ function parseSizes(bid) {
   if (typeof utils.deepAccess(bid, 'mediaTypes.' + _mediaTypes.BANNER) !== 'undefined') {
     if (Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0 && Array.isArray(bid.mediaTypes.banner.sizes[0]) && bid.mediaTypes.banner.sizes[0].length > 1) {
       sizes = mapSizes(bid.mediaTypes.banner.sizes);
-    } 
+    }
   } else {
     sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
   }
