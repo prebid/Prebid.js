@@ -42,33 +42,58 @@ const cmpCallMap = {
  * @param {[objects]} adUnits used in the safeframe workflow to know what sizes to include in the $sf.ext.register call
  */
 function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
-  let cmpCallbacks;
-  let cmpResponse = {};
+  function handleCmpResponseCallbacks() {
+    const cmpResponse = {};
 
-  // to collect the consent information from the user, we perform two calls to the CMP:
+    function afterEach() {
+      if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
+        cmpSuccess(cmpResponse);
+      }
+    }
+
+    return {
+      consentDataCallback: function(consentResponse) {
+        cmpResponse.getConsentData = consentResponse;
+        afterEach();
+      },
+      vendorConsentsCallback: function(consentResponse) {
+        cmpResponse.getVendorConsents = consentResponse;
+        afterEach();
+      }
+    }
+  }
+  let callbackHandler = handleCmpResponseCallbacks();
+  let cmpCallbacks = {};
+
+  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
   // second to collect the user's full unparsed consent information (via getVendorConsents)
-  callIabCMP('getConsentData', function (consentResponse) {
-    cmpResponse.getConsentData = consentResponse;
 
-    callIabCMP('getVendorConsents', function (consentResponse) {
-      cmpResponse.getVendorConsents = consentResponse;
-      cmpSuccess(cmpResponse);
-    });
-  });
-
-  // check if the CMP is located on the same window level as the prebid code.
-  // if it's found, directly call the CMP via it's API and call the cmpSuccess callback.
-  // if it's not found, assume the prebid code may be inside an iframe and the CMP code is located in a higher parent window.
-  // in this case, use the IAB's iframe locator sample code (which is slightly cutomized) to try to find the CMP and use postMessage() to communicate with the CMP.
-  function callIabCMP(commandName, cb) {
-    if (utils.isFn(window.__cmp)) {
-      window.__cmp(commandName, null, cb);
-    } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
-      callCmpWhileInSafeFrame(commandName, cb);
-    } else {
-      callCmpWhileInIframe(commandName, cb);
+  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
+  // check to see if CMP is found on the same window level as prebid and call it directly if so
+  // check to see if prebid is in a safeframe (with CMP support)
+  // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
+  // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
+  if (utils.isFn(window.__cmp)) {
+    window.__cmp('getConsentData', null, callbackHandler.consentDataCallback);
+    window.__cmp('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
+  } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
+    callCmpWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
+    callCmpWhileInSafeFrame('getVendorConsents', callbackHandler.vendorConsentsCallback);
+  } else {
+    // find the CMP frame
+    let f = window;
+    let cmpFrame;
+    while (!cmpFrame) {
+      try {
+        if (f.frames['__cmpLocator']) cmpFrame = f;
+      } catch (e) {}
+      if (f === window.top) break;
+      f = f.parent;
     }
+
+    callCmpWhileInIframe('getConsentData', cmpFrame, callbackHandler.consentDataCallback);
+    callCmpWhileInIframe('getVendorConsents', cmpFrame, callbackHandler.vendorConsentsCallback);
   }
 
   function inASafeFrame() {
@@ -86,7 +111,6 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     // find sizes from adUnits object
     let width = 1;
     let height = 1;
-
     if (Array.isArray(adUnits) && adUnits.length > 0) {
       let sizes = utils.getAdUnitSizes(adUnits[0]);
       width = sizes[0][0];
@@ -97,24 +121,7 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     window.$sf.ext.cmp(commandName);
   }
 
-  function callCmpWhileInIframe(commandName, moduleCallback) {
-    /**
-     * START OF STOCK CODE FROM IAB 1.1 CMP SPEC
-    */
-
-    // find the CMP frame
-    let f = window;
-    let cmpFrame;
-    while (!cmpFrame) {
-      try {
-        if (f.frames['__cmpLocator']) cmpFrame = f;
-      } catch (e) {}
-      if (f === window.top) break;
-      f = f.parent;
-    }
-
-    cmpCallbacks = {};
-
+  function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window.__cmp = function(cmd, arg, callback) {
@@ -122,7 +129,6 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
         removePostMessageListener();
 
         let errmsg = 'CMP not found';
-        // small customization to properly return error
         return cmpError(errmsg);
       }
       let callId = Math.random() + '';
@@ -136,23 +142,20 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     }
 
     /** when we get the return message, call the stashed callback */
-    // small customization to remove this eventListener later in module
     window.addEventListener('message', readPostMessageResponse, false);
-
-    /**
-     * END OF STOCK CODE FROM IAB 1.1 CMP SPEC
-     */
 
     // call CMP
     window.__cmp(commandName, null, cmpIframeCallback);
 
     function readPostMessageResponse(event) {
-      // small customization to prevent reading strings from other sources that aren't JSON.stringified
       let json = (typeof event.data === 'string' && strIncludes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
-      if (json.__cmpReturn) {
+      if (json.__cmpReturn && json.__cmpReturn.callId) {
         let i = json.__cmpReturn;
-        cmpCallbacks[i.callId](i.returnValue, i.success);
-        delete cmpCallbacks[i.callId];
+        // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
+        if (typeof cmpCallbacks[i.callId] !== 'undefined') {
+          cmpCallbacks[i.callId](i.returnValue, i.success);
+          delete cmpCallbacks[i.callId];
+        }
       }
     }
 
@@ -161,10 +164,7 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     }
 
     function cmpIframeCallback(consentObject) {
-      // will delete the local version of the window.__cmp function and the eventlistener that was created from the iframe CMP code
-      delete window.__cmp;
       removePostMessageListener();
-
       moduleCallback(consentObject);
     }
   }
@@ -215,7 +215,10 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
  * @param {object} consentObject required; object returned by CMP that contains user's consent choices
  */
 function processCmpData(consentObject) {
-  if (!utils.isPlainObject(consentObject) || !utils.isPlainObject(consentObject.getVendorConsents) || !utils.isPlainObject(consentObject.getVendorConsents)) {
+  if (
+    !utils.isPlainObject(consentObject) ||
+    (!utils.isPlainObject(consentObject.getVendorConsents) || Object.keys(consentObject.getVendorConsents).length === 0) ||
+    (!utils.isPlainObject(consentObject.getConsentData) || Object.keys(consentObject.getConsentData).length === 0)) {
     cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`);
   } else {
     clearTimeout(timer);

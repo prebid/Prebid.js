@@ -305,7 +305,7 @@ describe('consentManagement', function () {
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
-        let testConsentData = null;
+        let testConsentData = {};
         let bidsBackHandlerReturn = false;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
@@ -326,7 +326,7 @@ describe('consentManagement', function () {
       });
 
       it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', () => {
-        let testConsentData = null;
+        let testConsentData = {};
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
