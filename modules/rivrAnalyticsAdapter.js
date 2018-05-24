@@ -194,44 +194,64 @@ function reportClickEvent(event) {
   }, JSON.stringify(req));
 };
 
-function addClickHandlers(bannersIds) {
-  setTimeout(function () {
-    bannersIds.forEach(function (bannerId) {
-      let doc = document.getElementById(bannerId);
-      if (doc) {
-        let iframe = doc.getElementsByTagName('iframe')[0];
-        if (iframe) {
-          iframe.contentDocument.addEventListener('click', reportClickEvent);
-        }
-      }
-    });
-  }, 1500);
+function addClickHandler(bannerId) {
+  pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, addClickListener);
 };
 
-function displayedImpressionHandler(bannersIds) {
-  setTimeout(function () {
-    bannersIds.forEach((bannerId) => {
-      let doc = document.getElementById(bannerId);
-      if (doc) {
-        let iframe = doc.getElementsByTagName('iframe')[0];
-        if (iframe) {
-          let displayedImpressionImg = iframe.contentDocument.getElementsByTagName('img').length > 0;
-          if (displayedImpressionImg) {
-            let timestamp = new Date().toISOString();
-            let requestId = generateUUID();
-            let impression = {
-              timestamp,
-              'request_id': requestId,
-            };
-            if (rivrAnalytics.context.queue) {
-              rivrAnalytics.context.queue.push(impression);
-            }
-          }
-        }
+function addDisplayedImpHandler(bannerId) {
+  pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, impHandler);
+};
+
+function pinHandlerToHTMLElement(elementId, dataLoaderForHandler, specializedHandler) {
+  function waitForElement() {
+    let element = document.getElementById(elementId);
+    if (!element) {
+      window.requestAnimationFrame(waitForElement);
+    } else {
+      dataLoaderForHandler(element, specializedHandler);
+    }
+  }
+  waitForElement();
+}
+
+function dataLoaderForHandler(element, specializedHandler) {
+  function waitForElement() {
+    let iframe = element.getElementsByTagName('iframe')[0];
+    if (!iframe) {
+      window.requestAnimationFrame(waitForElement);
+    } else {
+      let displayedImpression = iframe.contentDocument.getElementsByTagName('img').length > 0;
+      if (!displayedImpression) {
+        window.requestAnimationFrame(waitForElement);
+      } else {
+        specializedHandler(iframe);
       }
-    });
-    sendImpressions();
-  }, 3000);
+    }
+  }
+  waitForElement();
+};
+
+function addClickListener(iframe) {
+  iframe.contentDocument.addEventListener('click', reportClickEvent);
+}
+
+function impHandler(iframe) {
+  let timestamp = new Date().toISOString();
+  let requestId = generateUUID();
+  let impression = {
+    timestamp,
+    'request_id': requestId,
+  };
+  if (rivrAnalytics.context.queue) {
+    rivrAnalytics.context.queue.push(impression);
+  }
+}
+
+function addHandlers(bannersIds) {
+  bannersIds.forEach((bannerId) => {
+    addClickHandler(bannerId);
+    addDisplayedImpHandler(bannerId);
+  })
 };
 
 function fulfillAuctionObject() {
@@ -353,8 +373,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     clientURL: window.location.href,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
-  addClickHandlers(config.options.bannersIds);
-  displayedImpressionHandler(config.options.bannersIds);
+  addHandlers(config.options.bannersIds);
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
   rivrAnalytics.originEnableAnalytics(config);
 };
