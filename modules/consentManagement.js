@@ -8,6 +8,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
+import strIncludes from 'core-js/library/fn/string/includes';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -132,7 +133,7 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
 
   function readPostMessageResponse(event) {
     // small customization to prevent reading strings from other sources that aren't JSON.stringified
-    let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+    let json = (typeof event.data === 'string' && strIncludes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
     if (json.__cmpReturn) {
       let i = json.__cmpReturn;
       cmpCallbacks[i.callId](i.returnValue, i.success);
