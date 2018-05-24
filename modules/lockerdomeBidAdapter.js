@@ -8,7 +8,7 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!bid.params.adUnitId;
   },
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const adUnitBidRequests = bidRequests.map(function (bid) {
       return {
         requestId: bid.bidId,
@@ -21,6 +21,14 @@ export const spec = {
       url: utils.getTopWindowLocation().href,
       referrer: utils.getTopWindowReferrer()
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = {
+        applies: bidderRequest.gdprConsent.gdprApplies,
+        consent: bidderRequest.gdprConsent.consentString
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',

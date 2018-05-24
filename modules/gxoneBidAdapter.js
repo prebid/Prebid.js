@@ -1,9 +1,9 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-const BIDDER_CODE = 'trustx';
-const ENDPOINT_URL = '//sofia.trustx.org/hb';
+const BIDDER_CODE = 'gxone';
+const ENDPOINT_URL = '//ads.gx1as.com/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
+const ADAPTER_SYNC_URL = '//ads.gx1as.com/push_sync';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -15,25 +15,20 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
+/**
+ * GXOne Bid Adapter.
+ * Contact: olivier@geronimo.co
+ *
+ */
 export const spec = {
   code: BIDDER_CODE,
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
   },
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {bidderRequest} - bidder request object
-   * @return ServerRequest Info describing the request to the server.
-   */
-  buildRequests: function(validBidRequests, bidderRequest) {
+
+  buildRequests: function(validBidRequests) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -44,45 +39,30 @@ export const spec = {
       if (bid.params.priceType === 'gross') {
         priceType = 'gross';
       }
-      reqId = bid.bidderRequestId;
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
       } else {
         bidsMap[bid.params.uid].push(bid);
       }
+      reqId = bid.bidderRequestId;
     });
 
     const payload = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
-      r: reqId
+      r: reqId,
     };
-
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-      }
-      payload.gdpr_applies =
-        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
-    }
 
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @param {*} bidRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
+
   interpretResponse: function(serverResponse, bidRequest) {
     serverResponse = serverResponse && serverResponse.body
     const bidResponses = [];
@@ -104,6 +84,7 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
+
   getUserSyncs: function(syncOptions) {
     if (syncOptions.pixelEnabled) {
       return [{
@@ -136,7 +117,6 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
       awaitingBids.forEach(bid => {
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
-          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,

@@ -8,6 +8,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
+import strIncludes from 'core-js/library/fn/string/includes';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -22,6 +23,7 @@ let consentData;
 let context;
 let args;
 let nextFn;
+let bidsBackHandler;
 
 let timer;
 let haveExited;
@@ -37,8 +39,9 @@ const cmpCallMap = {
  * based on the appropriate result.
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
+ * @param {[objects]} adUnits used in the safeframe workflow to know what sizes to include in the $sf.ext.register call
  */
-function lookupIabConsent(cmpSuccess, cmpError) {
+function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
   let cmpCallbacks;
 
   // check if the CMP is located on the same window level as the prebid code.
@@ -47,8 +50,35 @@ function lookupIabConsent(cmpSuccess, cmpError) {
   // in this case, use the IAB's iframe locator sample code (which is slightly cutomized) to try to find the CMP and use postMessage() to communicate with the CMP.
   if (utils.isFn(window.__cmp)) {
     window.__cmp('getVendorConsents', null, cmpSuccess);
+  } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
+    callCmpWhileInSafeFrame();
   } else {
     callCmpWhileInIframe();
+  }
+
+  function inASafeFrame() {
+    return !!(window.$sf && window.$sf.ext);
+  }
+
+  function callCmpWhileInSafeFrame() {
+    function sfCallback(msgName, data) {
+      if (msgName === 'cmpReturn') {
+        cmpSuccess(data.vendorConsents);
+      }
+    }
+
+    // find sizes from adUnits object
+    let width = 1;
+    let height = 1;
+
+    if (Array.isArray(adUnits) && adUnits.length > 0) {
+      let sizes = utils.getAdUnitSizes(adUnits[0]);
+      width = sizes[0][0];
+      height = sizes[0][1];
+    }
+
+    window.$sf.ext.register(width, height, sfCallback);
+    window.$sf.ext.cmp('getVendorConsents');
   }
 
   function callCmpWhileInIframe() {
@@ -104,7 +134,7 @@ function lookupIabConsent(cmpSuccess, cmpError) {
 
   function readPostMessageResponse(event) {
     // small customization to prevent reading strings from other sources that aren't JSON.stringified
-    let json = (typeof event.data === 'string' && includes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+    let json = (typeof event.data === 'string' && strIncludes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
     if (json.__cmpReturn) {
       let i = json.__cmpReturn;
       cmpCallbacks[i.callId](i.returnValue, i.success);
@@ -127,14 +157,16 @@ function lookupIabConsent(cmpSuccess, cmpError) {
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
  * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
- * @param {object} config required; This is the same param that's used in pbjs.requestBids.
+ * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(config, fn) {
+export function requestBidsHook(reqBidsConfigObj, fn) {
   context = this;
   args = arguments;
   nextFn = fn;
   haveExited = false;
+  let adUnits = reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits;
+  bidsBackHandler = reqBidsConfigObj.bidsBackHandler;
 
   // in case we already have consent (eg during bid refresh)
   if (consentData) {
@@ -146,7 +178,7 @@ export function requestBidsHook(config, fn) {
     return nextFn.apply(context, args);
   }
 
-  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed);
+  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed, adUnits);
 
   // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
   if (!haveExited) {
@@ -234,6 +266,11 @@ function exitModule(errMsg) {
         nextFn.apply(context, args);
       } else {
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.');
+        if (typeof bidsBackHandler === 'function') {
+          bidsBackHandler();
+        } else {
+          utils.logError('Error executing bidsBackHandler');
+        }
       }
     } else {
       nextFn.apply(context, args);
@@ -246,6 +283,7 @@ function exitModule(errMsg) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  gdprDataHandler.setConsentData(null);
 }
 
 /**

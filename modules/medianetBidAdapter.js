@@ -71,11 +71,16 @@ function getSize(size) {
   }
 }
 
-function configuredParams(params) {
-  return {
+function extParams(params, gdpr) {
+  let ext = {
     customer_id: params.cid,
     prebid_version: $$PREBID_GLOBAL$$.version
+  };
+  ext.gdpr_applies = !!(gdpr && gdpr.gdprApplies);
+  if (ext.gdpr_applies) {
+    ext.gdpr_consent_string = gdpr.consentString || '';
   }
+  return ext;
 }
 
 function slotParams(bidRequest) {
@@ -100,13 +105,13 @@ function slotParams(bidRequest) {
   return params;
 }
 
-function generatePayload(bidRequests, timeout) {
+function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: configuredParams(bidRequests[0].params),
+    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
-    tmax: timeout
+    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
   }
 }
 
@@ -153,12 +158,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {BidderRequests} bidderRequests
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, auctionData) {
-    let timeout = auctionData.timeout || config.getConfig('bidderTimeout');
-    let payload = generatePayload(bidRequests, timeout);
-
+  buildRequests: function(bidRequests, bidderRequests) {
+    let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
       url: BID_URL,

@@ -1,4 +1,9 @@
-# Release Schedule
+**Table of Contents**
+- [Release Schedule](#release-schedule)
+- [Release Process](#release-process)
+- [FAQs](#faqs)
+
+## Release Schedule
 
 We push a new release of Prebid.js every other week on Tuesday. During the adoption phase for 1.x, we are releasing updates for 1.x and 0.x at the same time.
 
@@ -9,7 +14,85 @@ You can determine what is in a given build using the [releases page](https://git
 
 Announcements regarding releases will be made to the #headerbidding-dev channel in subredditadops.slack.com.
 
-# FAQs
+## Release Process
+
+1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build [here](https://travis-ci.org/prebid/Prebid.js/branches) for master branch will show you detailed results. 
+  
+   In case of failure do following, 
+     - Try to fix the failing tests.
+     - If you are not able to fix tests in time. Skip the test, create issue and tag contributor.
+
+   #### How to run tests in browserstack
+
+   Set the environment variables. You may want to add these to your `~/.bashrc` for convenience.
+
+   ```
+   export BROWSERSTACK_USERNAME="my browserstack username"
+   export BROWSERSTACK_ACCESS_KEY="my browserstack access key"
+   ```
+   
+   ```
+   gulp test --browserstack >> prebid_test.log
+   
+   vim prebid_test.log // Will show the test results
+   ```
+
+
+2. Prepare Prebid Code
+
+   Update the package.json version to become the current release. Then commit your changes.
+
+   ```
+   git commit -m "Prebid 1.x.x Release"
+   git push
+   ```
+
+3. Verify Release
+
+   Make sure your there are no more merges to master branch. Prebid code is clean and up to date.
+
+4. Create a GitHub release
+
+   Edit the most recent [release notes](https://github.com/prebid/Prebid.js/releases) draft and make sure the correct tag is in the dropdown. Click `Publish`. GitHub will create release tag. 
+   
+   Pull these changes locally by running command 
+   ```
+   git pull
+   ``` 
+   
+   and verify the tag.
+
+5. Update coveralls
+
+   We use https://coveralls.io/ to show parts of code covered by unit tests.
+
+   Set the environment variables. You may want to add these to your `~/.bashrc` for convenience.
+   ```
+   export COVERALLS_SERVICE_NAME="travis-ci"
+   export COVERALLS_REPO_TOKEN="talk to Matt Kendall"
+   ```
+
+   Run `gulp coveralls` to update code coverage history.
+
+6. Distribute the code
+
+   Reach out to any of the Appnexus folks to trigger the jenkins job.
+
+   // TODO 
+   Jenkins job is moving files to appnexus cdn, pushing prebid.js to npm, purging cache and sending notification to slack.
+   Move all the files from Appnexus CDN to jsDelivr and create bash script to do above tasks.
+
+7. Post Release Steps
+   
+   Update the version
+   Manually edit Prebid's package.json to become "1.x.x-pre" (using the values for the next release). Then commit your changes.
+   ```
+   git commit -m "Increment pre version"
+   git push
+   ```
+
+
+## FAQs
 
 **1. Is there flexibility in the 2-week schedule?**
 

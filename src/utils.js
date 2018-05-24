@@ -125,6 +125,35 @@ exports.transformAdServerTargetingObj = function (targeting) {
 };
 
 /**
+ * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
+ * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
+ * @param {object} adUnit one adUnit object from the normal list of adUnits
+ * @returns {array[array[number]]} array of arrays containing numeric sizes
+ */
+export function getAdUnitSizes(adUnit) {
+  if (!adUnit) {
+    return;
+  }
+
+  let sizes = [];
+  if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
+    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    if (Array.isArray(bannerSizes[0])) {
+      sizes = bannerSizes;
+    } else {
+      sizes.push(bannerSizes);
+    }
+  } else if (Array.isArray(adUnit.sizes)) {
+    if (Array.isArray(adUnit.sizes[0])) {
+      sizes = adUnit.sizes;
+    } else {
+      sizes.push(adUnit.sizes);
+    }
+  }
+  return sizes;
+}
+
+/**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
@@ -675,8 +704,16 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id, bidsRequested) {
-  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
+export function getBidRequest(id, bidderRequests) {
+  let bidRequest;
+  bidderRequests.some(bidderRequest => {
+    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    if (result) {
+      bidRequest = result;
+    }
+    return result;
+  });
+  return bidRequest;
 }
 
 export function getKeys(obj) {
