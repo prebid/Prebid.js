@@ -20,14 +20,6 @@ export let allowAuction;
 
 let consentData;
 
-let context;
-let args;
-let nextFn;
-let bidsBackHandler;
-
-let timer;
-let haveExited;
-
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'iab': lookupIabConsent
@@ -39,15 +31,15 @@ const cmpCallMap = {
  * based on the appropriate result.
  * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
  * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
- * @param {[objects]} adUnits used in the safeframe workflow to know what sizes to include in the $sf.ext.register call
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
-function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
+function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
     const cmpResponse = {};
 
     function afterEach() {
       if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
-        cmpSuccess(cmpResponse);
+        cmpSuccess(cmpResponse, hookConfig);
       }
     }
 
@@ -109,6 +101,7 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
     }
 
     // find sizes from adUnits object
+    let adUnits = hookConfig.adUnits;
     let width = 1;
     let height = 1;
     if (Array.isArray(adUnits) && adUnits.length > 0) {
@@ -129,7 +122,7 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
         removePostMessageListener();
 
         let errmsg = 'CMP not found';
-        return cmpError(errmsg);
+        return cmpError(errmsg, hookConfig);
       }
       let callId = Math.random() + '';
       let msg = {__cmpCall: {
@@ -179,31 +172,35 @@ function lookupIabConsent(cmpSuccess, cmpError, adUnits) {
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function requestBidsHook(reqBidsConfigObj, fn) {
-  context = this;
-  args = arguments;
-  nextFn = fn;
-  haveExited = false;
-  let adUnits = reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits;
-  bidsBackHandler = reqBidsConfigObj.bidsBackHandler;
+  // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
+  const hookConfig = {
+    context: this,
+    args: arguments,
+    nextFn: fn,
+    adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
+    bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
+    haveExited: false,
+    timer: null
+  };
 
   // in case we already have consent (eg during bid refresh)
   if (consentData) {
-    return exitModule();
+    return exitModule(null, hookConfig);
   }
 
   if (!includes(Object.keys(cmpCallMap), userCMP)) {
     utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
-    return nextFn.apply(context, args);
+    return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
-  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed, adUnits);
+  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed, hookConfig);
 
   // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
-  if (!haveExited) {
+  if (!hookConfig.haveExited) {
     if (consentTimeout === 0) {
-      processCmpData(undefined);
+      processCmpData(undefined, hookConfig);
     } else {
-      timer = setTimeout(cmpTimedOut, consentTimeout);
+      hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
     }
   }
 }
@@ -213,40 +210,42 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
  * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exits the module.
  * @param {object} consentObject required; object returned by CMP that contains user's consent choices
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
-function processCmpData(consentObject) {
+function processCmpData(consentObject, hookConfig) {
   if (
     !utils.isPlainObject(consentObject) ||
     (!utils.isPlainObject(consentObject.getVendorConsents) || Object.keys(consentObject.getVendorConsents).length === 0) ||
     (!utils.isPlainObject(consentObject.getConsentData) || Object.keys(consentObject.getConsentData).length === 0)) {
-    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`);
+    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`, hookConfig);
   } else {
-    clearTimeout(timer);
+    clearTimeout(hookConfig.timer);
     storeConsentData(consentObject);
 
-    exitModule();
+    exitModule(null, hookConfig);
   }
 }
 
 /**
  * General timeout callback when interacting with CMP takes too long.
  */
-function cmpTimedOut() {
-  cmpFailed('CMP workflow exceeded timeout threshold.');
+function cmpTimedOut(hookConfig) {
+  cmpFailed('CMP workflow exceeded timeout threshold.', hookConfig);
 }
 
 /**
  * This function contains the controlled steps to perform when there's a problem with CMP.
  * @param {string} errMsg required; should be a short descriptive message for why the failure/issue happened.
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
 */
-function cmpFailed(errMsg) {
-  clearTimeout(timer);
+function cmpFailed(errMsg, hookConfig) {
+  clearTimeout(hookConfig.timer);
 
   // still set the consentData to undefined when there is a problem as per config options
   if (allowAuction) {
     storeConsentData(undefined);
   }
-  exitModule(errMsg);
+  exitModule(errMsg, hookConfig);
 }
 
 /**
@@ -276,10 +275,15 @@ function storeConsentData(cmpConsentObject) {
  * 2. bad exit but auction still continues (warning message is logged, CMP data is undefined and still passed along).
  * 3. bad exit with auction canceled (error message is logged).
  * @param {string} errMsg optional; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
-function exitModule(errMsg) {
-  if (haveExited === false) {
-    haveExited = true;
+function exitModule(errMsg, hookConfig) {
+  if (hookConfig.haveExited === false) {
+    hookConfig.haveExited = true;
+
+    let context = hookConfig.context;
+    let args = hookConfig.args;
+    let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
       if (allowAuction) {
@@ -287,8 +291,8 @@ function exitModule(errMsg) {
         nextFn.apply(context, args);
       } else {
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.');
-        if (typeof bidsBackHandler === 'function') {
-          bidsBackHandler();
+        if (typeof hookConfig.bidsBackHandler === 'function') {
+          hookConfig.bidsBackHandler();
         } else {
           utils.logError('Error executing bidsBackHandler');
         }
