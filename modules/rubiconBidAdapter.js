@@ -506,7 +506,7 @@ function parseSizes(bid) {
   let params = bid.params;
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (Array.isArray(bid.mediaTypes.video.playerSize) && bid.mediaTypes.video.playerSize.length === 1) {
+    if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
       size = bid.mediaTypes.video.playerSize;
     } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
@@ -521,10 +521,8 @@ function parseSizes(bid) {
 
   // deprecated: temp legacy support
   let sizes = [];
-  if (typeof bid.mediaTypes.banner !== 'undefined') {
-    if (Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0 && Array.isArray(bid.mediaTypes.banner.sizes[0]) && bid.mediaTypes.banner.sizes[0].length > 1) {
-      sizes = mapSizes(bid.mediaTypes.banner.sizes);
-    }
+  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else {
     sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
   }
