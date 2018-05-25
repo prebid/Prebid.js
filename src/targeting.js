@@ -210,7 +210,13 @@ export function newTargeting(auctionManager) {
         // setKeywords supports string and array as value
         if (utils.isStr(astTargeting[targetId][key]) || utils.isArray(astTargeting[targetId][key])) {
           let keywordsObj = {};
-          keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
+          let regex = /pt[0-9]/;
+          if (key.search(regex) < 0) {
+            keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
+          } else {
+            // pt${n} keys should not be uppercased
+            keywordsObj[key] = astTargeting[targetId][key];
+          }
           window.apntag.setKeywords(targetId, keywordsObj);
         }
       })
