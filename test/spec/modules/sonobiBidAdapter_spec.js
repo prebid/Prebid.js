@@ -387,8 +387,8 @@ describe('Sonobi adapter tests', () => {
 
     it('should create bid object for outstream video bid return', () => {
       adapter.parseResponse(sbi_video_bid);
-      console.log(spyAddBidResponse.called.args)
       expect(spyAddBidResponse.called).to.be.true;
+      expect(spyAddBidResponse.args[0][1].vastUrl).to.be.ok;
       expect(stubFailBid.callCount).to.equal(0);
     });
 

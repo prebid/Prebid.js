@@ -35,10 +35,6 @@ var SonobiAdapter = function SonobiAdapter() {
         var sizes = (bidRequest.params.sizes) ? bidRequest.params.sizes : bidRequest.sizes || null;
         sizes = utils.parseSizesInput(sizes).toString();
 
-        // if (utils.isEmpty(sizes)) {
-        //   utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
-        // }
-
         var bidId = bidRequest.bidId;
 
         var args = (sizes) ? ((floor) ? (sizes + '|f=' + floor) : (sizes)) : (floor) ? ('f=' + floor) : '';
