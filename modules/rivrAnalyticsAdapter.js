@@ -51,7 +51,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
 function sendAuction() {
   let auctionObject = rivrAnalytics.context.auctionObject;
   let req = Object.assign({}, {Auction: auctionObject});
-  auctionObject = fulfillAuctionObject();
+  rivrAnalytics.context.auctionObject = fulfillAuctionObject();
   logInfo('sending request to analytics => ', req);
   ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`, () => {
   }, JSON.stringify(req));
@@ -83,9 +83,7 @@ function trackBidResponse(args) {
 
 function trackBidWon(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
-  let bidResponse = createBidResponse(args);
   let auctionImpression = createAuctionImpression(args);
-  auctionObject.bidResponses.push(bidResponse);
   auctionObject.imp.push(auctionImpression);
 };
 
@@ -255,7 +253,7 @@ function addHandlers(bannersIds) {
 };
 
 function fulfillAuctionObject() {
-  return {
+  let newAuction = {
     id: null,
     timestamp: null,
     at: null,
@@ -312,6 +310,7 @@ function fulfillAuctionObject() {
     },
     bidResponses: []
   }
+  return newAuction;
 };
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
