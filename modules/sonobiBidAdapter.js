@@ -120,7 +120,6 @@ var SonobiAdapter = function SonobiAdapter() {
   }
 
   function _creative(mediaType, referrer) {
-    console.log(referrer)
     return function (sbi_dc, sbi_aid) {
       if (mediaType === 'video') {
         return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${referrer}`;
