@@ -74,6 +74,8 @@ function trackAuctionInit(args) {
 
 function trackBidRequest(args) {
   setCurrentPublisherId(args);
+  let bidRequest = args;
+  rivrAnalytics.context.auctionObject.bidRequests.push(bidRequest);
 };
 
 function trackBidResponse(args) {
@@ -310,7 +312,8 @@ function fulfillAuctionObject() {
       yob: null,
       gender: null,
     },
-    bidResponses: []
+    bidResponses: [],
+    bidRequests: []
   }
   return newAuction;
 };
