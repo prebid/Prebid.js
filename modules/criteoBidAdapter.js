@@ -207,12 +207,17 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     request.publisher.networkid = networkId;
   }
   if (bidderRequest && bidderRequest.gdprConsent) {
-    request.gdprConsent = {
-      gdprApplies: !!(bidderRequest.gdprConsent.gdprApplies),
-      consentData: bidderRequest.gdprConsent.consentString,
-      consentGiven: !!(bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-        bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]),
-    };
+    request.gdprConsent = {};
+    if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+      request.gdprConsent.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies);
+    }
+    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ] !== 'undefined') {
+      request.gdprConsent.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]);
+    }
+    if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+      request.gdprConsent.consentData = bidderRequest.gdprConsent.consentString;
+    }
   }
   return request;
 }
