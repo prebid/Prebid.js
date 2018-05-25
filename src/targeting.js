@@ -210,7 +210,13 @@ export function newTargeting(auctionManager) {
         // setKeywords supports string and array as value
         if (utils.isStr(astTargeting[targetId][key]) || utils.isArray(astTargeting[targetId][key])) {
           let keywordsObj = {};
-          keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
+          let regex = /pt[0-9]/;
+          if (key.search(regex) < 0) {
+            keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
+          } else {
+            // pt${n} keys should not be uppercased
+            keywordsObj[key] = astTargeting[targetId][key];
+          }
           window.apntag.setKeywords(targetId, keywordsObj);
         }
       })
@@ -224,11 +230,6 @@ export function newTargeting(auctionManager) {
    */
   function getWinningBidTargeting(adUnitCodes, bidsReceived) {
     let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
-    winners.forEach((winner) => {
-      winner.status = BID_TARGETING_SET;
-    });
-
-    // TODO : Add losing bids to pool from here ?
     let standardKeys = getStandardKeys();
 
     winners = winners.map(winner => {
