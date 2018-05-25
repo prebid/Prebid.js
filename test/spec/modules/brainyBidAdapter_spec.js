@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/brainyBidAdapter';
 
-const URL = '//proparm.co.jp/ssp/p/pbjs';
+const URL = '//proparm.jp/ssp/p/pbjs';
 const BIDDER_CODE = 'brainy';
 
 const validBidReq = {

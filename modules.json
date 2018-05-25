@@ -5,6 +5,7 @@
     "audienceNetworkBidAdapter",
     "beachfrontBidAdapter",
     "conversantBidAdapter",
+    "coxBidAdapter",
     "criteoBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
@@ -22,5 +23,6 @@
     "sharethroughBidAdapter",
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
-    "sovrnBidAdapter"
+    "sovrnBidAdapter",
+    "zeroIdBidAdapter"
 ]

@@ -1,14 +1,13 @@
-import { loadScript } from 'src/adloader';
+import { loadExternalScript } from 'src/adloader';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { EVENTS } from 'src/constants';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
+import find from 'core-js/library/fn/array/find';
 
-var events = require('src/events');
-
-const ADAPTER_VERSION = 4;
+const ADAPTER_VERSION = 7;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
+const CRITEO_VENDOR_ID = 91;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
@@ -32,7 +31,7 @@ export const spec = {
   /**
    * @param {BidRequest[]} bidRequests
    * @param {*} bidderRequest
-   * @return {ServerRequest}x`
+   * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
@@ -47,7 +46,7 @@ export const spec = {
 
       // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
       setTimeout(() => {
-        loadScript(PUBLISHER_TAG_URL);
+        loadExternalScript(PUBLISHER_TAG_URL, BIDDER_CODE);
       }, bidderRequest.timeout);
     }
 
@@ -55,12 +54,10 @@ export const spec = {
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
-
-      registerEventHandlers();
     } else {
       const context = buildContext(bidRequests);
       url = buildCdbUrl(context);
-      data = buildCdbRequest(context, bidRequests);
+      data = buildCdbRequest(context, bidRequests, bidderRequest);
     }
 
     if (data) {
@@ -87,7 +84,7 @@ export const spec = {
 
     if (body && body.slots && utils.isArray(body.slots)) {
       body.slots.forEach(slot => {
-        const bidRequest = request.bidRequests.find(b => b.adUnitCode === slot.impid);
+        const bidRequest = find(request.bidRequests, b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
@@ -109,6 +106,16 @@ export const spec = {
     }
 
     return bids;
+  },
+
+  /**
+   * @param {TimedOutBid} timeoutData
+   */
+  onTimeout: (timeoutData) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
+      adapter.handleBidTimeout();
+    }
   },
 };
 
@@ -171,7 +178,7 @@ function buildCdbUrl(context) {
  * @param {BidRequest[]} bidRequests
  * @return {*}
  */
-function buildCdbRequest(context, bidRequests) {
+function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   const request = {
     publisher: {
@@ -199,6 +206,14 @@ function buildCdbRequest(context, bidRequests) {
   };
   if (networkId) {
     request.publisher.networkid = networkId;
+  }
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    request.gdprConsent = {
+      gdprApplies: !!(bidderRequest.gdprConsent.gdprApplies),
+      consentData: bidderRequest.gdprConsent.consentString,
+      consentGiven: !!(bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+        bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]),
+    };
   }
   return request;
 }
@@ -243,39 +258,6 @@ function tryGetCriteoFastBid() {
     // Unable to get fast bid
   }
   return false;
-}
-
-// Register events to know when Criteo won the bid or timeouted
-let registeredEvents = false;
-function registerEventHandlers() {
-  if (registeredEvents) {
-    return;
-  }
-
-  registeredEvents = true;
-
-  events.on(EVENTS.BID_WON, (bid) => {
-    if (bid.bidderCode === 'criteo') {
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleBidWon(bid);
-    }
-  });
-
-  events.on(EVENTS.BID_TIMEOUT, (timedOutBidders) => {
-    timedOutBidders
-      .filter(bidder => bidder.bidder === 'criteo')
-      .map(bidder => {
-        const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bidder.auctionId);
-        adapter.handleBidTimeout();
-      });
-  });
-
-  events.on(EVENTS.SET_TARGETING, () => {
-    const adapters = Criteo.PubTag.Adapters.Prebid.GetAllAdapters();
-    for (const k in adapters) {
-      adapters[k].handleSetTargeting();
-    }
-  });
 }
 
 registerBidder(spec);

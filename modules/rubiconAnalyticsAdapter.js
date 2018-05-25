@@ -376,9 +376,11 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         switch (args.getStatusCode()) {
           case GOOD:
             bid.status = 'success';
+            delete bid.error; // it's possible for this to be set by a previous timeout
             break;
           case NO_BID:
             bid.status = 'no-bid';
+            delete bid.error;
             break;
           default:
             bid.status = 'error';
@@ -387,14 +389,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
-        if (typeof args.serverResponseTimeMs !== 'undefined') {
-          bid.serverLatencyMillis = args.serverResponseTimeMs;
-        }
         bid.bidResponse = parseBidResponse(args);
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {
-          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId];
+          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.adId];
+          if (typeof bid.serverResponseTimeMs !== 'undefined') {
+            cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
+          }
           if (!cachedBid.status) {
             cachedBid.status = 'no-bid';
           }
@@ -433,7 +435,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       case BID_TIMEOUT:
         args.forEach(badBid => {
           let auctionCache = cache.auctions[badBid.auctionId];
-          let bid = auctionCache.bids[badBid.bidId];
+          let bid = auctionCache.bids[badBid.bidId || badBid.adId];
           bid.status = 'error';
           bid.error = {
             code: 'timeout-error'
