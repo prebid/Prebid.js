@@ -92,7 +92,7 @@ export const spec = {
           pos: params.pos || 0,
           topframe: getTopFrame()
         };
-      } else if (mediaTypes && mediaTypes.video) {
+      } else if (mediaTypes.video) {
         imp.video = {
           w: sizes.length ? sizes[ 0 ][ 0 ] : 300,
           h: sizes.length ? sizes[ 0 ][ 1 ] : 250,
