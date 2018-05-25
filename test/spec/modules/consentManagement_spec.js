@@ -235,19 +235,19 @@ describe('consentManagement', function () {
       }
 
       function cmpMessageHandler(event) {
-        if(event && event.data) {
+        if (event && event.data) {
           var data = event.data;
           if (data.__cmpCall) {
             var callId = data.__cmpCall.callId;
             var returnValue = null;
             var response = {
               __cmpReturn: {
-                  callId,
-                  returnValue: {
-                    consentData: 'encoded_consent_data_via_post_message',
-                    gdprApplies: true,
-                  },
-                  success: true
+                callId,
+                returnValue: {
+                  consentData: 'encoded_consent_data_via_post_message',
+                  gdprApplies: true,
+                },
+                success: true
               }
             };
             event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
