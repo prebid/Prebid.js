@@ -21,79 +21,79 @@
 
     <script>
 
-		var pbjs = pbjs || {};
-		pbjs.que = pbjs.que || [];
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
 
-		/*
-         Prebid Video adUnit
-         */
+      /*
+       Prebid Video adUnit
+       */
 
-		var videoAdUnit = {
-			code: 'video1',
-			sizes: [640,480],
-			mediaTypes: {
-				video: {context: 'instream'}
-			},
-			bids: [
-				{
-					bidder: 'appnexusAst',
-					params: {
-						placementId: '9333431',
-						video: {
-							skipppable: false,
-							playback_methods: ['auto_play_sound_off']
-						}
-					}
-				}
-			]
-		};
+      var videoAdUnit = {
+        code: 'video1',
+        sizes: [640,480],
+        mediaTypes: {
+          video: {context: 'instream'}
+        },
+        bids: [
+          {
+            bidder: 'appnexusAst',
+            params: {
+              placementId: '9333431',
+              video: {
+                skipppable: false,
+                playback_methods: ['auto_play_sound_off']
+              }
+            }
+          }
+        ]
+      };
 
-		pbjs.que.push(function(){
-			pbjs.addAdUnits(videoAdUnit);
-			pbjs.requestBids({
-				timeout : 700,
-				bidsBackHandler : function(bids) {
-					var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-						adUnit: videoAdUnit,
-						params: {
-							iu: '/19968336/prebid_cache_video_adunit'
-						}
-					});
+      pbjs.que.push(function(){
+        pbjs.addAdUnits(videoAdUnit);
+        pbjs.requestBids({
+          timeout : 700,
+          bidsBackHandler : function(bids) {
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+              adUnit: videoAdUnit,
+              params: {
+                iu: '/19968336/prebid_cache_video_adunit'
+              }
+            });
 
-					invokeVideoPlayer(videoUrl);
-				}
-			});
-		});
+            invokeVideoPlayer(videoUrl);
+          }
+        });
+      });
 
-		pbjs.bidderSettings =
-			{
-				standard: {
-					adserverTargeting: [
-						{
-							key: "hb_bidder",
-							val: function (bidResponse) {
-								return bidResponse.bidderCode;
-							}
-						}, {
-							key: "hb_adid",
-							val: function (bidResponse) {
-								return bidResponse.adId;
-							}
-						}, {
-							key: "hb_pb",
-							val: function (bidResponse) {
-								return "10.00";
-							}
-						}, {
-							key: "hb_size",
-							val: function (bidResponse) {
-								return bidResponse.size;
+      pbjs.bidderSettings =
+        {
+          standard: {
+            adserverTargeting: [
+              {
+                key: "hb_bidder",
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: "hb_adid",
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: "hb_pb",
+                val: function (bidResponse) {
+                  return "10.00";
+                }
+              }, {
+                key: "hb_size",
+                val: function (bidResponse) {
+                  return bidResponse.size;
 
-							}
-						}
-					]
-				}
-			};
+                }
+              }
+            ]
+          }
+        };
     </script>
 </head>
 
@@ -116,20 +116,20 @@
 </div>
 
 <script>
-	function invokeVideoPlayer(url) {
-		videojs("vid1").ready(function() {
-			this.vastClient({
-				adTagUrl: url,
-				playAdAlways: true,
-				verbosity: 4,
-				vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-				autoplay: true
-			});
+  function invokeVideoPlayer(url) {
+    videojs("vid1").ready(function() {
+      this.vastClient({
+        adTagUrl: url,
+        playAdAlways: true,
+        verbosity: 4,
+        vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
+        autoplay: true
+      });
 
-			this.muted(true);
-			this.play();
-		});
-	}
+      this.muted(true);
+      this.play();
+    });
+  }
 
 </script>
 </body>
