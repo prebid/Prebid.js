@@ -130,7 +130,7 @@ export const spec = {
       };
       if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
         outBids.push(Object.assign({}, outBid, { ad: bid.adm }));
-      } else if ( bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video) {
+      } else if (bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video) {
         outBids.push(Object.assign({}, outBid, { vastXml: bid.adm }));
       }
     });
