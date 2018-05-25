@@ -4,7 +4,7 @@ import { parse } from 'src/url';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 
-const ADAPTER_VERSION = 7;
+const ADAPTER_VERSION = 8;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
