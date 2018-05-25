@@ -236,9 +236,11 @@ function addClickListener(iframe) {
 function impHandler(iframe) {
   let timestamp = new Date().toISOString();
   let requestId = generateUUID();
+  let adContainerId = iframe.parentElement.parentElement.id;
   let impression = {
     timestamp,
     'request_id': requestId,
+    'tag_id': adContainerId
   };
   if (rivrAnalytics.context.queue) {
     rivrAnalytics.context.queue.push(impression);
