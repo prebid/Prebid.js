@@ -125,7 +125,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window.__cmp = function(cmd, arg, callback) {
       if (!cmpFrame) {
-        removePostMessageListener()
+        removePostMessageListener();
 
         let errmsg = 'CMP not found';
         return cmpError(errmsg, hookConfig);
