@@ -186,7 +186,7 @@ describe('GambidAdapter', () => {
       'bidid': 'imp_5b05b9fde4b09084267a556f',
       'cur': 'USD',
       'ext': {
-        'pixels': [
+        'utrk': [
           { 'type': 'iframe', 'url': '//p.gsh.io/user/sync/1' },
           { 'type': 'image', 'url': '//p.gsh.io/user/sync/2' }
         ]
@@ -210,7 +210,7 @@ describe('GambidAdapter', () => {
               'h': 600,
               'w': 120,
               'ext': {
-                'pixels': [
+                'utrk': [
                   { 'type': 'iframe', 'url': '//p.partner1.io/user/sync/1' }
                 ]
               }
@@ -235,7 +235,7 @@ describe('GambidAdapter', () => {
               'h': 250,
               'w': 300,
               'ext': {
-                'pixels': [
+                'utrk': [
                   { 'type': 'image', 'url': '//p.partner2.io/user/sync/1' }
                 ]
               }
