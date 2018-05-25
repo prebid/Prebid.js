@@ -53,7 +53,9 @@ describe('gjirafaAdapterTest', () => {
       'sizes': [[728, 90], [980, 200], [980, 150], [970, 90], [970, 250]],
       'bidId': '10bdc36fe0b48c8',
       'bidderRequestId': '70deaff71c281d',
-      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc'
+      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc',
+	  'consent_string': 'consentString',
+	  'consent_required': 'true'
     },
     {
       'bidder': 'gjirafa',
@@ -67,7 +69,9 @@ describe('gjirafaAdapterTest', () => {
       'sizes': [[300, 250]],
       'bidId': '81a6dcb65e2bd9',
       'bidderRequestId': '70deaff71c281d',
-      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc'
+      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc',
+	  'consent_string': 'consentString',
+	  'consent_required': 'true'
     }];
 
     it('bidRequest HTTP method', () => {
@@ -96,6 +100,14 @@ describe('gjirafaAdapterTest', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].data.sizes).to.equal('728x90;980x200;980x150;970x90;970x250');
       expect(requests[1].data.sizes).to.equal('300x250');
+    });
+
+    it('should add GDPR data', () => {
+      const requests = spec.buildRequests(bidRequests);
+	  expect(requests[0].data.consent_string).to.exists;
+	  expect(requests[0].data.consent_required).to.exists;
+	  expect(requests[1].data.consent_string).to.exists;
+	  expect(requests[1].data.consent_required).to.exists;
     });
   });
 

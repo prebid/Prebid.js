@@ -73,6 +73,15 @@ export const spec = {
     if (member > 0) {
       payload.member_id = member;
     }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      // note - objects for impbus use underscore instead of camelCase
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -227,6 +236,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers,
     };
     if (nativeAd.main_img) {
       bid['native'].image = {

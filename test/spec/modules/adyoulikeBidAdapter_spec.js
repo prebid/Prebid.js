@@ -190,6 +190,28 @@ describe('Adyoulike Adapter', () => {
       canonicalQuery.restore();
     });
 
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'adyoulike',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdprConsent).to.exist;
+      expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
+    });
+
     it('sends bid request to endpoint with single placement', () => {
       const request = spec.buildRequests(bidRequestWithSinglePlacement);
       const payload = JSON.parse(request.data);

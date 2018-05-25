@@ -19,7 +19,8 @@ describe('ReadPeakAdapter', () => {
       },
       params: {
         bidfloor: 5.00,
-        publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+        publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77'
       },
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
@@ -63,8 +64,8 @@ describe('ReadPeakAdapter', () => {
               img: {
                 type: 3,
                 url: 'http://url.to/image',
-                w: 320,
-                h: 200,
+                w: 750,
+                h: 500,
               },
             }],
             link: {
@@ -97,7 +98,7 @@ describe('ReadPeakAdapter', () => {
           'publisher': {
             'id': '11bc5dd5-7421-4dd8-c926-40fa653bec76'
           },
-          'id': '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+          'id': '11bc5dd5-7421-4dd8-c926-40fa653bec77',
           'ref': '',
           'page': 'http://localhost',
           'domain': 'localhost'
@@ -151,15 +152,17 @@ describe('ReadPeakAdapter', () => {
       const request = spec.buildRequests([ bidRequest ]);
 
       const data = JSON.parse(request.data);
-      expect(data.isPrebid).to.equal(true);
+
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
       expect(data.id).to.equal(bidRequest.bidderRequestId)
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
       expect(data.site).to.deep.equal({
         publisher: {
           id: bidRequest.params.publisherId,
+          domain: 'http://localhost:9876',
         },
-        id: bidRequest.params.publisherId,
+        id: bidRequest.params.siteId,
         ref: window.top.document.referrer,
         page: utils.getTopWindowLocation().href,
         domain: utils.getTopWindowLocation().hostname,
@@ -188,7 +191,7 @@ describe('ReadPeakAdapter', () => {
 
       expect(bidResponse.native.title).to.equal('Title')
       expect(bidResponse.native.body).to.equal('Description')
-      expect(bidResponse.native.image).to.equal('http://url.to/image')
+      expect(bidResponse.native.image).to.deep.equal({url: 'http://url.to/image', width: 750, height: 500})
       expect(bidResponse.native.clickUrl).to.equal('http%3A%2F%2Furl.to%2Ftarget')
       expect(bidResponse.native.impressionTrackers).to.contain('http://url.to/pixeltracker')
     });

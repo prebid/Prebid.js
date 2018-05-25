@@ -18,7 +18,8 @@ Module that connects to Colossus SSP demand sources
                 bids: [{
                         bidder: 'colossusssp',
                         params: {
-                            placement_id: 0
+                            placement_id: 0,
+                            traffic: 'banner'
                         }
                     }]
                 }

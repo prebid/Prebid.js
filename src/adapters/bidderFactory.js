@@ -191,7 +191,7 @@ export function newBidder(spec) {
         // As soon as that is refactored, we can move this emit event where it should be, within the done function.
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
 
-        registerSyncs(responses);
+        registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -327,12 +327,12 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses) {
+  function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
       let syncs = spec.getUserSyncs({
         iframeEnabled: config.getConfig('userSync.iframeEnabled'),
         pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-      }, responses);
+      }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];

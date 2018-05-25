@@ -11,18 +11,22 @@ const bid = {
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
   }
 };
 
 describe('native.js', () => {
   let triggerPixelStub;
+  let insertHtmlIntoIframeStub;
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
   afterEach(() => {
     utils.triggerPixel.restore();
+    utils.insertHtmlIntoIframe.restore();
   });
 
   it('gets native targeting keys', () => {
@@ -36,6 +40,7 @@ describe('native.js', () => {
     fireNativeTrackers({}, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
+    sinon.assert.calledWith(insertHtmlIntoIframeStub, bid.native.javascriptTrackers);
   });
 
   it('fires click trackers', () => {
@@ -91,6 +96,7 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };
@@ -114,6 +120,7 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };
@@ -137,6 +144,7 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };

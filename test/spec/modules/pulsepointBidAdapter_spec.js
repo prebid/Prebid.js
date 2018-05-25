@@ -273,4 +273,25 @@ describe('PulsePoint Adapter Tests', () => {
     expect(ortbRequest.app.storeurl).to.equal('http://pulsepoint.com/apps');
     expect(ortbRequest.app.domain).to.equal('pulsepoint.com');
   });
+
+  it('Verify GDPR', () => {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gpdr_data'
+      }
+    };
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
+    // user object
+    expect(ortbRequest.user).to.not.equal(null);
+    expect(ortbRequest.user.ext).to.not.equal(null);
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
+    // regs object
+    expect(ortbRequest.regs).to.not.equal(null);
+    expect(ortbRequest.regs.ext).to.not.equal(null);
+    expect(ortbRequest.regs.ext.gdpr).to.equal(1);
+  });
 });

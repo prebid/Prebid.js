@@ -13,7 +13,10 @@ describe('Platform.io Adapter Tests', () => {
       siteId: '26047',
       placementId: '123',
       size: '300x250',
-      bidFloor: '0.001'
+      bidFloor: '0.001',
+      ifa: 'IFA',
+      latitude: '40.712775',
+      longitude: '-74.005973'
     }
   }, {
     placementCode: '/DfpAccount2/slot2',
@@ -24,7 +27,7 @@ describe('Platform.io Adapter Tests', () => {
       siteId: '26047',
       placementId: '1234',
       size: '728x90',
-      bidFloor: '0.000001'
+      bidFloor: '0.000001',
     }
   }];
   const nativeSlotConfig = [{
@@ -58,6 +61,21 @@ describe('Platform.io Adapter Tests', () => {
       size: '640x480'
     }
   }];
+  const appSlotConfig = [{
+    placementCode: '/DfpAccount1/slot5',
+    bidId: 'bid12345',
+    params: {
+      pubId: '29521',
+      placementId: '1234',
+      app: {
+        id: '1111',
+        name: 'app name',
+        bundle: 'io.platform.apps',
+        storeUrl: 'http://platform.io/apps',
+        domain: 'platform.io'
+      }
+    }
+  }];
 
   it('Verify build request', () => {
     const request = spec.buildRequests(slotConfigs);
@@ -74,6 +92,9 @@ describe('Platform.io Adapter Tests', () => {
     // device object
     expect(ortbRequest.device).to.not.equal(null);
     expect(ortbRequest.device.ua).to.equal(navigator.userAgent);
+    expect(ortbRequest.device.ifa).to.equal('IFA');
+    expect(ortbRequest.device.geo.lat).to.equal('40.712775');
+    expect(ortbRequest.device.geo.lon).to.equal('-74.005973');
     // slot 1
     expect(ortbRequest.imp[0].tagid).to.equal('123');
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
@@ -277,5 +298,19 @@ describe('Platform.io Adapter Tests', () => {
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
     expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
     expect(spec.isBidRequestValid(videoSlotConfig[0])).to.equal(true);
+  });
+
+  it('Verify app requests', () => {
+    const request = spec.buildRequests(appSlotConfig);
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest.site).to.equal(null);
+    expect(ortbRequest.app).to.not.be.null;
+    expect(ortbRequest.app.publisher).to.not.equal(null);
+    expect(ortbRequest.app.publisher.id).to.equal('29521');
+    expect(ortbRequest.app.id).to.equal('1111');
+    expect(ortbRequest.app.name).to.equal('app name');
+    expect(ortbRequest.app.bundle).to.equal('io.platform.apps');
+    expect(ortbRequest.app.storeurl).to.equal('http://platform.io/apps');
+    expect(ortbRequest.app.domain).to.equal('platform.io');
   });
 });
