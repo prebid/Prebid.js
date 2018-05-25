@@ -376,8 +376,7 @@ describe('Unit: Prebid Module', function () {
     let auction;
     let ajaxStub;
     let cbTimeout = 3000;
-    let auctionManagerInstance = newAuctionManager();
-    let targeting = newTargeting(auctionManagerInstance);
+    let targeting;
 
     let RESPONSE = {
       'version': '0.0.1',
@@ -454,6 +453,8 @@ describe('Unit: Prebid Module', function () {
     })
 
     beforeEach(() => {
+      let auctionManagerInstance = newAuctionManager();
+      targeting = newTargeting(auctionManagerInstance);
       let adUnits = [{
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300, 600]],
