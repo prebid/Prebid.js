@@ -190,7 +190,7 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   aliases: ['stickyadstv'], //  former name for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.

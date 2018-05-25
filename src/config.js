@@ -10,6 +10,7 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { createHook } from 'src/hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -113,6 +114,26 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      _mediaTypePriceGranularity: {},
+      get mediaTypePriceGranularity() {
+        return this._mediaTypePriceGranularity;
+      },
+      set mediaTypePriceGranularity(val) {
+        this._mediaTypePriceGranularity = Object.keys(val).reduce((aggregate, item) => {
+          if (validatePriceGranularity(val[item])) {
+            if (typeof val === 'string') {
+              aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
+            } else if (typeof val === 'object') {
+              aggregate[item] = val[item];
+              utils.logMessage(`Using custom price granularity for ${item}`);
+            }
+          } else {
+            utils.logWarn(`Invalid price granularity for media type: ${item}`);
+          }
+          return aggregate;
+        }, {});
+      },
+
       _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
       get enableSendAllBids() {
         return this._sendAllBids;
@@ -188,7 +209,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  function setConfig(options) {
+  let setConfig = createHook('asyncSeries', function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;
@@ -208,7 +229,7 @@ export function newConfig() {
     });
 
     callSubscribers(topicalConfig);
-  }
+  });
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of

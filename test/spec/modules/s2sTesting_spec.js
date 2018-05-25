@@ -13,7 +13,7 @@ describe('s2sTesting', function () {
   let randomNumber = 0;
 
   beforeEach(() => {
-    mathRandomStub = sinon.stub(Math, 'random', () => { return randomNumber; });
+    mathRandomStub = sinon.stub(Math, 'random').callsFake(() => { return randomNumber; });
   });
 
   afterEach(() => {
