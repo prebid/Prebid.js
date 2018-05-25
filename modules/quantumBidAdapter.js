@@ -58,7 +58,7 @@ export const spec = {
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
-        payload.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies;
+        payload.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
       };
 
       const url = devEnpoint || ENDPOINT_URL;
