@@ -114,7 +114,7 @@ export const spec = {
           height: Number(height),
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
-          creativeId: bid.sbi_aid,
+          creativeId: bid.sbi_crid || bid.sbi_aid,
           netRevenue: true,
           currency: 'USD'
         };

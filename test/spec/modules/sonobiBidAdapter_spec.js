@@ -237,6 +237,7 @@ describe('SonobiBidAdapter', () => {
           '/7780971/sparks_prebid_LB|30b31c1838de1f': {
             'sbi_size': '300x600',
             'sbi_apoc': 'remnant',
+            'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b039',
             'sbi_mouse': 1.07,
           },
@@ -268,7 +269,7 @@ describe('SonobiBidAdapter', () => {
         'height': 600,
         'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=localhost:9876"></script>',
         'ttl': 500,
-        'creativeId': '30292e432662bd5f86d90774b944b039',
+        'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD'
       },
