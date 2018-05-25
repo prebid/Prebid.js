@@ -70,8 +70,8 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
   try {
     cmpFunction = window.__cmp || utils.getWindowTop().__cmp;
-  } catch(e) {}
-  
+  } catch (e) {}
+
   if (utils.isFn(cmpFunction)) {
     cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
     cmpFunction('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
