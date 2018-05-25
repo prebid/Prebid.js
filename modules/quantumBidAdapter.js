@@ -25,7 +25,7 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
       const qtxRequest = {};
       let bidId = '';
@@ -55,6 +55,12 @@ export const spec = {
         bidId = bid.bidId;
       }
       qtxRequest.auid = placementId;
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
+        payload.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies;
+      };
+
       const url = devEnpoint || ENDPOINT_URL;
 
       return {
@@ -64,7 +70,8 @@ export const spec = {
         mediaType: mediaType,
         renderMode: renderMode,
         url: url,
-        'data': qtxRequest
+        'data': qtxRequest,
+        bidderRequest
       };
     });
   },
