@@ -5,7 +5,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Sonobi - Prebid.js video adUnit example</title>
+    <title>Prebid.js video adUnit example</title>
 
     <!-- videojs -->
     <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">
@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="../../build/dist/prebid.js" async=true></script>
+    <script src="../../build/dev/prebid.js" async=true></script>
 
 
     <script>
@@ -30,16 +30,19 @@
 
 		var videoAdUnit = {
 			code: 'video1',
-			sizes: [640, 480],
+			sizes: [640,480],
 			mediaTypes: {
 				video: {context: 'instream'}
 			},
 			bids: [
 				{
-					bidder: 'sonobi',
+					bidder: 'appnexusAst',
 					params: {
-						sizes: [],
-						placement_id: '92e95368e86639dbd86d'
+						placementId: '9333431',
+						video: {
+							skipppable: false,
+							playback_methods: ['auto_play_sound_off']
+						}
 					}
 				}
 			]
@@ -48,18 +51,15 @@
 		pbjs.que.push(function(){
 			pbjs.addAdUnits(videoAdUnit);
 			pbjs.requestBids({
-				timeout : 200000,
+				timeout : 700,
 				bidsBackHandler : function(bids) {
 					var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
 						adUnit: videoAdUnit,
 						params: {
-							cust_params: {
-								hb_vid: bids.video1.bids[0].aid
-							},
-							iu: '/7780971/apex_jwplayer_video'
+							iu: '/19968336/prebid_cache_video_adunit'
 						}
 					});
-					console.log(videoUrl)
+
 					invokeVideoPlayer(videoUrl);
 				}
 			});
@@ -85,7 +85,7 @@
 								return "10.00";
 							}
 						}, {
-							key: "hb_size ",
+							key: "hb_size",
 							val: function (bidResponse) {
 								return bidResponse.size;
 
@@ -99,7 +99,7 @@
 
 <body>
 
-<h2>Sonobi Prebid Video -- video.js</h2>
+<h2>Prebid Video -- video.js</h2>
 
 <div class="example-video-container">
 
@@ -122,9 +122,8 @@
 				adTagUrl: url,
 				playAdAlways: true,
 				verbosity: 4,
-				timeout: 200000,
 				vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-				autoplay: true,
+				autoplay: true
 			});
 
 			this.muted(true);
