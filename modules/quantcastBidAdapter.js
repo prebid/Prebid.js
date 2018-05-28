@@ -96,7 +96,6 @@ export const spec = {
         },
         bidId: bid.bidId
       };
-    });
 
       const data = JSON.stringify(requestData);
 
