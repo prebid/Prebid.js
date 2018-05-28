@@ -58,6 +58,39 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
+  it('gets custom bucket strings and it should honor 0', () => {
+    let cpm = 16.50908;
+    let customConfig = {
+      'buckets': [
+        {
+          'precision': 0,
+          'min': 3,
+          'max': 18,
+          'increment': 0.05,
+        }
+      ]
+    };
+    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"17"}';
+    let output = getPriceBucketString(cpm, customConfig);
+    expect(JSON.stringify(output)).to.deep.equal(expected);
+  });
+
+  it('gets the custom bucket strings without passing precision and it should honor the default precision', () => {
+    let cpm = 16.50908;
+    let customConfig = {
+      'buckets': [
+        {
+          'min': 3,
+          'max': 18,
+          'increment': 0.05,
+        }
+      ]
+    };
+    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.50"}';
+    let output = getPriceBucketString(cpm, customConfig);
+    expect(JSON.stringify(output)).to.deep.equal(expected);
+  });
+
   it('checks whether custom config is valid', () => {
     let badConfig = {
       'buckets': [{

@@ -1,174 +1,132 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
+import { registerBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
 
-var BIDDER_CODE = 'huddledmasses';
+const BIDDER_CODE = 'huddledmasses';
+const URL = '//huddledmassessupply.com/?c=o&m=multi';
+const URL_SYNC = '//huddledmassessupply.com/?c=o&m=cookie';
 
-var sizeObj = {
-  1: '468x60',
-  2: '728x90',
-  10: '300x600',
-  15: '300x250',
-  19: '300x100',
-  43: '320x50',
-  44: '300x50',
-  48: '300x300',
-  54: '300x1050',
-  55: '970x90',
-  57: '970x250',
-  58: '1000x90',
-  59: '320x80',
-  65: '640x480',
-  67: '320x480',
-  72: '320x320',
-  73: '320x160',
-  83: '480x300',
-  94: '970x310',
-  96: '970x210',
-  101: '480x320',
-  102: '768x1024',
-  113: '1000x300',
-  117: '320x100',
-  118: '800x250',
-  119: '200x600'
+let sizeObj = {
+  '468x60': 1,
+  '728x90': 2,
+  '300x600': 10,
+  '300x250': 15,
+  '300x100': 19,
+  '320x50': 43,
+  '300x50': 44,
+  '300x300': 48,
+  '300x1050': 54,
+  '970x90': 55,
+  '970x250': 57,
+  '1000x90': 58,
+  '320x80': 59,
+  '640x480': 65,
+  '320x480': 67,
+  '320x320': 72,
+  '320x160': 73,
+  '480x300': 83,
+  '970x310': 94,
+  '970x210': 96,
+  '480x320': 101,
+  '768x1024': 102,
+  '1000x300': 113,
+  '320x100': 117,
+  '800x250': 118,
+  '200x600': 119
 };
 
 utils._each(sizeObj, (item, key) => sizeObj[item] = key);
 
-function HuddledMassesAdapter() {
-  function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
+export const spec = {
+  code: BIDDER_CODE,
 
-    bids.forEach((bid) => {
-      function bidCallback(responseText) {
-        try {
-          utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
-          handleRpCB(responseText, bid);
-        } catch (err) {
-          if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing huddledmasses response for placement code ${bid.placementCode}`);
-          } else {
-            utils.logError('Error processing huddledmasses response for placement code ' + bid.placementCode, null, err);
-          }
-          var badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-          badBid.bidderCode = bid.bidder;
-          badBid.error = err;
-          bidmanager.addBidResponse(bid.placementCode, badBid);
-        }
-      }
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: (bid) => {
+    return (!isNaN(bid.params.placement_id) &&
+    ((bid.params.sizes !== undefined && bid.params.sizes.length > 0 && bid.params.sizes.some((sizeIndex) => sizeObj[sizeIndex] !== undefined)) ||
+    (bid.sizes !== undefined && bid.sizes.length > 0 && bid.sizes.map((size) => `${size[0]}x${size[1]}`).some((size) => sizeObj[size] !== undefined))));
+  },
 
-      try {
-        ajax(buildOptimizedCall(bid), bidCallback, undefined, { withCredentials: true });
-      } catch (err) {
-        utils.logError('Error sending huddledmasses request for placement code ' + bid.placementCode, null, err);
-      }
-    });
-  }
-
-  function buildOptimizedCall(bid) {
-    bid.startTime = (new Date()).getTime();
-
-    var parsedSizes = HuddledMassesAdapter.masSizeOrdering(
-      Array.isArray(bid.params.sizes) ? bid.params.sizes.map(size => (sizeObj[size] || '').split('x')) : bid.sizes
-    );
-
-    if (parsedSizes.length < 1) {
-      throw 'no valid sizes';
-    }
-
-    var secure = 0;
-    var win;
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: (validBidRequests) => {
+    let winTop = window;
     try {
-      win = window.top;
+      window.top.location.toString();
+      winTop = window.top;
     } catch (e) {
-      win = window;
+      utils.logMessage(e);
+    };
+    let location = utils.getTopWindowLocation();
+    let placements = [];
+    let request = {
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      'secure': location.protocol === 'https:' ? 1 : 0,
+      'host': location.host,
+      'page': location.pathname,
+      'placements': placements
+    };
+    for (let i = 0; i < validBidRequests.length; i++) {
+      let bid = validBidRequests[i];
+      let placement = {};
+      placement['placementId'] = bid.params.placement_id;
+      placement['bidId'] = bid.bidId;
+      placement['sizes'] = bid.sizes;
+      placements.push(placement);
     }
+    return {
+      method: 'POST',
+      url: URL,
+      data: request
+    };
+  },
 
-    if (win.location.protocol !== 'http:') {
-      secure = 1;
-    }
-
-    var host = win.location.host;
-    var page = win.location.pathname;
-    var language = navigator.language;
-    var deviceWidth = win.screen.width;
-    var deviceHeight = win.screen.height;
-
-    var queryString = [
-      'banner_id', bid.params.placement_id,
-      'size_ad', parsedSizes[0],
-      'alt_size_ad', parsedSizes.slice(1).join(',') || [],
-      'host', host,
-      'page', page,
-      'language', language,
-      'deviceWidth', deviceWidth,
-      'deviceHeight', deviceHeight,
-      'secure', secure,
-      'bidId', bid.bidId,
-      'checkOn', 'rf'
-    ];
-
-    return queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined
-          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
-          : memo,
-      '//huddledmassessupply.com/?'
-    ).slice(0, -1);
-  }
-
-  function handleRpCB(responseText, bidRequest) {
-    var ad = JSON.parse(responseText);
-
-    var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-    bid.creative_id = ad.ad_id;
-    bid.bidderCode = bidRequest.bidder;
-    bid.cpm = ad.cpm || 0;
-    bid.ad = ad.adm;
-    bid.width = ad.width;
-    bid.height = ad.height;
-    bid.dealId = ad.deal;
-
-    bidmanager.addBidResponse(bidRequest.placementCode, bid);
-  }
-
-  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE huddledmasses
-    callBids: _callBids
-  });
-}
-
-HuddledMassesAdapter.masSizeOrdering = function (sizes) {
-  var MAS_SIZE_PRIORITY = [15, 2, 9];
-  return utils.parseSizesInput(sizes)
-    .reduce((result, size) => {
-      var mappedSize = parseInt(sizeObj[size], 10);
-      if (mappedSize) {
-        result.push(mappedSize);
-      }
-      return result;
-    }, [])
-    .sort((first, second) => {
-      var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
-
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: (serverResponse) => {
+    let response = [];
+    try {
+      serverResponse = serverResponse.body;
+      for (let i = 0; i < serverResponse.length; i++) {
+        let resItem = serverResponse[i];
+        if (resItem.width && !isNaN(resItem.width) &&
+            resItem.height && !isNaN(resItem.height) &&
+            resItem.requestId && typeof resItem.requestId === 'string' &&
+            resItem.cpm && !isNaN(resItem.cpm) &&
+            resItem.ad && typeof resItem.ad === 'string' &&
+            resItem.ttl && !isNaN(resItem.ttl) &&
+            resItem.creativeId && typeof resItem.creativeId === 'string' &&
+            resItem.netRevenue && typeof resItem.netRevenue === 'boolean' &&
+            resItem.currency && typeof resItem.currency === 'string') {
+          response.push(resItem);
         }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
       }
+    } catch (e) {
+      utils.logMessage(e);
+    };
+    return response;
+  },
 
-      return first - second;
-    });
+  getUserSyncs: () => {
+    return [{
+      type: 'image',
+      url: URL_SYNC
+    }];
+  }
 };
 
-adaptermanager.registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');
-
-module.exports = HuddledMassesAdapter;
+registerBidder(spec);

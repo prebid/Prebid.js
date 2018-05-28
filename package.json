@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.28.0",
+  "version": "0.34.12",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -33,6 +33,7 @@
     "chai": "^3.3.0",
     "coveralls": "^2.11.11",
     "del": "^2.2.0",
+    "documentation": "^5.2.2",
     "ejs": "^2.5.1",
     "es5-shim": "^4.5.2",
     "eslint-config-standard": "^10.2.1",
@@ -47,11 +48,12 @@
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.0.0",
+    "gulp-documentation": "^3.2.1",
     "gulp-eslint": "^4.0.0",
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
-    "gulp-jsdoc-to-markdown": "^1.2.1",
+    "gulp-js-escape": "^1.0.1",
     "gulp-optimize-js": "^1.1.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
@@ -59,6 +61,7 @@
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.0",
     "gulp-webdriver": "^1.0.1",
+    "ignore-loader": "^0.1.2",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.0",
     "json-loader": "^0.5.1",
@@ -106,6 +109,7 @@
     "ajv-keywords": "^3.1.0",
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
-    "gulp-sourcemaps": "^2.6.0"
+    "gulp-sourcemaps": "^2.6.0",
+    "just-clone": "^1.0.2"
   }
 }

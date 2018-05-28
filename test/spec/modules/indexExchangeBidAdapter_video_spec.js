@@ -8,7 +8,7 @@ const PREBID_REQUEST = { 'bidderCode': 'indexExchange', 'requestId': '6f4cb846-1
 
 const CYGNUS_REQUEST_R_PARAM = { 'id': '16940e979c42d4', 'imp': [{ 'id': '2f4e1cc0f992f2', 'ext': { 'siteID': 6, 'sid': 'pr_1_1_s' }, 'video': { 'protocols': [2, 5, 3, 6], 'maxduration': 15, 'minduration': 0, 'startdelay': 0, 'linearity': 1, 'mimes': ['video/mp4', 'video/webm'], 'w': 640, 'h': 480 } }], 'site': { 'page': 'http://localhost:9876/' }};
 
-const PREBID_RESPONSE = { 'bidderCode': 'indexExchange', 'width': 640, 'height': 480, 'statusMessage': 'Bid available', 'adId': '2f4e1cc0f992f2', 'code': 'indexExchange', 'cpm': 10, 'vastUrl': 'http://vast.url', 'descriptionUrl': 'http://vast.url' };
+const PREBID_RESPONSE = { 'bidderCode': 'indexExchange', 'width': 640, 'height': 480, 'statusMessage': 'Bid available', 'adId': '2f4e1cc0f992f2', 'code': 'indexExchange', 'cpm': 10, 'vastUrl': 'http://vast.url' };
 
 const CYGNUS_RESPONSE = { 'seatbid': [{ 'bid': [{ 'crid': '1', 'adomain': ['vastdsp.com'], 'adid': '1', 'impid': '2f4e1cc0f992f2', 'cid': '1', 'id': '1', 'ext': { 'vasturl': 'http://vast.url', 'errorurl': 'http://error.url', 'dspid': 1, 'pricelevel': '_1000', 'advbrandid': 75, 'advbrand': 'Nacho Momma' } }], 'seat': '1' }], 'cur': 'USD', 'id': '16940e979c42d4' };
 
@@ -944,7 +944,6 @@ describe('indexExchange adapter - Video', () => {
           expect(response).to.have.property('statusMessage', PREBID_RESPONSE.statusMessage);
           expect(response).to.have.property('cpm', PREBID_RESPONSE.cpm);
           expect(response).to.have.property('vastUrl', PREBID_RESPONSE.vastUrl);
-          expect(response).to.have.property('descriptionUrl', PREBID_RESPONSE.descriptionUrl);
           expect(response).to.have.property('width', PREBID_RESPONSE.width);
           expect(response).to.have.property('height', PREBID_RESPONSE.height);
         });

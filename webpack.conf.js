@@ -19,7 +19,7 @@ module.exports = {
     ],
   },
   output: {
-    jsonpFunction: 'pbjsChunk'
+    jsonpFunction: prebid.globalVarName+"Chunk"
   },
   module: {
     rules: [
@@ -50,6 +50,10 @@ module.exports = {
       {
         test: /\.json$/,
         loader: 'json-loader'
+      },
+      {
+        test: /\.md$/,
+        loader: 'ignore-loader'
       },
       {
         test: /constants.json$/,

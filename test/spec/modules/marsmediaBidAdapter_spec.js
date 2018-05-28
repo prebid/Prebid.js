@@ -75,6 +75,7 @@ describe('MarsMedia adapter implementation', () => {
 
   afterEach(() => {
     sandbox.restore();
+    server.restore();
   });
 
   describe('should receive a valid request bid -', () => {

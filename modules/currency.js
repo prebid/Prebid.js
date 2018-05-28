@@ -13,9 +13,6 @@ var conversionCache = {};
 var currencyRatesLoaded = false;
 var adServerCurrency = 'USD';
 
-// Used as reference to the original bidmanager.addBidResponse
-var originalBidResponse;
-
 export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
@@ -81,12 +78,9 @@ function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
 
-  if (!originalBidResponse) {
-    utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
+  utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-    originalBidResponse = bidmanager.addBidResponse;
-    bidmanager.addBidResponse = addBidResponseDecorator(bidmanager.addBidResponse);
-  }
+  bidmanager.addBidResponse.addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
     ajax(url, function (response) {
@@ -103,12 +97,9 @@ function initCurrency(url) {
 }
 
 function resetCurrency() {
-  if (originalBidResponse) {
-    utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
+  utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-    bidmanager.addBidResponse = originalBidResponse;
-    originalBidResponse = undefined;
-  }
+  bidmanager.addBidResponse.removeHook(addBidResponseHook);
 
   adServerCurrency = 'USD';
   conversionCache = {};
@@ -118,37 +109,35 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseDecorator(fn) {
-  return function(adUnitCode, bid) {
-    if (!bid) {
-      return fn.apply(this, arguments); // if no bid, call original and let it display warnings
-    }
+export function addBidResponseHook(adUnitCode, bid, fn) {
+  if (!bid) {
+    return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+  }
 
-    let bidder = bid.bidderCode || bid.bidder;
-    if (bidderCurrencyDefault[bidder]) {
-      let currencyDefault = bidderCurrencyDefault[bidder];
-      if (bid.currency && currencyDefault !== bid.currency) {
-        utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
-      } else {
-        bid.currency = currencyDefault;
-      }
+  let bidder = bid.bidderCode || bid.bidder;
+  if (bidderCurrencyDefault[bidder]) {
+    let currencyDefault = bidderCurrencyDefault[bidder];
+    if (bid.currency && currencyDefault !== bid.currency) {
+      utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
+    } else {
+      bid.currency = currencyDefault;
     }
+  }
 
-    // default to USD if currency not set
-    if (!bid.currency) {
-      utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
-      bid.currency = 'USD';
-    }
+  // default to USD if currency not set
+  if (!bid.currency) {
+    utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
+    bid.currency = 'USD';
+  }
 
-    // execute immediately if the bid is already in the desired currency
-    if (bid.currency === adServerCurrency) {
-      return fn.apply(this, arguments);
-    }
+  // execute immediately if the bid is already in the desired currency
+  if (bid.currency === adServerCurrency) {
+    return fn.apply(this, arguments);
+  }
 
-    bidResponseQueue.push(wrapFunction(fn, this, arguments));
-    if (!currencySupportEnabled || currencyRatesLoaded) {
-      processBidResponseQueue();
-    }
+  bidResponseQueue.push(wrapFunction(fn, this, arguments));
+  if (!currencySupportEnabled || currencyRatesLoaded) {
+    processBidResponseQueue();
   }
 }
 

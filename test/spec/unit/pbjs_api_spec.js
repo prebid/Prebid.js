@@ -140,7 +140,7 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
-  })
+  });
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(() => {
       resetAuction();
@@ -373,57 +373,25 @@ describe('Unit: Prebid Module', function () {
     it('should get correct hb_pb when using bid.cpm is between 0 to 5', () => {
       bid.cpm = 2.1234;
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      var expected = {
-        '/19968336/header-bid-tag-0': {
-          hb_adid: '275bd666f5a5a5d',
-          hb_bidder: 'brealtime',
-          hb_pb: '2.12',
-          hb_size: '300x250'
-        }
-      }
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()['/19968336/header-bid-tag-0'].hb_pb).to.equal('2.12');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 5 to 8', () => {
       bid.cpm = 6.78;
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      var expected = {
-        '/19968336/header-bid-tag-0': {
-          hb_adid: '275bd666f5a5a5d',
-          hb_bidder: 'brealtime',
-          hb_pb: '6.75',
-          hb_size: '300x250'
-        }
-      }
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()['/19968336/header-bid-tag-0'].hb_pb).to.equal('6.75');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 8 to 20', () => {
       bid.cpm = 19.5234;
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      var expected = {
-        '/19968336/header-bid-tag-0': {
-          hb_adid: '275bd666f5a5a5d',
-          hb_bidder: 'brealtime',
-          hb_pb: '19.50',
-          hb_size: '300x250'
-        }
-      }
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()['/19968336/header-bid-tag-0'].hb_pb).to.equal('19.50');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 20 to 25', () => {
       bid.cpm = 21.5234;
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      var expected = {
-        '/19968336/header-bid-tag-0': {
-          hb_adid: '275bd666f5a5a5d',
-          hb_bidder: 'brealtime',
-          hb_pb: '21.00',
-          hb_size: '300x250'
-        }
-      }
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()['/19968336/header-bid-tag-0'].hb_pb).to.equal('21.00');
     });
   });
 
@@ -811,7 +779,7 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.callBids.restore();
     });
 
-    it('should not callBids if a video adUnit has non-video bidders', () => {
+    it('should only request video bidders on video adunits', () => {
       sinon.spy(adaptermanager, 'callBids');
       const videoAdaptersBackup = adaptermanager.videoAdapters;
       adaptermanager.videoAdapters = ['appnexusAst'];
@@ -825,7 +793,35 @@ describe('Unit: Prebid Module', function () {
       }];
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      sinon.assert.notCalled(adaptermanager.callBids);
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
+
+      adaptermanager.callBids.restore();
+      adaptermanager.videoAdapters = videoAdaptersBackup;
+    });
+
+    it('should only request video bidders on video adunits configured with mediaTypes', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      const videoAdaptersBackup = adaptermanager.videoAdapters;
+      adaptermanager.videoAdapters = ['appnexusAst'];
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaTypes: {video: {context: 'instream'}},
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
 
       adaptermanager.callBids.restore();
       adaptermanager.videoAdapters = videoAdaptersBackup;
@@ -1612,7 +1608,6 @@ describe('Unit: Prebid Module', function () {
           'creative_id': 29681110,
           'cpm': 10,
           'vastUrl': 'http://www.simplevideoad.com/',
-          'descriptionUrl': 'http://www.simplevideoad.com/',
           'responseTimestamp': 1462919239340,
           'requestTimestamp': 1462919238919,
           'bidder': 'appnexus',
@@ -1752,8 +1747,7 @@ describe('Unit: Prebid Module', function () {
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
       for (var key in expectedAdserverTargeting) {
-        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
-        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+        newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
       }
 
       $$PREBID_GLOBAL$$.setTargetingForAst();

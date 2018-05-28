@@ -19,7 +19,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
   this.handlerRes = function(response, bidObject) {
     let bid;
     if (parseFloat(response.result.cpm) > 0) {
-      bid = bidfactory.createBid(1);
+      bid = bidfactory.createBid(1, bidObject);
       bid.bidderCode = bidObject.bidder;
       bid.cpm = response.result.cpm;
       bid.width = response.result.width;
@@ -27,7 +27,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
       bid.ad = response.result.banner;
       bidmanager.addBidResponse(bidObject.placementCode, bid);
     } else {
-      bid = bidfactory.createBid(2);
+      bid = bidfactory.createBid(2, bidObject);
       bid.bidderCode = bidObject.bidder;
       bidmanager.addBidResponse(bidObject.placementCode, bid);
     }

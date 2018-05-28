@@ -1,4 +1,4 @@
-import { excpet } from 'chai';
+import { expect } from 'chai';
 import { assert } from 'chai';
 import { newConfig } from 'src/config';
 
@@ -6,6 +6,7 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let setDefaults;
 
 describe('config API', () => {
   let logErrorSpy;
@@ -13,6 +14,7 @@ describe('config API', () => {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
   });
 
@@ -31,6 +33,25 @@ describe('config API', () => {
   it('sets and gets arbitrary configuarion properties', () => {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
+  });
+
+  it('only accepts objects', () => {
+    setConfig('invalid');
+    expect(getConfig('0')).to.not.equal('i');
+  });
+
+  it('sets multiple config properties', () => {
+    setConfig({ foo: 'bar' });
+    setConfig({ biz: 'buz' });
+    var config = getConfig();
+    expect(config.foo).to.equal('bar');
+    expect(config.biz).to.equal('buz');
+  });
+
+  it('overwrites existing config properties', () => {
+    setConfig({ foo: {biz: 'buz'} });
+    setConfig({ foo: {baz: 'qux'} });
+    expect(getConfig('foo')).to.eql({baz: 'qux'});
   });
 
   it('sets debugging', () => {
@@ -64,6 +85,17 @@ describe('config API', () => {
   it('gets legacy publisherDomain in deprecation window', () => {
     $$PREBID_GLOBAL$$.publisherDomain = 'ad.example.com';
     expect(getConfig('publisherDomain')).to.equal('ad.example.com');
+  });
+
+  it('gets default userSync config', () => {
+    const DEFAULT_USERSYNC = {
+      syncEnabled: true,
+      pixelEnabled: true,
+      syncsPerBidder: 5,
+      syncDelay: 3000
+    };
+    setDefaults({'userSync': DEFAULT_USERSYNC});
+    expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
   it('has subscribe functionality for adding listeners to config updates', () => {

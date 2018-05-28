@@ -33,7 +33,6 @@ const AerServAdapter = function AerServAdapter() {
       bid.height = response.h;
       if (bidRequest.mediaType === 'video') {
         bid.vastUrl = response.vastUrl;
-        bid.descriptionUrl = response.vastUrl;
         bid.mediaType = 'video';
       } else {
         bid.ad = response.adm;

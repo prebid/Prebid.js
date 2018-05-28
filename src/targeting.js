@@ -106,9 +106,7 @@ targeting.setTargetingForAst = function() {
       // setKeywords supports string and array as value
       if (utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
         let keywordsObj = {};
-        let input = 'hb_adid';
-        let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
-        keywordsObj[nKey] = targeting[targetId][key];
+        keywordsObj[key.toUpperCase()] = targeting[targetId][key];
         window.apntag.setKeywords(targetId, keywordsObj);
       }
     })

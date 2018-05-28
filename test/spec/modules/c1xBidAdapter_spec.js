@@ -177,6 +177,23 @@ describe('c1x adapter tests: ', () => {
     });
     it('should show error when bidder sends invalid bid responses', () => {
       let responses;
+      let adUnits = [];
+      let unit = {};
+      let params = getDefaultBidRequest();
+
+      unit.bids = params.bids;
+      unit.code = '/123456/header-bid-tag-1';
+      unit.sizes = [[300, 250]];
+      adUnits.push(unit);
+
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
+      } else {
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
+      }
+
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+
       pbjs._c1xResponse(responses);
       let bidObject = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject.statusMessage).to.equal('Bid returned empty or error response');

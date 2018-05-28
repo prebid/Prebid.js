@@ -17,12 +17,12 @@ const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
 
 const GRANULARITY_OPTIONS = {
-  'LOW': 'low',
-  'MEDIUM': 'medium',
-  'HIGH': 'high',
-  'AUTO': 'auto',
-  'DENSE': 'dense',
-  'CUSTOM': 'custom'
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  AUTO: 'auto',
+  DENSE: 'dense',
+  CUSTOM: 'custom'
 };
 
 const ALL_TOPICS = '*';
@@ -37,6 +37,8 @@ const ALL_TOPICS = '*';
 
 export function newConfig() {
   let listeners = [];
+
+  let defaults = {};
 
   let config = {
     // `debug` is equivalent to legacy `pbjs.logging` property
@@ -116,8 +118,7 @@ export function newConfig() {
     // calls existing function which may be moved after deprecation
     set s2sConfig(val) {
       $$PREBID_GLOBAL$$.setS2SConfig(val);
-    },
-
+    }
   };
 
   function hasGranularity(val) {
@@ -166,10 +167,38 @@ export function newConfig() {
   function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
+      return;
     }
 
+    let topics = Object.keys(options);
+    let topicalConfig = {};
+
+    topics.forEach(topic => {
+      let option = options[topic];
+
+      if (typeof defaults[topic] === 'object' && typeof option === 'object') {
+        option = Object.assign({}, defaults[topic], option);
+      }
+
+      topicalConfig[topic] = config[topic] = option;
+    });
+
+    callSubscribers(topicalConfig);
+  }
+
+  /**
+   * Sets configuration defaults which setConfig values can be applied on top of
+   * @param {object} options
+   */
+  function setDefaults(options) {
+    if (typeof defaults !== 'object') {
+      utils.logError('defaults must be an object');
+      return;
+    }
+
+    Object.assign(defaults, options);
+    // Add default values to config as well
     Object.assign(config, options);
-    callSubscribers(options);
   }
 
   /*
@@ -237,7 +266,8 @@ export function newConfig() {
 
   return {
     getConfig,
-    setConfig
+    setConfig,
+    setDefaults
   };
 }
 

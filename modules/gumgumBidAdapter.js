@@ -63,7 +63,7 @@ const GumgumAdapter = function GumgumAdapter() {
       } = bidRequest;
       const timestamp = _getTimeStamp();
       const trackingId = params.inScreen;
-      const nativeId = params.native;
+      const nativeId = params['native'];
       const slotId = params.inSlot;
       const bid = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
@@ -72,7 +72,7 @@ const GumgumAdapter = function GumgumAdapter() {
         case !!(params.inImage): bid.pi = 1; break;
         case !!(params.inScreen): bid.pi = 2; break;
         case !!(params.inSlot): bid.pi = 3; break;
-        case !!(params.native): bid.pi = 5; break;
+        case !!(params['native']): bid.pi = 5; break;
         default: return utils.logWarn(
           `[GumGum] No product selected for the placement ${placementCode}` +
           ', please check your implementation.'

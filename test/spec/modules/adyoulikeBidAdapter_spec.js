@@ -29,7 +29,8 @@ describe('Adyoulike Adapter', () => {
         'placementCode': 'adunit/hb-0',
         'params': {
           'placement': 'placement_0'
-        }
+        },
+        'transactionId': 'bid_id_0_transaction_id'
       }
     ],
   };
@@ -43,7 +44,8 @@ describe('Adyoulike Adapter', () => {
         'params': {
           'placement': 'placement_0'
         },
-        'sizes': '300x250'
+        'sizes': '300x250',
+        'transactionId': 'bid_id_0_transaction_id'
       }
     ],
   };
@@ -57,7 +59,8 @@ describe('Adyoulike Adapter', () => {
         'params': {
           'placement': 'placement_0'
         },
-        'sizes': '300x250'
+        'sizes': '300x250',
+        'transactionId': 'bid_id_0_transaction_id'
       },
       {
         'bidId': 'bid_id_1',
@@ -66,14 +69,16 @@ describe('Adyoulike Adapter', () => {
         'params': {
           'placement': 'placement_1'
         },
-        'sizes': [[300, 600]]
+        'sizes': [[300, 600]],
+        'transactionId': 'bid_id_1_transaction_id'
       },
       {
         'bidId': 'bid_id_2',
         'bidder': 'adyoulike',
         'placementCode': 'adunit/hb-2',
         'params': {},
-        'sizes': '300x400'
+        'sizes': '300x400',
+        'transactionId': 'bid_id_2_transaction_id'
       },
       {
         'bidId': 'bid_id_3',
@@ -81,7 +86,8 @@ describe('Adyoulike Adapter', () => {
         'placementCode': 'adunit/hb-3',
         'params': {
           'placement': 'placement_3'
-        }
+        },
+        'transactionId': 'bid_id_3_transaction_id'
       }
     ],
   };
@@ -175,9 +181,10 @@ describe('Adyoulike Adapter', () => {
       expect(requests[0].url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.1');
+      expect(body.Version).to.equal('0.2');
       expect(body.Placements).deep.equal(['placement_0']);
       expect(body.PageRefreshed).to.equal(false);
+      expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id'});
     });
 
     it('sends bid request to endpoint with single placement without canonical', () => {
@@ -190,9 +197,10 @@ describe('Adyoulike Adapter', () => {
       expect(requests[0].url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.1');
+      expect(body.Version).to.equal('0.2');
       expect(body.Placements).deep.equal(['placement_0']);
       expect(body.PageRefreshed).to.equal(false);
+      expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id'});
     });
 
     it('sends bid request to endpoint with multiple placements', () => {
@@ -203,9 +211,10 @@ describe('Adyoulike Adapter', () => {
       expect(requests[0].url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.1');
+      expect(body.Version).to.equal('0.2');
       expect(body.Placements).deep.equal(['placement_0', 'placement_1']);
       expect(body.PageRefreshed).to.equal(false);
+      expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id', 'placement_1': 'bid_id_1_transaction_id'});
     });
   });
 

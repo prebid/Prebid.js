@@ -113,6 +113,11 @@ To run the unit tests:
 ```bash
 gulp test
 ```
+To run tests for a single file:
+
+```bash
+gulp test --file "path/to/spec/file.js"
+```
 
 To generate and view the code coverage reports:
 

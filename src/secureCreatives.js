@@ -4,7 +4,7 @@
  */
 
 import events from './events';
-import { fireNativeImpressions } from './native';
+import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;
@@ -42,7 +42,7 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      fireNativeImpressions(adObject);
+      fireNativeTrackers(data, adObject);
       $$PREBID_GLOBAL$$._winningBids.push(adObject);
       events.emit(BID_WON, adObject);
     }

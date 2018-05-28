@@ -21,3 +21,4 @@ We take PR review seriously. Please read https://medium.com/@mrjoelkemp/giving-b
 - Verify that  the bidder is being as efficient as possible, ideally not loading an external library, however if they do load a library it should be cached.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
+- If the adapter is triggering any user syncs make sure they are using the user sync module in the Prebid.js core.

@@ -43,6 +43,7 @@ describe('centro adapter tests', function () {
               unit: 28136,
               page_url: 'http://test_url.ru'
             },
+            bidId: '1234',
             placementCode: 'div-gpt-ad-12345-1'
           },
           {
@@ -51,12 +52,14 @@ describe('centro adapter tests', function () {
             params: {
               unit: 28137
             },
+            bidId: '5678',
             placementCode: 'div-gpt-ad-12345-2'
           },
           {
             bidder: 'centro',
             sizes: [[728, 90]],
             params: {},
+            bidId: '9101112',
             placementCode: 'div-gpt-ad-12345-3'
           }
         ]
@@ -71,7 +74,7 @@ describe('centro adapter tests', function () {
 
       var parsedBidUrl = urlParse(bidUrl1);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-      var generatedCallback = 'window["adCentroHandler_28136300x250div-gpt-ad-12345-1"]';
+      var generatedCallback = 'window["adCentroHandler_28136300x2501234"]';
 
       expect(parsedBidUrl.hostname).to.equal('staging.brand-server.com');
       expect(parsedBidUrl.pathname).to.equal('/hb');
@@ -85,7 +88,7 @@ describe('centro adapter tests', function () {
 
       parsedBidUrl = urlParse(bidUrl2);
       parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-      generatedCallback = 'window["adCentroHandler_28137728x90div-gpt-ad-12345-2"]';
+      generatedCallback = 'window["adCentroHandler_28137728x905678"]';
 
       expect(parsedBidUrl.hostname).to.equal('t.brand-server.com');
       expect(parsedBidUrl.pathname).to.equal('/hb');
@@ -117,6 +120,7 @@ describe('centro adapter tests', function () {
           params: {
             unit: 28136
           },
+          bidId: '12345',
           placementCode: '/19968336/header-bid-tag-0'
         },
         {
@@ -125,6 +129,7 @@ describe('centro adapter tests', function () {
           params: {
             unit: 111111
           },
+          bidId: '12346',
           placementCode: '/19968336/header-bid-tag-1'
         },
         {
@@ -133,6 +138,7 @@ describe('centro adapter tests', function () {
           params: {
             unit: 222222
           },
+          bidId: '12347',
           placementCode: '/19968336/header-bid-tag-2'
         },
         {
@@ -141,6 +147,7 @@ describe('centro adapter tests', function () {
           params: {
             unit: 333333
           },
+          bidId: '12348',
           placementCode: '/19968336/header-bid-tag-3'
         }
       ]
@@ -149,9 +156,9 @@ describe('centro adapter tests', function () {
     it('callback function should exist', function () {
       adapter().callBids(params);
 
-      expect(window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'])
+      expect(window['adCentroHandler_28136300x25012345'])
         .to.exist.and.to.be.a('function');
-      expect(window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'])
+      expect(window['adCentroHandler_111111728x9012346'])
         .to.exist.and.to.be.a('function');
     });
 
@@ -180,10 +187,10 @@ describe('centro adapter tests', function () {
       var response3 = {'adTag': '', 'height': 0, 'value': 0, 'width': 0, 'sectionID': 222222};
       var response4 = '';
 
-      window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'](response);
-      window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'](response2);
-      window['adCentroHandler_222222728x90%2F19968336%2Fheader-bid-tag-2'](response3);
-      window['adCentroHandler_333333728x90%2F19968336%2Fheader-bid-tag-3'](response4);
+      window['adCentroHandler_28136300x25012345'](response);
+      window['adCentroHandler_111111728x9012346'](response2);
+      window['adCentroHandler_222222728x9012347'](response3);
+      window['adCentroHandler_333333728x9012348'](response4);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

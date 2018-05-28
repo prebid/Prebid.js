@@ -17,6 +17,7 @@ var SmartAdServer = function SmartAdServer() {
         bidObject.cpm = adUnit.cpm;
         bidObject.currency = adUnit.currency;
         bidObject.ad = adUnit.ad;
+        bidObject.adUrl = adUnit.adUrl;
         bidObject.width = adUnit.width;
         bidObject.height = adUnit.height;
         bidObject.dealId = adUnit.dealId;
@@ -47,7 +48,8 @@ var SmartAdServer = function SmartAdServer() {
           'tgt': encodeURIComponent(bid.params.target || ''),
           'tag': bid.placementCode,
           'sizes': bid.sizes.map(size => size[0] + 'x' + size[1]).join(','),
-          'async': 1
+          'async': 1,
+          'prebidVersion': '$prebid.version$'
         };
         adloader.loadScript(url.format(adCall));
       }
