@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/rtbdemandAdkBidAdapter';
+import {spec} from 'modules/rtbdemandadkBidAdapter';
 import * as utils from 'src/utils';
 
-describe('RtbdemandAdk adapter', () => {
+describe('rtbdemandadk adapter', () => {
   const bid1_zone1 = {
       bidder: 'rtbdemandadk',
       bidId: 'Bid_01',
