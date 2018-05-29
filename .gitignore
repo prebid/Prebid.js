@@ -1,6 +1,7 @@
 # Built Files
 node_modules/
 build
+!build/dist/prebid.js
 
 # Test Files
 test/app
