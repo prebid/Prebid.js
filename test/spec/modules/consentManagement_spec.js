@@ -119,7 +119,7 @@ describe('consentManagement', function () {
       it('should bypass CMP and simply use previously stored consentData', () => {
         let testConsentData = {
           gdprApplies: true,
-          metadata: 'xyz'
+          consentData: 'xyz'
         };
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
@@ -140,7 +140,7 @@ describe('consentManagement', function () {
         let consent = gdprDataHandler.getConsentData();
 
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentData.metadata);
+        expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
@@ -178,6 +178,10 @@ describe('consentManagement', function () {
             vendorConsents: {
               metadata: 'abc123def',
               gdprApplies: true
+            },
+            vendorConsentData: {
+              consentData: 'abc123def',
+              gdprApplies: true
             }
           }
         };
@@ -200,61 +204,76 @@ describe('consentManagement', function () {
     });
 
     describe('CMP workflow for iframed page', () => {
-      let eventStub = sinon.stub();
-      let cmpStub = sinon.stub();
+      let ifr = null;
+      let stringifyResponse = false;
 
       beforeEach(() => {
-        didHookReturn = false;
-        window.__cmp = function() {};
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
+        ifr = createIFrameMarker();
+        window.addEventListener('message', cmpMessageHandler, false);
       });
 
       afterEach(() => {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
-        eventStub.restore();
-        cmpStub.restore();
         delete window.__cmp;
         utils.logError.restore();
         utils.logWarn.restore();
         resetConsentData();
+        document.body.removeChild(ifr);
+        window.removeEventListener('message', cmpMessageHandler);
       });
 
-      it('should return the consent string from a postmessage + addEventListener response', () => {
-        let testConsentData = {
-          data: {
-            __cmpReturn: {
-              returnValue: {
-                gdprApplies: true,
-                metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+      function createIFrameMarker() {
+        var ifr = document.createElement('iframe');
+        ifr.width = 0;
+        ifr.height = 0;
+        ifr.name = '__cmpLocator';
+        document.body.appendChild(ifr);
+        return ifr;
+      }
+
+      function cmpMessageHandler(event) {
+        if (event && event.data) {
+          var data = event.data;
+          if (data.__cmpCall) {
+            var callId = data.__cmpCall.callId;
+            var returnValue = null;
+            var response = {
+              __cmpReturn: {
+                callId,
+                returnValue: {
+                  consentData: 'encoded_consent_data_via_post_message',
+                  gdprApplies: true,
+                },
+                success: true
               }
-            }
+            };
+            event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
           }
-        };
-        eventStub = sinon.stub(window, 'addEventListener').callsFake((...args) => {
-          args[1](testConsentData);
-        });
-        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-          args[2]({
-            gdprApplies: true,
-            metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+        }
+      }
+
+      // Run tests with JSON response and String response
+      // from CMP window postMessage listener.
+      testIFramedPage('with/JSON response', false);
+      testIFramedPage('with/String response', true);
+
+      function testIFramedPage(testName, messageFormatString) {
+        it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
+          stringifyResponse = messageFormatString;
+          setConfig(goodConfigWithAllowAuction);
+          requestBidsHook({}, () => {
+            let consent = gdprDataHandler.getConsentData();
+            sinon.assert.notCalled(utils.logWarn);
+            sinon.assert.notCalled(utils.logError);
+            expect(consent.consentString).to.equal('encoded_consent_data_via_post_message');
+            expect(consent.gdprApplies).to.be.true;
+            done();
           });
         });
-
-        setConfig(goodConfigWithAllowAuction);
-
-        requestBidsHook({}, () => {
-          didHookReturn = true;
-        });
-        let consent = gdprDataHandler.getConsentData();
-
-        sinon.assert.notCalled(utils.logWarn);
-        sinon.assert.notCalled(utils.logError);
-        expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal('BOJy+UqOJy+UqABAB+AAAAAZ+A==');
-        expect(consent.gdprApplies).to.be.true;
-      });
+      }
     });
 
     describe('CMP workflow for normal pages:', () => {
@@ -280,7 +299,7 @@ describe('consentManagement', function () {
       it('performs lookup check and stores consentData for a valid existing user', () => {
         let testConsentData = {
           gdprApplies: true,
-          metadata: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
+          consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
         };
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
@@ -296,12 +315,13 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentData.metadata);
+        expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
-        let testConsentData = null;
+        let testConsentData = {};
+        let bidsBackHandlerReturn = false;
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
@@ -309,18 +329,19 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithCancelAuction);
 
-        requestBidsHook({}, () => {
+        requestBidsHook({ bidsBackHandler: () => bidsBackHandlerReturn = true }, () => {
           didHookReturn = true;
         });
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.calledOnce(utils.logError);
         expect(didHookReturn).to.be.false;
+        expect(bidsBackHandlerReturn).to.be.true;
         expect(consent).to.be.null;
       });
 
       it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', () => {
-        let testConsentData = null;
+        let testConsentData = {};
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);

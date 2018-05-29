@@ -98,8 +98,9 @@ function isBidRequestValid (bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests (validBidRequests) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
+  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -122,6 +123,10 @@ function buildRequests (validBidRequests) {
     if (params.ICV) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
+    }
+    data.gdprApplies = gdprConsent.gdprApplies;
+    if (gdprConsent.gdprApplies) {
+      data.gdprConsent = gdprConsent.consentString;
     }
 
     bids.push({
