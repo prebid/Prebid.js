@@ -11,7 +11,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'widespace';
-const WS_ADAPTER_VERSION = '2.0.0';
+const WS_ADAPTER_VERSION = '2.0.1';
 const LOCAL_STORAGE_AVAILABLE = window.localStorage;
 const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
@@ -106,9 +106,9 @@ export const spec = {
       // GDPR Consent info
       if (data.gdprCmp) {
         const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
-        data.gdprApplies = gdprApplies;
+        data.gdprApplies = gdprApplies ? 1 : 0;
         data.gdprConsentData = consentString;
-        data.gdprHasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprHasGlobalScope = vendorData && vendorData.hasGlobalScope ? 1 : 0;
       }
 
       // Remove empty params
