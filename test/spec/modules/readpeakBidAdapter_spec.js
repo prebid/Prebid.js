@@ -23,10 +23,9 @@ describe('ReadPeakAdapter', () => {
         publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
         siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77'
       },
-      auctionId: '1d1a030790a475',
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
-      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
     }
     serverResponse = {
@@ -102,7 +101,7 @@ describe('ReadPeakAdapter', () => {
           },
           'id': '11bc5dd5-7421-4dd8-c926-40fa653bec77',
           'ref': '',
-          'page': 'http://localhost:9876/?id=48509002',
+          'page': 'http://localhost',
           'domain': 'localhost'
         },
         'app': null,
@@ -162,7 +161,7 @@ describe('ReadPeakAdapter', () => {
       expect(data.site).to.deep.equal({
         publisher: {
           id: bidRequest.params.publisherId,
-          domain: config.getConfig('publisherDomain'),
+          domain: 'http://localhost:9876',
         },
         id: bidRequest.params.siteId,
         ref: window.top.document.referrer,

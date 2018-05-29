@@ -47,10 +47,6 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.setTargetingForGPTAsync);
     });
 
-    it('should have function $$PREBID_GLOBAL$$.allBidsAvailable', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.allBidsAvailable);
-    });
-
     it('should have function $$PREBID_GLOBAL$$.renderAd', function () {
       assert.isFunction($$PREBID_GLOBAL$$.renderAd);
     });
@@ -65,14 +61,6 @@ describe('Publisher API', function () {
 
     it('should have function $$PREBID_GLOBAL$$.addAdUnits', function () {
       assert.isFunction($$PREBID_GLOBAL$$.addAdUnits);
-    });
-
-    it('should have function $$PREBID_GLOBAL$$.addCallback', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.addCallback);
-    });
-
-    it('should have function $$PREBID_GLOBAL$$.removeCallback', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.removeCallback);
     });
 
     it('should have function $$PREBID_GLOBAL$$.aliasBidder', function () {

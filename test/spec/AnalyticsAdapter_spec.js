@@ -6,6 +6,8 @@ const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
+
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
   url: 'http://localhost:9999/src/adapters/analytics/libraries/example.js',
@@ -69,7 +71,7 @@ FEATURE: Analytics Adapters API
       adapter = new AnalyticsAdapter(config);
       spyTestGlobal = sinon.spy(window, config.global);
 
-      sinon.stub(events, 'getEvents', () => []); // these tests shouldn't be affected by previous tests
+      sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
     });
 
     afterEach(() => {
@@ -82,6 +84,17 @@ FEATURE: Analytics Adapters API
     it('SHOULD call global when a bidWon event occurs', () => {
       const eventType = BID_WON;
       const args = { more: 'info' };
+
+      adapter.enableAnalytics();
+      events.emit(eventType, args);
+
+      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
+      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+    });
+
+    it('SHOULD call global when a adRenderFailed event occurs', () => {
+      const eventType = AD_RENDER_FAILED;
+      const args = { call: 'adRenderFailed' };
 
       adapter.enableAnalytics();
       events.emit(eventType, args);
@@ -139,7 +152,7 @@ FEATURE: Analytics Adapters API
       const args = { more: 'info' };
 
       beforeEach(() => {
-        sinon.stub(Math, 'random', () => 0.5);
+        sinon.stub(Math, 'random').returns(0.5);
       });
 
       afterEach(() => {

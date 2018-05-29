@@ -9,7 +9,11 @@
     var adUnits = [{
         code: 'ad-slot',
         sizes: [[728, 90], [300, 250]],
-        mediaType: 'video',
+        mediaTypes: {
+            video: {
+                context: 'outstream'
+            }
+        },
         bids: [{
             bidder: 'unruly',
             params: {

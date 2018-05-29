@@ -21,34 +21,76 @@ describe('adxcg analytics adapter', () => {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
-    sinon.stub(events, 'getEvents', () => []);
-    adaptermanager.enableAnalytics({
-      provider: 'adxcg',
-      options: initOptions
-    });
+    sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(() => {
     adxcgAnalyticsAdapter.disableAnalytics();
     xhr.restore();
+    events.getEvents.restore();
   });
 
   describe('track', () => {
+    let initOptions = {
+      publisherId: '42'
+    };
+
+    adaptermanager.registerAnalyticsAdapter({
+      code: 'adxcg',
+      adapter: adxcgAnalyticsAdapter
+    });
+
+    beforeEach(() => {
+      adaptermanager.enableAnalytics({
+        provider: 'adxcg',
+        options: initOptions
+      });
+    });
+
+    afterEach(() => {
+      adxcgAnalyticsAdapter.disableAnalytics();
+    });
+
     it('builds and sends auction data', () => {
-      let auctionTimestamp = 42;
+      let auctionTimestamp = 1496510254313;
       let bidRequest = {
-        requestId: 'requestIdData'
+        auctionId: 'requestIdData'
       };
       let bidResponse = {
         adId: 'adIdData',
         ad: 'adContent'
       };
 
+      let bidTimeoutArgsV1 = [
+        {
+          bidId: '2baa51527bd015',
+          bidder: 'bidderOne',
+          adUnitCode: '/19968336/header-bid-tag-0',
+          auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+        },
+        {
+          bidId: '6fe3b4c2c23092',
+          bidder: 'bidderTwo',
+          adUnitCode: '/19968336/header-bid-tag-0',
+          auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+        }
+      ];
+
+      // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
         timestamp: auctionTimestamp
       });
+
+      // Step 2: Send bid requested event
       events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+
+      // Step 3: Send bid response event
       events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+
+      // Step 4: Send bid time out event
+      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+
+      // Step 5: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       expect(requests.length).to.equal(1);
@@ -63,8 +105,12 @@ describe('adxcg analytics adapter', () => {
       expect(auctionEventData.bidResponses[0]).to.not.have.property('ad');
 
       expect(auctionEventData.initOptions).to.deep.equal(initOptions);
+
       expect(auctionEventData.auctionTimestamp).to.equal(auctionTimestamp);
 
+      expect(auctionEventData.bidTimeout).to.deep.equal(['bidderOne', 'bidderTwo']);
+
+      // Step 6: Send auction bid won event
       events.emit(constants.EVENTS.BID_WON, {
         adId: 'adIdData',
         ad: 'adContent'

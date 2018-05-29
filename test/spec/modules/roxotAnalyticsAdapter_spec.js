@@ -17,7 +17,7 @@ describe('Roxot Prebid Analytic', function () {
   describe('enableAnalytics', function () {
     beforeEach(() => {
       sinon.spy(roxotAnalytic, 'track');
-      sinon.stub(events, 'getEvents', () => []);
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {

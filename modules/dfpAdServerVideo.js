@@ -3,7 +3,7 @@
  */
 
 import { registerVideoSupport } from '../src/adServerManager';
-import { getWinningBids } from '../src/targeting';
+import { targeting } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
 import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
@@ -63,14 +63,14 @@ export default function buildDfpVideoUrl(options) {
   }
 
   const adUnit = options.adUnit;
-  const bid = options.bid || getWinningBids(adUnit.code)[0];
+  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
 
   let urlComponents = {};
 
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url);
+    urlComponents = parse(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid);
@@ -80,24 +80,16 @@ export default function buildDfpVideoUrl(options) {
   const derivedParams = {
     correlator: Date.now(),
     sz: parseSizesInput(adUnit.sizes).join('|'),
-    url: location.href,
+    url: encodeURIComponent(location.href),
   };
-
-  const adserverTargeting = (bid && bid.adserverTargeting) || {};
-
-  const customParams = Object.assign({},
-    adserverTargeting,
-    { hb_uuid: bid && bid.videoCacheKey },
-    // hb_uuid should be deprecated and replaced by hb_cache_id
-    {hb_cache_id: bid && bid.videoCacheKey},
-    options.params.cust_params);
+  const encodedCustomParams = getCustParams(bid, options);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodeURIComponent(formatQS(customParams)) }
+    { cust_params: encodedCustomParams }
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
@@ -122,11 +114,8 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const adserverTargeting = (bid && bid.adserverTargeting) || {};
-  const customParams = Object.assign({},
-    adserverTargeting,
-  );
-  components.search.cust_params = encodeURIComponent(formatQS(customParams));
+  const encodedCustomParams = getCustParams(bid);
+  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
 
   return buildUrl(components);
 }
@@ -140,7 +129,7 @@ function buildUrlFromAdserverUrlComponents(components, bid) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  if (config.getConfig('usePrebidCache')) { return; }
+  if (config.getConfig('cache.url')) { return; }
 
   if (!deepAccess(components, `${prop}.description_url`)) {
     const vastUrl = bid && bid.vastUrl;
@@ -148,6 +137,25 @@ function getDescriptionUrl(bid, components, prop) {
   } else {
     logError(`input cannnot contain description_url`);
   }
+}
+
+/**
+ * Returns the encoded `cust_params` from the bid.adserverTargeting and adds the `hb_uuid`, and `hb_cache_id`. Optionally the options.params.cust_params
+ * @param {AdapterBidResponse} bid
+ * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
+ * @return {Object} Encoded key value pairs for cust_params
+ */
+function getCustParams(bid, options) {
+  const adserverTargeting = (bid && bid.adserverTargeting) || {};
+  const optCustParams = deepAccess(options, 'params.cust_params');
+  let customParams = Object.assign({},
+    adserverTargeting,
+    { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    { hb_cache_id: bid && bid.videoCacheKey },
+    optCustParams,
+  );
+  return encodeURIComponent(formatQS(customParams));
 }
 
 registerVideoSupport('dfp', {

@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const BID_URL = '//prebid.media.net/rtb/prebid';
 
 $$PREBID_GLOBAL$$.medianetGlobals = {};
 
@@ -14,6 +14,7 @@ function siteDetails(site) {
     page: site.page || utils.getTopWindowUrl(),
     ref: site.ref || utils.getTopWindowReferrer()
   };
+
   return Object.assign(siteData, getPageMeta());
 }
 
@@ -36,7 +37,7 @@ function getUrlFromSelector(selector, attribute) {
 
 function getAttributeFromSelector(selector, attribute) {
   try {
-    let doc = window.top.document;
+    let doc = utils.getWindowTop().document;
     let element = doc.querySelector(selector);
     if (element !== null && element[attribute]) {
       return element[attribute];
@@ -45,7 +46,7 @@ function getAttributeFromSelector(selector, attribute) {
 }
 
 function getAbsoluteUrl(url) {
-  let aTag = window.top.document.createElement('a');
+  let aTag = utils.getWindowTop().document.createElement('a');
   aTag.href = url;
 
   return aTag.href;
@@ -70,11 +71,16 @@ function getSize(size) {
   }
 }
 
-function configuredParams(params) {
-  return {
+function extParams(params, gdpr) {
+  let ext = {
     customer_id: params.cid,
     prebid_version: $$PREBID_GLOBAL$$.version
+  };
+  ext.gdpr_applies = !!(gdpr && gdpr.gdprApplies);
+  if (ext.gdpr_applies) {
+    ext.gdpr_consent_string = gdpr.consentString || '';
   }
+  return ext;
 }
 
 function slotParams(bidRequest) {
@@ -99,13 +105,13 @@ function slotParams(bidRequest) {
   return params;
 }
 
-function generatePayload(bidRequests) {
+function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: configuredParams(bidRequests[0].params),
-    id: bidRequests[0].bidderRequestId,
+    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent),
+    id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
   }
 }
 
@@ -142,7 +148,9 @@ export const spec = {
       utils.logError(`${BIDDER_CODE} : cid should be a string`);
       return false;
     }
+
     Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
+
     return true;
   },
 
@@ -150,11 +158,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {BidderRequests} bidderRequests
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
-    let payload = generatePayload(bidRequests);
-
+  buildRequests: function(bidRequests, bidderRequests) {
+    let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
       url: BID_URL,

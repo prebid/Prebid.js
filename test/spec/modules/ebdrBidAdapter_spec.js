@@ -1,19 +1,21 @@
-var chai = require('chai');
-var Adapter = require('modules/ebdrBidAdapter')();
-var adLoader = require('src/adloader');
-var bidmanager = require('src/bidmanager.js');
-var CONSTANTS = require('src/constants.json');
+import { expect } from 'chai';
+import { spec } from 'modules/ebdrBidAdapter';
+import { VIDEO, BANNER } from 'src/mediaTypes';
+import * as utils from 'src/utils';
 
-describe('ebdrBidAdapter', function () {
-  var sandbox;
-  var bidsRequestedOriginal;
-  const validBid_1 = {
-    bidderCode: 'ebdr',
-    bids: [
+describe('ebdrBidAdapter', () => {
+  let bidRequests;
+
+  beforeEach(() => {
+    bidRequests = [
       {
+        code: 'div-gpt-ad-1460505748561-0',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]],
+          }
+        },
         bidder: 'ebdr',
-        bidId: 'bid_id',
-        // bidderRequestId: 'ebdr1',
         params: {
           zoneid: '99999',
           bidfloor: '1.00',
@@ -22,114 +24,212 @@ describe('ebdrBidAdapter', function () {
           latitude: '34.089811',
           longitude: '-118.392805'
         },
-        placementCode: 'div-gpt-ad-1460505748561-0',
-        sizes: [[300, 250], [800, 600]]
-      }
-    ]
-  };
-  var invalidBid = {
-    bidderCode: 'ebdr',
-    bids: [
-      {
+        bidId: '2c5e8a1a84522d',
+        bidderRequestId: '1d0c4017f02458',
+        auctionId: '9adc85ed-43ee-4a78-816b-52b7e578f314'
+      }, {
+        adUnitCode: 'div-gpt-ad-1460505748561-1',
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [300, 250]
+          }
+        },
         bidder: 'ebdr',
-        bidId: 'bid_id',
-        params: {},
-        placementCode: 'div-gpt-ad-1460505748561-0',
-        sizes: [[300, 250]]
+        params: {
+          zoneid: '99998',
+          bidfloor: '1.00',
+          IDFA: 'xxx-xxx',
+          ADID: 'xxx-xxx',
+          latitude: '34.089811',
+          longitude: '-118.392805'
+        },
+        bidId: '23a01e95856577',
+        bidderRequestId: '1d0c4017f02458',
+        auctionId: '9adc85ed-43ee-4a78-816b-52b7e578f314'
       }
-    ]
-  };
-
-  var responseWithAd = {'id': 'bid_id', 'seatbid': [{'bid': [{'id': 'bid_id', 'impid': 'bid_id', 'price': 9.81, 'adid': 'abcde-12345', 'nurl': 'http://rex.bnmla.com/pixel?not=1&sid=LRX8nxQ4gX&z=16&rx=1.3392&d=3&dt=3&s=16&px=1.007999', 'adm': '<div><img src="https://cdn0.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=300 height=250 /></div>', 'adomain': ['advertiserdomain.com'], 'iurl': 'http://rex.bnmla.com/pixel?not=1&sid=LRX8nxQ4gX&z=16&rx=1.3392&d=3&dt=3&s=16&px=1.007999', 'cid': 'campaign1', 'crid': 'abcde-12345', 'w': 300, 'h': 250}], 'seat': '3d1ec0495ea735'}], 'bidid': '3d1ec0495ea735', 'cur': 'USD'};
-  var responseWithoutAd = JSON.stringify({
-    'cpm': 0,
-    'url': 'http://p.ato.mx/placement?id=1234',
-    'width': 300,
-    'height': 250,
-    'code': 'ad-unit-1'
+    ];
   });
 
-  var responseEmpty = '';
-  var validJsonParams = {
-    id: '1234',
-    prebid: 'ad-unit-1',
-    size: '300x250'
-  };
+  describe('spec.isBidRequestValid', () => {
+    it('should return true when the required params are passed', () => {
+      const bidRequest = bidRequests[0];
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
-  beforeEach(() => {
-    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-    sandbox = sinon.sandbox.create();
-  });
+    it('should return true when the only required param is missing', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.params = {
+        zoneid: '99998',
+        bidfloor: '1.00',
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
-  afterEach(() => {
-    sandbox.restore();
-    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
-  });
+    it('should return true when the "bidfloor" param is missing', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.params = {
+        zoneid: '99998',
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
-  describe('bid request', function() {
-    let loadScript;
-    beforeEach(function () {
-      loadScript = sinon.stub(adLoader, 'loadScript');
+    it('should return false when no bid params are passed', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.params = {};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
-    afterEach(function () {
-      loadScript.restore();
-    });
-    it('bid request with valid data', function () {
-      Adapter.callBids(validBid_1);
-      sinon.assert.calledOnce(loadScript);
-      let url = loadScript.firstCall.args[0];
-      let callback = loadScript.firstCall.args[1];
-      expect(url).to.equal('http://dsp.bnmla.com/hb?callback=window.pbjs.ebdrResponse&zoneid=99999&br=%7B%22id%22%3A%22bid_id%22%2C%22imp%22%3A%5B%7B%22id%22%3A%22bid_id%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22bidfloor%22%3A%221.00%22%7D%5D%2C%22site%22%3A%7B%22domain%22%3A%22localhost%3A9876%22%2C%22page%22%3A%22%2Fcontext.html%22%7D%2C%22device%22%3A%7B%22geo%22%3A%7B%22lat%22%3A%2234.089811%22%2C%22log%22%3A%22-118.392805%22%7D%2C%22ifa%22%3A%22xxx-xxx%22%7D%7D');
-    });
-    it('bid request with invalid data', function () {
-      Adapter.callBids(invalidBid);
-      sinon.assert.calledOnce(loadScript);
-      let url = loadScript.firstCall.args[0];
-      let callback = loadScript.firstCall.args[1];
-      expect(url).to.equal('http://dsp.bnmla.com/hb?callback=window.pbjs.ebdrResponse&zoneid=&br=%7B%22id%22%3A%22bid_id%22%2C%22imp%22%3A%5B%7B%22id%22%3A%22bid_id%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22bidfloor%22%3A%22%22%7D%5D%2C%22site%22%3A%7B%22domain%22%3A%22localhost%3A9876%22%2C%22page%22%3A%22%2Fcontext.html%22%7D%2C%22device%22%3A%7B%22geo%22%3A%7B%22lat%22%3A%22%22%2C%22log%22%3A%22%22%7D%2C%22ifa%22%3A%22%22%7D%7D');
-    });
-  });
-  describe('ebdrResponse', () => {
-    it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.ebdrResponse).to.be.a('function');
+
+    it('should return false when a bid request is not passed', () => {
+      expect(spec.isBidRequestValid()).to.equal(false);
+      expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
 
-  describe('add bids to the manager', () => {
-    let firstBid;
+  describe('spec.buildRequests', () => {
+    describe('for banner bids', () => {
+      it('must handle an empty bid size', () => {
+        bidRequests[0].mediaTypes = { banner: {} };
+        const requests = spec.buildRequests(bidRequests);
+        const bidRequest = {};
+        bidRequest['2c5e8a1a84522d'] = { mediaTypes: BANNER, w: null, h: null };
+        expect(requests.bids['2c5e8a1a84522d']).to.deep.equals(bidRequest['2c5e8a1a84522d']);
+      });
+      it('should create a single GET', () => {
+        bidRequests[0].mediaTypes = { banner: {} };
+        bidRequests[1].mediaTypes = { banner: {} };
+        const requests = spec.buildRequests(bidRequests);
+        expect(requests.method).to.equal('GET');
+      });
+      it('must parse bid size from a nested array', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {sizes: [[ width, height ]]} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = {};
+        data['2c5e8a1a84522d'] = { mediaTypes: BANNER, w: width, h: height };
+        expect(requests.bids['2c5e8a1a84522d']).to.deep.equal(data['2c5e8a1a84522d']);
+      });
+    });
+    describe('for video bids', () => {
+      it('must handle an empty bid size', () => {
+        bidRequests[1].mediaTypes = { video: {} };
+        const requests = spec.buildRequests(bidRequests);
+        const bidRequest = {};
+        bidRequest['23a01e95856577'] = { mediaTypes: VIDEO, w: null, h: null };
+        expect(requests.bids['23a01e95856577']).to.deep.equals(bidRequest['23a01e95856577']);
+      });
 
+      it('should create a GET request for each bid', () => {
+        const bidRequest = bidRequests[1];
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests.method).to.equal('GET');
+      });
+    });
+  });
+
+  describe('spec.interpretResponse', () => {
+    describe('for video bids', () => {
+      it('should return no bids if the response is not valid', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return a valid video bid response', () => {
+        const ebdrReq = {bids: {}};
+        bidRequests.forEach(bid => {
+          let _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER);
+          ebdrReq.bids[bid.bidId] = {mediaTypes: _mediaTypes,
+            w: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
+            h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
+          };
+        });
+        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '23a01e95856577', impid: '23a01e95856577', price: 0.81, adid: 'abcde-12345', nurl: 'https://cdn0.bnmla.com/vtest.xml', adm: '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><Ad id=\"static\"><InLine><AdSystem>Static VAST</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression /><Creatives><Creative><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event=\"start\" /><Tracking event=\"firstQuartile\" /><Tracking event=\"midpoint\" /><Tracking event=\"thirdQuartile\" /><Tracking event=\"complete\" /><Tracking event=\"pause\" /><Tracking event=\"mute\" /><Tracking event=\"fullscreen\" /></TrackingEvents><VideoClicks><ClickThrough>http://www.engagebdr.com/</ClickThrough><ClickTracking /></VideoClicks><MediaFiles><MediaFile type=\"video/mp4\" bitrate=\"160\" width=\"1918\" height=\"1080\">c</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD'};
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, ebdrReq);
+        expect(bidResponse[0]).to.deep.equal({
+          requestId: bidRequests[1].bidId,
+          vastXml: serverResponse.seatbid[0].bid[0].adm,
+          mediaType: 'video',
+          creativeId: serverResponse.seatbid[0].bid[0].crid,
+          cpm: serverResponse.seatbid[0].bid[0].price,
+          width: serverResponse.seatbid[0].bid[0].w,
+          height: serverResponse.seatbid[0].bid[0].h,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 3600,
+          vastUrl: serverResponse.seatbid[0].bid[0].nurl
+        });
+      });
+    });
+
+    describe('for banner bids', () => {
+      it('should return no bids if the response is not valid', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return no bids if the response is empty', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const bidResponse = spec.interpretResponse({ body: [] }, { bidRequest });
+        expect(bidResponse.length).to.equal(0);
+      });
+
+      it('should return valid banner bid responses', () => {
+        const ebdrReq = {bids: {}};
+        bidRequests.forEach(bid => {
+          let _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER);
+          ebdrReq.bids[bid.bidId] = {mediaTypes: _mediaTypes,
+            w: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
+            h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
+          };
+        });
+        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, ebdrReq);
+        expect(bidResponse[0]).to.deep.equal({
+          requestId: bidRequests[ 0 ].bidId,
+          ad: serverResponse.seatbid[0].bid[0].adm,
+          mediaType: 'banner',
+          creativeId: serverResponse.seatbid[0].bid[0].crid,
+          cpm: serverResponse.seatbid[0].bid[0].price,
+          width: serverResponse.seatbid[0].bid[0].w,
+          height: serverResponse.seatbid[0].bid[0].h,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 3600
+        });
+      });
+    });
+  });
+  describe('spec.getUserSyncs', () => {
+    let syncOptions
     beforeEach(() => {
-      sandbox.stub(bidmanager, 'addBidResponse');
-      $$PREBID_GLOBAL$$._bidsRequested.push(validBid_1);
-      $$PREBID_GLOBAL$$.ebdrResponse(responseWithAd);
-      firstBid = bidmanager.addBidResponse.firstCall.args[1];
+      syncOptions = {
+        enabledBidders: ['ebdr'], // only these bidders are allowed to sync
+        pixelEnabled: true
+      }
     });
-    it('should add a bid object for each bid', () => {
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-    });
-
-    it('should pass the correct placement code as first param', () => {
-      let firstPlacementCode = bidmanager.addBidResponse.firstCall.args[0];
-
-      expect(firstPlacementCode).to.eql('div-gpt-ad-1460505748561-0');
+    it('sucess with usersync url', () => {
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '//match.bnmla.com/usersync?sspid=59&redir=', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const result = [];
+      result.push({type: 'image', url: '//match.bnmla.com/usersync?sspid=59&redir='});
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
     });
 
-    it('should have a good statusCode', () => {
-      expect(firstBid.getStatusCode()).to.eql(1);
+    it('sucess without usersync url', () => {
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
     });
-
-    it('should add the CPM to the bid object', () => {
-      expect(firstBid).to.have.property('cpm', 9.81);
-    });
-
-    it('should include the ad to the bid object', () => {
-      expect(firstBid).to.have.property('ad');
-    });
-
-    it('should include the size to the bid object', () => {
-      expect(firstBid).to.have.property('width', 300);
-      expect(firstBid).to.have.property('height', 250);
+    it('empty response', () => {
+      const serverResponse = {};
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
     });
   });
 });

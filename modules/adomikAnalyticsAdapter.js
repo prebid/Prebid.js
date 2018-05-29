@@ -20,7 +20,7 @@ let adomikAdapter = Object.assign(adapter({}),
       switch (eventType) {
         case auctionInit:
           adomikAdapter.initializeBucketEvents()
-          adomikAdapter.currentContext.id = args.requestId
+          adomikAdapter.currentContext.id = args.auctionId
           break;
 
         case bidTimeout:

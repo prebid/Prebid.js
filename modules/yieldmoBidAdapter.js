@@ -1,151 +1,304 @@
-var utils = require('src/utils.js');
-var adloader = require('src/adloader.js');
-var bidmanager = require('src/bidmanager.js');
-var bidfactory = require('src/bidfactory.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+
+const BIDDER_CODE = 'yieldmo';
+const CURRENCY = 'USD';
+const TIME_TO_LIVE = 300;
+const NET_REVENUE = true;
+const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
+const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
+const localWindow = getTopWindow();
+
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: ['banner'],
+  /**
+    * Determines whether or not the given bid request is valid.
+    * @param {object} bid, bid to validate
+    * @return boolean, true if valid, otherwise false
+    */
+  isBidRequestValid: function(bid) {
+    return !!(bid && bid.adUnitCode && bid.bidId);
+  },
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(bidRequests) {
+    let serverRequest = {
+      p: [],
+      page_url: utils.getTopWindowUrl(),
+      bust: new Date().getTime().toString(),
+      pr: utils.getTopWindowReferrer(),
+      scrd: localWindow.devicePixelRatio || 0,
+      dnt: getDNT(),
+      e: getEnvironment(),
+      description: getPageDescription(),
+      title: localWindow.document.title || '',
+      w: localWindow.innerWidth,
+      h: localWindow.innerHeight
+    };
+    bidRequests.forEach((request) => {
+      serverRequest.p.push(addPlacement(request));
+    });
+    serverRequest.p = '[' + serverRequest.p.toString() + ']';
+    return {
+      method: 'GET',
+      url: SERVER_ENDPOINT,
+      data: serverRequest
+    }
+  },
+  /**
+   * Makes Yieldmo Ad Server response compatible to Prebid specs
+   * @param serverResponse successful response from Ad Server
+   * @param bidderRequest original bidRequest
+   * @return {Bid[]} an array of bids
+   */
+  interpretResponse: function(serverResponse) {
+    let bids = [];
+    let data = serverResponse.body;
+    if (data.length > 0) {
+      data.forEach((response) => {
+        if (response.cpm && response.cpm > 0) {
+          bids.push(createNewBid(response));
+        }
+      });
+    }
+    return bids;
+  },
+  getUserSync: function(syncOptions) {
+    if (trackingEnabled(syncOptions)) {
+      return [{
+        type: 'iframe',
+        url: SYNC_ENDPOINT + utils.getOrigin()
+      }];
+    } else {
+      return [];
+    }
+  }
+}
+registerBidder(spec);
+
+/***************************************
+ * Helper Functions
+ ***************************************/
 
 /**
- * Adapter for requesting bids from Yieldmo.
- *
- * @returns {{callBids: _callBids}}
- * @constructor
+ * Adds placement information to array
+ * @param request bid request
+ */
+function addPlacement(request) {
+  const placementInfo = {
+    placement_id: request.adUnitCode,
+    callback_id: request.bidId,
+    sizes: request.sizes
+  }
+  if (request.params && request.params.placementId) {
+    placementInfo.ym_placement_id = request.params.placementId
+  }
+  return JSON.stringify(placementInfo);
+}
+
+/**
+  * creates a new bid with response information
+  * @param response server response
+  */
+function createNewBid(response) {
+  return {
+    requestId: response['callback_id'],
+    cpm: response.cpm,
+    width: response.width,
+    height: response.height,
+    creativeId: response.creativeId,
+    currency: CURRENCY,
+    netRevenue: NET_REVENUE,
+    ttl: TIME_TO_LIVE,
+    ad: response.ad
+  };
+}
+
+/**
+ * Detects if tracking is allowed
+ * @returns false if dnt or if not iframe/pixel enabled
+ */
+function trackingEnabled(options) {
+  return (isIOS() && !getDNT() && options.iframeEnabled);
+}
+
+/**
+  * Detects whether we're in iOS
+  * @returns true if in iOS
+  */
+function isIOS() {
+  return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+}
+
+/**
+  * Detects whether dnt is true
+  * @returns true if user enabled dnt
+  */
+function getDNT() {
+  return window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false;
+}
+
+/**
+ * get page description
+ */
+function getPageDescription() {
+  if (document.querySelector('meta[name="description"]')) {
+    return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.
+  } else {
+    return '';
+  }
+}
+
+function getTopWindow() {
+  try {
+    return window.top;
+  } catch (e) {
+    return window;
+  }
+}
+
+/***************************************
+ * Detect Environment Helper Functions
+ ***************************************/
+
+/**
+ * Represents a method for loading Yieldmo ads.  Environments affect
+ * which formats can be loaded into the page
+ * Environments:
+ *    CodeOnPage: 0, // div directly on publisher's page
+ *    Amp: 1, // google Accelerate Mobile Pages ampproject.org
+ *    Mraid = 2, // native loaded through the MRAID spec, without Yieldmo's SDK https://www.iab.net/media/file/IAB_MRAID_v2_FINAL.pdf
+ *    Dfp: 4, // google doubleclick for publishers https://www.doubleclickbygoogle.com/
+ *    DfpInAmp: 5, // AMP page containing a DFP iframe
+ *    SafeFrame: 10,
+ *    DfpSafeFrame: 11,Sandboxed: 16, // An iframe that can't get to the top window.
+ *    SuperSandboxed: 89, // An iframe without allow-same-origin
+ *    Unknown: 90, // A default sandboxed implementation delivered by EnvironmentDispatch when all positive environment checks fail
  */
 
-var YieldmoAdapter = function YieldmoAdapter() {
-  function _callBids(params) {
-    var bids = params.bids;
-    adloader.loadScript(buildYieldmoCall(bids));
+/**
+  * Detects what environment we're in
+  * @returns Environment kind
+  */
+function getEnvironment() {
+  if (isSuperSandboxedIframe()) {
+    return 89;
+  } else if (isDfpInAmp()) {
+    return 5;
+  } else if (isDfp()) {
+    return 4;
+  } else if (isAmp()) {
+    return 1;
+  } else if (isDFPSafeFrame()) {
+    return 11;
+  } else if (isSafeFrame()) {
+    return 10;
+  } else if (isMraid()) {
+    return 2;
+  } else if (isCodeOnPage()) {
+    return 0;
+  } else if (isSandboxedIframe()) {
+    return 16;
+  } else {
+    return 90;
   }
+}
 
-  function buildYieldmoCall(bids) {
-    // build our base tag, based on if we are http or https
-    var ymURI = '//ads.yieldmo.com/exchange/prebid?';
-    var ymCall = document.location.protocol + ymURI;
+/**
+  * @returns true if we are running on the top window at dispatch time
+  */
+function isCodeOnPage() {
+  return window === window.parent;
+}
 
-    // Placement specific information
-    ymCall = _appendPlacementInformation(ymCall, bids);
+/**
+  * @returns true if the environment is both DFP and AMP
+  */
+function isDfpInAmp() {
+  return isDfp() && isAmp();
+}
 
-    // General impression params
-    ymCall = _appendImpressionInformation(ymCall);
-
-    // remove the trailing "&"
-    if (ymCall.lastIndexOf('&') === ymCall.length - 1) {
-      ymCall = ymCall.substring(0, ymCall.length - 1);
+/**
+  * @returns true if the window is in an iframe whose id and parent element id match DFP
+  */
+function isDfp() {
+  try {
+    const frameElement = window.frameElement;
+    const parentElement = window.frameElement.parentNode;
+    if (frameElement && parentElement) {
+      return frameElement.id.indexOf('google_ads_iframe') > -1 && parentElement.id.indexOf('google_ads_iframe') > -1;
     }
-
-    utils.logMessage('ymCall request built: ' + ymCall);
-
-    return ymCall;
+    return false;
+  } catch (e) {
+    return false;
   }
+}
 
-  function _appendPlacementInformation(url, bids) {
-    var placements = [];
-    var placement;
-    var bid;
-
-    for (var i = 0; i < bids.length; i++) {
-      bid = bids[i];
-
-      placement = {};
-      placement.callback_id = bid.bidId;
-      placement.placement_id = bid.placementCode;
-      placement.sizes = bid.sizes;
-
-      if (bid.params && bid.params.placementId) {
-        placement.ym_placement_id = bid.params.placementId;
-      }
-
-      placements.push(placement);
+/**
+* @returns true if there is an AMP context object
+*/
+function isAmp() {
+  try {
+    const ampContext = window.context || window.parent.context;
+    if (ampContext && ampContext.pageViewId) {
+      return ampContext;
     }
-
-    url = utils.tryAppendQueryString(url, 'p', JSON.stringify(placements));
-    return url;
+    return false;
+  } catch (e) {
+    return false;
   }
+}
 
-  function _appendImpressionInformation(url) {
-    var page_url = document.location; // page url
-    var pr = document.referrer || ''; // page's referrer
-    var dnt = (navigator.doNotTrack || false).toString(); // true if user enabled dnt (false by default)
-    var _s = document.location.protocol === 'https:' ? 1 : 0; // 1 if page is secure
-    var description = _getPageDescription();
-    var title = document.title || ''; // Value of the title from the publisher's page.
-    var bust = new Date().getTime().toString(); // cache buster
-    var scrd = window.devicePixelRatio || 0; // screen pixel density
+/**
+ * @returns true if the environment is a SafeFrame.
+ */
+function isSafeFrame() {
+  return window.$sf && window.$sf.ext;
+}
 
-    url = utils.tryAppendQueryString(url, 'callback', '$$PREBID_GLOBAL$$.YMCB');
-    url = utils.tryAppendQueryString(url, 'page_url', page_url);
-    url = utils.tryAppendQueryString(url, 'pr', pr);
-    url = utils.tryAppendQueryString(url, 'bust', bust);
-    url = utils.tryAppendQueryString(url, '_s', _s);
-    url = utils.tryAppendQueryString(url, 'scrd', scrd);
-    url = utils.tryAppendQueryString(url, 'dnt', dnt);
-    url = utils.tryAppendQueryString(url, 'description', description);
-    url = utils.tryAppendQueryString(url, 'title', title);
-
-    return url;
+/**
+ * @returns true if the environment is a dfp safe frame.
+ */
+function isDFPSafeFrame() {
+  if (window.location && window.location.href) {
+    const href = window.location.href;
+    return isSafeFrame() && href.indexOf('google') !== -1 && href.indexOf('safeframe') !== -1;
   }
+  return false;
+}
 
-  function _getPageDescription() {
-    if (document.querySelector('meta[name="description"]')) {
-      return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.
-    } else {
-      return '';
-    }
+/**
+ * Return true if we are in an iframe and can't access the top window.
+ */
+function isSandboxedIframe() {
+  return window.top !== window && !window.frameElement;
+}
+
+/**
+ * Return true if we cannot document.write to a child iframe (this implies no allow-same-origin)
+ */
+function isSuperSandboxedIframe() {
+  const sacrificialIframe = window.document.createElement('iframe');
+  try {
+    sacrificialIframe.setAttribute('style', 'display:none');
+    window.document.body.appendChild(sacrificialIframe);
+    sacrificialIframe.contentWindow._testVar = true;
+    window.document.body.removeChild(sacrificialIframe);
+    return false;
+  } catch (e) {
+    window.document.body.removeChild(sacrificialIframe);
+    return true;
   }
+}
 
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
-    if (ymResponses && ymResponses.constructor === Array && ymResponses.length > 0) {
-      for (var i = 0; i < ymResponses.length; i++) {
-        _registerPlacementBid(ymResponses[i]);
-      }
-    } else {
-      // If an incorrect response is returned, register error bids for all placements
-      // to prevent Prebid waiting till timeout for response
-      _registerNoResponseBids();
-
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-    }
-  };
-
-  function _registerPlacementBid(response) {
-    var bidObj = utils.getBidRequest(response.callback_id);
-    var placementCode = bidObj && bidObj.placementCode;
-    var bid = [];
-
-    if (response && response.cpm && response.cpm !== 0) {
-      bid = bidfactory.createBid(1, bidObj);
-      bid.bidderCode = 'yieldmo';
-      bid.cpm = response.cpm;
-      bid.ad = response.ad;
-      bid.width = response.width;
-      bid.height = response.height;
-      bidmanager.addBidResponse(placementCode, bid);
-    } else {
-      // no response data
-      if (bidObj) { utils.logMessage('No prebid response from yieldmo for placementCode: ' + bidObj.placementCode); }
-      bid = bidfactory.createBid(2, bidObj);
-      bid.bidderCode = 'yieldmo';
-      bidmanager.addBidResponse(placementCode, bid);
-    }
-  }
-
-  function _registerNoResponseBids() {
-    var yieldmoBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bid => bid.bidderCode === 'yieldmo');
-
-    utils._each(yieldmoBidRequests.bids, function (currentBid) {
-      var bid = [];
-      bid = bidfactory.createBid(2, currentBid);
-      bid.bidderCode = 'yieldmo';
-      bidmanager.addBidResponse(currentBid.placementCode, bid);
-    });
-  }
-
-  return Object.assign(this, {
-    callBids: _callBids
-  });
-};
-
-adaptermanager.registerBidAdapter(new YieldmoAdapter(), 'yieldmo');
-
-module.exports = YieldmoAdapter;
+/**
+ * @returns true if the window has the attribute identifying MRAID
+ */
+function isMraid() {
+  return !!(window.mraid);
+}

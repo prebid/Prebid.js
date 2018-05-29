@@ -1,6 +1,8 @@
 import { expect } from 'chai';
+import * as utils from 'src/utils';
+
 import {
-  BIDDER_CODE, CATEGORY, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME,
+  BIDDER_CODE, CATEGORY, DATA_PARTNER_PIXEL_ID, ENGINE_BASE_URL, NQ, NQ_NAME, SUB_ID,
   spec
 } from '../../../modules/nanointeractiveBidAdapter';
 
@@ -21,6 +23,7 @@ describe('nanointeractive adapter tests', function () {
           [NQ]: SEARCH_QUERY,
           [NQ_NAME]: null,
           [CATEGORY]: null,
+          [SUB_ID]: null,
         }
       })(),
       placementCode: 'div-gpt-ad-1460505748561-0',
@@ -28,16 +31,17 @@ describe('nanointeractive adapter tests', function () {
       sizes: SIZES,
       bidId: '24a1c9ec270973',
       bidderRequestId: '189135372acd55',
-      requestId: 'ac15bb68-4ef0-477f-93f4-de91c47f00a9'
+      auctionId: 'ac15bb68-4ef0-477f-93f4-de91c47f00a9'
     }
   }
 
   const SINGLE_BID_REQUEST = {
     [DATA_PARTNER_PIXEL_ID]: 'pid1',
     [NQ]: [SEARCH_QUERY, null],
+    [SUB_ID]: null,
     sizes: [WIDTH + 'x' + HEIGHT],
     bidId: '24a1c9ec270973',
-    cors: 'http://localhost:9876'
+    cors: 'http://localhost'
   };
 
   function getSingleBidResponse(isValid) {
@@ -77,10 +81,14 @@ describe('nanointeractive adapter tests', function () {
         expect(nanoBidAdapter.isBidRequestValid(getBid(false))).to.equal(false);
       });
       it('Test buildRequests()', function () {
+        let stub = sinon.stub(utils, 'getOrigin').callsFake(() => 'http://localhost');
+
         let request = nanoBidAdapter.buildRequests([getBid(true)]);
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(ENGINE_BASE_URL);
         expect(request.data).to.equal(JSON.stringify([SINGLE_BID_REQUEST]));
+
+        stub.restore();
       });
       it('Test interpretResponse() length', function () {
         let bids = nanoBidAdapter.interpretResponse({body: [getSingleBidResponse(true), getSingleBidResponse(false)]});

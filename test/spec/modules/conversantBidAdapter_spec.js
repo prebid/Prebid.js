@@ -3,7 +3,6 @@ import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
 var Adapter = require('modules/conversantBidAdapter');
-var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -23,7 +22,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 250]],
       bidId: 'bid000',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -35,7 +34,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[468, 60]],
       bidId: 'bid001',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -49,7 +48,7 @@ describe('Conversant adapter tests', function() {
       sizes: [[300, 600], [160, 600]],
       bidId: 'bid002',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }, {
       bidder: 'conversant',
       params: {
@@ -69,7 +68,7 @@ describe('Conversant adapter tests', function() {
       sizes: [640, 480],
       bidId: 'bid003',
       bidderRequestId: '117d765b87bed38',
-      requestId: 'req000'
+      auctionId: 'req000'
     }];
 
   const bidResponses = {
@@ -117,19 +116,8 @@ describe('Conversant adapter tests', function() {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(1);
     expect(spec.aliases[0]).to.equal('cnvr');
-    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(1);
-    expect(spec.supportedMediaTypes[0]).to.equal('video');
-  });
-
-  it('Verify user syncs', function() {
-    expect(spec.getUserSyncs({})).to.be.undefined;
-    expect(spec.getUserSyncs({iframeEnabled: true})).to.be.undefined;
-    expect(spec.getUserSyncs({pixelEnabled: false})).to.be.undefined;
-
-    const syncs = spec.getUserSyncs({pixelEnabled: true});
-    expect(syncs).to.be.an('array').with.lengthOf(1);
-    expect(syncs[0].type).to.equal('image');
-    expect(syncs[0].url).to.equal('//media.msg.dotomi.com/w/user.sync');
+    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(2);
+    expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
   it('Verify isBidRequestValid', function() {
@@ -156,7 +144,7 @@ describe('Conversant adapter tests', function() {
   it('Verify buildRequest', function() {
     const request = spec.buildRequests(bidRequests);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('//media.msg.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('//web.hb.ad.cpe.dotomi.com/s2s/header/24');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -228,6 +216,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('h', screen.height);
     expect(payload.device).to.have.property('dnt').that.is.oneOf([0, 1]);
     expect(payload.device).to.have.property('ua', navigator.userAgent);
+
+    expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
   it('Verify interpretResponse', function() {
@@ -279,5 +269,45 @@ describe('Conversant adapter tests', function() {
     expect(response).to.be.an('array').with.lengthOf(0);
     response = spec.interpretResponse({id: '123', seatbid: []}, {});
     expect(response).to.be.an('array').with.lengthOf(0);
+  });
+
+  it('Verify publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests)
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {crumbs: {pubcid: 12345}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests).data;
+    expect(payload).to.have.deep.property('user.ext.fpc', 12345);
+  });
+
+  it('Verify GDPR bid request', function() {
+    // add gdpr info
+    const bidRequest = {
+      gdprConsent: {
+        consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
+        gdprApplies: true
+      }
+    };
+
+    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    expect(payload).to.have.deep.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+    expect(payload).to.have.deep.property('regs.ext.gdpr', 1);
+  });
+
+  it('Verify GDPR bid request without gdprApplies', function() {
+    // add gdpr info
+    const bidRequest = {
+      gdprConsent: {
+        consentString: ''
+      }
+    };
+
+    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    expect(payload).to.have.deep.property('user.ext.consent', '');
+    expect(payload).to.not.have.deep.property('regs.ext.gdpr');
   });
 })

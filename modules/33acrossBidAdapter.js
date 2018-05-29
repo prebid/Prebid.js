@@ -1,5 +1,6 @@
+import { userSync } from 'src/userSync'
 const { registerBidder } = require('../src/adapters/bidderFactory');
-const utils = require('../src/utils');
+const { config } = require('../src/config');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -26,6 +27,9 @@ function _createServerRequest(bidRequest) {
   const ttxRequest = {};
   const params = bidRequest.params;
 
+  /*
+   * Infer data for the request payload
+   */
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
     banner: {
@@ -37,11 +41,7 @@ function _createServerRequest(bidRequest) {
       }
     }
   }
-
-  // Allowing site to be a test configuration object or just the id (former required for testing,
-  // latter when used by publishers)
-  ttxRequest.site = params.site || { id: params.siteId };
-
+  ttxRequest.site = { id: params.siteId };
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
@@ -50,30 +50,23 @@ function _createServerRequest(bidRequest) {
     ttxRequest.test = 1;
   }
 
+  /*
+   * Now construt the full server request
+   */
   const options = {
     contentType: 'application/json',
     withCredentials: true
   };
+  // Allow the ability to configure the HB endpoint for testing purposes.
+  const ttxSettings = config.getConfig('ttxSettings');
+  const url = (ttxSettings && ttxSettings.url) || END_POINT;
 
-  if (bidRequest.params.customHeaders) {
-    options.customHeaders = bidRequest.params.customHeaders;
-  }
-
+  // Return the server request
   return {
     'method': 'POST',
-    'url': bidRequest.params.url || END_POINT,
+    'url': url,
     'data': JSON.stringify(ttxRequest),
     'options': options
-  }
-}
-
-// Sync object will always be of type iframe for ttx
-function _createSync(bid) {
-  const syncUrl = bid.params.syncUrl || SYNC_ENDPOINT;
-
-  return {
-    type: 'iframe',
-    url: `${syncUrl}&id=${bid.params.siteId || bid.params.site.id}`
   }
 }
 
@@ -85,17 +78,30 @@ function _getFormatSize(sizeArr) {
   }
 }
 
+// Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
+// Sync type will always be 'iframe' for 33Across
+function _registerUserSyncs(requestData) {
+  let ttxRequest;
+  try {
+    ttxRequest = JSON.parse(requestData);
+  } catch (err) {
+    // No point in trying to register sync since the requisite data cannot be parsed.
+    return;
+  }
+  const ttxSettings = config.getConfig('ttxSettings');
+
+  let syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
+
+  syncUrl = `${syncUrl}&id=${ttxRequest.site.id}`;
+  userSync.registerSync('iframe', BIDDER_CODE, syncUrl);
+}
+
 function isBidRequestValid(bid) {
   if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
     return false;
   }
 
-  if ((typeof bid.params.site === 'undefined' || typeof bid.params.site.id === 'undefined') &&
-  (typeof bid.params.siteId === 'undefined')) {
-    return false;
-  }
-
-  if (typeof bid.params.productId === 'undefined') {
+  if (typeof bid.params.siteId === 'undefined' || typeof bid.params.productId === 'undefined') {
     return false;
   }
 
@@ -108,7 +114,12 @@ function buildRequests(bidRequests) {
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
-function interpretResponse(serverResponse) {
+function interpretResponse(serverResponse, bidRequest) {
+  // Register user sync first
+  if (bidRequest && bidRequest.data) {
+    _registerUserSyncs(bidRequest.data);
+  }
+
   const bidResponses = [];
 
   // If there are bids, look at the first bid of the first seatbid (see NOTE above for assumption about ttx)
@@ -119,24 +130,11 @@ function interpretResponse(serverResponse) {
   return bidResponses;
 }
 
-// Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
-function getUserSyncs(syncOptions) {
-  let syncs = [];
-  const ttxBidRequests = utils.getBidderRequestAllAdUnits(BIDDER_CODE).bids;
-
-  if (syncOptions.iframeEnabled) {
-    syncs = ttxBidRequests.map(_createSync);
-  }
-
-  return syncs;
-}
-
 const spec = {
   code: BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse,
-  getUserSyncs
+  interpretResponse
 }
 
 registerBidder(spec);
