@@ -54,8 +54,10 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       }
     }
   }
+
   let callbackHandler = handleCmpResponseCallbacks();
   let cmpCallbacks = {};
+  let cmpFunction;
 
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
@@ -66,9 +68,13 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   // check to see if prebid is in a safeframe (with CMP support)
   // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
-  if (utils.isFn(window.__cmp)) {
-    window.__cmp('getConsentData', null, callbackHandler.consentDataCallback);
-    window.__cmp('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
+  try {
+    cmpFunction = window.__cmp || utils.getWindowTop().__cmp;
+  } catch (e) {}
+
+  if (utils.isFn(cmpFunction)) {
+    cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
+    cmpFunction('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
   } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
     callCmpWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', callbackHandler.vendorConsentsCallback);

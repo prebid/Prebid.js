@@ -115,6 +115,7 @@ export const spec = {
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
           creativeId: bid.sbi_crid || bid.sbi_aid,
+          aid: bid.sbi_aid,
           netRevenue: true,
           currency: 'USD'
         };
