@@ -1,104 +1,161 @@
-const bidmanager = require('src/bidmanager');
-const bidfactory = require('src/bidfactory');
 const utils = require('src/utils');
-const ajax = require('src/ajax').ajax;
 const url = require('src/url');
-const adaptermanager = require('src/adaptermanager');
+import {registerBidder} from 'src/adapters/bidderFactory';
 
-const externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
-const internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
+const BIDDER_CODE = 'stroeerCore';
+const DEFAULT_HOST = 'hb.adscale.de';
+const DEFAULT_PATH = '/dsh';
+const DEFAULT_PORT = '';
 
-const StroeerCoreAdapter = function (win = window) {
-  const defaultHost = 'hb.adscale.de';
-  const defaultPath = '/dsh';
-  const defaultPort = '';
-  const bidderCode = 'stroeerCore';
+const _stroeerCore = getStroeerCore();
+const _externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
+const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
-  const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
+const isSecureWindow = () => window.location.protocol === 'https:';
+const isMainPageAccessible = () => getMostAccessibleTopWindow() === utils.getWindowTop();
 
-  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || undefined;
 
-  const isSecureWindow = () => win.location.protocol === 'https:';
+function getStroeerCore() {
+  let win = window;
 
-  function buildUrl({host: hostname = defaultHost, port = defaultPort, securePort, path: pathname = defaultPath}) {
-    const secure = isSecureWindow();
+  try {
+    while (!win.stroeerCore && window.top !== win && win.parent.location.href.length) {
+      win = win.parent;
+    }
+  } catch (ignore) {}
 
-    if (securePort && secure) {
-      port = securePort;
+  win.stroeerCore = win.stroeerCore || {};
+  return win.stroeerCore;
+}
+
+function getMostAccessibleTopWindow() {
+  let res = win;
+
+  try {
+    while (win.top !== res && res.parent.location.href.length) {
+      res = res.parent;
+    }
+  } catch (ignore) {}
+
+  return res;
+}
+
+function elementInView(elementId) {
+  const visibleInWindow = (el, win) => {
+    const rect = el.getBoundingClientRect();
+    const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
+
+    if (win !== win.parent) {
+      return inView && visibleInWindow(win.frameElement, win.parent);
     }
 
-    return `${url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname})}`;
+    return inView;
+  };
+
+  try {
+    return visibleInWindow(win.document.getElementById(elementId), utils.getWindowSelf());
+  } catch (e) {
+    // old browser, element not found, cross-origin etc.
+  }
+  return undefined;
+}
+
+function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) {
+  const secure = isSecureWindow();
+
+  if (securePort && secure) {
+    port = securePort;
   }
 
-  function getMostAccessibleTopWindow() {
-    let res = win;
+  return url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname});
+}
 
-    try {
-      while (win.top !== res && res.parent.location.href.length) {
-        res = res.parent;
+function setupGlobalNamespace(anyBid) {
+  // Used to lookup publisher's website settings on server-side.
+  _stroeerCore.anySid = _stroeerCore.anySid || anyBid.params.sid;
+  // Can be overridden for testing
+  _stroeerCore.connectHtmlUrl = _stroeerCore.connectHtmlUrl || anyBid.params.connectHtmlUrl;
+}
+
+export const spec = {
+  code : BIDDER_CODE,
+
+  isBidRequestValid: (function() {
+    const validators = [];
+
+    const createValidator = (checkFn, errorMsgFn) => {
+      return (bidRequest) => {
+        if (checkFn(bidRequest)) return true;
+        else {
+          utils.logError(`invalid bid: ${errorMsgFn(bidRequest)}`, 'ERROR');
+          return false;
+        }
       }
-    } catch (ignore) {}
-
-    return res;
-  }
-
-  function elementInView(elementId) {
-    const visibleInWindow = (el, win) => {
-      const rect = el.getBoundingClientRect();
-      const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
-
-      if (win !== win.parent) {
-        return inView && visibleInWindow(win.frameElement, win.parent);
-      }
-
-      return inView;
     };
 
-    try {
-      return visibleInWindow(win.document.getElementById(elementId), win);
-    } catch (e) {
-      // old browser, element not found, cross-origin etc.
+    validators.push(createValidator((bidReq) => typeof bidReq.params === 'object', bidReq => `bid request ${bidReq.bidId} does not have custom params`));
+    validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid), bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
+    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || [1, 2].includes(bidReq.params.ssat), bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
+
+    return function (bidRequest) {
+      return validators.every(f => f(bidRequest));
     }
-    return undefined;
-  }
+  }()),
 
-  function insertUserConnect(bids) {
-    const scriptElement = win.document.createElement('script');
-    const anyBidWithSlotId = bids[0];
-    const anyBidWithConnectJsUrl = bids.find(b => b.params && b.params.connectjsurl);
+  buildRequest: function(validBidRequests = [], bidderRequest) {
+    const anyBid = bidderRequest.bids[0];
 
-    if (anyBidWithSlotId) {
-      scriptElement.setAttribute('data-container-config', JSON.stringify({slotId: anyBidWithSlotId.params.sid}));
+    setupGlobalNamespace(anyBid);
+
+    const bidRequestWithSsat = validBidRequests.find(bidRequest => bidRequest.params.ssat);
+
+    const requestBody = {
+      id: bidderRequest.auctionId,
+      bids: [],
+      ref: utils.getTopWindowReferrer(),
+      ssl: isSecureWindow(),
+      mpa: isMainPageAccessible(),
+      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
+      ssat: bidRequestWithSsat.params.ssat || 2
+    };
+
+    validBidRequests.forEach(bid => {
+      requestBody.bids.push({
+        bid: bid.bidId,
+        sid: bid.params.sid,
+        siz: bid.sizes,
+        viz: elementInView(bid.placementCode)
+      });
+    });
+
+    return {
+      method: "POST",
+      url: buildUrl(anyBid),
+      data: JSON.stringify(requestBody)
     }
+  },
 
-    const userConnectUrl = anyBidWithConnectJsUrl && anyBidWithConnectJsUrl.params.connectjsurl;
+  interpretResponse: function (serverResponse, serverRequest) {
+    const bids = [];
 
-    scriptElement.src = userConnectUrl || ((isSecureWindow() ? 'https:' : 'http:') + '//js.adscale.de/userconnect.js');
+    serverResponse.body.forEach(bidResponse => {
+      const cpm = bidResponse.cpm;
 
-    utils.insertElement(scriptElement);
-  }
+      const bid = {
+        // Prebid fields
+        requestId: bidResponse.bidId,
+        cpm: cpm,
+        width: bidResponse.width,
+        height: bidResponse.height,
+        ad: bidResponse.ad,
 
-  function handleBidResponse(response, validBidRequestById) {
-    response.bids.forEach(bidResponse => {
-      const bidRequest = validBidRequestById[bidResponse.bidId];
-
-      if (bidRequest) {
-        const cpm = bidResponse.cpm;
-
-        const bidObject = Object.assign(bidfactory.createBid(1, bidRequest), {
-          bidderCode,
-          cpm: cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          cpm2: bidResponse.cpm2 || 0,
-          floor: bidResponse.floor || cpm,
-          exchangeRate: bidResponse.exchangeRate,
-          nurl: bidResponse.nurl,
-          originalAd: bidResponse.ad
-        });
-
-        bidObject.generateAd = function({auctionPrice}) {
+        // Custom fields
+        cpm2: bidResponse.cpm2 || 0,
+        floor: bidResponse.floor || cpm,
+        exchangeRate: bidResponse.exchangeRate,
+        nurl: bidResponse.nurl,
+        originalAd: bidResponse.ad,
+        generateAd: function({auctionPrice}) {
           let sspAuctionPrice = auctionPrice;
 
           if (this.exchangeRate && this.exchangeRate !== 1) {
@@ -108,178 +165,71 @@ const StroeerCoreAdapter = function (win = window) {
           auctionPrice = tunePrice(auctionPrice);
           sspAuctionPrice = tunePrice(sspAuctionPrice);
 
-          let creative = this.originalAd;
-          return creative
-            .replace(/\${AUCTION_PRICE:ENC}/g, externalCrypter.encrypt(this.adId, auctionPrice.toString()))
-            .replace(/\${SSP_AUCTION_PRICE:ENC}/g, internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
+          // note: adId provided by prebid elsewhere (same as bidId)
+          return this.originalAd
+            .replace(/\${AUCTION_PRICE:ENC}/g, _externalCrypter.encrypt(this.adId, auctionPrice.toString()))
+            .replace(/\${SSP_AUCTION_PRICE:ENC}/g, _internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
             .replace(/\${AUCTION_PRICE}/g, auctionPrice);
-        };
-
-        bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
-      }
-    });
-
-    const unfulfilledBidRequests = Object.keys(validBidRequestById)
-      .filter(id => response.bids.find(bid => bid.bidId === id) === undefined)
-      .map(id => validBidRequestById[id]);
-
-    unfulfilledBidRequests.forEach(bidRequest => {
-      bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
-    });
-  }
-
-  function tunePrice(price) {
-    const ENCRYPTION_SIZE_LIMIT = 8;
-    const str = String(price);
-    if (str.length <= ENCRYPTION_SIZE_LIMIT) {
-      return price;
-    }
-
-    const throwError = () => {
-      throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
-    };
-    const sides = str.split('.');
-
-    if (sides.length === 2) {
-      const integerPart = sides[0].trim();
-      let fractionalPart = sides[1].trim();
-
-      const bytesRemaining = ENCRYPTION_SIZE_LIMIT - integerPart.length;
-
-      // room '.' and at least two fraction digits
-      if (bytesRemaining > 2) fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
-      // room for '.' and first fraction digit. Can only accept if second fraction digit is zero.
-      else if (bytesRemaining === 2 && (fractionalPart.charAt(1) === '0')) fractionalPart = fractionalPart.charAt(0);
-      // no more room for '.' or fraction digit. Only accept if first and second fraction digits are zero.
-      else if (bytesRemaining >= 0 && bytesRemaining < 2 && fractionalPart.charAt(0) === '0' && fractionalPart.charAt(1) === '0') fractionalPart = '';
-      else throwError();
-
-      const newPrice = integerPart + (fractionalPart.length > 0 ? '.' + fractionalPart : '');
-      utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
-      return newPrice;
-    }
-
-    throwError();
-  }
-
-  function parseResponse(rawResponse) {
-    let response = {};
-
-    try {
-      response = JSON.parse(rawResponse);
-    } catch (e) {
-      utils.logError('unable to parse bid response', 'ERROR', e);
-    }
-
-    return response;
-  }
-
-  function createValidationFilters(ssat) {
-    const filters = [];
-
-    const createFilter = (checkFn, errorMsgFn) => {
-      return (bid) => {
-        if (checkFn(bid)) return true;
-        else {
-          utils.logError(`invalid bid: ${errorMsgFn(bid)}`, 'ERROR');
-          return false;
         }
-      }
-    };
-
-    filters.push(createFilter((bid) => typeof bid.params === 'object', bid => `bid ${bid.bidId} does not have custom params`));
-    filters.push(createFilter((bid) => utils.isStr(bid.params.sid), bid => `bid ${bid.bidId} does not have a sid string field`));
-    filters.push(createFilter((bid) => ssat === null || (bid.params.ssat === ssat), bid => `bid ${bid.bidId} has auction type that is inconsistent with other bids (expected ${ssat})`));
-    filters.push(createFilter((bid) => bid.params.ssat === undefined || [1, 2].includes(bid.params.ssat), bid => `bid ${bid.bidId} does not have a valid ssat value (must be 1 or 2)`));
-
-    return filters;
-  }
-
-  return {
-    callBids: function (params) {
-      const allBids = params.bids;
-      const validBidRequestById = {};
-
-      const bidWithSsat = allBids.find(b => b.params && b.params.ssat);
-      const ssat = bidWithSsat ? bidWithSsat.params.ssat : null;
-
-      if (ssat != null) utils.logInfo(`using value ${ssat} for ssat`);
-
-      const validationFilters = createValidationFilters(ssat);
-
-      const validBids = allBids.filter(bid => validationFilters.every(fn => fn(bid)));
-      const invalidBids = allBids.filter(bid => !validBids.includes(bid));
-
-      const requestBody = {
-        id: params.requestId,
-        bids: [],
-        ref: getPageReferer(),
-        ssl: isSecureWindow(),
-        mpa: isMainPageAccessible(),
-        timeout: params.timeout - (Date.now() - params.auctionStart),
-        ssat: ssat || 2
       };
 
-      validBids.forEach(bidRequest => {
-        requestBody.bids.push({
-          bid: bidRequest.bidId,
-          sid: bidRequest.params.sid,
-          siz: bidRequest.sizes,
-          viz: elementInView(bidRequest.placementCode)
-        });
-        validBidRequestById[bidRequest.bidId] = bidRequest;
+      bids.push(bid);
+    });
+
+    return bids;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    const sid = _stroeerCore.anySid;
+
+    if (syncOptions.iframeEnabled && sid) {
+      const userConnectUrl = (_stroeerCore.connectHtmlUrl || '//js.adscale.de/userconnect.html') + "?sid=" + sid;
+      syncs.push({
+        type: 'iframe',
+        url: userConnectUrl
       });
-
-      invalidBids.forEach(bid => bidmanager.addBidResponse(bid.placementCode, Object.assign(bidfactory.createBid(2, bid), {bidderCode})));
-
-      // Safeguard against the unexpected - an infinite request loop.
-      let redirectCount = 0;
-
-      function sendBidRequest(url) {
-        const callback = {
-          success: function (responseText /*, status code */) {
-            const response = parseResponse(responseText);
-
-            if (response.redirect && redirectCount === 0) {
-              // Workaround for IE 10/11. These browsers don't send the body on the ajax post redirect.
-              // Also as a workaround for Safari on iPad/iPhone. These browsers always do pre-flight CORS request when
-              // it should do simple CORS request as Ajax content-type is text/plain. Therefore, like the Safari on
-              // desktop when content type is json/application, they don't send the body on subsequent requests.
-              redirectCount++;
-              sendBidRequest(response.redirect);
-            } else {
-              if (response.bids) {
-                handleBidResponse(response, validBidRequestById);
-              } else {
-                utils.logError('invalid response ' + JSON.stringify(response), 'ERROR');
-                handleBidResponse({bids: []}, validBidRequestById);
-              }
-              insertUserConnect(validBids);
-            }
-          },
-          error: function () {
-            insertUserConnect(validBids);
-          }
-        };
-
-        ajax(url, callback, JSON.stringify(requestBody), {
-          withCredentials: true,
-          contentType: 'text/plain'
-        });
-      }
-
-      if (requestBody.bids.length > 0) {
-        sendBidRequest(buildUrl(allBids[0].params));
-      } else {
-        insertUserConnect(validBids);
-      }
     }
-  };
+    return syncs;
+  }
 };
 
-adaptermanager.registerBidAdapter(new StroeerCoreAdapter(), 'stroeerCore');
+registerBidder(spec);
 
-module.exports = StroeerCoreAdapter;
+
+function tunePrice(price) {
+  const ENCRYPTION_SIZE_LIMIT = 8;
+  const str = String(price);
+  if (str.length <= ENCRYPTION_SIZE_LIMIT) {
+    return price;
+  }
+
+  const throwError = () => {
+    throw new Error(`unable to truncate ${price} to fit into 8 bytes`);
+  };
+  const sides = str.split('.');
+
+  if (sides.length === 2) {
+    const integerPart = sides[0].trim();
+    let fractionalPart = sides[1].trim();
+
+    const bytesRemaining = ENCRYPTION_SIZE_LIMIT - integerPart.length;
+
+    // room '.' and at least two fraction digits
+    if (bytesRemaining > 2) fractionalPart = fractionalPart.substring(0, bytesRemaining - 1);
+    // room for '.' and first fraction digit. Can only accept if second fraction digit is zero.
+    else if (bytesRemaining === 2 && (fractionalPart.charAt(1) === '0')) fractionalPart = fractionalPart.charAt(0);
+    // no more room for '.' or fraction digit. Only accept if first and second fraction digits are zero.
+    else if (bytesRemaining >= 0 && bytesRemaining < 2 && fractionalPart.charAt(0) === '0' && fractionalPart.charAt(1) === '0') fractionalPart = '';
+    else throwError();
+
+    const newPrice = integerPart + (fractionalPart.length > 0 ? '.' + fractionalPart : '');
+    utils.logWarn(`truncated price ${price} to ${newPrice} to fit into 8 bytes`);
+    return newPrice;
+  }
+
+  throwError();
+}
 
 function Crypter(encKey, intKey) {
   this.encKey = atob(encKey); // padEnd key
