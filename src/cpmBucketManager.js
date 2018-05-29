@@ -124,11 +124,21 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const bucketMin = bucket.min * granularityMultiplier;
 
   // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
-  let cpmTarget = ((Math.floor((cpm - bucketMin) / increment)) * increment) + bucketMin;
+  // we're using a precision rounding on the quotient, as some values in JS return values slightly below the expected mark skewing the target bucket
+  //   (eg 4.01 / 0.01 = 400.99999999999994)
+  let cpmTarget = ((Math.floor(round(((cpm - bucketMin) / increment), 3))) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
   cpmTarget = Number(cpmTarget.toFixed(10));
   return cpmTarget.toFixed(precision);
+}
+
+function round(number, precision) {
+  var shift = function (number, exponent) {
+    var numArray = ('' + number).split('e');
+    return +(numArray[0] + 'e' + (numArray[1] ? (+numArray[1] + exponent) : exponent));
+  };
+  return shift(Math.round(shift(number, +precision)), -precision);
 }
 
 export { getPriceBucketString, isValidPriceConfig };
