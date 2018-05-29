@@ -135,6 +135,29 @@ describe('config API', () => {
     expect(getConfig('priceGranularity')).to.be.equal('low');
   });
 
+  it('set mediaTypePriceGranularity', () => {
+    const customPriceGranularity = {
+      'buckets': [{
+        'min': 0,
+        'max': 3,
+        'increment': 0.01,
+        'cap': true
+      }]
+    };
+    setConfig({
+      'mediaTypePriceGranularity': {
+        'banner': 'medium',
+        'video': customPriceGranularity,
+        'native': 'medium'
+      }
+    });
+
+    const configResult = getConfig('mediaTypePriceGranularity');
+    expect(configResult.banner).to.be.equal('medium');
+    expect(configResult.video).to.be.equal(customPriceGranularity);
+    expect(configResult.native).to.be.equal('medium');
+  });
+
   it('sets priceGranularity and customPriceBucket', () => {
     const goodConfig = {
       'buckets': [{

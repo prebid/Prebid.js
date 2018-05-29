@@ -21,17 +21,17 @@ export const spec = {
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && bid.params.appId && bid.params.bidfloor);
+    return !!(isVideoBidValid(bid) || isBannerBidValid(bid));
   },
 
   buildRequests(bids, bidderRequest) {
     let requests = [];
-    let videoBids = bids.filter(bid => isVideoBid(bid));
-    let bannerBids = bids.filter(bid => !isVideoBid(bid));
+    let videoBids = bids.filter(bid => isVideoBidValid(bid));
+    let bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
       requests.push({
         method: 'POST',
-        url: VIDEO_ENDPOINT + bid.params.appId,
+        url: VIDEO_ENDPOINT + getVideoBidParam(bid, 'appId'),
         data: createVideoRequestData(bid, bidderRequest),
         bidRequest: bid
       });
@@ -55,15 +55,16 @@ export const spec = {
         utils.logWarn(`No valid video bids from ${spec.code} bidder`);
         return [];
       }
-      let size = getFirstSize(bidRequest);
+      let sizes = getVideoSizes(bidRequest);
+      let firstSize = getFirstSize(sizes);
       let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
       return {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         vastUrl: response.url,
         cpm: response.bidPrice,
-        width: size.w,
-        height: size.h,
+        width: firstSize.w,
+        height: firstSize.h,
         creativeId: response.cmpId,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
@@ -120,10 +121,11 @@ function outstreamRender(bid) {
   });
 }
 
-function getSizes(bid) {
-  let sizes = (isVideoBid(bid)
-    ? utils.deepAccess(bid, 'mediaTypes.video.playerSize')
-    : utils.deepAccess(bid, 'mediaTypes.banner.sizes')) || bid.sizes;
+function getFirstSize(sizes) {
+  return (sizes && sizes.length) ? sizes[0] : { w: undefined, h: undefined };
+}
+
+function parseSizes(sizes) {
   return utils.parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
@@ -133,9 +135,12 @@ function getSizes(bid) {
   });
 }
 
-function getFirstSize(bid) {
-  let sizes = getSizes(bid);
-  return sizes.length ? sizes[0] : { w: undefined, h: undefined };
+function getVideoSizes(bid) {
+  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+}
+
+function getBannerSizes(bid) {
+  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 function getOsVersion() {
@@ -172,10 +177,30 @@ function getDoNotTrack() {
 }
 
 function isVideoBid(bid) {
-  return bid.mediaTypes && bid.mediaTypes.video;
+  return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function getVideoParams(bid) {
+function isBannerBid(bid) {
+  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+}
+
+function getVideoBidParam(bid, key) {
+  return utils.deepAccess(bid, 'params.video.' + key) || utils.deepAccess(bid, 'params.' + key);
+}
+
+function getBannerBidParam(bid, key) {
+  return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
+}
+
+function isVideoBidValid(bid) {
+  return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
+}
+
+function isBannerBidValid(bid) {
+  return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoTargetingParams(bid) {
   return Object.keys(Object(bid.params.video))
     .filter(param => includes(VIDEO_TARGETING, param))
     .reduce((obj, param) => {
@@ -185,21 +210,24 @@ function getVideoParams(bid) {
 }
 
 function createVideoRequestData(bid, bidderRequest) {
-  let size = getFirstSize(bid);
-  let video = getVideoParams(bid);
+  let sizes = getVideoSizes(bid);
+  let firstSize = getFirstSize(sizes);
+  let video = getVideoTargetingParams(bid);
+  let appId = getVideoBidParam(bid, 'appId');
+  let bidfloor = getVideoBidParam(bid, 'bidfloor');
   let topLocation = utils.getTopWindowLocation();
   let payload = {
     isPrebid: true,
-    appId: bid.params.appId,
+    appId: appId,
     domain: document.location.hostname,
     id: utils.getUniqueIdentifierStr(),
     imp: [{
       video: Object.assign({
-        w: size.w,
-        h: size.h,
+        w: firstSize.w,
+        h: firstSize.h,
         mimes: DEFAULT_MIMES
       }, video),
-      bidfloor: bid.params.bidfloor,
+      bidfloor: bidfloor,
       secure: topLocation.protocol === 'https:' ? 1 : 0
     }],
     site: {
@@ -234,9 +262,9 @@ function createBannerRequestData(bids, bidderRequest) {
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
-      id: bid.params.appId,
-      bidfloor: bid.params.bidfloor,
-      sizes: getSizes(bid)
+      id: getBannerBidParam(bid, 'appId'),
+      bidfloor: getBannerBidParam(bid, 'bidfloor'),
+      sizes: getBannerSizes(bid)
     };
   });
   let payload = {
