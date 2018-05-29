@@ -18,8 +18,8 @@ Module that connects to an AdSpirit zone to fetch bids.
                    {
                        bidder: "adspirit",
                        params: {
-                           placementId: '123',
-                           host: 'host'
+                           placementId: '5',
+                           host: 'http://n1test.adspirit.de'
                        }
                    }
                ]
