@@ -4,7 +4,6 @@ import parse from 'url-parse';
 import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
 import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
-import { newConfig } from 'src/config';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -105,6 +104,7 @@ describe('The DFP video support module', () => {
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
 
   it('should merge the user-provided cust_params with the default ones', () => {
@@ -130,10 +130,29 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
 
-  it('should not overwrite an existing description_url for object input and cache disabled', () => {
-    const config = newConfig();
-    config.setConfig({ usePrebidCache: true });
+  it('should merge the user-provided cust-params with the default ones when using url object', () => {
+    const bidCopy = Object.assign({ }, bid);
+    bidCopy.adserverTargeting = {
+      hb_adid: 'ad_id',
+    };
 
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s&cust_params=section%3dblog%26mykey%3dmyvalue'
+    }));
+
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_adid', 'ad_id');
+    expect(customParams).to.have.property('section', 'blog');
+    expect(customParams).to.have.property('mykey', 'myvalue');
+    expect(customParams).to.have.property('hb_uuid', 'abc');
+    expect(customParams).to.have.property('hb_cache_id', 'abc');
+  });
+
+  it('should not overwrite an existing description_url for object input and cache disabled', () => {
     const bidCopy = Object.assign({}, bid);
     bidCopy.vastUrl = 'vastUrl.example';
 

@@ -30,18 +30,21 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {bidderRequest} - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
+    let reqId;
 
     bids.forEach(bid => {
       if (bid.params.priceType === 'gross') {
         priceType = 'gross';
       }
+      reqId = bid.bidderRequestId;
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
@@ -54,7 +57,17 @@ export const spec = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
+      r: reqId
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      }
+      payload.gdpr_applies =
+        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+    }
 
     return {
       method: 'GET',

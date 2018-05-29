@@ -70,7 +70,7 @@ export const spec = {
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': navigator ? navigator.language : '',
+      'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
       'page': location.pathname,
