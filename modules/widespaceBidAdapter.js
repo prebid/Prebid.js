@@ -106,9 +106,10 @@ export const spec = {
       // GDPR Consent info
       if (data.gdprCmp) {
         const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
-        data.gdprApplies = gdprApplies ? 1 : 0;
+        const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
         data.gdprConsentData = consentString;
-        data.gdprHasGlobalScope = vendorData && vendorData.hasGlobalScope ? 1 : 0;
+        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0;
       }
 
       // Remove empty params
