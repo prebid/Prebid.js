@@ -45,6 +45,22 @@ describe('+widespaceAdatperTest', () => {
     'transactionId': '4f68b713-04ba-4d7f-8df9-643bcdab5efv'
   }];
 
+  // Dummy bidderRequest object
+  const bidderRequest = {
+    auctionId: 'bf1e57ee-fff2-4304-8143-91aaf423a944',
+    auctionStart: 1527418994278,
+    bidderCode: 'widespace',
+    bidderRequestId: '37a5f053efef34',
+    timeout: 3000,
+    gdprConsent: {
+      consentString: 'consentString',
+      gdprApplies: true,
+      vendorData: {
+        hasGlobalScope: false
+      }
+    }
+  };
+
   // Dummy bid response with ad code
   const bidResponse = {
     body: [{
@@ -125,7 +141,7 @@ describe('+widespaceAdatperTest', () => {
   });
 
   describe('+bidRequest', () => {
-    const request = spec.buildRequests(bidRequest);
+    const request = spec.buildRequests(bidRequest, bidderRequest);
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
 
     it('-bidRequest method is POST', () => {
