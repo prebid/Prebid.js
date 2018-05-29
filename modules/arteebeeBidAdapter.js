@@ -16,11 +16,11 @@ export const spec = {
     return 'params' in bidRequest && bidRequest.params.pub !== undefined &&
       bidRequest.params.source !== undefined;
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      let prebidReq = makePrebidRequest(validBidRequests[i]);
+      let prebidReq = makePrebidRequest(validBidRequests[i], bidderRequest);
       if (prebidReq) {
         requests.push(prebidReq);
       }
@@ -58,20 +58,20 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     return [];
   }
 }
 
 registerBidder(spec);
 
-function makePrebidRequest(req) {
+function makePrebidRequest(req, bidderRequest) {
   var host = req.params.host || DEFAULT_HOST;
   var ssp = req.params.ssp || DEFAULT_SSP;
 
   var url = window.location.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
 
-  const payload = makeRtbRequest(req);
+  const payload = makeRtbRequest(req, bidderRequest);
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -81,7 +81,7 @@ function makePrebidRequest(req) {
   };
 }
 
-function makeRtbRequest(req) {
+function makeRtbRequest(req, bidderRequest) {
   var auctionId = req.requestId;
 
   var imp = [];
@@ -98,6 +98,18 @@ function makeRtbRequest(req) {
 
   if (req.params.coppa) {
     rtbReq.regs = {coppa: 1};
+  }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if ((typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies) {
+      if (!rtbReq.regs) {
+        rtbReq.regs = {};
+      }
+      rtbReq.regs['ext'] = {'gdpr': 1};
+    }
+    if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
+      rtbReq['user'] = {'ext': {'consent': bidderRequest.gdprConsent.consentString}};
+    }
   }
 
   if (req.params.test) {
