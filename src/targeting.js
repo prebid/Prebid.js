@@ -78,25 +78,6 @@ export function newTargeting(auctionManager) {
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
       .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : []);
 
-    // make sure at least there is a entry per adUnitCode in the targeting so receivers of SET_TARGETING call's can know what ad units are being invoked
-
-    adUnitCodes.forEach(key => {
-      if (!targeting.some(target => {
-        let hasMatchingAdUnitCode = false;
-
-        Object.getOwnPropertyNames(target).forEach(targetKey => {
-          if (targetKey === key) {
-            hasMatchingAdUnitCode = true;
-          }
-        });
-        return hasMatchingAdUnitCode;
-      })) {
-        const emptyTargeting = {};
-        emptyTargeting[key] = [];
-        targeting.push(emptyTargeting);
-      }
-    });
-
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
       Object.keys(adUnitCode).map(key => {
@@ -109,6 +90,15 @@ export function newTargeting(auctionManager) {
     });
 
     targeting = flattenTargeting(targeting);
+
+    // make sure at least there is a entry per adUnit code in the targetingSet so receivers of SET_TARGETING call's can know what ad units are being invoked
+
+    adUnitCodes.forEach(code => {
+      if (!targeting[code]) {
+        targeting[code] = {};
+      }
+    });
+
     return targeting;
   };
 
