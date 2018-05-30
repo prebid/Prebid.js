@@ -40,7 +40,7 @@ const bidReq = [{
   },
   sizes: [[1, 1]],
   bidId: '453cf42d72bb3c',
-  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874\n'
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
 const validBidRes = {
