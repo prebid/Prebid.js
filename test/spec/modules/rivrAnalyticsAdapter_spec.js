@@ -137,15 +137,35 @@ describe('', () => {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
       const sitePubcid = analyticsAdapter.context.auctionObject.site.publisher.id;
       const appPubcid = analyticsAdapter.context.auctionObject.app.publisher.id;
+      const requestEvent = analyticsAdapter.context.auctionObject.bidRequests;
       expect(sitePubcid).to.be.eql(777);
       expect(sitePubcid).to.be.eql(appPubcid);
+      expect(requestEvent).to.have.length(1);
+      expect(requestEvent[0]).to.be.eql({
+        bidderCode: 'adapter',
+        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+        bidderRequestId: '1a6fc81528d0f6',
+        bids: [{
+          bidder: 'adapter',
+          params: {},
+          adUnitCode: 'container-1',
+          transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
+          sizes: [[300, 250]],
+          bidId: '208750227436c1',
+          bidderRequestId: '1a6fc81528d0f6',
+          auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+        }],
+        auctionStart: 1509369418387,
+        timeout: 3000,
+        start: 1509369418389
+      });
     });
 
     it('should handle bid response event', () => {
       events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
-      const ev = analyticsAdapter.context.auctionObject.bidResponses;
-      expect(ev).to.have.length(1);
-      expect(ev[0]).to.be.eql({
+      const responseEvent = analyticsAdapter.context.auctionObject.bidResponses;
+      expect(responseEvent).to.have.length(1);
+      expect(responseEvent[0]).to.be.eql({
         timestamp: 1509369418832,
         status: 1,
         'total_duration': 443,
@@ -182,9 +202,9 @@ describe('', () => {
 
     it('should handle winning bid', () => {
       events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
-      const ev = analyticsAdapter.context.auctionObject.imp;
-      expect(ev.length).to.be.eql(1);
-      expect(ev[0]).to.be.eql({
+      const wonEvent = analyticsAdapter.context.auctionObject.imp;
+      expect(wonEvent.length).to.be.eql(1);
+      expect(wonEvent[0]).to.be.eql({
         tagid: 'container-1',
         displaymanager: null,
         displaymanagerver: null,
@@ -203,19 +223,23 @@ describe('', () => {
     it('sends request after timeout', () => {
       let impressions = analyticsAdapter.context.auctionObject.imp;
       let responses = analyticsAdapter.context.auctionObject.bidResponses;
+      let requests = analyticsAdapter.context.auctionObject.bidRequests;
 
       expect(impressions.length).to.be.eql(1);
       expect(responses.length).to.be.eql(1);
+      expect(requests.length).to.be.eql(1);
       expect(ajaxStub.calledOnce).to.be.equal(false);
 
       timer.tick(4500);
 
-      let impressionss = analyticsAdapter.context.auctionObject.imp;
-      let responsess = analyticsAdapter.context.auctionObject.bidResponses;
+      let impressionsAfterSend = analyticsAdapter.context.auctionObject.imp;
+      let responsesAfterSend = analyticsAdapter.context.auctionObject.bidResponses;
+      let requestsAfterSend = analyticsAdapter.context.auctionObject.bidRequests;
 
       expect(ajaxStub.calledOnce).to.be.equal(true);
-      expect(impressionss.length).to.be.eql(0);
-      expect(responsess.length).to.be.eql(0);
+      expect(impressionsAfterSend.length).to.be.eql(0);
+      expect(responsesAfterSend.length).to.be.eql(0);
+      expect(requestsAfterSend.length).to.be.eql(0);
     });
   });
 });
