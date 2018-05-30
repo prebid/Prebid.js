@@ -189,6 +189,26 @@ describe('InSkin BidAdapter', () => {
 
       expect(request.method).to.have.string('POST');
     });
+
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'inskin',
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.consent.gdprConsentString).to.exist;
+      expect(payload.consent.gdprConsentRequired).to.exist;
+      expect(payload.consent.gdprConsentString).to.exist.and.to.equal(consentString);
+      expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
+    });
   });
   describe('interpretResponse validation', () => {
     it('response should have valid bidderCode', () => {
@@ -236,18 +256,24 @@ describe('InSkin BidAdapter', () => {
     });
   });
   describe('getUserSyncs', () => {
-    let syncOptions = {'iframeEnabled': true};
-
     it('handles empty sync options', () => {
       let opts = spec.getUserSyncs({});
 
       expect(opts).to.be.empty;
     });
 
-    it('should always return empty array', () => {
+    it('should return two sync urls if pixel syncs are enabled', () => {
+      let syncOptions = {'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions);
 
-      expect(opts).to.be.empty;
+      expect(opts.length).to.equal(2);
+    });
+
+    it('should return three sync urls if pixel and iframe syncs are enabled', () => {
+      let syncOptions = {'iframeEnabled': true, 'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(3);
     });
   });
 });

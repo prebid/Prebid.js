@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { spec } from 'modules/danmarketplaceBidAdapter';
+import { spec } from 'modules/fairtradeBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('DAN_Marketplace Adapter', function () {
+describe('FairTradeAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
@@ -13,9 +13,9 @@ describe('DAN_Marketplace Adapter', function () {
 
   describe('isBidRequestValid', () => {
     let bid = {
-      'bidder': 'danmarketplace',
+      'bidder': 'fairtrade',
       'params': {
-        'uid': '4'
+        'uid': '166'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -41,9 +41,9 @@ describe('DAN_Marketplace Adapter', function () {
   describe('buildRequests', () => {
     let bidRequests = [
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'fairtrade',
         'params': {
-          'uid': '5'
+          'uid': '165'
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -52,9 +52,9 @@ describe('DAN_Marketplace Adapter', function () {
         'auctionId': '1d1a030790a475',
       },
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'fairtrade',
         'params': {
-          'uid': '5'
+          'uid': '165'
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90]],
@@ -63,9 +63,9 @@ describe('DAN_Marketplace Adapter', function () {
         'auctionId': '1d1a030790a475',
       },
       {
-        'bidder': 'danmarketplace',
+        'bidder': 'fairtrade',
         'params': {
-          'uid': '6'
+          'uid': '167'
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -81,7 +81,8 @@ describe('DAN_Marketplace Adapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '5');
+      expect(payload).to.have.property('auids', '165');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('auids must not be duplicated', () => {
@@ -90,7 +91,8 @@ describe('DAN_Marketplace Adapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '5,6');
+      expect(payload).to.have.property('auids', '165,167');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('pt parameter must be "gross" if params.priceType === "gross"', () => {
@@ -100,7 +102,8 @@ describe('DAN_Marketplace Adapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
-      expect(payload).to.have.property('auids', '5,6');
+      expect(payload).to.have.property('auids', '165,167');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
 
@@ -111,16 +114,17 @@ describe('DAN_Marketplace Adapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '5,6');
+      expect(payload).to.have.property('auids', '165,167');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
   });
 
   describe('interpretResponse', () => {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 4, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 5, 'h': 90, 'w': 728}], 'seat': '1'},
-      {'bid': [{'price': 0, 'auid': 6, 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 165, 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 166, 'h': 90, 'w': 728}], 'seat': '1'},
+      {'bid': [{'price': 0, 'auid': 167, 'h': 250, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 4</div>', 'h': 250, 'w': 300}], 'seat': '1'},
       undefined,
       {'bid': [], 'seat': '1'},
@@ -130,9 +134,9 @@ describe('DAN_Marketplace Adapter', function () {
     it('should get correct bid response', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '4'
+            'uid': '165'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -146,7 +150,7 @@ describe('DAN_Marketplace Adapter', function () {
         {
           'requestId': '659423fff799cb',
           'cpm': 1.15,
-          'creativeId': 4,
+          'creativeId': 165,
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -164,9 +168,9 @@ describe('DAN_Marketplace Adapter', function () {
     it('should get correct multi bid response', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '4'
+            'uid': '165'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -175,9 +179,9 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c8c99',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '5'
+            'uid': '166'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -186,9 +190,9 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c8c99',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '4'
+            'uid': '165'
           },
           'adUnitCode': 'adunit-code-2',
           'sizes': [[728, 90]],
@@ -202,7 +206,7 @@ describe('DAN_Marketplace Adapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 4,
+          'creativeId': 165,
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -214,7 +218,7 @@ describe('DAN_Marketplace Adapter', function () {
         {
           'requestId': '5703af74d0472a',
           'cpm': 1.15,
-          'creativeId': 4,
+          'creativeId': 165,
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -226,7 +230,7 @@ describe('DAN_Marketplace Adapter', function () {
         {
           'requestId': '4dff80cc4ee346',
           'cpm': 0.5,
-          'creativeId': 5,
+          'creativeId': 166,
           'dealId': undefined,
           'width': 728,
           'height': 90,
@@ -244,9 +248,9 @@ describe('DAN_Marketplace Adapter', function () {
     it('handles wrong and nobid responses', () => {
       const bidRequests = [
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '6'
+            'uid': '167'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -255,9 +259,9 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c84d34',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '7'
+            'uid': '168'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -266,9 +270,9 @@ describe('DAN_Marketplace Adapter', function () {
           'auctionId': '1fa09aee5c84d34',
         },
         {
-          'bidder': 'danmarketplace',
+          'bidder': 'fairtrade',
           'params': {
-            'uid': '8'
+            'uid': '169'
           },
           'adUnitCode': 'adunit-code-2',
           'sizes': [[728, 90]],

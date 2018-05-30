@@ -1,39 +1,35 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-const BIDDER_CODE = 'danmarketplace';
-const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
+import { config } from 'src/config';
+const BIDDER_CODE = 'visx';
+const ENDPOINT_URL = '//t.visx.net/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//ads.danmarketplace.com/push_sync';
+const DEFAULT_CUR = 'EUR';
+const ADAPTER_SYNC_URL = '//t.visx.net/push_sync';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
   noBid: 'Array of bid objects is empty',
   noPlacementCode: 'Can\'t find in requested bids the bid with auid - ',
-  emptyUids: 'Uids should be not empty',
-  emptySeatbid: 'Seatbid array from response has empty item',
+  emptyUids: 'Uids should not be empty',
+  emptySeatbid: 'Seatbid array from response has an empty item',
   emptyResponse: 'Response is empty',
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
-
-/**
- * Dentsu Aegis Network Marketplace Bid Adapter.
- * Contact: niels@baarsma.net
- *
- */
 export const spec = {
   code: BIDDER_CODE,
-
-  aliases: ['DANMarketplace', 'DAN_Marketplace'],
-
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
   },
-
   buildRequests: function(validBidRequests) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
+    const currency =
+      config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
+      config.getConfig('currency.adServerCurrency') ||
+      DEFAULT_CUR;
     let priceType = 'net';
     let reqId;
 
@@ -54,7 +50,9 @@ export const spec = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
+      test: 1,
       r: reqId,
+      cur: currency,
     };
 
     return {
@@ -64,12 +62,12 @@ export const spec = {
       bidsMap: bidsMap,
     };
   },
-
   interpretResponse: function(serverResponse, bidRequest) {
-    serverResponse = serverResponse && serverResponse.body
+    serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;
+    const currency = bidRequest.data.cur;
 
     let errorMessage;
 
@@ -80,13 +78,12 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, currency, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-
   getUserSyncs: function(syncOptions) {
     if (syncOptions.pixelEnabled) {
       return [{
@@ -95,7 +92,7 @@ export const spec = {
       }];
     }
   }
-}
+};
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
@@ -108,7 +105,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, priceType, currency, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -118,12 +115,12 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
     if (awaitingBids) {
       awaitingBids.forEach(bid => {
         const bidResponse = {
-          requestId: bid.bidId, // bid.bidderRequestId,
+          requestId: bid.bidId,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
-          creativeId: serverBid.auid, // bid.bidId,
-          currency: 'USD',
+          creativeId: serverBid.auid,
+          currency: currency || DEFAULT_CUR,
           netRevenue: priceType !== 'gross',
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,

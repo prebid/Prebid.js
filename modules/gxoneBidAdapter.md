@@ -1,12 +1,12 @@
 # Overview
 
-Module Name: Dentsu Aegis Network Marketplace Bidder Adapter
+Module Name: GXOne Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: niels@baarsma.net
+Maintainer: olivier@geronimo.co
 
 # Description
 
-Module that connects to DAN Marketplace demand source to fetch bids.
+Module that connects to GXOne demand source to fetch bids.
 
 # Test Parameters
 ```
@@ -16,9 +16,9 @@ Module that connects to DAN Marketplace demand source to fetch bids.
                sizes: [[300, 250]],
                bids: [
                    {
-                       bidder: "danmarketplace",
+                       bidder: "gxone",
                        params: {
-                           uid: '4',
+                           uid: '2',
                            priceType: 'gross' // by default is 'net'
                        }
                    }
@@ -28,9 +28,9 @@ Module that connects to DAN Marketplace demand source to fetch bids.
                sizes: [[728, 90]],
                bids: [
                    {
-                       bidder: "danmarketplace",
+                       bidder: "gxone",
                        params: {
-                           uid: 5,
+                           uid: 9,
                            priceType: 'gross'
                        }
                    }

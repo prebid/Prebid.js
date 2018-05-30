@@ -25,11 +25,17 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     var pubUrl = null;
-    if (parent !== window) {
-      pubUrl = document.referrer;
-    } else {
-      pubUrl = window.location.href;
-    }
+    try {
+      if (window.top == window) {
+        pubUrl = window.location.href;
+      } else {
+        try {
+          pubUrl = window.top.location.href;
+        } catch (e2) {
+          pubUrl = document.referrer;
+        }
+      }
+    } catch (e1) {}
 
     return validBidRequests.map(bidRequest => {
       var subId = utils.getBidIdParameter('subId', bidRequest.params);
@@ -49,6 +55,10 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'protocol', protocol);
       queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.width);
       queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.height);
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        queryString = utils.tryAppendQueryString(queryString, 'gdprConsent', bidderRequest.gdprConsent.consentString);
+        queryString = utils.tryAppendQueryString(queryString, 'gdpr', (bidderRequest.gdprConsent.gdprApplies) ? '1' : '0');
+      }
       if (bidRequest.mediaType === 'video' || (typeof bidRequest.mediaTypes == 'object' && typeof bidRequest.mediaTypes.video == 'object')) {
         queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.playerWidth);
         queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.playerHeight);

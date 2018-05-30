@@ -8,7 +8,7 @@ Maintainer: rade@nanointeractive.com
 
 # Description
 
-Connects to NanoInteractive search retargeting Ad Server for bids.
+Connects to Nano Interactive search retargeting Ad Server for bids.
 
 Besides standard params, please provide, if exist, user search params. 
 
@@ -20,7 +20,6 @@ Three examples calling the Ad Server.
 
 **Third** is with the search query param name of the current url
 
-
 # Test Parameters
 ```
 var adUnits = [
@@ -31,7 +30,11 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
-            pid: '58bfec94eb0a1916fa380163'
+            // required
+            pid: '58bfec94eb0a1916fa380163',
+            // optional parameters
+            category: 'some category',
+            subId: '123'
          }
        }]
    },
@@ -42,8 +45,12 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
+            // required
             pid: '58bfec94eb0a1916fa380163',
-            nq: 'user search'
+            // optional parameters
+            nq: 'user search',
+            category: 'some category',
+            subId: '123'
          }
        }]
    },
@@ -54,10 +61,19 @@ var adUnits = [
        bids: [{
          bidder: 'nanointeractive',
          params: {
+            // required
             pid: '58bfec94eb0a1916fa380163',
-            name: 'search'
+            // optional parameters
+            name: 'search',
+            category: 'some category',
+            subId: '123'
          }
        }]
    }
 ];
 ```
+
+### Requirements:
+To be able to get identification key (`pid`), you must register at <br> 
+`https://audiencemanager.de/public/data-partners-register` <br>
+and follow further instructions.
