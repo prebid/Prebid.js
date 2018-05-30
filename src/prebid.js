@@ -360,7 +360,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     if (typeof bidsBackHandler === 'function') {
       // executeCallback, this will only be called in case of first request
       try {
-        bidsBackHandler();
+        setTimeout(bidsBackHandler, 0);
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       }
