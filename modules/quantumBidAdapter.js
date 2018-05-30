@@ -57,8 +57,8 @@ export const spec = {
       qtxRequest.auid = placementId;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
-        payload.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
+        qtxRequest.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
+        qtxRequest.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
       };
 
       const url = devEnpoint || ENDPOINT_URL;
