@@ -291,7 +291,6 @@ describe('quantumBidAdapter', () => {
     });
   });
 
-
   describe('interpretResponse', () => {
     let bidderRequest = {
       bidderCode: 'bidderCode',
