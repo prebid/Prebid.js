@@ -1,4 +1,4 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
@@ -23,14 +23,14 @@ const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
-export function getHighestCpmBidsFromBidPool(bidsReceived) {
+export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
   const bids = [];
   // bucket by adUnitcode
   let buckets = groupBy(bidsReceived, 'adUnitCode');
   // filter top bid for each bucket by bidder
   Object.keys(buckets).forEach(bucketKey => {
     let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(getHighestCpm, getEmptyBid())));
+    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(highestCpmCallback, getEmptyBid())));
   });
   return bids;
 }
@@ -189,7 +189,7 @@ export function newTargeting(auctionManager) {
       .filter(exports.isBidExpired)
     ;
 
-    return getHighestCpmBidsFromBidPool(bidsReceived);
+    return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }
 
   /**
@@ -346,7 +346,7 @@ export function newTargeting(auctionManager) {
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
     const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
-    const bids = getHighestCpmBidsFromBidPool(bidsReceived);
+    const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
 
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
