@@ -7,6 +7,8 @@ import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
 import { requestBidsHook } from 'modules/consentManagement';
+import events from 'src/events';
+import CONSTANTS from 'src/constants';
 
 let CONFIG = {
   accountId: '1',
@@ -79,34 +81,7 @@ const VIDEO_REQUEST = {
   ]
 };
 
-const BID_REQUESTS = [
-  {
-    'bidderCode': 'appnexus',
-    'auctionId': '173afb6d132ba3',
-    'bidderRequestId': '3d1063078dfcc8',
-    'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
-    'bids': [
-      {
-        'bidder': 'appnexus',
-        'params': {
-          'placementId': '10433394',
-          'member': 123
-        },
-        'bid_id': '123',
-        'adUnitCode': 'div-gpt-ad-1460505748561-0',
-        'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-        'sizes': [300, 250],
-        'bidId': '259fb43aaa06c1',
-        'bidderRequestId': '3d1063078dfcc8',
-        'auctionId': '173afb6d132ba3'
-      }
-    ],
-    'auctionStart': 1510852447530,
-    'timeout': 5000,
-    'src': 's2s',
-    'doneCbCallCount': 0
-  }
-];
+let BID_REQUESTS;
 
 const RESPONSE = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
@@ -359,7 +334,37 @@ describe('S2S Adapter', () => {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
-  beforeEach(() => adapter = new Adapter());
+  beforeEach(() => {
+    adapter = new Adapter();
+    BID_REQUESTS = [
+      {
+        'bidderCode': 'appnexus',
+        'auctionId': '173afb6d132ba3',
+        'bidderRequestId': '3d1063078dfcc8',
+        'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '10433394',
+              'member': 123
+            },
+            'bid_id': '123',
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+            'sizes': [300, 250],
+            'bidId': '123',
+            'bidderRequestId': '3d1063078dfcc8',
+            'auctionId': '173afb6d132ba3'
+          }
+        ],
+        'auctionStart': 1510852447530,
+        'timeout': 5000,
+        'src': 's2s',
+        'doneCbCallCount': 0
+      }
+    ];
+  });
 
   afterEach(() => {
     addBidResponse.resetHistory();
@@ -558,7 +563,7 @@ describe('S2S Adapter', () => {
         s2sConfig: s2sConfig,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
         app: { bundle: 'com.test.app' },
-      }
+      };
 
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -675,30 +680,33 @@ describe('S2S Adapter', () => {
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(cookie, 'cookieSet');
-      sinon.stub(utils, 'getBidRequest').returns({
-        bidId: '123'
-      });
+      sinon.stub(events, 'emit');
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
     afterEach(() => {
       server.restore();
-      utils.getBidRequest.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
+      events.emit.restore();
       cookie.cookieSet.restore();
       logWarnSpy.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
-    it('registers bids', () => {
+    it('registers bids and calls BIDDER_DONE', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(addBidResponse);
+
+      sinon.assert.calledOnce(events.emit);
+      const event = events.emit.firstCall.args;
+      expect(event[0]).to.equal(CONSTANTS.EVENTS.BIDDER_DONE);
+      expect(event[1].bids[0]).to.have.property('serverResponseTimeMs', 52);
 
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
@@ -708,7 +716,6 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('cache_id', '7654321');
       expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
       expect(response).to.not.have.property('vastUrl');
-      expect(response).to.have.property('serverResponseTimeMs', 52);
     });
 
     it('registers video bids', () => {
@@ -880,7 +887,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(cookie.cookieSet);
     });
 
-    it('handles OpenRTB responses', () => {
+    it('handles OpenRTB responses and call BIDDER_DONE', () => {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -890,13 +897,17 @@ describe('S2S Adapter', () => {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
+      sinon.assert.calledOnce(events.emit);
+      const event = events.emit.firstCall.args;
+      expect(event[0]).to.equal(CONSTANTS.EVENTS.BIDDER_DONE);
+      expect(event[1].bids[0]).to.have.property('serverResponseTimeMs', 8);
+
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('serverResponseTimeMs', 8);
     });
 
     it('handles OpenRTB video responses', () => {
@@ -917,7 +928,6 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('cpm', 10);
-      expect(response).to.have.property('serverResponseTimeMs', 81);
     });
 
     it('should log warning for unsupported bidder', () => {
