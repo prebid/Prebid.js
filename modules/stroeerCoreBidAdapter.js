@@ -11,15 +11,15 @@ const _stroeerCore = getStroeerCore();
 const _externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
 const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
-const isSecureWindow = () => window.location.protocol === 'https:';
+const isSecureWindow = () => utils.getWindowSelf().location.protocol === 'https:';
 const isMainPageAccessible = () => getMostAccessibleTopWindow() === utils.getWindowTop();
 
 
 function getStroeerCore() {
-  let win = window;
+  let win = utils.getWindowSelf();
 
   try {
-    while (!win.stroeerCore && window.top !== win && win.parent.location.href.length) {
+    while (!win.stroeerCore && utils.getWindowTop() !== win && win.parent.location.href.length) {
       win = win.parent;
     }
   } catch (ignore) {}
@@ -29,10 +29,10 @@ function getStroeerCore() {
 }
 
 function getMostAccessibleTopWindow() {
-  let res = win;
+  let res = utils.getWindowSelf();
 
   try {
-    while (win.top !== res && res.parent.location.href.length) {
+    while (utils.getWindowTop().top !== res && res.parent.location.href.length) {
       res = res.parent;
     }
   } catch (ignore) {}
@@ -53,7 +53,7 @@ function elementInView(elementId) {
   };
 
   try {
-    return visibleInWindow(win.document.getElementById(elementId), utils.getWindowSelf());
+    return visibleInWindow(utils.getWindowSelf().document.getElementById(elementId), utils.getWindowSelf());
   } catch (e) {
     // old browser, element not found, cross-origin etc.
   }
@@ -109,72 +109,74 @@ export const spec = {
 
     const bidRequestWithSsat = validBidRequests.find(bidRequest => bidRequest.params.ssat);
 
-    const requestBody = {
+    const payload = {
       id: bidderRequest.auctionId,
       bids: [],
       ref: utils.getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
-      ssat: bidRequestWithSsat.params.ssat || 2
+      ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2
     };
 
     validBidRequests.forEach(bid => {
-      requestBody.bids.push({
+      payload.bids.push({
         bid: bid.bidId,
         sid: bid.params.sid,
         siz: bid.sizes,
-        viz: elementInView(bid.placementCode)
+        viz: elementInView(bid.adUnitCode)
       });
     });
 
     return {
-      method: "POST",
-      url: buildUrl(anyBid),
-      data: JSON.stringify(requestBody)
+      method: 'POST',
+      url: buildUrl(anyBid.params),
+      data: payload
     }
   },
 
   interpretResponse: function (serverResponse, serverRequest) {
     const bids = [];
 
-    serverResponse.body.forEach(bidResponse => {
-      const cpm = bidResponse.cpm;
+    if (serverResponse.body && typeof serverResponse.body === 'object') {
+      serverResponse.body.forEach(bidResponse => {
+        const cpm = bidResponse.cpm;
 
-      const bid = {
-        // Prebid fields
-        requestId: bidResponse.bidId,
-        cpm: cpm,
-        width: bidResponse.width,
-        height: bidResponse.height,
-        ad: bidResponse.ad,
+        const bid = {
+          // Prebid fields
+          requestId: bidResponse.bidId,
+          cpm: cpm,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          ad: bidResponse.ad,
 
-        // Custom fields
-        cpm2: bidResponse.cpm2 || 0,
-        floor: bidResponse.floor || cpm,
-        exchangeRate: bidResponse.exchangeRate,
-        nurl: bidResponse.nurl,
-        originalAd: bidResponse.ad,
-        generateAd: function({auctionPrice}) {
-          let sspAuctionPrice = auctionPrice;
+          // Custom fields
+          cpm2: bidResponse.cpm2 || 0,
+          floor: bidResponse.floor || cpm,
+          exchangeRate: bidResponse.exchangeRate,
+          nurl: bidResponse.nurl,
+          originalAd: bidResponse.ad,
+          generateAd: function ({auctionPrice}) {
+            let sspAuctionPrice = auctionPrice;
 
-          if (this.exchangeRate && this.exchangeRate !== 1) {
-            auctionPrice = (parseFloat(auctionPrice) * this.exchangeRate).toFixed(4);
+            if (this.exchangeRate && this.exchangeRate !== 1) {
+              auctionPrice = (parseFloat(auctionPrice) * this.exchangeRate).toFixed(4);
+            }
+
+            auctionPrice = tunePrice(auctionPrice);
+            sspAuctionPrice = tunePrice(sspAuctionPrice);
+
+            // note: adId provided by prebid elsewhere (same as bidId)
+            return this.originalAd
+              .replace(/\${AUCTION_PRICE:ENC}/g, _externalCrypter.encrypt(this.adId, auctionPrice.toString()))
+              .replace(/\${SSP_AUCTION_PRICE:ENC}/g, _internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
+              .replace(/\${AUCTION_PRICE}/g, auctionPrice);
           }
+        };
 
-          auctionPrice = tunePrice(auctionPrice);
-          sspAuctionPrice = tunePrice(sspAuctionPrice);
-
-          // note: adId provided by prebid elsewhere (same as bidId)
-          return this.originalAd
-            .replace(/\${AUCTION_PRICE:ENC}/g, _externalCrypter.encrypt(this.adId, auctionPrice.toString()))
-            .replace(/\${SSP_AUCTION_PRICE:ENC}/g, _internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
-            .replace(/\${AUCTION_PRICE}/g, auctionPrice);
-        }
-      };
-
-      bids.push(bid);
-    });
+        bids.push(bid);
+      });
+    }
 
     return bids;
   },
