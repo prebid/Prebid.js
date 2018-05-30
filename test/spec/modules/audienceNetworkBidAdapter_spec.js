@@ -73,7 +73,7 @@ describe('AudienceNetwork adapter', () => {
     it('fullwidth', () => {
       expect(isBidRequestValid({
         bidder,
-        sizes: [[300, 250]],
+        sizes: [[300, 250], [336, 280]],
         params: {
           placementId,
           format: 'fullwidth'
@@ -85,6 +85,17 @@ describe('AudienceNetwork adapter', () => {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250]],
+        params: {
+          placementId,
+          format: 'native'
+        }
+      })).to.equal(true);
+    });
+
+    it('native with non-IAB size', () => {
+      expect(isBidRequestValid({
+        bidder,
+        sizes: [[728, 90]],
         params: {
           placementId,
           format: 'native'
