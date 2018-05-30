@@ -66,11 +66,11 @@ export function getConfig(debugging) {
   if (!debugging.enabled) {
     disableOverrides();
     try {
-      sessionStorage.removeItem(OVERRIDE_KEY);
+      window.sessionStorage.removeItem(OVERRIDE_KEY);
     } catch (e) {}
   } else {
     try {
-      sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(debugging));
+      window.sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(debugging));
     } catch (e) {}
     enableOverrides(debugging);
   }
@@ -80,7 +80,7 @@ config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 export function sessionLoader() {
   let overrides;
   try {
-    overrides = JSON.parse(sessionStorage.getItem(OVERRIDE_KEY));
+    overrides = JSON.parse(window.sessionStorage.getItem(OVERRIDE_KEY));
   } catch (e) {
   }
   if (overrides) {
