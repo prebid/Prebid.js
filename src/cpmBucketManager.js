@@ -128,7 +128,7 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   // this is done as JS can return values slightly below the expected mark which would skew the price bucket target
   //   (eg 4.01 / 0.01 = 400.99999999999994)
   // min precison should be 2 to move decimal place over.
-  let pow = Math.pow(10, precision * 2);
+  let pow = Math.pow(10, precision + 2);
   let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
   let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
