@@ -30,7 +30,7 @@ export const spec = {
     const gaxObjParams = find(bidRequests, hasParamInfo);
     return {
       method: 'GET',
-      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
+      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
     };
   },
 
