@@ -545,14 +545,28 @@ describe('Utils', function () {
       let previous = {
         cpm: 1,
         timeToRespond: 100,
-        responseTimeStamp: 1000
+        responseTimestamp: 1000
       };
       let current = {
         cpm: 1,
         timeToRespond: 50,
-        responseTimeStamp: 2000
+        responseTimestamp: 2000
       };
       assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
+    });
+
+    it('should pick the latest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
