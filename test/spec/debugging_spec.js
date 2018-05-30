@@ -18,8 +18,8 @@ describe('bid overrides', () => {
   describe('initialization', () => {
     beforeEach(() => {
       sandbox.stub(config, 'setConfig');
-      sandbox.stub(sessionStorage, 'setItem');
-      sandbox.stub(sessionStorage, 'removeItem');
+      sandbox.stub(window.sessionStorage, 'setItem');
+      sandbox.stub(window.sessionStorage, 'removeItem');
     });
 
     afterEach(() => {
@@ -35,14 +35,14 @@ describe('bid overrides', () => {
     });
 
     it('should happen when configuration found in sessionStorage', () => {
-      sandbox.stub(sessionStorage, 'getItem').returns('{"enabled": true}');
+      sandbox.stub(window.sessionStorage, 'getItem').returns('{"enabled": true}');
 
       sessionLoader();
       expect(addBidResponse.hasHook(boundHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', () => {
-      sandbox.stub(sessionStorage, 'getItem').throws();
+      sandbox.stub(window.sessionStorage, 'getItem').throws();
 
       expect(() => {
         sessionLoader();
