@@ -73,18 +73,18 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const request = {
       id: validBidRequests[0].auctionId,
       imp: validBidRequests.map(slot => mapImpression(slot)),
       site: mapSite(validBidRequests),
       cur: DEFAULT_CURRENCY_ARR,
-      test: validBidRequests[0].params.test || 0,
+      test: validBidRequests[0].params.test || 0
     };
-    if (validBidRequests[0].gdprConsent && validBidRequests[0].gdprConsent.gdprApplies) {
-      const consentStr = (validBidRequests[0].gdprConsent.consentString)
-        ? validBidRequests[0].gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
-      const gdpr = validBidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      const consentStr = (bidderRequest.gdprConsent.consentString)
+        ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
     };
