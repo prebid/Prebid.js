@@ -105,8 +105,15 @@ describe('sharethrough adapter spec', () => {
       const gdprConsent = { consentString: 'consent_string123', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidderRequest, fakeBidRequest)[0];
-      expect(bidRequest.data.consent_string).to.eq('consent_string123');
       expect(bidRequest.data.consent_required).to.eq(true);
+      expect(bidRequest.data.consent_string).to.eq('consent_string123');
+    });
+
+    it('should handle gdprConsent is present but values are undefined case', () => {
+      const gdprConsent = { consent_string: undefined, gdprApplies: undefined };
+      const fakeBidRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidderRequest, fakeBidRequest)[0];
+      expect(bidRequest.data).to.not.include.any.keys('consent_string')
     });
   });
 
@@ -169,6 +176,11 @@ describe('sharethrough adapter spec', () => {
         { type: 'image', url: 'cookieUrl2' },
         { type: 'image', url: 'cookieUrl3' }]
       );
+    });
+
+    it('returns an empty array if the body is null', () => {
+      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, [{ body: null }]);
+      expect(syncArray).to.be.an('array').that.is.empty;
     });
 
     it('returns an empty array if pixels are not enabled', () => {

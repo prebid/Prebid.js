@@ -11,7 +11,7 @@ function RhythmOneBidAdapter() {
     return true;
   };
 
-  this.getUserSyncs = function (syncOptions) {
+  this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
     let slots = [];
     let placementIds = [];
 
@@ -51,6 +51,10 @@ function RhythmOneBidAdapter() {
     data.response_ms = Date.now() - loadStart;
     data.placement_codes = slots.join(',');
     data.bidder_version = version;
+    if (gdprConsent) {
+      data.gdpr_consent = gdprConsent.consentString;
+      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : true;
+    }
 
     for (let k in data) {
       q.push(encodeURIComponent(k) + '=' + encodeURIComponent((typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k])));
@@ -76,10 +80,10 @@ function RhythmOneBidAdapter() {
 
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.0.0';
+  let version = '1.0.1.0';
   let loadStart = Date.now();
 
-  this.buildRequests = function (BRs) {
+  this.buildRequests = function (BRs, bidderRequest) {
     let fallbackPlacementId = getFirstParam('placementId', BRs);
     if (fallbackPlacementId === undefined || BRs.length < 1) {
       return [];
@@ -198,7 +202,10 @@ function RhythmOneBidAdapter() {
       p('h', heights);
       p('floor', floors);
       p('t', mediaTypes);
-
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        p('gdpr_consent', bidderRequest.gdprConsent.consentString);
+        p('gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true);
+      }
       url += '&' + query.join('&') + '&';
 
       return url;
