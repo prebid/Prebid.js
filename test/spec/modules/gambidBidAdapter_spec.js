@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gambidBidAdapter';
-import { deepClone } from 'src/utils';
+import * as utils from 'src/utils';
 
 const supplyPartnerId = '123';
 
@@ -60,8 +60,8 @@ describe('GambidAdapter', () => {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
 
-      const adUnit1 = Object.assign({}, deepClone(bidRequest), { auctionId: '1', adUnitCode: 'a' });
-      const adUnit2 = Object.assign({}, deepClone(bidRequest), { auctionId: '1', adUnitCode: 'b' });
+      const adUnit1 = Object.assign({}, utils.deepClone(bidRequest), { auctionId: '1', adUnitCode: 'a' });
+      const adUnit2 = Object.assign({}, utils.deepClone(bidRequest), { auctionId: '1', adUnitCode: 'b' });
       response = spec.buildRequests([adUnit1, adUnit2]);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(2);
@@ -75,17 +75,19 @@ describe('GambidAdapter', () => {
       expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
       expect(response.data.id).to.equal(bidRequest.auctionId);
 
-      const bidRequestWithEndpoint = deepClone(bidRequest);
+      const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gambid.io/a12';
       response = spec.buildRequests([ bidRequestWithEndpoint ])[ 0 ];
       expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
     });
 
     it('builds request correctly', () => {
+      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
+
       let response;
       response = spec.buildRequests([ bidRequest ])[ 0 ];
-      expect(response.data.site.domain).to.match(new RegExp(`^localhost:\\d+$`));
-      expect(response.data.site.page).to.match(new RegExp(`^http://localhost:\\d+/$`));
+      expect(response.data.site.domain).to.equal('www.test.com');
+      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
       expect(response.data.site.ref).to.equal('');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[ 0 ].id).to.equal(bidRequest.transactionId);
@@ -94,26 +96,28 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].bidfloor).to.equal(0);
       expect(response.data.imp[ 0 ].bidfloorcur).to.equal('USD');
 
-      const bidRequestWithInstlEquals1 = deepClone(bidRequest);
+      const bidRequestWithInstlEquals1 = utils.deepClone(bidRequest);
       bidRequestWithInstlEquals1.params.instl = 1;
       response = spec.buildRequests([ bidRequestWithInstlEquals1 ])[ 0 ];
       expect(response.data.imp[ 0 ].instl).to.equal(bidRequestWithInstlEquals1.params.instl);
 
-      const bidRequestWithInstlEquals0 = deepClone(bidRequest);
+      const bidRequestWithInstlEquals0 = utils.deepClone(bidRequest);
       bidRequestWithInstlEquals0.params.instl = 1;
       response = spec.buildRequests([ bidRequestWithInstlEquals0 ])[ 0 ];
       expect(response.data.imp[ 0 ].instl).to.equal(bidRequestWithInstlEquals0.params.instl);
 
-      const bidRequestWithBidfloorEquals1 = deepClone(bidRequest);
+      const bidRequestWithBidfloorEquals1 = utils.deepClone(bidRequest);
       bidRequestWithBidfloorEquals1.params.bidfloor = 1;
       response = spec.buildRequests([ bidRequestWithBidfloorEquals1 ])[ 0 ];
       expect(response.data.imp[ 0 ].bidfloor).to.equal(bidRequestWithBidfloorEquals1.params.bidfloor);
+
+      stub.restore();
     });
 
     it('builds request banner object correctly', () => {
       let response;
 
-      const bidRequestWithBanner = deepClone(bidRequest);
+      const bidRequestWithBanner = utils.deepClone(bidRequest);
       bidRequestWithBanner.mediaTypes = {
         banner: {
           sizes: [ [ 300, 250 ], [ 120, 600 ] ]
@@ -126,7 +130,7 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].banner.pos).to.equal(0);
       expect(response.data.imp[ 0 ].banner.topframe).to.equal(0);
 
-      const bidRequestWithPosEquals1 = deepClone(bidRequestWithBanner);
+      const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithBanner);
       bidRequestWithPosEquals1.params.pos = 1;
       response = spec.buildRequests([ bidRequestWithPosEquals1 ])[ 0 ];
       expect(response.data.imp[ 0 ].banner.pos).to.equal(bidRequestWithPosEquals1.params.pos);
@@ -135,7 +139,7 @@ describe('GambidAdapter', () => {
     it('builds request video object correctly', () => {
       let response;
 
-      const bidRequestWithVideo = deepClone(bidRequest);
+      const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
           sizes: [ [ 300, 250 ], [ 120, 600 ] ]
@@ -148,7 +152,7 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].video.pos).to.equal(0);
       expect(response.data.imp[ 0 ].video.topframe).to.equal(0);
 
-      const bidRequestWithPosEquals1 = deepClone(bidRequestWithVideo);
+      const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals1.params.pos = 1;
       response = spec.buildRequests([ bidRequestWithPosEquals1 ])[ 0 ];
       expect(response.data.imp[ 0 ].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
