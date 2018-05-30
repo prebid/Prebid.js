@@ -22,5 +22,6 @@
     "sharethroughBidAdapter",
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
-    "sovrnBidAdapter"
+    "sovrnBidAdapter",
+    "zeroIdBidAdapter"
 ]
