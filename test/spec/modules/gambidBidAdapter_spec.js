@@ -319,13 +319,13 @@ describe('GambidAdapter', () => {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(4);
       expect(response[ 0 ].type).to.equal(rtbResponse.ext.utrk[ 0 ].type);
-      expect(response[ 0 ].url).to.equal(rtbResponse.ext.utrk[ 0 ].url);
+      expect(response[ 0 ].url).to.equal(rtbResponse.ext.utrk[ 0 ].url + '?gc=missing');
       expect(response[ 1 ].type).to.equal(rtbResponse.ext.utrk[ 1 ].type);
-      expect(response[ 1 ].url).to.equal(rtbResponse.ext.utrk[ 1 ].url);
+      expect(response[ 1 ].url).to.equal(rtbResponse.ext.utrk[ 1 ].url + '?gc=missing');
       expect(response[ 2 ].type).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.utrk[ 0 ].type);
-      expect(response[ 2 ].url).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.utrk[ 0 ].url);
+      expect(response[ 2 ].url).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.utrk[ 0 ].url + '?gc=missing');
       expect(response[ 3 ].type).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.utrk[ 0 ].type);
-      expect(response[ 3 ].url).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.utrk[ 0 ].url);
+      expect(response[ 3 ].url).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.utrk[ 0 ].url + '?gc=missing');
     });
   });
 });
