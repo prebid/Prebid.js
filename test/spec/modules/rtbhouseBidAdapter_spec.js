@@ -95,12 +95,8 @@ describe('RTBHouseAdapter', () => {
 
     it('should populate GDPR and consent string if available for EEA users', () => {
       let bidRequest = Object.assign([], bidRequests);
-      bidRequests[0].gdprConsent = {
-        'consentString': consentStr,
-        'gdprApplies': true
-      };
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: consentStr}});
       let data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
@@ -108,11 +104,8 @@ describe('RTBHouseAdapter', () => {
 
     it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', () => {
       let bidRequest = Object.assign([], bidRequests);
-      bidRequests[0].gdprConsent = {
-        'gdprApplies': true
-      };
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true}});
       let data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('');
