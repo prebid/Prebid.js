@@ -266,7 +266,7 @@ function fulfillAuctionObject() {
     app: {
       id: null,
       name: null,
-      domain: rivrAnalytics.context.clientURL,
+      domain: window.location.href,
       bundle: null,
       cat: [],
       publisher: {
@@ -277,7 +277,7 @@ function fulfillAuctionObject() {
     site: {
       id: null,
       name: null,
-      domain: rivrAnalytics.context.clientURL,
+      domain: window.location.href,
       cat: [],
       publisher: {
         id: null,
@@ -293,7 +293,6 @@ function fulfillAuctionObject() {
         type: null,
         metro: null
       },
-      connectiontype: navigator.connection.effectiveType,
       devicetype: getPlatformType(),
       osv: null,
       os: null,
@@ -377,7 +376,12 @@ rivrAnalytics.enableAnalytics = (config) => {
     clientID: config.options.clientID,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
-  addHandlers(config.options.bannersIds);
+  let bannersIds = config.options.bannersIds
+  if (bannersIds) {
+    if (bannersIds.length > 0) {
+      addHandlers(config.options.bannersIds);
+    }
+  }
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);
   rivrAnalytics.originEnableAnalytics(config);
 };
