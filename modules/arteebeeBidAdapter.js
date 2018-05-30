@@ -82,7 +82,7 @@ function makePrebidRequest(req, bidderRequest) {
 }
 
 function makeRtbRequest(req, bidderRequest) {
-  var auctionId = req.requestId;
+  var auctionId = req.bidderRequestId;
 
   var imp = [];
   imp.push(makeImp(req));
