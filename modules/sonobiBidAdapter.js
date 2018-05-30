@@ -94,6 +94,7 @@ var SonobiAdapter = function SonobiAdapter() {
     goodBid.bidderCode = 'sonobi';
     goodBid.ad = createCreative(sbi_dc, bid.sbi_aid);
     goodBid.creativeId = bid.sbi_crid || bid.sbi_aid;
+
     goodBid.cpm = Number(bid.sbi_mouse);
     goodBid.width = Number(bid.sbi_size.split('x')[0]) || 1;
     goodBid.height = Number(bid.sbi_size.split('x')[1]) || 1;
