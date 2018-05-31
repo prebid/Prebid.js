@@ -18,16 +18,16 @@ Sign up for account on [prebid.adnxs.com](https://prebid.adnxs.com)
 
 ### bid params
 
-Bid params are sourced from the adapter configurations set for client side. These do not need to change for Prebid Server. 
+Bid params are sourced from the adapter configurations set for client side. These do not need to change for Prebid Server.
 
 ### Configuration
-To enable prebid server, set the following configuration. 
+To enable prebid server, set the following configuration.
 
 ```
 pbjs.setConfig({
     s2sConfig: {
         accountId : '12345',
-        bidders : ['appnexus','pubmatic', 'rubicon'], 
+        bidders : ['appnexus','pubmatic', 'rubicon'],
         defaultVendor: 'appnexus'
     }
 });
@@ -39,9 +39,9 @@ Configuration options
 |--------------+---------------+-----------+--------------------------------------------------------------------------|
 | `accountId`  | String        | X         | Prebid Server account ID.                                                |
 | `bidders`    | Array[String] | X         | List of bidder codes; must have been enabled during Prebid.js build.     |
-| `defaultVendor` | String     |           | Automatically includes all following options in the config with vendor's default values.  Individual properties can be overridden by including them in the config along with this setting. | 
+| `defaultVendor` | String     |           | Automatically includes all following options in the config with vendor's default values.  Individual properties can be overridden by including them in the config along with this setting. |
 | `enabled`    | Boolean       | X         | Enables S2S; default: `false`.                                           |
-| `endpoint`   | String        | X         | Set the endpoint. For example: `https://prebid.adnxs.com/pbs/v1/auction` |
+| `endpoint`   | String        | X         | Set the endpoint. For example: `https://prebid.adnxs.com/pbs/v1/openrtb2/auction` |
 | `timeout`    | Number        |           | Bidder timeout, in milliseconds; default: `1000`.                         |
 | `syncEndpoint` | String     |           | Configures the user-sync endpoint. Highly recommended.                    |
 | `adapter`    | String        |           | Adapter code; default: `"prebidServer"`.                                  |

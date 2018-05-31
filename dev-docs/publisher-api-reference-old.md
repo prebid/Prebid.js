@@ -1426,7 +1426,7 @@ pbjs.setConfig({
         enabled: true,
         timeout: 1000,
         adapter: 'prebidServer',
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'
         cookieSet: true,
         cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js',
@@ -1664,7 +1664,7 @@ labelAll: ["A", "B"]
 Only one conditional may be specified on a given AdUnit or bid -- if both `labelAny` and `labelAll` are specified, only the first one will be utilized and an error will be logged to the console. It is allowable for an AdUnit to have one condition and a bid to have another.
 
 {: .alert.alert-warning :}
-If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`. 
+If either `labeAny` or `labelAll` values is an empty array, it evaluates to `true`.
 
 Label targeting on the ad unit looks like the following:
 

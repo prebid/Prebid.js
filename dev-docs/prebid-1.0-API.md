@@ -80,7 +80,7 @@ pbjs.setConfig({
 
 ## No More Default Endpoints
 
-In Prebid 0.x there were defaults for the Prebid Server endpoints and the video cache URL. With 1.0, these defaults have been removed to be vendor neutral, so all publisher pages must define them via pbjs.setConfig(). The same functionality as 0.x may be achieved as shown below: 
+In Prebid 0.x there were defaults for the Prebid Server endpoints and the video cache URL. With 1.0, these defaults have been removed to be vendor neutral, so all publisher pages must define them via pbjs.setConfig(). The same functionality as 0.x may be achieved as shown below:
 
 {% highlight js %}
 
@@ -88,7 +88,7 @@ pbjs.setConfig({
     cache: {url: "https://prebid.adnxs.com/pbc/v1/cache"},
     s2sConfig: {
         ...
-        endpoint: "https://prebid.adnxs.com/pbs/v1/auction",
+        endpoint: "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
         syncEndpoint: "https://prebid.adnxs.com/pbs/v1/cookie_sync",
         ...
     }
@@ -96,7 +96,7 @@ pbjs.setConfig({
 
 {% endhighlight %}
 
-## Size Mapping Changes 
+## Size Mapping Changes
 
 The previous [`sizeMapping` functionality]({{site.baseurl}}/dev-docs/examples/size-mapping.html) will be removed and replaced by a `sizeConfig` parameter to the `pbjs.setConfig` method that provides a more powerful way to describe types of devices and
 screens.
@@ -234,9 +234,9 @@ adUnit = {
             context: 'outstream',
             playerSize: [600, 480]
         },
-        banner: { 
+        banner: {
             sizes: [300, 250],
-            ...options 
+            ...options
         },
         native: { ...options }
     },

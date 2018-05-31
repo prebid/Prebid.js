@@ -21,7 +21,7 @@ Using Prebid Server, you can move demand partners server-side, eliminating most 
 This should help you make more money without sacrificing user experience.
 
 {: .alert.alert-success :}
-**Prebid Server is open source!**  
+**Prebid Server is open source!**
 Prebid Server is an open source project.  [The source code is hosted under the Prebid organization on Github](https://github.com/prebid/prebid-server).
 
 * TOC
@@ -76,7 +76,7 @@ pbjs.que.push(function() {
             bidders: ['appnexus', 'pubmatic'],
             timeout: 1000,
             adapter: 'prebidServer',
-            endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
+            endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
             syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
             cookieSet: true,
             cookiesetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
@@ -104,7 +104,7 @@ pbjs.que.push(function() {
 
     pbjs.setConfig({
         s2sConfig: {
-            accountId: '1',            
+            accountId: '1',
             bidders: ['appnexus', 'pubmatic'],
             defaultVendor: 'appnexus'
         }
@@ -121,13 +121,13 @@ pbjs.que.push(function() {
 {% endhighlight %}
 
 {: .alert.alert-info :}
-**OpenRTB Endpoint**  
-If your `s2sConfig.endpoint` points to a url containing the path `openrtb2/auction`, such as the AppNexus-hosted endpoint https://prebid.adnxs.com/pbs/v1/openrtb2/auction', Prebid will communicate with that endpoint using the OpenRTB protocol.  
+**OpenRTB Endpoint**
+If your `s2sConfig.endpoint` points to a url containing the path `/openrtb2/`, such as the AppNexus-hosted endpoint https://prebid.adnxs.com/pbs/v1/openrtb2/auction', Prebid will communicate with that endpoint using the OpenRTB protocol.
 
 {: .alert.alert-info :}
-**Additional `cookieSet` details**  
-If set to `true`:  
-&bull; Prebid.js will overwrite all links on page to redirect through a persistent cookie URL  
+**Additional `cookieSet` details**
+If set to `true`:
+&bull; Prebid.js will overwrite all links on page to redirect through a persistent cookie URL
 &bull; Prebid.js will display a footer message on Safari indicating that cookies will be placed on browsers that block 3rd party cookies
 
 <a name="prebid-server-video-openrtb" />

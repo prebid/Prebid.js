@@ -1084,7 +1084,7 @@ For more information about the asynchronous event loop and `setTimeout`, see [Ho
 
 #### Send All Bids
 
-Sending all bids is the default, but should you wish to turn it off: 
+Sending all bids is the default, but should you wish to turn it off:
 
 {% highlight js %}
 pbjs.setConfig({ enableSendAllBids: false })
@@ -1150,7 +1150,7 @@ pbjs.setConfig({ cookieSyncDelay: 100 )
 
 #### Price Granularity
 
-This config is used to configure which price bucket is used for the `hb_pb` keyword. 
+This config is used to configure which price bucket is used for the `hb_pb` keyword.
 For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
 
 {% highlight js %}
@@ -1268,7 +1268,7 @@ pbjs.setConfig({
         enabled: true,
         timeout: 1000,
         adapter: 'prebidServer',
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction',
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         syncEndpoint: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'
         cookieSet: true,
         cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js',
