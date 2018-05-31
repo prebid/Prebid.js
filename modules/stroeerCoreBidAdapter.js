@@ -7,7 +7,7 @@ const DEFAULT_HOST = 'hb.adscale.de';
 const DEFAULT_PATH = '/dsh';
 const DEFAULT_PORT = '';
 
-const _stroeerCore = getStroeerCore();
+let _stroeerCore;
 const _externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
 const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
@@ -103,6 +103,7 @@ export const spec = {
   }()),
 
   buildRequest: function(validBidRequests = [], bidderRequest) {
+    _stroeerCore = getStroeerCore();
     const anyBid = bidderRequest.bids[0];
 
     setupGlobalNamespace(anyBid);
@@ -139,7 +140,7 @@ export const spec = {
     const bids = [];
 
     if (serverResponse.body && typeof serverResponse.body === 'object') {
-      serverResponse.body.forEach(bidResponse => {
+      serverResponse.body.bids.forEach(bidResponse => {
         const cpm = bidResponse.cpm;
 
         const bid = {
@@ -184,7 +185,6 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
     const sid = _stroeerCore.anySid;
-
     if (syncOptions.iframeEnabled && sid) {
       const userConnectUrl = (_stroeerCore.connectHtmlUrl || '//js.adscale.de/userconnect.html') + "?sid=" + sid;
       syncs.push({
@@ -241,7 +241,6 @@ function Crypter(encKey, intKey) {
 Crypter.prototype.encrypt = function (anyRandomString, data) {
   const CIPHERTEXT_SIZE = 8;
   const SIGNATURE_SIZE = 4;
-
   let paddedImpressionId = padEnd(anyRandomString, 16, '0').substring(0, 16);
 
   if (data.length > CIPHERTEXT_SIZE) {
