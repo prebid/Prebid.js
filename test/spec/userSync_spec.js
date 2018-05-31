@@ -201,7 +201,7 @@ describe('user sync', () => {
           filter: 'include'
         },
         iframe: {
-          bidders: ['*'],
+          bidders: '*',
           filter: 'include'
         }
       }
@@ -219,12 +219,11 @@ describe('user sync', () => {
     const userSync = newTestUserSync({
       filterSettings: {
         image: {
-          bidders: ['*'],
+          bidders: '*',
           filter: 'exclude'
         },
         iframe: {
-          bidders: ['testBidder'],
-          filter: 'include'
+          bidders: ['testBidder']
         }
       }
     });
@@ -271,7 +270,7 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
 
-    // invalid config - bidders is not an array of strings
+    // invalid config - bidders list includes wildcard
     const userSync3 = newTestUserSync({
       filterSettings: {
         iframe: {
@@ -287,6 +286,39 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(2)).to.not.be.null;
     expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - incorrect wildcard
+    const userSync4 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: '***',
+          filter: 'include'
+        }
+      }
+    });
+    userSync4.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync4.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync4.syncUsers();
+    expect(logWarnStub.getCall(3).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(3)).to.not.be.null;
+    expect(triggerPixelStub.getCall(3).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - missing bidders field
+    const userSync5 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          filter: 'include'
+        }
+      }
+    });
+    userSync5.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync5.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync5.syncUsers();
+    expect(logWarnStub.getCall(4).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(4)).to.not.be.null;
+    expect(triggerPixelStub.getCall(4).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
   });
 
   it('should overwrite logic of deprecated fields when filterSettings is defined', () => {
@@ -296,7 +328,7 @@ describe('user sync', () => {
       enabledBidders: ['ctestBidder'],
       filterSettings: {
         image: {
-          bidders: ['*'],
+          bidders: '*',
           filter: 'include'
         },
         iframe: {
