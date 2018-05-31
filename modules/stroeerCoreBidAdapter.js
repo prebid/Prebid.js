@@ -7,7 +7,6 @@ const DEFAULT_HOST = 'hb.adscale.de';
 const DEFAULT_PATH = '/dsh';
 const DEFAULT_PORT = '';
 
-let _stroeerCore;
 const _externalCrypter = new Crypter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=', 'eWRpdkFoa2tub3p5b2dscGttamIySGhkZ21jcmg0Znk=');
 const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D9=', '0379698055BD41FD05AC543A3AAAD6589BC6E1B3626=');
 
@@ -71,21 +70,19 @@ function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePor
 }
 
 function setupGlobalNamespace(anyBid) {
-  _stroeerCore = getStroeerCore();
+  const stroeerCore = getStroeerCore();
   // Used to lookup publisher's website settings on server-side.
-  _stroeerCore.anySid = _stroeerCore.anySid || anyBid.params.sid;
+  stroeerCore.anySid = stroeerCore.anySid || anyBid.params.sid;
   // Can be overridden for testing
-  _stroeerCore.userConnectJsUrl = _stroeerCore.userConnectJsUrl || anyBid.params.connectjsurl;
+  stroeerCore.userConnectJsUrl = stroeerCore.userConnectJsUrl || anyBid.params.connectjsurl;
 }
 
 function initUserConnect() {
   // should have already but will fetch again if we need to
-  _stroeerCore = _stroeerCore || getStroeerCore();
+  const stroeerCore = getStroeerCore();
 
-  console.log(JSON.stringify(_stroeerCore));
-
-  const sid = _stroeerCore.anySid;
-  const userConnectJsUrl = (_stroeerCore.userConnectJsUrl || '//js.adscale.de/userconnect.js');
+  const sid = stroeerCore.anySid;
+  const userConnectJsUrl = (stroeerCore.userConnectJsUrl || '//js.adscale.de/userconnect.js');
 
   const scriptElement = getMostAccessibleTopWindow().document.createElement('script');
 
@@ -174,10 +171,11 @@ export const spec = {
           // Custom fields
           cpm2: bidResponse.cpm2 || 0,
           floor: bidResponse.floor || cpm,
+          maxprice: bidResponse.maxprice || cpm,
           exchangeRate: bidResponse.exchangeRate,
           nurl: bidResponse.nurl,
           originalAd: bidResponse.ad,
-          generateAd: function ({auctionPrice}) {
+          generateAd: function ({auctionPrice, firstBid, secondBid, thirdBid}) {
             let sspAuctionPrice = auctionPrice;
 
             if (this.exchangeRate && this.exchangeRate !== 1) {
@@ -187,10 +185,17 @@ export const spec = {
             auctionPrice = tunePrice(auctionPrice);
             sspAuctionPrice = tunePrice(sspAuctionPrice);
 
+            const sspFirstBid = typeof firstBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(firstBid).toString());
+            const sspSecondBid = typeof secondBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(secondBid).toString());
+            const sspThirdBid = typeof thirdBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(thirdBid).toString());
+
             // note: adId provided by prebid elsewhere (same as bidId)
             return this.originalAd
               .replace(/\${AUCTION_PRICE:ENC}/g, _externalCrypter.encrypt(this.adId, auctionPrice.toString()))
               .replace(/\${SSP_AUCTION_PRICE:ENC}/g, _internalCrypter.encrypt(this.adId, sspAuctionPrice.toString()))
+              .replace(/\${FIRST_BID:ENC}/g, sspFirstBid)
+              .replace(/\${SECOND_BID:ENC}/g, sspSecondBid)
+              .replace(/\${THIRD_BID:ENC}/g, sspThirdBid)
               .replace(/\${AUCTION_PRICE}/g, auctionPrice);
           }
         };

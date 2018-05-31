@@ -27,13 +27,14 @@ describe('stroeerCore bid adapter', function () {
     assert.propertyVal(bidObject, 'cpm', cpm);
   }
 
-  function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd) {
+  function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd, maxprice) {
     assert.propertyVal(bidObject, 'cpm2', cpm2);
     assert.propertyVal(bidObject, 'floor', floor);
     assert.propertyVal(bidObject, 'exchangeRate', exchangeRate);
     assert.propertyVal(bidObject, 'nurl', nurl);
     assert.propertyVal(bidObject, 'originalAd', originalAd);
     assert.isFunction(bidObject.generateAd);
+    assert.propertyVal(bidObject, 'maxprice', maxprice);
   }
 
   const AUCTION_ID = utils.getUniqueIdentifierStr();
@@ -92,6 +93,7 @@ describe('stroeerCore bid adapter', function () {
     bid1.exchangeRate = 1.0;
     bid1.nurl = 'www.something.com';
     bid1.ssat = 2;
+    bid1.maxprice = 2.38;
 
     const bid2 = response.bids[1];
     bid2.floor = 1.0;
@@ -417,11 +419,11 @@ describe('stroeerCore bid adapter', function () {
       const result = spec.interpretResponse({body: bidderResponse});
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       // default custom values
-      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>');
+      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>', 4);
 
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
       // default custom values
-      assertCustomFieldsOnBid(result[1], 0, 7.3, undefined, undefined, '<div>tag2</div>');
+      assertCustomFieldsOnBid(result[1], 0, 7.3, undefined, undefined, '<div>tag2</div>', 7.3);
     });
 
     it('should interpret a first price response', () => {
@@ -429,10 +431,10 @@ describe('stroeerCore bid adapter', function () {
 
       const result = spec.interpretResponse({body: bidderResponse});
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
-      assertCustomFieldsOnBid(result[0], 3.8, 2.0, 1.0, 'www.something.com', '<div>tag1</div>');
+      assertCustomFieldsOnBid(result[0], 3.8, 2.0, 1.0, 'www.something.com', '<div>tag1</div>', 2.38);
 
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
-      assertCustomFieldsOnBid(result[1], 0, 1.0, 0.8, 'www.something-else.com', '<div>tag2</div>');
+      assertCustomFieldsOnBid(result[1], 0, 1.0, 0.8, 'www.something-else.com', '<div>tag2</div>', 7.3);
     });
 
     it('should default floor to same value as cpm and default cpm2 to 0', function() {
@@ -607,6 +609,121 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
+      it('should replace all occurrences of ${FIRST_BID:ENC}', function() {
+        const bidderResponse = buildBidderResponse();
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${FIRST_BID:ENC}></img>\n<script>var price=${FIRST_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22', firstBid: '21.00'});
+
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA</script>';
+        assert.equal(ad, expectedAd);
+      });
+
+      it('should replace all occurrences of ${FIRST_BID:ENC} with empty string if no first bid', function() {
+        const bidderResponse = buildBidderResponse();
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${FIRST_BID:ENC}></img>\n<script>var price=${FIRST_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22'});
+
+        const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
+        assert.equal(ad, expectedAd);
+      });
+
+      it('should replace all occurrences of ${SECOND_BID:ENC}', function() {
+        const bidderResponse = buildBidderResponse();
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${SECOND_BID:ENC}></img>\n<script>var price=${SECOND_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22', secondBid: '21.00'});
+
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA</script>';
+        assert.equal(ad, expectedAd);
+      });
+
+      it('should replace all occurrences of ${THIRD_BID:ENC}', function() {
+        const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${THIRD_BID:ENC}></img>\n<script>var price=${THIRD_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22', thirdBid: '21.00'});
+
+        const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Ny498-UZHq-IEVNNYA</script>';
+        assert.equal(ad, expectedAd);
+      });
+
+      it('should replace all occurrences of ${SECOND_BID:ENC} with empty string if no second bid', function() {
+        const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${SECOND_BID:ENC}></img>\n<script>var price=${SECOND_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22'});
+
+        const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
+        assert.equal(ad, expectedAd);
+      });
+
+      it('should replace all occurrences of ${THIRD_BID:ENC} with empty string if no second bid', function() {
+        const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
+
+        const responseBid = bidderResponse.bids[0];
+        responseBid.ad = '<img src=\'tracker.com?p=${THIRD_BID:ENC}></img>\n<script>var price=${THIRD_BID:ENC}</script>';
+        responseBid.bidId = '123456789123456789';
+        responseBid.maxprice = 3.0;
+
+        const result = spec.interpretResponse({body: bidderResponse});
+        const bid = result[0];
+        // Prebid will do this
+        bid.adId = '123456789123456789';
+
+        const ad = bid.generateAd({auctionPrice: '40.22'});
+
+        const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
+        assert.equal(ad, expectedAd);
+      });
+
       describe('price truncation in generateAd', function () {
         const d = new Decrpyter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=');
         const validPrices = [
@@ -701,7 +818,8 @@ describe('stroeerCore bid adapter', function () {
       if (expectedSlotId) {
         const config = JSON.parse(actualElement.getAttribute('data-container-config'));
         assert.equal(config.slotId, expectedSlotId);
-      } else {
+      }
+      else {
         assert.isFalse(actualElement.hasAttribute('data-container-config'));
       }
     }
@@ -721,7 +839,7 @@ describe('stroeerCore bid adapter', function () {
       assertConnectJs(element, '//js.adscale.de/userconnect.js', 'NDA=');
     });
 
-    it.only('should still perform user connect when no sid found', () => {
+    it('should still perform user connect when no sid found', () => {
       sandbox.stub(utils, 'insertElement');
 
       win.top.stroeerCore = {};
@@ -736,7 +854,7 @@ describe('stroeerCore bid adapter', function () {
 
     it('should not perform user connect when there was no response', () => {
       prepForUserConnect();
-      spec.getUserSyncs({}, []);
+      spec.getUserSyncs({}, []/*empty, zero-length array*/);
       assert.isTrue(utils.insertElement.notCalled);
     });
 
