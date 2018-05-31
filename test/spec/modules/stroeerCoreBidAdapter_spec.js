@@ -2,167 +2,6 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter';
 const utils = require('src/utils');
 
-function assertStandardFieldsOnBid(bidObject, bidId, ad, width, height, cpm) {
-  assert.propertyVal(bidObject, 'requestId', bidId);
-  assert.propertyVal(bidObject, 'ad', ad);
-  assert.propertyVal(bidObject, 'width', width);
-  assert.propertyVal(bidObject, 'height', height);
-  assert.propertyVal(bidObject, 'cpm', cpm);
-}
-
-function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd) {
-  assert.propertyVal(bidObject, 'cpm2', cpm2);
-  assert.propertyVal(bidObject, 'floor', floor);
-  assert.propertyVal(bidObject, 'exchangeRate', exchangeRate);
-  assert.propertyVal(bidObject, 'nurl', nurl);
-  assert.propertyVal(bidObject, 'originalAd', originalAd);
-  assert.isFunction(bidObject.generateAd);
-}
-
-const AUCTION_ID = utils.getUniqueIdentifierStr();
-
-const buildBidderRequest = () => ({
-  auctionId: AUCTION_ID,
-  bidderRequestId: 'bidder-request-id-123',
-  bidderCode: 'stroeerCore',
-  timeout: 5000,
-  auctionStart: 10000,
-  bids: [
-    {
-      bidId: 'bid1',
-      bidder: 'stroeerCore',
-      adUnitCode: 'div-1',
-      sizes: [[300, 600], [160, 60]],
-      mediaType: '',
-      params: {
-        sid: 'NDA='
-      }
-    },
-    {
-      bidId: 'bid2',
-      bidder: 'stroeerCore',
-      adUnitCode: 'div-2',
-      sizes: [[728, 90]],
-      params: {
-        sid: 'ODA='
-      }
-    }
-  ],
-});
-
-const buildBidderResponse = () => ({
-  'bids': [{
-    'bidId': 'bid1',
-    'cpm': 4.0,
-    'width': 300,
-    'height': 600,
-    'ad': '<div>tag1</div>'
-  }, {
-    'bidId': 'bid2',
-    'cpm': 7.3,
-    'width': 728,
-    'height': 90,
-    'ad': '<div>tag2</div>'
-  }]
-});
-
-const buildBidderResponseSecondPriceAuction = () => {
-  const response = buildBidderResponse();
-
-  const bid1 = response.bids[0];
-  bid1.cpm2 = 3.8;
-  bid1.floor = 2.0;
-  bid1.exchangeRate = 1.0;
-  bid1.nurl = 'www.something.com';
-  bid1.ssat = 2;
-
-  const bid2 = response.bids[1];
-  bid2.floor = 1.0;
-  bid2.exchangeRate = 0.8;
-  bid2.nurl = 'www.something-else.com';
-  bid2.ssat = 2;
-
-  return response;
-};
-
-const createWindow = (href, params = {}) => {
-  let {parent, referrer, top, frameElement, placementElements = []} = params;
-  const protocol = href.startsWith('https') ? 'https:' : 'http:';
-  const win = {
-    frameElement,
-    parent,
-    top,
-    location: {
-      protocol,
-      href
-    },
-    document: {
-      createElement: function() { return { setAttribute: function() {} } },
-      referrer,
-      getElementById: id => placementElements.find(el => el.id === id)
-    }
-  };
-
-  win.self = win;
-
-  if (!parent) {
-    win.parent = win;
-  }
-
-  if (!top) {
-    win.top = win;
-  }
-
-  return win;
-};
-
-function createElement(offsetTop = 0, id) {
-  return {
-    id,
-    getBoundingClientRect: function() {
-      return {
-        top: offsetTop,
-        height: 1
-      }
-    }
-  }
-}
-
-function setupSingleWindow(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
-  const win = createWindow('http://www.xyz.com/', {
-    parent: win, top: win, frameElement: createElement(304), placementElements:  placementElements
-  });
-
-  win.innerHeight = 200;
-
-  sandbox.stub(utils, 'getWindowSelf').returns(win);
-  sandbox.stub(utils, 'getWindowTop').returns(win);
-  sandbox.stub(utils, 'getTopWindowReferrer').returns(win.document.referrer);
-
-  return win;
-}
-
-function setupNestedWindows(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
-  const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
-  topWin.innerHeight = 800;
-
-  const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
-  midWin.innerHeight = 400;
-
-  const win = createWindow('http://www.xyz.com/', {
-    parent: midWin, top: topWin, frameElement: createElement(304), placementElements
-  });
-
-  win.innerHeight = 200;
-
-  sandbox.stub(utils, 'getWindowSelf').returns(win);
-  sandbox.stub(utils, 'getWindowTop').returns(topWin);
-  sandbox.stub(utils, 'getTopWindowReferrer').returns(topWin.document.referrer);
-
-  return {topWin, midWin, win};
-}
-
-
 describe('stroeerCore bid adapter', function () {
   let sandbox;
   let fakeServer;
@@ -179,6 +18,172 @@ describe('stroeerCore bid adapter', function () {
   afterEach(function() {
     sandbox.restore();
   });
+
+  function assertStandardFieldsOnBid(bidObject, bidId, ad, width, height, cpm) {
+    assert.propertyVal(bidObject, 'requestId', bidId);
+    assert.propertyVal(bidObject, 'ad', ad);
+    assert.propertyVal(bidObject, 'width', width);
+    assert.propertyVal(bidObject, 'height', height);
+    assert.propertyVal(bidObject, 'cpm', cpm);
+  }
+
+  function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd) {
+    assert.propertyVal(bidObject, 'cpm2', cpm2);
+    assert.propertyVal(bidObject, 'floor', floor);
+    assert.propertyVal(bidObject, 'exchangeRate', exchangeRate);
+    assert.propertyVal(bidObject, 'nurl', nurl);
+    assert.propertyVal(bidObject, 'originalAd', originalAd);
+    assert.isFunction(bidObject.generateAd);
+  }
+
+  const AUCTION_ID = utils.getUniqueIdentifierStr();
+
+  const buildBidderRequest = () => ({
+    auctionId: AUCTION_ID,
+    bidderRequestId: 'bidder-request-id-123',
+    bidderCode: 'stroeerCore',
+    timeout: 5000,
+    auctionStart: 10000,
+    bids: [
+      {
+        bidId: 'bid1',
+        bidder: 'stroeerCore',
+        adUnitCode: 'div-1',
+        sizes: [[300, 600], [160, 60]],
+        mediaType: '',
+        params: {
+          sid: 'NDA='
+        }
+      },
+      {
+        bidId: 'bid2',
+        bidder: 'stroeerCore',
+        adUnitCode: 'div-2',
+        sizes: [[728, 90]],
+        params: {
+          sid: 'ODA='
+        }
+      }
+    ],
+  });
+
+  const buildBidderResponse = () => ({
+    'bids': [{
+      'bidId': 'bid1',
+      'cpm': 4.0,
+      'width': 300,
+      'height': 600,
+      'ad': '<div>tag1</div>'
+    }, {
+      'bidId': 'bid2',
+      'cpm': 7.3,
+      'width': 728,
+      'height': 90,
+      'ad': '<div>tag2</div>'
+    }]
+  });
+
+  const buildBidderResponseSecondPriceAuction = () => {
+    const response = buildBidderResponse();
+
+    const bid1 = response.bids[0];
+    bid1.cpm2 = 3.8;
+    bid1.floor = 2.0;
+    bid1.exchangeRate = 1.0;
+    bid1.nurl = 'www.something.com';
+    bid1.ssat = 2;
+
+    const bid2 = response.bids[1];
+    bid2.floor = 1.0;
+    bid2.exchangeRate = 0.8;
+    bid2.nurl = 'www.something-else.com';
+    bid2.ssat = 2;
+
+    return response;
+  };
+
+  const createWindow = (href, params = {}) => {
+    let {parent, referrer, top, frameElement, placementElements = []} = params;
+    const protocol = href.startsWith('https') ? 'https:' : 'http:';
+    const win = {
+      frameElement,
+      parent,
+      top,
+      location: {
+        protocol,
+        href
+      },
+      document: {
+        createElement: function () {
+          return {
+            setAttribute: function () {
+            }
+          }
+        },
+        referrer,
+        getElementById: id => placementElements.find(el => el.id === id)
+      }
+    };
+
+    win.self = win;
+
+    if (!parent) {
+      win.parent = win;
+    }
+
+    if (!top) {
+      win.top = win;
+    }
+
+    return win;
+  };
+
+  function createElement(offsetTop = 0, id) {
+    return {
+      id,
+      getBoundingClientRect: function () {
+        return {
+          top: offsetTop,
+          height: 1
+        }
+      }
+    }
+  }
+
+  function setupSingleWindow(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
+    const win = createWindow('http://www.xyz.com/', {
+      parent: win, top: win, frameElement: createElement(304), placementElements: placementElements
+    });
+
+    win.innerHeight = 200;
+
+    sandbox.stub(utils, 'getWindowSelf').returns(win);
+    sandbox.stub(utils, 'getWindowTop').returns(win);
+    sandbox.stub(utils, 'getTopWindowReferrer').returns(win.document.referrer);
+
+    return win;
+  }
+
+  function setupNestedWindows(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
+    const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
+    topWin.innerHeight = 800;
+
+    const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
+    midWin.innerHeight = 400;
+
+    const win = createWindow('http://www.xyz.com/', {
+      parent: midWin, top: topWin, frameElement: createElement(304), placementElements
+    });
+
+    win.innerHeight = 200;
+
+    sandbox.stub(utils, 'getWindowSelf').returns(win);
+    sandbox.stub(utils, 'getWindowTop').returns(topWin);
+    sandbox.stub(utils, 'getTopWindowReferrer').returns(topWin.document.referrer);
+
+    return {topWin, midWin, win};
+  }
+
 
   describe('bid validation entry point', () => {
     let validBidRequest = Object.freeze(buildBidderRequest().bids[0]);
@@ -206,7 +211,6 @@ describe('stroeerCore bid adapter', function () {
       assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
   });
-
 
   describe('build request entry point', () => {
 
@@ -663,94 +667,32 @@ describe('stroeerCore bid adapter', function () {
     let win;
     beforeEach(() => {
       win = setupSingleWindow(sandbox);
+
+      // fake
+      win.document.createElement = function() {
+        const attrs = {};
+        return {
+          setAttribute: (name, value) => {attrs[name] = value},
+          getAttribute: (name) => attrs[name],
+          hasAttribute: (name) => attrs[name] !== undefined,
+          tagName: 'SCRIPT',
+        }
+      }
     });
 
-    it('should have \"getUserSyncs\" function', () => {
-      assert.isFunction(spec.getUserSyncs);
-    });
-
-    it('should register iframe with default url', () => {
-      const syncOptions = {iframeEnabled: true};
-
-
+    function prepForUserConnect(customUserConnectJsUrl = '') {
       const bidderRequest = buildBidderRequest();
       assert.equal(bidderRequest.bids[0].params.sid, 'NDA=');
+
+      if (customUserConnectJsUrl) {
+        bidderRequest.bids[0].params.connectjsurl = customUserConnectJsUrl;
+      }
 
       // To get a slot id
       spec.buildRequest(bidderRequest.bids, bidderRequest);
 
-      const syncs = spec.getUserSyncs(syncOptions);
-      assert.isArray(syncs);
-      assert.lengthOf(syncs, 1);
-
-      const sync = syncs[0];
-
-      assert.equal(sync.type, 'iframe');
-      assert.equal(sync.url, '//js.adscale.de/userconnect.html?sid=NDA=');
-    });
-
-    it('should register iframe with custom url', () => {
-      const syncOptions = {iframeEnabled: true};
-
-      const bidderRequest = buildBidderRequest();
-      win.top.stroeerCore = {connectHtmlUrl: 'http://something.else/'};
-
-      assert.equal(bidderRequest.bids[0].params.sid, 'NDA=');
-
-      // To get a slot id
-      spec.buildRequest(bidderRequest.bids, bidderRequest);
-
-      const syncs = spec.getUserSyncs(syncOptions);
-      assert.isArray(syncs);
-      assert.lengthOf(syncs, 1);
-
-      const sync = syncs[0];
-
-      assert.equal(sync.type, 'iframe');
-      assert.equal(sync.url, 'http://something.else/?sid=NDA=');
-    });
-  });
-
-  /*
-
-
-  describe('bid response', () => {
-
-
-    it('should perform user connect when have valid bids', () => {
-      runUserConnect();
-
-      assert.isTrue(utils.insertElement.calledOnce);
-      const element = utils.insertElement.lastCall.args[0];
-
-      assert.strictEqual(element.tagName, 'SCRIPT');
-      assert.strictEqual(element.src, 'http://js.adscale.de/userconnect.js');
-
-      const config = JSON.parse(element.getAttribute('data-container-config'));
-      assert.equal(config.slotId, 'NDA=');
-    });
-
-    it('should perform user connect when have invalid bids', () => {
-      bidderRequest.bids.forEach(b => delete b.params.sid);
-      runUserConnect();
-
-      assert.isTrue(utils.insertElement.calledOnce);
-      const element = utils.insertElement.lastCall.args[0];
-
-      assertConnectJs(element, 'http://js.adscale.de/userconnect.js')
-    });
-
-    it('should perform user connect using custom url', () => {
-      const customtUserConnectJsUrl = 'https://other.com/connect.js';
-      bidderRequest.bids[0].params.connectjsurl = customtUserConnectJsUrl;
-
-      runUserConnect();
-
-      assert.isTrue(utils.insertElement.calledOnce);
-      const element = utils.insertElement.lastCall.args[0];
-
-      assertConnectJs(element, customtUserConnectJsUrl, 'NDA=')
-    });
+      sandbox.stub(utils, 'insertElement');
+    }
 
     function assertConnectJs(actualElement, expectedUrl, expectedSlotId) {
       assert.strictEqual(actualElement.tagName, 'SCRIPT');
@@ -764,16 +706,52 @@ describe('stroeerCore bid adapter', function () {
       }
     }
 
-    function runUserConnect() {
-      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+    it('should have \"getUserSyncs\" function', () => {
+      assert.isFunction(spec.getUserSyncs);
+    });
 
+    it('should perform user connect when there was a response', () => {
+      prepForUserConnect();
+
+      spec.getUserSyncs({}, ['']);
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assertConnectJs(element, '//js.adscale.de/userconnect.js', 'NDA=');
+    });
+
+    it.only('should still perform user connect when no sid found', () => {
       sandbox.stub(utils, 'insertElement');
 
-      adapter().callBids(bidderRequest);
+      win.top.stroeerCore = {};
 
-      fakeServer.respond();
-    }
-  });*/
+      spec.getUserSyncs({}, ['']);
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assertConnectJs(element, '//js.adscale.de/userconnect.js');
+    });
+
+    it('should not perform user connect when there was no response', () => {
+      prepForUserConnect();
+      spec.getUserSyncs({}, []);
+      assert.isTrue(utils.insertElement.notCalled);
+    });
+
+    it('should perform user connect using custom url', () => {
+      const customUserConnectJsUrl = 'https://other.com/connect.js';
+      prepForUserConnect(customUserConnectJsUrl);
+
+      spec.getUserSyncs({}, ['']);
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assertConnectJs(element, customUserConnectJsUrl, 'NDA=');
+    });
+  });
 });
 
 function Decrpyter(encKey) {

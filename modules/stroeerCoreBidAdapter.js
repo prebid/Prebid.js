@@ -71,10 +71,31 @@ function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePor
 }
 
 function setupGlobalNamespace(anyBid) {
+  _stroeerCore = getStroeerCore();
   // Used to lookup publisher's website settings on server-side.
   _stroeerCore.anySid = _stroeerCore.anySid || anyBid.params.sid;
   // Can be overridden for testing
-  _stroeerCore.connectHtmlUrl = _stroeerCore.connectHtmlUrl || anyBid.params.connectHtmlUrl;
+  _stroeerCore.userConnectJsUrl = _stroeerCore.userConnectJsUrl || anyBid.params.connectjsurl;
+}
+
+function initUserConnect() {
+  // should have already but will fetch again if we need to
+  _stroeerCore = _stroeerCore || getStroeerCore();
+
+  console.log(JSON.stringify(_stroeerCore));
+
+  const sid = _stroeerCore.anySid;
+  const userConnectJsUrl = (_stroeerCore.userConnectJsUrl || '//js.adscale.de/userconnect.js');
+
+  const scriptElement = getMostAccessibleTopWindow().document.createElement('script');
+
+  if (sid) {
+    scriptElement.setAttribute('data-container-config', JSON.stringify({slotId: sid}));
+  }
+
+  scriptElement.src = userConnectJsUrl;
+
+  utils.insertElement(scriptElement);
 }
 
 export const spec = {
@@ -103,7 +124,6 @@ export const spec = {
   }()),
 
   buildRequest: function(validBidRequests = [], bidderRequest) {
-    _stroeerCore = getStroeerCore();
     const anyBid = bidderRequest.bids[0];
 
     setupGlobalNamespace(anyBid);
@@ -183,16 +203,16 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
-    const sid = _stroeerCore.anySid;
-    if (syncOptions.iframeEnabled && sid) {
-      const userConnectUrl = (_stroeerCore.connectHtmlUrl || '//js.adscale.de/userconnect.html') + "?sid=" + sid;
-      syncs.push({
-        type: 'iframe',
-        url: userConnectUrl
-      });
+    // WARNING: we are breaking rules by not returning anything. We are inserting sync elements instead.
+    // This is ok as we are using our own prebid.js build. This is not an official adapter yet.
+    // To make official we need to revisit how we do user matching along with adex, nuggad, etc.
+
+    if (serverResponses.length > 0) {
+      // We have a response so almost guaranteed we have cookie, etc.
+      initUserConnect();
     }
-    return syncs;
+
+    return [];
   }
 };
 
