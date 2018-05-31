@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 var applies = true;
-var consent_string = null;
+var consentString = null;
 
 export const tripleliftAdapterSpec = {
 
@@ -13,7 +13,7 @@ export const tripleliftAdapterSpec = {
   supportedMediaTypes: [BANNER],
   aliases: ['triplelift'],
   isBidRequestValid: function(bid) {
-    return !!(bid.params.inventoryCode);
+    return bid.params.inventoryCode !== 'undefined';
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -26,14 +26,17 @@ export const tripleliftAdapterSpec = {
     tlCall = utils.tryAppendQueryString(tlCall, 'fe', _isFlashEnabled().toString());
     tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
 
-    if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-      applies = bidderRequest.gdprConsent.gdprApplies;
-      tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', applies.toString());
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+        applies = bidderRequest.gdprConsent.gdprApplies;
+        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', applies.toString());
+      }
+      if (bidderRequest.gdprConsent.consentString !== 'undefined') {
+        consentString = bidderRequest.gdprConsent.consentString;
+        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
+      }
     }
-    if (!!bidderRequest.gdprConsent.consentString) {
-      consent_string = bidderRequest.gdprConsent.consentString;
-      tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consent_string);
-    }
+
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
@@ -48,22 +51,17 @@ export const tripleliftAdapterSpec = {
   },
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
-    var bidResponses = [];
     var bids = serverResponse.body.bids || [];
-
-    if (bids.length > 0) {
-      for (let i = 0; i < bids.length; i++) {
-        bidResponses.push(_buildResponseObject(bidderRequest, bids[i]));
-      }
-    }
-    return bidResponses;
+    return bids.map(function(bid) {
+      return _buildResponseObject(bidderRequest, bid);
+    });
   },
 
   getUserSyncs: function(syncOptions) {
-    var ibCall = '//ib.3lift.com/userSync.html';
-    if (consent_string !== null) {
+    var ibCall = '//ib.3lift.com/sync?';
+    if (consentString !== null) {
       ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', applies);
-      ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consent_string);
+      ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
     }
 
     if (syncOptions.iframeEnabled) {
@@ -76,42 +74,39 @@ export const tripleliftAdapterSpec = {
 }
 
 function _buildPostBody(bidRequests) {
-  var data = {imp: []};
-
-  for (let i = 0; i < bidRequests.length; i++) {
-    data.imp.push(
-      {
-        id: i,
-        tagid: bidRequests[i].params.inventoryCode,
-        floor: bidRequests[i].params.floor,
-        banner: {
-          format: _sizes(bidRequests[i].sizes),
-        },
+  var data = {};
+  data.imp = bidRequests.map(function(bid, index) {
+    return {
+      id: index,
+      tagid: bid.params.inventoryCode,
+      floor: bid.params.floor,
+      banner: {
+        format: _sizes(bid.sizes)
       }
-    )
-  }
+    }
+  });
+
   return data;
 }
 
 function _sizes(sizeArray) {
-  var format = [];
-  for (let i = 0; i < sizeArray.length; i++) {
-    format.push({
-      w: sizeArray[i][0],
-      h: sizeArray[i][1]
-    });
-  }
-  return format;
+  return sizeArray.map(function(size) {
+    return {
+      w: size[0],
+      h: size[1]
+    };
+  });
 }
 
 function _buildResponseObject(bidderRequest, bid) {
+  var bidResponse = {};
   var width = bid.width || 1;
   var height = bid.height || 1;
   var dealId = bid.deal_id || '';
   var creativeId = bid.imp_id;
 
   if (bid.cpm != 0 && bid.ad) {
-    const bidResponse = {
+    bidResponse = {
       requestId: bidderRequest.bids[creativeId].bidId,
       cpm: bid.cpm,
       width: width,
@@ -123,8 +118,8 @@ function _buildResponseObject(bidderRequest, bid) {
       currency: 'USD',
       ttl: 33,
     };
-    return bidResponse;
   };
+  return bidResponse;
 }
 
 function _isFlashEnabled() {
