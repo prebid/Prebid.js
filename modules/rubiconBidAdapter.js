@@ -242,8 +242,8 @@ export const spec = {
           'latitude',
           'longitude',
           'kw'
-        ].concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_v') !== -1)))
-        .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i') !== -1)))
+        ].concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_v.') !== -1)))
+        .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i.') !== -1)))
         .concat([
           'tk_flint',
           'x_source.tid',
