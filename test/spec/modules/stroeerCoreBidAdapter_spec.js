@@ -481,11 +481,11 @@ describe('stroeerCore bid adapter', function () {
 
           const result = spec.interpretResponse({body: bidderResponse});
 
-          const bidResponse = result[0];
+          const bid = result[0];
           // Prebid will do this
-          bidResponse.adId = test.bidId;
+          bid.adId = test.bidId;
 
-          const ad = bidResponse.generateAd({auctionPrice: test.price});
+          const ad = bid.generateAd({auctionPrice: test.price});
 
           const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
           const encryptedPrice = rx.exec(ad);
@@ -513,11 +513,11 @@ describe('stroeerCore bid adapter', function () {
 
           const result = spec.interpretResponse({body: bidderResponse});
 
-          const bidResponse = result[0];
+          const bid = result[0];
           // Prebid will do this
-          bidResponse.adId = test.bidId;
+          bid.adId = test.bidId;
 
-          const ad = bidResponse.generateAd({auctionPrice: test.price});
+          const ad = bid.generateAd({auctionPrice: test.price});
 
           const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
           const encryptedPrice = rx.exec(ad);
@@ -534,11 +534,11 @@ describe('stroeerCore bid adapter', function () {
 
         const result = spec.interpretResponse({body: bidderResponse});
 
-        const bidResponse = result[0];
+        const bid = result[0];
         // Prebid will do this
-        bidResponse.adId = '123456789123456789';
+        bid.adId = '123456789123456789';
 
-        const ad = bidResponse.generateAd({auctionPrice: '40.22'});
+        const ad = bid.generateAd({auctionPrice: '40.22'});
 
         const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw</script>';
         assert.equal(ad, expectedAd);
@@ -553,11 +553,11 @@ describe('stroeerCore bid adapter', function () {
 
         const result = spec.interpretResponse({body: bidderResponse});
 
-        const bidResponse = result[0];
+        const bid = result[0];
         // Prebid will do this
-        bidResponse.adId = '123456789123456789';
+        bid.adId = '123456789123456789';
 
-        const ad = bidResponse.generateAd({auctionPrice: '40.22'});
+        const ad = bid.generateAd({auctionPrice: '40.22'});
 
         const expectedAd = '<img src=\'tracker.com?p=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA</script>';
         assert.equal(ad, expectedAd);
@@ -572,14 +572,14 @@ describe('stroeerCore bid adapter', function () {
 
         const result = spec.interpretResponse({body: bidderResponse});
 
-        const bidResponse = result[0];
+        const bid = result[0];
         // Prebid will do this
-        bidResponse.adId = '123456789123456789';
+        bid.adId = '123456789123456789';
 
         // Mimic prebid by replacing AUCTION_PRICE macros in ad. We keep the original for generateAd.
-        bidResponse.ad = bidResponse.ad.replace(/\${AUCTION_PRICE}/g, '1.1111111');
+        bid.ad = bid.ad.replace(/\${AUCTION_PRICE}/g, '1.1111111');
 
-        const ad = bidResponse.generateAd({auctionPrice: 40.22});
+        const ad = bid.generateAd({auctionPrice: 40.22});
 
         const expectedAd = '<img src=\'tracker.com?p=40.22></img>\n<script>var price=40.22</script>';
         assert.equal(ad, expectedAd);
@@ -594,11 +594,11 @@ describe('stroeerCore bid adapter', function () {
 
         const result = spec.interpretResponse({body: bidderResponse});
 
-        const bidResponse = result[0];
+        const bid = result[0];
         // Prebid will do this
-        bidResponse.adId = '123456789123456789';
+        bid.adId = '123456789123456789';
 
-        const ad = bidResponse.generateAd({auctionPrice: 40.22});
+        const ad = bid.generateAd({auctionPrice: 40.22});
 
         const expectedAd = '<img src=\'tracker.com?p=40.22&e=MTIzNDU2Nzg5MTIzNDU2N8mnFBLGeBHQseHrBA></img>\n<script>var price=MTIzNDU2Nzg5MTIzNDU2Nyg88-cbHq-IYqegZw</script>';
         assert.equal(ad, expectedAd);
@@ -737,11 +737,11 @@ describe('stroeerCore bid adapter', function () {
             responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
 
             const result = spec.interpretResponse({body: bidderResponse});
-            const bidResponse = result[0];
+            const bid = result[0];
             // Prebid will do this
-            bidResponse.adId = '123456789123456789';
+            bid.adId = '123456789123456789';
 
-            const ad = bidResponse.generateAd({auctionPrice: test.price});
+            const ad = bid.generateAd({auctionPrice: test.price});
 
             const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
             const encryptedPrice = rx.exec(ad);
@@ -763,11 +763,11 @@ describe('stroeerCore bid adapter', function () {
             responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
 
             const result = spec.interpretResponse({body: bidderResponse});
-            const bidResponse = result[0];
+            const bid = result[0];
             // Prebid will do this
-            bidResponse.adId = '123456789123456789';
+            bid.adId = '123456789123456789';
 
-            assert.throws(() => bidResponse.generateAd({auctionPrice: test.price}), Error);
+            assert.throws(() => bid.generateAd({auctionPrice: test.price}), Error);
           });
         });
       });
