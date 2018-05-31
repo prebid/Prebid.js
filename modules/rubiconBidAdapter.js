@@ -197,7 +197,7 @@ export const spec = {
         return {
           method: 'GET',
           url: FASTLANE_ENDPOINT,
-          data: Object.keys(bidParams).reduce((paramString, key) => {
+          data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=1&rand=${Math.random()}`,
@@ -226,40 +226,11 @@ export const spec = {
           return spec.createSlotParams(bidRequest, bidderRequest);
         }));
 
-        const orderedParams = [
-          'account_id',
-          'site_id',
-          'zone_id',
-          'size_id',
-          'alt_size_ids',
-          'p_pos',
-          'gdpr',
-          'gdpr_consent',
-          'rf',
-          'dt.id',
-          'dt.keyv',
-          'dt.pref',
-          'latitude',
-          'longitude',
-          'kw'
-        ].concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_v.') !== -1)))
-          .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i.') !== -1)))
-          .concat([
-            'tk_flint',
-            'x_source.tid',
-            'p_screen_res',
-            'rp_floor',
-            'rp_secure',
-            'tk_user_key'
-          ]);
-
-        const unorderedParams = Object.keys(combinedSlotParams).filter(item => (orderedParams.indexOf(item) === -1))
-
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
           method: 'GET',
           url: FASTLANE_ENDPOINT,
-          data: orderedParams.concat(unorderedParams).reduce((paramString, key) => {
+          data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
             const propValue = combinedSlotParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
@@ -268,6 +239,37 @@ export const spec = {
       }));
     }
     return requests;
+  },
+
+  getOrderedParams: function(params) {
+    const orderedParams = [
+      'account_id',
+      'site_id',
+      'zone_id',
+      'size_id',
+      'alt_size_ids',
+      'p_pos',
+      'gdpr',
+      'gdpr_consent',
+      'rf',
+      'dt.id',
+      'dt.keyv',
+      'dt.pref',
+      'latitude',
+      'longitude',
+      'kw'
+    ].concat(Object.keys(params).filter(item => (item.indexOf('tg_v.') !== -1)))
+      .concat(Object.keys(params).filter(item => (item.indexOf('tg_i.') !== -1)))
+      .concat([
+        'tk_flint',
+        'x_source.tid',
+        'p_screen_res',
+        'rp_floor',
+        'rp_secure',
+        'tk_user_key'
+      ]);
+
+    return orderedParams.concat(Object.keys(params).filter(item => (orderedParams.indexOf(item) === -1)));
   },
 
   /**
