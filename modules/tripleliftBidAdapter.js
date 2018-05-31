@@ -64,7 +64,7 @@ export const tripleliftAdapterSpec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    var ibCall = '//ib.3lift.com/userSync.html';
+    var ibCall = '//ib.3lift.com/sync?';
     if (consent_string !== null) {
       ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', applies);
       ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consent_string);
@@ -132,15 +132,15 @@ function _buildResponseObject(bidderRequest, bid) {
 }
 
 function _isFlashEnabled() {
-  var hasFlash = 0;
+  var flash;
   try {
-    hasFlash = new ActiveXObject('ShockwaveFlash.ShockwaveFlash') ? 1 : 0
+    flash = Boolean(new ActiveXObject('ShockwaveFlash.ShockwaveFlash'));
   } catch (e) {
-    hasFlash = navigator.mimeTypes &&
+    flash = navigator.mimeTypes &&
       navigator.mimeTypes['application/x-shockwave-flash'] !== undefined &&
       navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin ? 1 : 0
   }
-  return hasFlash;
+  return flash ? 1 : 0;
 }
 
 registerBidder(tripleliftAdapterSpec);
