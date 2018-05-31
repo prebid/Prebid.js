@@ -225,11 +225,42 @@ export const spec = {
         const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
           return spec.createSlotParams(bidRequest, bidderRequest);
         }));
+
+        const orderedParams = [
+          'account_id',
+          'site_id',
+          'zone_id',
+          'size_id',
+          'alt_size_ids',
+          'p_pos',
+          'gdpr',
+          'gdpr_consent',
+          'rf',
+          'dt.id',
+          'dt.keyv',
+          'dt.pref',
+          'latitude',
+          'longitude',
+          'kw'
+        ].concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_v') !== -1)))
+        .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i') !== -1)))
+        .concat([
+          'tk_flint',
+          'x_source.tid',
+          'p_screen_res',
+          'rp_floor',
+          'rp_secure',
+          'tk_user_key'
+        ]);
+
+        const unorderedParams = Object.keys(combinedSlotParams).filter(item => (orderedParams.indexOf(item) === -1))
+
+
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
           method: 'GET',
           url: FASTLANE_ENDPOINT,
-          data: Object.keys(combinedSlotParams).reduce((paramString, key) => {
+          data: orderedParams.concat(unorderedParams).reduce((paramString, key) => {
             const propValue = combinedSlotParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
