@@ -1,9 +1,13 @@
 import * as utils from 'src/utils';
+import * as ajax from 'src/ajax';
+import {userSync} from 'src/userSync';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
-const ENDPOINT = '//ow.pubmatic.com/openrtb/2.4/';
+const ENDPOINT = '//172.16.4.65:8001/openrtb/2.4/';
+var COOKIE_SYNC = '//ow.pubmatic.com/cookie_sync/';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
@@ -150,6 +154,45 @@ function mandatoryParamCheck(paramName, paramValue) {
   return true;
 }
 
+function cookieSyncCallBack(gdprConsent) {
+  return function (response, XMLReqObj) {
+    response = JSON.parse(response);
+    let serverResponse;
+    let syncOptions = {
+      iframeEnabled: config.getConfig('userSync.iframeEnabled'),
+      pixelEnabled: config.getConfig('userSync.pixelEnabled')
+    };
+    // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
+    if (response.hasOwnProperty('bidder_status')) {
+      serverResponse = response.bidder_status;
+    }
+    serverResponse.forEach(bidder => {
+      if (bidder.usersync && bidder.usersync.url) {
+      // Attaching GDPR Consent Params in UserSync urls
+        if (gdprConsent) {
+          bidder.usersync.url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+          bidder.usersync.url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+        }
+        if (bidder.usersync.type === IFRAME) {
+          if (syncOptions.iframeEnabled) {
+            userSync.registerSync(IFRAME, bidder.bidder, bidder.usersync.url);
+          } else {
+            utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
+          }
+        } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
+          if (syncOptions.pixelEnabled) {
+            userSync.registerSync(IMAGE, bidder.bidder, bidder.usersync.url);
+          } else {
+            utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
+          }
+        } else {
+          utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
+        }
+      }
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -286,45 +329,16 @@ export const spec = {
   * Register User Sync.
   */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
-    let serverResponse;
     let urls = [];
-    // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
-    if (serverResponses.length > 0 && serverResponses[0] && serverResponses[0].body) {
-      serverResponse = serverResponses[0].body;
-    }
-    if (serverResponse && serverResponse.ext && serverResponse.ext.bidderstatus && utils.isArray(serverResponse.ext.bidderstatus)) {
-      serverResponse.ext.bidderstatus.forEach(bidder => {
-        if (bidder.usersync && bidder.usersync.url) {
-          // Attaching GDPR Consent Params in UserSync urls
-          if (gdprConsent) {
-            bidder.usersync.url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-            bidder.usersync.url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-          }
-
-          if (bidder.usersync.type === IFRAME) {
-            if (syncOptions.iframeEnabled) {
-              urls.push({
-                type: IFRAME,
-                url: bidder.usersync.url
-              });
-            } else {
-              utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
-            }
-          } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
-            if (syncOptions.pixelEnabled) {
-              urls.push({
-                type: IMAGE,
-                url: bidder.usersync.url
-              });
-            } else {
-              utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
-            }
-          } else {
-            utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
-          }
-        }
-      });
-    }
+    var bidders = config.getConfig('userSync.enabledBidders');
+    var UUID = utils.getUniqueIdentifierStr();
+    var data = {
+      uuid: UUID,
+      bidders: bidders
+    };
+    ajax.ajax(COOKIE_SYNC, cookieSyncCallBack(gdprConsent), JSON.stringify(data), {
+      withCredentials: true
+    });
     return urls;
   }
 };
