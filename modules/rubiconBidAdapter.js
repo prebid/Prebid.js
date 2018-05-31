@@ -255,8 +255,8 @@ export const spec = {
       'dt.id',
       'dt.keyv',
       'dt.pref',
-      'latitude',
-      'longitude',
+      'p_geo.latitude',
+      'p_geo.longitude',
       'kw'
     ].concat(Object.keys(params).filter(item => (item.indexOf('tg_v.') !== -1)))
       .concat(Object.keys(params).filter(item => (item.indexOf('tg_i.') !== -1)))
@@ -323,6 +323,8 @@ export const spec = {
     // use rubicon sizes if provided, otherwise adUnit.sizes
     const parsedSizes = parseSizes(bidRequest);
 
+    const [latitude, longitude] = params.latLong || [];
+
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
@@ -337,6 +339,8 @@ export const spec = {
       'p_screen_res': _getScreenResolution(),
       'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
+      'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
+      'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest)
     };
