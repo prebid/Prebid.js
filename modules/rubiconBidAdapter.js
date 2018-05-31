@@ -390,7 +390,6 @@ export const spec = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
           creativeId: ad.creative_id,
-          mediaType: ad.creative_type,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes

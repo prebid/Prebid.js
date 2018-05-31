@@ -183,13 +183,13 @@ describe('targeting tests', () => {
         expect(bids[1].adId).to.equal('adid-3');
       });
 
-      it('should use oldest bids from bid pool to get winning bid', () => {
-        // Pool is having 4 bids from 2 auctions. There are 2 bids from rubicon, #2 which is first bid will be selected to take part in auction.
+      it('should use highest cpm bid from bid pool to get winning bid', () => {
+        // Pool is having 4 bids from 2 auctions. There are 2 bids from rubicon, #2 which is highest cpm bid will be selected to take part in auction.
         let bidsReceived = [
           createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
           createBidReceived({bidder: 'rubicon', cpm: 9, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-0', adId: 'adid-2'}),
           createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
-          createBidReceived({bidder: 'rubicon', cpm: 10, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4'}),
+          createBidReceived({bidder: 'rubicon', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4'}),
         ];
         auctionManagerStub.returns(bidsReceived);
 
