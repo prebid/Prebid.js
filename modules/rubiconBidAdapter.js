@@ -243,18 +243,17 @@ export const spec = {
           'longitude',
           'kw'
         ].concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_v.') !== -1)))
-        .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i.') !== -1)))
-        .concat([
-          'tk_flint',
-          'x_source.tid',
-          'p_screen_res',
-          'rp_floor',
-          'rp_secure',
-          'tk_user_key'
-        ]);
+          .concat(Object.keys(combinedSlotParams).filter(item => (item.indexOf('tg_i.') !== -1)))
+          .concat([
+            'tk_flint',
+            'x_source.tid',
+            'p_screen_res',
+            'rp_floor',
+            'rp_secure',
+            'tk_user_key'
+          ]);
 
         const unorderedParams = Object.keys(combinedSlotParams).filter(item => (orderedParams.indexOf(item) === -1))
-
 
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
