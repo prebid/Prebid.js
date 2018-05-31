@@ -1,9 +1,9 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-const constants = require('src/constants.json');
+// const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
-const ENDPOINT = '//ow.pubmatic.com/openrtb/2.4/';
+const ENDPOINT = '//ow.pubmatic.com/openrtb/2.5/';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
@@ -136,8 +136,14 @@ function _createImpressionObject(bid, conf) {
       })()
     },
     ext: {
-      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid),
-      div: bid.params.divId
+      wrapper: {
+        div: bid.params.divId
+      },
+      bidder: {
+        pubmatic: {
+          pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
+        }
+      }
     }
   };
 }
@@ -192,15 +198,18 @@ export const spec = {
     });
 
     payload.site.publisher.id = conf.pubId.trim();
-    payload.ext.dm = {
-      rs: 1,
-      pubId: conf.pubId,
-      wp: 'pbjs',
-      wv: constants.REPO_AND_VERSION,
-      transactionId: conf.transactionId,
-      profileid: conf.profId || UNDEFINED,
-      versionid: conf.verId || DEFAULT_VERSION_ID,
-      wiid: conf.wiid || UNDEFINED
+
+    payload.ext.wrapper = {
+      profileid: parseInt(conf.profId) || UNDEFINED,
+      versionid: parseInt(conf.verId) || DEFAULT_VERSION_ID,
+      sumry_disable: 0,
+      ssauction: 0,
+      // rs: 1,
+      // pubId: conf.pubId,
+      // wp: 'pbjs',
+      // wv: constants.REPO_AND_VERSION,
+      // transactionId: conf.transactionId,
+      // wiid: conf.wiid || UNDEFINED
     };
     payload.user = {
       gender: _parseSlotParam('gender', conf.gender),
@@ -246,6 +255,7 @@ export const spec = {
       if (response.body && response.body.seatbid) {
         // Supporting multiple bid responses for same adSize
         const referrer = utils.getTopWindowUrl();
+        const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
           seatbidder.bid.forEach(bid => {
@@ -265,7 +275,7 @@ export const spec = {
                     dealId: firstSummary ? (bid.dealid || UNDEFINED) : UNDEFINED,
                     currency: CURRENCY,
                     netRevenue: true,
-                    ttl: 300,
+                    ttl: partnerResponseTimeObj[summary.bidder] || 300,
                     referrer: referrer,
                     ad: firstSummary ? bid.adm : ''
                   };
