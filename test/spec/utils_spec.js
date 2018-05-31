@@ -506,11 +506,11 @@ describe('Utils', function () {
 
   describe('getHighestCpm', function () {
     it('should pick the existing highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 2,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 100
       };
@@ -518,11 +518,11 @@ describe('Utils', function () {
     });
 
     it('should pick the new highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 2,
         timeToRespond: 100
       };
@@ -530,15 +530,43 @@ describe('Utils', function () {
     });
 
     it('should pick the fastest cpm in case of tie', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 50
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the oldest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
+    });
+
+    it('should pick the latest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -787,6 +815,34 @@ describe('Utils', function () {
       let var2 = 'my_test_value';
       let test2 = utils.convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
+    });
+  });
+
+  describe('getAdUnitSizes', () => {
+    it('returns an empty response when adUnits is undefined', () => {
+      let sizes = utils.getAdUnitSizes();
+      expect(sizes).to.be.undefined;
+    });
+
+    it('returns an empty array when invalid data is present in adUnit object', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: 300 });
+      expect(sizes).to.deep.equal([]);
+    });
+
+    it('retuns an array of arrays when reading from adUnit.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+
+    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 });

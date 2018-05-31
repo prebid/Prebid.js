@@ -63,6 +63,64 @@ describe('BeachfrontAdapter', () => {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
+
+    describe('for multi-format bids', () => {
+      it('should return true when the required params are passed for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+
+      it('should return true when the required params are passed for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+    });
   });
 
   describe('spec.buildRequests', () => {
@@ -166,6 +224,22 @@ describe('BeachfrontAdapter', () => {
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes });
       });
+
+      it('must add GDPR consent data to the request', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const bidderRequest = {
+          gdprConsent: {
+            consentRequired: true,
+            consentString
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.gdpr).to.equal(1);
+        expect(data.user.ext.consent).to.equal(consentString);
+      });
     });
 
     describe('for banner bids', () => {
@@ -264,6 +338,77 @@ describe('BeachfrontAdapter', () => {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
+      });
+
+      it('must add GDPR consent data to the request', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const bidderRequest = {
+          gdprConsent: {
+            consentRequired: true,
+            consentString
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.gdpr).to.equal(1);
+        expect(data.gdprConsent).to.equal(consentString);
+      });
+    });
+
+    describe('for multi-format bids', () => {
+      it('should create a POST request for each bid format', () => {
+        const width = 300;
+        const height = 250;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          },
+          banner: {
+            sizes: [ width, height ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests.length).to.equal(2);
+        expect(requests[0].url).to.contain(VIDEO_ENDPOINT);
+        expect(requests[1].url).to.contain(BANNER_ENDPOINT);
+      });
+
+      it('must parse bid sizes for each bid format', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ 640, 360 ]
+          },
+          banner: {
+            sizes: [ 300, 250 ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].data.imp[0].video).to.deep.contain({ w: 640, h: 360 });
+        expect(requests[1].data.slots[0].sizes).to.deep.equal([{ w: 300, h: 250 }]);
       });
     });
   });

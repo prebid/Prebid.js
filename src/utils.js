@@ -108,6 +108,35 @@ exports.transformAdServerTargetingObj = function (targeting) {
 };
 
 /**
+ * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
+ * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
+ * @param {object} adUnit one adUnit object from the normal list of adUnits
+ * @returns {array[array[number]]} array of arrays containing numeric sizes
+ */
+export function getAdUnitSizes(adUnit) {
+  if (!adUnit) {
+    return;
+  }
+
+  let sizes = [];
+  if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
+    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    if (Array.isArray(bannerSizes[0])) {
+      sizes = bannerSizes;
+    } else {
+      sizes.push(bannerSizes);
+    }
+  } else if (Array.isArray(adUnit.sizes)) {
+    if (Array.isArray(adUnit.sizes[0])) {
+      sizes = adUnit.sizes;
+    } else {
+      sizes.push(adUnit.sizes);
+    }
+  }
+  return sizes;
+}
+
+/**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
@@ -520,6 +549,38 @@ exports.callBurl = function({ source, burl }) {
 };
 
 /**
+ * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
+ * (though could be for other purposes)
+ * @param {string} htmlCode snippet of HTML code used for tracking purposes
+ */
+exports.insertHtmlIntoIframe = function(htmlCode) {
+  if (!htmlCode) {
+    return;
+  }
+
+  let iframe = document.createElement('iframe');
+  iframe.id = exports.getUniqueIdentifierStr();
+  iframe.width = 0;
+  iframe.height = 0;
+  iframe.hspace = '0';
+  iframe.vspace = '0';
+  iframe.marginWidth = '0';
+  iframe.marginHeight = '0';
+  iframe.style.display = 'none';
+  iframe.style.height = '0px';
+  iframe.style.width = '0px';
+  iframe.scrolling = 'no';
+  iframe.frameBorder = '0';
+  iframe.allowtransparency = 'true';
+
+  exports.insertElement(iframe, document, 'body');
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(htmlCode);
+  iframe.contentWindow.document.close();
+}
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
@@ -571,7 +632,7 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
       allowtransparency="true"
       marginheight="0" marginwidth="0"
       width="0" hspace="0" vspace="0" height="0"
-      style="height:0p;width:0p;display:none;"
+      style="height:0px;width:0px;display:none;"
       scrolling="no"
       src="${url}">
     </iframe>`;
@@ -624,8 +685,16 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id, bidsRequested) {
-  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
+export function getBidRequest(id, bidderRequests) {
+  let bidRequest;
+  bidderRequests.some(bidderRequest => {
+    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    if (result) {
+      bidRequest = result;
+    }
+    return result;
+  });
+  return bidRequest;
 }
 
 export function getKeys(obj) {
@@ -648,12 +717,24 @@ export function isGptPubadsDefined() {
   }
 }
 
-export function getHighestCpm(previous, current) {
-  if (previous.cpm === current.cpm) {
-    return previous.timeToRespond > current.timeToRespond ? current : previous;
-  }
+// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
+export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
 
-  return previous.cpm < current.cpm ? current : previous;
+// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
+export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
+
+// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
+export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
+
+function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
+  return (previous, current) => {
+    if (previous.cpm === current.cpm) {
+      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
+    }
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 /**

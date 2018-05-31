@@ -121,7 +121,7 @@ describe('justpremium adapter', () => {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
-      expect(options[0].src).to.match(/\/\/us-u.openx.net\/w\/1.0/)
+      expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
     })
   })
 })

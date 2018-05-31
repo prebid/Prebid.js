@@ -3,8 +3,6 @@ import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
-const adloader = require('../../../src/adloader');
-
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
 describe('AppNexusAdapter', () => {
@@ -331,18 +329,6 @@ describe('AppNexusAdapter', () => {
   })
 
   describe('interpretResponse', () => {
-    let loadScriptStub;
-
-    beforeEach(() => {
-      loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-        args[1]();
-      });
-    });
-
-    afterEach(() => {
-      loadScriptStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [

@@ -268,27 +268,32 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     try {
-      if (response.body && response.body.seatbid && response.body.seatbid[0] && response.body.seatbid[0].bid) {
-        response.body.seatbid[0].bid.forEach(bid => {
-          let newBid = {
-            requestId: bid.impid,
-            cpm: (parseFloat(bid.price) || 0).toFixed(2),
-            width: bid.w,
-            height: bid.h,
-            creativeId: bid.crid || bid.id,
-            dealId: bid.dealid,
-            currency: CURRENCY,
-            netRevenue: NET_REVENUE,
-            ttl: 300,
-            referrer: utils.getTopWindowUrl(),
-            ad: bid.adm
-          };
+      if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
+        // Supporting multiple bid responses for same adSize
+        response.body.seatbid.forEach(seatbidder => {
+          seatbidder.bid &&
+          utils.isArray(seatbidder.bid) &&
+          seatbidder.bid.forEach(bid => {
+            let newBid = {
+              requestId: bid.impid,
+              cpm: (parseFloat(bid.price) || 0).toFixed(2),
+              width: bid.w,
+              height: bid.h,
+              creativeId: bid.crid || bid.id,
+              dealId: bid.dealid,
+              currency: CURRENCY,
+              netRevenue: NET_REVENUE,
+              ttl: 300,
+              referrer: utils.getTopWindowUrl(),
+              ad: bid.adm
+            };
 
-          if (bid.ext && bid.ext.deal_channel) {
-            newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-          }
+            if (bid.ext && bid.ext.deal_channel) {
+              newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+            }
 
-          bidResponses.push(newBid);
+            bidResponses.push(newBid);
+          });
         });
       }
     } catch (error) {
@@ -306,7 +311,7 @@ export const spec = {
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
 
     if (syncOptions.iframeEnabled) {

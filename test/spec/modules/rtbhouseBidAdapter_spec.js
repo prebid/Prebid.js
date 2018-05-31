@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
-
+const consentStr = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
 /**
  * Helpers
  */
@@ -79,12 +79,38 @@ describe('RTBHouseAdapter', () => {
     it('sends bid request to ENDPOINT via POST', () => {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-
       const request = spec.buildRequests(bidRequest);
       expect(request.url).to.equal(buildEndpointUrl(bidRequest[0].params.region));
       expect(request.method).to.equal('POST');
     });
-  })
+
+    it('should not populate GDPR if for non-EEA users', () => {
+      let bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(bidRequest);
+      let data = JSON.parse(request.data);
+      expect(data).to.not.have.property('regs');
+      expect(data).to.not.have.property('user');
+    });
+
+    it('should populate GDPR and consent string if available for EEA users', () => {
+      let bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: consentStr}});
+      let data = JSON.parse(request.data);
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
+    });
+
+    it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', () => {
+      let bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true}});
+      let data = JSON.parse(request.data);
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('');
+    });
+  });
 
   describe('interpretResponse', () => {
     let response = [{
