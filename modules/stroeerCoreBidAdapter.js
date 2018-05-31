@@ -1,6 +1,6 @@
+import {registerBidder} from 'src/adapters/bidderFactory';
 const utils = require('src/utils');
 const url = require('src/url');
-import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
@@ -12,7 +12,6 @@ const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D
 
 const isSecureWindow = () => utils.getWindowSelf().location.protocol === 'https:';
 const isMainPageAccessible = () => getMostAccessibleTopWindow() === utils.getWindowTop();
-
 
 function getStroeerCore() {
   let win = utils.getWindowSelf();
@@ -96,7 +95,7 @@ function initUserConnect() {
 }
 
 export const spec = {
-  code : BIDDER_CODE,
+  code: BIDDER_CODE,
 
   isBidRequestValid: (function() {
     const validators = [];
@@ -222,7 +221,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
 
 function tunePrice(price) {
   const ENCRYPTION_SIZE_LIMIT = 8;

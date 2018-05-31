@@ -186,7 +186,6 @@ describe('stroeerCore bid adapter', function () {
     return {topWin, midWin, win};
   }
 
-
   describe('bid validation entry point', () => {
     let validBidRequest = Object.freeze(buildBidderRequest().bids[0]);
 
@@ -215,11 +214,9 @@ describe('stroeerCore bid adapter', function () {
   });
 
   describe('build request entry point', () => {
-
     it('should have \"buildRequest\" function', () => {
       assert.isFunction(spec.buildRequest);
     });
-
 
     describe('url on server request info object', () => {
       let win;
@@ -323,7 +320,6 @@ describe('stroeerCore bid adapter', function () {
       });
 
       describe('optional fields', () => {
-
         it('should use ssat value from config', function() {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
@@ -401,7 +397,7 @@ describe('stroeerCore bid adapter', function () {
     const invalidResponses = ['', '  ', ' ', undefined, null];
     invalidResponses.forEach(sample => {
       it('should ignore invalid responses (\"' + sample + '\") response', () => {
-        const result = spec.interpretResponse({body:sample});
+        const result = spec.interpretResponse({body: sample});
         assert.isArray(result);
         assert.lengthOf(result, 0);
       });
@@ -410,7 +406,7 @@ describe('stroeerCore bid adapter', function () {
     it('should ignore legacy (prebid < 1.0) redirect', function() {
       // Old workaround for CORS/Ajax/Redirect issues on a few browsers
       const legacyRedirect = {redirect: 'http://somewhere.com/over'};
-      assert.throws(() => spec.interpretResponse({body:legacyRedirect}));
+      assert.throws(() => spec.interpretResponse({body: legacyRedirect}));
     });
 
     it('should intrepret a standard response', () => {
@@ -574,7 +570,6 @@ describe('stroeerCore bid adapter', function () {
         responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE}></img>\n<script>var price=${AUCTION_PRICE}</script>';
         responseBid.bidId = '123456789123456789';
 
-
         const result = spec.interpretResponse({body: bidderResponse});
 
         const bidResponse = result[0];
@@ -635,7 +630,6 @@ describe('stroeerCore bid adapter', function () {
         responseBid.ad = '<img src=\'tracker.com?p=${FIRST_BID:ENC}></img>\n<script>var price=${FIRST_BID:ENC}</script>';
         responseBid.bidId = '123456789123456789';
         responseBid.maxprice = 3.0;
-
 
         const result = spec.interpretResponse({body: bidderResponse});
         const bid = result[0];
@@ -756,10 +750,10 @@ describe('stroeerCore bid adapter', function () {
         });
 
         const invalidPrices = [
-          { price: '123456789'},
-          { price: '123456.15'},
-          { price: '1234567.0152'},
-          { price: '1234567.1052'},
+          { price: '123456789' },
+          { price: '123456.15' },
+          { price: '1234567.0152' },
+          { price: '1234567.1052' },
         ];
         invalidPrices.forEach(test => {
           it(`should error when price is ${test.price}`, function () {
@@ -789,7 +783,7 @@ describe('stroeerCore bid adapter', function () {
       win.document.createElement = function() {
         const attrs = {};
         return {
-          setAttribute: (name, value) => {attrs[name] = value},
+          setAttribute: (name, value) => { attrs[name] = value },
           getAttribute: (name) => attrs[name],
           hasAttribute: (name) => attrs[name] !== undefined,
           tagName: 'SCRIPT',
@@ -818,8 +812,7 @@ describe('stroeerCore bid adapter', function () {
       if (expectedSlotId) {
         const config = JSON.parse(actualElement.getAttribute('data-container-config'));
         assert.equal(config.slotId, expectedSlotId);
-      }
-      else {
+      } else {
         assert.isFalse(actualElement.hasAttribute('data-container-config'));
       }
     }
@@ -854,7 +847,7 @@ describe('stroeerCore bid adapter', function () {
 
     it('should not perform user connect when there was no response', () => {
       prepForUserConnect();
-      spec.getUserSyncs({}, []/*empty, zero-length array*/);
+      spec.getUserSyncs({}, []/* empty, zero-length array */);
       assert.isTrue(utils.insertElement.notCalled);
     });
 
