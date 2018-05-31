@@ -521,10 +521,14 @@ function parseSizes(bid) {
 
   // deprecated: temp legacy support
   let sizes = [];
-  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+  if (Array.isArray(params.sizes)) {
+    sizes = params.sizes;
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    sizes = mapSizes(bid.sizes)
+  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else {
-    sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+    utils.logWarn('Warning: no sizes are setup or found');
   }
 
   return masSizeOrdering(sizes);
