@@ -134,14 +134,11 @@ function _buildResponseObject(bidderRequest, bid) {
 function _isFlashEnabled() {
   var hasFlash = 0;
   try {
-    var fo = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash');
-    hasFlash = 1;
+    hasFlash = new ActiveXObject('ShockwaveFlash.ShockwaveFlash') ? 1 : 0
   } catch (e) {
-    if (navigator.mimeTypes &&
+    hasFlash = navigator.mimeTypes &&
       navigator.mimeTypes['application/x-shockwave-flash'] !== undefined &&
-      navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
-      hasFlash = 1;
-    }
+      navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin ? 1 : 0
   }
   return hasFlash;
 }
