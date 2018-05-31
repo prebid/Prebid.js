@@ -140,8 +140,8 @@ Note if you receive an email with a broken link you most likely selected a confi
 <h4>Select Prebid Version</h4>
 <select class="selectpicker">
   <!-- empty value indicates legacy --> 
-  <option value="1.12.0">1.12.0 - latest</option>
-  <option value="">0.34.12 - legacy not recommended</option>
+  <option value="1.13.0">1.13.0 - latest</option>
+  <option value="">0.34.13 - legacy not recommended</option>
 </select>
 
 
