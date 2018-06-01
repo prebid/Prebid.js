@@ -1,30 +1,30 @@
 import {expect} from 'chai';
-import {spec} from 'modules/rtbdemandadkBidAdapter';
+import {spec} from 'modules/andbeyondBidAdapter';
 import * as utils from 'src/utils';
 
 describe('andbeyond adapter', () => {
   const bid1_zone1 = {
       bidder: 'andbeyond',
       bidId: 'Bid_01',
-      params: {zoneId: 1, host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 1, host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-1',
       sizes: [[300, 250], [300, 200]]
     }, bid2_zone2 = {
       bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 2, host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 2, host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid3_host2 = {
       bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 1, host: 'rtb-private.rtbdemand.com'},
+      params: {zoneId: 1, host: 'rtb-private.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_without_zone = {
       bidder: 'andbeyond',
       bidId: 'Bid_W',
-      params: {host: 'rtb-private.rtbdemand.com'},
+      params: {host: 'rtb-private.andbeyond.com'},
       placementCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_without_host = {
@@ -36,7 +36,7 @@ describe('andbeyond adapter', () => {
     }, bid_with_wrong_zoneId = {
       bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 'wrong id', host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 'wrong id', host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
     };
