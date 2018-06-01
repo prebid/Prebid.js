@@ -25,7 +25,7 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
       const qtxRequest = {};
       let bidId = '';
@@ -55,6 +55,12 @@ export const spec = {
         bidId = bid.bidId;
       }
       qtxRequest.auid = placementId;
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        qtxRequest.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
+        qtxRequest.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
+      };
+
       const url = devEnpoint || ENDPOINT_URL;
 
       return {
@@ -64,7 +70,8 @@ export const spec = {
         mediaType: mediaType,
         renderMode: renderMode,
         url: url,
-        'data': qtxRequest
+        'data': qtxRequest,
+        bidderRequest
       };
     });
   },
@@ -243,13 +250,21 @@ export const spec = {
                   native.title = asset['title']['text'];
                   break;
                 case 2:
-                  native.icon = asset['img'];
+                  native.icon = {
+                    url: asset['img'],
+                    width: asset['w'],
+                    height: asset['h']
+                  };
                   break;
                 case 3:
                   native.body = asset['data']['value'];
                   break;
                 case 4:
-                  native.image = asset['img'];
+                  native.image = {
+                    url: asset['img'],
+                    width: asset['w'],
+                    height: asset['h']
+                  };
                   break;
                 case 10:
                   native.sponsoredBy = asset['data']['value'];
