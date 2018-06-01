@@ -39,6 +39,11 @@ describe('andbeyond adapter', () => {
       params: {zoneId: 'wrong id', host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
+    }, usersyncOnlyResponse = {
+      id: 'nobid1',
+      ext: {
+        adk_usersync: ['http://adk.sync.com/sync']
+      }
     };
 
   const bidResponse1 = {
