@@ -151,7 +151,6 @@ describe('andbeyond adapter', () => {
     });
   });
 
-
   describe('requests routing', () => {
     it('should issue a request for each host', () => {
       let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
@@ -183,7 +182,6 @@ describe('andbeyond adapter', () => {
       expect(resp).to.have.property('ad');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
-
 
     it('should add nurl as pixel for banner response', () => {
       let request = spec.buildRequests([bid1_zone1])[0];
