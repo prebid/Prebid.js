@@ -55,8 +55,14 @@ describe('PubMaticServer adapter', () => {
                 'height': 250
               }]
             }
-          }]
-        }]
+          }],
+          'seat': 'pubmatic'
+        }],
+        'ext': {
+          'responsetimemillis': {
+            'pubmatic': 47
+          }
+        }
       }
     };
   });
@@ -190,7 +196,7 @@ describe('PubMaticServer adapter', () => {
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//ow.pubmatic.com/openrtb/2.4/');
+        expect(request.url).to.equal('//ow.pubmatic.com/openrtb/2.5/');
         expect(request.method).to.equal('POST');
   		});
 
@@ -208,11 +214,10 @@ describe('PubMaticServer adapter', () => {
   		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
   		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.ext.dm.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
-  		  expect(data.ext.dm.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-  		  expect(data.ext.dm.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
-  		  expect(data.ext.dm.profileid).to.equal(bidRequests[0].params.profId); // OpenWrap: Wrapper Profile ID
-  		  expect(data.ext.dm.versionid).to.equal(bidRequests[0].params.verId); // OpenWrap: Wrapper Profile Version ID
+        expect(data.ext.wrapper.profileid).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
+  		  expect(data.ext.wrapper.versionid).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
+        expect(data.ext.wrapper.sumry_disable).to.equal(0); // OpenWrap: Summary Disable flag
+  		  expect(data.ext.wrapper.ssauction).to.equal(0); // OpenWrap: Server Side Auction flag
   		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
   		  expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
   		  expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // tagid
@@ -220,10 +225,10 @@ describe('PubMaticServer adapter', () => {
   		  expect(data.imp[0].banner.format[0].h).to.equal(250); // height
         expect(data.imp[0].banner.format[1].w).to.equal(300); // width
         expect(data.imp[0].banner.format[1].h).to.equal(600); // height
-  		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+  		  expect(data.imp[0].ext.bidder.pubmatic.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         // TODO: Need to figure why this failing
         // expect(data.imp[0].ext.adunit).to.equal(bidRequests[0].params.adUnitId); // adUnitId
-        expect(data.imp[0].ext.div).to.equal(bidRequests[0].params.divId); // div
+        expect(data.imp[0].ext.wrapper.div).to.equal(bidRequests[0].params.divId); // div
   		});
 
       it('Request params check with GDPR consent', () => {
@@ -248,22 +253,21 @@ describe('PubMaticServer adapter', () => {
         expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
         expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
         expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.ext.dm.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
-        expect(data.ext.dm.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.ext.dm.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
-        expect(data.ext.dm.profileid).to.equal(bidRequests[0].params.profId); // OpenWrap: Wrapper Profile ID
-        expect(data.ext.dm.versionid).to.equal(bidRequests[0].params.verId); // OpenWrap: Wrapper Profile Version ID
-        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
+        expect(data.ext.wrapper.profileid).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
+  		  expect(data.ext.wrapper.versionid).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
+        expect(data.ext.wrapper.sumry_disable).to.equal(0); // OpenWrap: Summary Disable flag
+  		  expect(data.ext.wrapper.ssauction).to.equal(0); // OpenWrap: Server Side Auction flag
+  		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // tagid
         expect(data.imp[0].banner.format[0].w).to.equal(300); // width
         expect(data.imp[0].banner.format[0].h).to.equal(250); // height
         expect(data.imp[0].banner.format[1].w).to.equal(300); // width
         expect(data.imp[0].banner.format[1].h).to.equal(600); // height
-        expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+        expect(data.imp[0].ext.bidder.pubmatic.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         // TODO: Need to figure why this failing
         // expect(data.imp[0].ext.adunit).to.equal(bidRequests[0].params.adUnitId); // adUnitId
-        expect(data.imp[0].ext.div).to.equal(bidRequests[0].params.divId); // div
+        expect(data.imp[0].ext.wrapper.div).to.equal(bidRequests[0].params.divId); // div
       });
   	});
 
@@ -284,7 +288,7 @@ describe('PubMaticServer adapter', () => {
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ttl).to.equal(47);
         expect(response[0].referrer).to.include(utils.getTopWindowUrl());
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].originalBidder).to.equal(bidResponses.body.seatbid[0].bid[0].ext.summary[0].bidder);
