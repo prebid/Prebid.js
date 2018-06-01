@@ -9,7 +9,7 @@ Maintainer: shreyanschopra@rtbdemand.com
 # Description
 
 Connects to andbeyond whitelabel platform.
-Banner and video formats are supported.
+Banner formats are supported.
 
 
 # Test Parameters
@@ -21,19 +21,6 @@ Banner and video formats are supported.
         bids: [
           {
             bidder: 'andbeyond',
-            params: {
-              zoneId: '30164',  //required parameter
-              host: 'cpm.metaadserving.com' //required parameter
-            }
-          }
-        ]
-      }, {
-        code: 'video-ad-player',
-        sizes: [640, 480],   // video player size
-        bids: [
-          {
-            bidder: 'andbeyond',
-            mediaType : 'video',
             params: {
               zoneId: '30164',  //required parameter
               host: 'cpm.metaadserving.com' //required parameter
