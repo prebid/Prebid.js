@@ -411,7 +411,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     bidderRequest,
     options: {
       contentType: 'application/Json',
-      withCredentials: false
+      withCredentials: true
     }
   };
 
