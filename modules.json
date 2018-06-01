@@ -1,9 +1,11 @@
 [
-  "consentManagement",
-  "sonobiBidAdapter",
-  "ixBidAdapter",
-  "trustxBidAdapter",
-  "improvedigitalBidAdapter",
+  "guAnalyticsAdapter",
+
   "appnexusBidAdapter",
-  "guAnalyticsAdapter"
+  "consentManagement",
+  "improvedigitalBidAdapter",
+  "ixBidAdapter",
+  "prebidServerBidAdapter",
+  "sonobiBidAdapter",
+  "trustxBidAdapter"
 ]
