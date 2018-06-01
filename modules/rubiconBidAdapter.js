@@ -523,10 +523,10 @@ function parseSizes(bid) {
   let sizes = [];
   if (Array.isArray(params.sizes)) {
     sizes = params.sizes;
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
   } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    sizes = mapSizes(bid.sizes)
   } else {
     utils.logWarn('Warning: no sizes are setup or found');
   }
