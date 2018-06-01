@@ -25,6 +25,9 @@ describe('stroeerCore bid adapter', function () {
     assert.propertyVal(bidObject, 'width', width);
     assert.propertyVal(bidObject, 'height', height);
     assert.propertyVal(bidObject, 'cpm', cpm);
+    assert.propertyVal(bidObject, 'currency', 'EUR');
+    assert.propertyVal(bidObject, 'netRevenue', true);
+    assert.propertyVal(bidObject, 'creativeId', '');
   }
 
   function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd, maxprice) {

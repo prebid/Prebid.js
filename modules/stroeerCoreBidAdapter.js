@@ -166,6 +166,10 @@ export const spec = {
           width: bidResponse.width,
           height: bidResponse.height,
           ad: bidResponse.ad,
+          ttl: 300 /* 5 minutes */,
+          currency: 'EUR',
+          netRevenue: true,
+          creativeId: '',
 
           // Custom fields
           cpm2: bidResponse.cpm2 || 0,
