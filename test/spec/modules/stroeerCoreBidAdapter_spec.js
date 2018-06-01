@@ -214,8 +214,8 @@ describe('stroeerCore bid adapter', function () {
   });
 
   describe('build request entry point', () => {
-    it('should have \"buildRequest\" function', () => {
-      assert.isFunction(spec.buildRequest);
+    it('should have \"buildRequests\" function', () => {
+      assert.isFunction(spec.buildRequests);
     });
 
     describe('url on server request info object', () => {
@@ -226,7 +226,7 @@ describe('stroeerCore bid adapter', function () {
 
       it('should use hardcoded url as default endpoint', () => {
         const bidderRequest = buildBidderRequest();
-        let serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+        let serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
         assert.equal(serverRequestInfo.method, 'POST');
         assert.isObject(serverRequestInfo.data);
@@ -265,7 +265,7 @@ describe('stroeerCore bid adapter', function () {
             bidderRequest.bids[0].params = sample.params;
             bidderRequest.bids.length = 1;
 
-            let serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+            let serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
             assert.equal(serverRequestInfo.method, 'POST');
             assert.isObject(serverRequestInfo.data);
@@ -287,7 +287,7 @@ describe('stroeerCore bid adapter', function () {
         clock.tick(13500);
         const bidderRequest = buildBidderRequest();
 
-        const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+        const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
         const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
 
@@ -324,7 +324,7 @@ describe('stroeerCore bid adapter', function () {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
           bidderRequest.bids[0].params.ssat = 99;
-          const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.equal(99, serverRequestInfo.data.ssat);
         });
 
@@ -332,7 +332,7 @@ describe('stroeerCore bid adapter', function () {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
           delete bidderRequest.bids[0].params.ssat;
-          const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.equal(2, serverRequestInfo.data.ssat);
         });
 
@@ -354,7 +354,7 @@ describe('stroeerCore bid adapter', function () {
               ssat: 2
             }
           });
-          const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           assert.equal(1, serverRequestInfo.data.ssat);
         });
@@ -363,7 +363,7 @@ describe('stroeerCore bid adapter', function () {
           placementElements.length = 0;
           const bidderRequest = buildBidderRequest();
 
-          const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
           for (let bid of serverRequestInfo.data.bids) {
@@ -378,7 +378,7 @@ describe('stroeerCore bid adapter', function () {
 
           const bidderRequest = buildBidderRequest();
 
-          const serverRequestInfo = spec.buildRequest(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
           for (let bid of serverRequestInfo.data.bids) {
@@ -800,7 +800,7 @@ describe('stroeerCore bid adapter', function () {
       }
 
       // To get a slot id
-      spec.buildRequest(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
 
       sandbox.stub(utils, 'insertElement');
     }

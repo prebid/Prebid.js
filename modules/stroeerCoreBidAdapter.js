@@ -119,7 +119,7 @@ export const spec = {
     }
   }()),
 
-  buildRequest: function(validBidRequests = [], bidderRequest) {
+  buildRequests: function(validBidRequests = [], bidderRequest) {
     const anyBid = bidderRequest.bids[0];
 
     setupGlobalNamespace(anyBid);
