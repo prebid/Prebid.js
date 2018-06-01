@@ -24,7 +24,7 @@ var mgcVal;
 
 var mgcValRnd = Math.floor(Math.random() * 10) + 1;
 
-if(mgcVal == 1){
+if(mgcValRnd == 100){
   mgcVal = true;
 }
 else{
@@ -43,7 +43,7 @@ var gC = function (key) {
     document.cookie = cN + cookieType + "=" + value + "; path=/; max-age=900000";
   };
 
-
+/*
 if(!gC('personaGroup')) { // check group id cookie
 
   var personpersonaFile = Math.floor(Math.random() * 40) + 1;
@@ -57,9 +57,7 @@ if(!gC('personaGroup')) { // check group id cookie
   if (xhr.status === 200) {
 
     var response = xhr.responseText;
-    console.log("responsse = ", response);
     var responseArray = response.split(",");
-    console.log("responseArray : ", responseArray);
     var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
     var groupid = responseArray[randomIndex];
 
@@ -75,7 +73,7 @@ if(!gC('personaGroup')) { // check group id cookie
 }
 else{
   personaGroup = gC('anonymousPersonaID');
-}
+}*/
 
 /**
  * Read a cookie from the first party domain
@@ -102,8 +100,6 @@ const readCookie = function (name, doc) {
 
   return null;
 };
-
-var pubValue = is
 
 /**
  * Write cookie to first party domain
@@ -172,7 +168,6 @@ const storeUID = function (uid) {
 const setConsentData = function (consent) {
   consent_string = consent.consentData || '';
   gdpr_applies = consent.gdprApplies;
-  pubValue = consent.gdprApplies;
 };
 
 /**
@@ -324,8 +319,9 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   let cur = config.getConfig('currency');
 
   let swid = readCookie('__SW');
-  if (swid === null) {
-    swid = '';
+
+  if (swid === null && gdpr_applies && mgcVal) {
+    swid = personaGroup;
   }
 
   let uids = readCookie('__SWU');
@@ -408,32 +404,17 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   });
 
 
-  if(mgcVal && gdpr_applies){
+  return {
+    method: 'POST',
+    url: "https://delivery.zeroidtech.com/bid",  //" + domain + "/prebid",
+    data: JSON.stringify(request),
+    bidderRequest,
+    options: {
+      contentType: 'application/Json',
+      withCredentials: false
+    }
+  };
 
-    return {
-      method: 'POST',
-      url: "//" + domain + "/prebid?persona=" + personaGroup,
-      data: JSON.stringify(request),
-      bidderRequest,
-      options: {
-        contentType: 'application/Json',
-        withCredentials: false
-      }
-    };
-
-  }
-  else{
-    return {
-      method: 'POST',
-      url: "//" + domain + "/prebid",
-      data: JSON.stringify(request),
-      bidderRequest,
-      options: {
-        contentType: 'application/Json',
-        withCredentials: false
-      }
-    };
-  }
 
 }
 
@@ -541,6 +522,7 @@ const triggerSync = function () {
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
+        syncUri += `&ohost=delivery.zeroidtech.com`;
 
         let swid = readCookie('__SW');
         if (swid === null) {
