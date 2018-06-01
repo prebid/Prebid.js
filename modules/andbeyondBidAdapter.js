@@ -1,8 +1,7 @@
 import * as utils from 'src/utils';
-import { BANNER} from 'src/mediaTypes';
+import { BANNER } from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
 
 const VERSION = '1.1';
 
@@ -103,10 +102,10 @@ function buildImp(bid) {
     'tagid': bid.placementCode
   };
 
-    imp.banner = {
-      format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
-      topframe: 0
-    };
+  imp.banner = {
+    format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
+    topframe: 0
+  };
   if (utils.getTopWindowLocation().protocol === 'https:') {
     imp.secure = 1;
   }
@@ -167,4 +166,3 @@ function formatAdMarkup(bid) {
   }
   return `<!DOCTYPE html><html><head><title></title><body style='margin:0px;padding:0px;'>${adm}</body></head>`;
 }
-
