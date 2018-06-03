@@ -242,6 +242,9 @@ export const spec = {
   },
 
   getOrderedParams: function(params) {
+    const containsTgV = /^tg_v/
+    const containsTgI = /^tg_i/
+
     const orderedParams = [
       'account_id',
       'site_id',
@@ -252,14 +255,15 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'rf',
+      'rf',
       'dt.id',
       'dt.keyv',
       'dt.pref',
       'p_geo.latitude',
       'p_geo.longitude',
       'kw'
-    ].concat(Object.keys(params).filter(item => (item.indexOf('tg_v.') !== -1)))
-      .concat(Object.keys(params).filter(item => (item.indexOf('tg_i.') !== -1)))
+    ].concat(Object.keys(params).filter(item => containsTgV.test(item)))
+      .concat(Object.keys(params).filter(item => containsTgI.test(item)))
       .concat([
         'tk_flint',
         'x_source.tid',
