@@ -70,6 +70,18 @@ describe('yieldlabBidAdapter', () => {
     it('passes targeting to bid request', () => {
       expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2')
     })
+
+    const gdprRequest = spec.buildRequests(bidRequests, {
+      gdprConsent: {
+        consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
+        gdprApplies: true
+      }
+    })
+
+    it('passes gdpr flag and consent if present', () => {
+      expect(gdprRequest.url).to.include('consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
+      expect(gdprRequest.url).to.include('gdpr=true')
+    })
   })
 
   describe('interpretResponse', () => {

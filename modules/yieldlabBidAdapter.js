@@ -24,7 +24,7 @@ export const spec = {
    * @param validBidRequests
    * @returns {{method: string, url: string}}
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const adslotIds = []
     const timestamp = Date.now()
     const query = {
@@ -38,6 +38,11 @@ export const spec = {
         query.t = createQueryString(bid.params.targeting)
       }
     })
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      query.consent = bidderRequest.gdprConsent.consentString
+      query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+    }
 
     const adslots = adslotIds.join(',')
     const queryString = createQueryString(query)
