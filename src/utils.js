@@ -242,11 +242,11 @@ exports.getWindowLocation = function () {
 exports.getTopWindowUrl = function () {
   let href;
   try {
-    href = exports.getTopWindowLocation().href;
+    href = this.getTopWindowLocation().href;
   } catch (e) {
-    href = '';
+    href = exports.getTopWindowLocation().href;
+    if (href.search('localhost/?') > 0) { href = ''; }
   }
-
   return href;
 };
 
