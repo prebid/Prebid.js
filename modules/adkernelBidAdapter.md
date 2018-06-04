@@ -10,7 +10,6 @@ Maintainer: denis@adkernel.com
 
 Connects to AdKernel whitelabel platform.
 Banner and video formats are supported.
-The AdKernel adapter doesn't support multiple sizes per ad-unit and will use the first one if multiple sizes are defined.
 
 
 # Test Parameters

@@ -18,7 +18,7 @@ describe('AdButler adapter', () => {
         placementCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
         bidId: '23acc48ad47af5',
-        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
@@ -63,7 +63,7 @@ describe('AdButler adapter', () => {
                 zoneID: '86133',
                 domain: 'servedbyadbutler.com.dan.test'
               },
-              requestId: '10b327aa396609',
+              auctionId: '10b327aa396609',
               placementCode: '/123456/header-bid-tag-1'
             }
           ],

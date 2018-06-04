@@ -82,6 +82,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('auids must not be duplicated', () => {
@@ -91,6 +92,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('pt parameter must be "gross" if params.priceType === "gross"', () => {
@@ -101,6 +103,7 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
 
@@ -112,7 +115,32 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
+    });
+
+    it('if gdprConsent is present payload must have gdpr params', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 1);
+    });
+
+    it('if gdprApplies is false gdpr_applies must be 0', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 0);
+    });
+
+    it('if gdprApplies is undefined gdpr_applies must be 1', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 1);
     });
   });
 

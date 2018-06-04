@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import * as url from 'src/url';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {NATIVE, VIDEO} from 'src/mediaTypes';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes';
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -9,7 +9,7 @@ import {NATIVE, VIDEO} from 'src/mediaTypes';
  */
 
 const BIDDER_CODE = 'adxcg';
-const SUPPORTED_AD_TYPES = [VIDEO, NATIVE];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const SOURCE = 'pbjs10';
 export const spec = {
   code: BIDDER_CODE,
@@ -57,7 +57,7 @@ export const spec = {
       pathname: '/get/adi',
       search: {
         renderformat: 'javascript',
-        ver: 'r20171019PB10',
+        ver: 'r20171102PB10',
         adzoneid: adZoneIds.join(','),
         format: sizes.join(','),
         prebidBidIds: prebidBidIds.join(','),
@@ -90,9 +90,9 @@ export const spec = {
         bid.requestId = serverResponseOneItem.bidId;
         bid.cpm = serverResponseOneItem.cpm;
         bid.creativeId = parseInt(serverResponseOneItem.creativeId);
-        bid.currency = 'USD';
+        bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD';
         bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
-        bid.ttl = 300;
+        bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300;
 
         if (serverResponseOneItem.deal_id != null && serverResponseOneItem.deal_id.trim().length > 0) {
           bid.dealId = serverResponseOneItem.deal_id;
@@ -102,7 +102,6 @@ export const spec = {
           bid.ad = serverResponseOneItem.ad;
         } else if (serverResponseOneItem.vastUrl) {
           bid.vastUrl = serverResponseOneItem.vastUrl;
-          bid.descriptionUrl = serverResponseOneItem.vastUrl;
           bid.mediaType = 'video';
         } else if (serverResponseOneItem.nativeResponse) {
           bid.mediaType = 'native';
