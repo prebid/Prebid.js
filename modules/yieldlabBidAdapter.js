@@ -27,16 +27,24 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     const adslotIds = []
     const timestamp = Date.now()
+    const query = {
+      ts: timestamp,
+      json: true
+    }
 
     utils._each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId)
+      if (bid.params.targeting) {
+        query.t = createQueryString(bid.params.targeting)
+      }
     })
 
     const adslots = adslotIds.join(',')
+    const queryString = createQueryString(query)
 
     return {
       method: 'GET',
-      url: `${ENDPOINT}/yp/${adslots}?ts=${timestamp}&json=true`,
+      url: `${ENDPOINT}/yp/${adslots}?${queryString}`,
       validBidRequests: validBidRequests
     }
   },
@@ -102,6 +110,21 @@ function isVideo (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a querystring out of an object with key-values
+ * @param {Object} obj
+ * @returns {String}
+ */
+function createQueryString (obj) {
+  let str = []
+  for (var p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+    }
+  }
+  return str.join('&')
 }
 
 registerBidder(spec)
