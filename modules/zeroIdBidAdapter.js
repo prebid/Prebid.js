@@ -518,7 +518,7 @@ const triggerSync = function () {
 
         window.swSyncDone = true;
 
-        let syncUri = "//delivery.zeroidtech.com/sync";
+        let syncUri = "https://delivery.zeroidtech.com/sync";
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
