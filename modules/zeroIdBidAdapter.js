@@ -1,20 +1,36 @@
 import * as utils from 'src/utils';
-import {
-  registerBidder
-} from 'src/adapters/bidderFactory';
-import {
-  BANNER
-} from 'src/mediaTypes';
-import {
-  config
-} from 'src/config';
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { gdprDataHandler } from 'src/adaptermanager';
+import { BANNER } from 'src/mediaTypes';
+import { config } from 'src/config';
 
 const BIDDER_CODE = 'zid';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
+const GDPR_CONSENT_TIMEOUT_MS = 10000; // 10 seconds
+const STORE_UID_TIMEOUT_MS = 500;
+
+let consent_string = '';
+let gdpr_applies = false;
+let uids = {};
+let storeUIDTimeoutHandler = null;
+
 
 var cN = "";
 
 var personaGroup;
+
+var mgcVal;
+
+
+var mgcValRnd = Math.floor(Math.random() * 10) + 1;
+
+if(mgcValRnd == 100){
+  mgcVal = true;
+}
+else{
+  mgcVal = false;
+}
+
 
 
 var gC = function (key) {
@@ -27,10 +43,8 @@ var gC = function (key) {
     document.cookie = cN + cookieType + "=" + value + "; path=/; max-age=900000";
   };
 
-
-//if(!gC('personaGroup')) { // check group id cookie
-
-if(1===1) { // check group id cookie
+/*
+if(!gC('personaGroup')) { // check group id cookie
 
   var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
@@ -43,9 +57,7 @@ if(1===1) { // check group id cookie
   if (xhr.status === 200) {
 
     var response = xhr.responseText;
-    console.log("responsse = ", response);
     var responseArray = response.split(",");
-    console.log("responseArray : ", responseArray);
     var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
     var groupid = responseArray[randomIndex];
 
@@ -61,9 +73,207 @@ if(1===1) { // check group id cookie
 }
 else{
   personaGroup = gC('anonymousPersonaID');
+}*/
+
+/**
+ * Read a cookie from the first party domain
+ * @param {string} name
+ * @param {DOMDocument} doc (optional, defaults to window.document)
+ * @returns {*}
+ */
+const readCookie = function (name, doc) {
+  doc = typeof doc === 'undefined' ? window.document : doc;
+
+  const cookies = doc.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i];
+
+    // essentially trim()
+    while (cookie.charAt(0) == ' ') {
+      cookie = cookie.substring(1);
+    }
+
+    if (cookie.indexOf(name + "=") === 0) {
+      return cookie.substring(name.length + 1, cookie.length);
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Write cookie to first party domain
+ * @param {string} name
+ * @param {string} value
+ * @param {int} lifetimeSeconds
+ * @param {DOMDocument} doc (optional, defaults to window.document)
+ */
+const writeCookie = function (name, value, lifetimeSeconds, doc) {
+  doc = typeof doc === 'undefined' ? window.document : doc;
+  const d = new Date();
+  d.setTime(d.getTime() + (lifetimeSeconds * 1000));
+  const expires = "expires=" + d.toUTCString();
+  doc.cookie = name + "=" + value + "; " + expires + "; path=/";
+};
+
+/**
+ * Reads and parses the UID cookie
+ * @returns {object}
+ */
+const readUIDCookie = function () {
+  try {
+    return JSON.parse(window.atob(readCookie('__SWU')));
+  } catch (e) {
+    return {};
+  }
+};
+
+/**
+ * Write UIDs to __SWU cookie as a Base64 encoded JSON
+ */
+const writeUIDCookie = function () {
+  writeCookie(
+    '__SWU',
+    window.btoa(JSON.stringify(uids)),
+    60 * 60 * 24 * 365 // 1 year
+  );
+};
+
+/**
+ * Writes collection of UIDs to cookie after specified timeout
+ * @param {string} uid     A `:` sperated key value UID pair
+ */
+const storeUID = function (uid) {
+  clearTimeout(storeUIDTimeoutHandler);
+
+  const cookie = readUIDCookie();
+  uid = uid.split(':');
+
+  Object.assign(
+    uids,
+    cookie
+  );
+
+  uids[uid[0]] = uid[1];
+
+  storeUIDTimeoutHandler = setTimeout(function () {
+    writeUIDCookie();
+  }, STORE_UID_TIMEOUT_MS);
+};
+
+/**
+ * Set the GDPR consent data - always at request time
+ * @param {string} consent     The encoded consent string
+ */
+const setConsentData = function (consent) {
+  consent_string = consent.consentData || '';
+  gdpr_applies = consent.gdprApplies;
+};
+
+/**
+ * Check for GDPR consent - delay if there is no consent
+ * @param {function} cb     Success callback to be invoked on fetch completion
+ */
+const checkConsent = function (cb) {
+  let paused = false;
+
+  (function check () {
+    fetchGDPRConsent(function (consent) {
+      if (consent || paused) {
+        // consent exists or already paused - continue
+        cb();
+      }
+      else {
+        // no pre-existing consent - pause for consent
+        paused = true;
+
+        setTimeout(function() {
+          check();
+        }, GDPR_CONSENT_TIMEOUT_MS);
+      }
+    });
+  })();
+};
+
+/**
+ * Check for existence of CMP
+ * @returns {boolean}   Existence status of IAB friendly CMP
+ */
+const cmpExists = function () {
+  return (window.__cmp && typeof window.__cmp === 'function') || !!findCMPFrame();
 }
 
-function setChainIDTargeting(adUnitCode, chainID) {
+/**
+ * Find the CMP frame by traversing up the frame stack
+ * @returns {Object|null} cmpFrame     The frame object containing __cmp if it exists
+ */
+const findCMPFrame = function () {
+  let f = window;
+  let cmpFrame;
+
+  while (!cmpFrame) {
+    try {
+      if (f.frames.__cmpLocator) cmpFrame = f;
+    } catch (e) {}
+    if (f === window.top) break;
+    f = f.parent;
+  }
+
+  return cmpFrame;
+};
+
+/**
+ * Fetch GDPR consent from CMP and invoke callback
+ * @param {function(string)} cb     Success callback to be invoked on fetch completion
+ */
+const fetchGDPRConsent = function (cb) {
+  const getConsentDataReq = {
+    __cmpCall: {
+      command: 'getConsentData',
+      parameter: null,
+      callId: 'iframe:' + generateID()
+    }
+  };
+
+  function receiveMessage (event) {
+    let json = (typeof event.data === 'string' && event.data.includes('cmpReturn'))
+      ? JSON.parse(event.data)
+      : event.data;
+
+    if (json.__cmpReturn) {
+      let consent = json.__cmpReturn.returnValue;
+      setConsentData(consent);
+      cb(consent);
+    }
+  }
+
+  if (window.__cmp && typeof window.__cmp === 'function') {
+    // found CMP lets use it
+    window.__cmp('getConsentData', null, function (consent) {
+      setConsentData(consent);
+      cb(consent);
+    });
+  }
+  else {
+    // we might be in a frame - try to call CMP with postMessage
+    const frame = findCMPFrame();
+
+    if (!frame) {
+      return;
+    }
+
+    if (window.addEventListener) {
+      window.addEventListener('message', receiveMessage, false);
+    }
+    else if (window.attachEvent) {
+      window.attachEvent('onmessage', receiveMessage);
+    }
+
+    frame.postMessage(getConsentDataReq, '*');
+  }
+};
+
+const setChainIDTargeting = function (adUnitCode, chainID) {
   try {
     window.googletag.cmd.push(function () {
       window.googletag.pubads().getSlots().forEach(function (gptSlot) {
@@ -75,31 +285,30 @@ function setChainIDTargeting(adUnitCode, chainID) {
   } catch (e) {}
 }
 
-function isBidRequestValid(bid) {
+const isBidRequestValid = function (bid) {
   return bid && bid.params && bid.params.adUnitID && typeof bid.params.adUnitID === 'number';
 }
 
-function buildRequests(validBidRequests) {
+const generateID = function () {
+  if (crypto && crypto.getRandomValues) {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    )
+  }
+  let d = new Date().getTime();
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    d += performance.now(); // use high-precision timer if available
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    let r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
-  var generateID = function () {
-    if (crypto && crypto.getRandomValues) {
-      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-      )
-    }
-    var d = new Date().getTime();
-    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
-      d += performance.now(); //use high-precision timer if available
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (d + Math.random() * 16) % 16 | 0;
-      d = Math.floor(d / 16);
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-  };
-
-  var domain = "delivery.zeroidtech.com";
-  var loadID = generateID();
+const buildRequests = function (validBidRequests, bidderRequest) {
+  let domain = "delivery.zeroidtech.com";
+  let loadID = generateID();
 
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
@@ -109,14 +318,66 @@ function buildRequests(validBidRequests) {
 
   let cur = config.getConfig('currency');
 
-  var request = {
+  let swid = readCookie('__SW');
+
+  if (swid === null && gdpr_applies && mgcVal) {
+    swid = personaGroup;
+  }
+
+  let uids = readCookie('__SWU');
+  if (uids === null) {
+    uids = '';
+  }
+
+
+  var getConsentStr = function(){
+    if(mgcVal && gdpr_applies){
+      return "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
+    }
+    else{
+      if(bidderRequest.gdprConsent.consentString){
+        return bidderRequest.gdprConsent.consentString;
+      }
+      else{
+        return "";
+      }
+    }
+  }
+
+  var gdprApp = function(){
+    if(mgcVal && gdpr_applies){
+      return false;
+    }
+    else{
+      if(typeof bidderRequest.gdprConsent.gdprApplies === 'boolean'){
+        return bidderRequest.gdprConsent.gdprApplies;
+      }
+      else{
+        return false;
+      }
+    }
+  }
+
+  let request = {
     loadID: loadID,
+    switch_user_id: swid,
+    uids: uids,
     url: utils.getTopWindowUrl(),
     referrer: document.referrer,
     bidRequests: [],
     requestTime: (new Date()).getTime(),
     currency: cur,
+    gdpr: {
+      consent_string: getConsentStr(),
+      gdpr_applies: gdprApp()
+    }
   };
+
+
+  /*  gdpr: {
+      consent_string: bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
+        gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
+    }*/
 
   if ('__sw_start_time' in window) {
     request.loadTime = window.__sw_start_time;
@@ -124,11 +385,11 @@ function buildRequests(validBidRequests) {
 
   utils._each(validBidRequests, function (bid) {
 
-    var chainID = generateID();
+    let chainID = generateID();
 
     setChainIDTargeting(bid.adUnitCode, chainID);
 
-    var bidRequest = {
+    let bidRequest = {
       bidID: bid.bidId,
       chainID: chainID,
       adUnitID: bid.params.adUnitID,
@@ -142,19 +403,22 @@ function buildRequests(validBidRequests) {
     }
   });
 
+
   return {
     method: 'POST',
-    url: "https://" + domain + "/prebid?persona=" + personaGroup,//"bbgdn37ok6g0cek8mae0",
+    url: "https://delivery.zeroidtech.com/bid",  //" + domain + "/prebid",
     data: JSON.stringify(request),
+    bidderRequest,
     options: {
       contentType: 'application/Json',
-      withCredentials: false
+      withCredentials: true
     }
   };
+
+
 }
 
-function interpretResponse(serverResponse, originalBidRequest) {
-
+const interpretResponse = function (serverResponse, originalBidRequest) {
   window.googletag.cmd.push(function () {
     window.googletag.pubads().setTargeting("hb_time", (new Date()).getTime());
   });
@@ -190,6 +454,37 @@ function interpretResponse(serverResponse, originalBidRequest) {
   return responses;
 }
 
+/**
+ * Attempt to fetch GDPR consent to include in bidderRequest object
+ * @param {object} config required; This is the same paramthat's used in pbjs.requestBids
+ * @param {function} fn  required; The next function ins the chain used by hook.js
+ */
+const requestBidsHook = function (config, nextFn) {
+  const context = this;
+  const args = arguments;
+
+  let consentData = {
+    consentString: '',
+    gdprApplies: false
+  };
+
+  if (cmpExists()) {
+    checkConsent(function () {
+      Object.assign(consentData, {
+        consentString: consent_string,
+        gdprApplies: gdpr_applies
+      });
+
+      gdprDataHandler.setConsentData(consentData);
+      return nextFn.apply(context, args);
+    });
+  }
+  else {
+    gdprDataHandler.setConsentData(consentData);
+    return nextFn.apply(context, args);
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -200,41 +495,44 @@ export const spec = {
 
 registerBidder(spec);
 
-(function () {
+$$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
 
+/**
+ *=============================== User Sync ====================================
+ */
+
+const triggerSync = function () {
   window.__sw_start_time = (new Date()).getTime();
 
-  function getCookie(name) {
-    name = name + "=";
-    var decodedCookie = decodeURIComponent(document.cookie);
-    var ca = decodedCookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return "";
-  }
   try {
 
     window.swSyncDone = false;
 
-    if (getCookie("switch-synchronised") != "1") {
+    if (readCookie("switch-synchronised") != "1") {
 
-      var sync = function() {
+      const sync = function() {
 
-        if(window.swSyncDone) {
+        if (window.swSyncDone) {
           return;
         }
 
         window.swSyncDone = true;
 
+        let syncUri = "//delivery.zeroidtech.com/sync";
+
+        syncUri += `?consent_string=${consent_string}`;
+        syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
+        syncUri += `&ohost=delivery.zeroidtech.com`;
+
+        let swid = readCookie('__SW');
+        if (swid === null) {
+          swid = '';
+        }
+
+        syncUri += `&swid=${swid}`;
+
         // do sync
-        var iframe = document.createElement('iframe');
+        const iframe = document.createElement('iframe');
 
         document.body.appendChild(iframe);
 
@@ -245,19 +543,21 @@ registerBidder(spec);
         iframe.setAttribute('style', 'border:none; padding: 0px; margin: 0px; position: absolute;');
         iframe.setAttribute('width', '0');
         iframe.setAttribute('height', '0');
-        iframe.src = "//delivery.h.switchadhub.com/sync";
-        var d = new Date();
+        iframe.src = syncUri;
+        const d = new Date();
         d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
-        var expires = "expires=" + d.toUTCString();
+        const expires = "expires=" + d.toUTCString();
         document.cookie ="switch-synchronised=1;" + expires + ";path=/";
       };
 
       if(document.readyState === "complete" || document.readyState === "interactive") {
         sync();
-      } else {
-        if ( document.addEventListener ) {
-          document.addEventListener( "DOMContentLoaded", sync, false );
-        } else if ( document.attachEvent ) {
+      }
+      else {
+        if (document.addEventListener) {
+          document.addEventListener("DOMContentLoaded", sync, false);
+        }
+        else if (document.attachEvent) {
           document.attachEvent( "onreadystatechange", function(){
             if(document.readyState === "complete") {
               sync();
@@ -272,5 +572,49 @@ registerBidder(spec);
       }
     }
   } catch (e) {}
+};
 
+(function initSync () {
+  if (cmpExists()) {
+    checkConsent(function () {
+      triggerSync();
+    });
+  }
+  else {
+    triggerSync();
+  }
+})();
+
+/**
+ *============================== postMessage ===================================
+ */
+
+/**
+ * Handle a postMessage requesting a render of the advert
+ * @param {Object} message
+ */
+const handlePostMessage = function (message) {
+  if (typeof message.data !== 'string' || message.data.indexOf('__switch_') !== 0) {
+    return;
+  }
+
+  switch (0) {
+    case message.data.indexOf('__switch_swid:'):
+      const swid = message.data.substring(14);
+      writeCookie('__SW', swid, 60 * 60 * 24 * 365);
+      break;
+    case message.data.indexOf('__switch_uid:'):
+      const uid = message.data.substring(13);
+      storeUID(uid);
+      break;
+  }
+};
+
+(function bindPostMessageHandlers () {
+  if (window.addEventListener) {
+    window.addEventListener('message', handlePostMessage, false);
+  }
+  else if (window.attachEvent) {
+    window.attachEvent('onmessage', handlePostMessage);
+  }
 })();
