@@ -242,7 +242,7 @@ exports.getWindowLocation = function () {
 exports.getTopWindowUrl = function () {
   let href;
   try {
-    href = this.getTopWindowLocation().href;
+    href = exports.getTopWindowLocation().href;
   } catch (e) {
     href = '';
   }
