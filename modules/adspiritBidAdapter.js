@@ -46,11 +46,11 @@ export const spec = {
     let host = spec.getBidderHost(bidObj);
     let adm = '<scr' + 'ipt>window.inDapIF=false</scr' + 'ipt><scr' + 'ipt src="//' + host + SCRIPT_URL + '"></scr' + 'ipt>' + '<ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
     const bidResponse = {
-      requestId: bidRequest.bidId,
+      requestId: bidObj.bidId,
       cpm: cpm,
       width: adData.w,
       height: adData.h,
-      creativeId: adData.placement_id,
+      creativeId: bidObj.params.placementId,
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
