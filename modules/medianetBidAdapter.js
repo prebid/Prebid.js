@@ -80,7 +80,7 @@ function extParams(params) {
     customer_id: params.cid,
     prebid_version: $$PREBID_GLOBAL$$.version
   };
-  let windowSize = getWindowSize();
+  let windowSize = spec.getWindowSize();
   if (windowSize.w !== -1 && windowSize.h !== -1) {
     ext.screen = windowSize;
   }
@@ -108,10 +108,10 @@ function slotParams(bidRequest) {
   }
   const coordinates = getCoordinates(bidRequest.adUnitCode);
   if (coordinates) {
-    params.ext.coordinates = coordinates;
-    let viewability = getSlotVisibility(coordinates.top_left, getMinSize(params.banner));
-    params.ext.viewability = viewability;
-    if (viewability > 0.5) {
+    let normCoordinates = normalizeCoordinates(coordinates);
+    params.ext.coordinates = normCoordinates;
+    params.ext.viewability = getSlotVisibility(coordinates.top_left, getMinSize(params.banner));
+    if (getSlotVisibility(normCoordinates.top_left, getMinSize(params.banner)) > 0.5) {
       params.ext.visibility = SLOT_VISIBILITY.ABOVE_THE_FOLD;
     } else {
       params.ext.visibility = SLOT_VISIBILITY.BELOW_THE_FOLD;
@@ -129,7 +129,7 @@ function getMinSize(sizes) {
 
 function getSlotVisibility(topLeft, size) {
   let maxArea = size.w * size.h;
-  let windowSize = getWindowSize();
+  let windowSize = spec.getWindowSize();
   let bottomRight = {
     x: topLeft.x + size.w,
     y: topLeft.y + size.h
@@ -149,6 +149,19 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
   }
   // return overlapping area : [ min of rightmost/bottommost co-ordinates ] - [ max of leftmost/topmost co-ordinates ]
   return ((Math.min(bottomRight1.x, bottomRight2.x) - Math.max(topLeft1.x, topLeft2.x)) * (Math.min(bottomRight1.y, bottomRight2.y) - Math.max(topLeft1.y, topLeft2.y)));
+}
+
+function normalizeCoordinates(coordinates) {
+  return {
+    top_left: {
+      x: coordinates.top_left.x + window.pageXOffset,
+      y: coordinates.top_left.y + window.pageYOffset,
+    },
+    bottom_right: {
+      x: coordinates.bottom_right.x + window.pageXOffset,
+      y: coordinates.bottom_right.y + window.pageYOffset,
+    }
+  }
 }
 
 function generatePayload(bidRequests) {
@@ -273,6 +286,8 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       return filterUrlsByType(cookieSyncUrls, 'image');
     }
-  }
+  },
+
+  getWindowSize,
 };
 registerBidder(spec);
