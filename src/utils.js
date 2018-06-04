@@ -1046,3 +1046,36 @@ export function isInteger(value) {
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
 }
+
+/**
+ * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
+ * normally read from bidder params
+ * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
+ * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
+ * @param {Object{Arrays}} keywords object of arrays representing keyvalue pairs
+ * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
+ */
+export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
+  let arrs = [];
+
+  exports._each(keywords, (v, k) => {
+    if (exports.isArray(v)) {
+      let values = [];
+      exports._each(v, (val) => {
+        val = exports.getValueString(paramName + '.' + k, val);
+        if (val) { values.push(val); }
+      });
+      v = values;
+    } else {
+      v = exports.getValueString(paramName + '.' + k, v);
+      if (exports.isStr(v)) {
+        v = [v];
+      } else {
+        return;
+      } // unsuported types - don't send a key
+    }
+    arrs.push({key: k, value: v});
+  });
+
+  return arrs;
+}
