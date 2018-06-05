@@ -1,4 +1,6 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
+import includes from 'core-js/library/fn/array/includes';
+
 const utils = require('src/utils');
 const url = require('src/url');
 
@@ -77,7 +79,6 @@ function setupGlobalNamespace(anyBid) {
 }
 
 function initUserConnect() {
-  // should have already but will fetch again if we need to
   const stroeerCore = getStroeerCore();
 
   const sid = stroeerCore.anySid;
@@ -112,7 +113,7 @@ export const spec = {
 
     validators.push(createValidator((bidReq) => typeof bidReq.params === 'object', bidReq => `bid request ${bidReq.bidId} does not have custom params`));
     validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid), bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
-    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || [1, 2].includes(bidReq.params.ssat), bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
+    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || includes([1, 2], bidReq.params.ssat), bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
 
     return function (bidRequest) {
       return validators.every(f => f(bidRequest));
@@ -211,7 +212,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    // WARNING: we are breaking rules by not returning anything. We are inserting sync elements instead.
+    // WARNING: we are breaking rules by inserting sync elements ourselves instead of prebid.
     // This is ok as we are using our own prebid.js build. This is not an official adapter yet.
     // To make official we need to revisit how we do user matching along with adex, nuggad, etc.
 

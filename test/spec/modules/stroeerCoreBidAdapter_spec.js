@@ -8,14 +8,14 @@ describe('stroeerCore bid adapter', function () {
   let bidderRequest;
   let clock;
 
-  beforeEach(function() {
+  beforeEach(() => {
     bidderRequest = buildBidderRequest();
     sandbox = sinon.sandbox.create();
     fakeServer = sandbox.useFakeServer();
     clock = sandbox.useFakeTimers();
   });
 
-  afterEach(function() {
+  afterEach(() => {
     sandbox.restore();
   });
 
@@ -190,28 +190,43 @@ describe('stroeerCore bid adapter', function () {
   }
 
   describe('bid validation entry point', () => {
-    let validBidRequest = Object.freeze(buildBidderRequest().bids[0]);
+    let bidRequest;
+
+    beforeEach(() => {
+      bidRequest = buildBidderRequest().bids[0];
+    });
+
 
     it('should have \"isBidRequestValid\" function', () => {
       assert.isFunction(spec.isBidRequestValid);
     });
 
     it('should pass a valid bid', () => {
-      assert.isTrue(spec.isBidRequestValid(validBidRequest));
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
     });
 
     const invalidSsatSamples = [-1, 0, 3, 4];
     invalidSsatSamples.forEach((type) => {
-      it(`server side auction type ${type} should be invalid`, function() {
-        const bidRequest = Object.assign({}, validBidRequest);
+      it(`server side auction type ${type} should be invalid`, () => {
         bidRequest.params.ssat = type;
         assert.isFalse(spec.isBidRequestValid(bidRequest));
       })
     });
 
+    it('should include bids with valid ssat value', () => {
+      bidRequest.params.ssat = 1;
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
+
+      bidRequest.params.ssat = 2;
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
+
+      delete bidRequest.params.ssat;
+      assert.isUndefined(bidRequest.params.ssat);
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
+    });
+
     it('should exclude bids without slot id param', () => {
-      const bidRequest = Object.assign({}, validBidRequest);
-      delete bidRequest.params.sid;
+      bidRequest.params.sid = undefined;
       assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
   });
@@ -323,7 +338,7 @@ describe('stroeerCore bid adapter', function () {
       });
 
       describe('optional fields', () => {
-        it('should use ssat value from config', function() {
+        it('should use ssat value from config', () => {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
           bidderRequest.bids[0].params.ssat = 99;
@@ -331,7 +346,7 @@ describe('stroeerCore bid adapter', function () {
           assert.equal(99, serverRequestInfo.data.ssat);
         });
 
-        it('should use 2 as default value for ssat', function() {
+        it('should use 2 as default value for ssat', () => {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
           delete bidderRequest.bids[0].params.ssat;
@@ -339,7 +354,7 @@ describe('stroeerCore bid adapter', function () {
           assert.equal(2, serverRequestInfo.data.ssat);
         });
 
-        it('should use first ssat value on a list of bids', function() {
+        it('should use first ssat value on a list of bids', () => {
           const bidderRequest = buildBidderRequest();
 
           delete bidderRequest.bids[0].params.ssat;
@@ -406,7 +421,7 @@ describe('stroeerCore bid adapter', function () {
       });
     });
 
-    it('should ignore legacy (prebid < 1.0) redirect', function() {
+    it('should ignore legacy (prebid < 1.0) redirect', () => {
       // Old workaround for CORS/Ajax/Redirect issues on a few browsers
       const legacyRedirect = {redirect: 'http://somewhere.com/over'};
       assert.throws(() => spec.interpretResponse({body: legacyRedirect}));
@@ -436,7 +451,7 @@ describe('stroeerCore bid adapter', function () {
       assertCustomFieldsOnBid(result[1], 0, 1.0, 0.8, 'www.something-else.com', '<div>tag2</div>', 7.3);
     });
 
-    it('should default floor to same value as cpm and default cpm2 to 0', function() {
+    it('should default floor to same value as cpm and default cpm2 to 0', () => {
       const bidderResponse = buildBidderResponse();
       assert.isUndefined(bidderResponse.bids[0].floor);
       assert.isUndefined(bidderResponse.bids[0].cpm2);
@@ -452,7 +467,7 @@ describe('stroeerCore bid adapter', function () {
       assert.propertyVal(result[1], 'floor', 7.3);
     });
 
-    describe('should add generateAd method on bid object', function() {
+    describe('should add generateAd method on bid object', () => {
       const externalEncTests = [
         // full price text
         { price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw' },
@@ -474,7 +489,7 @@ describe('stroeerCore bid adapter', function () {
         { price: 0, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg' }
       ];
       externalEncTests.forEach(test => {
-        it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`, function() {
+        it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`, () => {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
@@ -506,7 +521,7 @@ describe('stroeerCore bid adapter', function () {
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
-        it(`should replace \${SSP_AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} with exchange rate ${test.exchangeRate} ignored`, function() {
+        it(`should replace \${SSP_AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} with exchange rate ${test.exchangeRate} ignored`, () => {
           const bidderResponse = buildBidderResponse();
 
           const responseBid = bidderResponse.bids[0];
@@ -528,7 +543,7 @@ describe('stroeerCore bid adapter', function () {
         });
       });
 
-      it('should replace all occurrences of ${SPP_AUCTION_PRICE:ENC}', function() {
+      it('should replace all occurrences of ${SPP_AUCTION_PRICE:ENC}', () => {
         const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
@@ -547,7 +562,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${AUCTION_PRICE:ENC}', function() {
+      it('should replace all occurrences of ${AUCTION_PRICE:ENC}', () => {
         const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
@@ -566,7 +581,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${AUCTION_PRICE}', function() {
+      it('should replace all occurrences of ${AUCTION_PRICE}', () => {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
@@ -588,7 +603,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all macros at the same time', function() {
+      it('should replace all macros at the same time', () => {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
@@ -607,7 +622,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${FIRST_BID:ENC}', function() {
+      it('should replace all occurrences of ${FIRST_BID:ENC}', () => {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
@@ -626,7 +641,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${FIRST_BID:ENC} with empty string if no first bid', function() {
+      it('should replace all occurrences of ${FIRST_BID:ENC} with empty string if no first bid', () => {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
@@ -645,7 +660,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${SECOND_BID:ENC}', function() {
+      it('should replace all occurrences of ${SECOND_BID:ENC}', () => {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
@@ -664,7 +679,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${THIRD_BID:ENC}', function() {
+      it('should replace all occurrences of ${THIRD_BID:ENC}', () => {
         const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
@@ -683,7 +698,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${SECOND_BID:ENC} with empty string if no second bid', function() {
+      it('should replace all occurrences of ${SECOND_BID:ENC} with empty string if no second bid', () => {
         const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
@@ -702,7 +717,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(ad, expectedAd);
       });
 
-      it('should replace all occurrences of ${THIRD_BID:ENC} with empty string if no second bid', function() {
+      it('should replace all occurrences of ${THIRD_BID:ENC} with empty string if no second bid', () => {
         const bidderResponse = buildBidderResponse({bidId1: '123456789123456789'});
 
         const responseBid = bidderResponse.bids[0];
@@ -733,7 +748,7 @@ describe('stroeerCore bid adapter', function () {
           {price: '1234567.0052', expectation: '1234567'},
         ];
         validPrices.forEach(test => {
-          it(`should safely truncate ${test.price} to ${test.expectation}`, function() {
+          it(`should safely truncate ${test.price} to ${test.expectation}`, () => {
             const bidderResponse = buildBidderResponse();
 
             const responseBid = bidderResponse.bids[0];
