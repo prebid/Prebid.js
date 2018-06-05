@@ -12,7 +12,6 @@ Connects to Nano Interactive search retargeting Ad Server for bids.
 
 
 
-
 <br>
 ### Requirements:
 To be able to get identification key (`pid`), please contact us at <br> 
@@ -147,7 +146,6 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
             bidder: 'nanointeractive',
             params: {
                 pid: '5afaa0280ae8996eb578de53',
-                category: 'automotive',
                 categoryName: 'cat_name',
                 name: 'search_param',
                 subId: '123'
