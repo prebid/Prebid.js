@@ -347,7 +347,11 @@ describe('S2S Adapter', () => {
             'bidder': 'appnexus',
             'params': {
               'placementId': '10433394',
-              'member': 123
+              'member': 123,
+              'keywords': {
+                'foo': ['bar', 'baz'],
+                'fizz': ['buzz']
+              }
             },
             'bid_id': '123',
             'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -598,7 +602,7 @@ describe('S2S Adapter', () => {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
-      config.setConfig({s2sConfig});
+      config.setConfig({s2sConfig: s2sConfig});
 
       const aliasBidder = {
         bidder: 'brealtime',
@@ -625,7 +629,7 @@ describe('S2S Adapter', () => {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
-      config.setConfig({s2sConfig});
+      config.setConfig({s2sConfig: s2sConfig});
 
       const alias = 'foobar';
       const aliasBidder = {
@@ -655,10 +659,14 @@ describe('S2S Adapter', () => {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
-      config.setConfig({s2sConfig});
+      config.setConfig({s2sConfig: s2sConfig});
 
       const myRequest = utils.deepClone(REQUEST);
       myRequest.ad_units[0].bids[0].params.usePaymentRule = true;
+      myRequest.ad_units[0].bids[0].params.keywords = {
+        foo: ['bar', 'baz'],
+        fizz: ['buzz']
+      };
 
       adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
@@ -667,6 +675,34 @@ describe('S2S Adapter', () => {
       expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
       expect(requestBid.imp[0].ext.appnexus.use_pmt_rule).to.exist.and.to.be.true;
       expect(requestBid.imp[0].ext.appnexus.member).to.exist;
+      expect(requestBid.imp[0].ext.appnexus.keywords).to.exist.and.to.deep.equal([{
+        key: 'foo',
+        value: ['bar', 'baz']
+      }, {
+        key: 'fizz',
+        value: ['buzz']
+      }]);
+
+      config.resetConfig();
+      const oldS2sConfig = Object.assign({}, CONFIG);
+      config.setConfig({s2sConfig: oldS2sConfig});
+
+      const myRequest2 = utils.deepClone(REQUEST);
+      myRequest2.ad_units[0].bids[0].params.keywords = {
+        foo: ['bar', 'baz'],
+        fizz: ['buzz']
+      };
+
+      adapter.callBids(myRequest2, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid2 = JSON.parse(requests[1].requestBody);
+
+      expect(requestBid2.ad_units[0].bids[0].params.keywords).to.exist.and.to.deep.equal([{
+        key: 'foo',
+        value: ['bar', 'baz']
+      }, {
+        key: 'fizz',
+        value: ['buzz']
+      }]);
     });
   });
 
