@@ -107,7 +107,7 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
         }]
     }];
     
-#### Example with `nqName`
+#### Example with `name`
     var adUnits = [{
         code: 'nano-div',
         sizes: [[300, 250], [300,600]],
@@ -118,7 +118,7 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
                 category: 'automotive',
                 // User searched "automobile search query" and it is in the URL like:
                 // https://www....?search_param=automobile%20search%20query&... 
-                nqName: 'search_param',
+                name: 'search_param',
                 subId: '123'
             }
         }]
@@ -139,7 +139,7 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
         }]
     }];
 
-#### Example with `categoryName` and `nqName`
+#### Example with `categoryName` and `name`
     var adUnits = [{
         code: 'nano-div',
         sizes: [[300, 250], [300,600]],
@@ -149,7 +149,7 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
                 pid: '5afaa0280ae8996eb578de53',
                 category: 'automotive',
                 categoryName: 'cat_name',
-                nqName: 'search_param',
+                name: 'search_param',
                 subId: '123'
             }
         }]
