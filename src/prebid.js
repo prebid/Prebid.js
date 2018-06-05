@@ -108,8 +108,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  let bidsReceived = auctionManager.getBidsReceived();
-  return targeting.getAllTargeting(adUnitCode, bidsReceived);
+  return targeting.getAllTargeting(adUnitCode);
 };
 
 /**
