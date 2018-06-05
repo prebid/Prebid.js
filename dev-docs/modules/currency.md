@@ -247,14 +247,10 @@ a currency object that may contain several parameters:
 
 ### Prebid.org's currency file
 
-Prebid.org hosts a conversion file at [http://currency.prebid.org/latest.json](http://currency.prebid.org/latest.json) -- the file is also available over HTTPS. The currencies supported are: 
-AUD,BRL,CAD,CHF,CNY,CZK,DKK,EUR,GBP,HKD,HUF,IDR,ILS,INR,JPY,KRW,MXN,MYR,NOK,NZD,PHP,PLN,RUB,SEK,SGD,THB,TRY,USD,ZAR
+Prebid.org hosts a conversion file at [https://currency.prebid.org/latest.json](https://currency.prebid.org/latest.json). The currencies currently supported are: AUD, BGN, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, ISK, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, TRY, USD, ZAR.
 
-<div class="alert alert-danger" role="alert">
-  <p>
-This file is currently updated weekly. More frequent updates are on the roadmap.
-  </p>
-</div>
+{: .alert.alert-warning :}
+The currencies on this list could change if the underlying API source changes. If a desired currency isn't on this list, you will need to generate and host your own conversion file.
 
 ### Format
 
