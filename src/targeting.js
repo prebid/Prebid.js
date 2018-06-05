@@ -100,6 +100,15 @@ export function newTargeting(auctionManager) {
     });
 
     targeting = flattenTargeting(targeting);
+
+    // make sure at least there is a entry per adUnit code in the targetingSet so receivers of SET_TARGETING call's can know what ad units are being invoked
+
+    adUnitCodes.forEach(code => {
+      if (!targeting[code]) {
+        targeting[code] = {};
+      }
+    });
+
     return targeting;
   };
 

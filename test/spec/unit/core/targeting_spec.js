@@ -136,6 +136,36 @@ describe('targeting tests', () => {
     });
   }); // end getAllTargeting tests
 
+  describe('getAllTargeting without bids return empty object', () => {
+    let amBidsReceivedStub;
+    let amGetAdUnitsStub;
+    let bidExpiryStub;
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$._sendAllBids = false;
+      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+        return [];
+      });
+      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+        return ['/123456/header-bid-tag-0'];
+      });
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
+    });
+
+    afterEach(() => {
+      auctionManager.getBidsReceived.restore();
+      auctionManager.getAdUnitCodes.restore();
+      targetingModule.isBidExpired.restore();
+    });
+
+    it('returns targetingSet correctly', () => {
+      let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+      // we should only get the targeting data for the one requested adunit to at least exist even though it has no keys to set
+      expect(Object.keys(targeting).length).to.equal(1);
+    });
+  }); // end getAllTargeting without bids return empty object
+
   describe('Targeting in concurrent auctions', () => {
     describe('check getOldestBid', () => {
       let bidExpiryStub;
