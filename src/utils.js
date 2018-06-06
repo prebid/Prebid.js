@@ -244,7 +244,7 @@ exports.getTopWindowUrl = function () {
   try {
     href = exports.getTopWindowLocation().href;
   } catch (e) {
-    href = ''
+    href = '';
   }
   return href;
 };
