@@ -139,7 +139,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&sdk[]=5.5.web&pbv=${pbv}`
       }]);
     });
 
@@ -158,7 +158,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['640x480'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=&sdk[]=&pbv=${pbv}&playerwidth=640&playerheight=480`
+        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&sdk[]=&pbv=${pbv}&playerwidth=640&playerheight=480`
       }]);
     });
 
@@ -177,7 +177,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['728x90'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&sdk[]=5.5.web&pbv=${pbv}`
       }]);
     });
 
@@ -196,7 +196,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&sdk[]=5.5.web&pbv=${pbv}`
       }]);
     });
 
@@ -410,7 +410,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.cpm).to.equal(1.23);
       expect(bidResponse.requestId).to.equal(requestId);
       expect(bidResponse.mediaType).to.equal('video');
-      expect(bidResponse.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${bidId}`);
+      expect(bidResponse.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${bidId}`);
       expect(bidResponse.width).to.equal(playerwidth);
       expect(bidResponse.height).to.equal(playerheight);
     });
@@ -450,7 +450,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseVideo.cpm).to.equal(1.23);
       expect(bidResponseVideo.requestId).to.equal(requestId);
       expect(bidResponseVideo.mediaType).to.equal('video');
-      expect(bidResponseVideo.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${videoPlacementId}&pageurl=&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${videoBidId}`);
+      expect(bidResponseVideo.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${videoPlacementId}&pageurl=http%3A%2F%2Flocalhost%3A9876%2F&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${videoBidId}`);
       expect(bidResponseVideo.width).to.equal(playerwidth);
       expect(bidResponseVideo.height).to.equal(playerheight);
 
