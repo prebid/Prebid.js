@@ -64,7 +64,9 @@ export const spec = {
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
-      payload.consent_string = bidderRequest.gdprConsent.consentString;
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.consent_string = bidderRequest.gdprConsent.consentString;
+      }
     }
 
     // If there is no key_maker data, then don't make the request.

@@ -169,7 +169,34 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.gdpr).to.equal('false')
       expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
-
+    it('should return a properly formatted request with GDPR applies set to false with no consent_string param', () => {
+      let bidderRequests = {
+        'gdprConsent': {
+          'consentString': undefined,
+          'vendorData': {},
+          'gdprApplies': false
+        },
+      };
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('false')
+      expect(bidRequests.data).to.not.include.keys('consent_string')
+    })
+    it('should return a properly formatted request with GDPR applies set to true with no consent_string param', () => {
+      let bidderRequests = {
+        'gdprConsent': {
+          'consentString': undefined,
+          'vendorData': {},
+          'gdprApplies': true
+        },
+      };
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('true')
+      expect(bidRequests.data).to.not.include.keys('consent_string')
+    })
     it('should return a properly formatted request with hfa', () => {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'

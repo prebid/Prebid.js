@@ -10,22 +10,12 @@ function getTopFrame() {
   }
 }
 
-function getTopWindowUrl() {
-  try {
-    return window.top.location.href;
-  } catch (e) {
-    utils.logMessage('Failed obtaining top window\'s URL: ', e);
-    try {
-      return window.location.href;
-    } catch (e) {
-      utils.logMessage('Failed obtaining current window\'s URL: ', e);
-      return '';
-    }
-  }
+function startsWith(str, search) {
+  return str.substr(0, search.length) === search;
 }
 
 function getTopWindowDomain() {
-  const url = getTopWindowUrl();
+  const url = utils.getTopWindowUrl();
   const domainStart = url.indexOf('://') + '://'.length;
   return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
 }
@@ -89,7 +79,7 @@ export const spec = {
         'tagid': adUnitCode,
         'bidfloor': params.bidfloor || 0,
         'bidfloorcur': 'USD',
-        'secure': getTopWindowUrl().toLowerCase().startsWith('http://') ? 0 : 1
+        'secure': startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
       };
 
       if (!mediaTypes || mediaTypes.banner) {
