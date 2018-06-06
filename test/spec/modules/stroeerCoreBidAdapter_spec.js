@@ -196,7 +196,6 @@ describe('stroeerCore bid adapter', function () {
       bidRequest = buildBidderRequest().bids[0];
     });
 
-
     it('should have \"isBidRequestValid\" function', () => {
       assert.isFunction(spec.isBidRequestValid);
     });

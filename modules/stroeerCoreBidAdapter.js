@@ -1,5 +1,6 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
 const utils = require('src/utils');
 const url = require('src/url');
@@ -125,7 +126,7 @@ export const spec = {
 
     setupGlobalNamespace(anyBid);
 
-    const bidRequestWithSsat = validBidRequests.find(bidRequest => bidRequest.params.ssat);
+    const bidRequestWithSsat = find(validBidRequests, bidRequest => bidRequest.params.ssat);
 
     const payload = {
       id: bidderRequest.auctionId,
