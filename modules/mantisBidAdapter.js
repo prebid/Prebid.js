@@ -170,7 +170,7 @@ const spec = {
     };
   },
   interpretResponse: function (serverResponse) {
-    storeUuid(serverResponse.uuid);
+    storeUuid(serverResponse.body.uuid);
     return serverResponse.body.ads.map(function (ad) {
       return {
         requestId: ad.bid,

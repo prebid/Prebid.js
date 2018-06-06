@@ -21,6 +21,9 @@ const CONFIG = {
   },
   'automatad': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'archon': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
@@ -29,7 +32,7 @@ let bidder = 'serverbid';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon'],
 
   /**
    * Determines whether or not the given bid request is valid.

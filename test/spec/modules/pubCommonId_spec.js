@@ -19,6 +19,10 @@ const TIMEOUT = 2000;
 
 describe('Publisher Common ID', function () {
   describe('Decorate adUnits', function () {
+    before(function() {
+      window.document.cookie = COOKIE_NAME + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    });
+
     it('Check same cookie', function () {
       let adUnits1 = getAdUnits();
       let adUnits2 = getAdUnits();

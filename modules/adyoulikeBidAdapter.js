@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 import { format } from 'src/url';
 // import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -26,14 +27,14 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidderRequest} - bidderRequest.bids[] is an array of AdUnits and bids
+   * @param {bidRequests} - bidRequests.bids[] is an array of AdUnits and bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidderRequest) {
-    let dcHostname = getHostname(bidderRequest);
+  buildRequests: function (bidRequests, bidderRequest) {
+    let dcHostname = getHostname(bidRequests);
     const payload = {
       Version: VERSION,
-      Bids: bidderRequest.reduce((accumulator, bid) => {
+      Bids: bidRequests.reduce((accumulator, bid) => {
         let size = getSize(bid.sizes);
         accumulator[bid.bidId] = {};
         accumulator[bid.bidId].PlacementID = bid.params.placement;
@@ -44,6 +45,14 @@ export const spec = {
       }, {}),
       PageRefreshed: getPageRefreshed()
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentString: bidderRequest.gdprConsent.consentString,
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
+
     const data = JSON.stringify(payload);
     const options = {
       withCredentials: false
@@ -77,7 +86,7 @@ export const spec = {
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  let dcHostname = bidderRequest.find(bid => bid.params.DC);
+  let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
   }

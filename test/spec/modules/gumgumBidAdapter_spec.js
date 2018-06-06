@@ -64,11 +64,23 @@ describe('gumgumAdapter', () => {
     ];
 
     it('sends bid request to ENDPOINT via GET', () => {
-      const requests = spec.buildRequests(bidRequests);
-      const request = requests[0];
+      const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET');
       expect(request.id).to.equal('30b31c1838de1e');
+    });
+    it('should add consent parameters if gdprConsent is present', () => {
+      const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
+      const fakeBidRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
+      expect(bidRequest.data.gdprApplies).to.eq(true);
+      expect(bidRequest.data.gdprConsent).to.eq('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+    it('should handle gdprConsent is present but values are undefined case', () => {
+      const gdprConsent = { consent_string: undefined, gdprApplies: undefined };
+      const fakeBidRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
+      expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
     });
   })
 
@@ -134,5 +146,27 @@ describe('gumgumAdapter', () => {
       let result = spec.interpretResponse({ body: response }, bidRequest);
       expect(result.length).to.equal(0);
     });
+  })
+  describe('getUserSyncs', () => {
+    const syncOptions = {
+      'iframeEnabled': 'true'
+    }
+    const response = {
+      'pxs': {
+        'scr': [
+          {
+            't': 'i',
+            'u': 'https://c.gumgum.com/images/pixel.gif'
+          },
+          {
+            't': 'f',
+            'u': 'https://www.nytimes.com/'
+          }
+        ]
+      }
+    }
+    let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+    expect(result[0].type).to.equal('image')
+    expect(result[1].type).to.equal('iframe')
   })
 });

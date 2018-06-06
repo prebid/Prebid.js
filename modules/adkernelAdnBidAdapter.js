@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import {BANNER, VIDEO} from 'src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
@@ -14,15 +14,21 @@ function isRtbDebugEnabled() {
 }
 
 function buildImp(bidRequest) {
-  const sizes = bidRequest.sizes;
   let imp = {
     id: bidRequest.bidId,
-    tagid: bidRequest.placementCode
+    tagid: bidRequest.adUnitCode
   };
-  if (bidRequest.mediaType === 'video' || utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
+    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
+    let sizes = canonicalizeSizesArray(bidRequest.sizes);
+    imp.banner = {
+      format: utils.parseSizesInput(sizes)
+    }
+  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.video`)) {
+    let size = canonicalizeSizesArray(bidRequest.sizes)[0];
     imp.video = {
-      w: sizes[0],
-      h: sizes[1],
+      w: size[0],
+      h: size[1],
       mimes: DEFAULT_MIMES,
       protocols: DEFAULT_PROTOCOLS,
       api: DEFAULT_APIS
@@ -32,17 +38,25 @@ function buildImp(bidRequest) {
         .filter(param => includes(VIDEO_TARGETING, param))
         .forEach(param => imp.video[param] = bidRequest.params.video[param]);
     }
-  } else {
-    imp.banner = {
-      format: utils.parseSizesInput(bidRequest.sizes)
-    };
   }
   return imp;
 }
 
-function buildRequestParams(auctionId, transactionId, tags) {
+/**
+ * Convert input array of sizes to canonical form Array[Array[Number]]
+ * @param sizes
+ * @return Array[Array[Number]]
+ */
+function canonicalizeSizesArray(sizes) {
+  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
+    return [sizes];
+  }
+  return sizes;
+}
+
+function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
   let loc = utils.getTopWindowLocation();
-  return {
+  let req = {
     id: auctionId,
     tid: transactionId,
     site: {
@@ -52,6 +66,17 @@ function buildRequestParams(auctionId, transactionId, tags) {
     },
     imp: tags
   };
+
+  if (gdprConsent && (gdprConsent.gdprApplies !== undefined || gdprConsent.consentString !== undefined)) {
+    req.user = {};
+    if (gdprConsent.gdprApplies !== undefined) {
+      req.user.gdpr = ~~(gdprConsent.gdprApplies);
+    }
+    if (gdprConsent.consentString !== undefined) {
+      req.user.consent = gdprConsent.consentString;
+    }
+  }
+  return req;
 }
 
 function buildBid(tag) {
@@ -77,9 +102,7 @@ function buildBid(tag) {
 }
 
 export const spec = {
-
   code: 'adkernelAdn',
-
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bidRequest) {
@@ -87,9 +110,7 @@ export const spec = {
       typeof bidRequest.params.pubId === 'number';
   },
 
-  buildRequests: function(bidRequests) {
-    let transactionId;
-    let auctionId;
+  buildRequests: function(bidRequests, bidderRequest) {
     let dispatch = bidRequests.map(buildImp)
       .reduce((acc, curr, index) => {
         let bidRequest = bidRequests[index];
@@ -98,14 +119,15 @@ export const spec = {
         acc[host] = acc[host] || {};
         acc[host][pubId] = acc[host][pubId] || [];
         acc[host][pubId].push(curr);
-        transactionId = bidRequest.transactionId;
-        auctionId = bidRequest.bidderRequestId;
         return acc;
       }, {});
+    let auctionId = bidderRequest.auctionId;
+    let gdprConsent = bidderRequest.gdprConsent;
+    let transactionId = bidderRequest.transactionId;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(auctionId, transactionId, dispatch[host][pubId]);
+        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent);
         requests.push({
           method: 'POST',
           url: `//${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled() ? '&debug=1' : ''}`,
@@ -131,15 +153,10 @@ export const spec = {
     if (!syncOptions.iframeEnabled || !serverResponses || serverResponses.length === 0) {
       return [];
     }
-    return serverResponses.filter(rps => 'syncpages' in rps.body)
+    return serverResponses.filter(rps => rps.body && rps.body.syncpages)
       .map(rsp => rsp.body.syncpages)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => {
-        return {
-          type: 'iframe',
-          url: sync_url
-        }
-      });
+      .map(sync_url => ({type: 'iframe', url: sync_url}));
   }
 };
 

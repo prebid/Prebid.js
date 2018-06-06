@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid';
 const DEFAULT_BID_TTL = 360;
@@ -62,7 +63,7 @@ function getOsType() {
   let os = ['android', 'ios', 'mac', 'linux', 'window'];
   let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i];
 
-  return os.find((tos, idx) => {
+  return find(os, (tos, idx) => {
     if (ua.match(regexp_os[idx])) {
       return os[idx];
     }

@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { BANNER } from 'src/mediaTypes';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -70,10 +71,9 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(REGIONS.includes(bid.params.region) && bid.params.publisherId);
+    return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
   },
-
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const request = {
       id: validBidRequests[0].auctionId,
       imp: validBidRequests.map(slot => mapImpression(slot)),
@@ -81,6 +81,14 @@ export const spec = {
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0
     };
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      const consentStr = (bidderRequest.gdprConsent.consentString)
+        ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      request.regs = {ext: {gdpr: gdpr}};
+      request.user = {ext: {consent: consentStr}};
+    };
+
     return {
       method: 'POST',
       url: buildEndpointUrl(validBidRequests[0].params.region),
