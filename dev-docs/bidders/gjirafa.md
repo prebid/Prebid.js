@@ -13,6 +13,7 @@ hide: true
 biddercode: gjirafa
 
 biddercode_longer_than_12: false
+gdpr_supported: true
 
 
 ---
