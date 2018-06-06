@@ -193,17 +193,13 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
-  it('should register image and iframe pixels with basic filterSettings config', () => {
+  it('should register both image and iframe pixels with filterSettings.all config', () => {
     const userSync = newTestUserSync({
       filterSettings: {
-        image: {
-          bidders: ['atestBidder'],
+        all: {
+          bidders: ['atestBidder', 'testBidder'],
           filter: 'include'
         },
-        iframe: {
-          bidders: '*',
-          filter: 'include'
-        }
       }
     });
     userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
@@ -241,7 +237,7 @@ describe('user sync', () => {
       filterSettings: {
         iframe: {
           bidders: ['testBidder'],
-          filter: 'included'
+          filter: 'includes'
         }
       }
     });
