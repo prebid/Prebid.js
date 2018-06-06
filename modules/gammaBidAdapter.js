@@ -27,11 +27,15 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests) {
-    const gaxObjParams = find(bidRequests, hasParamInfo);
-    return {
-      method: 'GET',
-      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
-    };
+   const serverRequests = [];
+   for (var i = 0, len = bidRequests.length; i < len; i++) {
+      const gaxObjParams = bidRequests[i];
+      serverRequests.push({
+        method: 'GET',
+        url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
+      });
+   }
+   return serverRequests;
   },
 
   /**
