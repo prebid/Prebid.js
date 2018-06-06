@@ -297,14 +297,15 @@ describe('OpenxAdapter', () => {
             'delDomain': 'test-del-domain',
             'customParams': {'Test1': 'testval1+', 'test2': ['testval2/', 'testval3']}
           }
-        );
+        }
+      );
 
-        const request = spec.buildRequests([bidRequest]);
-        const dataParams = request[0].data;
+      const request = spec.buildRequests([bidRequest]);
+      const dataParams = request[0].data;
 
-        expect(dataParams.tps).to.exist;
-        expect(dataParams.tps).to.equal(btoa('test1=testval1.&test2=testval2_,testval3'));
-      });
+      expect(dataParams.tps).to.exist;
+      expect(dataParams.tps).to.equal(btoa('test1=testval1.&test2=testval2_,testval3'));
+    });
 
     it('should send out custom floors on bids that have customFloors specified', () => {
       const bidRequest = Object.assign({},
@@ -315,14 +316,15 @@ describe('OpenxAdapter', () => {
             'delDomain': 'test-del-domain',
             'customFloor': 1.5
           }
-        );
+        }
+      );
 
-        const request = spec.buildRequests([bidRequest]);
-        const dataParams = request[0].data;
+      const request = spec.buildRequests([bidRequest]);
+      const dataParams = request[0].data;
 
-        expect(dataParams.aumfs).to.exist;
-        expect(dataParams.aumfs).to.equal('1500');
-      });
+      expect(dataParams.aumfs).to.exist;
+      expect(dataParams.aumfs).to.equal('1500');
+    });
 
     it('should send out custom bc parameter, if override is present', () => {
       const bidRequest = Object.assign({},
@@ -333,7 +335,11 @@ describe('OpenxAdapter', () => {
             'delDomain': 'test-del-domain',
             'bc': 'hb_override'
           }
-        );
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const dataParams = request[0].data;
 
       expect(dataParams.bc).to.exist;
       expect(dataParams.bc).to.equal('hb_override');
@@ -661,6 +667,7 @@ describe('OpenxAdapter', () => {
         });
       });
     });
+  });
 
   describe('interpretResponse for banner ads', () => {
     beforeEach(() => {
