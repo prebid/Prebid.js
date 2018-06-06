@@ -271,7 +271,8 @@ describe('SonobiBidAdapter', () => {
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
-        'currency': 'USD'
+        'currency': 'USD',
+        'aid': '30292e432662bd5f86d90774b944b039'
       },
       {
         'requestId': '30b31c1838de1e',
@@ -283,7 +284,8 @@ describe('SonobiBidAdapter', () => {
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'dozerkey'
+        'dealId': 'dozerkey',
+        'aid': '30292e432662bd5f86d90774b944b038'
       }
     ];
 

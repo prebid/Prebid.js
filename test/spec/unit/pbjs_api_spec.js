@@ -1813,7 +1813,10 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
       auctionManagerInstance = newAuctionManager();
       sinon.stub(auctionManagerInstance, 'getBidsReceived').callsFake(function() {
-        return [getBidResponses()[1]];
+        let bidResponse = getBidResponses()[1];
+        // add a pt0 value for special case.
+        bidResponse.adserverTargeting.pt0 = 'someVal';
+        return [bidResponse];
       });
       sinon.stub(auctionManagerInstance, 'getAdUnitCodes').callsFake(function() {
         return ['/19968336/header-bid-tag-0'];
@@ -1833,10 +1836,15 @@ describe('Unit: Prebid Module', function () {
 
       var expectedAdserverTargeting = bids[0].adserverTargeting;
       var newAdserverTargeting = {};
-      for (var key in expectedAdserverTargeting) {
-        newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
-      }
+      let regex = /pt[0-9]/;
 
+      for (var key in expectedAdserverTargeting) {
+        if (key.search(regex) < 0) {
+          newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
+        } else {
+          newAdserverTargeting[key] = expectedAdserverTargeting[key];
+        }
+      }
       targeting.setTargetingForAst();
       expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
     });

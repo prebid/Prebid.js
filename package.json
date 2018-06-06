@@ -1,7 +1,7 @@
 {
   "name": "prebid.js",
-  "version": "1.12.0",
-  "description": "Header Bidding Management Library",
+  "version": "1.13.0",
+  "description": "Header Bidding Management Library FS",
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp run-tests",
