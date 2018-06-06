@@ -126,7 +126,7 @@ describe('The Criteo bidding adapter', () => {
       expect(ortbRequest.slots[0].sizes[1]).to.equal('728x90');
       expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(false);
-      expect(ortbRequest.gdprConsent.consentGiven).to.equal(false);
+      expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
     });
 
     it('should properly build a mixed request', () => {
@@ -168,6 +168,29 @@ describe('The Criteo bidding adapter', () => {
       expect(ortbRequest.slots[1].sizes[0]).to.equal('300x250');
       expect(ortbRequest.slots[1].sizes[1]).to.equal('728x90');
       expect(ortbRequest.gdprConsent).to.equal(undefined);
+    });
+
+    it('should properly build request with undefined gdpr consent fields when they are not provided', () => {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = { timeout: 3000,
+        gdprConsent: {
+        },
+      };
+
+      const ortbRequest = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
+      expect(ortbRequest.gdprConsent.gdprApplies).to.equal(undefined);
+      expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
     });
   });
 

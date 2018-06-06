@@ -717,12 +717,24 @@ export function isGptPubadsDefined() {
   }
 }
 
-export function getHighestCpm(previous, current) {
-  if (previous.cpm === current.cpm) {
-    return previous.timeToRespond > current.timeToRespond ? current : previous;
-  }
+// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
+export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
 
-  return previous.cpm < current.cpm ? current : previous;
+// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
+export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
+
+// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
+export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
+
+function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
+  return (previous, current) => {
+    if (previous.cpm === current.cpm) {
+      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
+    }
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 /**
