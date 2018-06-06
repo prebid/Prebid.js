@@ -61,6 +61,30 @@ describe('rhythmone adapter tests', function () {
       assert.equal(mangoRequest.length, 1);
     });
 
+    it('should send GDPR Consent data to RhythmOne tag', () => {
+	  let _consentString = 'testConsentString';
+	  var request = z.buildRequests(
+        [
+          {
+            'bidder': 'rhythmone',
+            'params': {
+              'placementId': 'xyz',
+              'keywords': '',
+              'categories': [],
+              'trace': true,
+              'method': 'get',
+              'api': 'mango',
+              'endpoint': 'http://fakedomain.com?'
+            },
+            'adUnitCode': 'div-gpt-ad-1438287399331-0',
+            'sizes': [[300, 250]]
+          }
+        ], {gdprConsent: {gdprApplies: 1, consentString: _consentString}}
+      );
+      assert.equal(getURLParam(request[0].url, 'gdpr'), 'true');
+      assert.equal(getURLParam(request[0].url, 'gdpr_consent'), 'testConsentString');
+    });
+
     var bids = z.interpretResponse({
       body: [
         {
@@ -77,5 +101,19 @@ describe('rhythmone adapter tests', function () {
     it('should register one bid', function() {
       assert.equal(bids.length, 1);
     });
+    function getURLParam(url, key) {
+      let val = '';
+      if (url.indexOf('?') > -1) {
+        let qs = url.substr(url.indexOf('?'));
+        let qsArr = qs.split('&');
+        for (let i = 0; i < qsArr.length; i++) {
+          if (qsArr[i].indexOf(key.toLowerCase() + '=') > -1) {
+            val = qsArr[i].split('=')[1]
+            break;
+          }
+        }
+      }
+      return val;
+    }
   });
 });

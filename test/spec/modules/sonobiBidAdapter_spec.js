@@ -130,6 +130,14 @@ describe('SonobiBidAdapter', () => {
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600',
     };
 
+    let bidderRequests = {
+      'gdprConsent': {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'vendorData': {},
+        'gdprApplies': true
+      },
+    };
+
     it('should return a properly formatted request', () => {
       const bidRequests = spec.buildRequests(bidRequest)
       const bidRequestsPageViewID = spec.buildRequests(bidRequest)
@@ -145,6 +153,23 @@ describe('SonobiBidAdapter', () => {
       expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
+    it('should return a properly formatted request with GDPR applies set to true', () => {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('true')
+      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+    })
+
+    it('should return a properly formatted request with GDPR applies set to false', () => {
+      bidderRequests.gdprConsent.gdprApplies = false;
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('false')
+      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+    })
+
     it('should return a properly formatted request with hfa', () => {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'
@@ -155,6 +180,7 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
     it('should return null if there is nothing to bid on', () => {
       const bidRequests = spec.buildRequests([{params: {}}])
       expect(bidRequests).to.equal(null);
@@ -211,6 +237,7 @@ describe('SonobiBidAdapter', () => {
           '/7780971/sparks_prebid_LB|30b31c1838de1f': {
             'sbi_size': '300x600',
             'sbi_apoc': 'remnant',
+            'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b039',
             'sbi_mouse': 1.07,
           },
@@ -242,9 +269,10 @@ describe('SonobiBidAdapter', () => {
         'height': 600,
         'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=localhost:9876"></script>',
         'ttl': 500,
-        'creativeId': '30292e432662bd5f86d90774b944b039',
+        'creativeId': '1234abcd',
         'netRevenue': true,
-        'currency': 'USD'
+        'currency': 'USD',
+        'aid': '30292e432662bd5f86d90774b944b039'
       },
       {
         'requestId': '30b31c1838de1e',
@@ -256,7 +284,8 @@ describe('SonobiBidAdapter', () => {
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'dozerkey'
+        'dealId': 'dozerkey',
+        'aid': '30292e432662bd5f86d90774b944b038'
       }
     ];
 

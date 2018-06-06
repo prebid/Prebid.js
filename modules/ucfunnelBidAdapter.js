@@ -19,16 +19,16 @@ export const spec = {
   },
 
   /**
-   * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of ucfunnel bidders
-   * @return object of parameters for Prebid AJAX request
+   * @param {BidRequest[]} bidRequests
+   * @param {*} bidderRequest
+   * @return {ServerRequest}
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     var bidRequests = [];
     for (var i = 0; i < validBidRequests.length; i++) {
       var bid = validBidRequests[i];
 
-      var ucfunnelUrlParams = buildUrlParams(bid);
+      var ucfunnelUrlParams = buildUrlParams(bid, bidderRequest);
 
       bidRequests.push({
         method: 'GET',
@@ -69,7 +69,7 @@ export const spec = {
 };
 registerBidder(spec);
 
-function buildUrlParams(bid) {
+function buildUrlParams(bid, bidderRequest) {
   const host = utils.getTopWindowLocation().host;
   const page = utils.getTopWindowLocation().pathname;
   const refer = document.referrer;
@@ -87,6 +87,11 @@ function buildUrlParams(bid) {
     'adid', utils.getBidIdParameter('adid', bid.params),
     'ver', VER
   ];
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    queryString.push('gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    queryString.push('euconsent', bidderRequest.gdprConsent.consentString);
+  }
 
   return queryString.reduce(
     (memo, curr, index) =>

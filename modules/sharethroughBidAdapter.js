@@ -14,12 +14,16 @@ export const sharethroughAdapterSpec = {
         placement_key: bid.params.pkey,
         hbVersion: '$prebid.version$',
         strVersion: VERSION,
-        hbSource: 'prebid'
+        hbSource: 'prebid',
+        consent_required: false
       };
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
-        query.consent_required = bidderRequest.gdprConsent.gdprApplies;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
       return {
@@ -51,7 +55,7 @@ export const sharethroughAdapterSpec = {
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
         syncs.push({ type: 'image', url: url });
       });

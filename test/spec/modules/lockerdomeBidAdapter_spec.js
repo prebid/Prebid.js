@@ -53,7 +53,6 @@ describe('LockerDomeAdapter', () => {
     it('should generate a valid single POST request for multiple bid requests', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('POST');
-      // TODO: Update to production URL
       expect(request.url).to.equal('https://lockerdome.com/ladbid/prebid');
       expect(request.data).to.exist;
 
@@ -76,6 +75,21 @@ describe('LockerDomeAdapter', () => {
       expect(bids[1].sizes).to.have.lengthOf(1);
       expect(bids[1].sizes[0][0]).to.equal(300);
       expect(bids[1].sizes[0][1]).to.equal(600);
+    });
+
+    it('should add GDPR data to request if available', () => {
+      const bidderRequest = {
+        gdprConsent: {
+          consentString: 'AAABBB',
+          gdprApplies: true
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.gdpr).to.be.an('object');
+      expect(requestData.gdpr).to.have.property('applies', true);
+      expect(requestData.gdpr).to.have.property('consent', 'AAABBB');
     });
   });
 
