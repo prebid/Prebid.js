@@ -12,14 +12,13 @@ describe('bid overrides', () => {
   });
 
   afterEach(() => {
+    window.sessionStorage.clear();
     sandbox.restore();
   });
 
   describe('initialization', () => {
     beforeEach(() => {
       sandbox.stub(config, 'setConfig');
-      sandbox.stub(window.sessionStorage, 'setItem');
-      sandbox.stub(window.sessionStorage, 'removeItem');
     });
 
     afterEach(() => {
@@ -35,17 +34,19 @@ describe('bid overrides', () => {
     });
 
     it('should happen when configuration found in sessionStorage', () => {
-      sandbox.stub(window.sessionStorage, 'getItem').returns('{"enabled": true}');
-
-      sessionLoader();
+      sessionLoader({
+        getItem: () => ('{"enabled": true}')
+      });
       expect(addBidResponse.hasHook(boundHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', () => {
-      sandbox.stub(window.sessionStorage, 'getItem').throws();
-
       expect(() => {
-        sessionLoader();
+        sessionLoader({
+          getItem() {
+            throw new Error('test');
+          }
+        });
       }).not.to.throw();
     });
   });

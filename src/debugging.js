@@ -77,10 +77,10 @@ export function getConfig(debugging) {
 }
 config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 
-export function sessionLoader() {
+export function sessionLoader(storage = window.sessionStorage) {
   let overrides;
   try {
-    overrides = JSON.parse(window.sessionStorage.getItem(OVERRIDE_KEY));
+    overrides = JSON.parse(storage.getItem(OVERRIDE_KEY));
   } catch (e) {
   }
   if (overrides) {
