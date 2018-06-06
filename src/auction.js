@@ -150,6 +150,23 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
+  function hasVideoBids(bids) {
+    const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
+    const videoBid = bidsArray.some(bid => !!(utils.deepAccess(bid.mediaTypes, ['video'])));
+    const cacheEnabled = !!(config.getConfig('cache.url'));
+    const isCachedBid = (bidResponse) => !!(bidResponse.videoCacheKey && bidResponse.vastUrl);
+
+    // video bids response can have videoCacheKey and vastUrl. In that case no need to defer bidsBackAll check.
+    let bidReceived = bidsArray.map((bid) => {
+      return find(_bidsReceived, (bidReceived) => {
+        return bidReceived.adId === bid.bidId && bidReceived.mediaType === 'video';
+      })
+    }).filter(bid => bid);
+
+    // video bids with cache enabled need to be cached first before they are considered done
+    return (videoBid && cacheEnabled && bidReceived.every(isCachedBid));
+  }
+
   function done(bidRequestId) {
     const innerBidRequestId = bidRequestId;
     return delayExecution(function() {
@@ -157,9 +174,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
 
+      events.emit(CONSTANTS.EVENTS.BIDDER_DONE, request);
       // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
-      request.doneCbCallCount += 1;
-      bidsBackAll();
+      if (!hasVideoBids(request.bids)) {
+        request.doneCbCallCount += 1;
+        bidsBackAll();
+      }
     }, 1);
   }
 
@@ -230,6 +250,7 @@ function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
+  // when you want to add video bid you want to see if cache is enabled and than videoCacheKey exists or not vastUrl exist or not
   let addBid = true;
   if (config.getConfig('cache.url')) {
     if (!bidResponse.videoCacheKey) {

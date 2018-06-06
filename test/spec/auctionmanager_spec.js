@@ -856,5 +856,22 @@ describe('auctionmanager.js', function () {
       config.getConfig.restore();
       store.store.restore();
     });
+
+    it('should not call store when video bid responds with videoCacheKey and vastUrl', () => {
+      sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
+      let storeSpy = sinon.spy(store, 'store');
+      const bidsCopy = Object.assign({}, bids[0], {
+        mediaType: 'video',
+        videoCacheKey: 'some-key',
+        vastUrl: 'someUrl'
+      });
+      spec.interpretResponse.returns(bidsCopy);
+
+      auction.callBids();
+      assert.equal(storeSpy.callCount, 0);
+
+      storeSpy.restore();
+      config.getConfig.restore();
+    });
   });
 });
