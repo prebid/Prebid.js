@@ -1,16 +1,16 @@
 # Overview
 
 ```
-Module Name:  Appnexus Bid Adapter
+Module Name:  Playground XYZ Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: info@prebid.org
+Maintainer: tech@playgroundxyz.com
 ```
 
 # Description
 
 Connects to playgroundxyz ad server for bids.
 
-Appnexus bid adapter supports Banner, Video (instream and outstream).
+Playground XYZ bid adapter supports Banner.
 
 # Test Parameters
 ```
