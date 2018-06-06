@@ -352,7 +352,8 @@ describe('SonobiBidAdapter', () => {
 
     it('should return an empty array', () => {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
-    })
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+    });
   })
   describe('_getPlatform', () => {
     it('should return mobile', () => {

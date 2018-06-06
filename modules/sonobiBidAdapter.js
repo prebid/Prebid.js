@@ -153,9 +153,7 @@ export const spec = {
           });
         });
       }
-    } catch (e) {
-      logError(e)
-    }
+    } catch (e) {}
     return syncs;
   }
 };
