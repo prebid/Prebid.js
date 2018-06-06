@@ -221,7 +221,7 @@ describe('iasBidAdapter is an adapter that', () => {
       it('has property `slots`', () => {
         expect(bidResponse[0]).to.deep.include({ slots: slots });
       });
-      it('response is the same for multiple slots', ()=>{
+      it('response is the same for multiple slots', () => {
         var adapter = spec;
         var requests = adapter.buildRequests(bidRequests);
         expect(adapter.interpretResponse(serverResponse, requests)).to.length(2);
