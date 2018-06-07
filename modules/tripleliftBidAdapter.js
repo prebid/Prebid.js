@@ -41,7 +41,6 @@ export const tripleliftAdapterSpec = {
       }
     }
 
-
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
