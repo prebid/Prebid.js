@@ -275,14 +275,25 @@ const spec = {
   }
 };
 onMessage('iframe', function (data) {
-  var frames = document.getElementsByTagName('iframe');
-  for (var i = 0; i < frames.length; i++) {
-    var frame = frames[i];
-    if (frame.name == data.frame) {
-      onVisible(frame, function (stop) {
-        pixel(data.pixel);
-        stop();
-      }, 1000, 0.50);
+  if (window.$sf) {
+    var viewed = false;
+    $sf.ext.register(data.width, data.height, function () {
+      if ($sf.ext.inViewPercentage() < 50 || viewed) {
+        return;
+      }
+      viewed = true;
+      pixel(data.pixel);
+    });
+  } else {
+    var frames = document.getElementsByTagName('iframe');
+    for (var i = 0; i < frames.length; i++) {
+      var frame = frames[i];
+      if (frame.name == data.frame) {
+        onVisible(frame, function (stop) {
+          pixel(data.pixel);
+          stop();
+        }, 1000, 0.50);
+      }
     }
   }
 });
