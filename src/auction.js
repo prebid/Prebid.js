@@ -95,7 +95,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _callback = callback;
   let _timer;
   let _timeout = cbTimeout;
-  let _winningBid;
+  let _winningBids = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
@@ -114,9 +114,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
 
     if (_callback != null) {
+      let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        const timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -134,6 +135,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
+        // Calling timed out bidders
+        if (timedOutBidders.length) {
+          adaptermanager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+        }
         // Only automatically sync if the publisher has not chosen to "enableOverride"
         let userSyncConfig = config.getConfig('userSync') || {};
         if (!userSyncConfig.enableOverride) {
@@ -152,7 +157,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
 
-      // this is done for cache-enabled video bids in tryAddVideoBids, after the cache is stored
+      // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
       request.doneCbCallCount += 1;
       bidsBackAll();
     }, 1);
@@ -197,8 +202,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     executeCallback,
     callBids,
     bidsBackAll,
-    setWinningBid: (winningBid) => { _winningBid = winningBid },
-    getWinningBid: () => _winningBid,
+    addWinningBid: (winningBid) => { _winningBids = _winningBids.concat(winningBid) },
+    getWinningBids: () => _winningBids,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
@@ -293,17 +298,20 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
 
   // a publisher-defined renderer can be used to render bids
-  const adUnitRenderer =
-    bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+  const bidReq = bidRequest.bids && find(bidRequest.bids, bid => bid.adUnitCode == adUnitCode);
+  const adUnitRenderer = bidReq && bidReq.renderer;
 
   if (adUnitRenderer && adUnitRenderer.url) {
     bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
 
+  // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
+
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
-    config.getConfig('customPriceBucket'),
+    (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : config.getConfig('customPriceBucket'),
     config.getConfig('currency.granularityMultiplier')
   );
   bidObject.pbLg = priceStringsObj.low;
@@ -325,8 +333,11 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   return bidObject;
 }
 
-export function getStandardBidderSettings() {
-  let granularity = config.getConfig('priceGranularity');
+export function getStandardBidderSettings(mediaType) {
+  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
@@ -399,7 +410,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidder_settings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings();
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist

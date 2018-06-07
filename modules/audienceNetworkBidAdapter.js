@@ -27,7 +27,7 @@ const isBidRequestValid = bid =>
   typeof bid.params.placementId === 'string' &&
   bid.params.placementId.length > 0 &&
   Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).every(size => size === '300x250') : true) &&
+  (isFullWidth(bid.params.format) ? bid.sizes.map(flattenSize).some(size => size === '300x250') : true) &&
   (isValidNonSizedFormat(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 
 /**
