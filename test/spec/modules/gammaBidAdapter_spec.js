@@ -46,7 +46,7 @@ describe('gammaBidAdapter', function() {
       const requests = spec.buildRequests(bidArray);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
-        expect(request.url).to.be.equal(ENDPOINT);
+        expect(requestItem.url).to.be.equal(ENDPOINT);
       });
     });
   });
