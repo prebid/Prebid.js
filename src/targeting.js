@@ -195,7 +195,7 @@ export function newTargeting(auctionManager) {
   function getBidsReceived() {
     const bidsReceived = auctionManager.getBidsReceived()
       .filter(isUnusedBid)
-      .filter(exports.isBidExpired)
+      .filter(bid => !exports.isBidExpired(bid))
     ;
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
