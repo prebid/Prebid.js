@@ -83,7 +83,8 @@ describe('justpremium adapter', () => {
           cpm: 0.52,
           netRevenue: true,
           currency: 'USD',
-          ttl: 60000
+          ttl: 60000,
+          format: 'lb'
         }
       ]
 
@@ -99,6 +100,7 @@ describe('justpremium adapter', () => {
       expect(result[0].ttl).to.equal(60000)
       expect(result[0].creativeId).to.equal(3213123)
       expect(result[0].netRevenue).to.equal(true)
+      expect(result[0].format).to.equal('lb')
     })
 
     it('Verify wrong server response', () => {
