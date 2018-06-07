@@ -255,7 +255,6 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'rf',
-      'rf',
       'dt.id',
       'dt.keyv',
       'dt.pref',
