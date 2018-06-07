@@ -95,9 +95,9 @@ describe('gammaBidAdapter', function() {
     });
 
     it('handles empty bid response', () => {
-      let response = [{
+      let response = {
         body: {}
-      }];
+      };
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
