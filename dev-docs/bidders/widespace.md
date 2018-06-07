@@ -8,11 +8,12 @@ hide: true
 biddercode: widespace
 prebid_1_0_supported : true
 biddercode_longer_than_12: false
-
-
+gdpr_supported: true
 ---
 
 ### Bid params
+
+{: .table .table-bordered .table-striped } 
 
 | Name  | Scope    | Description         | Example |
 | :---- | :------- | :------------------ | :------ |
