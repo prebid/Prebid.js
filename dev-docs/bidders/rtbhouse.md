@@ -2,6 +2,7 @@
 layout: bidder
 title: RTBHouse
 description: Prebid RTB House Bidder Adapter
+gdpr_supported: true
 
 top_nav_section: dev_docs
 nav_section: reference
