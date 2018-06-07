@@ -2,7 +2,6 @@ import roxotAnalytic from 'modules/roxotAnalyticsAdapter';
 import {expect} from 'chai';
 
 let events = require('src/events');
-let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
@@ -180,12 +179,7 @@ describe('Roxot Prebid Analytic', function () {
       events.getEvents.restore();
     });
     it('should send prepared events to backend', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: {
           publisherId: publisherId,
@@ -264,12 +258,7 @@ describe('Roxot Prebid Analytic', function () {
       events.getEvents.restore();
     });
     it('should not send event for blocked ad unit', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: {
           publisherId: publisherId,
@@ -319,11 +308,6 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('correct parse publisher config', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl,
@@ -331,7 +315,7 @@ describe('Roxot Prebid Analytic', function () {
         anything: 'else',
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -340,16 +324,11 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support deprecated options', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherIds: [publisherId],
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -359,16 +338,11 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support default end-points', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -378,17 +352,12 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support custom config end-point', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -398,17 +367,12 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support custom config and event end-point', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
         server: roxotEventServerUrl
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -418,18 +382,13 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support different config and event end-points', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl,
         server: roxotEventServerUrl
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -439,17 +398,12 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support adUnit filter', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId,
         adUnits: ['div1', 'div2']
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
@@ -458,16 +412,11 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support fail loading server config', function () {
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
       let publisherOptions = {
         publisherId: publisherId
       };
 
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
       });
