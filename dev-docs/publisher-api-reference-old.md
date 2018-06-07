@@ -623,40 +623,42 @@ See the table below for the list of properties in the `mediaTypes` object of the
 For an example of a native ad unit, see below.  For more detailed instructions, see [Show Native Ads]({{site.baseurl}}/dev-docs/show-native-ads.html).
 
 ```javascript
-    pbjs.addAdUnits({
-        code: slot.code,
-        mediaTypes: {
-            native: {
-                image: {
-                    required: true,
-                    sizes: [150, 50]
-                },
-                title: {
-                    required: true,
-                    len: 80
-                },
-                sponsoredBy: {
-                    required: true
-                },
-                clickUrl: {
-                    required: true
-                },
-                body: {
-                    required: true
-                },
-                icon: {
-                    required: true,
-                    sizes: [50, 50]
-                }
+pbjs.addAdUnits({
+    code: slot.code,
+    mediaTypes: {
+        native: {
+            image: {
+                required: true,
+                sizes: [150, 50]
             },
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13232354
-                }
-            }, ]
+            title: {
+                required: true,
+                len: 80
+            },
+            sponsoredBy: {
+                required: true
+            },
+            clickUrl: {
+                required: true
+            },
+            body: {
+                required: true
+            },
+            icon: {
+                required: true,
+                sizes: [50, 50]
+            }
         }
-    })
+    },
+    bids: [
+        {
+            bidder: 'appnexus',
+            params: {
+                placementId: 13232354
+            }
+        }
+    ]
+});
 ```
 
 {% include dev-docs/native-image-asset-sizes.md %}
@@ -724,15 +726,17 @@ pbjs.addAdUnits({
     code: slot.code,
     mediaTypes: {
         banner: {
-            sizes: [[300, 250], [300, 600]]
-        },
-        bids: [{
+            sizes: [[300, 250]]
+        }
+    },
+    bids: [
+        {
             bidder: 'appnexus',
             params: {
                 placementId: 13144370
             }
-        }, ]
-    }
+        }
+    ]
 })
 ```
 
