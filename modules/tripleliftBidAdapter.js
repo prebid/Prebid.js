@@ -26,6 +26,10 @@ export const tripleliftAdapterSpec = {
     tlCall = utils.tryAppendQueryString(tlCall, 'fe', _isFlashEnabled().toString());
     tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
 
+    if (bidderRequest && bidderRequest.timeout) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
+    }
+
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         applies = bidderRequest.gdprConsent.gdprApplies;
@@ -36,6 +40,7 @@ export const tripleliftAdapterSpec = {
         tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
       }
     }
+
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
