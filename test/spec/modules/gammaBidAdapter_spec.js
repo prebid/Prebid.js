@@ -11,18 +11,18 @@ describe('gammaBidAdapter', function() {
     'bidder': 'gamma',
     'params': {
       siteId: '1465446377',
-        zoneId: '1515999290'
+      zoneId: '1515999290'
     },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
+    'adUnitCode': 'adunit-code',
+    'sizes': [
         [300, 250]
       ],
-      'bidId': '23beaa6af6cdde',
-      'bidderRequestId': '19c0c1efdf37e7',
-      'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+    'bidId': '23beaa6af6cdde',
+    'bidderRequestId': '19c0c1efdf37e7',
+    'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
   };
   let bidArray = [bid];
-  
+
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -42,16 +42,11 @@ describe('gammaBidAdapter', function() {
   });
 
   describe('buildRequests', () => {
-    const request = spec.buildRequests(bidArray);
-
-    it('sends bid request to our endpoint via GET', () => {
+    it('should attempt to send bid requests to the endpoint via GET', () => {
+      const request = spec.buildRequests(bidArray);
       expect(request.method).to.equal('GET');
+      expect(request.url).to.be.equal(ENDPOINT);
     });
-
-    it('bidRequest url', () => {
-       expect(request.url).to.be.equal(ENDPOINT);
-    });
-  });
 
   describe('interpretResponse', () => {
     let serverResponse;
