@@ -307,7 +307,7 @@ const generateID = function () {
 }
 
 const buildRequests = function (validBidRequests, bidderRequest) {
-  let domain = "delivery.zeroidtech.com";
+  let domain = "delivery.h.switchadhub.com";
   let loadID = generateID();
 
   window.googletag = window.googletag || {};
@@ -406,11 +406,11 @@ const buildRequests = function (validBidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: "https://delivery.zeroidtech.com/bid",  //" + domain + "/prebid",
+    url: "https://delivery.h.switchadhub.com/prebid",  //" + domain + "/prebid",
     data: JSON.stringify(request),
     bidderRequest,
     options: {
-      contentType: 'application/Json',
+      contentType: 'text/plain',
       withCredentials: true
     }
   };
@@ -518,11 +518,10 @@ const triggerSync = function () {
 
         window.swSyncDone = true;
 
-        let syncUri = "https://delivery.zeroidtech.com/sync";
+        let syncUri = "https://delivery.h.switchadhub.com/sync";
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
-        syncUri += `&ohost=delivery.zeroidtech.com`;
 
         let swid = readCookie('__SW');
         if (swid === null) {
