@@ -203,7 +203,12 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
-    if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+    const adapter = _bidderRegistry[bidderCode];
+    if (!adapter) {
+      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+    }
+
+    if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
