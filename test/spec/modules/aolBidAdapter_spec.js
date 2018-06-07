@@ -576,13 +576,13 @@ describe('AolAdapter', () => {
       expect(spec.isConsentRequired(null)).to.be.false;
     });
 
-    it('should return false when gdprApplies equals true and consentString is not present', () => {
+    it('should return true when gdprApplies equals true and consentString is not present', () => {
       let consentData = {
         consentString: null,
         gdprApplies: true
       };
 
-      expect(spec.isConsentRequired(consentData)).to.be.false;
+      expect(spec.isConsentRequired(consentData)).to.be.true;
     });
 
     it('should return false when consentString is present and gdprApplies equals false', () => {
@@ -604,28 +604,46 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('formatMarketplaceConsentData()', () => {
-    let consentRequiredStub;
+  describe('formatMarketplaceDynamicParams()', () => {
+    let formatConsentDataStub;
+    let formatKeyValuesStub;
 
     beforeEach(() => {
-      consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
+      formatConsentDataStub = sinon.stub(spec, 'formatConsentData');
+      formatKeyValuesStub = sinon.stub(spec, 'formatKeyValues');
     });
 
     afterEach(() => {
-      consentRequiredStub.restore();
+      formatConsentDataStub.restore();
+      formatKeyValuesStub.restore();
     });
 
-    it('should return empty string when consent is not required', () => {
-      consentRequiredStub.returns(false);
-      expect(spec.formatMarketplaceConsentData()).to.be.equal('');
+    it('should return empty string when params are not present', () => {
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('');
     });
 
-    it('should return formatted consent data when consent is required', () => {
-      consentRequiredStub.returns(true);
-      let formattedConsentData = spec.formatMarketplaceConsentData({
-        consentString: 'test-consent'
+    it('should return formatted params when formatConsentData returns data', () => {
+      formatConsentDataStub.returns({
+        euconsent: 'test-consent',
+        gdpr: 1
       });
-      expect(formattedConsentData).to.be.equal(';euconsent=test-consent;gdpr=1');
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('euconsent=test-consent;gdpr=1;');
+    });
+
+    it('should return formatted params when formatKeyValues returns data', () => {
+      formatKeyValuesStub.returns({
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('param1=val1;param2=val2;param3=val3;');
+    });
+
+    it('should return formatted bid floor param when it is present', () => {
+      let params = {
+        bidFloor: 0.45
+      };
+      expect(spec.formatMarketplaceDynamicParams(params)).to.be.equal('bidfloor=0.45;');
     });
   });
 
@@ -661,7 +679,7 @@ describe('AolAdapter', () => {
         consentString: 'test-consent'
       };
       consentRequiredStub.returns(true);
-      expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&euconsent=test-consent&gdpr=1');
+      expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&gdpr=1&euconsent=test-consent');
     });
 
     it('should return formatted secure param when isSecureProtocol returns true', () => {

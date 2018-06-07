@@ -306,9 +306,12 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
 
+  // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
+
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
-    config.getConfig('customPriceBucket'),
+    (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : config.getConfig('customPriceBucket'),
     config.getConfig('currency.granularityMultiplier')
   );
   bidObject.pbLg = priceStringsObj.low;
@@ -330,8 +333,11 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   return bidObject;
 }
 
-export function getStandardBidderSettings() {
-  let granularity = config.getConfig('priceGranularity');
+export function getStandardBidderSettings(mediaType) {
+  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
@@ -404,7 +410,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidder_settings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings();
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist
