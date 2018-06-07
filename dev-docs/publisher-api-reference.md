@@ -936,6 +936,11 @@ this method registers the callback for every `bidWon` event.
 {: .alert.alert-info :}
 Currently, `bidWon` is the only event that accepts the `id` parameter.
 
+Additional data may also be passed to the handler that you have defined
+
+{: .alert.alert-info :}
+Currently, `bidRequest`, `bidResponse`, and `bidWon`, are the only events that pass additional data to the handler
+
 The available events are:
 
 {: .table .table-bordered .table-striped }
@@ -954,7 +959,22 @@ The available events are:
 | adRenderFailed| Ad rendering failed (added in v1.7)     |
 | bidderDone    | A bidder has signaled they are done responding (added in v1.8)|
 
-The example below shows how to use these methods:
+The examples below show how these methods can be used:
+
+{% highlight js %}
+
+        /* Log when ad units are added to Prebid */
+        pbjs.onEvent('addAdUnits', function() {
+          console.log('Ad units were added to Prebid.')
+          console.log(pbjs.adUnits);
+        });
+
+        /* Log when Prebid wins the ad server auction */
+        pbjs.onEvent('bidWon', function(data) {
+          console.log(data.bidderCode+ ' won the ad server auction for ad unit ' +data.adUnitCode+ ' at ' +data.cpm+ ' CPM');
+        });
+
+{% endhighlight %}
 
 {% highlight js %}
 
@@ -1126,7 +1146,7 @@ After this method is called, `pbjs.getAdserverTargeting()` will give you the bel
 Set the order in which bidders are called:
 
 {% highlight js %}
-pbjs.setConfig({ bidderSequence: "fixed" })   /* default is "random" as of 0.27.0 */
+pbjs.setConfig({ bidderSequence: "fixed" })   /* default is "random" */
 {% endhighlight %}
 
 <a name="setConfig-Publisher-Domain" />
@@ -1289,7 +1309,7 @@ Additional information of these properties:
 | `bidders` | Required | Array of Strings | Which bidders support auctions on the server side |
 | `defaultVendor` | Optional | String | Automatically includes all following options in the config with vendor's default values.*  Individual properties can be overridden by including them in the config along with this setting. |
 | `enabled` | Optional | Boolean | Enables S2S - defaults to `false` |
-| `timeout` | Required | Integer | Number of milliseconds allowed for the server-side auctions |
+| `timeout` | Required | Integer | Number of milliseconds allowed for the server-side auctions. This should be approximately 200ms-300ms less than your Prebid.js timeout to allow for all bids to be returned in a timely manner. |
 | `adapter` | Required | String | Adapter code for S2S. Defaults to 'prebidServer' |
 | `endpoint` | Required | URL | Defines the auction endpoint for the Prebid Server cluster |
 | `syncEndpoint` | Required | URL | Defines the cookie_sync endpoint for the Prebid Server cluster |
