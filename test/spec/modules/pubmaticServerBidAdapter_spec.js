@@ -214,6 +214,9 @@ describe('PubMaticServer adapter', () => {
   		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
   		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+  		  expect(data.ext.wrapper.wp).to.equal('pbjs'); // Prebid TransactionId
+  		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profileid).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.versionid).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
         expect(data.ext.wrapper.sumry_disable).to.equal(0); // OpenWrap: Summary Disable flag
@@ -247,6 +250,9 @@ describe('PubMaticServer adapter', () => {
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+        expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+  		  expect(data.ext.wrapper.wp).to.equal('pbjs'); // Prebid TransactionId
+  		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
         expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
@@ -288,7 +294,8 @@ describe('PubMaticServer adapter', () => {
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(47);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].serverSideResponseTime).to.equal(47);
         expect(response[0].referrer).to.include(utils.getTopWindowUrl());
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].originalBidder).to.equal(bidResponses.body.seatbid[0].bid[0].ext.summary[0].bidder);
