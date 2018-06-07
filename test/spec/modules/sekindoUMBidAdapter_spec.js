@@ -64,6 +64,14 @@ describe('sekindoUMAdapter', () => {
       expect(request[0].method).to.equal('GET');
     });
 
+    it('with gdprConsent, banner data should be a query string and method = GET', () => {
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      const request = spec.buildRequests([bidRequests], {'gdprConsent': {'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', 'vendorData': {}, 'gdprApplies': true}});
+      expect(request[0].data).to.be.a('string');
+      expect(request[0].method).to.equal('GET');
+    });
+
     it('video data should be a query string and method = GET', () => {
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;

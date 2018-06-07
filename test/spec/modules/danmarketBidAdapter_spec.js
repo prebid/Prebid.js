@@ -114,6 +114,30 @@ describe('DAN_Marketplace Adapter', function () {
       expect(payload).to.have.property('auids', '5,6');
       delete bidRequests[1].params.priceType;
     });
+
+    it('if gdprConsent is present payload must have gdpr params', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 1);
+    });
+
+    it('if gdprApplies is false gdpr_applies must be 0', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 0);
+    });
+
+    it('if gdprApplies is undefined gdpr_applies must be 1', () => {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('gdpr_consent', 'AAA');
+      expect(payload).to.have.property('gdpr_applies', 1);
+    });
   });
 
   describe('interpretResponse', () => {

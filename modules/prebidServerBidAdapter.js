@@ -2,12 +2,13 @@ import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS, S2S } from 'src/constants';
+import { STATUS, S2S, EVENTS } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
+import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
@@ -37,7 +38,7 @@ const availVendorDefaults = {
     adapter: 'prebidServer',
     cookieSet: false,
     enabled: true,
-    endpoint: '//prebid.adnxs.com/pbs/v1/auction',
+    endpoint: '//prebid.adnxs.com/pbs/v1/openrtb2/auction',
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
     timeout: 1000
   },
@@ -96,36 +97,56 @@ function setS2sConfig(options) {
   }
 
   _s2sConfig = options;
-  if (options.syncEndpoint) {
-    queueSync(options.bidders);
-  }
 }
 getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
+ * resets the _synced variable back to false, primiarily used for testing purposes
+*/
+export function resetSyncedStatus() {
+  _synced = false;
+}
+
+/**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes) {
+function queueSync(bidderCodes, gdprConsent) {
   if (_synced) {
     return;
   }
   _synced = true;
-  const payload = JSON.stringify({
+
+  const payload = {
     uuid: utils.generateUUID(),
     bidders: bidderCodes
-  });
-  ajax(_s2sConfig.syncEndpoint, (response) => {
-    try {
-      response = JSON.parse(response);
-      response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
-    } catch (e) {
-      utils.logError(e);
+  };
+
+  if (gdprConsent) {
+    // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
+    if (gdprConsent.consentString) {
+      payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
     }
-  },
-  payload, {
-    contentType: 'text/plain',
-    withCredentials: true
-  });
+    // attempt to populate gdpr_consent if we know gdprApplies or it may apply
+    if (gdprConsent.gdprApplies !== false) {
+      payload.gdpr_consent = gdprConsent.consentString;
+    }
+  }
+  const jsonPayload = JSON.stringify(payload);
+
+  ajax(_s2sConfig.syncEndpoint,
+    (response) => {
+      try {
+        response = JSON.parse(response);
+        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
+      } catch (e) {
+        utils.logError(e);
+      }
+    },
+    jsonPayload,
+    {
+      contentType: 'text/plain',
+      withCredentials: true
+    });
 }
 
 /**
@@ -187,7 +208,8 @@ const paramTypes = {
   'appnexus': {
     'member': tryConvertString,
     'invCode': tryConvertString,
-    'placementId': tryConvertNumber
+    'placementId': tryConvertNumber,
+    'keywords': utils.transformBidderParamKeywords
   },
   'rubicon': {
     'accountId': tryConvertNumber,
@@ -341,27 +363,27 @@ const LEGACY_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(result, bidRequests, requestedBidders) {
+  interpretResponse(result, bidderRequests, requestedBidders) {
     const bids = [];
-    let responseTimes = {};
-
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
         result.bidder_status.forEach(bidder => {
-          if (bidder.no_cookie) {
-            doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
-          }
           if (bidder.error) {
             utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
           }
 
-          responseTimes[bidder.bidder] = bidder.response_time_ms;
+          bidderRequests.filter(bidderRequest => bidderRequest.bidderCode === bidder.bidder)
+            .forEach(bidderRequest =>
+              (bidderRequest.bids || []).forEach(bid =>
+                bid.serverResponseTimeMs = bidder.response_time_ms
+              )
+            )
         });
       }
 
       if (result.bids) {
         result.bids.forEach(bidObj => {
-          const bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
+          const bidRequest = utils.getBidRequest(bidObj.bid_id, bidderRequests);
           const cpm = bidObj.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
           let bidObject = bidfactory.createBid(status, bidRequest);
@@ -370,9 +392,6 @@ const LEGACY_PROTOCOL = {
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
           bidObject.cpm = cpm;
-          if (responseTimes[bidObj.bidder]) {
-            bidObject.serverResponseTimeMs = responseTimes[bidObj.bidder];
-          }
           if (bidObj.cache_id) {
             bidObject.cache_id = bidObj.cache_id;
           }
@@ -485,7 +504,7 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
-        // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
+        // TODO: move this bidder specific out to a more ideal location (submodule?); https://github.com/prebid/Prebid.js/issues/2420
         // convert all AppNexus keys to underscore format for pbs
         if (bid.bidder === 'appnexus') {
           bid.params.use_pmt_rule = (typeof bid.params.usePaymentRule === 'boolean') ? bid.params.usePaymentRule : false;
@@ -562,7 +581,7 @@ const OPEN_RTB_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(response, bidRequests, requestedBidders) {
+  interpretResponse(response, bidderRequests, requestedBidders) {
     const bids = [];
 
     if (response.seatbid) {
@@ -571,7 +590,7 @@ const OPEN_RTB_PROTOCOL = {
         (seatbid.bid || []).forEach(bid => {
           const bidRequest = utils.getBidRequest(
             this.bidMap[`${bid.impid}${seatbid.seat}`],
-            bidRequests
+            bidderRequests
           );
 
           const cpm = bid.price;
@@ -583,8 +602,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.cpm = cpm;
 
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
-          if (serverResponseTimeMs) {
-            bidObject.serverResponseTimeMs = serverResponseTimeMs;
+          if (bidRequest && serverResponseTimeMs) {
+            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
@@ -637,7 +656,7 @@ const OPEN_RTB_PROTOCOL = {
  * const bids = protocol().interpretResponse(response, bidRequests, requestedBidders);
  */
 const protocolAdapter = () => {
-  const OPEN_RTB_PATH = 'openrtb2/auction';
+  const OPEN_RTB_PATH = '/openrtb2/';
 
   const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
   const isOpenRtb = ~endpoint.indexOf(OPEN_RTB_PATH);
@@ -666,6 +685,11 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
+    if (_s2sConfig && _s2sConfig.syncEndpoint) {
+      let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
+      queueSync(_s2sConfig.bidders, consent);
+    }
+
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
     const requestJson = JSON.stringify(request);
 
@@ -678,7 +702,7 @@ export function PrebidServer() {
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
+  function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done) {
     let result;
 
     try {
@@ -686,15 +710,17 @@ export function PrebidServer() {
 
       const bids = protocolAdapter().interpretResponse(
         result,
-        bidRequests,
+        bidderRequests,
         requestedBidders
       );
 
       bids.forEach(({adUnit, bid}) => {
-        if (isValid(adUnit, bid, bidRequests)) {
+        if (isValid(adUnit, bid, bidderRequests)) {
           addBidResponse(adUnit, bid);
         }
       });
+
+      bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
 
       if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync

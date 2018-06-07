@@ -80,7 +80,8 @@ let VALID_BID_REQUEST = [{
     },
     'ext': {
       'customer_id': 'customer_id',
-      'prebid_version': $$PREBID_GLOBAL$$.version
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'gdpr_applies': false,
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
@@ -129,7 +130,8 @@ let VALID_BID_REQUEST = [{
     },
     'ext': {
       'customer_id': 'customer_id',
-      'prebid_version': $$PREBID_GLOBAL$$.version
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'gdpr_applies': false
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
@@ -331,7 +333,64 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
-  }];
+  }],
+  VALID_BIDDER_REQUEST_WITH_GDPR = {
+    'gdprConsent': {
+      'consentString': 'consentString',
+      'gdprApplies': true,
+    },
+    'timeout': 3000,
+  },
+  VALID_PAYLOAD_FOR_GDPR = {
+    'site': {
+      'domain': 'media.net',
+      'page': 'http://media.net/prebidtest',
+      'ref': 'http://media.net/prebidtest'
+    },
+    'ext': {
+      'customer_id': 'customer_id',
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'gdpr_consent_string': 'consentString',
+      'gdpr_applies': true,
+    },
+    'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'imp': [{
+      'id': '28f8f8130a583e',
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-0'
+      },
+      'banner': [{
+        'w': 300,
+        'h': 250
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
+    }, {
+      'id': '3f97ca71b1e5c2',
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-123'
+      },
+      'banner': [{
+        'w': 300,
+        'h': 251
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest'
+        }
+      }
+    }],
+    'tmax': 3000,
+  };
 
 describe('Media.net bid adapter', () => {
   describe('isBidRequestValid', () => {
@@ -371,6 +430,12 @@ describe('Media.net bid adapter', () => {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
     });
+
+    it('should add gdpr to response ext', () => {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GDPR);
+      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GDPR);
+    });
+
     describe('build requests: when page meta-data is available', () => {
       it('should pass canonical, twitter and fb paramters if available', () => {
         let sandbox = sinon.sandbox.create();
