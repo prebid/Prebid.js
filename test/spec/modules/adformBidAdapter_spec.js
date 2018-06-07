@@ -239,7 +239,7 @@ describe('Adform adapter', () => {
       };
     });
 
-    describe("verifySizes", () => {
+    describe('verifySizes', () => {
       it('should respond with empty response when sizes doesn\'t match', () => {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 100;
@@ -268,7 +268,7 @@ describe('Adform adapter', () => {
         assert.equal(serverResponse.body[0].response, 'banner');
         assert.deepEqual(result, []);
       });
-      it("should support size dimensions as a strings", () => {
+      it('should support size dimensions as a strings', () => {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 300;
         serverResponse.body[0].height = 600;
@@ -283,7 +283,6 @@ describe('Adform adapter', () => {
         assert.equal(result[0].height, 600);
       });
     })
-
   });
 
   beforeEach(() => {
