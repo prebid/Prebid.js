@@ -24,7 +24,7 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {object} ServerRequest - Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
       let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
@@ -61,7 +61,13 @@ export const spec = {
       payload.ref = validBidRequests[0].params.referrer;
     }
 
-    // If there is no key_maker data, then dont make the request.
+    // Apply GDPR parameters to request.
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      payload.consent_string = bidderRequest.gdprConsent.consentString;
+    }
+
+    // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
     }
@@ -108,7 +114,8 @@ export const spec = {
           height: Number(height),
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
-          creativeId: bid.sbi_aid,
+          creativeId: bid.sbi_crid || bid.sbi_aid,
+          aid: bid.sbi_aid,
           netRevenue: true,
           currency: 'USD'
         };

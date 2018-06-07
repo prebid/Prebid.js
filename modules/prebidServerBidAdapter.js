@@ -2,12 +2,13 @@ import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS, S2S } from 'src/constants';
+import { STATUS, S2S, EVENTS } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
+import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 const getConfig = config.getConfig;
@@ -361,10 +362,8 @@ const LEGACY_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(result, bidRequests, requestedBidders) {
+  interpretResponse(result, bidderRequests, requestedBidders) {
     const bids = [];
-    let responseTimes = {};
-
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
         result.bidder_status.forEach(bidder => {
@@ -372,13 +371,18 @@ const LEGACY_PROTOCOL = {
             utils.logWarn(`Prebid Server returned error: '${bidder.error}' for ${bidder.bidder}`);
           }
 
-          responseTimes[bidder.bidder] = bidder.response_time_ms;
+          bidderRequests.filter(bidderRequest => bidderRequest.bidderCode === bidder.bidder)
+            .forEach(bidderRequest =>
+              (bidderRequest.bids || []).forEach(bid =>
+                bid.serverResponseTimeMs = bidder.response_time_ms
+              )
+            )
         });
       }
 
       if (result.bids) {
         result.bids.forEach(bidObj => {
-          const bidRequest = utils.getBidRequest(bidObj.bid_id, bidRequests);
+          const bidRequest = utils.getBidRequest(bidObj.bid_id, bidderRequests);
           const cpm = bidObj.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
           let bidObject = bidfactory.createBid(status, bidRequest);
@@ -387,9 +391,6 @@ const LEGACY_PROTOCOL = {
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
           bidObject.cpm = cpm;
-          if (responseTimes[bidObj.bidder]) {
-            bidObject.serverResponseTimeMs = responseTimes[bidObj.bidder];
-          }
           if (bidObj.cache_id) {
             bidObject.cache_id = bidObj.cache_id;
           }
@@ -579,7 +580,7 @@ const OPEN_RTB_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(response, bidRequests, requestedBidders) {
+  interpretResponse(response, bidderRequests, requestedBidders) {
     const bids = [];
 
     if (response.seatbid) {
@@ -588,7 +589,7 @@ const OPEN_RTB_PROTOCOL = {
         (seatbid.bid || []).forEach(bid => {
           const bidRequest = utils.getBidRequest(
             this.bidMap[`${bid.impid}${seatbid.seat}`],
-            bidRequests
+            bidderRequests
           );
 
           const cpm = bid.price;
@@ -600,8 +601,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.cpm = cpm;
 
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
-          if (serverResponseTimeMs) {
-            bidObject.serverResponseTimeMs = serverResponseTimeMs;
+          if (bidRequest && serverResponseTimeMs) {
+            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
@@ -700,7 +701,7 @@ export function PrebidServer() {
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders, bidRequests, addBidResponse, done) {
+  function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done) {
     let result;
 
     try {
@@ -708,15 +709,17 @@ export function PrebidServer() {
 
       const bids = protocolAdapter().interpretResponse(
         result,
-        bidRequests,
+        bidderRequests,
         requestedBidders
       );
 
       bids.forEach(({adUnit, bid}) => {
-        if (isValid(adUnit, bid, bidRequests)) {
+        if (isValid(adUnit, bid, bidderRequests)) {
           addBidResponse(adUnit, bid);
         }
       });
+
+      bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
 
       if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
         // cookie sync

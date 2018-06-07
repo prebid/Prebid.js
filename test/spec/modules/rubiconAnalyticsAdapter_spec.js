@@ -27,6 +27,7 @@ const {
     AUCTION_END,
     BID_REQUESTED,
     BID_RESPONSE,
+    BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
     SET_TARGETING
@@ -39,6 +40,7 @@ const BID = {
   'height': 480,
   'mediaType': 'video',
   'statusMessage': 'Bid available',
+  'bidId': '2ecff0db240757',
   'adId': '2ecff0db240757',
   'source': 'client',
   'requestId': '2ecff0db240757',
@@ -78,6 +80,7 @@ const BID = {
 
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag1',
+  bidId: '3bd4ebb1c900e2',
   adId: '3bd4ebb1c900e2',
   requestId: '3bd4ebb1c900e2',
   width: 728,
@@ -85,7 +88,6 @@ const BID2 = Object.assign({}, BID, {
   mediaType: 'banner',
   cpm: 1.52,
   source: 'server',
-  serverResponseTimeMs: 42,
   rubiconTargeting: {
     'rpfl_elemid': '/19968336/header-bid-tag1',
     'rpfl_14062': '2_tier0100'
@@ -190,6 +192,15 @@ const MOCK = {
       'status': 'rendered'
     })
   ],
+  BIDDER_DONE: {
+    'bidderCode': 'rubicon',
+    'bids': [
+      BID,
+      Object.assign({}, BID2, {
+        'serverResponseTimeMs': 42,
+      })
+    ]
+  },
   BID_TIMEOUT: [
     {
       'bidId': '2ecff0db240757',
@@ -392,6 +403,7 @@ function performStandardAuction() {
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
   events.emit(SET_TARGETING, MOCK.SET_TARGETING);
   events.emit(BID_WON, MOCK.BID_WON[0]);
@@ -588,6 +600,7 @@ describe('rubicon analytics adapter', () => {
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       events.emit(SET_TARGETING, MOCK.SET_TARGETING);
       events.emit(BID_WON, MOCK.BID_WON[0]);
