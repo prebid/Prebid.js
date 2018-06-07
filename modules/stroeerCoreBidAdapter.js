@@ -138,6 +138,13 @@ export const spec = {
       ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2
     };
 
+    if (bidderRequest.gdprConsent) {
+      payload.gdpr = {
+        consent: bidderRequest.gdprConsent.consentString,
+        applies: bidderRequest.gdprConsent.gdbrApplies
+      };
+    }
+
     validBidRequests.forEach(bid => {
       payload.bids.push({
         bid: bid.bidId,
