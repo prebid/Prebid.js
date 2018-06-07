@@ -3,7 +3,7 @@
 ```
 Module Name:  Playground XYZ Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: tech@playgroundxyz.com
+Maintainer: tech+prebid@playgroundxyz.com
 ```
 
 # Description
