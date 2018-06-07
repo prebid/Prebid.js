@@ -41,6 +41,21 @@ describe('gammaBidAdapter', function() {
   });
 
   describe('buildRequests', () => {
+    bidArray.push({
+      'bidder': 'gamma',
+      'params': {
+        siteId: '1465446377',
+        zoneId: '1515999290'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [
+        [300, 250]
+      ],
+      'bidId': '23beaa6af6cdde',
+      'bidderRequestId': '19c0c1efdf37e7',
+      'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1'
+    });
+
     it('should attempt to send bid requests to the endpoint via GET', () => {
       const requests = spec.buildRequests(bidArray);
       requests.forEach(function(requestItem) {
