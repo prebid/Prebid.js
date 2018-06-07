@@ -506,7 +506,9 @@ function parseSizes(bid) {
   let params = bid.params;
   if (spec.hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+    if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
+      size = bid.mediaTypes.video.playerSize;
+    } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
@@ -518,7 +520,16 @@ function parseSizes(bid) {
   }
 
   // deprecated: temp legacy support
-  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+  let sizes = [];
+  if (Array.isArray(params.sizes)) {
+    sizes = params.sizes;
+  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    sizes = mapSizes(bid.mediaTypes.banner.sizes);
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    sizes = mapSizes(bid.sizes)
+  } else {
+    utils.logWarn('Warning: no sizes are setup or found');
+  }
 
   return masSizeOrdering(sizes);
 }
