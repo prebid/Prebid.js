@@ -5,7 +5,6 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('gammaBidAdapter', function() {
   const adapter = newBidder(spec);
-  const ENDPOINT = 'hb.gammaplatform.com';
 
   let bid = {
     'bidder': 'gamma',
@@ -46,7 +45,7 @@ describe('gammaBidAdapter', function() {
       const requests = spec.buildRequests(bidArray);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
-        expect(requestItem.url).to.be.equal(ENDPOINT);
+        expect(requestItem.url).to.match(new RegExp(`hb.gammaplatform.com`));
       });
     });
   });
