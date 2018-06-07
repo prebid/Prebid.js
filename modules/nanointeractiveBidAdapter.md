@@ -98,7 +98,6 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
             bidder: 'nanointeractive',
             params: {
                 pid: '5afaa0280ae8996eb578de53',
-                category: 'automotive',
                 // User searched "automobile search query" (extracted from search text field) 
                 nq: 'automobile search query',
                 subId: '123'
@@ -114,7 +113,6 @@ The `nq` and `name` are mutually exclusive. If you pass both, `name` takes prece
             bidder: 'nanointeractive',
             params: {
                 pid: '5afaa0280ae8996eb578de53',
-                category: 'automotive',
                 // User searched "automobile search query" and it is in the URL like:
                 // https://www....?search_param=automobile%20search%20query&... 
                 name: 'search_param',
