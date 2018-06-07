@@ -8,6 +8,7 @@ hide: true
 biddercode: underdogmedia
 biddercode_longer_than_12: true
 prebid_1_0_supported : true
+gdpr_supported: true
 ---
 
 ### bid params
