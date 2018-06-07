@@ -1,13 +1,13 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting, getOldestBid, RENDERED, BID_TARGETING_SET } from './targeting';
+import { targeting, getHighestCpmBidsFromBidPool, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -166,13 +166,21 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   }
 
   // get our ad unit codes
-  var targetingSet = targeting.getAllTargeting(adUnit);
+  let targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
   targeting.setTargetingForGPT(targetingSet);
+
+  Object.keys(targetingSet).forEach((adUnitCode) => {
+    Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
+      if (targetingKey === 'hb_adid') {
+        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_TARGETING_SET);
+      }
+    });
+  });
 
   // emit event
   events.emit(SET_TARGETING, targetingSet);
@@ -581,7 +589,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  let bidsReceived = auctionManager.getBidsReceived().filter(getOldestBid);
+  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
   return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
 };

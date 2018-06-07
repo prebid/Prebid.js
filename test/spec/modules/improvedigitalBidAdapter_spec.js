@@ -32,6 +32,14 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
+  const bidderRequest = {
+    'gdprConsent': {
+      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      'vendorData': {},
+      'gdprApplies': true
+    },
+  };
+
   describe('isBidRequestValid', () => {
     it('should return false when no bid', () => {
       expect(spec.isBidRequestValid()).to.equal(false);
@@ -139,6 +147,13 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub.restore();
     });
 
+    it('should add GDPR consent string', () => {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+
     it('should return 2 requests', () => {
       const requests = spec.buildRequests([
         simpleBidRequest,
@@ -150,14 +165,6 @@ describe('Improve Digital Adapter Tests', function () {
   });
 
   describe('interpretResponse', () => {
-    let registerSyncStub;
-    beforeEach(() => {
-      registerSyncStub = sinon.stub(userSync, 'registerSync');
-    });
-
-    afterEach(() => {
-      registerSyncStub.restore();
-    });
     const serverResponse = {
       'body': {
         'id': '687a06c541d8d1',
@@ -254,9 +261,11 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should register user syncs', () => {
+      const registerSyncSpy = sinon.spy(userSync, 'registerSync');
       const bids = spec.interpretResponse(serverResponse);
-      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
-      expect(registerSyncStub.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
+      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
+      expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
+      registerSyncSpy.restore();
     });
 
     it('should set dealId correctly', () => {

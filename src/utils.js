@@ -685,8 +685,16 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id, bidsRequested) {
-  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
+export function getBidRequest(id, bidderRequests) {
+  let bidRequest;
+  bidderRequests.some(bidderRequest => {
+    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    if (result) {
+      bidRequest = result;
+    }
+    return result;
+  });
+  return bidRequest;
 }
 
 export function getKeys(obj) {
@@ -709,12 +717,24 @@ export function isGptPubadsDefined() {
   }
 }
 
-export function getHighestCpm(previous, current) {
-  if (previous.cpm === current.cpm) {
-    return previous.timeToRespond > current.timeToRespond ? current : previous;
-  }
+// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
+export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
 
-  return previous.cpm < current.cpm ? current : previous;
+// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
+export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
+
+// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
+export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
+
+function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
+  return (previous, current) => {
+    if (previous.cpm === current.cpm) {
+      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
+    }
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 /**
@@ -1025,4 +1045,37 @@ export function isInteger(value) {
  */
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
+}
+
+/**
+ * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
+ * normally read from bidder params
+ * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
+ * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
+ * @param {Object{Arrays}} keywords object of arrays representing keyvalue pairs
+ * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
+ */
+export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
+  let arrs = [];
+
+  exports._each(keywords, (v, k) => {
+    if (exports.isArray(v)) {
+      let values = [];
+      exports._each(v, (val) => {
+        val = exports.getValueString(paramName + '.' + k, val);
+        if (val) { values.push(val); }
+      });
+      v = values;
+    } else {
+      v = exports.getValueString(paramName + '.' + k, v);
+      if (exports.isStr(v)) {
+        v = [v];
+      } else {
+        return;
+      } // unsuported types - don't send a key
+    }
+    arrs.push({key: k, value: v});
+  });
+
+  return arrs;
 }

@@ -126,6 +126,29 @@ export const spec = {
     });
 
     return bidResponses;
+  },
+
+  /**
+   * SyncURLがある場合にレスポンスを解析してURLを返す
+   * @param  {object} syncOptions     Syncの設定
+   * @param  {object} serverResponses SSPからのレスポンス
+   * @return {object}                 表示タイプとURLが入ったオブジェクト
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+    if (syncOptions.pixelEnabled) {
+      const brainyResponseObj = serverResponses[0].body;
+      if (!brainyResponseObj) {
+        return [];
+      }
+      if (brainyResponseObj.syncUrl && brainyResponseObj.syncUrl != 'null' && brainyResponseObj.syncUrl.length > 0) {
+        syncs.push({
+          type: 'image',
+          url: brainyResponseObj.syncUrl
+        });
+      }
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
