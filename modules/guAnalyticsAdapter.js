@@ -60,8 +60,8 @@ function sendAll() {
       },
       JSON.stringify(req),
       {
-        method: 'PUT',
-        contentType: 'application/json; charset=utf-8'
+        method: 'POST',
+        contentType: 'text/plain; charset=utf-8'
       }
     );
   }
