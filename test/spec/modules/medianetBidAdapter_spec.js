@@ -477,6 +477,15 @@ let VALID_BID_REQUEST = [{
   };
 
 describe('Media.net bid adapter', () => {
+  let sandbox;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', () => {
     it('should accept valid bid params', () => {
       let isValid = spec.isBidRequestValid(VALID_PARAMS);
@@ -500,9 +509,7 @@ describe('Media.net bid adapter', () => {
   });
 
   describe('buildRequests', () => {
-    let sandbox;
-    before(() => {
-      sandbox = sinon.sandbox.create();
+    beforeEach(() => {
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 50,
@@ -522,9 +529,7 @@ describe('Media.net bid adapter', () => {
         h: 1000
       });
     });
-    after(() => {
-      sandbox.restore();
-    });
+
     it('should build valid payload on bid', () => {
       let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(requestObj.data)).to.deep.equal(VALID_PAYLOAD);
@@ -547,7 +552,6 @@ describe('Media.net bid adapter', () => {
 
     describe('build requests: when page meta-data is available', () => {
       it('should pass canonical, twitter and fb paramters if available', () => {
-        let sandbox = sinon.sandbox.create();
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'
@@ -560,24 +564,21 @@ describe('Media.net bid adapter', () => {
         });
         let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
         expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);
-        sandbox.restore();
       });
     });
   });
 
   describe('slot visibility', () => {
-    let sandbox;
+    let documentStub;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
       let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
       });
+      documentStub = sandbox.stub(document, 'getElementById');
     });
-    afterEach(() => sandbox.restore());
     it('slot visibility should be 2 and ratio 0 when ad unit is BTF', () => {
-      let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 1010,
         left: 1010,
@@ -597,7 +598,6 @@ describe('Media.net bid adapter', () => {
       expect(data.imp[0].ext.viewability).to.equal(0);
     });
     it('slot visibility should be 2 and ratio < 0.5 when ad unit is partially inside viewport', () => {
-      let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 990,
         left: 990,
@@ -616,7 +616,6 @@ describe('Media.net bid adapter', () => {
       expect(data.imp[0].ext.viewability).to.equal(100 / 75000);
     });
     it('slot visibility should be 1 and ratio > 0.5 when ad unit mostly in viewport', () => {
-      let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 800,
         left: 800,
