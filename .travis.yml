@@ -6,7 +6,7 @@ node_js:
 env:
 - BROWSERSTACK_USERNAME=info184
 addons:
-  chrome: stable,
+  chrome: stable
   browserstack:
     username: info184
     access_key:
