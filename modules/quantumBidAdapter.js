@@ -251,9 +251,9 @@ export const spec = {
                   break;
                 case 2:
                   native.icon = {
-                    url: asset['img'],
-                    width: asset['w'],
-                    height: asset['h']
+                    url: asset['img']['url'],
+                    width: asset['img']['w'],
+                    height: asset['img']['h']
                   };
                   break;
                 case 3:
@@ -261,9 +261,9 @@ export const spec = {
                   break;
                 case 4:
                   native.image = {
-                    url: asset['img'],
-                    width: asset['w'],
-                    height: asset['h']
+                    url: asset['img']['url'],
+                    width: asset['img']['w'],
+                    height: asset['img']['h']
                   };
                   break;
                 case 10:

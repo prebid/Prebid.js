@@ -392,6 +392,17 @@ describe('the rubicon adapter', () => {
           });
         });
 
+        it('ad engine query params should be ordered correctly', () => {
+          sandbox.stub(Math, 'random').callsFake(() => 0.1);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+
+          request.data.split('&').forEach((item, i) => {
+            expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
+          });
+        });
+
         it('should make a well-formed request object without latLong', () => {
           let expectedQuery = {
             'account_id': '14062',
