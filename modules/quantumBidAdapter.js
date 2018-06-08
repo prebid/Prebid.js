@@ -301,17 +301,14 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      });
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: serverResponses[0].body.sync[0]
+    const syncs = [];
+    if (serverResponses.body && serverResponses.body.sync) {
+      const syncType = syncOptions.pixelEnabled ? 'image' : 'iframe';
+      utils._each(serverResponses.body.sync, function(pixel) {
+        syncs.push({
+          type: syncType,
+          url: pixel
+        });
       });
     }
     return syncs;
