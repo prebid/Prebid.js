@@ -566,15 +566,16 @@ describe('Media.net bid adapter', () => {
   });
 
   describe('slot visibility', () => {
-    let sandbox = sinon.sandbox.create();
-    before(() => {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
       let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
       });
     });
-    after(() => sandbox.restore());
+    afterEach(() => sandbox.restore());
     it('slot visibility should be 2 and ratio 0 when ad unit is BTF', () => {
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
@@ -594,7 +595,6 @@ describe('Media.net bid adapter', () => {
       let data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
       expect(data.imp[0].ext.viewability).to.equal(0);
-      documentStub.restore();
     });
     it('slot visibility should be 2 and ratio < 0.5 when ad unit is partially inside viewport', () => {
       let documentStub = sandbox.stub(document, 'getElementById');
@@ -614,7 +614,6 @@ describe('Media.net bid adapter', () => {
       let data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
       expect(data.imp[0].ext.viewability).to.equal(100 / 75000);
-      documentStub.restore();
     });
     it('slot visibility should be 1 and ratio > 0.5 when ad unit mostly in viewport', () => {
       let documentStub = sandbox.stub(document, 'getElementById');
@@ -634,7 +633,6 @@ describe('Media.net bid adapter', () => {
       let data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(1);
       expect(data.imp[0].ext.viewability).to.equal(40000 / 75000);
-      documentStub.restore();
     });
     it('co-ordinates should not be sent and slot visibility should be 0 when ad unit is not present', () => {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
