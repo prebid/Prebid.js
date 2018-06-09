@@ -69,10 +69,10 @@ export const polymorphAdapterSpec = {
         utils.logError('API No Response: ' + serverResponse.message);
         return bidResponses
       }
-      var width = bidderRequest.params.defaultWidth || bidderRequest.sizes[0][0];
-      var height = bidderRequest.params.defaultHeight || bidderRequest.sizes[0][1];
-      var theHTML = '';
-      var crid = '';
+      let width = bidderRequest.params.defaultWidth || bidderRequest.sizes[0][0];
+      let height = bidderRequest.params.defaultHeight || bidderRequest.sizes[0][1];
+      let theHTML = '';
+      let crid = '';
       if (typeof serverResponse.ad !== 'undefined') {
         crid = serverResponse.crid;
         theHTML = serverResponse.ad.html;
