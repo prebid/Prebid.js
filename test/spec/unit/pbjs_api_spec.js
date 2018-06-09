@@ -1251,8 +1251,6 @@ describe('Unit: Prebid Module', function () {
           ]
         });
 
-        debugger;
-
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId')
           .and.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
