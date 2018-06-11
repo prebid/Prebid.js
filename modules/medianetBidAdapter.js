@@ -3,7 +3,12 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const BID_URL = '//prebid.media.net/rtb/prebid';
+const SLOT_VISIBILITY = {
+  NOT_DETERMINED: 0,
+  ABOVE_THE_FOLD: 1,
+  BELOW_THE_FOLD: 2
+};
 
 $$PREBID_GLOBAL$$.medianetGlobals = {};
 
@@ -70,11 +75,16 @@ function getSize(size) {
   }
 }
 
-function configuredParams(params) {
-  return {
+function extParams(params) {
+  let ext = {
     customer_id: params.cid,
     prebid_version: $$PREBID_GLOBAL$$.version
+  };
+  let windowSize = spec.getWindowSize();
+  if (windowSize.w !== -1 && windowSize.h !== -1) {
+    ext.screen = windowSize;
   }
+  return ext;
 }
 
 function slotParams(bidRequest) {
@@ -96,13 +106,68 @@ function slotParams(bidRequest) {
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }
+  const coordinates = getCoordinates(bidRequest.adUnitCode);
+  if (coordinates) {
+    let normCoordinates = normalizeCoordinates(coordinates);
+    params.ext.coordinates = normCoordinates;
+    params.ext.viewability = getSlotVisibility(coordinates.top_left, getMinSize(params.banner));
+    if (getSlotVisibility(normCoordinates.top_left, getMinSize(params.banner)) > 0.5) {
+      params.ext.visibility = SLOT_VISIBILITY.ABOVE_THE_FOLD;
+    } else {
+      params.ext.visibility = SLOT_VISIBILITY.BELOW_THE_FOLD;
+    }
+  } else {
+    params.ext.visibility = SLOT_VISIBILITY.NOT_DETERMINED;
+  }
+
   return params;
+}
+
+function getMinSize(sizes) {
+  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
+}
+
+function getSlotVisibility(topLeft, size) {
+  let maxArea = size.w * size.h;
+  let windowSize = spec.getWindowSize();
+  let bottomRight = {
+    x: topLeft.x + size.w,
+    y: topLeft.y + size.h
+  };
+  if (maxArea === 0 || windowSize.w === -1 || windowSize.h === -1) {
+    return 0;
+  }
+
+  return getOverlapArea(topLeft, bottomRight, {x: 0, y: 0}, {x: windowSize.w, y: windowSize.h}) / maxArea;
+}
+
+// find the overlapping area between two rectangles
+function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
+  // If no overlap, return 0
+  if ((topLeft1.x > bottomRight2.x || bottomRight1.x < topLeft2.x) || (topLeft1.y > bottomRight2.y || bottomRight1.y < topLeft2.y)) {
+    return 0;
+  }
+  // return overlapping area : [ min of rightmost/bottommost co-ordinates ] - [ max of leftmost/topmost co-ordinates ]
+  return ((Math.min(bottomRight1.x, bottomRight2.x) - Math.max(topLeft1.x, topLeft2.x)) * (Math.min(bottomRight1.y, bottomRight2.y) - Math.max(topLeft1.y, topLeft2.y)));
+}
+
+function normalizeCoordinates(coordinates) {
+  return {
+    top_left: {
+      x: coordinates.top_left.x + window.pageXOffset,
+      y: coordinates.top_left.y + window.pageYOffset,
+    },
+    bottom_right: {
+      x: coordinates.bottom_right.x + window.pageXOffset,
+      y: coordinates.bottom_right.y + window.pageYOffset,
+    }
+  }
 }
 
 function generatePayload(bidRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: configuredParams(bidRequests[0].params),
+    ext: extParams(bidRequests[0].params),
     id: bidRequests[0].bidderRequestId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: config.getConfig('bidderTimeout')
@@ -120,6 +185,31 @@ function fetchCookieSyncUrls(response) {
   }
 
   return [];
+}
+
+function getWindowSize() {
+  return {
+    w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1,
+    h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1
+  }
+}
+
+function getCoordinates(id) {
+  const element = document.getElementById(id);
+  if (element && element.getBoundingClientRect) {
+    const rect = element.getBoundingClientRect();
+    let coordinates = {};
+    coordinates.top_left = {
+      y: rect.top,
+      x: rect.left,
+    };
+    coordinates.bottom_right = {
+      y: rect.bottom,
+      x: rect.right,
+    };
+    return coordinates
+  }
+  return null;
 }
 
 export const spec = {
@@ -196,6 +286,8 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       return filterUrlsByType(cookieSyncUrls, 'image');
     }
-  }
+  },
+
+  getWindowSize,
 };
 registerBidder(spec);

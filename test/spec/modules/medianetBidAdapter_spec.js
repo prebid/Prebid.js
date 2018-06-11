@@ -79,13 +79,29 @@ let VALID_BID_REQUEST = [{
     },
     'ext': {
       'customer_id': 'customer_id',
-      'prebid_version': $$PREBID_GLOBAL$$.version
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'screen': {
+        'w': 1000,
+        'h': 1000
+      }
     },
     'id': '1e9b1f07797c1c',
     'imp': [{
       'id': '28f8f8130a583e',
       'ext': {
-        'dfp_id': 'div-gpt-ad-1460505748561-0'
+        'dfp_id': 'div-gpt-ad-1460505748561-0',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        }
       },
       'banner': [{
         'w': 300,
@@ -103,7 +119,19 @@ let VALID_BID_REQUEST = [{
     }, {
       'id': '3f97ca71b1e5c2',
       'ext': {
-        'dfp_id': 'div-gpt-ad-1460505748561-123'
+        'dfp_id': 'div-gpt-ad-1460505748561-123',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        }
       },
       'banner': [{
         'w': 300,
@@ -128,13 +156,29 @@ let VALID_BID_REQUEST = [{
     },
     'ext': {
       'customer_id': 'customer_id',
-      'prebid_version': $$PREBID_GLOBAL$$.version
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'screen': {
+        'w': 1000,
+        'h': 1000
+      }
     },
     'id': '1e9b1f07797c1c',
     'imp': [{
       'id': '28f8f8130a583e',
       'ext': {
-        'dfp_id': 'div-gpt-ad-1460505748561-0'
+        'dfp_id': 'div-gpt-ad-1460505748561-0',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        }
       },
       'banner': [{
         'w': 300,
@@ -151,7 +195,19 @@ let VALID_BID_REQUEST = [{
     }, {
       'id': '3f97ca71b1e5c2',
       'ext': {
-        'dfp_id': 'div-gpt-ad-1460505748561-123'
+        'dfp_id': 'div-gpt-ad-1460505748561-123',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        }
       },
       'banner': [{
         'w': 300,
@@ -334,6 +390,15 @@ let VALID_BID_REQUEST = [{
 
 describe('Media.net bid adapter', () => {
   config.setConfig({bidderTimeout: 5000});
+  let sandbox;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', () => {
     it('should accept valid bid params', () => {
       let isValid = spec.isBidRequestValid(VALID_PARAMS);
@@ -357,6 +422,27 @@ describe('Media.net bid adapter', () => {
   });
 
   describe('buildRequests', () => {
+    beforeEach(() => {
+      let documentStub = sandbox.stub(document, 'getElementById');
+      let boundingRect = {
+        top: 50,
+        left: 50,
+        bottom: 100,
+        right: 100
+      };
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      windowSizeStub.returns({
+        w: 1000,
+        h: 1000
+      });
+    });
+
     it('should build valid payload on bid', () => {
       let requestObj = spec.buildRequests(VALID_BID_REQUEST);
       expect(JSON.parse(requestObj.data)).to.deep.equal(VALID_PAYLOAD);
@@ -373,7 +459,6 @@ describe('Media.net bid adapter', () => {
     });
     describe('build requests: when page meta-data is available', () => {
       it('should pass canonical, twitter and fb paramters if available', () => {
-        let sandbox = sinon.sandbox.create();
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'
@@ -386,8 +471,79 @@ describe('Media.net bid adapter', () => {
         });
         let bidReq = spec.buildRequests(VALID_BID_REQUEST);
         expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);
-        sandbox.restore();
       });
+    });
+  });
+
+  describe('slot visibility', () => {
+    let documentStub;
+    beforeEach(() => {
+      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      windowSizeStub.returns({
+        w: 1000,
+        h: 1000
+      });
+      documentStub = sandbox.stub(document, 'getElementById');
+    });
+    it('slot visibility should be 2 and ratio 0 when ad unit is BTF', () => {
+      let boundingRect = {
+        top: 1010,
+        left: 1010,
+        bottom: 1050,
+        right: 1050
+      };
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST);
+      let data = JSON.parse(bidReq.data);
+      expect(data.imp[0].ext.visibility).to.equal(2);
+      expect(data.imp[0].ext.viewability).to.equal(0);
+    });
+    it('slot visibility should be 2 and ratio < 0.5 when ad unit is partially inside viewport', () => {
+      let boundingRect = {
+        top: 990,
+        left: 990,
+        bottom: 1050,
+        right: 1050
+      };
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST);
+      let data = JSON.parse(bidReq.data);
+      expect(data.imp[0].ext.visibility).to.equal(2);
+      expect(data.imp[0].ext.viewability).to.equal(100 / 75000);
+    });
+    it('slot visibility should be 1 and ratio > 0.5 when ad unit mostly in viewport', () => {
+      let boundingRect = {
+        top: 800,
+        left: 800,
+        bottom: 1050,
+        right: 1050
+      };
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST);
+      let data = JSON.parse(bidReq.data);
+      expect(data.imp[0].ext.visibility).to.equal(1);
+      expect(data.imp[0].ext.viewability).to.equal(40000 / 75000);
+    });
+    it('co-ordinates should not be sent and slot visibility should be 0 when ad unit is not present', () => {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST);
+      let data = JSON.parse(bidReq.data);
+      expect(data.imp[1].ext).to.not.have.ownPropertyDescriptor('viewability');
+      expect(data.imp[1].ext.visibility).to.equal(0);
     });
   });
 
@@ -424,7 +580,7 @@ describe('Media.net bid adapter', () => {
     it('should not push response if no-bid', () => {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);
-      expect(bids).to.deep.equal(validBids)
+      expect(bids).to.deep.equal(validBids);
     });
   });
 });
