@@ -41,7 +41,7 @@ function mapBanner(slot) {
  */
 function mapSizes(slot_sizes) {
   const format = [];
-  if (typeof(slot_sizes[0]) == 'number') {
+  if (typeof slot_sizes[0] == 'number') {
     // most probably size is formatted .sizes: [300,250]
     format.push({
       w: slot_sizes[0],
