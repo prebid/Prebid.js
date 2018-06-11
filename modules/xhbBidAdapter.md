@@ -39,9 +39,6 @@ var adUnits = [
           body: {
             required: true
           },
-          brand: {
-            required: true
-          },
           image: {
             required: true
           },
