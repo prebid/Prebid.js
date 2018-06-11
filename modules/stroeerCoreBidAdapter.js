@@ -141,7 +141,7 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       payload.gdpr = {
         consent: bidderRequest.gdprConsent.consentString,
-        applies: bidderRequest.gdprConsent.gdbrApplies
+        applies: bidderRequest.gdprConsent.gdprApplies
       };
     }
 

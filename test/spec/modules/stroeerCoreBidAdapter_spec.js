@@ -403,8 +403,8 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdbrApplies: true},
-          {consentString: 'UGluZyBQb25n', gdbrApplies: false}];
+        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true},
+          {consentString: 'UGluZyBQb25n', gdprApplies: false}];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
             const bidderRequest = buildBidderRequest();
@@ -413,7 +413,7 @@ describe('stroeerCore bid adapter', function () {
             const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
             const actualGdpr = serverRequestInfo.data.gdpr;
-            assert.propertyVal(actualGdpr, 'applies', sample.gdbrApplies);
+            assert.propertyVal(actualGdpr, 'applies', sample.gdprApplies);
             assert.propertyVal(actualGdpr, 'consent', sample.consentString);
           });
         });
