@@ -9,5 +9,7 @@
 	"sovrnBidAdapter",
 	"pubmaticBidAdapter",
 	"adgenerationBidAdapter",
-	"pubmaticServerBidAdapter"
+	"pubmaticServerBidAdapter",
+	"ixBidAdapter",
+	"criteoBidAdapter"
 ]

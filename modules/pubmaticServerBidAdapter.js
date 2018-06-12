@@ -3,7 +3,7 @@ import * as ajax from 'src/ajax';
 import {userSync} from 'src/userSync';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
-// const constants = require('src/constants.json');
+const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
 const ENDPOINT = '//172.16.4.192:9898/openrtb/2.5/';
@@ -199,6 +199,12 @@ function cookieSyncCallBack(gdprConsent) {
   }
 }
 
+function logAllErrors(errors) {
+  utils._each(errors, function (item, key) {
+    utils.logWarn(key + ':' + item.join(','));
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -247,12 +253,13 @@ export const spec = {
       versionid: parseInt(conf.verId) || parseInt(DEFAULT_VERSION_ID),
       sumry_disable: 0,
       ssauction: 0,
-      // rs: 1,
-      // pubId: conf.pubId,
-      // wp: 'pbjs',
-      // wv: constants.REPO_AND_VERSION,
+      wp: 'pbjs',
+      wv: constants.REPO_AND_VERSION,
       // transactionId: conf.transactionId,
-      // wiid: conf.wiid || UNDEFINED
+      wiid: conf.wiid || UNDEFINED
+    };
+    payload.source = {
+      tid: conf.transactionId
     };
     payload.user = {
       gender: _parseSlotParam('gender', conf.gender),
@@ -281,7 +288,7 @@ export const spec = {
     payload.site.domain = utils.getTopWindowHostName();
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: utils.getParameterByName('pwtvc') ? ENDPOINT + '?debug=1' : ENDPOINT,
       data: JSON.stringify(payload)
     };
   },
@@ -296,6 +303,10 @@ export const spec = {
     const bidResponses = [];
     try {
       if (response.body && response.body.seatbid) {
+        // Log errors if any present
+        const errors = (response.body.ext && response.body.ext.errors) || {};
+        logAllErrors(errors);
+
         // Supporting multiple bid responses for same adSize
         const referrer = utils.getTopWindowUrl();
         const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
@@ -318,9 +329,10 @@ export const spec = {
                     dealId: firstSummary ? (bid.dealid || UNDEFINED) : UNDEFINED,
                     currency: CURRENCY,
                     netRevenue: true,
-                    ttl: partnerResponseTimeObj[summary.bidder] || 300,
+                    ttl: 300,
                     referrer: referrer,
-                    ad: firstSummary ? bid.adm : ''
+                    ad: firstSummary ? bid.adm : '',
+                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 500
                   };
                   bidResponses.push(newBid);
                 }
