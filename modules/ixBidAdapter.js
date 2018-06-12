@@ -185,7 +185,8 @@ export const spec = {
 
       // If the bid request is for banner, then transform the bid request based on banner format.
       if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
-        validBidRequest.mediaType === 'banner') {
+        validBidRequest.mediaType === 'banner' ||
+        (validBidRequest.mediaType === undefined && utils.deepAccess(validBidRequest, 'mediaTypes.banner') === undefined)) {
         bannerImp = bidToBannerImp(validBidRequest);
         bannerImps.push(bannerImp);
       }
