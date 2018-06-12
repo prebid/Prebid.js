@@ -6,8 +6,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 // const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
-const ENDPOINT = '//ow.pubmatic.com/openrtb/2.5/';
-const COOKIE_SYNC = '//ow.pubmatic.com/cookie_sync/';
+const ENDPOINT = '//172.16.4.192:9898/openrtb/2.5/';
+const COOKIE_SYNC = '//172.16.4.192/cookie_sync/';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
@@ -244,7 +244,7 @@ export const spec = {
 
     payload.ext.wrapper = {
       profileid: parseInt(conf.profId) || UNDEFINED,
-      versionid: parseInt(conf.verId) || DEFAULT_VERSION_ID,
+      versionid: parseInt(conf.verId) || parseInt(DEFAULT_VERSION_ID),
       sumry_disable: 0,
       ssauction: 0,
       // rs: 1,
