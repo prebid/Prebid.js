@@ -359,14 +359,14 @@ export const spec = {
     // visitor properties
     if (params.visitor !== null && typeof params.visitor === 'object') {
       Object.keys(params.visitor).forEach((key) => {
-        data[`tg_v.${key}`] = params.visitor[key];
+        data[`tg_v.${key}`] = params.visitor[key].toString();
       });
     }
 
     // inventory properties
     if (params.inventory !== null && typeof params.inventory === 'object') {
       Object.keys(params.inventory).forEach((key) => {
-        data[`tg_i.${key}`] = params.inventory[key];
+        data[`tg_i.${key}`] = params.inventory[key].toString();
       });
     }
 
