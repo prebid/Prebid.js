@@ -49,6 +49,7 @@ gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
+      allowEmpty: true,
       read: false
     })
     .pipe(clean());
