@@ -38,6 +38,7 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
 function getEmptyBid(adUnitCode) {
   return {
     adUnitCode: adUnitCode,
+    // zero
     cpm: 0,
     adserverTargeting: {},
     timeToRespond: 0
@@ -209,6 +210,7 @@ export function newTargeting(auctionManager) {
   targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
+    // zero
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)

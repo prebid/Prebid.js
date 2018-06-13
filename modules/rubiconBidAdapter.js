@@ -11,12 +11,10 @@ function isSecure() {
 
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
+const VIDEO_ENDPOINT = '//localhost:8080/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
-const TIMEOUT_BUFFER = 500;
-
-var sizeMap = {
+let sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
@@ -113,12 +111,7 @@ export const spec = {
       return false;
     }
 
-    let parsedSizes = parseSizes(bid);
-    if (parsedSizes.length < 1) {
-      return false;
-    }
-
-    return true;
+    return spec.hasVideoMediaType(bid) || parseSizes(bid).length > 0;
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -131,48 +124,33 @@ export const spec = {
     const videoRequests = bidRequests.filter(spec.hasVideoMediaType).map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let params = bidRequest.params;
-      let size = parseSizes(bidRequest);
-
       let data = {
-        page_url: _getPageUrl(bidRequest),
-        resolution: _getScreenResolution(),
-        account_id: params.accountId,
-        integration: INTEGRATION,
-        'x_source.tid': bidRequest.transactionId,
-        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-        stash_creatives: true,
-        ae_pass_through_parameters: params.video.aeParams,
-        slots: []
+        id: utils.generateUUID(),
+        test: config.getConfig('debug') ? 1 : 0,
+        cur: ['USD'],
+        imp: [{
+          id: bidRequest.adUnitCode,
+          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          ext: {
+            rubicon: bidRequest.params
+          },
+          video: utils.deepAccess(bidRequest, 'mediaTypes.video')
+        }],
+        ext: {
+          prebid: {
+            cache: {
+              vastxml: {
+                ttlseconds: 300
+              }
+            },
+            targeting: {
+              includewinners: true
+            }
+          }
+        }
       };
 
-      // Define the slot object
-      let slotData = {
-        site_id: params.siteId,
-        zone_id: params.zoneId,
-        position: parsePosition(params.position),
-        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-        element_id: bidRequest.adUnitCode,
-        name: bidRequest.adUnitCode,
-        language: params.video.language,
-        width: size[0],
-        height: size[1],
-        size_id: params.video.size_id
-      };
-
-      if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
-      }
-
-      if (params.keywords && Array.isArray(params.keywords)) {
-        slotData.keywords = params.keywords;
-      }
-
-      if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
-      }
-
-      data.slots.push(slotData);
+      appendSiteAppDevice(data);
 
       if (bidderRequest.gdprConsent) {
         // add 'gdpr' only if 'gdprApplies' is defined
@@ -246,15 +224,15 @@ export const spec = {
    * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
    * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
    */
-  combineSlotUrlParams: function(aSlotUrlParams) {
+  combineSlotUrlParams: function (aSlotUrlParams) {
     // if only have params for one slot, return those params
     if (aSlotUrlParams.length === 1) {
       return aSlotUrlParams[0];
     }
 
     // reduce param values from all slot objects into an array of values in a single object
-    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
-      Object.keys(oSlotUrlParams).forEach(function(param) {
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function (oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function (param) {
         if (!oCombinedParams.hasOwnProperty(param)) {
           oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
         }
@@ -268,7 +246,7 @@ export const spec = {
     // convert arrays into semicolon delimited strings
     const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
 
-    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
+    Object.keys(oCombinedSlotUrlParams).forEach(function (param) {
       const sValues = oCombinedSlotUrlParams[param].join(';');
       // consolidate param values into one value if they are all the same
       const match = sValues.match(re);
@@ -283,7 +261,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @returns {Object} - object key values named and formatted as slot params
    */
-  createSlotParams: function(bidRequest, bidderRequest) {
+  createSlotParams: function (bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
@@ -363,6 +341,62 @@ export const spec = {
     // check overall response
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
+    }
+
+    // video response from PBS Java openRTB
+    if (responseObj.seatbid) {
+      const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
+      if (Array.isArray(responseErrors) && responseErrors.length > 0) {
+        responseErrors.forEach(error => {
+          utils.logError('Got error from PBS Java openRTB: ' + error);
+        })
+      }
+      const bids = [];
+      responseObj.seatbid.forEach(seatbid => {
+        (seatbid.bid || []).forEach(bid => {
+          let bidObject = {
+            requestId: bidRequest.bidId,
+            currency: responseObj.cur || 'USD',
+            creativeId: bid.crid,
+            cpm: bid.price || 0,
+            bidderCode: seatbid.seat,
+            ttl: 300,
+            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
+            height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
+          };
+
+          if (bid.dealid) {
+            bidObject.dealId = bid.dealid;
+          }
+
+          let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
+          if (bidRequest && serverResponseTimeMs) {
+            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
+          }
+
+          if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
+            bidObject.mediaType = VIDEO;
+            if (bid.adm) {
+              bidObject.vastXml = bid.adm;
+            }
+            if (bid.nurl) {
+              bidObject.vastUrl = bid.nurl;
+            }
+            const videoCacheKey = utils.deepAccess(bid, 'ext.prebid.targeting.hb_uuid');
+            if (videoCacheKey) {
+              bidObject.vastUrl = videoCacheKey;
+              bidObject.videoCacheKey = videoCacheKey;
+            }
+          } else {
+            utils.logError('Prebid Server Java openRTB returns response with media type other than video for video request.');
+          }
+
+          bids.push(bidObject);
+        });
+      });
+
+      return bids;
     }
 
     let ads = responseObj.ads;
@@ -504,23 +538,27 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (spec.hasVideoMediaType(bid)) {
-    let size = [];
-    if (params.video && params.video.playerWidth && params.video.playerHeight) {
-      size = [
-        params.video.playerWidth,
-        params.video.playerHeight
-      ];
-    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
-      size = bid.sizes[0];
-    }
-    return size;
-  }
 
   // deprecated: temp legacy support
-  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes)
+  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes);
 
   return masSizeOrdering(sizes);
+}
+
+function appendSiteAppDevice(request) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+  } else {
+    request.site = {
+      page: utils.getTopWindowUrl()
+    }
+  }
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
+  }
 }
 
 function mapSizes(sizes) {
@@ -565,7 +603,7 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-var hasSynced = false;
+let hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
