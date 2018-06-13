@@ -10,13 +10,11 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
+const VIDEO_ENDPOINT = '//localhost:8080/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
-const TIMEOUT_BUFFER = 500;
-
-var sizeMap = {
+let sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
@@ -109,51 +107,33 @@ export const spec = {
     const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let params = bidRequest.params;
-      let size = parseSizes(bidRequest, 'video');
-
       let data = {
-        page_url: _getPageUrl(bidRequest, bidderRequest),
-        resolution: _getScreenResolution(),
-        account_id: params.accountId,
-        integration: INTEGRATION,
-        'x_source.tid': bidRequest.transactionId,
-        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-        stash_creatives: true,
-        slots: []
+        id: utils.generateUUID(),
+        test: config.getConfig('debug') ? 1 : 0,
+        cur: ['USD'],
+        imp: [{
+          id: bidRequest.adUnitCode,
+          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          ext: {
+            rubicon: bidRequest.params
+          },
+          video: utils.deepAccess(bidRequest, 'mediaTypes.video')
+        }],
+        ext: {
+          prebid: {
+            cache: {
+              vastxml: {
+                ttlseconds: 300
+              }
+            },
+            targeting: {
+              includewinners: true
+            }
+          }
+        }
       };
 
-      // Define the slot object
-      let slotData = {
-        site_id: params.siteId,
-        zone_id: params.zoneId,
-        position: params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
-        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-        element_id: bidRequest.adUnitCode,
-        name: bidRequest.adUnitCode,
-        width: size[0],
-        height: size[1],
-        size_id: determineRubiconVideoSizeId(bidRequest)
-      };
-
-      if (params.video) {
-        data.ae_pass_through_parameters = params.video.aeParams;
-        slotData.language = params.video.language;
-      }
-
-      if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
-      }
-
-      if (params.keywords && Array.isArray(params.keywords)) {
-        slotData.keywords = params.keywords;
-      }
-
-      if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
-      }
-
-      data.slots.push(slotData);
+      appendSiteAppDevice(data);
 
       if (bidderRequest.gdprConsent) {
         // add 'gdpr' only if 'gdprApplies' is defined
@@ -378,10 +358,66 @@ export const spec = {
       return [];
     }
 
+    // video response from PBS Java openRTB
+    if (responseObj.seatbid) {
+      const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
+      if (Array.isArray(responseErrors) && responseErrors.length > 0) {
+        responseErrors.forEach(error => {
+          utils.logError('Got error from PBS Java openRTB: ' + error);
+        })
+      }
+      const bids = [];
+      responseObj.seatbid.forEach(seatbid => {
+        (seatbid.bid || []).forEach(bid => {
+          let bidObject = {
+            requestId: bidRequest.bidId,
+            currency: responseObj.cur || 'USD',
+            creativeId: bid.crid,
+            cpm: bid.price || 0,
+            bidderCode: seatbid.seat,
+            ttl: 300,
+            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
+            height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
+          };
+
+          if (bid.dealid) {
+            bidObject.dealId = bid.dealid;
+          }
+
+          let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
+          if (bidRequest && serverResponseTimeMs) {
+            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
+          }
+
+          if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
+            bidObject.mediaType = VIDEO;
+            if (bid.adm) {
+              bidObject.vastXml = bid.adm;
+            }
+            if (bid.nurl) {
+              bidObject.vastUrl = bid.nurl;
+            }
+            const videoCacheKey = utils.deepAccess(bid, 'ext.prebid.targeting.hb_uuid');
+            if (videoCacheKey) {
+              bidObject.vastUrl = videoCacheKey;
+              bidObject.videoCacheKey = videoCacheKey;
+            }
+          } else {
+            utils.logError('Prebid Server Java openRTB returns response with media type other than video for video request.');
+          }
+
+          bids.push(bidObject);
+        });
+      });
+
+      return bids;
+    }
+
     let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -558,6 +594,22 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
+}
+
+function appendSiteAppDevice(request) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+  } else {
+    request.site = {
+      page: utils.getTopWindowUrl()
+    }
+  }
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
+  }
 }
 
 function mapSizes(sizes) {

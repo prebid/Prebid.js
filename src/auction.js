@@ -458,6 +458,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
 
   // if there is any key value pairs to map do here
   var keyValues;
+  // zero
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
