@@ -1,6 +1,7 @@
 import {logError, getTopWindowUrl, getTopWindowReferrer, getTopWindowLocation, createTrackPixelHtml} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { formatQS } from 'src/url';
+import { config } from 'src/config';
 
 /**
  * @type {{CODE: string, V: string, RECTANGLE_SIZE: {W: number, H: number}, SPOT_TYPES: {INTERSTITIAL: string, RECTANGLE: string, FLOATING: string, BANNER: string}, DISPLAY_AD: number, ENDPOINT_URL: string, EVENTS_ENDPOINT_URL: string, RESPONSE_HEADERS_NAME: {PRICING_VALUE: string, AD_H: string, AD_W: string}}}
@@ -217,11 +218,7 @@ const Url = {
       toQueryString.rw = CONSTANTS.RECTANGLE_SIZE.W;
       toQueryString.rh = CONSTANTS.RECTANGLE_SIZE.H;
     }
-
-    if (typeof $$PREBID_GLOBAL$$ !== 'undefined') {
-      toQueryString.bco = $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout;
-    }
-
+    toQueryString.bco = config.getConfig('cbTimeout') || config.getConfig('bidderTimeout');
     toQueryString.timestamp = Date.now();
     delete toQueryString.qa;
     return toQueryString;
@@ -229,22 +226,8 @@ const Url = {
 };
 
 /**
- * Tracking pixels for events
- * @type {{fire: (function(*=))}}
- */
-const Tracker = {
-  /**
-  * Creates a tracking pixel
-  * @param urls: Array<String>
-  */
-  fire(urls) {
-    urls.forEach(url => url && ((new Image(1, 1)).src = encodeURI(url)));
-  }
-};
-
-/**
  * Analytics
- * @type {{errorEventName: string, pageProtocol: string, getPageProtocol: (function(): string), getEventUrl: (function(*, *=)), reportEvent: (function(string, Object)), defaults: {v: (string|string), page: string, mw: boolean, hb: string}, eventQueryStringParams: (function(Object): string), createTrackingPixel: (function(string))}}
+ * @type {{errorEventName: string, pageProtocol: string, getPageProtocol: (function(): string), getEventUrl: (function(*, *=)), defaults: {v: (string|string), page: string, mw: boolean, hb: string}, eventQueryStringParams: (function(Object): string)}}
  */
 const Reporter = {
   /**
@@ -275,17 +258,6 @@ const Reporter = {
   },
 
   /**
-  * Reports an event to Fyber's servers.
-  * @param {string} evtName - event name as string.
-  * @param {object} extraDetails - e.g., a JS exception JSON object.
-  * @param shouldSendOnlyToNewEndpoint
-  */
-  reportEvent(evtName, extraDetails) {
-    const url = this.getEventUrl(evtName, extraDetails);
-    this.createTrackingPixel(url);
-  },
-
-  /**
   * Fyber Event Reporting Query String Parameters, not including App Id.
   * @param {object} extraDetails - e.g., a JS exception JSON object.
   * @return {string} Fyber event contcatenated queryString parameters.
@@ -294,14 +266,6 @@ const Reporter = {
     const toQS = Object.assign({}, this.defaults, {realAppId: extraDetails && extraDetails.appId, timestamp: Date.now()});
     Url.handleGDPR(toQS);
     return formatQS(toQS);
-  },
-
-  /**
-  * Creates a tracking pixel by prepending the page's protocol to the URL sent as the param.
-  * @param {string} urlWithoutProtocol - the URL to send the tracking pixel to, without the protocol as a prefix.
-  */
-  createTrackingPixel(urlWithoutProtocol) {
-    Tracker.fire([this.getPageProtocol() + urlWithoutProtocol]);
   }
 };
 const {PRICING_VALUE, AD_W, AD_H, CREATIVE_ID, CURRENCY, TIMEOUT} = CONSTANTS.RESPONSE_HEADERS_NAME;
@@ -405,7 +369,6 @@ export const spec = {
     const bidResponse = [];
     if (!isValid || !Helpers.isValidBidResponse(response.body, headersData)) {
       logError(`response failed for ${CONSTANTS.CODE} adapter`);
-      Reporter.reportEvent('HBPreBidNoAd', bid.params);
       return bidResponse;
     }
     bidResponse.push(new FyberBid(headersData, response.body, bid));
