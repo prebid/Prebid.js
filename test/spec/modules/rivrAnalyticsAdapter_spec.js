@@ -69,6 +69,44 @@ describe('', () => {
     start: 1509369418389
   };
 
+  const REQUEST2 = {
+    bidderCode: 'adapter',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    bidderRequestId: '1a6fc81528d0f6',
+    bids: [{
+      bidder: 'adapter',
+      params: {},
+      adUnitCode: 'container-1',
+      transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
+      sizes: [[300, 250]],
+      bidId: 'request2id',
+      bidderRequestId: '1a6fc81528d0f6',
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+    }],
+    auctionStart: 1509369418387,
+    timeout: 3000,
+    start: 1509369418389
+  };
+
+  const REQUEST3 = {
+    bidderCode: 'adapter',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    bidderRequestId: '1a6fc81528d0f6',
+    bids: [{
+      bidder: 'adapter',
+      params: {},
+      adUnitCode: 'container-1',
+      transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
+      sizes: [[300, 250]],
+      bidId: 'request3id',
+      bidderRequestId: '1a6fc81528d0f6',
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+    }],
+    auctionStart: 1509369418387,
+    timeout: 3000,
+    start: 1509369418389
+  };
+
   const RESPONSE = {
     bidderCode: 'adapter',
     width: 300,
@@ -172,12 +210,12 @@ describe('', () => {
         bidderId: null,
         'bidder_name': 'adapter',
         cur: 'EU',
-        seatid: [
+        seatbid: [
           {
             seat: null,
             bid: [
               {
-                status: 1,
+                status: 2,
                 'clear_price': 0.015,
                 attr: [],
                 crid: 999,
@@ -200,8 +238,17 @@ describe('', () => {
       expect(endTime).to.be.eql(447);
     });
 
+    it('should map unresponded requests to empty responded on auction end', () => {
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST3);
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
+      const responses = analyticsAdapter.context.auctionObject.bidResponses;
+      expect(responses.length).to.be.eql(3);
+    })
+
     it('should handle winning bid', () => {
       events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
+      const responseWhichIsWonAlso = analyticsAdapter.context.auctionObject.bidResponses[0];
       const wonEvent = analyticsAdapter.context.auctionObject.imp;
       expect(wonEvent.length).to.be.eql(1);
       expect(wonEvent[0]).to.be.eql({
@@ -218,6 +265,33 @@ describe('', () => {
           api: []
         }
       });
+
+      expect(responseWhichIsWonAlso).to.be.eql({
+        timestamp: 1509369418832,
+        status: 1,
+        'total_duration': 443,
+        bidderId: null,
+        'bidder_name': 'adapter',
+        cur: 'EU',
+        seatbid: [
+          {
+            seat: null,
+            bid: [
+              {
+                status: 1,
+                'clear_price': 0.015,
+                attr: [],
+                crid: 999,
+                cid: null,
+                id: null,
+                adid: '208750227436c1',
+                adomain: [],
+                iurl: null
+              }
+            ]
+          }
+        ]
+      });
     });
 
     it('sends request after timeout', () => {
@@ -226,8 +300,8 @@ describe('', () => {
       let requests = analyticsAdapter.context.auctionObject.bidRequests;
 
       expect(impressions.length).to.be.eql(1);
-      expect(responses.length).to.be.eql(1);
-      expect(requests.length).to.be.eql(1);
+      expect(responses.length).to.be.eql(3);
+      expect(requests.length).to.be.eql(3);
       expect(ajaxStub.calledOnce).to.be.equal(false);
 
       timer.tick(4500);
