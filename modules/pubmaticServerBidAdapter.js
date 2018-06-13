@@ -359,7 +359,10 @@ export const spec = {
       bidders: bidders
     };
     ajax.ajax(COOKIE_SYNC, cookieSyncCallBack(gdprConsent), JSON.stringify(data), {
-      withCredentials: true
+      withCredentials: true,
+      customHeaders: {
+        'Access-Control-Allow-Origin': '*'
+      }
     });
     return urls;
   }
