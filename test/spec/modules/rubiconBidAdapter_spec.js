@@ -144,11 +144,12 @@ describe('the rubicon adapter', () => {
             keywords: ['a', 'b', 'c'],
             inventory: {
               rating: '5-star',
-              prodtype: 'tech'
+              prodtype: ['tech', 'mobile']
             },
             visitor: {
               ucat: 'new',
-              lastsearch: 'iphone'
+              lastsearch: 'iphone',
+              likes: ['sports', 'video games']
             },
             position: 'atf',
             referrer: 'localhost'
@@ -226,8 +227,9 @@ describe('the rubicon adapter', () => {
             'kw': 'a,b,c',
             'tg_v.ucat': 'new',
             'tg_v.lastsearch': 'iphone',
+            'tg_v.likes': 'sports,video games',
             'tg_i.rating': '5-star',
-            'tg_i.prodtype': 'tech',
+            'tg_i.prodtype': 'tech,mobile',
             'tg_fl.eid': 'div-1',
             'rf': 'localhost'
           };
@@ -584,7 +586,7 @@ describe('the rubicon adapter', () => {
 
           expect(slot).to.have.property('inventory').that.is.an('object');
           expect(slot.inventory).to.have.property('rating').that.equals('5-star');
-          expect(slot.inventory).to.have.property('prodtype').that.equals('tech');
+          expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
             .that.is.an('array')
@@ -594,6 +596,7 @@ describe('the rubicon adapter', () => {
           expect(slot).to.have.property('visitor').that.is.an('object');
           expect(slot.visitor).to.have.property('ucat').that.equals('new');
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
         it('should make a well-formed video request', () => {
@@ -646,7 +649,7 @@ describe('the rubicon adapter', () => {
 
           expect(slot).to.have.property('inventory').that.is.an('object');
           expect(slot.inventory).to.have.property('rating').that.equals('5-star');
-          expect(slot.inventory).to.have.property('prodtype').that.equals('tech');
+          expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
             .that.is.an('array')
@@ -656,6 +659,7 @@ describe('the rubicon adapter', () => {
           expect(slot).to.have.property('visitor').that.is.an('object');
           expect(slot.visitor).to.have.property('ucat').that.equals('new');
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
         it('should send request with proper ad position', () => {
@@ -873,8 +877,9 @@ describe('the rubicon adapter', () => {
             'kw': 'a,b,c',
             'tg_v.ucat': 'new',
             'tg_v.lastsearch': 'iphone',
+            'tg_v.likes': 'sports,video games',
             'tg_i.rating': '5-star',
-            'tg_i.prodtype': 'tech',
+            'tg_i.prodtype': 'tech,mobile',
             'tg_fl.eid': 'div-1',
             'rf': 'localhost'
           };
