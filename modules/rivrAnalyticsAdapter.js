@@ -115,15 +115,17 @@ function setCurrentPublisherId(bidRequested) {
 };
 
 function fetchLocalization() {
-  navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
-    if (permission.status === 'granted') {
-      navigator.geolocation.getCurrentPosition((position) => {
-        let deviceLocation = rivrAnalytics.context.auctionObject.device.geo;
-        deviceLocation.lat = position.coords.latitude;
-        deviceLocation.long = position.coords.longitude;
-      });
-    }
-  });
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
+      if (permission.status === 'granted') {
+        navigator.geolocation.getCurrentPosition((position) => {
+          let deviceLocation = rivrAnalytics.context.auctionObject.device.geo;
+          deviceLocation.lat = position.coords.latitude;
+          deviceLocation.long = position.coords.longitude;
+        });
+      }
+    });
+  }
 }
 
 function getPlatformType() {
