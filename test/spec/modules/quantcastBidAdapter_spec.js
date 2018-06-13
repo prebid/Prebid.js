@@ -129,11 +129,20 @@ describe('Quantcast adapter', () => {
           referrer,
           domain
         },
-        bidId: '2f7b179d443f14'
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
     });
+  });
+
+  it('propagates GDPR consent string and signal', () => {
+    const gdprConsent = { gdprApplies: true, consentString: 'consentString' }
+    const requests = qcSpec.buildRequests([bidRequest], { gdprConsent });
+    const parsed = JSON.parse(requests[0].data)
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal(gdprConsent.consentString);
   });
 
   describe('`interpretResponse`', () => {
