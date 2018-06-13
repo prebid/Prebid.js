@@ -115,7 +115,7 @@ function setCurrentPublisherId(bidRequested) {
 };
 
 function fetchLocalization() {
-  navigator.permissions.query({ name: 'geolocation' }).then(function (permission) {
+  navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
     if (permission.status === 'granted') {
       navigator.geolocation.getCurrentPosition((position) => {
         let deviceLocation = rivrAnalytics.context.auctionObject.device.geo;
@@ -124,6 +124,7 @@ function fetchLocalization() {
       });
     }
   });
+}
 
 function getPlatformType() {
   if (navigator.userAgent.match(/mobile/i)) {
