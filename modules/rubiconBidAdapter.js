@@ -95,14 +95,26 @@ export const spec = {
 
     if (hasVideoMediaType(bid)) {
       // Log warning if mediaTypes contains both 'banner' and 'video'
-      if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
-        utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
+      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream') {
+        if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+          utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
+        }
+        // Bid is invalid if video is set but params video is missing size_id
+        if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+          utils.logError('Error: size id is missing for instream video request.');
+          return false;
+        }
+        return true;
+      } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
+        if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
+          utils.logWarn('Warning: outstream video is sending invalid size id, converting size id to 203.');
+        }
+        return true;
       }
-      // Bid is invalid if legacy video is set but params video is missing size_id
-      if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-        return false;
-      }
-    } else if (bid.mediaTypes && typeof bid.mediaTypes.banner === 'undefined') {
+      // video context is neither instream nor outstream
+      utils.logError('Error: video context is neither instream nor outstream.');
+      return false;
+    } else if (bid.mediaTypes && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) === 'undefined') {
       // Bid is invalid if mediaTypes video is invalid and a mediaTypes banner property is not defined
       return false;
     }

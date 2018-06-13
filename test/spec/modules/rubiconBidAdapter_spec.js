@@ -215,7 +215,7 @@ describe('the rubicon adapter', () => {
       'p_aso.video.ext.skipdelay': 15,
       'playerHeight': 320,
       'playerWidth': 640,
-      'size_id': 201,
+      'size_id': 203,
       'aeParams': {
         'p_aso.video.ext.skip': '1',
         'p_aso.video.ext.skipdelay': '15'
