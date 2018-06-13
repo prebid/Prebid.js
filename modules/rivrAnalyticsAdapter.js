@@ -87,10 +87,12 @@ function trackBidWon(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
   let auctionImpression = createAuctionImpression(args);
   auctionObject.imp.push(auctionImpression);
+  assignBidWonStatusToResponse(args);
 };
 
 function trackAuctionEnd(args) {
   rivrAnalytics.context.auctionTimeEnd = Date.now();
+  createEmptyBidResponses();
 };
 
 function trackBidTimeout(args) {
@@ -138,12 +140,12 @@ function createBidResponse(bidResponseEvent) {
     bidderId: null,
     bidder_name: bidResponseEvent.bidder,
     cur: bidResponseEvent.currency,
-    seatid: [
+    seatbid: [
       {
         seat: null,
         bid: [
           {
-            status: bidResponseEvent.getStatusCode(),
+            status: 2,
             clear_price: bidResponseEvent.cpm,
             attr: [],
             crid: bidResponseEvent.creativeId,
@@ -156,6 +158,18 @@ function createBidResponse(bidResponseEvent) {
         ]
       }
     ]
+  }
+};
+
+function createSingleEmptyBidResponse(bidResponse) {
+  return {
+    timestamp: bidResponse.start,
+    total_duration: 'noResponseDuration',
+    bidderId: null,
+    bidder_name: bidResponse.bidder,
+    cur: null,
+    response: 'noBid',
+    seatbid: []
   }
 };
 
@@ -362,6 +376,41 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
       }
     }, ttl);
   }
+};
+
+function assignBidWonStatusToResponse(wonBid) {
+  let wonBidId = wonBid.adId;
+  rivrAnalytics.context.auctionObject.bidResponses.forEach((response) => {
+    if (response.seatbid.length > 0) {
+      let bidObjectResponse = response.seatbid[0].bid[0];
+      if (wonBidId === bidObjectResponse.adid) {
+        bidObjectResponse.status = 1
+      }
+    }
+  });
+};
+
+function createEmptyBidResponses() {
+  let unRespondedBidRequests = findAllUnrespondedBidRequests();
+  unRespondedBidRequests.forEach((bid) => {
+    let emptyBidResponse = createSingleEmptyBidResponse(bid);
+    rivrAnalytics.context.auctionObject.bidResponses.push(emptyBidResponse);
+  });
+};
+
+function findAllUnrespondedBidRequests() {
+  let respondedBidIds = getAllRespondedBidIds();
+  let bidRequests = rivrAnalytics.context.auctionObject.bidRequests;
+  let allNotRespondedBidRequests = bidRequests.reduce((cache, requestBidder) => {
+    let notRespondedBids = requestBidder.bids.filter((bid) => !respondedBidIds.includes(bid.bidId));
+    notRespondedBids.forEach((bid) => bid.start = requestBidder.start);
+    return cache.concat(notRespondedBids);
+  }, []);
+  return allNotRespondedBidRequests;
+};
+
+function getAllRespondedBidIds() {
+  return rivrAnalytics.context.auctionObject.bidResponses.map((response) => response.seatbid[0].bid[0].adid);
 };
 
 // save the base class function
