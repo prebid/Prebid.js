@@ -136,6 +136,7 @@ describe('auctionmanager.js', function () {
       adId: '1adId',
       source: 'client',
       mediaType: 'banner',
+      timeToRespond: 123,
     };
 
     /* return the expected response for a given bid, filter by keys if given */
@@ -147,6 +148,7 @@ describe('auctionmanager.js', function () {
         'hb_size': bid.getSize(),
         'hb_source': bid.source,
         'hb_format': bid.mediaType,
+        'hb_ttr': bid.timeToRespond,
       };
 
       if (!keys) {
@@ -208,6 +210,12 @@ describe('auctionmanager.js', function () {
               key: 'hb_format',
               val: function (bidResponse) {
                 return bidResponse.mediaType;
+              }
+            },
+            {
+              key: 'hb_ttr',
+              val: function (bidResponse) {
+                return bidResponse.timeToRespond;
               }
             },
           ]

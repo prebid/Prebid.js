@@ -1,0 +1,11 @@
+[
+  "guAnalyticsAdapter",
+
+  "appnexusBidAdapter",
+  "consentManagement",
+  "improvedigitalBidAdapter",
+  "ixBidAdapter",
+  "prebidServerBidAdapter",
+  "sonobiBidAdapter",
+  "trustxBidAdapter"
+]

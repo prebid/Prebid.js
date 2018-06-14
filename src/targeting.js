@@ -74,6 +74,10 @@ export function newTargeting(auctionManager) {
     }
   };
 
+  function addTimedOutIncompleteAuction(adUnitCode, targeting) {
+    return targeting.push({[adUnitCode]: [{hb_ttr: [-1]}]});
+  }
+
   /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
@@ -84,7 +88,8 @@ export function newTargeting(auctionManager) {
 
     // Get targeting for the winning bid. Add targeting for any bids that have
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-    var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
+    const winningBidTargeting = getWinningBidTargeting(adUnitCodes, bidsReceived);
+    var targeting = winningBidTargeting
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
       .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : []);
 
@@ -98,6 +103,12 @@ export function newTargeting(auctionManager) {
         });
       });
     });
+
+    const winningBid = winningBidTargeting.length > 0;
+    const someBidTimedOut = auctionManager.getBidsRequested().some((bidRequest) => bidRequest.doneCbCallCount === 0);
+    if (!winningBid && someBidTimedOut) {
+      addTimedOutIncompleteAuction(adUnitCodes[0], targeting);
+    }
 
     targeting = flattenTargeting(targeting);
 

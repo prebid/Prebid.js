@@ -54,6 +54,14 @@ export const spec = {
       'lib_v': '$prebid.version$'
     };
 
+    if (validBidRequests[0].params.pageViewId) {
+      payload.pv = validBidRequests[0].params.pageViewId;
+    }
+
+    if (validBidRequests[0].params.appNexusTargeting) {
+      payload.gmgt = validBidRequests[0].params.appNexusTargeting;
+    }
+
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
     }

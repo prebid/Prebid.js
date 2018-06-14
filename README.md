@@ -19,6 +19,7 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 - [Build](#Build)
 - [Run](#Run)
 - [Contribute](#Contribute)
+- [Guardian optimised build](#guardian-optimised-build)
 
 <a name="Install"></a>
 
@@ -211,3 +212,6 @@ Prebid.js is supported on IE10+ and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
+
+## Guardian optimised build
+Modifications are listed [here](https://github.com/guardian/Prebid.js/blob/master/modifications.md).
