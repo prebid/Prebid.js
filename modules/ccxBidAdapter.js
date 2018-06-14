@@ -27,26 +27,36 @@ function _getSiteObj () {
 }
 
 function _validateSizes (sizeObj, type) {
-  if (!utils.isArray(sizeObj)) {
+  if (!utils.isArray(sizeObj) || typeof sizeObj[0] === 'undefined') {
     return false
   }
 
-  if (type === 'video' && (typeof sizeObj[0] === 'undefined' || !utils.isArray(sizeObj[0]) || sizeObj[0].length !== 2)) {
+  if (type === 'video' && (!utils.isArray(sizeObj[0]) || sizeObj[0].length !== 2)) {
     return false
   }
+
+  let result = true
 
   if (type === 'banner') {
-    if (typeof sizeObj[0] === 'undefined') {
-      return false
-    } else {
-      let result = true
+    utils._each(sizeObj, function (size) {
+      if (!utils.isArray(size) || (size.length !== 2)) {
+        result = false
+      }
+    })
+    return result
+  }
+
+  if (type === 'old') {
+    if (!utils.isArray(sizeObj[0]) && sizeObj.length !== 2) {
+      result = false
+    } else if (utils.isArray(sizeObj[0])) {
       utils._each(sizeObj, function (size) {
         if (!utils.isArray(size) || (size.length !== 2)) {
           result = false
         }
       })
-      return result
     }
+    return result;
   }
 
   return true
@@ -57,20 +67,28 @@ function _buildBid (bid) {
   placement.id = bid.bidId
   placement.secure = 1
 
-  if (utils.deepAccess(bid, 'mediaTypes.banner')) {
+  let sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes') || utils.deepAccess(bid, 'mediaTypes.video.playerSize') || utils.deepAccess(bid, 'sizes')
+
+  if (utils.deepAccess(bid, 'mediaTypes.banner') || utils.deepAccess(bid, 'mediaType') === 'banner' || (!utils.deepAccess(bid, 'mediaTypes.video') && !utils.deepAccess(bid, 'mediaType'))) {
     placement.banner = {'format': []}
-    let sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes')
-    utils._each(sizes, function (size) {
-      placement.banner.format.push({'w': size[0], 'h': size[1]})
-    })
-  } else if (utils.deepAccess(bid, 'mediaTypes.video')) {
+    if (utils.isArray(sizes[0])) {
+      utils._each(sizes, function (size) {
+        placement.banner.format.push({'w': size[0], 'h': size[1]})
+      })
+    } else {
+      placement.banner.format.push({'w': sizes[0], 'h': sizes[1]})
+    }
+  } else if (utils.deepAccess(bid, 'mediaTypes.video') || utils.deepAccess(bid, 'mediaType') === 'video') {
     placement.video = {}
 
-    let size = utils.deepAccess(bid, 'mediaTypes.video.playerSize')
-
-    if (typeof size !== 'undefined') {
-      placement.video.w = size[0][0]
-      placement.video.h = size[0][1]
+    if (typeof sizes !== 'undefined') {
+      if (utils.isArray(sizes[0])) {
+        placement.video.w = sizes[0][0]
+        placement.video.h = sizes[0][1]
+      } else {
+        placement.video.w = sizes[0]
+        placement.video.h = sizes[1]
+      }
     }
 
     placement.video.protocols = utils.deepAccess(bid, 'params.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS
@@ -129,6 +147,12 @@ export const spec = {
       return isValid
     } else if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
       let isValid = _validateSizes(bid.mediaTypes.video.playerSize, 'video')
+      if (!isValid) {
+        utils.logWarn('Bid sizes are invalid.')
+      }
+      return isValid
+    } else if (utils.deepAccess(bid, 'sizes')) {
+      let isValid = _validateSizes(bid.sizes, 'old')
       if (!isValid) {
         utils.logWarn('Bid sizes are invalid.')
       }

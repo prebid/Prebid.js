@@ -31,15 +31,38 @@ const bidReq = [{
 const correctReq = {
   accountID: '12345',
   slotID: '12345'
-}
+};
 
 const bidResponse = {
   ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
   adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+  syncUrl: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
   cpm: 100,
   height: 250,
   width: 300
 };
+
+const bidSyncResponse = [{
+  body: {
+    ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
+    adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+    syncUrl: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
+    cpm: 100,
+    height: 250,
+    width: 300
+  }
+}];
+
+const invalidSyncBidResponse = [{
+  body: {
+    ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
+    adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+    syncUrl: 'null',
+    cpm: 100,
+    height: 250,
+    width: 300
+  }
+}];
 
 describe('brainy Adapter', () => {
   describe('request', () => {
@@ -75,6 +98,31 @@ describe('brainy Adapter', () => {
       expect(bid.cpm).to.equal(bidResponse.cpm);
       expect(bid.width).to.equal(bidResponse.width);
       expect(bid.height).to.equal(bidResponse.height);
+    });
+  });
+
+  describe('spec.getUserSyncs', () => {
+    let syncOptions
+    beforeEach(() => {
+      syncOptions = {
+        enabledBidders: ['brainy'],
+        pixelEnabled: true
+      }
+    });
+    it('sucess with usersync url', () => {
+      const result = [];
+      result.push({type: 'image', url: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34'});
+      expect(spec.getUserSyncs(syncOptions, bidSyncResponse)).to.deep.equal(result);
+    });
+
+    it('sucess without usersync url', () => {
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, invalidSyncBidResponse)).to.deep.equal(result);
+    });
+    it('empty response', () => {
+      const serverResponse = [{body: {}}];
+      const result = [];
+      expect(spec.getUserSyncs(syncOptions, serverResponse)).to.deep.equal(result);
     });
   });
 });

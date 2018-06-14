@@ -1,4 +1,6 @@
 import {expect} from 'chai';
+import {config} from 'src/config';
+import * as utils from 'src/utils';
 import {spec} from 'modules/madvertiseBidAdapter';
 
 describe('madvertise adapater', () => {
@@ -70,26 +72,70 @@ describe('madvertise adapater', () => {
   });
 
   describe('Test build request', () => {
-    it('minimum request', () => {
-      let bid = [{
-        bidder: 'madvertise',
-        sizes: [[728, 90], [300, 100]],
-        bidId: '51ef8751f9aead',
-        adUnitCode: 'div-gpt-ad-1460505748561-0',
-        transactionId: 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        auctionId: '18fd8b8b0bd757',
-        bidderRequestId: '418b37f85e772c',
-        params: {
-          s: 'test',
+    beforeEach(function () {
+      let mockConfig = {
+        consentManagement: {
+          cmpApi: 'IAB',
+          timeout: 1111,
+          allowAuctionWithoutConsent: 'cancel'
         }
-      }];
-      const req = spec.buildRequests(bid);
+      };
+
+      sinon.stub(config, 'getConfig').callsFake((key) => {
+        return utils.deepAccess(mockConfig, key);
+      });
+    });
+    afterEach(function () {
+      config.getConfig.restore();
+    });
+    let bid = [{
+      bidder: 'madvertise',
+      sizes: [[728, 90], [300, 100]],
+      bidId: '51ef8751f9aead',
+      adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      auctionId: '18fd8b8b0bd757',
+      bidderRequestId: '418b37f85e772c',
+      params: {
+        s: 'test',
+      }
+    }];
+    it('minimum request with gdpr consent', () => {
+      let bidderRequest = {
+        gdprConsent: {
+          consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          vendorData: {},
+          gdprApplies: true
+        }
+      };
+      const req = spec.buildRequests(bid, bidderRequest);
 
       expect(req).to.exist.and.to.be.a('array');
       expect(req[0]).to.have.property('method');
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
-      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0').and.to.contain(`&s=test`).and.to.contain(`&sizes[0]=728x90`)
+      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain(`&sizes[0]=728x90`);
+      expect(req[0].url).to.contain(`&gdpr=1`);
+      expect(req[0].url).to.contain(`&consent[0][format]=IAB`);
+      expect(req[0].url).to.contain(`&consent[0][value]=BOJ/P2HOJ/P2HABABMAAAAAZ+A==`)
+    });
+
+    it('minimum request without gdpr consent', () => {
+      let bidderRequest = {};
+      const req = spec.buildRequests(bid, bidderRequest);
+
+      expect(req).to.exist.and.to.be.a('array');
+      expect(req[0]).to.have.property('method');
+      expect(req[0].method).to.equal('GET');
+      expect(req[0]).to.have.property('url');
+      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain(`&sizes[0]=728x90`);
+      expect(req[0].url).not.to.contain(`&gdpr=1`);
+      expect(req[0].url).not.to.contain(`&consent[0][format]=`);
+      expect(req[0].url).not.to.contain(`&consent[0][value]=`)
     });
   });
 
