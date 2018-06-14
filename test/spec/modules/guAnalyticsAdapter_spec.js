@@ -8,13 +8,10 @@ const events = require('../../../src/events');
 
 describe('Gu analytics adapter', () => {
   let sandbox;
+  let ajaxStub;
   let timer;
 
-  const REQUEST1 = {
-    bidderCode: 'b1',
-    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-    bidderRequestId: '1a6fc81528d0f7',
-    bids: [{
+  const BIDONE = {
       bidder: 'b1',
       params: {},
       adUnitCode: 'slot-1',
@@ -23,7 +20,13 @@ describe('Gu analytics adapter', () => {
       bidId: '208750227436c1',
       bidderRequestId: '1a6fc81528d0f7',
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
-    }],
+  };
+
+  const REQUEST1 = {
+    bidderCode: 'b1',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    bidderRequestId: '1a6fc81528d0f7',
+    bids: [ BIDONE ],
     auctionStart: 1509369418387,
     timeout: 3000,
     start: 1509369418389
@@ -73,6 +76,7 @@ describe('Gu analytics adapter', () => {
 
   before(() => {
     sandbox = sinon.sandbox.create();
+    ajaxStub = sandbox.stub(ajax, 'ajax');
     timer = sandbox.useFakeTimers(0);
   });
 
@@ -89,6 +93,7 @@ describe('Gu analytics adapter', () => {
   });
 
   afterEach(() => {
+    ajaxStub.reset();
     events.getEvents.restore();
   });
 
@@ -153,12 +158,19 @@ describe('Gu analytics adapter', () => {
 
   it('should handle auction end event', () => {
     timer.tick(447);
-    const ajaxStub = sandbox.stub(ajax, 'ajax');
     events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
     ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
     expect(ev[4]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
+  });
+
+  it('should handle bid won event', () => {
+      events.emit(CONSTANTS.EVENTS.BID_WON, BIDONE);
+      let ev = analyticsAdapter.context.queue.peekAll();
+      expect(ev).to.have.length(0); // The queue has been flushed.
+      ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+      expect(ev[0]).to.be.eql({ev: 'bidwon', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', bid: BIDONE.bidId });
   });
 });
