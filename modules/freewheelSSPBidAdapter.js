@@ -234,7 +234,7 @@ export const spec = {
 
     var vastParams = currentBidRequest.params.vastUrlParams;
     if (typeof vastParams === 'object') {
-      for (kye in vastParams) {
+      for (key in vastParams) {
         if (vastParams.hasOwnProperty(key)) {
           requestParams[key] = vastParams[key];
         }
