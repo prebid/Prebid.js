@@ -227,8 +227,8 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof currentBidRequest.gdprConsent.gdprApplies === 'boolean') {
-        requestParams._fw_gdpr = currentBidRequest.gdprConsent.gdprApplies;
+      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        requestParams._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
     }
 
