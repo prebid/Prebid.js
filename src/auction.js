@@ -220,13 +220,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           placements[bid.adUnitCode].requests++;          
           placements[bid.adUnitCode].bidders[bidder.bidderCode].bids.push(bid);
 
-          console.log(bid.adUnitCode+" "+bid.bidder+"/"+bid.bidderCode+" "+placements[bid.adUnitCode].requests+" "+placements[bid.adUnitCode].responses+" "+placements[bid.adUnitCode].timeouts);
+          //console.log(bid.adUnitCode+" "+bid.bidder+"/"+bid.bidderCode+" "+placements[bid.adUnitCode].requests+" "+placements[bid.adUnitCode].responses+" "+placements[bid.adUnitCode].timeouts);
           if(bidder.doneCbCallCount || bidsInFlight[bidder.bidderCode]){
             placements[bid.adUnitCode].responses++;
           }else if(bidTmo[bid.adUnitCode] && bidTmo[bid.adUnitCode][bid.bidder]){
             placements[bid.adUnitCode].timeouts++;
           }else{
-            console.log("bid neither done or timeout", bid);
+            //console.log("bid neither done or timeout", bid);
           }
           return placements;
         },placements);        
@@ -234,7 +234,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       return placements;
     },{});
 
-    console.log(plcDone, bidTmo, bidsInFlight);
+    //console.log(plcDone, bidTmo, bidsInFlight);
 
     const bidsResps = _bidsReceived.reduce(groupByPlacement, {});
 

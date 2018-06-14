@@ -671,7 +671,14 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
+    //shouldn't the ad_units already be cloned before, making this a clone of a clone?
+    const adUnits = utils.deepClone(s2sBidRequest.ad_units,(obj, result, key, clone) =>{
+      if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
+        result[key] = obj[key];
+        return true;
+      }
+      return false;//normal clone
+    });
 
     convertTypes(adUnits);
 
