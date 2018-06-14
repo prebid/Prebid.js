@@ -5,7 +5,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const BIDDER_CODE = 'appnexus';
+const BIDDER_CODE = 'xhb';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -130,7 +130,7 @@ export const spec = {
       }];
     }
   }
-}
+};
 
 function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
@@ -147,14 +147,40 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   }
 
   renderer.setEventHandlers({
-    impression: () => utils.logMessage('AppNexus outstream video impression event'),
-    loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+    impression: () => utils.logMessage('xhb outstream video impression event'),
+    loaded: () => utils.logMessage('xhb outstream video loaded event'),
     ended: () => {
-      utils.logMessage('AppNexus outstream renderer video event');
+      utils.logMessage('xhb outstream renderer video event');
       document.querySelector(`#${adUnitCode}`).style.display = 'none';
     }
   });
   return renderer;
+}
+
+/* Turn keywords parameter into ut-compatible format */
+function getKeywords(keywords) {
+  let arrs = [];
+
+  utils._each(keywords, (v, k) => {
+    if (utils.isArray(v)) {
+      let values = [];
+      utils._each(v, (val) => {
+        val = utils.getValueString('keywords.' + k, val);
+        if (val) { values.push(val); }
+      });
+      v = values;
+    } else {
+      v = utils.getValueString('keywords.' + k, v);
+      if (utils.isStr(v)) {
+        v = [v];
+      } else {
+        return;
+      } // unsuported types - don't send a key
+    }
+    arrs.push({key: k, value: v});
+  });
+
+  return arrs;
 }
 
 /**
@@ -167,12 +193,12 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
 function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm,
+    cpm: 0.00,
     creativeId: rtbBid.creative_id,
-    dealId: rtbBid.deal_id,
+    dealId: 99999999,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300, //300ms seems a bit unrealistic, as the adserver and possible other bidders might need more time to respond i would rather set it at leaset @30s (30.000ms) or don't implement a ttl at all, and just filter stale requests server side
+    ttl: 300,
     appnexus: {
       buyerMemberId: rtbBid.buyer_member_id
     }
@@ -256,7 +282,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.reserve) {
@@ -284,7 +310,7 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+    tag.keywords = getKeywords(bid.params.keywords);
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {

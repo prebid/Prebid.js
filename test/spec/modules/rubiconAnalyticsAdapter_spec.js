@@ -1,4 +1,3 @@
-import adaptermanager from 'src/adaptermanager';
 import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';

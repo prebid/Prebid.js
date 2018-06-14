@@ -153,19 +153,6 @@ describe('Adform adapter', () => {
       let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
     });
-    it('should respond with empty response when sizes doesn\'t match', () => {
-      serverResponse.body[0].response = 'banner';
-      serverResponse.body[0].width = 100;
-      serverResponse.body[0].height = 150;
-
-      serverResponse.body = [serverResponse.body[0]];
-      bidRequest.bids = [bidRequest.bids[0]];
-      let result = spec.interpretResponse(serverResponse, bidRequest);
-
-      assert.equal(serverResponse.body.length, 1);
-      assert.equal(serverResponse.body[0].response, 'banner');
-      assert.deepEqual(result, []);
-    });
     it('should respond with empty response when response from server is not banner', () => {
       serverResponse.body[0].response = 'not banner';
       serverResponse.body = [serverResponse.body[0]];
@@ -250,6 +237,51 @@ describe('Adform adapter', () => {
         assert.ok(!result[i].gdpr);
         assert.ok(!result[i].gdpr_consent);
       };
+    });
+
+    describe('verifySizes', () => {
+      it('should respond with empty response when sizes doesn\'t match', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 100;
+        serverResponse.body[0].height = 150;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(serverResponse.body.length, 1);
+        assert.equal(serverResponse.body[0].response, 'banner');
+        assert.deepEqual(result, []);
+      });
+      it('should respond with empty response when sizes as a strings doesn\'t match', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 100;
+        serverResponse.body[0].height = 150;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+
+        bidRequest.bids[0].sizes = [['101', '150']];
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(serverResponse.body.length, 1);
+        assert.equal(serverResponse.body[0].response, 'banner');
+        assert.deepEqual(result, []);
+      });
+      it('should support size dimensions as a strings', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 300;
+        serverResponse.body[0].height = 600;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(result[0].width, 300);
+        assert.equal(result[0].height, 600);
+      });
     })
   });
 

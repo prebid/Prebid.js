@@ -208,7 +208,8 @@ const paramTypes = {
   'appnexus': {
     'member': tryConvertString,
     'invCode': tryConvertString,
-    'placementId': tryConvertNumber
+    'placementId': tryConvertNumber,
+    'keywords': utils.transformBidderParamKeywords
   },
   'rubicon': {
     'accountId': tryConvertNumber,
@@ -503,7 +504,7 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
-        // TODO: move this bidder specific out to a more ideal location (submodule?); issue# pending
+        // TODO: move this bidder specific out to a more ideal location (submodule?); https://github.com/prebid/Prebid.js/issues/2420
         // convert all AppNexus keys to underscore format for pbs
         if (bid.bidder === 'appnexus') {
           bid.params.use_pmt_rule = (typeof bid.params.usePaymentRule === 'boolean') ? bid.params.usePaymentRule : false;
