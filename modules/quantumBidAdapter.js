@@ -297,14 +297,14 @@ export const spec = {
    * Register the user sync pixels which should be dropped after the auction.
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {ServerResponse} serverResponse A successful response from the server
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponse) {
     const syncs = [];
-    if (serverResponses.body && serverResponses.body.sync) {
+    if (serverResponse.body && serverResponse.body.sync) {
       const syncType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-      utils._each(serverResponses.body.sync, function(pixel) {
+      utils._each(serverResponse.body.sync, function(pixel) {
         syncs.push({
           type: syncType,
           url: pixel
