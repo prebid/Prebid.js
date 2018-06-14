@@ -23,16 +23,6 @@ const invalidBidReq = {
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 };
 
-const bidReq = [{
-  bidder: BIDDER_CODE,
-  params: {
-    adid: 'test-ad-83444226E44368D1E32E49EEBE6D29'
-  },
-  sizes: [[300, 250]],
-  bidId: '263be71e91dd9d',
-  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
-}];
-
 const validBidRes = {
   ad_id: 'ad-83444226E44368D1E32E49EEBE6D29',
   adm: '<html style="height:100%"><body style="width:300px;height: 100%;padding:0;margin:0 auto;"><div style="width:100%;height:100%;display:table;"><div style="width:100%;height:100%;display:table-cell;text-align:center;vertical-align:middle;"><a href="//www.ucfunnel.com/" target="_blank"><img src="//cdn.aralego.net/ucfad/house/ucf/AdGent-300x250.jpg" width="300px" height="250px" align="middle" style="border:none"></a></div></div></body></html>',
@@ -79,23 +69,45 @@ describe('ucfunnel Adapter', () => {
     });
   });
   describe('build request', () => {
-    it('Verify bid request', () => {
-      const request = spec.buildRequests(bidReq);
-      expect(request[0].method).to.equal('GET');
-      expect(request[0].url).to.equal(URL);
-      expect(request[0].data).to.match(new RegExp(`${bidReq[0].params.adid}`));
+    it('should create a POST request for every bid', () => {
+      const request = spec.buildRequests([validBidReq]);
+      expect(request[0].method).to.equal('POST');
+      expect(request[0].url).to.equal(location.protocol + spec.ENDPOINT);
+    });
+
+    it('should attach the bid request object', () => {
+      const requests = spec.buildRequests([ validBidReq ]);
+      expect(requests[0].bidRequest).to.equal(validBidReq);
+    });
+
+    it('should attach request data', () => {
+      const requests = spec.buildRequests([ validBidReq ]);
+      const data = requests[0].data;
+      const [ width, height ] = validBidReq.sizes[0];
+      expect(data.w).to.equal(width);
+      expect(data.h).to.equal(height);
+    });
+
+    it('must parse bid size from a nested array', () => {
+      const width = 640;
+      const height = 480;
+      validBidReq.sizes = [[ width, height ]];
+      const requests = spec.buildRequests([ validBidReq ]);
+      const data = requests[0].data;
+      expect(data.w).to.equal(width);
+      expect(data.h).to.equal(height);
     });
   });
 
   describe('interpretResponse', () => {
     it('should build bid array', () => {
-      const request = spec.buildRequests(bidReq);
+      const request = spec.buildRequests([ validBidReq ]);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       expect(result.length).to.equal(1);
     });
 
     it('should have all relevant fields', () => {
-      const request = spec.buildRequests(bidReq);
+      const request = spec.buildRequests([ validBidReq ]);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       const bid = result[0];
 
