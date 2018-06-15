@@ -17,15 +17,23 @@
           sizes: [[300, 250], [300,600]],
   
           // Replace this object to test a new Adapter!
-          bids: [{
-            bidder: 'appnexusAst',
-            params: {
-              placementId: '10433394'
-            }
-          }]
-  
+            bids: [
+                {
+                    bidder: "trustx",
+                    params: {
+                        uid: '44',
+                        priceType: 'gross' // by default is 'net'
+                    }
+                },
+                {
+                    bidder: 'improvedigital',
+                    params: {
+                        placementId: 1053688
+                    }
+                }
+            ]
         }];
-  
+
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
   
@@ -39,11 +47,23 @@
           googletag.pubads().disableInitialLoad();
         });
   
-        pbjs.que.push(function() {
-          pbjs.addAdUnits(adUnits);
-          pbjs.requestBids({
-            bidsBackHandler: sendAdserverRequest
-          });
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                bidderTimeout: 1500
+            });
+            pbjs.enableAnalytics([
+                {
+                    provider: 'gu',
+                    options: {
+                        ajaxUrl: '//localhost:9000',
+                        pv: 'pv1234567'
+                    }
+                }
+            ]);
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest
+            });
         });
   
         function sendAdserverRequest() {
