@@ -75,9 +75,13 @@ module.exports = (function () {
     return utils.contains(allEvents, event);
   }
 
+  function _internalEvent(event) {
+    return true;
+  }
+
   _public.on = function (eventString, handler, id) {
     // check whether available event or not
-    if (_checkAvailableEvent(eventString)) {
+    if (_checkAvailableEvent(eventString) || _internalEvent(eventString)) {
       var event = _handlers[eventString] || { que: [] };
 
       if (id) {

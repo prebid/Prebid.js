@@ -17,7 +17,10 @@ const {
     BIDDER_DONE,
     SET_TARGETING,
     AD_RENDER_FAILED
-  }
+  },
+  INTERNAL_EVENTS: {
+    XHR_TIMEDOUT
+  },
 } = CONSTANTS;
 
 const LIBRARY = 'library';
@@ -116,7 +119,8 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [AUCTION_INIT]: args => {
           args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
-        }
+        },
+        [XHR_TIMEDOUT]: args => this.enqueue({ eventType: XHR_TIMEDOUT, args }),
       };
 
       utils._each(_handlers, (handler, event) => {

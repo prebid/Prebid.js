@@ -37,6 +37,9 @@
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED" : "adRenderFailed"
   },
+  "INTERNAL_EVENTS": {
+    "XHR_TIMEDOUT": "xhrTimedOut"
+  },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
     "NO_AD": "noAd",

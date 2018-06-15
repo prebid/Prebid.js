@@ -1,4 +1,6 @@
 import {parse as parseURL, format as formatURL} from './url';
+import CONSTANTS from 'src/constants.json';
+import events from 'src/events';
 
 var utils = require('./utils');
 
@@ -56,6 +58,7 @@ export function ajaxBuilder(timeout = 3000) {
         };
         x.ontimeout = function () {
           callbacks.error('timeout', x);
+          events.emit(CONSTANTS.INTERNAL_EVENTS.XHR_TIMEDOUT, url);
         };
         x.onprogress = function() {
           utils.logMessage('xhr onprogress');
@@ -73,6 +76,7 @@ export function ajaxBuilder(timeout = 3000) {
         };
         x.ontimeout = function () {
           utils.logError('  xhr timeout after ', x.timeout, 'ms');
+          events.emit(CONSTANTS.INTERNAL_EVENTS.XHR_TIMEDOUT, url);
         };
       }
 
