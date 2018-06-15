@@ -349,7 +349,7 @@ export const spec = {
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
         responseErrors.forEach(error => {
           utils.logError('Got error from PBS Java openRTB: ' + error);
-        })
+        });
       }
       const bids = [];
       responseObj.seatbid.forEach(seatbid => {
