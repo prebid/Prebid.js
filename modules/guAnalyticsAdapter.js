@@ -82,7 +82,7 @@ function trackBidWon(args){
                                  args.auctionId,
                                  undefined, // timeToRespond
                                  undefined, // startTime
-                                 args.bidId
+                                 args.requestId
                                );
     return [event];
 }
