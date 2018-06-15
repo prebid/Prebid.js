@@ -302,15 +302,17 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponse) {
     const syncs = [];
-    if (serverResponse.body && serverResponse.body.sync) {
-      const syncType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-      utils._each(serverResponse.body.sync, function(pixel) {
-        syncs.push({
-          type: syncType,
-          url: pixel
+    utils._each(serverResponse, function(serverResponse) {
+      if (serverResponse.body && serverResponse.body.sync) {
+        const syncType = syncOptions.pixelEnabled ? 'image' : 'iframe';
+        utils._each(serverResponse.body.sync, function (pixel) {
+          syncs.push({
+            type: syncType,
+            url: pixel
+          });
         });
-      });
-    }
+      }
+    });
     return syncs;
   }
 }
