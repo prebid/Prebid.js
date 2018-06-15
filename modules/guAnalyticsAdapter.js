@@ -7,6 +7,11 @@ import {ajax} from 'src/ajax';
 
 const analyticsType = 'endpoint';
 const QUEUE_TIMEOUT = 4000;
+const SENDALL_ON = {};
+
+// Look there: http://jsben.ch/qhIE6
+SENDALL_ON[CONSTANTS.EVENTS.AUCTION_END] = true;
+SENDALL_ON[CONSTANTS.EVENTS.BID_WON] = true;
 
 let analyticsAdapter = Object.assign(adapter({analyticsType}),
   {
@@ -31,13 +36,16 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
         case CONSTANTS.EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
+        case CONSTANTS.EVENTS.BID_WON:
+          handler = trackBidWon;
+          break;
       }
       if (handler) {
         let events = handler(args);
         if (events && analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
-        if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+        if ( SENDALL_ON[eventType] ) {
           sendAll();
         }
       }
@@ -65,6 +73,18 @@ function sendAll() {
       }
     );
   }
+}
+
+function trackBidWon(args){
+    const event = createHbEvent( undefined, // bidderCode
+                                 'bidwon',
+                                 undefined, // adunit code
+                                 args.auctionId,
+                                 undefined, // timeToRespond
+                                 undefined, // startTime
+                                 args.bidId
+                               );
+    return [event];
 }
 
 function trackAuctionInit(args) {
