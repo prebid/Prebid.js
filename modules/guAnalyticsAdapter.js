@@ -45,7 +45,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
         if (events && analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
-        if ( SENDALL_ON[eventType] ) {
+        if (SENDALL_ON[eventType]) {
           sendAll();
         }
       }
@@ -75,16 +75,16 @@ function sendAll() {
   }
 }
 
-function trackBidWon(args){
-    const event = createHbEvent( undefined, // bidderCode
-                                 'bidwon',
-                                 undefined, // adunit code
-                                 args.auctionId,
-                                 undefined, // timeToRespond
-                                 undefined, // startTime
-                                 args.bidId
-                               );
-    return [event];
+function trackBidWon(args) {
+  const event = createHbEvent(undefined, // bidderCode
+    'bidwon',
+    undefined, // adunit code
+    args.auctionId,
+    undefined, // timeToRespond
+    undefined, // startTime
+    args.requestId
+  );
+  return [event];
 }
 
 function trackAuctionInit(args) {

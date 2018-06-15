@@ -11,15 +11,49 @@ describe('Gu analytics adapter', () => {
   let ajaxStub;
   let timer;
 
+  const BIDWONEXAMPLE = {
+    ad: '<span>some html</span>',
+    adId: '24a5288f9d6d6b',
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    adUrl: undefined,
+    adserverTargeting: {hb_bidder: 'improvedigital', hb_adid: '24a5288f9d6d6b', hb_pb: '1.40', hb_size: '600x290', hb_deal: 268515},
+    auctionId: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
+    bidder: 'improvedigital',
+    bidderCode: 'improvedigital',
+    cpm: 1.4520580823232898,
+    creativeId: '422031',
+    currency: 'USD',
+    dealId: 268515,
+    height: 290,
+    mediaType: 'banner',
+    netRevenue: false,
+    pbAg: '1.45',
+    pbCg: '',
+    pbDg: '1.45',
+    pbHg: '1.45',
+    pbLg: '1.00',
+    pbMg: '1.40',
+    requestId: '24a5288f9d6d6b',
+    requestTimestamp: 1529069097708,
+    responseTimestamp: 1529069097937,
+    size: '600x290',
+    source: 'client',
+    status: 'rendered',
+    statusMessage: 'Bid available',
+    timeToRespond: 229,
+    ttl: 300,
+    width: 600
+  };
+
   const BIDONE = {
-      bidder: 'b1',
-      params: {},
-      adUnitCode: 'slot-1',
-      transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
-      sizes: [[300, 250]],
-      bidId: '208750227436c1',
-      bidderRequestId: '1a6fc81528d0f7',
-      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+    bidder: 'b1',
+    params: {},
+    adUnitCode: 'slot-1',
+    transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
+    sizes: [[300, 250]],
+    bidId: '208750227436c1',
+    bidderRequestId: '1a6fc81528d0f7',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
   };
 
   const REQUEST1 = {
@@ -167,10 +201,10 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid won event', () => {
-      events.emit(CONSTANTS.EVENTS.BID_WON, BIDONE);
-      let ev = analyticsAdapter.context.queue.peekAll();
-      expect(ev).to.have.length(0); // The queue has been flushed.
-      ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
-      expect(ev[0]).to.be.eql({ev: 'bidwon', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', bid: BIDONE.bidId });
+    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    let ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(0); // The queue has been flushed.
+    ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+    expect(ev[0]).to.be.eql({ev: 'bidwon', aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15', bid: '24a5288f9d6d6b'});
   });
 });
