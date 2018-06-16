@@ -76,7 +76,7 @@ export const spec = {
         });
       });
 
-      const gdprConsent = bidderRequest && bidderRequest.gdprConsent || {};
+      const gdprConsent = bidderRequest ? bidderRequest.gdprConsent : {};
 
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
