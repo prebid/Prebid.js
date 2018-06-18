@@ -4,7 +4,7 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import { BANNER } from 'src/mediaTypes';
 import { config } from 'src/config';
 
-const BIDDER_CODE = 'zid';
+const BIDDER_CODE = 'switch';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GDPR_CONSENT_TIMEOUT_MS = 10000; // 10 seconds
 const STORE_UID_TIMEOUT_MS = 500;
@@ -14,66 +14,62 @@ let gdpr_applies = false;
 let uids = {};
 let storeUIDTimeoutHandler = null;
 
-
-var cN = "";
-
-var personaGroup;
-
-var mgcVal;
+var samplingVal = Math.floor(Math.random() * 1000) + 1;
 
 
-var mgcValRnd = Math.floor(Math.random() * 10) + 1;
+var domainIsOnWhitelist = function(){
+  var domainIsOnWhiteList = false;
 
-if(mgcValRnd == 100){
-  mgcVal = true;
+  var whiteList = "";
+  whiteList += "43rumors.com";
+  whiteList += "Pajiba.com";
+  whiteList += "albumoftheyear.org";
+  whiteList += "alltrails.com";
+  whiteList += "business2community.com";
+  whiteList += "celebritynetworth.com";
+  whiteList += "comicsands.com";
+  whiteList += "cordcuttersnews.com";
+  whiteList += "fleaflicker.com";
+  whiteList += "flickeringmyth.com";
+  whiteList += "fool.com";
+  whiteList += "freemahjong.org";
+  whiteList += "gardeningknowhow.com";
+  whiteList += "golfwrx.com";
+  whiteList += "groundedreason.com";
+  whiteList += "happycow.net";
+  whiteList += "healthyeater.com";
+  whiteList += "justwatch.com";
+  whiteList += "lolwot.com";
+  whiteList += "moviemistakes.com";
+  whiteList += "namechk.com";
+  whiteList += "nextshark.com";
+  whiteList += "postgradproblems.com";
+  whiteList += "scotch.io";
+  whiteList += "slashfilm.com";
+  whiteList += "slowrobot.com";
+  whiteList += "songfacts.com";
+  whiteList += "tennisworldusa.org";
+  whiteList += "tribunist.com";
+  whiteList += "tripstodiscover.com";
+  whiteList += "triviahive.com";
+  whiteList += "typingclub.com";
+  whiteList += "urbanfonts.com";
+  whiteList += "uscreditcardguide.com";
+  whiteList += "vandelaydesign.com";
+  whiteList += "wdwmagic.com";
+  whiteList += "weather.us";
+  whiteList += "weddbook.com";
+  whiteList += "who.unfollowed.me";
+  whiteList += "windowsreport.com";
+  whiteList += "worldofsolitaire.com";
+  whiteList += "firstshowing.net";
+
+  var whiteListRegEx = new RegExp('whiteList');
+
+  domainIsOnWhiteList = whiteListRegEx.test(location.hostname);
+
+  return domainIsOnWhiteList;
 }
-else{
-  mgcVal = false;
-}
-
-
-
-var gC = function (key) {
-    var match = document.cookie.match(new RegExp(key + '=([^;]+)'));
-    if (match) return match[1];
-  },
-
-  //setCookie
-  sC = function (cN, cookieType, value) {
-    document.cookie = cN + cookieType + "=" + value + "; path=/; max-age=900000";
-  };
-
-/*
-if(!gC('personaGroup')) { // check group id cookie
-
-  var personpersonaFile = Math.floor(Math.random() * 40) + 1;
-
-  var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-  xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.setRequestHeader('Accept', '*');
-  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.send();
-  if (xhr.status === 200) {
-
-    var response = xhr.responseText;
-    var responseArray = response.split(",");
-    var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
-    var groupid = responseArray[randomIndex];
-
-    //sC(cN,'anonymousPersonaID', groupid);
-    sC(cN,'personaGroup', groupid);
-
-    personaGroup = groupid;
-
-  }
-  else if (xhr.status !== 200) {
-    sC(cN,'personaGroup', 123456789);
-  }
-}
-else{
-  personaGroup = gC('anonymousPersonaID');
-}*/
 
 /**
  * Read a cookie from the first party domain
@@ -319,43 +315,13 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   let cur = config.getConfig('currency');
 
   let swid = readCookie('__SW');
-
-  if (swid === null && gdpr_applies && mgcVal) {
-    swid = personaGroup;
+  if (swid === null) {
+    swid = '';
   }
 
   let uids = readCookie('__SWU');
   if (uids === null) {
     uids = '';
-  }
-
-
-  var getConsentStr = function(){
-    if(mgcVal && gdpr_applies){
-      return "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
-    }
-    else{
-      if(bidderRequest.gdprConsent.consentString){
-        return bidderRequest.gdprConsent.consentString;
-      }
-      else{
-        return "";
-      }
-    }
-  }
-
-  var gdprApp = function(){
-    if(mgcVal && gdpr_applies){
-      return false;
-    }
-    else{
-      if(typeof bidderRequest.gdprConsent.gdprApplies === 'boolean'){
-        return bidderRequest.gdprConsent.gdprApplies;
-      }
-      else{
-        return false;
-      }
-    }
   }
 
   let request = {
@@ -368,16 +334,10 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     requestTime: (new Date()).getTime(),
     currency: cur,
     gdpr: {
-      consent_string: getConsentStr(),
-      gdpr_applies: gdprApp()
+      consent_string: bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
+      gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
     }
   };
-
-
-  /*  gdpr: {
-      consent_string: bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
-        gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
-    }*/
 
   if ('__sw_start_time' in window) {
     request.loadTime = window.__sw_start_time;
@@ -403,17 +363,18 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-
-  return {
-    method: 'POST',
-    url: "https://delivery.h.switchadhub.com/prebid",  //" + domain + "/prebid",
-    data: JSON.stringify(request),
-    bidderRequest,
-    options: {
-      contentType: 'text/plain',
-      withCredentials: true
-    }
-  };
+  if(domainIsOnWhitelist() || samplingVal == 1){
+    return {
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    };
+  }
 
 
 }
@@ -518,7 +479,7 @@ const triggerSync = function () {
 
         window.swSyncDone = true;
 
-        let syncUri = "https://delivery.h.switchadhub.com/sync";
+        let syncUri = "//delivery.h.switchadhub.com/sync";
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
