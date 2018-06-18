@@ -230,7 +230,10 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit.sizes = banner.sizes;
+        // make sure we always send [[h,w]] format
+        const normalizedSize = utils.getAdUnitSizes(adUnit);
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
       } else {
         utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
