@@ -82,6 +82,9 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
         result[args.auctionId] = {
           'auctionStart': args.timestamp,
           'auctionTimeout': args.timeout,
+          'numberOfBidsRequested': 0,
+          'numberOfBidsReceived': 0,
+          'doneCbCount': 0
         }
         result['global'] = {
           'setTargetingCalled': 'no'
@@ -91,26 +94,19 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
         let temp = {}
         let auctionId = args.auctionId;
         let numberOfBidsRequested = result[auctionId]['numberOfBidsRequested'];
-        if (typeof numberOfBidsRequested === 'undefined') {
-          temp[auctionId] = { 'numberOfBidsRequested': 1 }
-        } else {
-          temp[auctionId] = {
-            'numberOfBidsRequested': ++numberOfBidsRequested
-          }
+        temp[auctionId] = {
+          'numberOfBidsRequested': ++numberOfBidsRequested
         }
+
         result = mergeDeep(result, temp);
         break;
       case BID_RESPONSE:
         auctionId = args.auctionId;
         let numberOfBidsReceived = result[auctionId]['numberOfBidsReceived'];
         temp = {};
-        if (typeof numberOfBidsReceived === 'undefined') {
-          temp[auctionId] = { 'numberOfBidsReceived': 1 }
-        } else {
-          temp[auctionId] = {
-            'numberOfBidsReceived': ++numberOfBidsReceived
-          }
-        }
+        temp[auctionId] = {
+          'numberOfBidsReceived': ++numberOfBidsReceived
+        };
 
         temp[auctionId]['bidder'] = {};
         let timingObject = {
@@ -128,13 +124,10 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
       case BIDDER_DONE:
         let doneCbCount = result[args.auctionId]['doneCbCount'];
         temp = {};
-        if (typeof doneCbCount === 'undefined') {
-          temp[args.auctionId] = { 'doneCbCount': 1 }
-        } else {
-          temp[args.auctionId] = {
-            'doneCbCount': ++doneCbCount
-          }
+        temp[args.auctionId] = {
+          'doneCbCount': ++doneCbCount
         }
+
         result = mergeDeep(result, temp);
         store.set(key, result);
         break;
