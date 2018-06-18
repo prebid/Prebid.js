@@ -231,7 +231,7 @@ describe('BeachfrontAdapter', () => {
         const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
         const bidderRequest = {
           gdprConsent: {
-            consentRequired: true,
+            gdprApplies: true,
             consentString
           }
         };
@@ -346,7 +346,7 @@ describe('BeachfrontAdapter', () => {
         const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
         const bidderRequest = {
           gdprConsent: {
-            consentRequired: true,
+            gdprApplies: true,
             consentString
           }
         };

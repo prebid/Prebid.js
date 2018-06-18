@@ -248,8 +248,8 @@ function createVideoRequestData(bid, bidderRequest) {
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    let { consentRequired, consentString } = bidderRequest.gdprConsent;
-    payload.regs.ext = { gdpr: consentRequired ? 1 : 0 };
+    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+    payload.regs.ext = { gdpr: gdprApplies ? 1 : 0 };
     payload.user.ext = { consent: consentString };
   }
 
@@ -283,8 +283,8 @@ function createBannerRequestData(bids, bidderRequest) {
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    let { consentRequired, consentString } = bidderRequest.gdprConsent;
-    payload.gdpr = consentRequired ? 1 : 0;
+    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+    payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
   }
 
