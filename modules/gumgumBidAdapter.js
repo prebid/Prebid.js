@@ -174,8 +174,17 @@ function interpretResponse (serverResponse, bidRequest) {
       pvid
     }
   } = Object.assign(defaultResponse, serverResponseBody)
-  let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
-  let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+  let data = bidRequest.data || {}
+  let product = data.pi
+  let isTestUnit = (product === 3 && data.si === 9)
+  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  let [width, height] = sizes[0].split('x')
+
+  // return 1x1 when breakout expected
+  if ((product === 2 || product === 5) && sizes.includes('1x1')) {
+    width = '1'
+    height = '1'
+  }
 
   // update Page View ID from server response
   pageViewId = pvid
