@@ -446,7 +446,7 @@ describe('adapterManager tests', () => {
         ],
         'start': 1462918897460
       }];
-      
+
       AdapterManager.callBids(
         adUnits,
         bidRequests,
