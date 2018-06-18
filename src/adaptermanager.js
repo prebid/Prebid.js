@@ -347,15 +347,12 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-      bidRequest.doneCbCallCount = 0;
-      let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, done, ajax);
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-    }
+
+    utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    bidRequest.doneCbCallCount = 0;
+    let done = doneCb(bidRequest.bidderRequestId);
+    adapter.callBids(bidRequest, addBidResponse, done, ajax);
   });
 }
 
