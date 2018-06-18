@@ -304,10 +304,9 @@ export const spec = {
     const syncs = [];
     utils._each(serverResponse, function(serverResponse) {
       if (serverResponse.body && serverResponse.body.sync) {
-        const syncType = syncOptions.pixelEnabled ? 'image' : 'iframe';
         utils._each(serverResponse.body.sync, function (pixel) {
           syncs.push({
-            type: syncType,
+            type: 'image',
             url: pixel
           });
         });
