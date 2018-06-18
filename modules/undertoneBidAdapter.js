@@ -11,7 +11,7 @@ const URL = '//hb.undertone.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    if (bid && bid.params && bid.params.publisherId && bid.params.placementId) {
+    if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
@@ -37,7 +37,7 @@ export const spec = {
         hbadaptor: 'prebid',
         url: location.href,
         domain: domain,
-        placementId: bidReq.params.placementId,
+        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
         sizes: bidReq.sizes,
         params: bidReq.params
