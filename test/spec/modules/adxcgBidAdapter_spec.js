@@ -54,13 +54,45 @@ describe('AdxcgAdapter', () => {
 
       let query = parsedRequestUrl.search;
       expect(query.renderformat).to.equal('javascript');
-      expect(query.ver).to.equal('r20171102PB10');
+      expect(query.ver).to.equal('r20180522PB10');
       expect(query.source).to.equal('pbjs10');
       expect(query.pbjs).to.equal('$prebid.version$');
       expect(query.adzoneid).to.equal('1');
       expect(query.format).to.equal('300x250|640x360|1x1');
       expect(query.jsonp).to.be.empty;
       expect(query.prebidBidIds).to.equal('84ab500420319d');
+    });
+  });
+
+  describe('gdpr compliance', () => {
+    let bid = {
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    };
+
+    it('should send GDPR Consent data if gdprApplies', () => {
+      let request = spec.buildRequests([bid], {gdprConsent: {gdprApplies: true, consentString: 'consentDataString'}});
+      let parsedRequestUrl = url.parse(request.url);
+      let query = parsedRequestUrl.search;
+
+      expect(query.gdpr).to.equal('1');
+      expect(query.gdpr_consent).to.equal('consentDataString');
+    });
+
+    it('should not send GDPR Consent data if gdprApplies is false or undefined', () => {
+      let request = spec.buildRequests([bid], {gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}});
+      let parsedRequestUrl = url.parse(request.url);
+      let query = parsedRequestUrl.search;
+
+      expect(query.gdpr).to.be.empty;
+      expect(query.gdpr_consent).to.be.empty;
     });
   });
 
