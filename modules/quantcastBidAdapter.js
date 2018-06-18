@@ -1,5 +1,5 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -75,6 +75,17 @@ export const spec = {
         });
       });
 
+      let gdprSignal;
+      let gdprConsentString;
+
+      if (bid.gdprConsent !== undefined) {
+        if (bid.gdprConsent.gdprApplies !== undefined) {
+          gdprSignal = bid.gdprConsent.gdprApplies ? 1 : 0;
+        }
+
+        gdprConsentString = bid.gdprConsent.consentString;
+      }
+
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
         publisherId: bid.params.publisherId,
@@ -94,6 +105,8 @@ export const spec = {
           referrer,
           domain
         },
+        gdprSignal: gdprSignal,
+        gdprConsent: gdprConsentString,
         bidId: bid.bidId
       };
 
@@ -143,7 +156,7 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency } = bid;
+      const {ad, cpm, width, height, creativeId, currency} = bid;
 
       return {
         requestId: response.requestId,

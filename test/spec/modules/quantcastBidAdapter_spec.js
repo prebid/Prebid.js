@@ -12,8 +12,10 @@ import { newBidder } from '../../../src/adapters/bidderFactory';
 describe('Quantcast adapter', () => {
   const quantcastAdapter = newBidder(qcSpec);
   let bidRequest;
+  let consentString;
 
   beforeEach(() => {
+    consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
@@ -23,6 +25,10 @@ describe('Quantcast adapter', () => {
       params: {
         publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
         battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
+      },
+      gdprConsent: {
+        consentString: consentString,
+        gdprApplies: true
       },
       sizes: [[300, 250]]
     };
@@ -105,6 +111,43 @@ describe('Quantcast adapter', () => {
       expect(requests[0].method).to.equal('POST');
     });
 
+    it('populates gdprSignal when false', () => {
+      bidRequest.gdprConsent.gdprApplies = false;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprSignal).to.equal(0);
+    });
+
+    it('populates gdprSignal when true', () => {
+      bidRequest.gdprConsent.gdprApplies = true;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprSignal).to.equal(1);
+    });
+
+    it('populates gdprSignal when undefined', () => {
+      bidRequest.gdprConsent.gdprApplies = undefined;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprSignal).to.equal(undefined);
+    });
+
+    it('populates gdprConsent when set', () => {
+      let consentString = 'some string';
+      bidRequest.gdprConsent.consentString = consentString;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprConsent).to.equal(consentString);
+    });
+
+    it('populates gdprConsent when undefined', () => {
+      bidRequest.gdprConsent.consentString = undefined;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprConsent).to.equal(undefined);
+    });
+
+    it('populates gdprSignal and gdprConsent when fully undefined', () => {
+      bidRequest.gdprConsent = undefined;
+      const requests = qcSpec.buildRequests([bidRequest]);
+      expect(JSON.parse(requests[0].data).gdprSignal).to.equal(undefined);
+    });
+
     it('sends bid requests contains all the required parameters', () => {
       const referrer = utils.getTopWindowUrl();
       const loc = utils.getTopWindowLocation();
@@ -129,6 +172,8 @@ describe('Quantcast adapter', () => {
           referrer,
           domain
         },
+        gdprSignal: 1,
+        gdprConsent: consentString,
         bidId: '2f7b179d443f14'
       };
 
