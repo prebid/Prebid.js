@@ -111,6 +111,65 @@ describe('IndexexchangeAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
+    it('should return false when mediaTypes is not banner', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes = {
+        video: {
+          sizes: [[300, 250]]
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaTypes.banner does not have sizes', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes = {
+        banner: {
+          size: [[300, 250]]
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is not banner', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'banne';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is video', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'video';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is native', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'native';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true when mediaType is missing and has sizes', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when mediaType is banner', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.mediaType = 'banner';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return false when there is only bidFloor', () => {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
@@ -143,6 +202,12 @@ describe('IndexexchangeAdapter', () => {
     const requestUrl = request.url;
     const requestMethod = request.method;
     const query = request.data;
+
+    const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutMediaType[0].mediaTypes;
+    bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
+    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType);
+    const queryWithoutMediaType = requestWithoutMediaType.data;
 
     it('request should be made to IX endpoint with GET method', () => {
       expect(requestMethod).to.equal('GET');
@@ -197,6 +262,70 @@ describe('IndexexchangeAdapter', () => {
 
       expect(impression.bidfloor).to.equal(bid.params.bidFloor);
       expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
+    });
+
+    it('payload without mediaType should have correct format and value', () => {
+      const payload = JSON.parse(queryWithoutMediaType.r);
+
+      expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
+      expect(payload.site).to.exist;
+      expect(payload.site.page).to.exist;
+      expect(payload.site.page).to.contain('http');
+      expect(payload.site.ref).to.exist;
+      expect(payload.site.ref).to.be.a('string');
+      expect(payload.ext).to.exist;
+      expect(payload.ext.source).to.equal('prebid');
+      expect(payload.imp).to.exist;
+      expect(payload.imp).to.be.an('array');
+      expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('impression without mediaType should have correct format and value', () => {
+      const impression = JSON.parse(queryWithoutMediaType.r).imp[0];
+      const sidValue = `${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`;
+
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal(sidValue);
+    });
+
+    it('impression should have sid if id is configured as number', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.id = 50;
+      const requestBidFloor = spec.buildRequests([bid]);
+      const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal('50');
+    });
+
+    it('impression should have sid if id is configured as string', () => {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.id = 'abc';
+      const requestBidFloor = spec.buildRequests([bid]);
+      const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal('abc');
     });
 
     it('should add first party data to page url in bid request if it exists in config', () => {
@@ -272,21 +401,6 @@ describe('IndexexchangeAdapter', () => {
 
       expect(requestStringTimeout.data.t).to.be.undefined;
     });
-
-    it('should default to assuming media type is banner', () => {
-      const bidsWithoutMediaType = [
-        Object.assign({}, DEFAULT_BANNER_VALID_BID[0])
-      ];
-      delete bidsWithoutMediaType[0].mediaTypes;
-
-      const request = spec.buildRequests(bidsWithoutMediaType);
-      const payload = JSON.parse(request.data.r);
-
-      expect(payload.id).to.equal(bidsWithoutMediaType[0].bidderRequestId);
-      expect(payload.imp).to.exist;
-      expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
-    });
   });
 
   describe('interpretResponseBanner', () => {
@@ -300,7 +414,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -321,7 +435,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -342,7 +456,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -363,7 +477,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: 'deal'
         }
