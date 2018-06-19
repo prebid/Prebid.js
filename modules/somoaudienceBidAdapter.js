@@ -1,6 +1,5 @@
 import {getTopWindowReferrer, getTopWindowLocation} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-const realvuAnalyticsAdapter = require('modules/realvuAnalyticsAdapter.js');
 
 export const spec = {
 
@@ -14,18 +13,29 @@ export const spec = {
 
   buildRequests: function(bidRequests) {
     return bidRequests.map(bidRequest => {
-      const rv = realvuAnalyticsAdapter.checkIn(bidRequest, 'E321');
       let da = openRtbRequest(bidRequest);
-      if (rv == 'yes') {
-        da.imp[0].pmp = {
-          private_auction: 0,
-          deals: [
-            {
-              id: 'realvu',
-              bidfloor: 1.5
-            }
-          ]
-        };
+      if (window.top1 && window.top1.realvu_aa) {
+        let a = window.top1.realvu_aa.check({
+          unit_id: bidRequest.adUnitCode,
+          size: bidRequest.sizes,
+          partner_id: 'E321'
+        });
+        a.rq_bids.push({
+          bidder: bidRequest.bidder,
+          adId: bidRequest.bidId,
+          partner_id: 'E321'
+        });
+        if (a.riff == 'yes') {
+          da.imp[0].pmp = {
+            private_auction: 0,
+            deals: [
+              {
+                id: 'realvu',
+                bidfloor: 1.5
+              }
+            ]
+          };
+        }
       }
       return {
         method: 'POST',
