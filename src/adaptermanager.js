@@ -279,14 +279,13 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     return;
   }
 
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
-
   let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
     return partitions;
   }, [[], []]);
 
   if (serverBidRequests.length) {
+    const s2sAjax = ajaxBuilder(serverBidRequests[0].timeout);
     let adaptersServerSide = _s2sConfig.bidders;
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
@@ -331,12 +330,13 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           serverBidRequests,
           addBidResponse,
           () => doneCbs.forEach(done => done()),
-          ajax
+          s2sAjax
         );
       }
     }
   }
 
+  const ajax = (clientBidRequests.length) ? ajaxBuilder(clientBidRequests[0].timeout) : null;
   // handle client adapter requests
   clientBidRequests.forEach(bidRequest => {
     bidRequest.start = timestamp();

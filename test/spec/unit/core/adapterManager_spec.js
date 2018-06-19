@@ -151,6 +151,7 @@ describe('adapterManager tests', () => {
         'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
+        'timeout': 1000,
         'src': 's2s',
         'adUnitsS2SCopy': [
           {
@@ -315,6 +316,7 @@ describe('adapterManager tests', () => {
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
+        'timeout': 1000,
         'adUnitsS2SCopy': [
           {
             'code': '/19968336/header-bid-tag1',
@@ -444,6 +446,7 @@ describe('adapterManager tests', () => {
         ],
         'start': 1462918897460
       }];
+
       AdapterManager.callBids(
         adUnits,
         bidRequests,
