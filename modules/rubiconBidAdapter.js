@@ -96,12 +96,12 @@ export const spec = {
       // Log warning if mediaTypes contains both 'banner' and 'video'
       if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
         if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-          utils.logError('Error: size id is missing for instream video request.');
+          utils.logError('Error: size id is missing for rubicon instream video request.');
           return false;
         }
       } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
         if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
-          utils.logWarn('Warning: outstream video is sending invalid size id, converting size id to 203.');
+          utils.logWarn('Warning: rubicon outstream video is sending invalid size id, converting size id to 203.');
         }
       }
       if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
@@ -132,7 +132,6 @@ export const spec = {
         'x_source.tid': bidRequest.transactionId,
         timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
         stash_creatives: true,
-        ae_pass_through_parameters: params.video.aeParams,
         slots: []
       };
 
@@ -144,11 +143,15 @@ export const spec = {
         floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
         element_id: bidRequest.adUnitCode,
         name: bidRequest.adUnitCode,
-        language: params.video.language,
         width: size[0],
         height: size[1],
         size_id: utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : params.video.size_id
       };
+
+      if (params.video) {
+        data.ae_pass_through_parameters = params.video.aeParams;
+        slotData.language = params.video.language;
+      }
 
       if (params.inventory && typeof params.inventory === 'object') {
         slotData.inventory = params.inventory;
