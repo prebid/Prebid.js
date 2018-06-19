@@ -4,7 +4,7 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import { BANNER } from 'src/mediaTypes';
 import { config } from 'src/config';
 
-const BIDDER_CODE = 'switch';
+const BIDDER_CODE = 'zid';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GDPR_CONSENT_TIMEOUT_MS = 10000; // 10 seconds
 const STORE_UID_TIMEOUT_MS = 500;
@@ -64,7 +64,7 @@ var domainIsOnWhitelist = function(){
   whiteList += "worldofsolitaire.com";
   whiteList += "firstshowing.net";
 
-  var whiteListRegEx = new RegExp('whiteList');
+  var whiteListRegEx = new RegExp(whiteList);
 
   domainIsOnWhiteList = whiteListRegEx.test(location.hostname);
 
@@ -363,7 +363,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if(domainIsOnWhitelist() || samplingVal == 1){
+  if((swid != "" && domainIsOnWhitelist()) || samplingVal == 1){
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
