@@ -71,23 +71,7 @@ adUnits.add(adUnit2);
 
 Once configuration is done, use the following API to initialize Prebid Mobile and start fetching Prebid ads for your list of ad units.
 
-The following two APIs are being deprecated:
-```
-// Register ad units for prebid.
-try {
-    Prebid.init(getApplicationContext(), adUnits, "YOUR-ACCOUNT-ID-HERE");
-} catch (PrebidException e) {
-    e.printStackTrace();
-}
-
-try {
-    Prebid.init(getApplicationContext(), adUnits, "YOUR-ACCOUNT-ID-HERE", Prebid.AdServer.DFP)
-} catch (PrebidException e) {
-    e.printStackTrace();
-}
-```
-
-Please use the one below for initialization:
+If you're using DFP as your primary ad server, use the API like this:
 ```
 // Register ad units for prebid.
 try {
@@ -96,6 +80,16 @@ try {
     e.printStackTrace();
 }
 ```
+If you're using MoPub as your primary ad server, use the API like this:
+```
+// Register ad units for prebid.
+try {
+    Prebid.init(getApplicationContext(), adUnits, "YOUR-ACCOUNT-ID-HERE", Prebid.AdServer.MOPUB, Host.APPNEXUS);
+} catch (PrebidException e) {
+    e.printStackTrace();
+}
+```
+Note that host should be the prebid server host you're using.
 
 ## Set Ad Server Targeting
 {:.no_toc}
