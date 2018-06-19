@@ -103,6 +103,9 @@ export const spec = {
         if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
           utils.logWarn('Warning: rubicon outstream video is sending invalid size id, converting size id to 203.');
         }
+      } else {
+        utils.logError('Error: no instream or outstream context defined in mediaTypes.');
+        return false;
       }
       if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
         utils.logWarn('Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
