@@ -74,7 +74,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-const MAX_REQUESTS_PER_ORIGIN = 6;
+const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
@@ -241,6 +241,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     function runIfOriginHasCapacity(call) {
       let hasCapacity = true;
 
+      let maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
+
       call.bidRequests.some(bidRequest => {
         let requests = 1;
         let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC) ? 's2s'
@@ -251,9 +253,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
             // some bidders might use more than the MAX_REQUESTS_PER_ORIGIN in a single auction.  In those cases
             // set their request count to MAX_REQUESTS_PER_ORIGIN so the auction isn't permanently queued waiting
             // for capacity for that bidder
-            requests = Math.min(bidRequest.bids.length, MAX_REQUESTS_PER_ORIGIN);
+            requests = Math.min(bidRequest.bids.length, maxRequests);
           }
-          if (outstandingRequests[sourceInfo[source].origin] + requests > MAX_REQUESTS_PER_ORIGIN) {
+          if (outstandingRequests[sourceInfo[source].origin] + requests > maxRequests) {
             hasCapacity = false;
           }
         }
