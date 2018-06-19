@@ -52,9 +52,6 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
         }
       };
       x.ontimeout = function () {
-        if (typeof done === 'function') {
-          done(parser.origin);
-        }
         utils.logError('  xhr timeout after ', x.timeout, 'ms');
       };
 
