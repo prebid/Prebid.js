@@ -1209,9 +1209,12 @@ describe('Unit: Prebid Module', function () {
     registerBidder(spec);
 
     describe('part 1', () => {
+      let auctionArgs;
+
       beforeEach(() => {
         adUnitsBackup = auction.getAdUnits
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
+          auctionArgs = arguments[0];
           return auction;
         });
         logMessageSpy = sinon.spy(utils, 'logMessage');
@@ -1232,6 +1235,26 @@ describe('Unit: Prebid Module', function () {
           console.log(e);
         }
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
+      });
+
+      it('should attach transactionIds to ads (or pass through transactionId if it already exists)', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              transactionId: 'd0676a3c-ff32-45a5-af65-8175a8e7ddca',
+              bids: []
+            }, {
+              code: 'test2',
+              bids: []
+            }
+          ]
+        });
+
+        expect(auctionArgs.adUnits[0]).to.have.property('transactionId')
+          .and.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
+        expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
+          .and.to.match(/[a-f0-9\-]{36}/i);
       });
 
       it('should execute callback immediately if adUnits is empty', () => {

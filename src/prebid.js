@@ -339,9 +339,13 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const bidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adaptermanager.bidderRegistry;
 
+    if (!adUnit.transactionId) {
+      adUnit.transactionId = utils.generateUUID();
+    }
+
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
-      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      const spec = adapter && adapter.getSpec && adapter.getSpec();
       // banner is default if not specified in spec
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
@@ -382,13 +386,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
-    // generate transactionid for each new adUnits
-    // Append array to existing
-    adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === 'object') {
-    // Generate the transaction id for the adunit
-    adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
   // emit event
