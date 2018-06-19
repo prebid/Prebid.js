@@ -181,16 +181,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 
   function callBids() {
-    startAuctionTimer();
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
-
-    const auctionInit = {
-      timestamp: _auctionStart,
-      auctionId: _auctionId,
-      timeout: _timeout
-    };
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
     let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
@@ -200,11 +192,20 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     let requests = {};
 
-    _auctionStatus = AUCTION_IN_PROGRESS;
-
     let call = {
       bidRequests,
       run: () => {
+        startAuctionTimer();
+
+        _auctionStatus = AUCTION_IN_PROGRESS;
+
+        const auctionInit = {
+          timestamp: _auctionStart,
+          auctionId: _auctionId,
+          timeout: _timeout
+        };
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
+
         adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this), {
           request(source, origin) {
             increment(outstandingRequests, origin);
