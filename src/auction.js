@@ -202,9 +202,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     _auctionStatus = AUCTION_IN_PROGRESS;
 
-    queuedCalls.push({
+    let call = {
       bidRequests,
-      fn: () => {
+      run: () => {
         adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this), {
           request(source, origin) {
             increment(outstandingRequests, origin);
@@ -223,25 +223,24 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           done(origin) {
             outstandingRequests[origin]--;
             if (queuedCalls[0]) {
-              runIfOriginHasCapacity(queuedCalls[0])
+              if(runIfOriginHasCapacity(queuedCalls[0])) {
+                queuedCalls.shift();
+              }
             }
           }
         });
       }
-    });
+    };
 
-    if (queuedCalls.length === 1) {
-      queuedCalls.shift().fn();
-    } else {
-      if (!runIfOriginHasCapacity(queuedCalls[0])) {
-        utils.logWarn('queueing auction due to limited endpoint capacity');
-      }
+    if (!runIfOriginHasCapacity(call)) {
+      utils.logWarn('queueing auction due to limited endpoint capacity');
+      queuedCalls.push(call);
     }
 
-    function runIfOriginHasCapacity(nextCall) {
+    function runIfOriginHasCapacity(call) {
       let hasCapacity = true;
 
-      nextCall.bidRequests.some(bidRequest => {
+      call.bidRequests.some(bidRequest => {
         let requests = 1;
         let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
@@ -262,7 +261,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       });
 
       if (hasCapacity) {
-        queuedCalls.shift().fn();
+        call.run();
       }
 
       return hasCapacity;
