@@ -13,6 +13,7 @@
     "gumgumBidAdapter",
     "ixBidAdapter",
     "justpremiumBidAdapter",
+    "lockerdomeBidAdapter",
     "komoonaBidAdapter",
     "openxBidAdapter",
     "prebidServerBidAdapter",
