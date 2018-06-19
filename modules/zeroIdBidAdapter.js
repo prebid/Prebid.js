@@ -20,53 +20,72 @@ var samplingVal = Math.floor(Math.random() * 1000) + 1;
 var domainIsOnWhitelist = function(){
   var domainIsOnWhiteList = false;
 
-  var whiteList = "";
-  whiteList += "43rumors.com";
-  whiteList += "Pajiba.com";
-  whiteList += "albumoftheyear.org";
-  whiteList += "alltrails.com";
-  whiteList += "business2community.com";
-  whiteList += "celebritynetworth.com";
-  whiteList += "comicsands.com";
-  whiteList += "cordcuttersnews.com";
-  whiteList += "fleaflicker.com";
-  whiteList += "flickeringmyth.com";
-  whiteList += "fool.com";
-  whiteList += "freemahjong.org";
-  whiteList += "gardeningknowhow.com";
-  whiteList += "golfwrx.com";
-  whiteList += "groundedreason.com";
-  whiteList += "happycow.net";
-  whiteList += "healthyeater.com";
-  whiteList += "justwatch.com";
-  whiteList += "lolwot.com";
-  whiteList += "moviemistakes.com";
-  whiteList += "namechk.com";
-  whiteList += "nextshark.com";
-  whiteList += "postgradproblems.com";
-  whiteList += "scotch.io";
-  whiteList += "slashfilm.com";
-  whiteList += "slowrobot.com";
-  whiteList += "songfacts.com";
-  whiteList += "tennisworldusa.org";
-  whiteList += "tribunist.com";
-  whiteList += "tripstodiscover.com";
-  whiteList += "triviahive.com";
-  whiteList += "typingclub.com";
-  whiteList += "urbanfonts.com";
-  whiteList += "uscreditcardguide.com";
-  whiteList += "vandelaydesign.com";
-  whiteList += "wdwmagic.com";
-  whiteList += "weather.us";
-  whiteList += "weddbook.com";
-  whiteList += "who.unfollowed.me";
-  whiteList += "windowsreport.com";
-  whiteList += "worldofsolitaire.com";
-  whiteList += "firstshowing.net";
+  var whiteList = [
+    "43rumors.com",
+    "Pajiba.com",
+    "albumoftheyear.org",
+    "alltrails.com",
+    "business2community.com",
+    "celebritynetworth.com",
+    "comicsands.com",
+    "cordcuttersnews.com",
+    "fleaflicker.com",
+    "flickeringmyth.com",
+    "fool.com",
+    "freemahjong.org",
+    "gardeningknowhow.com",
+    "golfwrx.com",
+    "groundedreason.com",
+    "happycow.net",
+    "healthyeater.com",
+    "justwatch.com",
+    "lolwot.com",
+    "moviemistakes.com",
+    "namechk.com",
+    "nextshark.com",
+    "postgradproblems.com",
+    "scotch.io",
+    "slashfilm.com",
+    "slowrobot.com",
+    "songfacts.com",
+    "tennisworldusa.org",
+    "tribunist.com",
+    "tripstodiscover.com",
+    "triviahive.com",
+    "typingclub.com",
+    "urbanfonts.com",
+    "uscreditcardguide.com",
+    "vandelaydesign.com",
+    "wdwmagic.com",
+    "weather.us",
+    "weddbook.com",
+    "who.unfollowed.me",
+    "windowsreport.com",
+    "worldofsolitaire.com",
+    "firstshowing.net"
+  ]
 
-  var whiteListRegEx = new RegExp(whiteList);
+  var locatshun = window.location.hostname;
 
-  domainIsOnWhiteList = whiteListRegEx.test(location.hostname);
+  var hasWWW = locatshun.indexOf("www.");
+
+
+
+
+  if(hasWWW != -1){
+    var indexPOS = hasWWW + 4;
+    locatshun = locatshun.slice(indexPOS);
+  }
+
+  var domainCheck = whiteList.indexOf(locatshun);
+
+  if (domainCheck == -1){
+    domainIsOnWhiteList = false;
+  }
+  else{
+    domainIsOnWhiteList = true;
+  }
+
 
   return domainIsOnWhiteList;
 }
@@ -315,6 +334,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   let cur = config.getConfig('currency');
 
   let swid = readCookie('__SW');
+
   if (swid === null) {
     swid = '';
   }
@@ -363,7 +383,19 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if((swid != "" && domainIsOnWhitelist()) || samplingVal == 1){
+  if(swid != "" && domainIsOnWhitelist()){
+    return {
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    };
+  }
+  else if(samplingVal == 1){
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
