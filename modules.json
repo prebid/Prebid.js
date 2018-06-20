@@ -28,6 +28,5 @@
     "sonobiBidAdapter",
     "sovrnBidAdapter",
     "zeroIdBidAdapter",
-    "lockerdomeBidAdapter",
     "consumableBidAdapter"
 ]
