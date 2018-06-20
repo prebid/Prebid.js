@@ -1,6 +1,3 @@
-require('babel-core/register')({
-  ignore: /node_modules\/(?!ProjectB)/
-});
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
 const END_POINT = 'http://papi.mynativeplatform.com/pub2/web/hbwidget.json';
