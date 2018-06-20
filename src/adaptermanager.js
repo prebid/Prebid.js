@@ -393,12 +393,20 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 };
 
 exports.aliasBidAdapter = function (bidderCode, alias) {
-  var existingAlias = _bidderRegistry[alias];
+  let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
-    var bidAdaptor = _bidderRegistry[bidderCode];
+    let bidAdaptor = _bidderRegistry[bidderCode];
     if (typeof bidAdaptor === 'undefined') {
-      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
+      const s2sConfig = config.getConfig('s2sConfig');
+      const s2sBidders = s2sConfig && s2sConfig.bidders;
+
+      if (!(s2sBidders && includes(s2sBidders, alias))) {
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      } else {
+        exports.aliasRegistry[alias] = bidderCode;
+      }
     } else {
       try {
         let newAdapter;

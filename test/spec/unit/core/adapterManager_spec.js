@@ -19,7 +19,8 @@ const CONFIG = {
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
-  bidders: ['appnexus']
+  bidders: ['appnexus'],
+  accountId: 'abc'
 };
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
@@ -717,6 +718,36 @@ describe('adapterManager tests', () => {
         AdapterManager.aliasBidAdapter(CODE, alias);
         expect(AdapterManager.bidderRegistry).to.have.property(alias);
         expect(AdapterManager.videoAdapters).to.include(alias);
+      });
+    });
+
+    describe('special case for s2s-only bidders', () => {
+      beforeEach(() => {
+        sinon.stub(utils, 'logError');
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+        utils.logError.restore();
+      });
+
+      it('should allow an alias if alias is part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
+
+        AdapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(AdapterManager.aliasRegistry).to.have.property('s2sAlias');
+      });
+
+      it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
+
+        AdapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
+        sinon.assert.calledOnce(utils.logError);
+        expect(AdapterManager.aliasRegistry).to.not.have.property('s2sAlias1');
       });
     });
   });

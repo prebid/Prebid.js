@@ -340,8 +340,14 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
     // get the bidder's mediaTypes
-    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adaptermanager.bidderRegistry;
+
+    const s2sConfig = config.getConfig('s2sConfig');
+    const s2sBidders = s2sConfig && s2sConfig.bidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
+      return !includes(s2sBidders, bidder);
+    }) : allBidders;
 
     if (!adUnit.transactionId) {
       adUnit.transactionId = utils.generateUUID();
