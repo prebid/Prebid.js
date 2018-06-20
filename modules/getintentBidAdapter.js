@@ -11,7 +11,7 @@ const VIDEO_PROPERTIES = [
   'protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'
 ];
 const OPTIONAL_PROPERTIES = [
-  'cur', 'floor'
+  'cur', 'floor', 'sid'
 ];
 
 export const spec = {
