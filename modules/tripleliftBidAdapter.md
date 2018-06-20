@@ -9,9 +9,7 @@ Maintainer: bzellman@triplelift.com
 # Description
 
 Connects to Triplelift Exchange for bids.
-
-Triplelift bid adapter supports Banner format only. We are a native SSP that takes components and renders them to fit the look and feel of the publisher's page.
-We do not support
+Triplelift bid adapter supports Banner format only.
 
 # Test Parameters
 ```
