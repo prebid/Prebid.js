@@ -14,66 +14,81 @@ let gdpr_applies = false;
 let uids = {};
 let storeUIDTimeoutHandler = null;
 
-
-var cN = "";
-
-var personaGroup;
-
-var mgcVal;
+var samplingVal = Math.floor(Math.random() * 1000) + 1;
 
 
-var mgcValRnd = Math.floor(Math.random() * 10) + 1;
+var domainIsOnWhitelist = function(){
+  var domainIsOnWhiteList = false;
 
-if(mgcValRnd == 100){
-  mgcVal = true;
-}
-else{
-  mgcVal = false;
-}
+  var whiteList = [
+    "43rumors.com",
+    "Pajiba.com",
+    "albumoftheyear.org",
+    "alltrails.com",
+    "business2community.com",
+    "celebritynetworth.com",
+    "comicsands.com",
+    "cordcuttersnews.com",
+    "fleaflicker.com",
+    "flickeringmyth.com",
+    "fool.com",
+    "freemahjong.org",
+    "gardeningknowhow.com",
+    "golfwrx.com",
+    "groundedreason.com",
+    "happycow.net",
+    "healthyeater.com",
+    "justwatch.com",
+    "lolwot.com",
+    "moviemistakes.com",
+    "namechk.com",
+    "nextshark.com",
+    "postgradproblems.com",
+    "scotch.io",
+    "slashfilm.com",
+    "slowrobot.com",
+    "songfacts.com",
+    "tennisworldusa.org",
+    "tribunist.com",
+    "tripstodiscover.com",
+    "triviahive.com",
+    "typingclub.com",
+    "urbanfonts.com",
+    "uscreditcardguide.com",
+    "vandelaydesign.com",
+    "wdwmagic.com",
+    "weather.us",
+    "weddbook.com",
+    "who.unfollowed.me",
+    "windowsreport.com",
+    "worldofsolitaire.com",
+    "firstshowing.net"
+  ]
+
+  var locatshun = window.location.hostname;
+
+  var hasWWW = locatshun.indexOf("www.");
 
 
 
-var gC = function (key) {
-    var match = document.cookie.match(new RegExp(key + '=([^;]+)'));
-    if (match) return match[1];
-  },
 
-  //setCookie
-  sC = function (cN, cookieType, value) {
-    document.cookie = cN + cookieType + "=" + value + "; path=/; max-age=900000";
-  };
-
-/*
-if(!gC('personaGroup')) { // check group id cookie
-
-  var personpersonaFile = Math.floor(Math.random() * 40) + 1;
-
-  var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-  xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.setRequestHeader('Accept', '*');
-  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.send();
-  if (xhr.status === 200) {
-
-    var response = xhr.responseText;
-    var responseArray = response.split(",");
-    var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
-    var groupid = responseArray[randomIndex];
-
-    //sC(cN,'anonymousPersonaID', groupid);
-    sC(cN,'personaGroup', groupid);
-
-    personaGroup = groupid;
-
+  if(hasWWW != -1){
+    var indexPOS = hasWWW + 4;
+    locatshun = locatshun.slice(indexPOS);
   }
-  else if (xhr.status !== 200) {
-    sC(cN,'personaGroup', 123456789);
+
+  var domainCheck = whiteList.indexOf(locatshun);
+
+  if (domainCheck == -1){
+    domainIsOnWhiteList = false;
   }
+  else{
+    domainIsOnWhiteList = true;
+  }
+
+
+  return domainIsOnWhiteList;
 }
-else{
-  personaGroup = gC('anonymousPersonaID');
-}*/
 
 /**
  * Read a cookie from the first party domain
@@ -320,42 +335,13 @@ const buildRequests = function (validBidRequests, bidderRequest) {
 
   let swid = readCookie('__SW');
 
-  if (swid === null && gdpr_applies && mgcVal) {
-    swid = personaGroup;
+  if (swid === null) {
+    swid = '';
   }
 
   let uids = readCookie('__SWU');
   if (uids === null) {
     uids = '';
-  }
-
-
-  var getConsentStr = function(){
-    if(mgcVal && gdpr_applies){
-      return "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
-    }
-    else{
-      if(bidderRequest.gdprConsent.consentString){
-        return bidderRequest.gdprConsent.consentString;
-      }
-      else{
-        return "";
-      }
-    }
-  }
-
-  var gdprApp = function(){
-    if(mgcVal && gdpr_applies){
-      return false;
-    }
-    else{
-      if(typeof bidderRequest.gdprConsent.gdprApplies === 'boolean'){
-        return bidderRequest.gdprConsent.gdprApplies;
-      }
-      else{
-        return false;
-      }
-    }
   }
 
   let request = {
@@ -368,16 +354,10 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     requestTime: (new Date()).getTime(),
     currency: cur,
     gdpr: {
-      consent_string: getConsentStr(),
-      gdpr_applies: gdprApp()
+      consent_string: bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
+      gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
     }
   };
-
-
-  /*  gdpr: {
-      consent_string: bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
-        gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
-    }*/
 
   if ('__sw_start_time' in window) {
     request.loadTime = window.__sw_start_time;
@@ -403,17 +383,30 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-
-  return {
-    method: 'POST',
-    url: "https://delivery.h.switchadhub.com/prebid",  //" + domain + "/prebid",
-    data: JSON.stringify(request),
-    bidderRequest,
-    options: {
-      contentType: 'text/plain',
-      withCredentials: true
-    }
-  };
+  if(swid != "" && domainIsOnWhitelist()){
+    return {
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    };
+  }
+  else if(samplingVal == 1){
+    return {
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    };
+  }
 
 
 }
@@ -518,7 +511,7 @@ const triggerSync = function () {
 
         window.swSyncDone = true;
 
-        let syncUri = "https://delivery.h.switchadhub.com/sync";
+        let syncUri = "//delivery.h.switchadhub.com/sync";
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
