@@ -653,10 +653,12 @@ describe('stroeerCore bid adapter', function () {
         // Prebid will do this
         bid.adId = '123456789123456789';
 
-        const ad = bid.generateAd({auctionPrice: '40.22'});
+        const ad1 = bid.generateAd({auctionPrice: '40.22'});
+        const ad2 = bid.generateAd({auctionPrice: '40.22', firstBid: null});
 
         const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
-        assert.equal(ad, expectedAd);
+        assert.equal(ad1, expectedAd);
+        assert.equal(ad2, expectedAd);
       });
 
       it('should replace all occurrences of ${SECOND_BID:ENC}', () => {
@@ -710,10 +712,12 @@ describe('stroeerCore bid adapter', function () {
         // Prebid will do this
         bid.adId = '123456789123456789';
 
-        const ad = bid.generateAd({auctionPrice: '40.22'});
+        const ad1 = bid.generateAd({auctionPrice: '40.22'});
+        const ad2 = bid.generateAd({auctionPrice: '40.22', secondBid: null});
 
         const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
-        assert.equal(ad, expectedAd);
+        assert.equal(ad1, expectedAd);
+        assert.equal(ad2, expectedAd);
       });
 
       it('should replace all occurrences of ${THIRD_BID:ENC} with empty string if no second bid', () => {
@@ -729,10 +733,12 @@ describe('stroeerCore bid adapter', function () {
         // Prebid will do this
         bid.adId = '123456789123456789';
 
-        const ad = bid.generateAd({auctionPrice: '40.22'});
+        const ad1 = bid.generateAd({auctionPrice: '40.22'});
+        const ad2 = bid.generateAd({auctionPrice: '40.22', thirdBid: null});
 
         const expectedAd = '<img src=\'tracker.com?p=></img>\n<script>var price=</script>';
-        assert.equal(ad, expectedAd);
+        assert.equal(ad1, expectedAd);
+        assert.equal(ad2, expectedAd);
       });
 
       describe('price truncation in generateAd', function () {

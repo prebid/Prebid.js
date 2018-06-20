@@ -190,9 +190,9 @@ export const spec = {
             auctionPrice = tunePrice(auctionPrice);
             sspAuctionPrice = tunePrice(sspAuctionPrice);
 
-            const sspFirstBid = typeof firstBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(firstBid).toString());
-            const sspSecondBid = typeof secondBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(secondBid).toString());
-            const sspThirdBid = typeof thirdBid === 'undefined' ? '' : _internalCrypter.encrypt(this.adId, tunePrice(thirdBid).toString());
+            const sspFirstBid = firstBid == null ? '' : _internalCrypter.encrypt(this.adId, tunePrice(firstBid).toString());
+            const sspSecondBid = secondBid == null ? '' : _internalCrypter.encrypt(this.adId, tunePrice(secondBid).toString());
+            const sspThirdBid = thirdBid == null ? '' : _internalCrypter.encrypt(this.adId, tunePrice(thirdBid).toString());
 
             // note: adId provided by prebid elsewhere (same as bidId)
             return this.originalAd
