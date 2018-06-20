@@ -63,7 +63,7 @@ export const spec = {
   interpretResponse: function (ucfunnelResponseObj, request) {
     const bidRequest = request.bidRequest;
     const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
-    const videoPlayerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    const videoPlayerSize = parseSizes(bidRequest);
 
     let bid = {
       requestId: bidRequest.bidId,
