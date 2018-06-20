@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
-// import {parse as parseURL} from '../../../src/url';
+
 const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 
 describe('triplelift adapter', () => {
