@@ -3,12 +3,7 @@ require('babel-core/register')({
 });
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
-// production
-// const END_POINT = 'http://papi.mynativeplatform.com/pub2/web/hbwidget.json';
-// local
-const END_POINT = 'http://127.0.0.1:8080/pub2/web/hbwidget.json';
-// Qa
-// const END_POINT = 'http://54.237.134.160:8080/pub2/web/hbwidget.json';
+const END_POINT = 'http://papi.mynativeplatform.com/pub2/web/hbwidget.json';
 const END_POINT_METHOD = 'POST';
 
 // called first
