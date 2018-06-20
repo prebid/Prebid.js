@@ -402,97 +402,101 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
-    it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+    describe('gdpr tests', () => {
+      afterEach(() => {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+      });
 
-      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
-      config.setConfig(consentConfig);
+      it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
 
-      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-      gdprBidRequest[0].gdprConsent = {
-        consentString: 'abc123',
-        gdprApplies: true
-      };
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+        config.setConfig(consentConfig);
 
-      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        gdprBidRequest[0].gdprConsent = {
+          consentString: 'abc123',
+          gdprApplies: true
+        };
 
-      expect(requestBid.regs.ext.gdpr).is.equal(1);
-      expect(requestBid.user.ext.consent).is.equal('abc123');
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
 
-      config.resetConfig();
-      config.setConfig({s2sConfig: CONFIG});
+        expect(requestBid.regs.ext.gdpr).is.equal(1);
+        expect(requestBid.user.ext.consent).is.equal('abc123');
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      requestBid = JSON.parse(requests[1].requestBody);
+        config.resetConfig();
+        config.setConfig({s2sConfig: CONFIG});
 
-      expect(requestBid.regs).to.not.exist;
-      expect(requestBid.user).to.not.exist;
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(requests[1].requestBody);
 
-      config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
-    });
+        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.user).to.not.exist;
+      });
 
-    it('check gdpr info gets added into cookie_sync request: have consent data', () => {
-      let cookieSyncConfig = utils.deepClone(CONFIG);
-      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      it('check gdpr info gets added into cookie_sync request: have consent data', () => {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
-      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
-      config.setConfig(consentConfig);
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+        config.setConfig(consentConfig);
 
-      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
 
-      gdprBidRequest[0].gdprConsent = {
-        consentString: 'abc123def',
-        gdprApplies: true
-      };
+        gdprBidRequest[0].gdprConsent = {
+          consentString: 'abc123def',
+          gdprApplies: true
+        };
 
-      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.gdpr).is.equal(1);
-      expect(requestBid.gdpr_consent).is.equal('abc123def');
-    });
+        expect(requestBid.gdpr).is.equal(1);
+        expect(requestBid.gdpr_consent).is.equal('abc123def');
+      });
 
-    it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
-      let cookieSyncConfig = utils.deepClone(CONFIG);
-      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
-      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
-      config.setConfig(consentConfig);
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+        config.setConfig(consentConfig);
 
-      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-      gdprBidRequest[0].gdprConsent = {
-        consentString: 'xyz789abcc',
-        gdprApplies: false
-      };
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        gdprBidRequest[0].gdprConsent = {
+          consentString: 'xyz789abcc',
+          gdprApplies: false
+        };
 
-      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.gdpr).is.equal(0);
-      expect(requestBid.gdpr_consent).is.undefined;
-    });
+        expect(requestBid.gdpr).is.equal(0);
+        expect(requestBid.gdpr_consent).is.undefined;
+      });
 
-    it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
-      let cookieSyncConfig = utils.deepClone(CONFIG);
-      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
-      let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
-      config.setConfig(consentConfig);
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
+        config.setConfig(consentConfig);
 
-      let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-      gdprBidRequest[0].gdprConsent = {
-        consentString: undefined,
-        gdprApplies: undefined
-      };
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        gdprBidRequest[0].gdprConsent = {
+          consentString: undefined,
+          gdprApplies: undefined
+        };
 
-      adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.gdpr).is.undefined;
-      expect(requestBid.gdpr_consent).is.undefined;
+        expect(requestBid.gdpr).is.undefined;
+        expect(requestBid.gdpr_consent).is.undefined;
+      });
     });
 
     it('sets invalid cacheMarkup value to 0', () => {
