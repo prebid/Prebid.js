@@ -111,9 +111,9 @@ describe('triplelift adapter', () => {
       }
     };
     let bidderRequest = {
-      bidderCode: "triplelift",
-      auctionId: "a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18",
-      bidderRequestId: "5c55612f99bc11",
+      bidderCode: 'triplelift',
+      auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
+      bidderRequestId: '5c55612f99bc11',
       bids: [
         {
           imp_id: 0,
@@ -125,7 +125,7 @@ describe('triplelift adapter', () => {
         }
       ],
       gdprConsent: {
-        consentString: "BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY",
+        consentString: 'BOONm0NOONma-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVOQ6gEaY',
         gdprApplies: true
       }
     };
@@ -174,9 +174,9 @@ describe('triplelift adapter', () => {
         }
       };
       let bidderRequest = {
-        bidderCode: "triplelift",
-        auctionId: "a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18",
-        bidderRequestId: "5c55612f99bc11",
+        bidderCode: 'triplelift',
+        auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
+        bidderRequestId: '5c55612f99bc11',
         bids: [
           {
             imp_id: 0,
@@ -196,7 +196,7 @@ describe('triplelift adapter', () => {
           }
         ],
         gdprConsent: {
-          consentString: "BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY",
+          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
           gdprApplies: true
         }
       };
