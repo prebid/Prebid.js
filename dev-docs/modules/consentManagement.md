@@ -241,7 +241,7 @@ var cmpLoaded;       // true if iabConsentData was loaded and processed
             }
         } catch (e) {}  // do nothing
     }
-    function cmpFunc = function(command, version, callback) {
+    var cmpFunc = function(command, version, callback) {
         if (command === 'ping') {
             callback({gdprAppliesGlobally: gdprApplies, cmpLoaded: cmpLoaded}, responseCode);
         } else if (command === 'getConsentData') {
