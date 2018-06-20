@@ -1305,6 +1305,7 @@ describe('Unit: Prebid Module', function () {
           ]
         }];
         adUnitCodes = ['adUnit-code'];
+        configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
         spyCallBids = sinon.spy(adaptermanager, 'callBids');
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');

@@ -74,7 +74,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-const MAX_REQUESTS_PER_ORIGIN = 4;
+export let MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
@@ -224,7 +224,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           done(origin) {
             outstandingRequests[origin]--;
             if (queuedCalls[0]) {
-              if(runIfOriginHasCapacity(queuedCalls[0])) {
+              if (runIfOriginHasCapacity(queuedCalls[0])) {
                 queuedCalls.shift();
               }
             }
