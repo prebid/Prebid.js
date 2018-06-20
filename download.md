@@ -304,7 +304,7 @@ Note if you receive an email with a broken link you most likely selected a confi
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" disabled class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Temporarily Down for maintenance. </button>
 
 </div>
 
