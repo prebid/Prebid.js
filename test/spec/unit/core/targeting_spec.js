@@ -111,13 +111,13 @@ describe('targeting tests', () => {
       amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
     });
 
     afterEach(() => {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidExpired.restore();
+      targetingModule.isBidNotExpired.restore();
     });
 
     it('selects the top bid when _sendAllBids true', () => {
@@ -149,13 +149,13 @@ describe('targeting tests', () => {
       amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
+      bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
     });
 
     afterEach(() => {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidExpired.restore();
+      targetingModule.isBidNotExpired.restore();
     });
 
     it('returns targetingSet correctly', () => {
@@ -171,7 +171,7 @@ describe('targeting tests', () => {
       let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(() => {
-        bidExpiryStub = sinon.stub(targetingModule, 'isBidExpired').returns(true);
+        bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
         auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
       });
 

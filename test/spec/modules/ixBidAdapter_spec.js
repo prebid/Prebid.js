@@ -77,10 +77,10 @@ describe('IndexexchangeAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when siteID is number', () => {
+    it('should return true when siteID is number', () => {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.siteId = 123;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when siteID is missing', () => {

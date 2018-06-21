@@ -167,7 +167,7 @@ export const spec = {
       return false;
     }
 
-    if (typeof bid.params.siteId !== 'string') {
+    if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
       return false;
     }
 

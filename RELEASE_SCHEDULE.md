@@ -91,6 +91,21 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
    git push
    ```
 
+## Beta Releases
+
+Prebid.js features may be released as Beta or as Generally Available (GA).
+
+Characteristics of a `Beta` release:
+- May be a partial implementation (e.g. more work needed to flesh out the feature)
+- May not be fully tested with other features
+- Limited documentation, focused on technical aspects
+- Few users
+
+Characteristics of a `GA` release:
+- Complete set of functionality
+- Significant user base with no major issues for at least a month
+- Decent documentation that includes business need, use cases, and examples
+
 
 ## FAQs
 

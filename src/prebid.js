@@ -9,6 +9,7 @@ import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
+import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
@@ -26,6 +27,9 @@ const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISS
 const eventValidators = {
   bidWon: checkDefinedPlacement
 };
+
+// initialize existing debugging sessions if present
+sessionLoader();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -336,8 +340,14 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
     // get the bidder's mediaTypes
-    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adaptermanager.bidderRegistry;
+
+    const s2sConfig = config.getConfig('s2sConfig');
+    const s2sBidders = s2sConfig && s2sConfig.bidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
+      return !includes(s2sBidders, bidder);
+    }) : allBidders;
 
     if (!adUnit.transactionId) {
       adUnit.transactionId = utils.generateUUID();

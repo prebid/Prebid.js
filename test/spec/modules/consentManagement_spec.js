@@ -68,35 +68,47 @@ describe('consentManagement', function () {
     });
 
     describe('error checks:', () => {
-      describe('unknown CMP framework ID:', () => {
-        beforeEach(() => {
-          sinon.stub(utils, 'logWarn');
+      beforeEach(() => {
+        didHookReturn = false;
+        sinon.stub(utils, 'logWarn');
+        sinon.stub(utils, 'logError');
+      });
+
+      afterEach(() => {
+        utils.logWarn.restore();
+        utils.logError.restore();
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        resetConsentData();
+      });
+
+      it('should throw a warning and return to hooked function when an unknown CMP framework ID is used', () => {
+        let badCMPConfig = {
+          cmpApi: 'bad'
+        };
+        setConfig(badCMPConfig);
+        expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
+
+        requestBidsHook({}, () => {
+          didHookReturn = true;
         });
+        let consent = gdprDataHandler.getConsentData();
+        sinon.assert.calledOnce(utils.logWarn);
+        expect(didHookReturn).to.be.true;
+        expect(consent).to.be.null;
+      });
 
-        afterEach(() => {
-          utils.logWarn.restore();
-          config.resetConfig();
-          $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
-          resetConsentData();
+      it('should throw proper errors when CMP is not found', () => {
+        setConfig(goodConfigWithCancelAuction);
+
+        requestBidsHook({}, () => {
+          didHookReturn = true;
         });
-
-        it('should return Warning message and return to hooked function', () => {
-          let badCMPConfig = {
-            cmpApi: 'bad'
-          };
-          setConfig(badCMPConfig);
-          expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
-
-          didHookReturn = false;
-
-          requestBidsHook({}, () => {
-            didHookReturn = true;
-          });
-          let consent = gdprDataHandler.getConsentData();
-          sinon.assert.calledOnce(utils.logWarn);
-          expect(didHookReturn).to.be.true;
-          expect(consent).to.be.null;
-        });
+        let consent = gdprDataHandler.getConsentData();
+        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
+        sinon.assert.calledTwice(utils.logError);
+        expect(didHookReturn).to.be.false;
+        expect(consent).to.be.null;
       });
     });
 

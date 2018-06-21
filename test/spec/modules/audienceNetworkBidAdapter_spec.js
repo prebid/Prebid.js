@@ -19,7 +19,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
-const pbv = '$prebid.version$';
+const debug = 'adapterver=1.0.0&platform=241394079772386&platver=$prebid.version$';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
 describe('AudienceNetwork adapter', () => {
@@ -140,7 +140,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
       }]);
     });
 
@@ -159,7 +159,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['640x480'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=${pageUrl}&sdk[]=&pbv=${pbv}&playerwidth=640&playerheight=480`
+        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=${pageUrl}&sdk[]=&${debug}&playerwidth=640&playerheight=480`
       }]);
     });
 
@@ -178,7 +178,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['728x90'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
       }]);
     });
 
@@ -197,7 +197,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&pbv=${pbv}`
+        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
       }]);
     });
 
