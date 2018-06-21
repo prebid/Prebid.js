@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Prebid Server Video Example - Kaltura Player</title>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            /* PRE-DEFINE `invokeVideoPlayer`
+
+            Because we have no way of knowing when all the bids will be
+            returned from Prebid we can't be sure that the browser will
+            reach the point where `invokeVideoPlayer` is defined before
+            `bidsBackHandler` fires and tries to call it.
+
+            To prevent an "`invokeVideoPlayer` not defined" error, we
+            pre-define it before we make the call to Prebid, and redefine
+            it later on with the code to create the player and play the
+            ad.
+
+            In this first version, it simply stores the winning VAST to
+            use later. */
+
+            var tempTag = false;
+            var invokeVideoPlayer = function(url) {
+                tempTag = url;
+            };
+
+            /* Prebid video ad unit */
+
+            var videoAdUnit = {
+                code: 'video1',
+                mediaTypes: {
+                    video: {
+                        playerSize: [640, 480],
+                        context: 'instream',
+                        mimes: ['video/mp4'],
+                        protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                        playbackmethod: [2]
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232361, // Add your own placement id here.
+                        video: {
+                            skippable: true,
+                            playback_method: ['auto_play_sound_off']
+                        }
+                    }
+                }]
+            };
+
+            pbjs.que.push(function() {
+
+                // configure prebid to use prebid cache and prebid server
+                // make sure to add your own accountId to your s2sConfig object
+                pbjs.setConfig({
+                    cache: {
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                    },
+                    debug: true,
+                    s2sConfig: {
+                        endpoint: 'http://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+                        accountId: 'c9d412ee-3cc6-4b66-9326-9f49d528f13e',
+                        bidders: ['appnexus']
+                    }
+                });
+
+                pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+
+                pbjs.requestBids({
+                    bidsBackHandler: function(bids) {
+
+                        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                            adUnit: videoAdUnit,
+                            params: {
+                                iu: '/19968336/prebid_cache_video_adunit',
+                                cust_params: {
+                                    section: 'blog',
+                                    anotherKey: 'anotherValue'
+                                },
+                                output: 'vast'
+                            }
+                        });
+                        invokeVideoPlayer(videoUrl);
+                    }
+                });
+            });
+
+        </script>
+    </head>
+
+    <body>
+        <h1>Prebid Server Video Example - Kaltura Player</h1>
+        <div id="myPlayer" style="width:640px; height:480px;"></div>
+
+        <!-- INCLUDE KALTURA PLAYER SCRIPT
+
+		 Add the script for your Kaltura player. This will be part of
+		 the code you will copy-paste from Kaltura. -->
+
+        <script src="http://cdnapi.kaltura.com/p/2222001/sp/222200100/embedIframeJs/uiconf_id/37440401/partner_id/2222001"></script>
+
+        <script>
+            invokeVideoPlayer = function(url) {
+
+                /* EMBED KALTURA PLAYER
+
+                Call `kWidget.embed()` and pass in a JSON object of your
+                player settings. Most of this JSON object will be part of
+                the code you will copy paste from Kaltura.
+
+                Documentation for kWidget available here:
+                http://player.kaltura.com/docs/kwidget */
+
+                kWidget.embed({
+                    "targetId": "myPlayer",
+                    "wid": "_2222001",
+                    "uiconf_id": 37440401,
+
+                    /* ADD VAST SETTINGS TO THE PLAYER SETTINGS
+
+                    Inside `flashVars`, add another key called `"vast"` and
+                    pass in a JSON object with:
+
+                    - the position where you want your ad to play
+
+                    - the URL of the ad (which in this case will be the `url`
+                    we got back from Prebid) */
+
+                    "flashvars": {
+                        "streamerType": "auto",
+                        "vast": {
+                            "plugin": true,
+                            "prerollUrl": url,
+                        }
+                    },
+                    "entry_id": "1_k4eka7er",
+
+                    /* ADD A READY CALLBACK AND GET A REFERENCE TO THE PLAYER
+
+                    Add a ready callback to the player settings. This allows
+                    us to get a reference to the player (stored in the
+                    variable `kdp`) in order to interact with it later. */
+
+                    readyCallback: function(playerId) {
+                        console.log("Kaltura player " + playerId + " is ready.");
+                    }
+                });
+            };
+
+            /* ACCOUNT FOR PAGE SPEED
+
+            If Prebid returned bids before the browser reached the end of
+            the page, the first version of `invokeVideoPlayer` will have
+            been called from `bidsBackHandler` so the winning VAST tag
+            will be stored in the `tempTag` variable.
+
+            If that's the case, we want to call the 'real' version of
+            `invokeVideoPlayer` with the stored URL to create the player
+            and play the ad.
+
+            If `tempTag` is not defined, that means the browser reached
+            the end of the page before the bids came back from Prebid,
+            meaning the 'real' version of `invokeVideoPlayer` was already
+            called. */
+
+            if (tempTag) {
+                invokeVideoPlayer(tempTag);
+                tempTag = false;
+            }
+
+        </script>
+    </body>
+
+</html>

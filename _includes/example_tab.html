@@ -1,0 +1,27 @@
+<h5>All Examples</h5>
+
+<ul id="example-tab">
+
+    {% assign example_pages = (site.pages | where: "layout", "example") | sort: "pid" %} 
+
+    {% for epage in example_pages %}
+        <li>
+            <a href="{{ epage.url }}">{{ epage.title }}</a> 
+            {% if epage.is_beta %}
+                <span class="label label-warning">Beta</span>
+            {% endif %}
+        </li>
+    {% endfor %}
+
+    <br> {% assign pl_example_pages = (site.pages | where: "layout", "player_example" | sort: "pid" %} 
+
+    {% for p_epage in pl_example_pages %}
+        <li>
+            <a href="{{ p_epage.url }}">{{ p_epage.title }}</a>
+            {% if p_epage.is_beta %}
+                <span class="label label-warning">Beta</span> 
+            {% endif %}
+        </li>
+    {% endfor %}
+
+</ul>

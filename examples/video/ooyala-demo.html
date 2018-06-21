@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script>
+        <title>Ooyala Prebid Demo</title>
+
+        <!-- LOAD OOYALA PLUGINS
+
+         Load the Ooyala player scripts you plan to use.
+
+         You must load the core player script, the scripts for
+         whatever video formats you want to support, and the scripts
+         for the ad manager you want to use.
+
+         The scripts themselves and a guide for choosing which ones
+         you need can be found here:
+
+         http://help.ooyala.com/video-platform/documentation/concepts/pbv4_plugins.html
+        -->
+
+        <!-- CORE PLAYER REQUIRED -->
+        <script src="//player.ooyala.com/static/v4/stable/latest/core.min.js"></script>
+
+        <!-- VIDEO PLUGINS -->
+        <script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/main_html5.min.js"></script>
+        <script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/bit_wrapper.min.js"></script>
+        <script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/osmf_flash.min.js"></script>
+
+        <!-- HTML5 SKIN -->
+        <script src="//player.ooyala.com/static/v4/stable/latest/skin-plugin/html5-skin.min.js"></script>
+
+        <!-- SKIN ASSET -->
+        <link rel="stylesheet" href="//player.ooyala.com/static/v4/stable/latest/skin-plugin/html5-skin.min.css" />
+
+        <!-- IMA PLUGIN -->
+        <script src="//player.ooyala.com/static/v4/stable/latest/ad-plugin/google_ima.js"></script>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+            iosDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+            console.log("|||| Start of prebid: " + performance.now());
+
+            /* PRE-DEFINE `invokeVideoPlayer`
+
+               Because we have no way of knowing when all the bids will be
+               returned from prebid we can't be sure that the browser will
+               reach the point where `invokeVideoPlayer` is defined before
+               bidsBackHandler fires and tries to call it.
+
+               To prevent a `invokeVideoPlayer not defined` error, we
+               pre-define it before we make the call to prebid, and redefine
+               it later on with the code to create the player and play the
+               ad. In this first version it simply stores the winning VAST to
+               use later.  */
+
+            var tempTag = false;
+            var invokeVideoPlayer = function(url) {
+                tempTag = url;
+            }
+
+            var videoAdUnit = {
+                code: 'video1',
+                mediaTypes: {
+                    video: {
+                        playerSize: [640, 480],
+                        context: 'instream'
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: iosDevice ? 13239390 : 13232361, // Add your own placement id here. Note, skippable video is not supported on iOS 
+                        video: {
+                            skippable: true,
+                            playback_method: ['auto_play_sound_off']
+                        }
+                    }
+                }]
+            };
+
+            pbjs.que.push(function() {
+                pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+
+                /* Use the Prebid Cache - required for video ads */
+
+                pbjs.setConfig({
+                    debug: true,
+                    cache: {
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                    }
+                });
+
+                pbjs.requestBids({
+                    bidsBackHandler: function(bids) {
+
+                        /* Build the DFP video URL */
+
+                        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                            adUnit: videoAdUnit,
+                            params: {
+                                iu: '/19968336/prebid_cache_video_adunit',
+                                cust_params: {
+                                    section: 'blog',
+                                    anotherKey: 'anotherValue'
+                                },
+                                output: 'vast'
+                            }
+                        });
+                        invokeVideoPlayer(videoUrl);
+                    }
+                });
+            });
+
+        </script>
+    </head>
+
+    <body>
+        <div id='container' style='width:640px;height:480px;'></div>
+        <script>
+            var invokeVideoPlayer = function(url) {
+                console.log("invoking video player with url " + url);
+
+                /* DEFINE PLAYER SETTINGS
+
+                   Define the settings you want for your player in a JSON
+                   object. These lines will be part of the embed code you
+                   copy-paste from Ooyala Backlot, we just need to add the ad
+                   parameters.  */
+
+                var playerParam = {
+                    'pcode': 'lsbWkyOjtI6LOjmlqk2o5I-TsWRA',
+                    'playerBrandingId': '45b8294c6ad14265b2b47586c911cb07',
+                    'debug': true,
+                    'autoplay': true,
+                    'initialVolume': 0.0,
+                    'skin': {
+                        'config': '//player.ooyala.com/static/v4/stable/4.6.9/skin-plugin/skin.json',
+                        'inline': {
+                            'adScreen': {
+                                'showAdMarquee': true,
+                                'showAdCountDown': true,
+                                'showControlBar': true,
+                                'useGoogleAdUI': true
+                            }
+                        }
+                    },
+
+                    /* ADD THE AD PARAMETERS TO THE PLAYER SETTINGS
+
+                       Create a new JSON object in the player parameters. The key
+                       should be the ad manager you're using (in our case we're
+                       using the Google IMA ads manager, so the key is
+                       `"google-ima-ads-manager"`). The IMA ads manager requires
+                       an ad set (which we've named `"all_ads"`).
+
+                       For more information see the Ooyala docs:
+
+                       http://help.ooyala.com/video-platform/concepts/pbv4_ads_dev_google_ima.html:
+
+                       Make sure the ad parameters are properly formatted JSON.
+                     */
+                    "google-ima-ads-manager": {
+                        "all_ads": [{
+                            "position": "0",
+                            "position_type": "t",
+                            "tag_url": url
+                        }],
+                        'showAdControls': true
+                    }
+                };
+
+                /* INITIALIZE THE PLAYER
+
+                   Use the `OO.ready()` event to make sure that all the
+                   necessary Ooyala plugins have loaded before attempting to
+                   create the player. Once it has, call `create()` and pass
+                   in:
+
+                   - the div you're creating the player in
+
+                   - the ID of the content video
+
+                   - the player settings we created above */
+
+                OO.ready(function() {
+                    console.log("OO is ready, invoking");
+                    console.dir(playerParam);
+                    window.pp = OO.Player.create('container', 'ltcG54NzE6Bxk08Mqs1_KMcQZDN7lH8N', playerParam);
+                });
+            }
+
+            /* ACCOUNT FOR PAGE SPEED
+
+               If Prebid returned bids before the browser reached the end of
+               the page, the first version of `invokeVideoPlayer` will have
+               been called from `bidsBackHandler`, so the winning VAST tag will
+               be stored in `tempTag`.
+
+               If that's the case, we want to call the "real" version of
+               `invokeVideoPlayer` with the stored URL to create the player and
+               play the ad.
+
+               If `tempTag` is not defined, that means the browser reached the
+               end of the page before the bids came back from Prebid, meaning
+               the "real" version of `invokeVideoPlayer` was already called.
+             */
+
+            if (tempTag) {
+                invokeVideoPlayer(tempTag);
+                tempTag = false;
+            }
+
+        </script>
+    </body>
+
+</html>

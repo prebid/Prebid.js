@@ -1,0 +1,153 @@
+<html>
+
+    <head>
+
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script src="/assets/js/pbjs-event-logger.js"></script>
+
+        <script>
+            var sizes = [
+                [300, 250]
+            ];
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+            var PREBID_TIMEOUT = 1000;
+
+            function initAdserver() {
+                if (pbjs.initAdserverSet) return;
+
+                eventLogger.logEventTime('timer', 'end');
+
+                googletag.cmd.push(function() {
+                    pbjs.que.push(function() {
+                        eventLogger.logEventTime('targeting', 'start');
+                        pbjs.setTargetingForGPTAsync();
+                        eventLogger.logEventTime('targeting', 'end');
+                        googletag.pubads().refresh();
+                    });
+                    eventLogger.submitLogToParent();
+                });
+
+                pbjs.initAdserverSet = true;
+            }
+
+            // Load GPT when timeout is reached.
+            setTimeout(initAdserver, PREBID_TIMEOUT);
+            eventLogger.logEventTime('timer', 'start');
+
+            pbjs.que.push(function() {
+
+                pbjs.setConfig({
+                    debug: true
+                })
+
+                var allSlotsBidWon = function allSlotsBidWon() {
+                    console.log('allSlotsBidWon called');
+                };
+
+                pbjs.onEvent('bidWon', allSlotsBidWon);
+
+                var adUnits = [{
+                    code: '/19968336/header-bid-tag-1',
+                    mediaTypes: {
+                        banner: {
+                            sizes: sizes
+                        }
+                    },
+                    bids: [{
+                            bidder: 'appnexus',
+                            params: {
+                                placementId: 13144370
+                            }
+                        },
+                        {
+                            bidder: 'appnexus',
+                            params: {
+                                placementId: 13144370
+                            }
+                        },
+                        {
+                            bidder: 'appnexus',
+                            params: {
+                                placementId: 13144370
+                            }
+                        }
+                    ]
+                }];
+
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    bidsBackHandler: function(bidResponses) {
+                        initAdserver();
+                    }
+                });
+            });
+
+            (function() {
+                eventLogger.logEventTime('loadPBJS', 'start');
+                var d = document, pbs = d.createElement("script");
+                pbs.type = "text/javascript";
+                pbs.src = 'https://acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
+                var target = document.getElementsByTagName("head")[0];
+                target.insertBefore(pbs, target.firstChild);
+                eventLogger.logEventTime('loadPBJS', 'end');
+            })();
+
+            //load GPT library here
+            (function() {
+                eventLogger.logEventTime('loadGPT', 'start');
+                var gads = document.createElement('script');
+                gads.async = true;
+                gads.type = 'text/javascript';
+                gads.src = '//www.googletagservices.com/tag/js/gpt.js';
+                var node = document.getElementsByTagName('script')[0];
+                node.parentNode.insertBefore(gads, node);
+                eventLogger.logEventTime('loadGPT', 'end');
+            })();
+
+        </script>
+
+
+        <script>
+            // GPT setup
+            googletag.cmd.push(function() {
+                var slot1 = googletag.defineSlot('/19968336/header-bid-tag-1', sizes, 'div-1').addService(googletag.pubads());
+                googletag.pubads().disableInitialLoad();
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+
+            function refreshBids() {
+                pbjs.que.push(function() {
+                    pbjs.requestBids({
+                        timeout: PREBID_TIMEOUT,
+                        bidsBackHandler: function() {
+                            pbjs.setTargetingForGPTAsync();
+                            googletag.pubads().refresh();
+                        }
+                    });
+                });
+            }
+
+        </script>
+    </head>
+
+    <body style="padding:0;margin:0">
+
+        <div id='div-1'>
+            <p>No response</p>
+            <script type='text/javascript'>
+                googletag.cmd.push(function() {
+                    googletag.display('div-1');
+                });
+
+            </script>
+        </div>
+        <button onclick="refreshBids()">Refresh Bids</button>
+
+    </body>
+
+</html>

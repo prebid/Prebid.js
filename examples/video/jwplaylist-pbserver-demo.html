@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script>
+        <meta charset="utf-8" />
+        <title>Prebid Server Video -- JW Player with Playlist</title>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            var PREBID_TIMEOUT = 700;
+
+            var firstPlay = true;
+
+            var tempTag = false;
+            var invokeVideoPlayer = function(url) {
+                tempTag = url;
+            }
+
+            var videoAdUnit = {
+                code: 'video1',
+                sizes: [640, 480],
+                mediaTypes: {
+                    video: {
+                        context: 'instream',
+                        mimes: ['video/mp4'],
+                        protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                        playbackmethod: [2]
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232361, // Add your own placement id here
+                        video: {
+                            skippable: true,
+                            playback_method: ['auto_play_sound_off']
+                        }
+                    }
+                }]
+            };
+
+            var requestVideoAd = function() {
+
+                pbjs.requestBids({
+                    bidsBackHandler: function(bids) {
+                        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                            adUnit: videoAdUnit,
+                            params: {
+                                iu: '/19968336/prebid_cache_video_adunit',
+                                cust_params: {
+                                    section: 'blog',
+                                    anotherKey: 'anotherValue'
+                                },
+                                output: 'vast'
+                            }
+                        });
+                        invokeVideoPlayer(videoUrl);
+                    }
+                });
+            };
+
+            pbjs.que.push(function() {
+                // configure prebid to use prebid cache and prebid server
+                // make sure to add your own accountId to your s2sConfig object
+                pbjs.setConfig({
+                    cache: {
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                    },
+                    debug: true,
+                    s2sConfig: {
+                        endpoint: 'http://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+                        accountId: 'c9d412ee-3cc6-4b66-9326-9f49d528f13e',
+                        bidders: ['appnexus']
+                    }
+                });
+
+                pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+
+                requestVideoAd();
+            });
+
+        </script>
+    </head>
+
+    <body>
+
+        <h2>Prebid Server Video - JW Player Playlist</h2>
+        <br>
+        <br>
+        <div id="myElement1"></div>
+        <!-- replace this script with the libraries script of your player -->
+        <script src="https://content.jwplatform.com/libraries/72xIKEe6.js"></script>
+        <script>
+            var adTag = "";
+            var playerInstance = jwplayer('myElement1');
+
+            invokeVideoPlayer = function(url) {
+                adTag = url;
+                console.log("MESSAGE: invoking the video player");
+
+                // if this is our first time invoking the player, we also need to create the player
+                // and the event listeners
+                if (firstPlay) {
+                    playerInstance.setup({
+                        "playlist": "https://content.jwplatform.com/feeds/ae4tmw2D.json",
+                        "width": 640,
+                        "height": 480,
+                        "advertising": {
+                            "client": "vast",
+                        },
+                    });
+
+                    // set firstPlay to false to make sure we don't call setup() on our player a second time
+                    firstPlay = false;
+
+                    // beforePlay gets triggered before each content video plays
+                    // we play the ad tag being stored in the variable adTag, which we refresh
+                    // each time a content video plays by calling requestVideoAd
+                    playerInstance.on("beforePlay", function() {
+                        playerInstance.playAd(adTag);
+                        console.log("MESSAGE: refreshing the ad slot");
+                        pbjs.que.push(function() {
+                            requestVideoAd();
+                        });
+                    });
+
+                    // if our playlist ends and does not repeat, we want to play the last ad we got
+                    playerInstance.on("beforeComplete", function() {
+                        if (playerInstance.getPlaylistIndex() === playerInstance.getPlaylist().length - 1) {
+                            playerInstance.playAd(adTag);
+                        }
+                    });
+                }
+            }
+
+            // if prebid returned an ad before the browser reached the end of the page,
+            // the version of invokeVideoPlayer we defined in the header has stored the url in tempTag,
+            // so we call invokeVideoPlayer with the stored url we stored
+            if (tempTag) {
+                invokeVideoPlayer(tempTag);
+                tempTag = false;
+            }
+
+        </script>
+    </body>
+
+</html>

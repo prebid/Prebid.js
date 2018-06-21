@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<link rel="icon" type="image/png" href="/favicon.png">
+		<script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script>
+		<link href="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.css" rel="stylesheet">
+		<title>Prebid Video -- Brightcove Player</title>
+		<script>
+			var pbjs = pbjs || {};
+			pbjs.que = pbjs.que || [];
+			iosDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+
+			/* PRE-DEFINE `invokeVideoPlayer`
+
+			  Because we have no way of knowing when all the bids will be
+			  returned from Prebid we can't be sure that the browser will
+			  reach the point where `invokeVideoPlayer` is defined before
+			  `bidsBackHandler` fires and tries to call it.
+
+			  To prevent an "`invokeVideoPlayer` not defined" error, we
+			  pre-define it before we make the call to Prebid, and redefine
+			  it later on with the code to create the player and play the
+			  ad.
+
+			  In this first version, it simply stores the winning VAST to
+			  use later. */
+
+			var tempTag = false;
+			var invokeVideoPlayer = function(url) {
+				tempTag = url;
+			}
+
+			var videoAdUnit = {
+				code: 'video1',
+				mediaTypes: {
+					video: {
+						playerSize: [640, 480],
+						context: 'instream'
+					}
+				},
+				bids: [{
+					bidder: 'appnexus',
+					params: {
+						placementId: iosDevice ? 13239390 : 13232361, // Add your own placement id here. Note, skippable video is not supported on iOS 
+						video: {
+							skipppable: true,
+							playback_method: ['auto_play_sound_off']
+						}
+					}
+				}]
+			};
+
+			pbjs.que.push(function() {
+				pbjs.addAdUnits(videoAdUnit);
+				pbjs.setConfig({
+					debug: true,
+					cache: {
+						url: 'https://prebid.adnxs.com/pbc/v1/cache'
+					}
+				});
+				pbjs.requestBids({
+					bidsBackHandler: function(bids) {
+						var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+							adUnit: videoAdUnit,
+							params: {
+								iu: '/19968336/prebid_cache_video_adunit',
+								cust_params: {
+									section: 'blog',
+									anotherKey: 'anotherValue'
+								},
+								output: 'vast'
+							}
+						});
+						invokeVideoPlayer(videoUrl);
+					}
+				});
+			});
+
+		</script>
+	</head>
+
+	<body>
+		<h1>Prebid Video -- Brightcove Player</h1>
+
+
+		<!--  CREATE VIDEO ELEMENT
+
+		You can copy paste this from the embed code in Video
+		Cloud. Add an ID tag to the player element - this is what
+		we'll use to reference the player later. 
+	  
+		If you're playing a preroll ad, do not include a videoId
+		in the video element. We will load that dynamically after
+		the prebid ad has loaded. -->
+
+		<video id="myVideo" data-account="5229431809001" data-player="rJVmLwTBx" data-embed="default" data-application-id class="video-js" playsinline controls width="640" height="480"></video>
+
+		<!-- INCLUDE PLAYER AND IMA3 PLUGIN SCRIPTS
+
+		First, include the player script from Brightcove. This will
+		also be part of the embed code provided by Video Cloud. Then
+		include the ima3 plugin script.
+
+		Since we are not configuring the plugin in Video Cloud, we
+		need to include this script on the page.  -->
+
+		<script src="//players.brightcove.net/5229431809001/rJVmLwTBx_default/index.min.js"></script>
+		<script src="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.js"></script>
+
+		<script type="text/JavaScript">
+
+			  // REDEFINE `invokeVideoPlayer`
+			function invokeVideoPlayer(url) {
+
+				  // USE `bc()` TO REFERENCE VIDEO PLAYER, PASS OPTIONS INTO IMA3 PLUGIN
+				bc("myVideo").ima3({
+				 	serverUrl: url,
+				 	debug: true,
+				 	timeout: 5000,
+				 	ima3SdkSettings: {
+				    	"disableCustomPlaybackForIOS10Plus": true
+				  	},
+				  	adTechOrder: [
+				    	"html5",
+				    	"flash"
+				  	],
+				});
+
+				// ADD A `ready` LISTENER AND INTERACT WITH THE PLAYER
+
+				//   Call `videojs()` and pass in the ID of the video element to
+				//   get a reference to the player. Call `.ready` on the player
+				//   to set up the event listener, and place any code that will
+				//   interact with the player inside the callback (such as 
+				//   loading media files, logging events for the player or ads).
+
+				videojs("myVideo").ready(function() {
+				 	var myPlayer = this;
+
+				  // LOAD THE MEDIA FILE
+
+				  //   Once we know the player is ready and we have our prebid ad
+				  //   ready, load the content video from Brightcove Studio.
+
+				  //   Replace this ID with the ID with one of your own media file IDs
+				  //   which can be found in your Brightcove Studio account.
+
+				 	myPlayer.catalog.getVideo("5276850149001", function(error, video){
+						myPlayer.catalog.load(video);
+						if(error) {
+					  		console.log("There was an error retrieving the media file: " + error);
+						}
+				  	});
+
+				  	myPlayer.on("ima3error", function() {
+						console.log("There was an ima3 error.");
+				  	});
+				});
+			 };
+
+			// ACCOUNT FOR PAGE SPEED
+
+			//   If prebid returned bids before the browser reached the end of
+			//   the page, the first version of `invokeVideoPlayer` will have
+			//   been called from `bidsBackHandler` so the winning vast tag
+			//   will be stored in `tempTag`.
+
+			//   If that's the case, we want to call the 'real' version of
+			//   `invokeVideoPlayer` with the stored url to create the player
+			//   and play the ad.
+
+			//   If `tempTag` is not defined, that means the browser reached
+			//   the end of the page before the bids came back from prebid,
+			//   meaning the 'real' version of `invokeVideoPlayer` was already
+			//   called.
+
+			if (tempTag) {
+			 	invokeVideoPlayer(tempTag);
+			 	tempTag = false;
+			}
+		  </script>
+
+	</body>
+
+</html>

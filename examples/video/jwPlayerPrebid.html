@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script>
+        <meta charset="utf-8" />
+        <title>Prebid.js Self-Hosted JW Player Example</title>
+        <script type="text/javascript" src="http://ssl.p.jwpcdn.com/player/v/7.2.4/jwplayer.js"></script>
+        <script type="text/javascript">
+            jwplayer.key = "YEUwUA9wRFeDcydr"; //Test Key - replace this with your own valid JWPlayer license key
+        </script>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            // define invokeVideoPlayer in advance in case we get the bids back from prebid before the entire page loads
+            var tempTag = false;
+            var invokeVideoPlayer = function(url) {
+                tempTag = url;
+            }
+
+            var videoAdUnit = {
+                code: 'video1',
+                mediaTypes: {
+                    video: {
+                        playerSize: [640, 480],
+                        context: 'instream'
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232361, // Add your own placement id here
+                        video: {
+                            skipppable: true,
+                            playback_method: ['auto_play_sound_off']
+                        }
+                    }
+                }]
+            };
+
+            pbjs.que.push(function() {
+                pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+                pbjs.setConfig({
+                    debug: true,
+                    cache: {
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                    }
+                });
+
+                pbjs.requestBids({
+                    bidsBackHandler: function(bids) {
+                        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                            adUnit: videoAdUnit,
+                            params: {
+                                iu: '/19968336/prebid_cache_video_adunit',
+                                cust_params: {
+                                    section: 'blog',
+                                    anotherKey: 'anotherValue'
+                                },
+                                output: 'vast'
+                            }
+                        });
+                        invokeVideoPlayer(videoUrl);
+                    }
+                });
+            });
+
+        </script>
+    </head>
+
+    <body>
+
+        <h1>Prebid.js Self-Hosted JW Player Example</h1>
+        <br>
+        <br>
+        <div id="playerContainerJW" style='width:640px; height:480px; border:1px solid black;'>
+        </div>
+
+        <script>
+            var jwPlayerInstance = jwplayer("playerContainerJW");
+
+            invokeVideoPlayer = function(url) {
+                jwPlayerInstance.setup({
+                    "file": "http://video-demo.appnexus.com/pbjs/JWPlayerDemo/AppNexus_Summit_Video_HighRes.mp4",
+                    "width": 640,
+                    "height": 480,
+                    "autostart": true,
+                    "mute": true,
+                    "advertising": {
+                        client: "vast",
+                    }
+                });
+
+                jwPlayerInstance.on('beforePlay', function() {
+                    jwPlayerInstance.playAd(url);
+                })
+            }
+
+            if (tempTag) {
+                invokeVideoPlayer(tempTag);
+                tempTag = false;
+            }
+
+        </script>
+        <p>
+            <a href="jwPlatformPrebidDemo.html">Click here to see an example of integrating Prebid with a JW Platform account.</a>
+        </p>
+        <p>
+            <a href="jwPlaylistUniqueAds.html">Click here to see an example of using Prebid to show a new ad between JW Player playlist items.</a>
+        </p>
+    </body>
+
+</html>

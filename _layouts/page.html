@@ -1,0 +1,31 @@
+{% include head.html %}
+{% include main_nav.html %}
+
+<div class="container bs-docs-container">
+
+    {% if page.is_full_screen %}
+        {{content}}
+    {% else %}
+
+        <div class="row">
+
+            <div class="col-md-3">
+                <div class="docs-sidebar">
+                    {% include left_nav.html %}
+                </div>
+            </div>
+
+            <div class="col-md-9" role="main">
+                {{content}}
+            </div>
+        </div>
+
+    {% endif %} 
+
+    {% if page.show_disqus %}
+        {% include disqus_addon.html %}
+    {% endif %}
+
+</div>
+
+{% include foot.html %}

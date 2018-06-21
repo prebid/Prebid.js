@@ -1,0 +1,171 @@
+# name of the software
+name: Prebid
+# current version of the software
+version: 1.0.0
+# licence of the software
+license: Apache License
+licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
+
+# list of additional links on the right of the top menu
+headerLinks:
+  - title: GitHub
+    url: https://github.com/prebid
+
+
+# list if additional links on the footer
+footerLinks:
+  - title: GitHub
+    url: https://github.com/prebid/
+# - title: Issues
+#   url: https://github.com/prebid/Prebid.js/issues?state=open
+# - title: About Us
+#   url: /about.html
+
+
+# header
+header:
+  #color1: "#0084B4"
+  #color1: "#55acee"
+  color1: "#3b88c3"
+  #color1: "#2ABBB0"
+  
+  #color1: "#080331"
+  #color2: "#673051"
+  trianglify: false
+
+# google analytics
+analytics:
+  account:
+  domain:
+
+# github buttons
+githubButton:
+  user: prebid
+  repo: Prebid.js
+
+# twitter buttons
+twitter:
+  enabled: true
+  via:
+  hash: prebidjs
+  account:
+
+# facebook buttons
+facebook:
+  enabled: false
+  profileUrl:
+
+# Build settings
+markdown: kramdown
+
+nav_sections:
+  - top_nav: beta
+    code: current
+    name: CURRENT BETA
+  - top_nav: beta
+    code: past
+    name: PAST BETA
+
+  - top_nav: dev_docs
+    code: quick-start
+    name: DEVELOPER QUICK START
+  - top_nav: dev_docs
+    code: prebid-multi-format
+    name: PREBID MULTI-FORMAT (ALPHA)
+  - top_nav: dev_docs
+    code: prebid-video
+    name: PREBID VIDEO (BETA)
+  - top_nav: dev_docs
+    code: prebid-native
+    name: PREBID NATIVE (ALPHA)
+  - top_nav: dev_docs
+    code: prebid-server
+    name: PREBID SERVER
+  - top_nav: dev_docs
+    code: prebid-amp
+    name: PREBID FOR AMP (ALPHA)
+  - top_nav: dev_docs
+    code: troubleshooting
+    name: TROUBLESHOOTING
+  - top_nav: dev_docs
+    code: reference
+    name: REFERENCE
+  - top_nav: dev_docs
+    code: features
+    name: FEATURES
+  - top_nav: dev_docs
+    code: adapters
+    name: ADAPTERS
+
+  - top_nav: overview
+    code: intro
+    name: INTRO
+  - top_nav: overview
+    code: postbid
+    name: POST-BID
+  - top_nav: overview
+    code: analytics
+    name: ANALYTICS
+  - top_nav: overview
+    code: studies
+    name: LATEST STUDIES
+
+  # - top_nav: beta
+  #   code: BETA PRODUCTS
+
+  - top_nav: adops
+    code: tutorials
+    name: AD OPS TUTORIALS
+  - top_nav: adops
+    code: reference
+    name: REFERENCE
+
+  - top_nav: support
+    code: support
+    name: SUPPORT
+
+  - top_nav: videos
+    code: videos
+    name: VIDEOS
+
+  - top_nav: principles
+    code: principles
+    name: PRINCIPLES
+
+  - top_nav: download
+    code: download
+    name: DOWNLOAD
+
+  - top_nav: modules
+    code: modules
+    name: MODULES
+
+  - top_nav: prebid-mobile
+    code: prebid-mobile
+    name: PREBID MOBILE
+  - top_nav: prebid-mobile
+    code: prebid-mobile-pbs
+    name: PREBID SERVER
+  - top_nav: prebid-mobile
+    code: prebid-mobile-ios
+    name: FOR IOS
+  - top_nav: prebid-mobile
+    code: prebid-mobile-android
+    name: FOR ANDROID
+  - top_nav: prebid-mobile
+    code: prebid-mobile-adops
+    name: FOR ADOPS
+  - top_nav: prebid-mobile
+    code: prebid-mobile-contributors
+    name: FOR CONTRIBUTORS
+
+
+port: 8080
+
+exclude: ['README.md', 'LICENSE', 'bower.json', 'Gemfile.lock', 'Gemfile', 'vendor']
+
+plugins:
+  - jekyll-mentions
+  - jemoji
+  - jekyll-redirect-from
+  - jekyll-sitemap

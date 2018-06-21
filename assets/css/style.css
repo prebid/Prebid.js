@@ -1,0 +1,409 @@
+/* top navbar floats at top of screen when you scroll */
+
+header#top {
+    position: fixed;
+    width: 100%;
+}
+
+/* bump top of left nav below floating top navbar  */
+
+.row {
+    margin-top: 3em;
+}
+
+/* bump top of 'Prebid.js' text on homepage below floating top navbar */
+
+.home-title {
+    margin-top: 1em;
+}
+
+/* Dropdown submenus, as described at
+   https://php.quicoto.com/bootstrap-3-second-level-menu-nav/ */
+
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu > .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+}
+.dropdown-submenu:hover > .dropdown-menu {
+  display: block;
+}
+.dropdown-submenu:hover > a:after {
+  border-left-color: #fff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left > .dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+}
+
+/* End dropdown submenu */
+
+/* External links should have an icon denoting them */
+
+a[href^="http://"]:after,
+a[href^="https://"]:after {
+  content: url(/assets/images/Icon_External_Link.png);
+  margin: 0 0 0 5px;
+}
+
+a[href^="http://prebid.org/"]:after,
+a[href^="https://prebid.org/"]:after {
+  content: '';
+  margin: 0;
+}
+
+.bs-docs-nav .navbar-brand, .bs-docs-nav .navbar-nav>li>a {
+  color: #444;
+  font-weight: 400;
+}
+
+.bs-docs-masthead {
+  padding-top:30px;
+  padding-bottom:30px;
+  margin-bottom:0px;
+}
+
+.bs-docs-masthead h1 {
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.bs-docs-masthead .version {
+  color: white;
+}
+
+.bs-docs-masthead .btn.btn-default {
+  color: #ec971f;
+  background: #fefefe;
+  border-color: white;
+}
+
+.bs-docs-masthead .btn.btn-default:hover {
+  background: #eee;
+}
+
+.bs-docs-masthead .btn.btn-callout {
+    background: #ec971f;
+    color: #fefefe;
+}
+
+.btn.btn-outline {
+  color: #FF8800;
+  color: #f0ad4e;
+  color: #ec971f;
+  border-color: #cccccc;
+  
+}
+
+.btn.btn-outline:hover {
+  color: white;
+  background: #2ABBB0;
+  background: #3b88c3;
+  border-color: #2ABBB0;
+  border-color: #3b88c3;
+}
+
+
+.bs-docs-masthead .note {
+  font-size: 18px;
+  color: white;
+  margin-top: 20px;
+}
+
+.bs-docs-featurette-title {
+  font-weight: 300;
+  margin-bottom: 15px;
+  color: #444;
+}
+
+.bs-docs-featurette .col-sm-4 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.bs-docs-featurette .col-sm-4 p {
+  margin-bottom: 15px;
+}
+
+.bs-docs-featurette h3 {
+  font-weight: 500;
+  color: #444;
+}
+
+.bs-docs-header {
+  margin-bottom: 0px;
+}
+.bs-docs-header h1, .bs-docs-header p {
+  margin-right:0px;
+  color: white;
+}
+
+.bs-docs-sidebar .nav > li > a {
+  font-size:15px;
+}
+.bs-docs-sidebar .nav .nav > li > a {
+  font-size:14px;
+}
+.back-top-top {
+  font-size:13px;
+}
+
+#content {
+  position:relative;
+}
+.bs-docs-header#content:after {
+  content:"";
+  position:absolute;
+  bottom:0px;
+  right:0px;
+  height:50px;
+  width:30%;
+  background:linear-gradient(135deg, transparent 50px, white 50px);
+}
+
+img {
+  max-width: 100%;
+}
+
+
+.full-rule {
+  margin-top: 50px;
+  margin-bottom: 50px;
+}
+
+.full-rule.thin {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.bs-docs-section {
+    text-indent: auto;
+    hyphens: auto;
+}
+
+@media (min-width: 1024px) {
+    .bs-docs-section {
+        line-height: 1.6;
+        font-size: large;
+        margin-right: 10em;
+    }
+
+    .container {
+        width: 88%;
+    }
+}
+
+.bs-docs-section h1 {
+  padding-bottom: 9px;
+  margin: 40px 0 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.pb-docs {
+  padding-top: 50px;
+  border-bottom: 0px;
+  padding-bottom: 0px;
+}
+
+.pb-home {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.pb-home .benefits img {
+  height: 80px;
+}
+
+.pb-home img {
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pb-home .bidder-logos img {
+  width: auto;
+  height: auto;
+}
+
+.pb-home .partner-logos .logo-block {
+  height: 100px;
+  vertical-align: center;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.pb-home .partner-logos .logo-block img {
+  max-height: 60px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.pb-home .bidder-logos h3 {
+  /*padding-top: 20px;
+  padding-bottom: 20px;*/
+  /*color: #2ABBB0;*/
+  color: #3b88c3;
+  /*font-size: 25px;*/
+  font-weight: 300;
+}
+
+@media (min-width: 768px) {
+  #pb-home-demo {
+    margin-top: 30px;
+  }
+  #pb-home-demo .col-sm-7 .lead {
+   margin-left: 0;
+   padding-left: 0;
+  }
+
+  .pb-sm-left {
+    text-align: left;
+  }
+  .pb-sm-center {
+    text-align: center;
+  }
+  .pb-sm-right {
+    text-align: right;
+  }
+}
+
+.pb-img {
+  -webkit-box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  -moz-box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.pb-sm-img {
+  max-width: 200px;
+}
+
+.pb-lg-img {
+  max-width: 650px;
+}
+
+.pb-md-img {
+    max-width: 450px;
+}
+
+.blog-related-posts {
+  color: #aaa;
+  margin-top: 40px;
+}
+
+.bs-callout code {
+  background-color: transparent;
+}
+
+.bs-docs-footer {
+  margin-top: 60px;
+}
+
+
+.nav.nav-tabs {
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.bs-callout {
+  padding-top: 0px;
+  padding-bottom: 10px;
+}
+
+#chart_div {
+  height: 400px;
+}
+
+.docs-sidebar {
+  margin-top: 20px;
+  padding: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 2px;
+}
+
+.docs-sidebar .nav>li>a{
+  padding: 0px;
+  padding-bottom: 10px;
+  color: #555;
+}
+.docs-sidebar .nav>li>a:hover{
+  color: #337ab7;
+  background: transparent;
+}
+
+.docs-sidebar .nav>li>a.selected {
+  color: #337ab7;
+}
+
+.docs-sidebar h5 {
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 15px;
+}
+
+.bs-docs-nav {
+    border-bottom: solid 1px #AAA;
+}
+
+.bg-info {
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.bg-warning {
+  padding: 10px;
+  border-radius: 5px;
+}
+
+table.jsfiddle-line-number {
+    width: 100%;
+    border: 0;
+}
+
+table.jsfiddle-line-number .line-number {
+    padding-top: 61px;
+    vertical-align: text-top;
+    line-height: 21px;
+    width: 17px;
+    color: #aaa;
+    font-size: 13px;
+    text-align: right;
+}
+
+.blog-date {
+  margin-top: 45px;
+  text-align: right;
+  width: 80%;
+  font-size: 20px;
+  color: #aaa;
+}
+
+#example-tab {
+  padding-left:10px;
+}
+
+#example-tab li {
+  margin-bottom: 6px;
+}
+
+table:not(.jsfiddle-line-number) {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+
+div.pl-doc-entry{
+  position: absolute;
+}
+
+.prebid-mobile-notice {
+    margin-top: 2em;
+}
