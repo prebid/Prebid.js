@@ -28,5 +28,6 @@
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
+    "tripleliftBidAdapter",
     "zeroIdBidAdapter"
 ]
