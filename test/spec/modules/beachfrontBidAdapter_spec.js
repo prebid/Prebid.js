@@ -554,4 +554,119 @@ describe('BeachfrontAdapter', () => {
       });
     });
   });
+
+  describe('spec.getUserSyncs', () => {
+    describe('for video bids', () => {
+      let bidResponse;
+
+      beforeEach(() => {
+        bidResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+      });
+
+      it('should return an iframe user sync if iframes are enabled', () => {
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs.length).to.equal(1);
+        expect(userSyncs[0].type).to.equal('iframe');
+      });
+
+      it('should return an image user sync if iframes are disabled', () => {
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs.length).to.equal(1);
+        expect(userSyncs[0].type).to.equal('image');
+      });
+
+      it('should not return user syncs if none are enabled', () => {
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: false
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
+      });
+    });
+
+    describe('for banner bids', () => {
+      let bidResponse;
+
+      beforeEach(() => {
+        bidResponse = {
+          slot: bidRequests[0].adUnitCode,
+          adm: '<div id="44851937"></div>',
+          crid: 'crid_1',
+          price: 3.02,
+          w: 728,
+          h: 90
+        };
+      });
+
+      it('should return user syncs defined the bid response', () => {
+        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            { sync: syncUrl },
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([
+          { type: 'iframe', url: syncUrl }
+        ]);
+      });
+
+      it('should not return user syncs if iframes are disabled', () => {
+        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            { sync: syncUrl },
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
+      });
+
+      it('should not return user syncs if there are none in the bid response', () => {
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
+      });
+    });
+  });
 });
