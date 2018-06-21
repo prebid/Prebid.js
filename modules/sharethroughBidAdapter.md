@@ -26,12 +26,13 @@ Module that connects to Sharethrough's demand sources
                ]
            },{
                code: 'test-div',
-               sizes: [[1, 1]],   // a mobile size
+               sizes: [[300,250], [1, 1]],   // a mobile size
                bids: [
                    {
                        bidder: "sharethrough",
                        params: {
-                           pkey: 'LuB3vxGGFrBZJa6tifXW4xgK'
+                           pkey: 'LuB3vxGGFrBZJa6tifXW4xgK',
+                           iframe: true
                        }
                    }
                ]
