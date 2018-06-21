@@ -70,7 +70,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
             w: adW,
             h: adH
           },
-          tagid: toStringIfExists(bidReq.placementCode),
+          tagid: toStringIfExists(rtbTagId || bidReq.placementCode),
           bidfloor: bidFloor,
           secure: secureValue()
         }],
@@ -91,7 +91,7 @@ var MemeGenAdapter = function MemeGenAdapter() {
       };
     }
 
-    function buildWebRequst() {
+    function buildWebRequest() {
       return {
         id: utils.getUniqueIdentifierStr(),
         imp: [{
@@ -124,12 +124,14 @@ var MemeGenAdapter = function MemeGenAdapter() {
     if (isInapp) {
       bidRequest = buildInappRequest();
     } else {
-      bidRequest = buildWebRequst();
+      bidRequest = buildWebRequest();
     }
 
     var pageUrl = utils.getBidIdParameter('pageUrl', bidReq.params);
     var pageDomain = utils.getBidIdParameter('pageDomain', bidReq.params);
     var ip = utils.getBidIdParameter('ip', bidReq.params);
+    bidRequest.tmax = timeout;
+    bidRequest.cur = ["USD"];
 
     if (bidRequest.site) {
       if (pageUrl) {
