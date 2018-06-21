@@ -90,6 +90,10 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       f = f.parent;
     }
 
+    if (!cmpFrame) {
+      return cmpError('CMP not found.', hookConfig);
+    }
+
     callCmpWhileInIframe('getConsentData', cmpFrame, callbackHandler.consentDataCallback);
     callCmpWhileInIframe('getVendorConsents', cmpFrame, callbackHandler.vendorConsentsCallback);
   }
@@ -124,12 +128,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window.__cmp = function(cmd, arg, callback) {
-      if (!cmpFrame) {
-        removePostMessageListener();
-
-        let errmsg = 'CMP not found';
-        return cmpError(errmsg, hookConfig);
-      }
       let callId = Math.random() + '';
       let msg = {__cmpCall: {
         command: cmd,
