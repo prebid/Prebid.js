@@ -5,6 +5,7 @@
     "audienceNetworkBidAdapter",
     "beachfrontBidAdapter",
     "consentManagement",
+    "consumableBidAdapter",
     "conversantBidAdapter",
     "coxBidAdapter",
     "criteoBidAdapter",
@@ -27,7 +28,5 @@
     "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
-    "zeroIdBidAdapter",
-    "lockerdomeBidAdapter",
-    "consumableBidAdapter"
+    "zeroIdBidAdapter"
 ]
