@@ -17,11 +17,12 @@ export const spec = {
       timeout: bidderRequest.timeout,
       currency: currency,
       cpmGranularity: 1,
+      timestamp: (new Date()).getTime(),
       cpmRange: {
         floor: 0,
         ceil: 20
       },
-      adSlotIds: utils._map(validBidRequests, bid => bid.params.placementId)
+      adSlotIDs: utils._map(validBidRequests, bid => bid.params.placementId)
     }, spec._getAllMetadata());
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
