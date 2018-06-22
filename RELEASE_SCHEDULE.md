@@ -1,6 +1,7 @@
 **Table of Contents**
 - [Release Schedule](#release-schedule)
 - [Release Process](#release-process)
+- [Beta Releases](#beta-releases)
 - [FAQs](#faqs)
 
 ## Release Schedule
