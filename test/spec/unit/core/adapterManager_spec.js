@@ -1013,6 +1013,20 @@ describe('adapterManager tests', () => {
         expect(result[0].mediaTypes.video).to.exist;
         sinon.assert.calledOnce(utils.logInfo);
       });
+
+      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', () => {
+        let fullAdUnit = [{
+          sizes: [300, 250],
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          }
+        }];
+        let result = checkBidRequestSizes(fullAdUnit);
+        expect(result[0].sizes).to.deep.equal([[300, 250]]);
+        expect(result[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
+      });
     });
 
     describe('negative tests for validating bid requests', () => {
