@@ -32,8 +32,6 @@ function mapImpression(slot) {
  */
 function mapBanner(slot) {
   return {
-    w: slot.sizes[0][0],
-    h: slot.sizes[0][1],
     format: mapSizes(slot.sizes)
   };
 }
@@ -43,12 +41,20 @@ function mapBanner(slot) {
  */
 function mapSizes(slot_sizes) {
   const format = [];
-  slot_sizes.forEach(elem => {
+  if (typeof slot_sizes[0] == 'number') {
+    // most probably size is formatted .sizes: [300,250]
     format.push({
-      w: elem[0],
-      h: elem[1]
+      w: slot_sizes[0],
+      h: slot_sizes[1]
     });
-  });
+  } else {
+    slot_sizes.forEach(elem => {
+      format.push({
+        w: elem[0],
+        h: elem[1]
+      });
+    });
+  }
   return format;
 }
 
