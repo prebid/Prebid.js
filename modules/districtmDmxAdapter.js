@@ -110,7 +110,7 @@ export class DistrictmDmxAdapter {
     }
   }
   test() {
-    return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0 || 0;
+    return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0;
   }
 
   getUserSyncs(optionsType) {
