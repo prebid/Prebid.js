@@ -28,6 +28,7 @@ var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
+var jsEscape = require('gulp-js-escape');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -70,12 +71,17 @@ function nodeBundle(modules) {
   });
 }
 
+// these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
+var explicitModules = [
+  'pre1api'
+];
+
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
-    modules = allModules;
+    modules = allModules.filter(module => !explicitModules.includes(module));
   } else {
     var diff = _.difference(modules, allModules);
     if(diff.length !== 0) {
@@ -118,7 +124,11 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      done();
+      if (argv.browserstack) {
+        process.exit(0);
+      } else {
+        done();
+      }
     }
   }
 }
@@ -189,7 +199,7 @@ gulp.task('test', ['clean'], function (done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false, argv.file), newKarmaCallback(done)).start();
+  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 });
 
 // View the code coverage report in the browser.
@@ -296,10 +306,21 @@ gulp.task('e2etest-report', function() {
   }, 5000);
 });
 
-gulp.task('build-postbid', function() {
+// This task creates postbid.js. Postbid setup is different from prebid.js
+// More info can be found here http://prebid.org/overview/what-is-post-bid.html
+gulp.task('build-postbid', ['escape-postbid-config'], function() {
+  var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
+
   return gulp.src('./integrationExamples/postbid/oas/postbid.js')
-    .pipe(uglify())
-    .pipe(gulp.dest('build/dist'));
+    .pipe(replace('\[%%postbid%%\]', fileContent))
+    .pipe(gulp.dest('build/postbid/'));
+});
+
+// Dependant task for building postbid. It escapes postbid-config file.
+gulp.task('escape-postbid-config', function() {
+  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
+    .pipe(jsEscape())
+    .pipe(gulp.dest('build/postbid/'));
 });
 
 module.exports = nodeBundle;

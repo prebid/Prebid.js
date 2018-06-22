@@ -1,60 +1,60 @@
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const adloader = require('src/adloader.js');
-const utils = require('src/utils.js');
-const adaptermanager = require('src/adaptermanager');
-const CONSTANTS = require('src/constants.json');
-const HOST = $$PREBID_GLOBAL$$.kargo_kraken_host || 'https://krk.kargo.com';
-
-const KargoAdapter = function KargoAdapter() {
-  function _handleBid(bids) {
-    return function wrappedHandleBid(adUnits) {
-      utils._map(bids, bid => {
-        let adUnit = adUnits[bid.params.placementId];
-
-        if (adUnit) {
-          bidmanager.addBidResponse(bid.placementCode, _createBid(adUnit));
-
-          if (adUnit.receivedTracker) {
-            var el = document.createElement('img');
-            el.src = adUnit.receivedTracker;
-            document.body.appendChild(el);
-          }
-        }
-      });
-    };
-  }
-
-  function _createBid(adUnit) {
-    let bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
-    bidObject.bidderCode = 'kargo';
-    bidObject.cpm = Number(adUnit.cpm);
-    bidObject.ad = adUnit.adm;
-    bidObject.width = adUnit.width;
-    bidObject.height = adUnit.height;
-    return bidObject;
-  }
-
-  function _callBids(params) {
+import * as utils from 'src/utils';
+import {config} from 'src/config';
+import {registerBidder} from 'src/adapters/bidderFactory';
+const BIDDER_CODE = 'kargo';
+const HOST = 'https://krk.kargo.com';
+export const spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function(bid) {
+    if (!bid || !bid.params) {
+      return false;
+    }
+    return !!bid.params.placementId;
+  },
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const currency = config.getConfig('currency');
     const transformedParams = Object.assign({}, {
-      timeout: params.timeout,
-      currency: 'USD',
+      timeout: bidderRequest.timeout,
+      currency: currency,
       cpmGranularity: 1,
       cpmRange: {
         floor: 0,
         ceil: 20
       },
-      adSlotIds: utils._map(params.bids, bid => bid.params.placementId)
-    }, _getAllMetadata());
+      adSlotIds: utils._map(validBidRequests, bid => bid.params.placementId)
+    }, spec._getAllMetadata());
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
-    const callbackName = `kargo_prebid_${params.requestId.replace(/-/g, '_')}`;
+    return Object.assign({}, bidderRequest, {
+      method: 'GET',
+      url: `${HOST}/api/v1/bid`,
+      data: `json=${encodedParams}`,
+      currency: currency
+    });
+  },
+  interpretResponse: function(response, bidRequest) {
+    let adUnits = response.body;
+    let bids = {};
+    utils._each(bidRequest.bids, bid => bids[bid.params.placementId] = bid);
+    const bidResponses = [];
+    for (let adUnitId in adUnits) {
+      let adUnit = adUnits[adUnitId];
+      bidResponses.push({
+        requestId: bids[adUnitId].bidId,
+        cpm: Number(adUnit.cpm),
+        width: adUnit.width,
+        height: adUnit.height,
+        ad: adUnit.adm,
+        ttl: 300,
+        creativeId: adUnitId,
+        netRevenue: true,
+        currency: bidRequest.currency
+      });
+    }
+    return bidResponses;
+  },
 
-    window.$$PREBID_GLOBAL$$[callbackName] = _handleBid(params.bids);
-
-    adloader.loadScript(`${HOST}/api/v1/bid?json=${encodedParams}&cb=window.$$PREBID_GLOBAL$$.${callbackName}`);
-  }
-
-  function _readCookie(name) {
+  // PRIVATE
+  _readCookie(name) {
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -70,15 +70,15 @@ const KargoAdapter = function KargoAdapter() {
     }
 
     return null;
-  }
+  },
 
-  function _getCrbIds() {
+  _getCrbIds() {
     try {
-      const crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb')));
-      var syncIds = {};
+      const crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
+      let syncIds = {};
 
       if (crb && crb.v) {
-        var vParsed = JSON.parse(atob(crb.v));
+        let vParsed = JSON.parse(atob(crb.v));
 
         if (vParsed && vParsed.syncIds) {
           syncIds = vParsed.syncIds;
@@ -89,12 +89,12 @@ const KargoAdapter = function KargoAdapter() {
     } catch (e) {
       return {};
     }
-  }
+  },
 
-  function _getUid() {
+  _getUid() {
     try {
-      const uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid')));
-      var vData = {};
+      const uid = JSON.parse(decodeURIComponent(spec._readCookie('krg_uid')));
+      let vData = {};
 
       if (uid && uid.v) {
         vData = uid.v;
@@ -104,41 +104,41 @@ const KargoAdapter = function KargoAdapter() {
     } catch (e) {
       return {};
     }
-  }
+  },
 
-  function _getKruxUserId() {
-    return _getLocalStorageSafely('kxkar_user');
-  }
+  _getKruxUserId() {
+    return spec._getLocalStorageSafely('kxkar_user');
+  },
 
-  function _getKruxSegments() {
-    return _getLocalStorageSafely('kxkar_segs');
-  }
+  _getKruxSegments() {
+    return spec._getLocalStorageSafely('kxkar_segs');
+  },
 
-  function _getKrux() {
-    const segmentsStr = _getKruxSegments();
-    var segments = [];
+  _getKrux() {
+    const segmentsStr = spec._getKruxSegments();
+    let segments = [];
 
     if (segmentsStr) {
       segments = segmentsStr.split(',');
     }
 
     return {
-      userID: _getKruxUserId(),
+      userID: spec._getKruxUserId(),
       segments: segments
     };
-  }
+  },
 
-  function _getLocalStorageSafely(key) {
+  _getLocalStorageSafely(key) {
     try {
       return localStorage.getItem(key);
     } catch (e) {
       return null;
     }
-  }
+  },
 
-  function _getUserIds() {
-    const uid = _getUid();
-    const crbIds = _getCrbIds();
+  _getUserIds() {
+    const uid = spec._getUid();
+    const crbIds = spec._getCrbIds();
 
     return {
       kargoID: uid.userId,
@@ -146,23 +146,15 @@ const KargoAdapter = function KargoAdapter() {
       crbIDs: crbIds,
       optOut: uid.optOut
     };
-  }
+  },
 
-  function _getAllMetadata() {
+  _getAllMetadata() {
     return {
-      userIDs: _getUserIds(),
-      krux: _getKrux(),
-      pageURL: window.location.href
+      userIDs: spec._getUserIds(),
+      krux: spec._getKrux(),
+      pageURL: window.location.href,
+      rawCRB: spec._readCookie('krg_crb')
     };
   }
-
-  // Export the callBids function, so that prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return {
-    callBids: _callBids
-  };
 };
-
-adaptermanager.registerBidAdapter(new KargoAdapter(), 'kargo');
-
-module.exports = KargoAdapter;
+registerBidder(spec);

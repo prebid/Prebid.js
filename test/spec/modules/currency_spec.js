@@ -5,17 +5,22 @@ import {
 
 import {
   setConfig,
-  addBidResponseDecorator,
-
+  addBidResponseHook,
   currencySupportEnabled,
   currencyRates
 } from 'modules/currency';
+
+import { createHook } from 'src/hook';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
+
+  let fn = sinon.spy();
+  let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
+
   beforeEach(() => {
     fakeCurrencyFileServer = sinon.fakeServer.create();
   });
@@ -46,10 +51,6 @@ describe('currency', function () {
       var bid = { cpm: 1, bidder: 'rubicon' };
       var innerBid;
 
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
-      	innerBid = bid;
-      });
-
       setConfig({
         adServerCurrency: 'GBP',
         bidderCurrencyDefault: {
@@ -57,7 +58,9 @@ describe('currency', function () {
         }
       });
 
-      wrappedAddBidResponseFn('elementId', bid);
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
+      	innerBid = bid;
+      });
 
       expect(innerBid.currency).to.equal('GBP')
     });
@@ -68,10 +71,6 @@ describe('currency', function () {
       var bid = { cpm: 1, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
-      	innerBid = bid;
-      });
-
       setConfig({
         adServerCurrency: 'JPY',
         bidderCurrencyDefault: {
@@ -79,7 +78,9 @@ describe('currency', function () {
         }
       });
 
-      wrappedAddBidResponseFn('elementId', bid);
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
+      	innerBid = bid;
+      });
 
       expect(innerBid.currency).to.equal('JPY')
     });
@@ -97,11 +98,34 @@ describe('currency', function () {
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
 
-      wrappedAddBidResponseFn('elementId', bid);
+      expect(innerBid.cpm).to.equal('1.0000');
+    });
+
+    it('uses default rates when currency file fails to load', () => {
+      setConfig({});
+
+      setConfig({
+        adServerCurrency: 'USD',
+        defaultRates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // default response is 404
+      fakeCurrencyFileServer.respond();
+
+      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
+      var innerBid;
+
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
+      	innerBid = bid;
+      });
 
       expect(innerBid.cpm).to.equal('1.0000');
     });
@@ -113,14 +137,15 @@ describe('currency', function () {
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
 
-      var marker = false;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
-        marker = true;
-      });
       var bid = { 'cpm': 1, 'currency': 'USD' };
 
       setConfig({ 'adServerCurrency': 'JPY' });
-      wrappedAddBidResponseFn('elementId', bid);
+
+      var marker = false;
+      addBidResponseHook('elementId', bid, function() {
+      	marker = true;
+      });
+
       expect(marker).to.equal(false);
 
       fakeCurrencyFileServer.respond();
@@ -133,10 +158,9 @@ describe('currency', function () {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.cpm).to.equal(1);
     });
 
@@ -144,10 +168,9 @@ describe('currency', function () {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -157,10 +180,9 @@ describe('currency', function () {
       });
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(bid).to.equal(innerBid);
     });
 
@@ -170,10 +192,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'ABC' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -183,10 +204,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -196,10 +216,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'JPY' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.cpm).to.equal(1);
       expect(innerBid.currency).to.equal('JPY');
     });
@@ -210,10 +229,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.cpm).to.equal('0.7798');
       expect(innerBid.currency).to.equal('GBP');
     });
@@ -224,10 +242,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'CNY' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.cpm).to.equal('0.1133');
       expect(innerBid.currency).to.equal('GBP');
     });
@@ -238,10 +255,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'JPY' };
       var innerBid;
-      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
       	innerBid = bid;
       });
-      wrappedAddBidResponseFn('elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
     });

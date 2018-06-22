@@ -1,54 +1,63 @@
 import {expect} from 'chai';
-import Adapter from 'modules/adkernelBidAdapter';
-import * as ajax from 'src/ajax';
+import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import bidmanager from 'src/bidmanager';
-import CONSTANTS from 'src/constants.json';
+import {parse as parseUrl} from 'src/url';
 
 describe('Adkernel adapter', () => {
   const bid1_zone1 = {
       bidder: 'adkernel',
       bidId: 'Bid_01',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-1',
-      sizes: [[300, 250]]
+      adUnitCode: 'ad-unit-1',
+      sizes: [[300, 250], [300, 200]]
     }, bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
-      placementCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      adUnitCode: 'ad-unit-2',
+      sizes: [728, 90]
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-2',
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {host: 'rtb-private.adkernel.com'},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {zoneId: 1},
-      placementCode: 'ad-unit-1',
+      adUnitCode: 'ad-unit-1',
+      sizes: [[728, 90]]
+    }, bid_with_wrong_zoneId = {
+      bidder: 'adkernel',
+      bidId: 'Bid_02',
+      params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
+      adUnitCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_video = {
       bidder: 'adkernel',
+      transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
       bidId: 'Bid_Video',
-      sizes: [640, 480],
-      mediaType: 'video',
+      bidderRequestId: '18b2a61ea5d9a7',
+      auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
+      sizes: [[640, 480]],
       params: {
         zoneId: 1,
-        host: 'rtb.adkernel.com',
+        host: 'rtb.adkernel.com'
+      },
+      mediaTypes: {
         video: {
-          mimes: ['video/mp4', 'video/webm', 'video/x-flv']
+          context: 'instream',
+          playerSize: [[640, 480]]
         }
       },
-      placementCode: 'ad-unit-1'
+      adUnitCode: 'ad-unit-1'
     };
 
   const bidResponse1 = {
@@ -57,20 +66,29 @@ describe('Adkernel adapter', () => {
         bid: [{
           id: '1',
           impid: 'Bid_01',
+          crid: '100_001',
           price: 3.01,
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-          adm: '<!-- admarkup here -->'
+          adm: '<!-- admarkup here -->',
+          w: 300,
+          h: 250
         }]
       }],
-      cur: 'USD'
+      cur: 'USD',
+      ext: {
+        adk_usersync: ['http://adk.sync.com/sync']
+      }
     }, bidResponse2 = {
       id: 'bid2',
       seatbid: [{
         bid: [{
           id: '2',
           impid: 'Bid_02',
+          crid: '100_002',
           price: 1.31,
-          adm: '<!-- admarkup here -->'
+          adm: '<!-- admarkup here -->',
+          w: 300,
+          h: 250
         }]
       }],
       cur: 'USD'
@@ -80,85 +98,60 @@ describe('Adkernel adapter', () => {
         bid: [{
           id: 'sZSYq5zYMxo_0',
           impid: 'Bid_Video',
+          crid: '100_003',
           price: 0.00145,
           adid: '158801',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855',
-          crid: '158801',
-          w: 600,
-          h: 400
+          cid: '16855'
         }]
       }],
       cur: 'USD'
+    }, usersyncOnlyResponse = {
+      id: 'nobid1',
+      ext: {
+        adk_usersync: ['http://adk.sync.com/sync']
+      }
     };
 
-  let adapter,
-    sandbox,
-    ajaxStub;
-
-  beforeEach(() => {
-    sandbox = sinon.sandbox.create();
-    adapter = new Adapter();
-    ajaxStub = sandbox.stub(ajax, 'ajax');
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  });
-
-  function doRequest(bids) {
-    adapter.callBids({
-      bidderCode: 'adkernel',
-      bids: bids
+  function buildRequest(bidRequests, bidderRequest = {}, url = 'https://example.com/index.html', dnt = true) {
+    let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
+      let loc = parseUrl(url);
+      loc.protocol += ':';
+      return loc;
     });
+    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
+    wmock.restore();
+    dntmock.restore();
+    let rtbRequests = pbRequests.map(r => JSON.parse(r.data.r));
+    return [pbRequests, rtbRequests];
   }
 
   describe('input parameters validation', () => {
-    let spy;
-
-    beforeEach(() => {
-      spy = sandbox.spy();
-      sandbox.stub(bidmanager, 'addBidResponse');
-    });
-
     it('empty request shouldn\'t generate exception', () => {
-      expect(adapter.callBids({
+      expect(spec.isBidRequestValid({
         bidderCode: 'adkernel'
-      })).to.be.an('undefined');
+      })).to.be.equal(false);
     });
 
     it('request without zone shouldn\'t issue a request', () => {
-      doRequest([bid_without_zone]);
-      sinon.assert.notCalled(ajaxStub);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal('adkernel');
+      expect(spec.isBidRequestValid(bid_without_zone)).to.be.equal(false);
     });
 
     it('request without host shouldn\'t issue a request', () => {
-      doRequest([bid_without_host]);
-      sinon.assert.notCalled(ajaxStub);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal('adkernel');
+      expect(spec.isBidRequestValid(bid_without_host)).to.be.equal(false);
+    });
+
+    it('empty request shouldn\'t generate exception', () => {
+      expect(spec.isBidRequestValid(bid_with_wrong_zoneId)).to.be.equal(false);
     });
   });
 
   describe('banner request building', () => {
-    let bidRequest;
-
-    beforeEach(() => {
-      sandbox.stub(utils, 'getTopWindowLocation', () => {
-        return {
-          protocol: 'https:',
-          hostname: 'example.com',
-          host: 'example.com',
-          pathname: '/index.html',
-          href: 'http://example.com/index.html'
-        };
-      });
-
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      doRequest([bid1_zone1]);
-      bidRequest = JSON.parse(decodeURIComponent(ajaxStub.getCall(0).args[2].r));
+    let bidRequest, bidRequests, _;
+    before(() => {
+      [_, bidRequests] = buildRequest([bid1_zone1]);
+      bidRequest = bidRequests[0];
     });
 
     it('should be a first-price auction', () => {
@@ -169,9 +162,9 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.imp[0]).to.have.property('banner');
     });
 
-    it('should have h/w', () => {
-      expect(bidRequest.imp[0].banner).to.have.property('w', 300);
-      expect(bidRequest.imp[0].banner).to.have.property('h', 250);
+    it('should have w/h', () => {
+      expect(bidRequest.imp[0].banner).to.have.property('format');
+      expect(bidRequest.imp[0].banner.format).to.be.eql([{w: 300, h: 250}, {w: 300, h: 200}]);
     });
 
     it('should respect secure connection', () => {
@@ -184,166 +177,129 @@ describe('Adkernel adapter', () => {
 
     it('should create proper site block', () => {
       expect(bidRequest.site).to.have.property('domain', 'example.com');
-      expect(bidRequest.site).to.have.property('page', 'http://example.com/index.html');
+      expect(bidRequest.site).to.have.property('page', 'https://example.com/index.html');
     });
 
     it('should fill device with caller macro', () => {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
-    })
+      expect(bidRequest.device).to.have.property('dnt', 1);
+    });
+
+    it('shouldn\'t contain gdpr-related information for default request', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests[0]).to.not.have.property('regs');
+      expect(bidRequests[0]).to.not.have.property('user');
+    });
+
+    it('should contain gdpr-related information if consent is configured', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1],
+        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}});
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1});
+      expect(bidRequest).to.have.property('user');
+      expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
+    });
+
+    it('should\'t contain consent string if gdpr isn\'t applied', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1], {gdprConsent: {gdprApplies: false}});
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
+      expect(bidRequest).to.not.have.property('user');
+    });
+
+    it('should\'t pass dnt if state is unknown', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1], {}, 'https://example.com/index.html', false);
+      expect(bidRequests[0].device).to.not.have.property('dnt');
+    });
   });
 
   describe('video request building', () => {
-    let bidRequest;
-
-    beforeEach(() => {
-      sandbox.stub(utils, 'getTopWindowLocation', () => {
-        return {
-          protocol: 'https:',
-          hostname: 'example.com',
-          host: 'example.com',
-          pathname: '/index.html',
-          href: 'http://example.com/index.html'
-        };
-      });
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(videoBidResponse));
-      doRequest([bid_video]);
-      bidRequest = JSON.parse(decodeURIComponent(ajaxStub.getCall(0).args[2].r));
+    let _, bidRequests;
+    before(() => {
+      [_, bidRequests] = buildRequest([bid_video]);
     });
 
     it('should have video object', () => {
-      expect(bidRequest.imp[0]).to.have.property('video');
+      expect(bidRequests[0].imp[0]).to.have.property('video');
     });
 
     it('should have h/w', () => {
-      expect(bidRequest.imp[0].video).to.have.property('w', 640);
-      expect(bidRequest.imp[0].video).to.have.property('h', 480);
+      expect(bidRequests[0].imp[0].video).to.have.property('w', 640);
+      expect(bidRequests[0].imp[0].video).to.have.property('h', 480);
     });
 
     it('should have tagid', () => {
-      expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
+      expect(bidRequests[0].imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
   });
 
   describe('requests routing', () => {
-    it('should issue a request for each network', () => {
-      ajaxStub.onFirstCall().callsArgWith(1, '')
-        .onSecondCall().callsArgWith(1, '');
-      doRequest([bid1_zone1, bid3_host2]);
-      expect(ajaxStub.calledTwice);
-      expect(ajaxStub.firstCall.args[0]).to.include(bid1_zone1.params.host);
-      expect(ajaxStub.secondCall.args[0]).to.include(bid3_host2.params.host);
+    it('should issue a request for each host', () => {
+      let [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
+      expect(pbRequests).to.have.length(2);
+      expect(pbRequests[0].url).to.have.string(`//${bid1_zone1.params.host}/`);
+      expect(pbRequests[1].url).to.have.string(`//${bid3_host2.params.host}/`);
     });
 
     it('should issue a request for each zone', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      ajaxStub.onCall(1).callsArgWith(1, JSON.stringify(bidResponse2));
-      doRequest([bid1_zone1, bid2_zone2]);
-      expect(ajaxStub.calledTwice);
-    });
-
-    it('should route calls to proper zones', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      ajaxStub.onCall(1).callsArgWith(1, JSON.stringify(bidResponse2));
-      doRequest([bid1_zone1, bid2_zone2]);
-      expect(ajaxStub.firstCall.args[2].zone).to.equal('1');
-      expect(ajaxStub.secondCall.args[2].zone).to.equal('2');
+      let [pbRequests, _] = buildRequest([bid1_zone1, bid2_zone2]);
+      expect(pbRequests).to.have.length(2);
+      expect(pbRequests[0].data.zone).to.be.equal(bid1_zone1.params.zoneId);
+      expect(pbRequests[1].data.zone).to.be.equal(bid2_zone2.params.zoneId);
     });
   });
 
   describe('responses processing', () => {
-    beforeEach(() => {
-      sandbox.stub(bidmanager, 'addBidResponse');
-    });
-
-    it('should return fully-initialized bid-response', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      doRequest([bid1_zone1]);
-      let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
-      expect(bidResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidResponse.bidderCode).to.equal('adkernel');
-      expect(bidResponse.cpm).to.equal(3.01);
-      expect(bidResponse.ad).to.include('<!-- admarkup here -->');
-      expect(bidResponse.width).to.equal(300);
-      expect(bidResponse.height).to.equal(250);
+    it('should return fully-initialized banner bid-response', () => {
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
+      expect(resp).to.have.property('requestId', 'Bid_01');
+      expect(resp).to.have.property('cpm', 3.01);
+      expect(resp).to.have.property('width', 300);
+      expect(resp).to.have.property('height', 250);
+      expect(resp).to.have.property('creativeId', '100_001');
+      expect(resp).to.have.property('currency');
+      expect(resp).to.have.property('ttl');
+      expect(resp).to.have.property('mediaType', 'banner');
+      expect(resp).to.have.property('ad');
+      expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
     it('should return fully-initialized video bid-response', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(videoBidResponse));
-      doRequest([bid_video]);
-      let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
-      expect(bidResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidResponse.mediaType).to.equal('video');
-      expect(bidResponse.bidderCode).to.equal('adkernel');
-      expect(bidResponse.cpm).to.equal(0.00145);
-      expect(bidResponse.vastUrl).to.equal('https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl');
-      expect(bidResponse.width).to.equal(600);
-      expect(bidResponse.height).to.equal(400);
-    });
-
-    it('should map responses to proper ad units', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      ajaxStub.onCall(1).callsArgWith(1, JSON.stringify(bidResponse2));
-      doRequest([bid1_zone1, bid2_zone2]);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal('adkernel');
-      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
-      expect(bidmanager.addBidResponse.secondCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidmanager.addBidResponse.secondCall.args[1].bidderCode).to.equal('adkernel');
-      expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal('ad-unit-2');
-    });
-
-    it('should process empty responses', () => {
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      ajaxStub.onCall(1).callsArgWith(1, '');
-      doRequest([bid1_zone1, bid2_zone2]);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal('adkernel');
-      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
-      expect(bidmanager.addBidResponse.secondCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(bidmanager.addBidResponse.secondCall.args[1].bidderCode).to.equal('adkernel');
-      expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal('ad-unit-2');
+      let [pbRequests, _] = buildRequest([bid_video]);
+      let resp = spec.interpretResponse({body: videoBidResponse}, pbRequests[0])[0];
+      expect(resp).to.have.property('requestId', 'Bid_Video');
+      expect(resp.mediaType).to.equal('video');
+      expect(resp.cpm).to.equal(0.00145);
+      expect(resp.vastUrl).to.equal('https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl');
+      expect(resp.width).to.equal(640);
+      expect(resp.height).to.equal(480);
     });
 
     it('should add nurl as pixel for banner response', () => {
-      sandbox.spy(utils, 'createTrackPixelHtml');
-      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
-      doRequest([bid1_zone1]);
-      expect(utils.createTrackPixelHtml.calledOnce);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
       let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
-      expect(bidmanager.addBidResponse.firstCall.args[1].ad).to.include(expectedNurl);
+      expect(resp.ad).to.have.string(expectedNurl);
     });
 
-    it('should perform usersync for each unique host/zone combination', () => {
-      ajaxStub.callsArgWith(1, '');
-      const expectedSyncUrls = ['//sync.adkernel.com/user-sync?zone=1&r=%2F%2Frtb-private.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D',
-        '//sync.adkernel.com/user-sync?zone=2&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D',
-        '//sync.adkernel.com/user-sync?zone=1&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D'];
-      let userSyncUrls = [];
-      sandbox.stub(utils, 'createInvisibleIframe', () => {
-        return {};
-      });
-      sandbox.stub(utils, 'addEventHandler', (el, ev, cb) => {
-        userSyncUrls.push(el.src);
-        cb(); // instant callback
-      });
-      doRequest([bid1_zone1, bid2_zone2, bid2_zone2, bid3_host2]);
-      expect(utils.createInvisibleIframe.calledThrice);
-      expect(userSyncUrls).to.be.eql(expectedSyncUrls);
+    it('should handle bidresponse with user-sync only', () => {
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
+      expect(resp).to.have.length(0);
     });
-  });
 
-  describe('adapter aliasing', () => {
-    const ALIAS_NAME = 'adkernelAlias';
-
-    it('should allow bidder code changing', () => {
-      expect(adapter.getBidderCode()).to.equal('adkernel');
-      adapter.setBidderCode(ALIAS_NAME);
-      expect(adapter.getBidderCode()).to.equal(ALIAS_NAME);
+    it('should perform usersync', () => {
+      let syncs = spec.getUserSyncs({iframeEnabled: false}, [{body: bidResponse1}]);
+      expect(syncs).to.have.length(0);
+      syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: bidResponse1}]);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0]).to.have.property('type', 'iframe');
+      expect(syncs[0]).to.have.property('url', 'http://adk.sync.com/sync');
     });
   });
 });
