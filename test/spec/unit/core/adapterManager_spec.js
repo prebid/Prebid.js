@@ -92,7 +92,8 @@ describe('adapterManager tests', () => {
       }];
 
       let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      expect(bidRequests.length).to.equal(1);
+      expect(bidRequests[0].bidderCode).to.equal('appnexus');
       sinon.assert.called(utils.logError);
     });
 
