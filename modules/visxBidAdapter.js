@@ -22,7 +22,7 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -55,6 +55,15 @@ export const spec = {
       cur: currency,
     };
 
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      }
+      payload.gdpr_applies =
+        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+    }
+
     return {
       method: 'GET',
       url: ENDPOINT_URL,
@@ -84,11 +93,20 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.pixelEnabled) {
+      var query = [];
+      if (gdprConsent) {
+        if (gdprConsent.consentString) {
+          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+        }
+        query.push('gdpr_applies=' + encodeURIComponent(
+          (typeof gdprConsent.gdprApplies === 'boolean')
+            ? Number(gdprConsent.gdprApplies) : 1));
+      }
       return [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
+        url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
   }
