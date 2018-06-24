@@ -23,10 +23,11 @@ Banner formats are supported.
         //         bidder: 'my6sense',
         //             params: {
         //                 key: 'mW3mLht0kMT',
-        //                 dataVersion: 3,
-        //                 pageUrl: '',
+        //                 pageUrl: '[PAGE_URL]',
         //                 zone: '[ZONE]',
-        //
+        //                 dataView: ''
+        //                 organicClicks:'',
+        //                 paidClicks:'',
         //         }
         //     }]
         // }
