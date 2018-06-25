@@ -11,7 +11,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'widespace';
-const WS_ADAPTER_VERSION = '2.0.0';
+const WS_ADAPTER_VERSION = '2.0.1';
 const LOCAL_STORAGE_AVAILABLE = window.localStorage;
 const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
@@ -34,7 +34,7 @@ export const spec = {
     return false;
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
@@ -60,6 +60,7 @@ export const spec = {
         'sid': bid.params.sid,
         'lcuid': LC_UID,
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
+        'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
         'hb.floor': bid.bidfloor || '',
@@ -100,6 +101,15 @@ export const spec = {
           val => includes(val, 'WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
         data.forceAdId = DEBUG_AD;
+      }
+
+      // GDPR Consent info
+      if (data.gdprCmp) {
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
+        data.gdprConsentData = consentString;
+        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0;
       }
 
       // Remove empty params

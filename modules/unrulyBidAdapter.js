@@ -73,17 +73,20 @@ export const adapter = {
     return bid.mediaType === 'video' || context === 'outstream';
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const url = 'https://targeting.unrulymedia.com/prebid';
     const method = 'POST';
-    const data = { bidRequests: validBidRequests };
+    const data = {
+      bidRequests: validBidRequests,
+      bidderRequest
+    };
     const options = { contentType: 'application/json' };
 
     return {
       url,
       method,
       data,
-      options,
+      options
     };
   },
 
