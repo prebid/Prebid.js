@@ -6,7 +6,6 @@ import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
 import CONSTANTS from 'src/constants.json';
-import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
@@ -167,7 +166,7 @@ export function newBidder(spec) {
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
         if (isValid(adUnitCode, bid, [bidderRequest])) {
-          addBidResponse(adUnitCode, bid);
+          addBidResponse(adUnitCode, bid, done);
         }
       }
 
@@ -175,22 +174,6 @@ export function newBidder(spec) {
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses(bids) {
-        const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
-
-        const videoBid = bidsArray.some(bid => bid.mediaType === 'video');
-        const cacheEnabled = config.getConfig('cache.url');
-
-        // video bids with cache enabled need to be cached first before they are considered done
-        if (!(videoBid && cacheEnabled)) {
-          done();
-        }
-
-        // TODO: the code above needs to be refactored. We should always call done when we're done. if the auction
-        // needs to do cleanup before _it_ can be done it should handle that itself in the auction.  It should _not_
-        // require us, the bidders, to conditionally call done.  That makes the whole done API very flaky.
-        // As soon as that is refactored, we can move this emit event where it should be, within the done function.
-        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-
         registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
