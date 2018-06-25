@@ -146,7 +146,7 @@ describe('33acrossBidAdapter:', function () {
         'data': JSON.stringify(ttxRequest),
         'options': {
           'contentType': 'application/json',
-          'withCredentials': false
+          'withCredentials': true
         }
       }
       const builtServerRequests = buildRequests(this.bidRequests);
@@ -194,7 +194,7 @@ describe('33acrossBidAdapter:', function () {
         data: JSON.stringify(ttxRequest),
         options: {
           contentType: 'application/json',
-          withCredentials: false
+          withCredentials: true
         }
       };
 
@@ -244,7 +244,7 @@ describe('33acrossBidAdapter:', function () {
         data: JSON.stringify(ttxRequest),
         options: {
           contentType: 'application/json',
-          withCredentials: false
+          withCredentials: true
         }
       };
 
