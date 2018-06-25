@@ -153,7 +153,7 @@ export const spec = {
       return false;
     }
 
-    if (typeof bid.params.siteId !== 'string') {
+    if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
       return false;
     }
 
@@ -185,7 +185,8 @@ export const spec = {
 
       // If the bid request is for banner, then transform the bid request based on banner format.
       if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
-        validBidRequest.mediaType === 'banner') {
+        validBidRequest.mediaType === 'banner' ||
+        (validBidRequest.mediaType === undefined && utils.deepAccess(validBidRequest, 'mediaTypes.banner') === undefined)) {
         bannerImp = bidToBannerImp(validBidRequest);
         bannerImps.push(bannerImp);
       }

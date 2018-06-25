@@ -131,6 +131,7 @@ describe('MantisAdapter', () => {
     it('display ads returned', () => {
       let response = {
         body: {
+          uuid: 'uuid',
           ads: [
             {
               bid: 'bid',
@@ -161,6 +162,8 @@ describe('MantisAdapter', () => {
 
       let result = spec.interpretResponse(response, {bidderRequest});
       expect(result[0]).to.deep.equal(expectedResponse[0]);
+      expect(window.mantis_uuid).to.equal(response.body.uuid);
+      expect(window.localStorage.getItem('mantis:uuid')).to.equal(response.body.uuid);
     });
 
     it('no ads returned', () => {

@@ -60,7 +60,7 @@ Module that connects to Beachfront's demand sources
             code: 'test-video-banner',
             mediaTypes: {
                 video: {
-                    context: 'instream',
+                    context: 'outstream',
                     playerSize: [ 640, 360 ]
                 },
                 banner: {

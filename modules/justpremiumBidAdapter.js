@@ -3,6 +3,7 @@ import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.1'
 const pixels = []
 
 export const spec = {
@@ -46,6 +47,11 @@ export const spec = {
       };
     }
 
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
@@ -72,7 +78,8 @@ export const spec = {
           cpm: bid.price,
           netRevenue: true,
           currency: bid.currency || 'USD',
-          ttl: bid.ttl || spec.time
+          ttl: bid.ttl || spec.time,
+          format: bid.format
         }
         bidResponses.push(bidResponse)
       }

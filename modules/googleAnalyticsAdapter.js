@@ -235,7 +235,8 @@ function sendBidTimeouts(timedOutBidders) {
   _analyticsQueue.push(function () {
     utils._each(timedOutBidders, function (bidderCode) {
       _eventCount++;
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, _disableInteraction);
+      var bidderName = bidderCode.bidder;
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderName, _disableInteraction);
     });
   });
 

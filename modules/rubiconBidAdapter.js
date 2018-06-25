@@ -71,7 +71,8 @@ var sizeMap = {
   199: '640x200',
   213: '1030x590',
   214: '980x360',
-  232: '580x400'
+  232: '580x400',
+  257: '400x600'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -193,7 +194,7 @@ export const spec = {
         return {
           method: 'GET',
           url: FASTLANE_ENDPOINT,
-          data: Object.keys(bidParams).reduce((paramString, key) => {
+          data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=1&rand=${Math.random()}`,
@@ -221,11 +222,12 @@ export const spec = {
         const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
           return spec.createSlotParams(bidRequest, bidderRequest);
         }));
+
         // SRA request returns grouped bidRequest arrays not a plain bidRequest
         return {
           method: 'GET',
           url: FASTLANE_ENDPOINT,
-          data: Object.keys(combinedSlotParams).reduce((paramString, key) => {
+          data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
             const propValue = combinedSlotParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
           }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
@@ -234,6 +236,40 @@ export const spec = {
       }));
     }
     return requests;
+  },
+
+  getOrderedParams: function(params) {
+    const containsTgV = /^tg_v/
+    const containsTgI = /^tg_i/
+
+    const orderedParams = [
+      'account_id',
+      'site_id',
+      'zone_id',
+      'size_id',
+      'alt_size_ids',
+      'p_pos',
+      'gdpr',
+      'gdpr_consent',
+      'rf',
+      'dt.id',
+      'dt.keyv',
+      'dt.pref',
+      'p_geo.latitude',
+      'p_geo.longitude',
+      'kw'
+    ].concat(Object.keys(params).filter(item => containsTgV.test(item)))
+      .concat(Object.keys(params).filter(item => containsTgI.test(item)))
+      .concat([
+        'tk_flint',
+        'x_source.tid',
+        'p_screen_res',
+        'rp_floor',
+        'rp_secure',
+        'tk_user_key'
+      ]);
+
+    return orderedParams.concat(Object.keys(params).filter(item => (orderedParams.indexOf(item) === -1)));
   },
 
   /**
@@ -287,6 +323,8 @@ export const spec = {
     // use rubicon sizes if provided, otherwise adUnit.sizes
     const parsedSizes = parseSizes(bidRequest);
 
+    const [latitude, longitude] = params.latLong || [];
+
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
@@ -301,6 +339,8 @@ export const spec = {
       'p_screen_res': _getScreenResolution(),
       'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
+      'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
+      'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest)
     };
@@ -316,14 +356,14 @@ export const spec = {
     // visitor properties
     if (params.visitor !== null && typeof params.visitor === 'object') {
       Object.keys(params.visitor).forEach((key) => {
-        data[`tg_v.${key}`] = params.visitor[key];
+        data[`tg_v.${key}`] = params.visitor[key].toString();
       });
     }
 
     // inventory properties
     if (params.inventory !== null && typeof params.inventory === 'object') {
       Object.keys(params.inventory).forEach((key) => {
-        data[`tg_i.${key}`] = params.inventory[key];
+        data[`tg_i.${key}`] = params.inventory[key].toString();
       });
     }
 
@@ -491,7 +531,9 @@ function parseSizes(bid) {
   let params = bid.params;
   if (hasVideoMediaType(bid)) {
     let size = [];
-    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+    if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
+      size = bid.mediaTypes.video.playerSize;
+    } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
@@ -503,7 +545,16 @@ function parseSizes(bid) {
   }
 
   // deprecated: temp legacy support
-  let sizes = Array.isArray(params.sizes) ? params.sizes : mapSizes(bid.sizes);
+  let sizes = [];
+  if (Array.isArray(params.sizes)) {
+    sizes = params.sizes;
+  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    sizes = mapSizes(bid.mediaTypes.banner.sizes);
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    sizes = mapSizes(bid.sizes)
+  } else {
+    utils.logWarn('Warning: no sizes are setup or found');
+  }
 
   return masSizeOrdering(sizes);
 }
