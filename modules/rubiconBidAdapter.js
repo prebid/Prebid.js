@@ -96,19 +96,19 @@ export const spec = {
       // Log warning if mediaTypes contains both 'banner' and 'video'
       if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
         if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-          utils.logError('Error: size id is missing for rubicon instream video request.');
+          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
           return false;
         }
       } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
         if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
-          utils.logWarn('Warning: rubicon outstream video is sending invalid size id, converting size id to 203.');
+          utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
         }
       } else {
-        utils.logError('Error: no instream or outstream context defined in mediaTypes.');
+        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
         return false;
       }
       if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
-        utils.logWarn('Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
+        utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
       }
     }
     return parseSizes(bid).length > 0;
@@ -214,7 +214,7 @@ export const spec = {
 
         // fastlane SRA has a limit of 10 slots
         if (bidsInGroup.length > 10) {
-          utils.logWarn(`single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
+          utils.logWarn(`Rubicon bid adapter Warning: single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
           bidsInGroup = bidsInGroup.slice(0, 10);
         }
 
@@ -408,7 +408,7 @@ export const spec = {
 
         bids.push(bid);
       } else {
-        utils.logError(`bidRequest undefined at index position:${i}`, bidRequest, responseObj);
+        utils.logError(`Rubicon bid adapter Error: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
 
       return bids;
