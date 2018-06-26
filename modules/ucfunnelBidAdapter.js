@@ -43,13 +43,9 @@ export const spec = {
   buildRequests: function(bids, bidderRequest) {
     return bids.map(bid => {
       return {
-        method: 'POST',
+        method: 'GET',
         url: location.protocol + spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
-        options: {
-          contentType: 'application/json',
-          withCredentials: true
-        },
         bidRequest: bid
       }
     });
@@ -207,4 +203,11 @@ function getRequestData(bid, bidderRequest) {
   }
 
   return bidData;
+  // var bidReqParams = [];
+  // for (var p in bidData) {
+  //   if (bidData.hasOwnProperty(p)) {
+  //     bidReqParams.push(encodeURIComponent(p) + '=' + encodeURIComponent(bidData[p]));
+  //   }
+  // }
+  // return bidReqParams.join('&');
 }

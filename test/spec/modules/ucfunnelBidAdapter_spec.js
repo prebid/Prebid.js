@@ -100,15 +100,8 @@ describe('ucfunnel Adapter', () => {
   describe('build request', () => {
     const request = spec.buildRequests([validBannerBidReq]);
     it('should create a POST request for every bid', () => {
-      expect(request[0].method).to.equal('POST');
+      expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(location.protocol + spec.ENDPOINT);
-    });
-
-    it('should ensure contentType is `application/json`', () => {
-      expect(request[0].options).to.deep.equal({
-        contentType: 'application/json',
-        withCredentials: true
-      });
     });
 
     it('should attach the bid request object', () => {
