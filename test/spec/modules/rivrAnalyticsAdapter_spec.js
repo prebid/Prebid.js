@@ -171,6 +171,26 @@ describe('', () => {
       expect(auctionId).to.be.eql(1);
     });
 
+    it('should map proper response params on auction init', () => {
+      localStorage.setItem('rivr_should_optimise', 'optimise')
+      localStorage.setItem('rivr_model_version', 'some model version');
+      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 2, config: {}, timeout: 3000});
+      let auctionObject2 = analyticsAdapter.context.auctionObject;
+
+      expect(auctionObject2['ext.rivr.optimiser']).to.be.eql('optimise');
+      expect(auctionObject2['modelVersion']).to.be.eql('some model version');
+
+      localStorage.removeItem('rivr_should_optimise');
+      localStorage.removeItem('rivr_model_version');
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 3, config: {}, timeout: 3000});
+
+      let auctionObject3 = analyticsAdapter.context.auctionObject;
+
+      expect(auctionObject3['ext.rivr.optimiser']).to.be.eql('unoptimised');
+      expect(auctionObject3['modelVersion']).to.be.eql(null);
+    })
+
     it('should handle bid request event', () => {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
       const sitePubcid = analyticsAdapter.context.auctionObject.site.publisher.id;

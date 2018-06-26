@@ -22,6 +22,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         }
         if (rivrAnalytics.context.auctionObject) {
           rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+          saveUnoptimisedParams();
           fetchLocalization();
         }
         handler = trackAuctionInit;
@@ -332,10 +333,62 @@ function fulfillAuctionObject() {
       gender: null,
     },
     bidResponses: [],
-    bidRequests: []
+    bidRequests: [],
+    'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
+    modelVersion: localStorage.getItem('rivr_model_version') || null,
+    'ext.rivr.originalvalues': []
   }
   return newAuction;
 };
+
+function saveUnoptimisedParams() {
+  let units = rivrAnalytics.context.adUnits;
+  if (units) {
+    if (units.length > 0) {
+      let allUnits = connectAllUnits(units);
+      allUnits.forEach((adUnit) => {
+        adUnit.bids.forEach((bid) => {
+          let configForAd = fetchConfigForBidder(bid.bidder);
+          if (configForAd) {
+            let unOptimisedParamsField = createUnOptimisedParamsField(bid, configForAd)
+            rivrAnalytics.context.auctionObject['ext.rivr.originalvalues'].push(unOptimisedParamsField);
+          }
+        })
+      });
+    }
+  }
+};
+
+function connectAllUnits(units) {
+  return units.reduce((acc, units) => {
+    units.forEach((unit) => acc.push(unit))
+    return acc
+  }, []);
+}
+
+function createUnOptimisedParamsField(unit, config) {
+  let floorPriceLabel = config['floorPriceLabel'];
+  let currencyLabel = config['currencyLabel'];
+  let pmpLabel = config['pmpLabel'];
+  return {
+    'ext.rivr.demand_source_original': unit.bidder,
+    'ext.rivr.bidfloor_original': unit.params[floorPriceLabel],
+    'ext.rivr.currency_original': unit.params[currencyLabel],
+    'ext.rivr.pmp_original': unit.params[pmpLabel],
+  }
+}
+
+function fetchConfigForBidder(bidderName) {
+  let config = localStorage.getItem('rivr_config_string');
+  if (config) {
+    let parsed = JSON.parse(config);
+    return parsed.demand.map((bidderConfig) => {
+      if (bidderName === bidderConfig.partner) {
+        return bidderConfig
+      };
+    })[0];
+  }
+}
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
  * @param callback
@@ -424,10 +477,16 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
+  let copiedUnits;
+  if (config.options.adUnits) {
+    let stringifiedAdUnits = JSON.stringify(config.options.adUnits);
+    copiedUnits = JSON.parse(stringifiedAdUnits);
+  }
   rivrAnalytics.context = {
     host: config.options.host || DEFAULT_HOST,
     pubId: config.options.pubId,
     auctionObject: {},
+    adUnits: copiedUnits,
     clientID: config.options.clientID,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
