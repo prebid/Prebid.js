@@ -19,7 +19,8 @@ const CONFIG = {
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
-  bidders: ['appnexus']
+  bidders: ['appnexus'],
+  accountId: 'abc'
 };
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
@@ -91,7 +92,8 @@ describe('adapterManager tests', () => {
       }];
 
       let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      expect(bidRequests.length).to.equal(1);
+      expect(bidRequests[0].bidderCode).to.equal('appnexus');
       sinon.assert.called(utils.logError);
     });
 
@@ -719,6 +721,36 @@ describe('adapterManager tests', () => {
         expect(AdapterManager.videoAdapters).to.include(alias);
       });
     });
+
+    describe('special case for s2s-only bidders', () => {
+      beforeEach(() => {
+        sinon.stub(utils, 'logError');
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+        utils.logError.restore();
+      });
+
+      it('should allow an alias if alias is part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
+
+        AdapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(AdapterManager.aliasRegistry).to.have.property('s2sAlias');
+      });
+
+      it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
+
+        AdapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
+        sinon.assert.calledOnce(utils.logError);
+        expect(AdapterManager.aliasRegistry).to.not.have.property('s2sAlias1');
+      });
+    });
   });
 
   describe('makeBidRequests', () => {
@@ -981,6 +1013,20 @@ describe('adapterManager tests', () => {
         expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.video).to.exist;
         sinon.assert.calledOnce(utils.logInfo);
+      });
+
+      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', () => {
+        let fullAdUnit = [{
+          sizes: [300, 250],
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          }
+        }];
+        let result = checkBidRequestSizes(fullAdUnit);
+        expect(result[0].sizes).to.deep.equal([[300, 250]]);
+        expect(result[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
       });
     });
 
