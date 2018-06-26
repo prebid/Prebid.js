@@ -36,7 +36,7 @@ export const spec = {
         'ua': navigator.userAgent,
         'ip': ''
       },
-      'user': { 'id': getUserID(document.cookie) },
+      'user': { 'id': getUserID() },
       'imp': [
         {
           'id': req.params.placementId,
