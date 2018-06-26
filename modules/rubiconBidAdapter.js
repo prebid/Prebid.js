@@ -88,38 +88,31 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let params = bid.params;
 
-    if (!/^\d+$/.test(params.accountId)) {
+    if (!/^\d+$/.test(bid.params.accountId)) {
       return false;
     }
 
-    // Log warning if context is 'outstream', is not currently supported
-    if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
-      utils.logWarn('Warning: outstream video for Rubicon Client Adapter is not supported yet');
+    if (hasVideoMediaType(bid)) {
+      // Log warning if mediaTypes contains both 'banner' and 'video'
+      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
+        if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
+          return false;
+        }
+      } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
+        if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
+          utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
+        }
+      } else {
+        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
+        return false;
+      }
+      if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+        utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
+      }
     }
-
-    // Log warning if mediaTypes contains both 'banner' and 'video'
-    if (spec.hasVideoMediaType(bid) && typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
-      utils.logWarn('Warning: instream video and banner requested for same ad unit, continuing with video instream request');
-    }
-
-    // Bid is invalid if legacy video is set but params video is missing size_id
-    if (bid.mediaType === 'video' && typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-      return false;
-    }
-
-    // Bid is invalid if mediaTypes video is invalid and a mediaTypes banner property is not defined
-    if (bid.mediaTypes && !spec.hasVideoMediaType(bid) && typeof bid.mediaTypes.banner === 'undefined') {
-      return false;
-    }
-
-    let parsedSizes = parseSizes(bid);
-    if (parsedSizes.length < 1) {
-      return false;
-    }
-
-    return true;
+    return parseSizes(bid).length > 0;
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -129,7 +122,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    const videoRequests = bidRequests.filter(spec.hasVideoMediaType).map(bidRequest => {
+    const videoRequests = bidRequests.filter(hasVideoMediaType).map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
       let params = bidRequest.params;
@@ -143,7 +136,6 @@ export const spec = {
         'x_source.tid': bidRequest.transactionId,
         timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
         stash_creatives: true,
-        ae_pass_through_parameters: params.video.aeParams,
         slots: []
       };
 
@@ -151,15 +143,19 @@ export const spec = {
       let slotData = {
         site_id: params.siteId,
         zone_id: params.zoneId,
-        position: parsePosition(params.position),
+        position: params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
         floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
         element_id: bidRequest.adUnitCode,
         name: bidRequest.adUnitCode,
-        language: params.video.language,
         width: size[0],
         height: size[1],
-        size_id: params.video.size_id
+        size_id: utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : params.video.size_id
       };
+
+      if (params.video) {
+        data.ae_pass_through_parameters = params.video.aeParams;
+        slotData.language = params.video.language;
+      }
 
       if (params.inventory && typeof params.inventory === 'object') {
         slotData.inventory = params.inventory;
@@ -193,7 +189,7 @@ export const spec = {
 
     if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
-      requests = videoRequests.concat(bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest)).map(bidRequest => {
+      requests = videoRequests.concat(bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest)).map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
@@ -208,7 +204,7 @@ export const spec = {
     } else {
       // single request requires bids to be grouped by site id into a single request
       // note: utils.groupBy wasn't used because deep property access was needed
-      const nonVideoRequests = bidRequests.filter(bidRequest => !spec.hasVideoMediaType(bidRequest));
+      const nonVideoRequests = bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest));
       const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
         return groupedBids;
@@ -219,7 +215,7 @@ export const spec = {
 
         // fastlane SRA has a limit of 10 slots
         if (bidsInGroup.length > 10) {
-          utils.logWarn(`single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
+          utils.logWarn(`Rubicon bid adapter Warning: single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
           bidsInGroup = bidsInGroup.slice(0, 10);
         }
 
@@ -335,7 +331,7 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'p_pos': parsePosition(params.position),
+      'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': isSecure() ? '1' : '0',
       'tk_flint': INTEGRATION,
@@ -381,17 +377,6 @@ export const spec = {
   },
 
   /**
-   * Test if bid has mediaType or mediaTypes set for video.
-   * note: 'mediaType' has been deprecated, however support will remain for a transitional period
-   * @param {BidRequest} bidRequest
-   * @returns {boolean}
-   */
-  hasVideoMediaType: function (bidRequest) {
-    return (typeof utils.deepAccess(bidRequest, 'params.video.size_id') !== 'undefined' &&
-      (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'instream'));
-  },
-
-  /**
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} bidRequest - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
@@ -408,7 +393,7 @@ export const spec = {
     let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && hasVideoMediaType(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -463,7 +448,7 @@ export const spec = {
 
         bids.push(bid);
       } else {
-        utils.logError(`bidRequest undefined at index position:${i}`, bidRequest, responseObj);
+        utils.logError(`Rubicon bid adapter Error: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
 
       return bids;
@@ -544,7 +529,7 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (spec.hasVideoMediaType(bid)) {
+  if (hasVideoMediaType(bid)) {
     let size = [];
     if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
       size = bid.mediaTypes.video.playerSize;
@@ -586,11 +571,14 @@ function mapSizes(sizes) {
     }, []);
 }
 
-function parsePosition(position) {
-  if (position === 'atf' || position === 'btf') {
-    return position;
-  }
-  return 'unknown';
+/**
+ * Test if bid has mediaType or mediaTypes set for video.
+ * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+ * @param {BidRequest} bidRequest
+ * @returns {boolean}
+ */
+export function hasVideoMediaType(bidRequest) {
+  return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
 }
 
 export function masSizeOrdering(sizes) {
