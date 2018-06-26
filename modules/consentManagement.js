@@ -348,7 +348,7 @@ export function setConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
-
+  utils.logInfo('consentManagement module has been activated...');
   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
 }
 config.getConfig('consentManagement', config => setConfig(config.consentManagement));
