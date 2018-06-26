@@ -144,7 +144,8 @@ describe('Polymorph adapter test', () => {
         ttl: 3600,
         creativeId: body.crid,
         netRevenue: false,
-        currency: 'USD'
+        currency: 'USD',
+        mediaType: 'banner'
       }];
 
       let result = spec.interpretResponse(response, { 'bidderRequest': bidRequests[0] });
@@ -163,7 +164,8 @@ describe('Polymorph adapter test', () => {
           ttl: 3600,
           creativeId: body.ads[0].crid,
           netRevenue: false,
-          currency: 'USD'
+          currency: 'USD',
+          mediaType: 'banner'
         }
       ];
 
