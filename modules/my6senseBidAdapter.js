@@ -1,6 +1,6 @@
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
-const END_POINT = 'http://papi.mynativeplatform.com/pub2/web/hbwidget.json';
+const END_POINT = '//papi.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
 const END_POINT_METHOD = 'POST';
 
 // called first
