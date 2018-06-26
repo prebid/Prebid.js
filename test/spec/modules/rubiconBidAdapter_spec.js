@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, masSizeOrdering, resetUserSync} from 'modules/rubiconBidAdapter';
+import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
@@ -213,6 +213,45 @@ describe('the rubicon adapter', () => {
       'skipdelay': 15,
       'playerHeight': 320,
       'playerWidth': 640,
+      'size_id': 203,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaTypes = {
+      video: {
+        context: 'instream'
+      },
+    };
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
+  function createLegacyVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaType = 'video';
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
       'size_id': 201,
     };
   }
@@ -235,11 +274,12 @@ describe('the rubicon adapter', () => {
             keywords: ['a', 'b', 'c'],
             inventory: {
               rating: '5-star',
-              prodtype: 'tech'
+              prodtype: ['tech', 'mobile']
             },
             visitor: {
               ucat: 'new',
-              lastsearch: 'iphone'
+              lastsearch: 'iphone',
+              likes: ['sports', 'video games']
             },
             position: 'atf',
             referrer: 'localhost',
@@ -335,8 +375,9 @@ describe('the rubicon adapter', () => {
             'kw': 'a,b,c',
             'tg_v.ucat': 'new',
             'tg_v.lastsearch': 'iphone',
+            'tg_v.likes': 'sports,video games',
             'tg_i.rating': '5-star',
-            'tg_i.prodtype': 'tech',
+            'tg_i.prodtype': 'tech,mobile',
             'tg_fl.eid': 'div-1',
             'rf': 'localhost'
           };
@@ -349,6 +390,17 @@ describe('the rubicon adapter', () => {
             } else {
               expect(data[key]).to.equal(value);
             }
+          });
+        });
+
+        it('ad engine query params should be ordered correctly', () => {
+          sandbox.stub(Math, 'random').callsFake(() => 0.1);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+
+          request.data.split('&').forEach((item, i) => {
+            expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
           });
         });
 
@@ -370,8 +422,9 @@ describe('the rubicon adapter', () => {
             'kw': 'a,b,c',
             'tg_v.ucat': 'new',
             'tg_v.lastsearch': 'iphone',
+            'tg_v.likes': 'sports,video games',
             'tg_i.rating': '5-star',
-            'tg_i.prodtype': 'tech',
+            'tg_i.prodtype': 'tech,mobile',
             'rf': 'localhost',
             'p_geo.latitude': undefined,
             'p_geo.longitude': undefined
@@ -771,8 +824,9 @@ describe('the rubicon adapter', () => {
               'kw': 'a,b,c',
               'tg_v.ucat': 'new',
               'tg_v.lastsearch': 'iphone',
+              'tg_v.likes': 'sports,video games',
               'tg_i.rating': '5-star',
-              'tg_i.prodtype': 'tech',
+              'tg_i.prodtype': 'tech,mobile',
               'tg_fl.eid': 'div-1',
               'rf': 'localhost'
             };
@@ -1071,7 +1125,9 @@ describe('the rubicon adapter', () => {
               accountId: 1001,
               siteId: 123,
               zoneId: 456,
-              video: {}
+              video: {
+                size_id: 201
+              }
             },
             sizes: [[300, 250]]
           };
@@ -1128,13 +1184,17 @@ describe('the rubicon adapter', () => {
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
         });
 
-        it('should not validate bid request when video is outstream', () => {
+        it('bid request is valid when video context is outstream', () => {
           createVideoBidderRequestOutstream();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+          const bidRequestCopy = clone(bidderRequest);
+
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
+          expect(request.data.slots[0].size_id).to.equal(203);
         });
       });
 
@@ -1182,8 +1242,9 @@ describe('the rubicon adapter', () => {
             'kw': 'a,b,c',
             'tg_v.ucat': 'new',
             'tg_v.lastsearch': 'iphone',
+            'tg_v.likes': 'sports,video games',
             'tg_i.rating': '5-star',
-            'tg_i.prodtype': 'tech',
+            'tg_i.prodtype': 'tech,mobile',
             'tg_fl.eid': 'div-1',
             'rf': 'localhost'
           };
@@ -1205,12 +1266,12 @@ describe('the rubicon adapter', () => {
       describe('hasVideoMediaType', () => {
         it('should return true if mediaType is video and size_id is set', () => {
           createVideoBidderRequest();
-          const legacyVideoTypeBidRequest = spec.hasVideoMediaType(bidderRequest.bids[0]);
+          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(true);
         });
 
         it('should return false if mediaType is video and size_id is not defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(spec.isBidRequestValid({
             bid: 99,
             mediaType: 'video',
             params: {
@@ -1220,17 +1281,17 @@ describe('the rubicon adapter', () => {
         });
 
         it('should return false if bidRequest.mediaType is not equal to video', () => {
-          expect(spec.hasVideoMediaType({
+          expect(hasVideoMediaType({
             mediaType: 'banner'
           })).is.equal(false);
         });
 
         it('should return false if bidRequest.mediaType is not defined', () => {
-          expect(spec.hasVideoMediaType({})).is.equal(false);
+          expect(hasVideoMediaType({})).is.equal(false);
         });
 
         it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(hasVideoMediaType({
             mediaTypes: {
               video: {
                 context: 'instream'
@@ -1245,7 +1306,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(spec.isBidRequestValid({
             mediaTypes: {
               video: {
                 context: 'instream'

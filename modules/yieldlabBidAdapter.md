@@ -21,7 +21,11 @@ Module that connects to Yieldlab's demand sources
                    params: {
                        adslotId: "5220336",
                        supplyId: "1381604",
-                       adSize: "728x90"
+                       adSize: "728x90",
+                       targeting: {
+                           key1: "value1",
+                           key2: "value2"
+                       }
                    }
                }]
            }, {

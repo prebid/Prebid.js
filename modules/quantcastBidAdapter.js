@@ -41,9 +41,10 @@ export const spec = {
    * `BidRequests`.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be send to Quantcast server
+   * @param bidderRequest
    * @return ServerRequest information describing the request to the server.
    */
-  buildRequests(bidRequests) {
+  buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
 
     const referrer = utils.getTopWindowUrl();
@@ -75,6 +76,8 @@ export const spec = {
         });
       });
 
+      const gdprConsent = bidderRequest ? bidderRequest.gdprConsent : {};
+
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
         publisherId: bid.params.publisherId,
@@ -94,7 +97,9 @@ export const spec = {
           referrer,
           domain
         },
-        bidId: bid.bidId
+        bidId: bid.bidId,
+        gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
+        gdprConsent: gdprConsent.consentString
       };
 
       const data = JSON.stringify(requestData);
