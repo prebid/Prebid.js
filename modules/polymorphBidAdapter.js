@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'polymorph';
 const URL = '//api.adsnative.com/v1/ad-template.json';
