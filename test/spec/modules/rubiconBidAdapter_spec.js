@@ -207,6 +207,9 @@ describe('the rubicon adapter', () => {
         context: 'outstream'
       },
     };
+    bid.params.accountId = 14062;
+    bid.params.siteId = 70608;
+    bid.params.zoneId = 335918;
     bid.params.video = {
       'language': 'en',
       'skip': 1,
@@ -218,41 +221,6 @@ describe('the rubicon adapter', () => {
         'p_aso.video.ext.skip': '1',
         'p_aso.video.ext.skipdelay': '15'
       }
-    };
-  }
-
-  function createVideoBidderRequestNoPlayer() {
-    let bid = bidderRequest.bids[0];
-    bid.mediaTypes = {
-      video: {
-        context: 'instream'
-      },
-    };
-    bid.params.video = {
-      'language': 'en',
-      'p_aso.video.ext.skip': true,
-      'p_aso.video.ext.skipdelay': 15,
-      'size_id': 201,
-      'aeParams': {
-        'p_aso.video.ext.skip': '1',
-        'p_aso.video.ext.skipdelay': '15'
-      }
-    };
-  }
-
-  function createLegacyVideoBidderRequestNoPlayer() {
-    let bid = bidderRequest.bids[0];
-    bid.mediaType = 'video';
-    bid.params.video = {
-      'language': 'en',
-      'p_aso.video.ext.skip': true,
-      'p_aso.video.ext.skipdelay': 15,
-      'size_id': 201,
-      'aeParams': {
-        'p_aso.video.ext.skip': '1',
-        'p_aso.video.ext.skipdelay': '15'
-      }
-      'size_id': 201,
     };
   }
 
@@ -1194,7 +1162,7 @@ describe('the rubicon adapter', () => {
 
           let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
-          expect(request.data.slots[0].size_id).to.equal(203);
+          expect(request.data.imp[0].ext.rubicon.video.size_id).to.equal(203);
         });
       });
 

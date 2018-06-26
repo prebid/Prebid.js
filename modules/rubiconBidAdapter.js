@@ -93,11 +93,11 @@ export const spec = {
       return false;
     }
 
+    // video
     if (hasVideoMediaType(bid)) {
-      // Log warning if mediaTypes contains both 'banner' and 'video'
       if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
         if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
+          utils.logError('Rubicon bid adapter Error: size id is missing for instream/legacy video request.');
           return false;
         }
       } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
@@ -105,14 +105,16 @@ export const spec = {
           utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
         }
       } else {
-        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
+        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes for video request.');
         return false;
       }
       if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
         utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
       }
+      return true;
     }
-    return hasVideoMediaType(bid) || parseSizes(bid).length > 0;
+    // banner
+    return parseSizes(bid).length > 0;
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -220,9 +222,9 @@ export const spec = {
     return requests;
   },
 
-  getOrderedParams: function(params) {
-    const containsTgV = /^tg_v/
-    const containsTgI = /^tg_i/
+  getOrderedParams: function (params) {
+    const containsTgV = /^tg_v/;
+    const containsTgI = /^tg_i/;
 
     const orderedParams = [
       'account_id',
