@@ -18,6 +18,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
+const debug = 'adapterver=0.1.0&platform=241394079772386&platver=$prebid.version$';
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
@@ -128,7 +129,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: 'placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=&sdk[]=5.5.web'
+        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=&sdk[]=5.5.web&${debug}`
       }]);
     });
 
@@ -147,7 +148,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['640x480'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: 'placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=&sdk[]=&playerwidth=640&playerheight=480'
+        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=&sdk[]=&${debug}&playerwidth=640&playerheight=480`
       }]);
     });
   });
