@@ -272,6 +272,21 @@ describe('IndexexchangeAdapter', () => {
 
       expect(requestStringTimeout.data.t).to.be.undefined;
     });
+
+    it('should default to assuming media type is banner', () => {
+      const bidsWithoutMediaType = [
+        Object.assign({}, DEFAULT_BANNER_VALID_BID[0])
+      ];
+      delete bidsWithoutMediaType[0].mediaTypes;
+
+      const request = spec.buildRequests(bidsWithoutMediaType);
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.id).to.equal(bidsWithoutMediaType[0].bidderRequestId);
+      expect(payload.imp).to.exist;
+      expect(payload.imp).to.be.an('array');
+      expect(payload.imp).to.have.lengthOf(1);
+    });
   });
 
   describe('interpretResponseBanner', () => {

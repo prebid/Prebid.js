@@ -3,40 +3,42 @@ import { spec } from 'modules/ccxBidAdapter';
 import * as utils from 'src/utils';
 
 describe('ccxAdapter', () => {
-  let bids = [{
-    adUnitCode: 'banner',
-    auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
-    bidId: '2e56e1af51a5d7',
-    bidder: 'ccx',
-    bidderRequestId: '17e7b9f58a607e',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250]]
-      }
+  let bids = [
+    {
+      adUnitCode: 'banner',
+      auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
+      bidId: '2e56e1af51a5d7',
+      bidder: 'ccx',
+      bidderRequestId: '17e7b9f58a607e',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+      params: {
+        placementId: 607
+      },
+      sizes: [[300, 250]],
+      transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     },
-    params: {
-      placementId: 607
-    },
-    sizes: [[300, 250]],
-    transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
-  },
-  {
-    adUnitCode: 'video',
-    auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
-    bidId: '3u94t90ut39tt3t',
-    bidder: 'ccx',
-    bidderRequestId: '23ur20r239r2r',
-    mediaTypes: {
-      video: {
-        playerSize: [[640, 480]]
-      }
-    },
-    params: {
-      placementId: 608
-    },
-    sizes: [[640, 480]],
-    transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
-  }];
+    {
+      adUnitCode: 'video',
+      auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
+      bidId: '3u94t90ut39tt3t',
+      bidder: 'ccx',
+      bidderRequestId: '23ur20r239r2r',
+      mediaTypes: {
+        video: {
+          playerSize: [[640, 480]]
+        }
+      },
+      params: {
+        placementId: 608
+      },
+      sizes: [[640, 480]],
+      transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
+    }
+  ];
   describe('isBidRequestValid', () => {
     it('Valid bid requests', () => {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
@@ -63,8 +65,16 @@ describe('ccxAdapter', () => {
       bidsClone[1].mediaTypes.video.sizes = [640, 480];
       expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
     });
+    it('Valid bid reqeust - old style sizes', () => {
+      let bidsClone = utils.deepClone(bids);
+      delete (bidsClone[0].mediaTypes);
+      delete (bidsClone[1].mediaTypes);
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
+      expect(spec.isBidRequestValid(bidsClone[1])).to.be.true;
+      bidsClone[0].sizes = [300, 250];
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
+    });
   });
-
   describe('buildRequests', function () {
     it('No valid bids', function () {
       expect(spec.buildRequests([])).to.be.empty;
@@ -163,41 +173,116 @@ describe('ccxAdapter', () => {
 
       expect(data.imp).to.deep.have.same.members(imps);
     });
+    it('Valid bid request - sizes old style', function () {
+      let bidsClone = utils.deepClone(bids);
+      delete (bidsClone[0].mediaTypes);
+      delete (bidsClone[1].mediaTypes);
+      bidsClone[0].mediaType = 'banner';
+      bidsClone[1].mediaType = 'video';
+
+      let imps = [
+        {
+          banner: {
+            format: [
+              {
+                w: 300,
+                h: 250
+              }
+            ]
+          },
+          ext: {
+            pid: 607
+          },
+          id: '2e56e1af51a5d7',
+          secure: 1
+        },
+        {
+          video: {
+            w: 640,
+            h: 480,
+            protocols: [2, 3, 5, 6],
+            mimes: ['video/mp4', 'video/x-flv'],
+            playbackmethod: [1, 2, 3, 4],
+            skip: 0
+          },
+          id: '3u94t90ut39tt3t',
+          secure: 1,
+          ext: {
+            pid: 608
+          }
+        }
+      ];
+
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let data = JSON.parse(response.data);
+
+      expect(data.imp).to.deep.have.same.members(imps);
+    });
+    it('Valid bid request - sizes old style - no media type', function () {
+      let bidsClone = utils.deepClone(bids);
+      delete (bidsClone[0].mediaTypes);
+      delete (bidsClone[1]);
+
+      let imps = [
+        {
+          banner: {
+            format: [
+              {
+                w: 300,
+                h: 250
+              }
+            ]
+          },
+          ext: {
+            pid: 607
+          },
+          id: '2e56e1af51a5d7',
+          secure: 1
+        }
+      ];
+
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let data = JSON.parse(response.data);
+
+      expect(data.imp).to.deep.have.same.members(imps);
+    });
   });
 
   let response = {
     id: '0b9de793-8eda-481e-a548-c187d58b28d9',
     seatbid: [
-      {bid: [
-        {
-          id: '2e56e1af51a5d7_221',
-          impid: '2e56e1af51a5d7',
-          price: 8.1,
-          adid: '221',
-          adm: '<script>TEST</script>',
-          adomain: ['clickonometrics.com'],
-          crid: '221',
-          w: 300,
-          h: 250,
-          ext: {
-            type: 'standard'
+      {
+        bid: [
+          {
+            id: '2e56e1af51a5d7_221',
+            impid: '2e56e1af51a5d7',
+            price: 8.1,
+            adid: '221',
+            adm: '<script>TEST</script>',
+            adomain: ['clickonometrics.com'],
+            crid: '221',
+            w: 300,
+            h: 250,
+            ext: {
+              type: 'standard'
+            }
+          },
+          {
+            id: '2e56e1af51a5d8_222',
+            impid: '2e56e1af51a5d8',
+            price: 5.68,
+            adid: '222',
+            adm: '<xml>',
+            adomain: ['clickonometrics.com'],
+            crid: '222',
+            w: 640,
+            h: 480,
+            ext: {
+              type: 'video'
+            }
           }
-        },
-        {
-          id: '2e56e1af51a5d8_222',
-          impid: '2e56e1af51a5d8',
-          price: 5.68,
-          adid: '222',
-          adm: '<xml>',
-          adomain: ['clickonometrics.com'],
-          crid: '222',
-          w: 640,
-          h: 480,
-          ext: {
-            type: 'video'
-          }
-        }
-      ]}
+        ]
+      }
     ],
     cur: 'PLN',
     ext: {

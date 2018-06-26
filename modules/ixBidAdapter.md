@@ -141,18 +141,20 @@ var adUnits = [{
     bids: [{
         bidder: 'ix',
         params: {
-            siteId: '4622',
+            siteId: '12345',
             size: [300, 250]
         }
     }, {
         bidder: 'ix',
         params: {
-            siteId: '6242',
+            siteId: '12345',
             size: [300, 600]
         }
     }]
 }];
 ```
+
+Please note that you can re-use the existing `siteId` within the same flex position.
 
 ##### 2. Include `ixBidAdapter` in your build process
 
