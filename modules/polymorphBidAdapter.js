@@ -8,7 +8,7 @@ const URL = '//api.adsnative.com/v1/ad-template.json';
 export const polymorphAdapterSpec = {
   code: BIDDER_CODE,
   aliases: ['adsnative'],
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -92,7 +92,8 @@ export const polymorphAdapterSpec = {
         ttl: 3600,
         creativeId: crid,
         netRevenue: false,
-        currency: 'USD'
+        currency: 'USD',
+        mediaType: 'banner'
       };
       bidResponses.push(bidResp);
     } catch (e) {
