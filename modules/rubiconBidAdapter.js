@@ -87,7 +87,8 @@ export const spec = {
     }
     let params = bid.params;
 
-    if (!/^\d+$/.test(params.accountId)) {
+    if (!/^\d+$/.test(params.accountId) || !Number.isInteger(params.siteId) || !Number.isInteger(params.zoneId)) {
+      utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.');
       return false;
     }
 

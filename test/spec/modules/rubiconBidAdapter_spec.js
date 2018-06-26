@@ -1036,6 +1036,27 @@ describe('the rubicon adapter', () => {
           expect(request.data.imp[0].video.pos).to.equal('1');
         });
 
+        it('should not validate bid request when the type of accountId, siteId and zoneId is string', () => {
+          const bidRequest = {
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              }
+            },
+            params: {
+              accountId: '1001',
+              siteId: '123',
+              zoneId: '456',
+              video: {}
+            },
+            sizes: [[300, 250]]
+          };
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+          expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+        });
+
         it('should validate bid request with invalid video if a mediaTypes banner property is defined', () => {
           const bidRequest = {
             mediaTypes: {
@@ -1048,6 +1069,8 @@ describe('the rubicon adapter', () => {
             },
             params: {
               accountId: 1001,
+              siteId: 123,
+              zoneId: 456,
               video: {}
             },
             sizes: [[300, 250]]
