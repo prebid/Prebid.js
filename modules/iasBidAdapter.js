@@ -118,9 +118,6 @@ function interpretResponse(serverResponse, request) {
     bidResponses.push(otherResponse);
   });
 
-  if (top.postIASResponse) {
-    postIASResponse(iasResponse);
-  }
   return bidResponses;
 }
 
