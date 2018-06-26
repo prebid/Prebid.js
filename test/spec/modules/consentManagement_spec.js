@@ -23,7 +23,7 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 3);
+        sinon.assert.callCount(utils.logInfo, 4);
       });
     });
 
