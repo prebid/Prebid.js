@@ -606,7 +606,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 /**
  * Mark the winning bid as used, should only be used in conjunction with video
  * @param {string} adUnitCode - required ad unit code
- * @alias module:pbjs.markWinningVideoBidAsUsed
+ * @alias module:pbjs.markWinningBidAsUsed
  */
 $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (adUnitCode) {
   const bids = targeting.getWinningBids(adUnitCode);
