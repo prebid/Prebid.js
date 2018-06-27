@@ -7,7 +7,11 @@ const REQUEST = {
   'params': {
     'adslotId': '1111',
     'supplyId': '2222',
-    'adSize': '728x90'
+    'adSize': '728x90',
+    'targeting': {
+      'key1': 'value1',
+      'key2': 'value2'
+    }
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
@@ -61,6 +65,22 @@ describe('yieldlabBidAdapter', () => {
 
     it('returns a list of valid requests', () => {
       expect(request.validBidRequests).to.eql([REQUEST])
+    })
+
+    it('passes targeting to bid request', () => {
+      expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2')
+    })
+
+    const gdprRequest = spec.buildRequests(bidRequests, {
+      gdprConsent: {
+        consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
+        gdprApplies: true
+      }
+    })
+
+    it('passes gdpr flag and consent if present', () => {
+      expect(gdprRequest.url).to.include('consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
+      expect(gdprRequest.url).to.include('gdpr=true')
     })
   })
 

@@ -19,17 +19,38 @@ const bidderRequest = [
     sizes: [[700, 400]],
     placementCode: 'bar',
     params: {
-      pkey: 'bbbb2222'
+      pkey: 'bbbb2222',
+      iframe: true
     }
   }];
-const prebidRequest = [{
-  method: 'GET',
-  url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
-  data: {
-    bidId: 'bidId',
-    placement_key: 'pKey'
-  }
-}];
+
+const prebidRequests = [
+  {
+    method: 'GET',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    data: {
+      bidId: 'bidId',
+      placement_key: 'pKey'
+    },
+    strData: {
+      stayInIframe: false,
+      sizes: []
+    }
+  },
+  {
+    method: 'GET',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    data: {
+      bidId: 'bidId',
+      placement_key: 'pKey'
+    },
+    strData: {
+      stayInIframe: true,
+      sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
+    }
+  },
+];
+
 const bidderResponse = {
   body: {
     'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
@@ -48,6 +69,7 @@ const bidderResponse = {
   },
   header: { get: (header) => header }
 };
+
 // Mirrors the one in modules/sharethroughBidAdapter.js as the function is unexported
 const b64EncodeUnicode = (str) => {
   return btoa(
@@ -56,6 +78,7 @@ const b64EncodeUnicode = (str) => {
         return String.fromCharCode('0x' + p1);
       }));
 }
+
 describe('sharethrough adapter spec', () => {
   describe('.code', () => {
     it('should return a bidder code of sharethrough', () => {
@@ -119,13 +142,27 @@ describe('sharethrough adapter spec', () => {
 
   describe('.interpretResponse', () => {
     it('returns a correctly parsed out response', () => {
-      expect(spec.interpretResponse(bidderResponse, prebidRequest[0])[0]).to.include(
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.include(
         {
           width: 0,
           height: 0,
           cpm: 12.34,
           creativeId: 'aCreativeId',
-          deal_id: 'aDealId',
+          dealId: 'aDealId',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360,
+        });
+    });
+
+    it('returns a correctly parsed out response with largest size when strData.stayInIframe is true', () => {
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[1])[0]).to.include(
+        {
+          width: 300,
+          height: 300,
+          cpm: 12.34,
+          creativeId: 'aCreativeId',
+          dealId: 'aDealId',
           currency: 'USD',
           netRevenue: true,
           ttl: 360,
@@ -134,21 +171,21 @@ describe('sharethrough adapter spec', () => {
 
     it('returns a blank array if there are no creatives', () => {
       const bidResponse = { body: { creatives: [] } };
-      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse(bidResponse, prebidRequests[0])).to.be.an('array').that.is.empty;
     });
 
     it('returns a blank array if body object is empty', () => {
       const bidResponse = { body: {} };
-      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse(bidResponse, prebidRequests[0])).to.be.an('array').that.is.empty;
     });
 
     it('returns a blank array if body is null', () => {
       const bidResponse = { body: null };
-      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse(bidResponse, prebidRequests[0])).to.be.an('array').that.is.empty;
     });
 
-    it('correctly sends back a sfp script tag', () => {
-      const adMarkup = spec.interpretResponse(bidderResponse, prebidRequest[0])[0].ad;
+    it('correctly generates ad markup', () => {
+      const adMarkup = spec.interpretResponse(bidderResponse, prebidRequests[0])[0].ad;
       let resp = null;
 
       expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
@@ -162,6 +199,19 @@ describe('sharethrough adapter spec', () => {
         /sfp_js.src = "\/\/native.sharethrough.com\/assets\/sfp.js";/);
       expect(adMarkup).to.match(
         /window.top.document.getElementsByTagName\('body'\)\[0\].appendChild\(sfp_js\);/)
+    });
+
+    it('correctly generates ad markup for staying in iframe', () => {
+      const adMarkup = spec.interpretResponse(bidderResponse, prebidRequests[1])[0].ad;
+      let resp = null;
+
+      expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
+      expect(() => resp = b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
+      expect(adMarkup).to.match(
+        /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
+      expect(!!adMarkup.indexOf(resp)).to.eql(true);
+      expect(adMarkup).to.match(
+        /<script src="\/\/native.sharethrough.com\/assets\/sfp.js"><\/script>/);
     });
   });
 
@@ -180,6 +230,11 @@ describe('sharethrough adapter spec', () => {
 
     it('returns an empty array if the body is null', () => {
       const syncArray = spec.getUserSyncs({ pixelEnabled: true }, [{ body: null }]);
+      expect(syncArray).to.be.an('array').that.is.empty;
+    });
+
+    it('returns an empty array if the body.cookieSyncUrls is missing', () => {
+      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { creatives: ['creative'] } }]);
       expect(syncArray).to.be.an('array').that.is.empty;
     });
 
