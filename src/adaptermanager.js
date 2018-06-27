@@ -507,3 +507,7 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
 exports.callBidWonBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
+
+exports.callSetTargetingBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onSetTargeting', bid);
+};
