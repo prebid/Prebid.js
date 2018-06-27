@@ -15,7 +15,9 @@ const url = 'https://an.facebook.com/v2/placementbid.json';
 const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hb_bidder = 'fan';
-const pbv = '$prebid.version$';
+const platver = '$prebid.version$';
+const platform = '241394079772386';
+const adapterver = '1.0.0';
 
 /**
  * Does this bid request contain valid parameters?
@@ -166,7 +168,9 @@ const buildRequests = bids => {
     testmode,
     pageurl,
     sdk,
-    pbv
+    adapterver,
+    platform,
+    platver
   };
   const video = findIndex(adformats, isVideo);
   if (video !== -1) {
