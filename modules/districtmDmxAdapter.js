@@ -145,7 +145,7 @@ export function checkDeepArray(Arr) {
       return Arr;
     }
   } else {
-    return [0, 0];
+    return Arr;
   }
 }
 export function defaultSize(thebidObj) {
