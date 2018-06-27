@@ -203,11 +203,4 @@ function getRequestData(bid, bidderRequest) {
   }
 
   return bidData;
-  // var bidReqParams = [];
-  // for (var p in bidData) {
-  //   if (bidData.hasOwnProperty(p)) {
-  //     bidReqParams.push(encodeURIComponent(p) + '=' + encodeURIComponent(bidData[p]));
-  //   }
-  // }
-  // return bidReqParams.join('&');
 }
