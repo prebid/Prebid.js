@@ -459,7 +459,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', () => {
-          var sizesBidderRequest = clone(bidderRequest);
+          let sizesBidderRequest = clone(bidderRequest);
           sizesBidderRequest.bids[0].params.sizes = [55, 57, 59, 801];
 
           let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
@@ -470,7 +470,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should not validate bid request if no valid sizes', () => {
-          var sizesBidderRequest = clone(bidderRequest);
+          let sizesBidderRequest = clone(bidderRequest);
           sizesBidderRequest.bids[0].sizes = [[621, 250], [300, 251]];
 
           let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
@@ -479,7 +479,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should not validate bid request if no account id is present', () => {
-          var noAccountBidderRequest = clone(bidderRequest);
+          let noAccountBidderRequest = clone(bidderRequest);
           delete noAccountBidderRequest.bids[0].params.accountId;
 
           let result = spec.isBidRequestValid(noAccountBidderRequest.bids[0]);
@@ -488,7 +488,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should allow a floor override', () => {
-          var floorBidderRequest = clone(bidderRequest);
+          let floorBidderRequest = clone(bidderRequest);
           floorBidderRequest.bids[0].params.floor = 2;
 
           let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
@@ -614,7 +614,7 @@ describe('the rubicon adapter', () => {
 
           it('should send digiTrustId config params', () => {
             sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
+              let config = {
                 digiTrustId: {
                   success: true,
                   identity: {
@@ -647,7 +647,7 @@ describe('the rubicon adapter', () => {
 
           it('should not send digiTrustId config params due to optout', () => {
             sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
+              let config = {
                 digiTrustId: {
                   success: true,
                   identity: {
@@ -676,7 +676,7 @@ describe('the rubicon adapter', () => {
 
           it('should not send digiTrustId config params due to failure', () => {
             sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
+              let config = {
                 digiTrustId: {
                   success: false,
                   identity: {
@@ -705,7 +705,7 @@ describe('the rubicon adapter', () => {
 
           it('should not send digiTrustId config params if they do not exist', () => {
             sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {};
+              let config = {};
               return config[key];
             });
 
@@ -1051,14 +1051,14 @@ describe('the rubicon adapter', () => {
 
         it('should send request with proper ad position', () => {
           createVideoBidderRequest();
-          var positionBidderRequest = clone(bidderRequest);
+          let positionBidderRequest = clone(bidderRequest);
           positionBidderRequest.bids[0].mediaTypes.video.pos = '1';
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
 
           expect(request.data.imp[0].video.pos).to.equal('1');
         });
 
-        it('should not validate bid request when the type of accountId, siteId and zoneId is string', () => {
+        it('should validate bid request and do the conversion when the type of accountId, siteId and zoneId is string', () => {
           const bidRequest = {
             mediaTypes: {
               video: {
@@ -1069,7 +1069,32 @@ describe('the rubicon adapter', () => {
               accountId: '1001',
               siteId: '123',
               zoneId: '456',
-              video: {}
+              video: {
+                size_id: 201
+              }
+            },
+            sizes: [[300, 250]]
+          };
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+          expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+        });
+
+        it('should not validate bid request when the type of accountId, siteId and zoneId is string', () => {
+          const bidRequest = {
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              }
+            },
+            params: {
+              accountId: 'hello',
+              siteId: '123',
+              zoneId: '456',
+              video: {
+                size_id: 201
+              }
             },
             sizes: [[300, 250]]
           };
