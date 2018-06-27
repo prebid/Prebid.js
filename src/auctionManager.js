@@ -91,6 +91,9 @@ export function newAuctionManager() {
   auctionManager.setStatusForBids = function(adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
+
+    const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+    if (auction) auction.setBidTargeting(bid);
   }
 
   function _addAuction(auction) {
