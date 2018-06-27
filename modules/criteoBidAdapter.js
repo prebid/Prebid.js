@@ -117,6 +117,26 @@ export const spec = {
       adapter.handleBidTimeout();
     }
   },
+
+  /**
+   * @param {Bid} bid
+   */
+  onBidWon: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleBidWon(bid);
+    }
+  },
+
+  /**
+   * @param {Bid} bid
+   */
+  onSetTargeting: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleSetTargeting();
+    }
+  },
 };
 
 /**
