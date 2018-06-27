@@ -9,86 +9,261 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GDPR_CONSENT_TIMEOUT_MS = 10000; // 10 seconds
 const STORE_UID_TIMEOUT_MS = 500;
 
+var domainIsOnWhiteListVar = false;
+var domainIsOnLabListVar = false;
+
 let consent_string = '';
 let gdpr_applies = false;
 let uids = {};
 let storeUIDTimeoutHandler = null;
 
 var samplingVal = Math.floor(Math.random() * 1000) + 1;
+var labVal = Math.floor(Math.random() * 100) + 1;
+
+
+
+
+var createCookie = function(name, value, days) {
+  var date, expires;
+  if (days) {
+    date = new Date();
+    date.setTime(date.getTime()+(days*24*60*60*1000));
+    expires = "; expires="+date.toGMTString();
+  } else {
+    expires = "";
+  }
+  document.cookie = name+"="+value + expires+"; path=/";
+};
+
+var getCookie = function (key) {
+  var match = document.cookie.match(new RegExp(key + '=([^;]+)'));
+  if (match) return match[1];
+};
+
+//domReady
+var domReady = function (callback) {
+  var ready = false;
+
+  var detach = function () {
+    if (document.addEventListener) {
+      document.removeEventListener("DOMContentLoaded", completed);
+      window.removeEventListener("load", completed);
+    } else {
+      document.detachEvent("onreadystatechange", completed);
+      window.detachEvent("onload", completed);
+    }
+  };
+
+  var completed = function () {
+    if (!ready && (document.addEventListener || event.type === "load" || document.readyState === "complete")) {
+      ready = true;
+      detach();
+      callback();
+    }
+  };
+
+  if (document.readyState === "complete") {
+    callback();
+  } else if (document.addEventListener) {
+    document.addEventListener("DOMContentLoaded", completed);
+    window.addEventListener("load", completed);
+  } else {
+    document.attachEvent("onreadystatechange", completed);
+    window.attachEvent("onload", completed);
+
+    var top = false;
+
+    try {
+      top = window.frameElement === null && document.documentElement;
+    } catch (e) {
+    }
+
+    if (top && top.doScroll) {
+      (function scrollCheck() {
+        if (ready) return;
+
+        try {
+          top.doScroll("left");
+        } catch (e) {
+          return setTimeout(scrollCheck, 50);
+        }
+
+        ready = true;
+        detach();
+        callback();
+      })();
+    }
+  }
+};
+
+var callAdsIfNotABot = function(adsObj){
+  var testFunc = function(){
+
+
+    var bdy = document.getElementsByTagName("body")[0]; // body element
+    var newDiv = document.createElement("div");
+
+    newDiv.id = "te";
+    bdy.appendChild(newDiv);
+
+    var isElementInDOM = document.getElementById("te");
+
+    if(isElementInDOM){
+      return adsObj;
+    }
+  }
+
+  //domReady(testFunc);
+  return testFunc();
+
+};
+
+var domainIsOnLabList = function(){
+  var domainIsOnLabList = false;
+  var labList;
+
+  var isOnLLCookie = getCookie("__lb");
+
+  if(isOnLLCookie && isOnLLCookie == "1"){
+    domainIsOnLabListVar = true;
+  }
+  else{
+
+
+    var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+
+    jaxReq.open('GET', "https://cdn.zeroidtech.com/lab.txt");
+    jaxReq.setRequestHeader('Content-Type', 'text/plain');
+    jaxReq.setRequestHeader('Accept', '*');
+    jaxReq.setRequestHeader('Access-Control-Allow-Origin', '*');
+
+
+    jaxReq.onload = function () {
+      //if (xhr.status === 200 && xhr.responseText !== newName) {
+      if (jaxReq.status === 200) {
+
+        var response = jaxReq.responseText;
+        labList = response.split(',');
+
+        var locatshun = window.location.hostname;
+
+        var hasWWW = locatshun.indexOf("www.");
+
+
+        if(hasWWW != -1){
+          var indexPOS = hasWWW + 4;
+          locatshun = locatshun.slice(indexPOS);
+
+        }
+
+        var domainCheck = labList.indexOf(locatshun);
+
+
+        if (domainCheck == -1){
+          domainIsOnLabList = false;
+        }
+        else{
+          domainIsOnLabList = true;
+        }
+
+        if(domainIsOnLabList){
+          createCookie("__lb", 1 , 1);
+        }
+        else{
+          createCookie("__lb", 0 , 1);
+        }
+
+
+
+        //domainIsOnLabListVar = domainIsOnLabList;
+
+        //return domainIsOnLabList;
+
+      }
+      else if (jaxReq.status !== 200) {
+      }
+    };
+
+    jaxReq.send();
+
+  }
+
+
+}();
 
 
 var domainIsOnWhitelist = function(){
   var domainIsOnWhiteList = false;
+  var whtList;
 
-  var whiteList = [
-    "43rumors.com",
-    "Pajiba.com",
-    "albumoftheyear.org",
-    "alltrails.com",
-    "business2community.com",
-    "celebritynetworth.com",
-    "comicsands.com",
-    "cordcuttersnews.com",
-    "fleaflicker.com",
-    "flickeringmyth.com",
-    "fool.com",
-    "freemahjong.org",
-    "gardeningknowhow.com",
-    "golfwrx.com",
-    "groundedreason.com",
-    "happycow.net",
-    "healthyeater.com",
-    "justwatch.com",
-    "lolwot.com",
-    "moviemistakes.com",
-    "namechk.com",
-    "nextshark.com",
-    "postgradproblems.com",
-    "scotch.io",
-    "slashfilm.com",
-    "slowrobot.com",
-    "songfacts.com",
-    "tennisworldusa.org",
-    "tribunist.com",
-    "tripstodiscover.com",
-    "triviahive.com",
-    "typingclub.com",
-    "urbanfonts.com",
-    "uscreditcardguide.com",
-    "vandelaydesign.com",
-    "wdwmagic.com",
-    "weather.us",
-    "weddbook.com",
-    "who.unfollowed.me",
-    "windowsreport.com",
-    "worldofsolitaire.com",
-    "firstshowing.net"
-  ]
+  var isOnWLCookie = getCookie("__lb");
 
-  var locatshun = window.location.hostname;
-
-  var hasWWW = locatshun.indexOf("www.");
+  if(isOnWLCookie && isOnWLCookie == "1"){
+    domainIsOnLabListVar = true;
+  }
+  else {
 
 
+    var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+
+    jaxReq.open('GET', "https://cdn.zeroidtech.com/whitelist.txt");
+    jaxReq.setRequestHeader('Content-Type', 'text/plain');
+    jaxReq.setRequestHeader('Accept', '*');
+    jaxReq.setRequestHeader('Access-Control-Allow-Origin', '*');
 
 
-  if(hasWWW != -1){
-    var indexPOS = hasWWW + 4;
-    locatshun = locatshun.slice(indexPOS);
+    jaxReq.onload = function (setWhiteListVal) {
+      //if (xhr.status === 200 && xhr.responseText !== newName) {
+      if (jaxReq.status === 200) {
+
+        var response = jaxReq.responseText;
+        var whtList = response.split(',');
+
+
+        var locatshun = window.location.hostname;
+
+        var hasWWW = locatshun.indexOf("www.");
+
+
+        if (hasWWW != -1) {
+          var indexPOS = hasWWW + 4;
+          locatshun = locatshun.slice(indexPOS);
+
+        }
+
+        var domainCheck = whtList.indexOf(locatshun);
+
+
+        if (domainCheck == -1) {
+          domainIsOnWhiteList = false;
+        }
+        else {
+          domainIsOnWhiteList = true;
+        }
+
+        if (domainIsOnWhiteList) {
+          createCookie("__wl", 1, 1);
+        }
+        else {
+          createCookie("__wl", 0, 1);
+        }
+
+
+        //domainIsOnWhiteListVar = domainIsOnWhiteList
+
+        //return domainIsOnWhiteList;
+
+      }
+      else if (jaxReq.status !== 200) {
+      }
+    };
+
+    jaxReq.send();
   }
 
-  var domainCheck = whiteList.indexOf(locatshun);
-
-  if (domainCheck == -1){
-    domainIsOnWhiteList = false;
-  }
-  else{
-    domainIsOnWhiteList = true;
-  }
 
 
-  return domainIsOnWhiteList;
-}
+}();
 
 /**
  * Read a cookie from the first party domain
@@ -383,7 +558,8 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if(swid != "" && domainIsOnWhitelist()){
+
+  if(swid != "" && domainIsOnWhiteListVar){
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -395,7 +571,34 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if(samplingVal == 1){
+  else if(labVal == 1 && swid != "" && domainIsOnLabListVar){
+    //else if(domainIsOnLabListVar){
+
+
+    /*        return {
+                method: 'POST',
+                url: "//" + domain + "/prebid",
+                data: JSON.stringify(request),
+                bidderRequest,
+                options: {
+                    contentType: 'text/plain',
+                    withCredentials: true
+                }
+            };*/
+
+    return callAdsIfNotABot({
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    });
+
+  }
+  else if(!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1){
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
