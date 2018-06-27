@@ -523,7 +523,7 @@ describe('DistrictM Adaptor', () => {
       expect(_.isEqual(checkDeepArray([[728, 90]]), [728, 90])).to.be.equal(true);
       expect(_.isEqual(checkDeepArray([[728, 90], [300, 250]]), [728, 90])).to.be.equal(true);
       expect(_.isEqual(checkDeepArray([[300, 250], [300, 250]]), [728, 90])).to.be.equal(false);
-      expect(_.isEqual(checkDeepArray(''), [0, 0])).to.be.equal(true);
+      expect(_.isEqual(checkDeepArray([300, 250]), [300, 250])).to.be.equal(true);
     });
     it(`test defaultSize`, () => {
       expect(width).to.be.equal(300);
