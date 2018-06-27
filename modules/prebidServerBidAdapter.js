@@ -717,7 +717,7 @@ export function PrebidServer() {
 
       bids.forEach(({adUnit, bid}) => {
         if (isValid(adUnit, bid, bidderRequests)) {
-          addBidResponse(adUnit, bid);
+          addBidResponse(adUnit, bid, done);
         }
       });
 
@@ -735,13 +735,6 @@ export function PrebidServer() {
       utils.logError('error parsing response: ', result.status);
     }
 
-    const videoBid = bids.some(bidResponse => bidResponse.bid.mediaType === 'video');
-    const cacheEnabled = config.getConfig('cache.url');
-
-    // video bids with cache enabled need to be cached first before they are considered done
-    if (!(videoBid && cacheEnabled)) {
-      done();
-    }
     doClientSideSyncs(requestedBidders);
   }
 

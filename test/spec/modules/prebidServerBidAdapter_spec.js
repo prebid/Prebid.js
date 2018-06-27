@@ -784,7 +784,6 @@ describe('S2S Adapter', () => {
       server.respond();
 
       sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
     });
 
     it('does not call addBidResponse and calls done when server requests cookie sync', () => {
@@ -795,7 +794,6 @@ describe('S2S Adapter', () => {
       server.respond();
 
       sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
     });
 
     it('does not call addBidResponse and calls done  when ad unit is set', () => {
@@ -806,7 +804,6 @@ describe('S2S Adapter', () => {
       server.respond();
 
       sinon.assert.notCalled(addBidResponse);
-      sinon.assert.calledOnce(done);
     });
 
     it('registers successful bids and calls done when there are less bids than requests', () => {
@@ -817,7 +814,6 @@ describe('S2S Adapter', () => {
       server.respond();
 
       sinon.assert.calledOnce(addBidResponse);
-      sinon.assert.calledOnce(done);
 
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
 
