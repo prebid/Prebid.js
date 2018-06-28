@@ -108,9 +108,13 @@ export const spec = {
       bidRequest.startTime = new Date().getTime();
 
       let data = {
-        id: utils.generateUUID(),
+        id: bidRequest.transactionId,
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
+        source: {
+          tid: bidRequest.transactionId
+        },
+        tmax: config.getConfig('timeout') || 1000,
         imp: [{
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,
@@ -128,6 +132,9 @@ export const spec = {
             },
             targeting: {
               includewinners: true
+            },
+            aliases: {
+              rubiconLite: 'rubicon'
             }
           }
         }
@@ -135,12 +142,42 @@ export const spec = {
 
       appendSiteAppDevice(data);
 
+      const digiTrust = getDigiTrustQueryParams();
+      if (digiTrust) {
+        data.user = {
+          ext: {
+            digitrust: digiTrust
+          }
+        };
+      }
+
       if (bidderRequest.gdprConsent) {
-        // add 'gdpr' only if 'gdprApplies' is defined
+        // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
+        let gdprApplies;
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          data.gdpr = Number(bidderRequest.gdprConsent.gdprApplies);
+          gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
-        data.gdpr_consent = bidderRequest.gdprConsent.consentString;
+
+        if (data.regs) {
+          if (data.regs.ext) {
+            data.regs.ext.gdpr = gdprApplies;
+          } else {
+            data.regs.ext = {gdpr: gdprApplies};
+          }
+        } else {
+          data.regs = {ext: {gdpr: gdprApplies}};
+        }
+
+        let consentString = bidderRequest.gdprConsent.consentString;
+        if (data.user) {
+          if (data.user.ext) {
+            data.user.ext.consent = consentString;
+          } else {
+            data.user.ext = {consent: consentString};
+          }
+        } else {
+          data.user = {ext: {consent: consentString}};
+        }
       }
 
       return {
@@ -594,6 +631,24 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
+}
+
+function getDigiTrustQueryParams() {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return {
+    id: digiTrustId.id,
+    keyv: digiTrustId.keyv,
+    pref: 0
+  };
 }
 
 function appendSiteAppDevice(request) {
