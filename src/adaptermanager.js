@@ -281,7 +281,7 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -293,7 +293,8 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
   }, [[], []]);
 
   if (serverBidRequests.length) {
-    const s2sAjax = ajaxBuilder(serverBidRequests[0].timeout, requestCallbacks ? {
+    // s2s should get the same client side timeout as other client side requests.
+    const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, 's2s'),
       done: requestCallbacks.done
     } : undefined);
@@ -356,7 +357,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
     bidRequest.doneCbCallCount = 0;
     let done = doneCb(bidRequest.bidderRequestId);
-    let ajax = ajaxBuilder(clientBidRequests[0].timeout, requestCallbacks ? {
+    let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
