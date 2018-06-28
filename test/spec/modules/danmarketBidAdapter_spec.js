@@ -176,6 +176,7 @@ describe('DAN_Marketplace Adapter', function () {
           'height': 250,
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
         }
@@ -232,6 +233,7 @@ describe('DAN_Marketplace Adapter', function () {
           'height': 250,
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
         },
@@ -244,6 +246,7 @@ describe('DAN_Marketplace Adapter', function () {
           'height': 250,
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
         },
@@ -256,6 +259,7 @@ describe('DAN_Marketplace Adapter', function () {
           'height': 90,
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
         }

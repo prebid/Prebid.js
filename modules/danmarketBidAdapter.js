@@ -1,9 +1,12 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { Renderer } from 'src/Renderer';
+import { VIDEO, BANNER } from 'src/mediaTypes';
 const BIDDER_CODE = 'danmarket';
 const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
 const TIME_TO_LIVE = 360;
 const ADAPTER_SYNC_URL = '//ads.danmarketplace.com/push_sync';
+const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -25,6 +28,8 @@ export const spec = {
   code: BIDDER_CODE,
 
   aliases: ['DANMarketplace', 'DAN_Marketplace', 'danmarketplace'],
+
+  supportedMediaTypes: [ BANNER, VIDEO ],
 
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
@@ -75,7 +80,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    serverResponse = serverResponse && serverResponse.body
+    serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;
@@ -144,9 +149,24 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
           currency: 'USD',
           netRevenue: priceType !== 'gross',
           ttl: TIME_TO_LIVE,
-          ad: serverBid.adm,
           dealId: serverBid.dealid
         };
+        if (!serverBid.w && !serverBid.h) {
+          bidResponse.vastXml = decodeURIComponent(serverBid.adm);
+          bidResponse.mediaType = VIDEO;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml,
+          };
+          if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
+            bidResponse.renderer = createRenderer(bidResponse, {
+              id: bid.bidId,
+              url: RENDERER_URL,
+            });
+          }
+        } else {
+          bidResponse.ad = serverBid.adm;
+          bidResponse.mediaType = BANNER;
+        }
         bidResponses.push(bidResponse);
       });
     } else {
@@ -156,6 +176,31 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
   if (errorMessage) {
     utils.logError(errorMessage);
   }
+}
+
+function outstreamRender (bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+    });
+  });
+}
+
+function createRenderer (bid, rendererParams) {
+  const renderer = Renderer.install({
+    id: rendererParams.id,
+    url: rendererParams.url,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
 }
 
 registerBidder(spec);
