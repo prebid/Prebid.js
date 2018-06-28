@@ -1001,8 +1001,8 @@ describe('the rubicon adapter', () => {
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
-          expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-          expect(post.gdpr).to.equal(1);
+          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.cache.vastxml.ttlseconds).to.equal(300);
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
@@ -1042,8 +1042,8 @@ describe('the rubicon adapter', () => {
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
-          expect(post.gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-          expect(post.gdpr).to.equal(1);
+          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.cache.vastxml.ttlseconds).to.equal(300);
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
