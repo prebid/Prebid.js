@@ -123,7 +123,7 @@ function queueSync(bidderCodes, gdprConsent) {
 
   if (gdprConsent) {
     // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
-    if (gdprConsent.consentString) {
+    if (typeof gdprConsent.consentString !== 'undefined') {
       payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
     }
     // attempt to populate gdpr_consent if we know gdprApplies or it may apply
