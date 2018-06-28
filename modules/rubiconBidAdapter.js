@@ -532,7 +532,7 @@ function parseSizes(bid) {
   if (hasVideoMediaType(bid)) {
     let size = [];
     if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
-      size = bid.mediaTypes.video.playerSize;
+      size = bid.mediaTypes.video.playerSize[0];
     } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
