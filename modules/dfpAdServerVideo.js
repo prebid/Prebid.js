@@ -80,7 +80,7 @@ export default function buildDfpVideoUrl(options) {
   const derivedParams = {
     correlator: Date.now(),
     sz: parseSizesInput(adUnit.sizes).join('|'),
-    url: location.href,
+    url: encodeURIComponent(location.href),
   };
   const encodedCustomParams = getCustParams(bid, options);
 
@@ -152,7 +152,7 @@ function getCustParams(bid, options) {
     adserverTargeting,
     { hb_uuid: bid && bid.videoCacheKey },
     // hb_uuid will be deprecated and replaced by hb_cache_id
-    {hb_cache_id: bid && bid.videoCacheKey},
+    { hb_cache_id: bid && bid.videoCacheKey },
     optCustParams,
   );
   return encodeURIComponent(formatQS(customParams));

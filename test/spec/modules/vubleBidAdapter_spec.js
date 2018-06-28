@@ -106,7 +106,8 @@ describe('VubleAdapter', () => {
           context: 'instream'
         }
       },
-      bidId: 'abdc'
+      bidId: 'abdc',
+      adUnitCode: ''
     };
     let bid2 = {
       bidder: 'vuble',
@@ -122,7 +123,8 @@ describe('VubleAdapter', () => {
           context: 'outstream'
         }
       },
-      bidId: 'efgh'
+      bidId: 'efgh',
+      adUnitCode: 'code'
     };
 
     // Formatted requets
@@ -138,7 +140,8 @@ describe('VubleAdapter', () => {
         floor_price: 5.5,
         url: 'http://www.vuble.tv/',
         env: 'net',
-        bid_id: 'abdc'
+        bid_id: 'abdc',
+        adUnitCode: ''
       }
     };
     let request2 = {
@@ -153,7 +156,8 @@ describe('VubleAdapter', () => {
         floor_price: 0,
         url: 'http://www.vuble.fr/',
         env: 'com',
-        bid_id: 'efgh'
+        bid_id: 'efgh',
+        adUnitCode: 'code'
       }
     };
 
@@ -188,7 +192,8 @@ describe('VubleAdapter', () => {
         pub_id: '3',
         zone_id: '12345',
         bid_id: 'abdc',
-        floor_price: 5.50 // optional
+        floor_price: 5.50, // optional
+        adUnitCode: 'code'
       },
       method: 'POST',
       url: '//player.mediabong.net/prebid/request'
@@ -230,6 +235,13 @@ describe('VubleAdapter', () => {
       wrongResponse = utils.deepClone(response);
       delete wrongResponse.body;
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
+    });
+
+    it('should equal to the expected formatted result', () => {
+      response.body.renderer_url = 'vuble_renderer.js';
+      result.adUnitCode = 'code';
+      let formattedResponses = adapter.interpretResponse(response, bid);
+      expect(formattedResponses[0].adUnitCode).to.equal(result.adUnitCode);
     });
   });
 

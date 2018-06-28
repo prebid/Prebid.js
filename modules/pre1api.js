@@ -124,7 +124,7 @@ pbjs.requestBids.addHook((config, next = config) => {
   } else {
     logWarn(`${MODULE_NAME} module: concurrency has been disabled and "$$PREBID_GLOBAL$$.requestBids" call was queued`);
   }
-}, 100);
+}, 5);
 
 Object.keys(auctionPropMap).forEach(prop => {
   if (prop === 'allBidsAvailable') {

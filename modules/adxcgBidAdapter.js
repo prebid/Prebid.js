@@ -6,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes';
 /**
  * Adapter for requesting bids from adxcg.net
  * updated to latest prebid repo on 2017.10.20
+ * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  */
 
 const BIDDER_CODE = 'adxcg';
@@ -51,21 +52,28 @@ export const spec = {
     requestUrl.search = null;
     requestUrl.hash = null;
 
+    let beaconParams = {
+      renderformat: 'javascript',
+      ver: 'r20180522PB10',
+      adzoneid: adZoneIds.join(','),
+      format: sizes.join(','),
+      prebidBidIds: prebidBidIds.join(','),
+      url: encodeURIComponent(url.format(requestUrl)),
+      secure: secure ? '1' : '0',
+      source: SOURCE,
+      pbjs: '$prebid.version$'
+    };
+
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      beaconParams.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
+      beaconParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    }
+
     let adxcgRequestUrl = url.format({
       protocol: secure ? 'https' : 'http',
       hostname: secure ? 'hbps.adxcg.net' : 'hbp.adxcg.net',
       pathname: '/get/adi',
-      search: {
-        renderformat: 'javascript',
-        ver: 'r20171102PB10',
-        adzoneid: adZoneIds.join(','),
-        format: sizes.join(','),
-        prebidBidIds: prebidBidIds.join(','),
-        url: encodeURIComponent(url.format(requestUrl)),
-        secure: secure ? '1' : '0',
-        source: SOURCE,
-        pbjs: '$prebid.version$'
-      }
+      search: beaconParams
     });
 
     return {
@@ -151,4 +159,5 @@ export const spec = {
     }
   }
 };
+
 registerBidder(spec);

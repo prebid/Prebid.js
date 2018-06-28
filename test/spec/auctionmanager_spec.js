@@ -7,6 +7,7 @@ import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
+import find from 'core-js/library/fn/array/find';
 
 const adloader = require('../../src/adloader');
 var assert = require('assert');
@@ -641,6 +642,35 @@ describe('auctionmanager.js', function () {
         spec.interpretResponse.returns(bids1);
         auction.callBids();
         const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+
+      it('bid for a regular unit and a video unit', function() {
+        let renderer = {
+          url: 'renderer.js',
+          render: (bid) => bid
+        };
+
+        // make sure that if the renderer is only on the second ad unit, prebid
+        // still correctly uses it
+        let bid = mockBid();
+        let bidRequests = [mockBidRequest(bid)];
+
+        bidRequests[0].bids[1] = Object.assign({
+          renderer,
+          bidId: utils.getUniqueIdentifierStr()
+        }, bidRequests[0].bids[0]);
+        bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+
+        makeRequestsStub.returns(bidRequests);
+
+        // this should correspond with the second bid in the bidReq because of the ad unit code
+        bid.mediaType = 'video-outstream';
+        spec.interpretResponse.returns(bid);
+
+        auction.callBids();
+
+        const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
     });

@@ -259,6 +259,19 @@ describe('E-Planning Adapter', () => {
       stubGetReferrer.restore()
     });
 
+    it('should return crs parameter with document charset', () => {
+      let expected;
+      try {
+        expected = window.top.document.characterSet;
+      } catch (e) {
+        expected = document.characterSet;
+      }
+
+      const chset = spec.buildRequests(bidRequests).data.crs;
+
+      expect(chset).to.equal(expected);
+    });
+
     it('should return the testing url when the request has the t parameter', () => {
       const url = spec.buildRequests([testBid]).url;
       const expectedUrl = '//' + TEST_ISV + '/layers/t_pbjs_2.json';

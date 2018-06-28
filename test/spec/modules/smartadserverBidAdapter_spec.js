@@ -11,6 +11,7 @@ import {
   config
 } from 'src/config';
 import * as utils from 'src/utils';
+import { requestBidsHook } from 'modules/consentManagement';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', () => {
@@ -99,6 +100,58 @@ describe('Smart bid adapter tests', () => {
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
+  describe('gdpr tests', () => {
+    afterEach(() => {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+    });
+
+    it('Verify build request with GDPR', () => {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
+          gdprApplies: true
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('gdpr').and.to.equal(true);
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+
+    it('Verify build request with GDPR without gdprApplies', () => {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.not.have.property('gdpr');
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+  });
+
   it('Verify parse response', () => {
     const request = spec.buildRequests(DEFAULT_PARAMS);
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
@@ -116,7 +169,11 @@ describe('Smart bid adapter tests', () => {
     expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
     expect(bid.referrer).to.equal(utils.getTopWindowUrl());
 
-    expect(function() { spec.interpretResponse(BID_RESPONSE, {data: 'invalid Json'}) }).to.not.throw();
+    expect(function () {
+      spec.interpretResponse(BID_RESPONSE, {
+        data: 'invalid Json'
+      })
+    }).to.not.throw();
   });
 
   it('Verifies bidder code', () => {
@@ -187,15 +244,21 @@ describe('Smart bid adapter tests', () => {
   });
 
   it('Verifies user sync', () => {
-    var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE]);
+    var syncs = spec.getUserSyncs({
+      iframeEnabled: true
+    }, [BID_RESPONSE]);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     expect(syncs[0].url).to.equal('http://awesome.fake.csync.url');
 
-    syncs = spec.getUserSyncs({iframeEnabled: false}, [BID_RESPONSE]);
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false
+    }, [BID_RESPONSE]);
     expect(syncs).to.have.lengthOf(0);
 
-    syncs = spec.getUserSyncs({iframeEnabled: true}, []);
+    syncs = spec.getUserSyncs({
+      iframeEnabled: true
+    }, []);
     expect(syncs).to.have.lengthOf(0);
   });
 });
