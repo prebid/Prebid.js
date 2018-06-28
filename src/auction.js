@@ -229,7 +229,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
               }
             }
           }
-        });
+        }, _timeout);
       }
     };
 
