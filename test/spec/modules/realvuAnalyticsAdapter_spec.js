@@ -16,7 +16,7 @@ function addDiv(id) {
   let d = null;
   if (f.contentDocument) d = f.contentDocument; // DOM
   else if (f.contentWindow) d = f.contentWindow.document; // IE
-  d.open()
+  d.open();
   d.write('<img width="728" height="90" />');
   d.close();
   return dv;
@@ -56,17 +56,17 @@ describe('RealVu Analytics Adapter.', () => {
       ]
     };
     let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
-    const b = window.top1.realvu_aa;
-    let a = b.ads[0];
+    // const b = window.top1.realvu_aa;
+    // let a = b.ads[0];
     // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
     // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
     expect(result).to.equal('yes');
 
-    result = realvuAnalyticsAdapter.checkIn(bid); // test invalid partnerId 'undefined'
-    result = realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
+    realvuAnalyticsAdapter.checkIn(bid); // test invalid partnerId 'undefined'
+    realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
   });
 
-  it.skip('isInView returns "yes"', () => {
+  it('isInView returns "yes"', () => {
     let inview = realvuAnalyticsAdapter.isInView('ad1');
     expect(inview).to.equal('yes');
   });
@@ -133,7 +133,6 @@ describe('RealVu Boost.', () => {
   });
 
   it('addUnitById', () => {
-    let a1 = document.getElementById('ad1');
     let p = boost.addUnitById('1Y', 'ad1');
     expect(typeof p).to.not.equal('undefined');
   });
