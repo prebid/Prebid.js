@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import realvuAnalyticsAdapter from 'modules/realvuAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 

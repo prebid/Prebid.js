@@ -38,8 +38,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   init: function () {
     let z = this;
     let u = navigator.userAgent;
-    z.device = u.match(/iPad|Tablet/gi) ? 'tablet' : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
-    if (typeof (z.len) == 'undefined') z.len = 0; // check, meybe too much, just make it len:0,
+    z.device = u.match(/iPad|Tablet/gi) ? 'tablet'
+      : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi)
+      ? 'mobile' : 'desktop';
+    if (typeof (z.len) == 'undefined') z.len = 0;
     z.ie = navigator.appVersion.match(/MSIE/);
     z.saf = (u.match(/Safari/) && !u.match(/Chrome/));
     z.ff = u.match(/Firefox/i);
@@ -53,24 +55,22 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       }
     }
     z.add_evt(window.top1, 'focus', function () {
-      window.top1.realvu_aa.foc = 1; /* window.top1.realvu_aa.log('focus',-1); */
+      window.top1.realvu_aa.foc = 1;
     });
-    // z.add_evt(window.top1, "scroll", function(){window.top1.realvu_aa.foc=1;window.top1.realvu_aa.log('scroll focus',-1);});
     z.add_evt(window.top1, 'blur', function () {
-      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0;
     });
-    // + http://www.w3.org/TR/page-visibility/
     z.add_evt(window.top1.document, 'blur', function () {
-      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0;
     });
     z.add_evt(window.top1, 'visibilitychange', function () {
       window.top1.realvu_aa.foc = !window.top1.document.hidden;
-      /* window.top1.realvu_aa.log('vis-ch '+window.top1.realvu_aa.foc,-1); */
     });
-    // -
-    z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
+    z.doLog = (window.top1.location.search.match(/boost_log/) ||
+      document.referrer.match(/boost_log/)) ? 1 : 0;
     if (z.doLog) {
-      window.setTimeout(z.scr(window.top1.location.protocol + '//ac.realvu.net/realvu_aa_viz.js'), 500);
+      window.setTimeout(z.scr(window.top1.location.protocol +
+        '//ac.realvu.net/realvu_aa_viz.js'), 500);
     }
   },
 
@@ -86,15 +86,17 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
 
   update: function () {
     let z = this;
-    let de = window.top1.document.documentElement;
-    z.x1 = window.top1.pageXOffset ? window.top1.pageXOffset : de.scrollLeft;
-    z.y1 = window.top1.pageYOffset ? window.top1.pageYOffset : de.scrollTop;
-    let w1 = window.top1.innerWidth ? window.top1.innerWidth : de.clientWidth;
-    let h1 = window.top1.innerHeight ? window.top1.innerHeight : de.clientHeight;
+    let t1 = window.top1;
+    let de = t1.document.documentElement;
+    z.x1 = t1.pageXOffset ? t1.pageXOffset : de.scrollLeft;
+    z.y1 = t1.pageYOffset ? t1.pageYOffset : de.scrollTop;
+    let w1 = t1.innerWidth ? t1.innerWidth : de.clientWidth;
+    let h1 = t1.innerHeight ? t1.innerHeight : de.clientHeight;
     z.x2 = z.x1 + w1;
     z.y2 = z.y1 + h1;
   },
-  brd: function (s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
+
+  brd: function (s, p) { // s-element, p={Top,Right,Bottom, Left}
     let u;
     if (window.getComputedStyle) u = window.getComputedStyle(s, null);
     else u = s.style;
@@ -102,7 +104,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     return parseInt(a.length > 2 ? a.slice(0, -2) : 0);
   },
 
-  padd: function (s, p) { // return a board Width, s-element, p={Top,Right,Bottom, Left}
+  padd: function (s, p) { // s-element, p={Top,Right,Bottom, Left}
     let u;
     if (window.getComputedStyle) u = window.getComputedStyle(s, null);
     else u = s.style;
@@ -123,12 +125,14 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     let yv1 = Math.max(y1, this.y1);
     let xv2 = Math.min(x2, this.x2);
     let yv2 = Math.min(y2, this.y2);
-    let A = Math.round(100 * ((xv2 - xv1) * (yv2 - yv1)) / ((x2 - x1) * (y2 - y1)));
+    let A = Math.round(100 * ((xv2 - xv1) * (yv2 - yv1)) /
+      ((x2 - x1) * (y2 - y1)));
     return (A > 0) ? A : 0;
   },
 
   viz_dist: function (x1, x2, y1, y2) { // coords of Ad
-    let d = Math.max(0, this.x1 - x2, x1 - this.x2) + Math.max(0, this.y1 - y2, y1 - this.y2);
+    let d = Math.max(0, this.x1 - x2, x1 - this.x2) +
+      Math.max(0, this.y1 - y2, y1 - this.y2);
     return d;
   },
 
@@ -154,7 +158,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       let bk = z.beacons.shift();
       while (typeof bk != 'undefined') {
         bk.s1 = bk.s1.replace(/_sr=0*_/, '_sr=' + z.sr + '_');
-        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
+        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + ' ' +
+          bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
           z.scr(bk.s1, bk.a);
@@ -183,7 +188,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       '_f=' + f + '_r=' + a.riff +
       '_s=' + a.w + 'x' + a.h;
     if (a.p) s2 += '_p=' + a.p;
-    s2 += '_ps=' + this.enc(a.unit_id) + // 08-Jun-15 - _p= is replaced with _ps= - p-number, ps-string
+    s2 += '_ps=' + this.enc(a.unit_id) +
       '_dv=' + this.device +
       // + '_a=' + this.enc(a.a)
       '_d=' + pin.mode +
@@ -193,7 +198,6 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   enc: function (s1) {
-    // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, "%2A").replace(/_/g, "%5F").replace(/\+/g,
     return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
       '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
@@ -208,7 +212,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
 
     try {
       while (ad != null && typeof (ad) != 'undefined') {
-        if (ad.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
+        if (ad.getBoundingClientRect) {
           let r = ad.getBoundingClientRect();
           xp += r.left; // +sL;
           yp += r.top; // +sT;
@@ -243,7 +247,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
               xp += t.brd(op, 'Left');
               yp += t.brd(op, 'Top');
             }
-            if (ad.tagName != 'IFRAME' && op != document.body && op != document.documentElement) {
+            if (ad.tagName != 'IFRAME' && op != document.body && op !=
+              document.documentElement) {
               xp -= op.scrollLeft;
               yp -= op.scrollTop;
             }
@@ -263,7 +268,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           }
         }
         if (this.fr) break; // inside different domain iframe or sf
-        ad = wnd.frameElement; // in case Ad is allocated inside iframe here we go up
+        ad = wnd.frameElement; // in case Ad is allocated inside iframe
         wnd = wnd.parent;
       }
     } catch (e) {
@@ -329,17 +334,18 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           z.writePos(a);
         }
       }
-      let vtr = ((a.box.w * a.box.h) < 242500) ? 49 : 29; // treashfold more then 49% and more then 29% for "oversized"
+      let vtr = ((a.box.w * a.box.h) < 242500) ? 49 : 29;
       if (a.pins[0].edge) {
         vtr = a.pins[0].edge - 1; // override default edge 50% (>49)
       }
-      a.vz = z.viz_area(a.box.x, a.box.x + a.box.w, a.box.y, a.box.y + a.box.h);
-      a.r = (z.fr > 1 ? 'frame' : (((a.vz > vtr) && z.foc) ? 'yes' : 'no')); // f-frame, y-yes in view,n-not in view
+      a.vz = z.viz_area(a.box.x, a.box.x + a.box.w,
+        a.box.y, a.box.y + a.box.h);
+      a.r = (z.fr > 1 ? 'frame' : (((a.vz > vtr) && z.foc) ? 'yes' : 'no'));
       if (a.y < 0) {
         a.r = 'out'; // if the unit intentionaly moved out, count it as out.
       }
       if (a.vz > vtr && z.foc) {
-        a.vt += dvz; // real dt counter in milliseconds, because of poll() can be called irregularly
+        a.vt += dvz; // real dt counter in milliseconds
         a.vtu += dvz;
       }
       // now process every pin
@@ -350,7 +356,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           let dist = z.viz_dist(a.x, a.x + a.w, a.y, a.y + a.h);
           let near = (pin.dist != null && dist <= pin.dist);
           // apply "near" rule for ad call only
-          a.r = (z.fr > 1) ? 'frame' : (((a.vz > vtr) && z.foc) ? 'yes' : 'no');
+          a.r = (z.fr > 1) ? 'frame'
+            : (((a.vz > vtr) && z.foc) ? 'yes' : 'no');
           if (near && a.r == 'no') {
             a.r = 'yes';
           }
@@ -369,8 +376,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
               }
             }
           }
-          if ((pin.mode == 'kvp' || pin.mode == 'tx2') || (((a.vz > vtr) || near) && ((pin.mode == 'in-view' || pin.mode == 'video')))) {
-            z.show(a, pin); // in-view or flip show immediately if initial realvu=yes, or delay is over
+          if ((pin.mode == 'kvp' || pin.mode == 'tx2') ||
+            (((a.vz > vtr) || near) &&
+            ((pin.mode == 'in-view' || pin.mode == 'video')))) {
+            z.show(a, pin);
           }
         }
         if (pin.state == 2) {
@@ -381,7 +390,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
             a.vt = 0;
             // @if NODE_ENV='debug'
             let now = new Date();
-            let msg = (now.getTime() - time0) / 1000 + ' RENDERED ' + a.unit_id;
+            let msg = (now.getTime() - time0) / 1000 + ' REND ' + a.unit_id;
             utils.logMessage(msg);
             // @endif
             let rpt = z.bids_rpt(a, true);
@@ -392,7 +401,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         if (pin.state > 2) {
           let tmin = (pin.mode == 'video') ? 2E3 : 1E3; // mrc min view time
           if (a.vz > vtr) {
-            pin.vt += dvz; // real dt counter in milliseconds, because of poll() can be called irregularly
+            pin.vt += dvz;
             if (pin.state == 3) {
               pin.state = 4;
               z.incrMem(a, 'r', 'v:v0');
@@ -414,7 +423,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           }
         }
         if (pin.state >= 2 && pin.mode === 'tx2' &&
-          ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu > pin.delay && a.riff === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
+          ((a.vtu > pin.rotate) || (pin.delay > 0 && a.vtu >
+            pin.delay && a.riff === 'no' && a.ncall < 2)) && pin.tx2n > 0) {
           // flip or rotate
           pin.tx2n--;
           pin.state = 1;
@@ -452,7 +462,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         tn = a.tagName;
       }
     }
-    if (not_friendly || tn == 'OBJECT' || tn == 'IMG' || tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
+    if (not_friendly || tn == 'OBJECT' || tn == 'IMG' ||
+        tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
       (tn == 'DIV' && a.style.backgroundImage)) {
       let w1 = a.offsetWidth;
       let h1 = a.offsetHeight;
@@ -469,7 +480,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     return null;
   },
 
-  doc: function(f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
+  doc: function(f) {
     let d = null;
     try {
       if (f.contentDocument) d = f.contentDocument; // DOM
@@ -600,7 +611,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         }
         pin.delay = pin.delay || 0; // delay in msec
         if (typeof pin.mode == 'undefined') {
-          if ((typeof pin.callback != 'undefined') || (typeof pin.content != 'undefined')) {
+          if ((typeof pin.callback != 'undefined') ||
+            (typeof pin.content != 'undefined')) {
             pin.mode = (pin.delay > 0) ? 'tx2' : 'in-view';
           } else {
             pin.mode = 'kvp';
@@ -628,7 +640,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   setSize: function (sa) {
     let sb = sa;
     try {
-      if (typeof (sa) == 'string') sb = sa.split('x'); // pin.size is a string WWWxHHH or array
+      if (typeof (sa) == 'string') sb = sa.split('x');
       else if (Array.isArray(sa)) {
         let mm = 4;
         while (--mm > 0 && Array.isArray(sa[0]) && Array.isArray(sa[0][0])) {
@@ -638,7 +650,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           if (Array.isArray(sa[m])) {
             sb = sa[m]; // if size is [][]
             let s = sb[0] + 'x' + sb[1];
-            if (s == '300x250' || s == '728x90' || s == '320x50' || s == '970x90') {
+            if (s == '300x250' || s == '728x90' ||
+              s == '320x50' || s == '970x90') {
               break; // use most popular sizes
             }
           } else if (sa.length > 1) {
@@ -773,8 +786,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
 
   keyPos: function (a) {
     if (a.pins[0].unit_id) {
-      let level = 'L' + (window.top1.location.pathname.match(/\//g) || []).length;
-      return 'realvu.' + level + '.' + a.pins[0].unit_id.replace(/[0-9]{5,}/gi, 'RANDOM');
+      let level = 'L' +
+        (window.top1.location.pathname.match(/\//g) || []).length;
+      return 'realvu.' + level + '.' +
+        a.pins[0].unit_id.replace(/[0-9]{5,}/gi, 'RANDOM');
     }
   },
 
@@ -836,7 +851,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         let nr = parseInt(vr[1], 10);
         let sv = 0;
         let sr = 0;
-        for (nr &= 0x3FF; nr > 0; nr >>>= 1, nv >>>= 1) { // count 10 deliveries
+        for (nr &= 0x3FF; nr > 0; nr >>>= 1, nv >>>= 1) { // count 10
           if (nr & 0x1) sr++;
           if (nv & 0x1) sv++;
         }
@@ -858,12 +873,15 @@ if (typeof (window.top1.boost_poll) == 'undefined') {
 
 let _options = {};
 
-realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnalytics;
+realvuAnalyticsAdapter.originEnableAnalytics =
+  realvuAnalyticsAdapter.enableAnalytics;
 
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
   _options = config.options;
-  if (typeof (_options.partnerId) == 'undefined' || _options.partnerId == '') {
-    utils.logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
+  if (typeof (_options.partnerId) == 'undefined' ||
+    _options.partnerId == '') {
+    utils.logError('Missed realvu.com partnerId parameter',
+      101, 'Missed partnerId parameter');
   }
   realvuAnalyticsAdapter.originEnableAnalytics(config);
   return _options.partnerId;
@@ -877,7 +895,8 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
   let now = new Date();
   msg += (now.getTime() - time0) / 1000 + ' eventType=' + eventType;
   if (typeof (args) != 'undefined') {
-    msg += ', args.bidder=' + args.bidder + ' args.adUnitCode=' + args.adUnitCode +
+    msg += ', args.bidder=' + args.bidder + ' args.adUnitCode=' +
+      args.adUnitCode +
       ' args.adId=' + args.adId +
       ' args.cpm=' + args.cpm +
       ' creativei_id=' + args.creative_id;
@@ -913,7 +932,8 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
 realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
   // find (or add if not registered yet) the unit in boost
   if (typeof (partnerId) == 'undefined' || partnerId == '') {
-    utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
+    utils.logError('Missed realvu.com partnerId parameter',
+      102, 'Missed partnerId parameter');
   }
   let a = window.top1.realvu_aa.check({
     unit_id: bid.adUnitCode,
