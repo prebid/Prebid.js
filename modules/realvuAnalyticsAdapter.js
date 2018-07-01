@@ -40,7 +40,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     let u = navigator.userAgent;
     z.device = u.match(/iPad|Tablet/gi) ? 'tablet'
       : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi)
-      ? 'mobile' : 'desktop';
+        ? 'mobile' : 'desktop';
     if (typeof (z.len) == 'undefined') z.len = 0;
     z.ie = navigator.appVersion.match(/MSIE/);
     z.saf = (u.match(/Safari/) && !u.match(/Chrome/));

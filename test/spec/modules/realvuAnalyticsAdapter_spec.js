@@ -62,8 +62,8 @@ describe('RealVu Analytics Adapter.', () => {
     // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
     expect(result).to.equal('yes');
 
-    realvuAnalyticsAdapter.checkIn(bid); // test invalid partnerId 'undefined'
-    realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
+    realvuAnalyticsAdapter.checkIn(bid); // invalid partnerId 'undefined'
+    realvuAnalyticsAdapter.checkIn(bid, ''); // invalid partnerId ''
   });
 
   it('isInView returns "yes"', () => {
