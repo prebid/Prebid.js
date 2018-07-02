@@ -12,6 +12,7 @@ var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
 var t_Object = 'Object';
+var t_Boolean = 'Boolean';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 let warnLogger = null;
@@ -421,6 +422,10 @@ exports.isNumber = function(object) {
 
 exports.isPlainObject = function(object) {
   return exports.isA(object, t_Object);
+}
+
+exports.isBoolean = function(object) {
+  return exports.isA(object, t_Boolean);
 }
 
 /**
