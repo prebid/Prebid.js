@@ -3,6 +3,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 export const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
+let appId = '';
+
 export const spec = {
   code: 'beachfront',
   supportedMediaTypes: ['video'],
@@ -13,9 +15,10 @@ export const spec = {
 
   buildRequests(bids) {
     return bids.map(bid => {
+      appId = bid.params.appId;
       return {
         method: 'POST',
-        url: ENDPOINT + bid.params.appId,
+        url: ENDPOINT + appId,
         data: createRequestParams(bid),
         bidRequest: bid
       };
@@ -42,6 +45,24 @@ export const spec = {
       ttl: 300,
       netRevenue: true
     };
+  },
+
+  getUserSyncs(syncOptions) {
+    let syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `//sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=0&gc=&gce=1`
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: `//sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=0&gc=&gce=1`
+      });
+    }
+
+    return syncs;
   }
 };
 

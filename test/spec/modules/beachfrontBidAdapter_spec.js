@@ -146,4 +146,35 @@ describe('BeachfrontAdapter', () => {
       });
     });
   });
+
+  describe('spec.getUserSyncs', () => {
+    it('should return an iframe user sync if iframes are enabled', () => {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions);
+      expect(userSyncs.length).to.equal(1);
+      expect(userSyncs[0].type).to.equal('iframe');
+    });
+
+    it('should return an image user sync if iframes are disabled', () => {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions);
+      expect(userSyncs.length).to.equal(1);
+      expect(userSyncs[0].type).to.equal('image');
+    });
+
+    it('should not return user syncs if none are enabled', () => {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions);
+      expect(userSyncs).to.deep.equal([]);
+    });
+  });
 });
