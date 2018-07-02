@@ -47,6 +47,9 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
+// store the number of times requestBids has been called per ad Unit
+$$PREBID_GLOBAL$$.displayCount = $$PREBID_GLOBAL$$.displayCount || {};
+
 // Allow publishers who enable user sync override to trigger their sync
 $$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
@@ -367,6 +370,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       }
     });
+    // increment the number of times requestBids has been called for this adUnit
+    $$PREBID_GLOBAL$$.displayCount[adUnit.code] = ($$PREBID_GLOBAL$$.displayCount[adUnit.code] + 1) || 1;
   });
 
   if (!adUnits || adUnits.length === 0) {
