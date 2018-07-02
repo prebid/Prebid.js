@@ -234,9 +234,9 @@ function _createImpressionObject(bid, conf) {
     if (bid.params.video.hasOwnProperty('skippable')) {
       videoObj.ext = {
         'video_skippable': bid.params.video.skippable ? 1 : 0
-      }  
+      }
     }
-    
+
     impObj.video = videoObj;
   } else {
     bannerObj = {
