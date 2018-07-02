@@ -55,7 +55,7 @@ export const sharethroughAdapterSpec = {
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body) {
+    if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.cookieSyncUrls) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
         syncs.push({ type: 'image', url: url });
       });
