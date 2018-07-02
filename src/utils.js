@@ -11,10 +11,13 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
+var t_Object = 'Object';
 var toString = Object.prototype.toString;
 let infoLogger = null;
+let warnLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
+  warnLogger = console.warn.bind(window.console);
 } catch (e) {
 }
 
@@ -28,7 +31,7 @@ try {
  *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
  */
 exports.replaceTokenInString = function (str, map, token) {
-  this._each(map, function (value, key) {
+  exports._each(map, function (value, key) {
     value = (value === undefined) ? '' : value;
 
     var keyString = token + key.toUpperCase() + token;
@@ -105,6 +108,35 @@ exports.transformAdServerTargetingObj = function (targeting) {
     return '';
   }
 };
+
+/**
+ * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
+ * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
+ * @param {object} adUnit one adUnit object from the normal list of adUnits
+ * @returns {array[array[number]]} array of arrays containing numeric sizes
+ */
+export function getAdUnitSizes(adUnit) {
+  if (!adUnit) {
+    return;
+  }
+
+  let sizes = [];
+  if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
+    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    if (Array.isArray(bannerSizes[0])) {
+      sizes = bannerSizes;
+    } else {
+      sizes.push(bannerSizes);
+    }
+  } else if (Array.isArray(adUnit.sizes)) {
+    if (Array.isArray(adUnit.sizes[0])) {
+      sizes = adUnit.sizes;
+    } else {
+      sizes.push(adUnit.sizes);
+    }
+  }
+  return sizes;
+}
 
 /**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
@@ -212,11 +244,10 @@ exports.getWindowLocation = function () {
 exports.getTopWindowUrl = function () {
   let href;
   try {
-    href = this.getTopWindowLocation().href;
+    href = exports.getTopWindowLocation().href;
   } catch (e) {
     href = '';
   }
-
   return href;
 };
 
@@ -228,9 +259,15 @@ exports.getTopWindowReferrer = function() {
   }
 };
 
-exports.logWarn = function (msg) {
+exports.logWarn = function (msg, args) {
   if (debugTurnedOn() && console.warn) {
-    console.warn('WARNING: ' + msg);
+    if (warnLogger) {
+      if (!args || args.length === 0) {
+        args = '';
+      }
+
+      warnLogger('WARNING: ' + msg + ((args === '') ? '' : ' : params : '), args);
+    }
   }
 };
 
@@ -336,10 +373,10 @@ exports.hasValidBidRequest = function (paramObj, requiredParamsArr, adapter) {
   for (var i = 0; i < requiredParamsArr.length; i++) {
     found = false;
 
-    this._each(paramObj, findParam);
+    exports._each(paramObj, findParam);
 
     if (!found) {
-      this.logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
+      exports.logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
       return false;
     }
   }
@@ -367,20 +404,24 @@ exports.isA = function (object, _t) {
 };
 
 exports.isFn = function (object) {
-  return this.isA(object, t_Fn);
+  return exports.isA(object, t_Fn);
 };
 
 exports.isStr = function (object) {
-  return this.isA(object, t_Str);
+  return exports.isA(object, t_Str);
 };
 
 exports.isArray = function (object) {
-  return this.isA(object, t_Arr);
+  return exports.isA(object, t_Arr);
 };
 
 exports.isNumber = function(object) {
-  return this.isA(object, t_Numb);
+  return exports.isA(object, t_Numb);
 };
+
+exports.isPlainObject = function(object) {
+  return exports.isA(object, t_Object);
+}
 
 /**
  * Return if the object is "empty";
@@ -407,7 +448,7 @@ exports.isEmpty = function (object) {
  * @returns {boolean} if string is empty
  */
 exports.isEmptyStr = function(str) {
-  return this.isStr(str) && (!str || str.length === 0);
+  return exports.isStr(str) && (!str || str.length === 0);
 };
 
 /**
@@ -417,8 +458,8 @@ exports.isEmptyStr = function(str) {
  * @param {Function(value, key, object)} fn
  */
 exports._each = function (object, fn) {
-  if (this.isEmpty(object)) return;
-  if (this.isFn(object.forEach)) return object.forEach(fn, this);
+  if (exports.isEmpty(object)) return;
+  if (exports.isFn(object.forEach)) return object.forEach(fn, this);
 
   var k = 0;
   var l = object.length;
@@ -433,11 +474,11 @@ exports._each = function (object, fn) {
 };
 
 exports.contains = function (a, obj) {
-  if (this.isEmpty(a)) {
+  if (exports.isEmpty(a)) {
     return false;
   }
 
-  if (this.isFn(a.indexOf)) {
+  if (exports.isFn(a.indexOf)) {
     return a.indexOf(obj) !== -1;
   }
 
@@ -468,10 +509,10 @@ exports.indexOf = (function () {
  * @return {Array}
  */
 exports._map = function (object, callback) {
-  if (this.isEmpty(object)) return [];
-  if (this.isFn(object.map)) return object.map(callback);
+  if (exports.isEmpty(object)) return [];
+  if (exports.isFn(object.map)) return object.map(callback);
   var output = [];
-  this._each(object, function (value, key) {
+  exports._each(object, function (value, key) {
     output.push(callback(value, key, object));
   });
 
@@ -515,12 +556,44 @@ exports.callBurl = function({ source, burl }) {
 };
 
 /**
+ * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
+ * (though could be for other purposes)
+ * @param {string} htmlCode snippet of HTML code used for tracking purposes
+ */
+exports.insertHtmlIntoIframe = function(htmlCode) {
+  if (!htmlCode) {
+    return;
+  }
+
+  let iframe = document.createElement('iframe');
+  iframe.id = exports.getUniqueIdentifierStr();
+  iframe.width = 0;
+  iframe.height = 0;
+  iframe.hspace = '0';
+  iframe.vspace = '0';
+  iframe.marginWidth = '0';
+  iframe.marginHeight = '0';
+  iframe.style.display = 'none';
+  iframe.style.height = '0px';
+  iframe.style.width = '0px';
+  iframe.scrolling = 'no';
+  iframe.frameBorder = '0';
+  iframe.allowtransparency = 'true';
+
+  exports.insertElement(iframe, document, 'body');
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(htmlCode);
+  iframe.contentWindow.document.close();
+}
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
 exports.insertUserSyncIframe = function(url) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
+  let iframeHtml = exports.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
@@ -566,7 +639,7 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
       allowtransparency="true"
       marginheight="0" marginwidth="0"
       width="0" hspace="0" vspace="0" height="0"
-      style="height:0p;width:0p;display:none;"
+      style="height:0px;width:0px;display:none;"
       scrolling="no"
       src="${url}">
     </iframe>`;
@@ -592,7 +665,7 @@ exports.getIframeDocument = function (iframe) {
       doc = iframe.contentDocument;
     }
   } catch (e) {
-    this.logError('Cannot get iframe document', e);
+    exports.logError('Cannot get iframe document', e);
   }
 
   return doc;
@@ -602,13 +675,13 @@ exports.getValueString = function(param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
-  if (this.isStr(val)) {
+  if (exports.isStr(val)) {
     return val;
   }
-  if (this.isNumber(val)) {
+  if (exports.isNumber(val)) {
     return val.toString();
   }
-  this.logWarn('Unsuported type for param: ' + param + ' required type: String');
+  exports.logWarn('Unsuported type for param: ' + param + ' required type: String');
 };
 
 export function uniques(value, index, arry) {
@@ -619,8 +692,16 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id, bidsRequested) {
-  return find(bidsRequested.map(bidSet => find(bidSet.bids, bid => bid.bidId === id)), bid => bid);
+export function getBidRequest(id, bidderRequests) {
+  let bidRequest;
+  bidderRequests.some(bidderRequest => {
+    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    if (result) {
+      bidRequest = result;
+    }
+    return result;
+  });
+  return bidRequest;
 }
 
 export function getKeys(obj) {
@@ -643,12 +724,24 @@ export function isGptPubadsDefined() {
   }
 }
 
-export function getHighestCpm(previous, current) {
-  if (previous.cpm === current.cpm) {
-    return previous.timeToRespond > current.timeToRespond ? current : previous;
-  }
+// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
+export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
 
-  return previous.cpm < current.cpm ? current : previous;
+// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
+export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
+
+// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
+// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
+export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
+
+function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
+  return (previous, current) => {
+    if (previous.cpm === current.cpm) {
+      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
+    }
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 /**
@@ -775,6 +868,9 @@ export function groupBy(xs, key) {
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
 export function deepAccess(obj, path) {
+  if (!obj) {
+    return;
+  }
   path = String(path).split('.');
   for (let i = 0; i < path.length; i++) {
     obj = obj[path[i]];
@@ -846,7 +942,21 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };
 }
-
+/**
+ * Returns user configured bidder params from adunit
+ * @param {object} adunits
+ * @param {string} adunit code
+ * @param {string} bidder code
+ * @return {Array} user configured param for the given bidder adunit configuration
+ */
+export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
+  return adUnits
+    .filter(adUnit => adUnit.code === adUnitCode)
+    .map((adUnit) => adUnit.bids)
+    .reduce(flatten, [])
+    .filter((bidderData) => bidderData.bidder === bidder)
+    .map((bidderData) => bidderData.params || {});
+}
 /**
  * Returns the origin
  */
@@ -934,4 +1044,45 @@ export function isInteger(value) {
   } else {
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
   }
+}
+
+/**
+ * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
+ * @param {string} value string value to convert
+ */
+export function convertCamelToUnderscore(value) {
+  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
+}
+
+/**
+ * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
+ * normally read from bidder params
+ * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
+ * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
+ * @param {Object{Arrays}} keywords object of arrays representing keyvalue pairs
+ * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
+ */
+export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
+  let arrs = [];
+
+  exports._each(keywords, (v, k) => {
+    if (exports.isArray(v)) {
+      let values = [];
+      exports._each(v, (val) => {
+        val = exports.getValueString(paramName + '.' + k, val);
+        if (val) { values.push(val); }
+      });
+      v = values;
+    } else {
+      v = exports.getValueString(paramName + '.' + k, v);
+      if (exports.isStr(v)) {
+        v = [v];
+      } else {
+        return;
+      } // unsuported types - don't send a key
+    }
+    arrs.push({key: k, value: v});
+  });
+
+  return arrs;
 }

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "1.7.0-pre",
+  "version": "1.16.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -24,11 +24,10 @@
     "node": ">=4.0"
   },
   "devDependencies": {
+    "ajv": "6.2.0",
     "babel-core": "6.22.0",
     "babel-loader": "^7.1.1",
-    "babel-plugin-transform-es3-member-expression-literals": "6.22.0",
-    "babel-plugin-transform-es3-property-literals": "6.22.0",
-    "babel-preset-es2015": "6.22.0",
+    "babel-preset-env": "^1.6.1",
     "block-loader": "^2.1.0",
     "chai": "^3.3.0",
     "coveralls": "^2.11.11",
@@ -72,7 +71,6 @@
     "karma-chrome-launcher": "^2.2.0",
     "karma-coverage-istanbul-reporter": "^1.3.0",
     "karma-es5-shim": "^0.0.4",
-    "karma-expect": "^1.1.0",
     "karma-firefox-launcher": "^1.0.1",
     "karma-ie-launcher": "^1.0.0",
     "karma-mocha": "^1.3.0",
@@ -80,7 +78,6 @@
     "karma-opera-launcher": "^1.0.0",
     "karma-requirejs": "^1.1.0",
     "karma-safari-launcher": "^1.0.0",
-    "karma-sauce-launcher": "^1.1.0",
     "karma-script-launcher": "^1.0.0",
     "karma-sinon": "^1.0.5",
     "karma-sourcemap-loader": "^0.3.7",
@@ -89,7 +86,7 @@
     "localtunnel": "^1.3.0",
     "lodash": "^4.17.4",
     "mkpath": "^1.0.0",
-    "mocha": "^1.21.4",
+    "mocha": "2.2.5",
     "mock-fs": "^3.11.0",
     "nightwatch": "^0.9.5",
     "open": "0.0.5",

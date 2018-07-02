@@ -1,6 +1,7 @@
-
-import {logError, getTopWindowLocation, getTopWindowReferrer} from 'src/utils';
+import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import includes from 'core-js/library/fn/array/includes';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -9,14 +10,18 @@ const NATIVE_DEFAULTS = {
   IMG_MIN: 150,
   ICON_MIN: 50,
 };
+const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
+const VIDEO_TARGETING = ['mimes', 'skippable', 'playback_method', 'protocols', 'api'];
+const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
+const DEFAULT_APIS = [1, 2];
 
 export const spec = {
 
   code: 'platformio',
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: bid => (
-    !!(bid && bid.params && bid.params.pubId && bid.params.siteId)
+    !!(bid && bid.params && bid.params.pubId && bid.params.placementId)
   ),
   buildRequests: bidRequests => {
     const request = {
@@ -24,7 +29,8 @@ export const spec = {
       at: 2,
       imp: bidRequests.map(slot => impression(slot)),
       site: site(bidRequests),
-      device: device(),
+      app: app(bidRequests),
+      device: device(bidRequests),
     };
     return {
       method: 'POST',
@@ -69,7 +75,14 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         nurl = nurl.replace(/\$(%7B|\{)AUCTION_BID_ID(%7D|\})/gi, bidResponse.bidid);
         bid['native']['impressionTrackers'] = [nurl];
         bid.mediaType = 'native';
-      } else {
+      } else if (idToImpMap[id]['video']) {
+        bid.vastUrl = idToBidMap[id].adm;
+        bid.vastUrl = bid.vastUrl.replace(/\$(%7B|\{)AUCTION_PRICE(%7D|\})/gi, idToBidMap[id].price);
+        bid.crid = idToBidMap[id].crid;
+        bid.width = idToImpMap[id].video.w;
+        bid.height = idToImpMap[id].video.h;
+        bid.mediaType = 'video';
+      } else if (idToImpMap[id]['banner']) {
         bid.ad = idToBidMap[id].adm;
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_IMP_ID(%7D|\})/gi, idToBidMap[id].impid);
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_AD_ID(%7D|\})/gi, idToBidMap[id].adid);
@@ -78,6 +91,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_BID_ID(%7D|\})/gi, bidResponse.bidid);
         bid.width = idToImpMap[id].banner.w;
         bid.height = idToImpMap[id].banner.h;
+        bid.mediaType = 'banner';
       }
       bids.push(bid);
     }
@@ -87,26 +101,60 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 function impression(slot) {
   return {
     id: slot.bidId,
-    banner: banner(slot),
+    secure: window.location.protocol === 'https:' ? 1 : 0,
+    'banner': banner(slot),
     'native': nativeImpression(slot),
+    'video': videoImpression(slot),
     bidfloor: slot.params.bidFloor || '0.000001',
     tagid: slot.params.placementId.toString(),
   };
 }
-function banner(slot) {
-  if (!slot.nativeParams) {
+
+function getSizes(slot) {
+  if (slot.params.size) {
     const size = slot.params.size.toUpperCase().split('X');
-    const width = parseInt(size[0]);
-    const height = parseInt(size[1]);
     return {
-      w: width,
-      h: height,
+      width: parseInt(size[0]),
+      height: parseInt(size[1]),
     };
+  }
+  return {
+    width: 1,
+    height: 1,
   };
 }
 
+function banner(slot) {
+  if (slot.mediaType === 'banner' || utils.deepAccess(slot, 'mediaTypes.banner')) {
+    const sizes = getSizes(slot);
+    return {
+      w: sizes.width,
+      h: sizes.height,
+    };
+  }
+  return null;
+}
+
+function videoImpression(slot) {
+  if (slot.mediaType === 'video' || utils.deepAccess(slot, 'mediaTypes.video')) {
+    const sizes = getSizes(slot);
+    const video = {
+      w: sizes.width,
+      h: sizes.height,
+      mimes: DEFAULT_MIMES,
+      protocols: DEFAULT_PROTOCOLS,
+      api: DEFAULT_APIS,
+    };
+    if (slot.params.video) {
+      Object.keys(slot.params.video).filter(param => includes(VIDEO_TARGETING, param)).forEach(param => video[param] = slot.params.video[param]);
+    }
+    return video;
+  }
+  return null;
+}
+
 function nativeImpression(slot) {
-  if (slot.nativeParams) {
+  if (slot.mediaType === 'native' || utils.deepAccess(slot, 'mediaTypes.native')) {
     const assets = [];
     addAsset(assets, titleAsset(1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
     addAsset(assets, dataAsset(2, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
@@ -166,25 +214,57 @@ function dataAsset(id, params, type, defaultLen) {
 function site(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.pubId : '0';
   const siteId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.siteId : '0';
-  return {
-    publisher: {
-      id: pubId.toString(),
-      domain: getTopWindowLocation().hostname,
-    },
-    id: siteId.toString(),
-    ref: getTopWindowReferrer(),
-    page: getTopWindowLocation().href,
+  const appParams = bidderRequest[0].params.app;
+  if (!appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+        domain: utils.getTopWindowLocation().hostname,
+      },
+      id: siteId.toString(),
+      ref: utils.getTopWindowReferrer(),
+      page: utils.getTopWindowLocation().href,
+    }
   }
+  return null;
 }
 
-function device() {
+function app(bidderRequest) {
+  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.pubId : '0';
+  const appParams = bidderRequest[0].params.app;
+  if (appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      id: appParams.id,
+      name: appParams.name,
+      bundle: appParams.bundle,
+      storeurl: appParams.storeUrl,
+      domain: appParams.domain,
+    }
+  }
+  return null;
+}
+
+function device(bidderRequest) {
+  const lat = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.latitude : '';
+  const lon = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.longitude : '';
+  const ifa = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.ifa : '';
   return {
+    dnt: utils.getDNT() ? 1 : 0,
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
     w: (window.screen.width || window.innerWidth),
     h: (window.screen.height || window.innerHeigh),
+    geo: {
+      lat: lat,
+      lon: lon,
+    },
+    ifa: ifa,
   };
 }
+
 function parse(rawResponse) {
   try {
     if (rawResponse) {

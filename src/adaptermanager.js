@@ -7,6 +7,7 @@ import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -94,27 +95,11 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
 
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
-  });
-  return sizesObj;
-}
-
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
-    adUnit.sizes = transformHeightWidth(adUnit);
-
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
       return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
@@ -147,6 +132,16 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
   return adUnitsClientCopy;
 }
+
+exports.gdprDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    this.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return this.consentData;
+  }
+};
 
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
@@ -208,15 +203,30 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
-    if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+    const adapter = _bidderRegistry[bidderCode];
+    if (!adapter) {
+      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+    }
+
+    if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
+
+  if (exports.gdprDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['gdprConsent'] = exports.gdprDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
 };
 
 exports.checkBidRequestSizes = (adUnits) => {
-  Array.prototype.forEach.call(adUnits, adUnit => {
+  function isArrayOfNums(val) {
+    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
+  }
+
+  adUnits.forEach((adUnit) => {
     if (adUnit.sizes) {
       utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
     }
@@ -225,7 +235,10 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit.sizes = banner.sizes;
+        // make sure we always send [[h,w]] format
+        const normalizedSize = utils.getAdUnitSizes(adUnit);
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
       } else {
         utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
@@ -235,10 +248,15 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && utils.isInteger(video.playerSize[0]) && utils.isInteger(video.playerSize[1])) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
           adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from ${video.playerSize} to ${newPlayerSize} so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
         } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
         }
       }
@@ -263,13 +281,11 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
   }
-
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
 
   let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
@@ -277,10 +293,25 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   }, [[], []]);
 
   if (serverBidRequests.length) {
+    const s2sAjax = ajaxBuilder(serverBidRequests[0].timeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, 's2s'),
+      done: requestCallbacks.done
+    } : undefined);
     let adaptersServerSide = _s2sConfig.bidders;
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
     let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
+    adUnitsS2SCopy.forEach((adUnitCopy) => {
+      let validBids = adUnitCopy.bids.filter((bid) => {
+        return find(serverBidRequests, request => {
+          return request.bidderCode === bid.bidder &&
+          find(request.bids, (reqBid) => reqBid.adUnitCode === adUnitCopy.code);
+        });
+      });
+      adUnitCopy.bids = validBids;
+    });
+
+    adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
 
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
@@ -310,7 +341,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           serverBidRequests,
           addBidResponse,
           () => doneCbs.forEach(done => done()),
-          ajax
+          s2sAjax
         );
       }
     }
@@ -321,15 +352,15 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-      bidRequest.doneCbCallCount = 0;
-      let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, done, ajax);
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-    }
+    utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    bidRequest.doneCbCallCount = 0;
+    let done = doneCb(bidRequest.bidderRequestId);
+    let ajax = ajaxBuilder(clientBidRequests[0].timeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+      done: requestCallbacks.done
+    } : undefined);
+    adapter.callBids(bidRequest, addBidResponse, done, ajax);
   });
 }
 
@@ -366,12 +397,20 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 };
 
 exports.aliasBidAdapter = function (bidderCode, alias) {
-  var existingAlias = _bidderRegistry[alias];
+  let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
-    var bidAdaptor = _bidderRegistry[bidderCode];
+    let bidAdaptor = _bidderRegistry[bidderCode];
     if (typeof bidAdaptor === 'undefined') {
-      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
+      const s2sConfig = config.getConfig('s2sConfig');
+      const s2sBidders = s2sConfig && s2sConfig.bidders;
+
+      if (!(s2sBidders && includes(s2sBidders, alias))) {
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      } else {
+        exports.aliasRegistry[alias] = bidderCode;
+      }
     } else {
       try {
         let newAdapter;
@@ -437,3 +476,26 @@ exports.getBidAdapter = function(bidder) {
 exports.setS2STestingModule = function (module) {
   s2sTestingModule = module;
 };
+
+exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
+  timedOutBidders = timedOutBidders.map((timedOutBidder) => {
+    // Adding user configured params & timeout to timeout event data
+    timedOutBidder.params = utils.getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
+    timedOutBidder.timeout = cbTimeout;
+    return timedOutBidder;
+  });
+  timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
+
+  Object.keys(timedOutBidders).forEach((bidder) => {
+    try {
+      const adapter = _bidderRegistry[bidder];
+      const spec = adapter.getSpec();
+      if (spec && spec.onTimeout && typeof spec.onTimeout === 'function') {
+        utils.logInfo(`Invoking ${bidder}.onTimeout`);
+        spec.onTimeout(timedOutBidders[bidder]);
+      }
+    } catch (e) {
+      utils.logWarn(`Error calling onTimeout of ${bidder}`);
+    }
+  });
+}

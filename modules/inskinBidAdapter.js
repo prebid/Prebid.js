@@ -26,10 +26,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param {bidderRequest} - the full bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     // Do we need to group by bidder? i.e. to make multiple requests for
     // different endpoints.
 
@@ -55,6 +56,14 @@ export const spec = {
       includePricingData: true,
       parallel: true
     }, validBidRequests[0].params);
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.consent = {
+        gdprConsentString: bidderRequest.gdprConsent.consentString,
+        // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+        gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
 
     validBidRequests.map(bid => {
       let config = CONFIG[bid.bidder];
@@ -151,7 +160,27 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    return [];
+    const userSyncs = [];
+
+    if (syncOptions.pixelEnabled) {
+      userSyncs.push({
+        type: 'image',
+        url: 'https://e.serverbid.com/udb/9969/match?redir=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fpool%2Fset%2Fi.gif%3FpoolId%3D9969%26poolKey%3D'
+      });
+      userSyncs.push({
+        type: 'image',
+        url: 'https://ssum.casalemedia.com/usermatchredir?s=185638&cb=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fsync%2Fi.gif%3FpartnerId%3D1%26userId%3D'
+      });
+    }
+
+    if (syncOptions.iframeEnabled) {
+      userSyncs.push({
+        type: 'iframe',
+        url: 'https://ssum-sec.casalemedia.com/usermatch?s=184665&cb=https%3A%2F%2Fmfad.inskinad.com%2Fudb%2F9874%2Fsync%2Fi.gif%3FpartnerId%3D1%26userId%3D'
+      });
+    }
+
+    return userSyncs;
   }
 };
 

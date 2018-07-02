@@ -10,16 +10,15 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
   },
-  buildRequests: function (validBidRequests) {
-    var i, l, j, k, bid, _key, _value, reqParams;
+  buildRequests: function (validBidRequests, bidderRequest) {
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
-    var netRevenue = 'net';
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.params.priceType === 'gross') {
-        netRevenue = 'gross';
+      if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
+        netRevenue = 'net';
       }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
@@ -35,8 +34,18 @@ export const spec = {
     }
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
-
+    netRevenue = netRevenue || 'gross';
+    request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
+
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      gdprObject = {
+        gdpr: bidderRequest.gdprConsent.gdprApplies,
+        gdpr_consent: bidderRequest.gdprConsent.consentString
+      };
+      request.push('gdpr=' + gdprObject.gdpr);
+      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+    }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
@@ -51,7 +60,8 @@ export const spec = {
       url: request.join('&'),
       bids: validBidRequests,
       netRevenue: netRevenue,
-      bidder: 'adform'
+      bidder: 'adform',
+      gdpr: gdprObject
     };
 
     function formRequestUrl(reqData) {
@@ -97,16 +107,19 @@ export const spec = {
           vastXml: response.vast_content,
           mediaType: type
         };
+        if (bidRequest.gdpr) {
+          bidObject.gdpr = bidRequest.gdpr.gdpr;
+          bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
+        }
         bidRespones.push(bidObject);
       }
     }
-
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+        if (adItem.width == validSizes[j][0] &&
+            adItem.height == validSizes[j][1]) {
           return true;
         }
       }

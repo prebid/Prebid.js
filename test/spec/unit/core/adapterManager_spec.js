@@ -19,7 +19,8 @@ const CONFIG = {
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
-  bidders: ['appnexus']
+  bidders: ['appnexus'],
+  accountId: 'abc'
 };
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
@@ -91,7 +92,8 @@ describe('adapterManager tests', () => {
       }];
 
       let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      expect(bidRequests.length).to.equal(1);
+      expect(bidRequests[0].bidderCode).to.equal('appnexus');
       sinon.assert.called(utils.logError);
     });
 
@@ -151,6 +153,7 @@ describe('adapterManager tests', () => {
         'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
+        'timeout': 1000,
         'src': 's2s',
         'adUnitsS2SCopy': [
           {
@@ -315,6 +318,7 @@ describe('adapterManager tests', () => {
         'bidderRequestId': '2946b569352ef2',
         'tid': '34566b569352ef2',
         'src': 's2s',
+        'timeout': 1000,
         'adUnitsS2SCopy': [
           {
             'code': '/19968336/header-bid-tag1',
@@ -444,6 +448,7 @@ describe('adapterManager tests', () => {
         ],
         'start': 1462918897460
       }];
+
       AdapterManager.callBids(
         adUnits,
         bidRequests,
@@ -717,150 +722,215 @@ describe('adapterManager tests', () => {
       });
     });
 
-    describe('makeBidRequests', () => {
-      let adUnits;
+    describe('special case for s2s-only bidders', () => {
       beforeEach(() => {
-        adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
-          return adUnit;
-        })
+        sinon.stub(utils, 'logError');
       });
 
-      describe('setBidderSequence', () => {
-        beforeEach(() => {
-          sinon.spy(utils, 'shuffle');
-        });
-
-        afterEach(() => {
-          config.resetConfig();
-          utils.shuffle.restore();
-        });
-
-        it('setting to `random` uses shuffled order of adUnits', () => {
-          config.setConfig({ bidderSequence: 'random' });
-          let bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
-          sinon.assert.calledOnce(utils.shuffle);
-        });
+      afterEach(() => {
+        config.resetConfig();
+        utils.logError.restore();
       });
 
-      describe('sizeMapping', () => {
-        beforeEach(() => {
-          sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
-        });
+      it('should allow an alias if alias is part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
 
-        afterEach(() => {
-          matchMedia.restore();
-          setSizeConfig([]);
-        });
+        AdapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(AdapterManager.aliasRegistry).to.have.property('s2sAlias');
+      });
 
-        it('should not filter bids w/ no labels', () => {
-          let bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
+      it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', () => {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: testS2sConfig});
 
-          expect(bidRequests.length).to.equal(2);
-          let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
-          expect(rubiconBidRequests.bids.length).to.equal(1);
-          expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+        AdapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
+        sinon.assert.calledOnce(utils.logError);
+        expect(AdapterManager.aliasRegistry).to.not.have.property('s2sAlias1');
+      });
+    });
+  });
 
-          let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
-          expect(appnexusBidRequests.bids.length).to.equal(2);
-          expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-          expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
-        });
+  describe('makeBidRequests', () => {
+    let adUnits;
+    beforeEach(() => {
+      adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
+        return adUnit;
+      })
+    });
 
-        it('should filter sizes using size config', () => {
-          let validSizes = [
-            [728, 90],
-            [300, 250]
-          ];
+    describe('setBidderSequence', () => {
+      beforeEach(() => {
+        sinon.spy(utils, 'shuffle');
+      });
 
-          let validSizeMap = validSizes.map(size => size.toString()).reduce((map, size) => {
-            map[size] = true;
-            return map;
-          }, {});
+      afterEach(() => {
+        config.resetConfig();
+        utils.shuffle.restore();
+      });
 
-          setSizeConfig([{
-            'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
-            'sizesSupported': validSizes,
-            'labels': ['tablet', 'phone']
-          }]);
+      it('setting to `random` uses shuffled order of adUnits', () => {
+        config.setConfig({ bidderSequence: 'random' });
+        let bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        sinon.assert.calledOnce(utils.shuffle);
+      });
+    });
 
-          let bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
+    describe('sizeMapping', () => {
+      beforeEach(() => {
+        sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
+      });
+
+      afterEach(() => {
+        matchMedia.restore();
+        setSizeConfig([]);
+      });
+
+      it('should not filter bids w/ no labels', () => {
+        let bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+
+        expect(bidRequests.length).to.equal(2);
+        let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
+        expect(rubiconBidRequests.bids.length).to.equal(1);
+        expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+
+        let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
+        expect(appnexusBidRequests.bids.length).to.equal(2);
+        expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
+        expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+      });
+
+      it('should filter sizes using size config', () => {
+        let validSizes = [
+          [728, 90],
+          [300, 250]
+        ];
+
+        let validSizeMap = validSizes.map(size => size.toString()).reduce((map, size) => {
+          map[size] = true;
+          return map;
+        }, {});
+
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': validSizes,
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
 
           // only valid sizes as specified in size config should show up in bidRequests
-          bidRequests.forEach(bidRequest => {
-            bidRequest.bids.forEach(bid => {
-              bid.sizes.forEach(size => {
-                expect(validSizeMap[size]).to.equal(true);
-              });
+        bidRequests.forEach(bidRequest => {
+          bidRequest.bids.forEach(bid => {
+            bid.sizes.forEach(size => {
+              expect(validSizeMap[size]).to.equal(true);
             });
           });
-
-          setSizeConfig([{
-            'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
-            'sizesSupported': [],
-            'labels': ['tablet', 'phone']
-          }]);
-
-          bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
-
-          // if no valid sizes, all bidders should be filtered out
-          expect(bidRequests.length).to.equal(0);
         });
 
-        it('should filter adUnits/bidders based on applied labels', () => {
-          adUnits[0].labelAll = ['visitor-uk', 'mobile'];
-          adUnits[1].labelAny = ['visitor-uk', 'desktop'];
-          adUnits[1].bids[0].labelAny = ['mobile'];
-          adUnits[1].bids[1].labelAll = ['desktop'];
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [],
+          'labels': ['tablet', 'phone']
+        }]);
 
-          let bidRequests = AdapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            ['visitor-uk', 'desktop']
-          );
+        bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+
+        // if no valid sizes, all bidders should be filtered out
+        expect(bidRequests.length).to.equal(0);
+      });
+
+      it('should filter adUnits/bidders based on applied labels', () => {
+        adUnits[0].labelAll = ['visitor-uk', 'mobile'];
+        adUnits[1].labelAny = ['visitor-uk', 'desktop'];
+        adUnits[1].bids[0].labelAny = ['mobile'];
+        adUnits[1].bids[1].labelAll = ['desktop'];
+
+        let bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          ['visitor-uk', 'desktop']
+        );
 
           // only one adUnit and one bid from that adUnit should make it through the applied labels above
-          expect(bidRequests.length).to.equal(1);
-          expect(bidRequests[0].bidderCode).to.equal('rubicon');
-          expect(bidRequests[0].bids.length).to.equal(1);
-          expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
+        expect(bidRequests.length).to.equal(1);
+        expect(bidRequests[0].bidderCode).to.equal('rubicon');
+        expect(bidRequests[0].bids.length).to.equal(1);
+        expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
+      });
+    });
+
+    describe('gdpr consent module', () => {
+      it('inserts gdprConsent object to bidRequest only when module was enabled', () => {
+        AdapterManager.gdprDataHandler.setConsentData({
+          consentString: 'abc123def456',
+          consentRequired: true
         });
-      })
+
+        let bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].gdprConsent.consentString).to.equal('abc123def456');
+        expect(bidRequests[0].gdprConsent.consentRequired).to.be.true;
+
+        AdapterManager.gdprDataHandler.setConsentData(null);
+
+        bidRequests = AdapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].gdprConsent).to.be.undefined;
+      });
     });
   });
 
   describe('isValidBidRequest', () => {
     describe('positive tests for validating bid request', () => {
-      beforeEach(() => {});
+      beforeEach(() => {
+        sinon.stub(utils, 'logInfo');
+      });
 
-      afterEach(() => {});
-      it('should main adUnit structure and adUnits.sizes is replaced', () => {
+      afterEach(() => {
+        utils.logInfo.restore();
+      });
+
+      it('should maintain adUnit structure and adUnits.sizes is replaced', () => {
         let fullAdUnit = [{
           sizes: [[300, 250], [300, 600]],
           mediaTypes: {
@@ -868,7 +938,7 @@ describe('adapterManager tests', () => {
               sizes: [[300, 250]]
             },
             video: {
-              playerSize: [640, 480]
+              playerSize: [[640, 480]]
             },
             native: {
               image: {
@@ -882,8 +952,8 @@ describe('adapterManager tests', () => {
           }
         }];
         let result = checkBidRequestSizes(fullAdUnit);
-        expect(result[0].sizes).to.deep.equal([640, 480]);
-        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([640, 480]);
+        expect(result[0].sizes).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
         expect(result[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
         expect(result[0].mediaTypes.native.image.aspect_ratios).to.deep.equal([140, 140]);
@@ -916,7 +986,7 @@ describe('adapterManager tests', () => {
           mediaTypes: {
             video: {
               context: 'outstream',
-              playerSize: [400, 350]
+              playerSize: [[400, 350]]
             },
             native: {
               image: {
@@ -927,8 +997,36 @@ describe('adapterManager tests', () => {
           }
         }];
         result = checkBidRequestSizes(mixedAdUnit);
-        expect(result[0].sizes).to.deep.equal([400, 350]);
+        expect(result[0].sizes).to.deep.equal([[400, 350]]);
         expect(result[0].mediaTypes.video).to.exist;
+
+        let altVideoPlayerSize = [{
+          sizes: [[600, 600]],
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          }
+        }];
+        result = checkBidRequestSizes(altVideoPlayerSize);
+        expect(result[0].sizes).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
+        expect(result[0].mediaTypes.video).to.exist;
+        sinon.assert.calledOnce(utils.logInfo);
+      });
+
+      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', () => {
+        let fullAdUnit = [{
+          sizes: [300, 250],
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          }
+        }];
+        let result = checkBidRequestSizes(fullAdUnit);
+        expect(result[0].sizes).to.deep.equal([[300, 250]]);
+        expect(result[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
       });
     });
 
@@ -959,7 +1057,7 @@ describe('adapterManager tests', () => {
           sizes: [[600, 600]],
           mediaTypes: {
             video: {
-              playerSize: '600x400'
+              playerSize: ['600x400']
             }
           }
         }];
@@ -973,25 +1071,11 @@ describe('adapterManager tests', () => {
           sizes: [[600, 600]],
           mediaTypes: {
             video: {
-              playerSize: ['300', '200']
+              playerSize: [['300', '200']]
             }
           }
         }];
         result = checkBidRequestSizes(badVideo2);
-        expect(result[0].sizes).to.deep.equal([[600, 600]]);
-        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badVideo3 = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: [[640, 480]]
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badVideo3);
         expect(result[0].sizes).to.deep.equal([[600, 600]]);
         expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
         expect(result[0].mediaTypes.video).to.exist;
