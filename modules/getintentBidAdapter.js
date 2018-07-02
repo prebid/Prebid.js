@@ -99,7 +99,8 @@ function buildGiBidRequest(bidRequest) {
     tid: bidRequest.params.tid, // required
     known: bidRequest.params.known || 1,
     is_video: bidRequest.mediaType === 'video',
-    resp_type: 'JSON'
+    resp_type: 'JSON',
+    provider: 'direct.prebidjs'
   };
   if (bidRequest.sizes) {
     giBidRequest.size = produceSize(bidRequest.sizes);
