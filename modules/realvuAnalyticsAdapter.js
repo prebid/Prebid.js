@@ -198,8 +198,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   enc: function (s1) {
-    return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
-      '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
+    return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F')
+      .replace(/\+/g, '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
 
   findPosG: function (adi) {
@@ -586,7 +586,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     try {
       // not to track the same object more than one time
       for (let i = 0; i < z.len; i++) {
-        //         if (z.ads[i].div == adobj) { a = z.ads[i]; break; }
+        // if (z.ads[i].div == adobj) { a = z.ads[i]; break; }
         if (z.ads[i].unit_id == pin.unit_id) {
           a = z.ads[i];
           break;
@@ -596,7 +596,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       if (a == null) {
         a = z.add(pin.wnd, pin.p);
         a.unit_id = pin.unit_id;
-        let adobj = (pin.unit) ? pin.unit : document.getElementById(a.unit_id);
+        let adobj = (pin.unit)
+          ? pin.unit : document.getElementById(a.unit_id);
         if (adobj != null) {
           z.bind_obj(a, adobj);
         } else {
