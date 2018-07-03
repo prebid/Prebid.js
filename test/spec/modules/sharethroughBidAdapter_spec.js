@@ -22,7 +22,19 @@ const bidderRequest = [
       pkey: 'bbbb2222',
       iframe: true
     }
-  }];
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId3',
+    sizes: [[700, 400]],
+    placementCode: 'coconut',
+    params: {
+      pkey: 'cccc3333',
+      iframe: true,
+      iframeSize: [500, 500]
+    },
+  },
+];
 
 const prebidRequests = [
   {
@@ -46,6 +58,19 @@ const prebidRequests = [
     },
     strData: {
       stayInIframe: true,
+      sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
+    }
+  },
+  {
+    method: 'GET',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    data: {
+      bidId: 'bidId',
+      placement_key: 'pKey'
+    },
+    strData: {
+      stayInIframe: true,
+      iframeSize: [500, 500],
       sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
     }
   },
@@ -160,6 +185,20 @@ describe('sharethrough adapter spec', () => {
         {
           width: 300,
           height: 300,
+          cpm: 12.34,
+          creativeId: 'aCreativeId',
+          dealId: 'aDealId',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360,
+        });
+    });
+
+    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is true and strData.iframeSize is provided', () => {
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[2])[0]).to.include(
+        {
+          width: 500,
+          height: 500,
           cpm: 12.34,
           creativeId: 'aCreativeId',
           dealId: 'aDealId',
