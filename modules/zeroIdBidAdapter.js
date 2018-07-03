@@ -21,8 +21,6 @@ var samplingVal = Math.floor(Math.random() * 1000) + 1;
 var labVal = Math.floor(Math.random() * 100) + 1;
 
 
-
-
 var createCookie = function(name, value, days) {
   var date, expires;
   if (days) {
@@ -124,10 +122,10 @@ var domainIsOnLabList = function(){
 
   var isOnLLCookie = getCookie("__lb");
 
-  if(isOnLLCookie && isOnLLCookie == "1"){
+  if(typeof isOnLLCookie != "undefined"  && isOnLLCookie == "1"){
     domainIsOnLabListVar = true;
   }
-  else{
+  else if(typeof isOnLLCookie == "undefined"){
 
 
     var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
@@ -166,6 +164,8 @@ var domainIsOnLabList = function(){
           domainIsOnLabList = true;
         }
 
+
+
         if(domainIsOnLabList){
           createCookie("__lb", 1 , 1);
         }
@@ -173,9 +173,7 @@ var domainIsOnLabList = function(){
           createCookie("__lb", 0 , 1);
         }
 
-
-
-        //domainIsOnLabListVar = domainIsOnLabList;
+        domainIsOnLabListVar = domainIsOnLabList;
 
         //return domainIsOnLabList;
 
@@ -189,19 +187,21 @@ var domainIsOnLabList = function(){
   }
 
 
-}();
+};
 
 
 var domainIsOnWhitelist = function(){
   var domainIsOnWhiteList = false;
   var whtList;
 
-  var isOnWLCookie = getCookie("__lb");
+  var isOnWLCookie = getCookie("__wl");
 
-  if(isOnWLCookie && isOnWLCookie == "1"){
-    domainIsOnLabListVar = true;
+
+  if(typeof isOnWLCookie != "undefined" && isOnWLCookie == "1"){
+    domainIsOnWhiteListVar = true;
   }
-  else {
+  else if(typeof isOnWLCookie == "undefined"){
+
 
 
     var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
@@ -241,15 +241,17 @@ var domainIsOnWhitelist = function(){
           domainIsOnWhiteList = true;
         }
 
+
         if (domainIsOnWhiteList) {
           createCookie("__wl", 1, 1);
         }
         else {
           createCookie("__wl", 0, 1);
+          domainIsOnLabList();
         }
 
 
-        //domainIsOnWhiteListVar = domainIsOnWhiteList
+        domainIsOnWhiteListVar = domainIsOnWhiteList
 
         //return domainIsOnWhiteList;
 
@@ -263,7 +265,9 @@ var domainIsOnWhitelist = function(){
 
 
 
-}();
+};
+
+domainIsOnWhitelist();
 
 /**
  * Read a cookie from the first party domain
@@ -557,7 +561,6 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       domain = bid.params.domain;
     }
   });
-
 
   if(swid != "" && domainIsOnWhiteListVar){
     return {
