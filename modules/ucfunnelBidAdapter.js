@@ -95,7 +95,8 @@ export const spec = {
         break;
       case VIDEO:
         Object.assign(bid, {
-          vastXml: ad.adm
+          vastUrl: ad.vastUrl,
+          vastXml: ad.vastXml
         });
 
         if (videoPlayerSize && videoPlayerSize.length === 2) {

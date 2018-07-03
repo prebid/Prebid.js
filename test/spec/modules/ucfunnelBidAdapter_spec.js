@@ -46,7 +46,8 @@ const validVideoBidReq = {
 const validVideoBidRes = {
   creative_type: VIDEO,
   ad_id: 'ad-9A22D466494297EAC443D967B2622DA9',
-  adm: '<VAST version="3.0"><Ad id="preroll-1"><InLine><AdSystem>ucX</AdSystem><AdTitle> I-Primo </AdTitle><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents><Tracking event="start"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/start]]></Tracking><Tracking event="complete"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/complete]]></Tracking><Tracking event="unmute"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/umute]]></Tracking><Tracking event="rewind"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/rewind]]></Tracking></TrackingEvents><VideoClicks><ClickThrough><![CDATA[https://www.iprimo.tw/]]></ClickThrough><ClickTracking><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/clk]]></ClickTracking></VideoClicks><MediaFiles><MediaFile width="1920" height="1080" type="video/mp4" delivery="progressive"><![CDATA[https://cdn.aralego.net/ucfad/house/ucf/i-primo.mp4]]</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
+  vastUrl: 'https://ads.aralego.com/ads/58f9749f-0553-4993-8d9a-013a38b29e55',
+  vastXml: '<VAST version="3.0"><Ad id="preroll-1"><InLine><AdSystem>ucX</AdSystem><AdTitle> I-Primo </AdTitle><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents><Tracking event="start"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/start]]></Tracking><Tracking event="complete"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/complete]]></Tracking><Tracking event="unmute"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/umute]]></Tracking><Tracking event="rewind"><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/rewind]]></Tracking></TrackingEvents><VideoClicks><ClickThrough><![CDATA[https://www.iprimo.tw/]]></ClickThrough><ClickTracking><![CDATA[https://dev-ads.aralego.com/c/ucfunnel-test-vad-campaign/clk]]></ClickTracking></VideoClicks><MediaFiles><MediaFile width="1920" height="1080" type="video/mp4" delivery="progressive"><![CDATA[https://cdn.aralego.net/ucfad/house/ucf/i-primo.mp4]]</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
   cpm: 0.01,
   width: 640,
   height: 360
@@ -157,6 +158,7 @@ describe('ucfunnel Adapter', () => {
         const bid = result[0];
 
         expect(bid.mediaType).to.equal(VIDEO);
+        expect(bid.vastUrl).to.exist;
         expect(bid.vastXml).to.exist;
         expect(bid.requestId).to.equal('263be71e91dd9f');
         expect(bid.cpm).to.equal(0.01);
