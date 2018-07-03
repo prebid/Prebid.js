@@ -388,7 +388,7 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        it('should ref field when unable to determine document referrer', () => {
+        it('should skip ref field when unable to determine document referrer', () => {
           // i.e., empty if user came from bookmark, or web page using 'rel="noreferrer" on link, etc
           utils.getTopWindowReferrer.restore();
           sandbox.stub(utils, 'getTopWindowReferrer').returns('');
@@ -401,6 +401,21 @@ describe('stroeerCore bid adapter', function () {
           for (let bid of serverRequestInfo.data.bids) {
             assert.isUndefined(bid.ref);
           }
+        });
+
+        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true},
+          {consentString: 'UGluZyBQb25n', gdprApplies: false}];
+        gdprSamples.forEach((sample) => {
+          it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
+            const bidderRequest = buildBidderRequest();
+            bidderRequest.gdprConsent = sample;
+
+            const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            const actualGdpr = serverRequestInfo.data.gdpr;
+            assert.propertyVal(actualGdpr, 'applies', sample.gdprApplies);
+            assert.propertyVal(actualGdpr, 'consent', sample.consentString);
+          });
         });
       });
     });
