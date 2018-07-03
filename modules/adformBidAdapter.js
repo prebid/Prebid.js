@@ -114,13 +114,12 @@ export const spec = {
         bidRespones.push(bidObject);
       }
     }
-
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+        if (adItem.width == validSizes[j][0] &&
+            adItem.height == validSizes[j][1]) {
           return true;
         }
       }
