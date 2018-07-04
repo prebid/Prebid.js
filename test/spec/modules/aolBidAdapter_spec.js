@@ -544,12 +544,11 @@ describe('AolAdapter', () => {
 
       expect(formattedPixels).to.equal(
         '<script>var w=window,prebid;' +
-        'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
+        'try{for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
         'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
-        'try{prebid.aolGlobals.pixelsDropped=true;' +
+        'prebid.aolGlobals.pixelsDropped=true;' +
         'document.write(\'<pixels-dom-elements/>\');break;}' +
-        'catch(e){continue;}' +
-        '}}</script>');
+        '}}catch(e){document.write(\'<pixels-dom-elements/>\');}</script>');
     });
   });
 
