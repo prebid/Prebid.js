@@ -124,7 +124,11 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      done();
+      if (argv.browserstack) {
+        process.exit(0);
+      } else {
+        done();
+      }
     }
   }
 }

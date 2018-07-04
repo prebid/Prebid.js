@@ -16,7 +16,7 @@ describe('video.js', () => {
       }]
     }];
     const valid = isValidVideoBid(bid, bidRequests);
-    expect(valid).to.be(true);
+    expect(valid).to.equal(true);
   });
 
   it('catches invalid instream bids', () => {
@@ -33,7 +33,7 @@ describe('video.js', () => {
       }]
     }];
     const valid = isValidVideoBid(bid, bidRequests);
-    expect(valid).to.be(false);
+    expect(valid).to.equal(false);
   });
 
   it('catches invalid bids when prebid-cache is disabled', () => {
@@ -46,7 +46,7 @@ describe('video.js', () => {
 
     const valid = isValidVideoBid({ vastXml: '<xml>vast</xml>' }, bidRequests);
 
-    expect(valid).to.be(false);
+    expect(valid).to.equal(false);
   });
 
   it('validates valid outstream bids', () => {
@@ -67,7 +67,7 @@ describe('video.js', () => {
       }]
     }];
     const valid = isValidVideoBid(bid, bidRequests);
-    expect(valid).to.be(true);
+    expect(valid).to.equal(true);
   });
 
   it('catches invalid outstream bids', () => {
@@ -84,6 +84,6 @@ describe('video.js', () => {
       }]
     }];
     const valid = isValidVideoBid(bid, bidRequests);
-    expect(valid).to.be(false);
+    expect(valid).to.equal(false);
   });
 });

@@ -55,7 +55,7 @@ function _createServerRequest(bidRequest) {
    */
   const options = {
     contentType: 'application/json',
-    withCredentials: false
+    withCredentials: true
   };
   // Allow the ability to configure the HB endpoint for testing purposes.
   const ttxSettings = config.getConfig('ttxSettings');

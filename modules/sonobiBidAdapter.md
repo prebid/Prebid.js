@@ -30,3 +30,41 @@ Module that connects to Sonobi's demand sources.
     }
   ];
 ```
+
+# Video Test Parameters
+```
+ var videoAdUnit = {
+        code: 'adUnit_af',
+        sizes: [640,480],
+        mediaTypes: {
+          video: {context: 'instream'}
+        },
+        bids: [
+          {
+            bidder: 'sonobi',
+            params: {
+              placement_id: '92e95368e86639dbd86d',
+            }
+          }
+        ]
+      };
+```
+
+Example bidsBackHandler for video bids
+```
+pbjs.requestBids({
+          timeout : 700,
+          bidsBackHandler : function(bids) {
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                adUnit: videoAdUnit,
+                params: {
+                    cust_params: {
+                        hb_vid: bids.adUnit_af.bids[0].creativeId
+                    },
+                    iu: '/7780971/apex_jwplayer_video'
+                }
+            });
+            invokeVideoPlayer(videoUrl);
+          }
+        });
+```

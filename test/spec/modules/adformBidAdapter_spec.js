@@ -30,7 +30,7 @@ describe('Adform adapter', () => {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
-      assert.lengthOf(parsedUrl.items, 5);
+      assert.lengthOf(parsedUrl.items, 7);
     });
 
     it('should handle global request parameters', () => {
@@ -62,8 +62,8 @@ describe('Adform adapter', () => {
         {
           mid: '2',
           someVar: 'someValue',
-          transactionId: '5f33781f-9552-4iuy',
-          priceType: 'gross'
+          pt: 'gross',
+          transactionId: '5f33781f-9552-4iuy'
         },
         {
           mid: '3',
@@ -78,6 +78,16 @@ describe('Adform adapter', () => {
         {
           mid: '3',
           pdom: 'home',
+          transactionId: '5f33781f-9552-7ev3'
+        },
+        {
+          mid: '5',
+          pt: 'net',
+          transactionId: '5f33781f-9552-7ev3',
+        },
+        {
+          mid: '6',
+          pt: 'gross',
           transactionId: '5f33781f-9552-7ev3'
         }
       ]);
@@ -88,24 +98,59 @@ describe('Adform adapter', () => {
       let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
     });
+
+    it('should set gross to the request, if there is any gross priceType', () => {
+      let request = spec.buildRequests([bids[5], bids[5]]);
+      let parsedUrl = parseUrl(request.url);
+
+      assert.equal(parsedUrl.query.pt, 'net');
+
+      request = spec.buildRequests([bids[4], bids[3]]);
+      parsedUrl = parseUrl(request.url);
+
+      assert.equal(parsedUrl.query.pt, 'gross');
+    });
+
+    describe('gdpr', () => {
+      it('should send GDPR Consent data to adform if gdprApplies', () => {
+        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
+        let parsedUrl = parseUrl(request.url).query;
+
+        assert.equal(parsedUrl.gdpr, 'true');
+        assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
+      });
+
+      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', () => {
+        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
+        let parsedUrl = parseUrl(request.url).query;
+
+        assert.ok(!parsedUrl.gdpr);
+        assert.ok(!parsedUrl.gdpr_consent);
+
+        request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: undefined, consentString: 'concentDataString'}});
+        assert.ok(!parsedUrl.gdpr);
+        assert.ok(!parsedUrl.gdpr_consent);
+      });
+
+      it('should return GDPR Consent data with request data', () => {
+        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
+
+        assert.deepEqual(request.gdpr, {
+          gdpr: true,
+          gdpr_consent: 'concentDataString'
+        });
+
+        request = spec.buildRequests([bids[0]]);
+        assert.ok(!request.gdpr);
+      });
+    });
   });
 
   describe('interpretResponse', () => {
     it('should respond with empty response when there is empty serverResponse', () => {
       let result = spec.interpretResponse({ body: {} }, {});
-      assert.deepEqual(result, []);
-    });
-    it('should respond with empty response when sizes doesn\'t match', () => {
-      serverResponse.body[0].response = 'banner';
-      serverResponse.body[0].width = 100;
-      serverResponse.body[0].height = 150;
-
-      serverResponse.body = [serverResponse.body[0]];
-      bidRequest.bids = [bidRequest.bids[0]];
-      let result = spec.interpretResponse(serverResponse, bidRequest);
-
-      assert.equal(serverResponse.body.length, 1);
-      assert.equal(serverResponse.body[0].response, 'banner');
       assert.deepEqual(result, []);
     });
     it('should respond with empty response when response from server is not banner', () => {
@@ -166,12 +211,84 @@ describe('Adform adapter', () => {
         assert.equal(result[i].mediaType, expected[i]);
       }
     });
+
+    it('should set default netRevenue as gross', () => {
+      bidRequest.netRevenue = 'gross';
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i].netRevenue, false);
+      }
+    });
+
+    it('should set gdpr if it exist in bidRequest', () => {
+      bidRequest.gdpr = {
+        gdpr: true,
+        gdpr_consent: 'ERW342EIOWT34234KMGds'
+      };
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i].gdpr, true);
+        assert.equal(result[i].gdpr_consent, 'ERW342EIOWT34234KMGds');
+      };
+
+      bidRequest.gdpr = undefined;
+      result = spec.interpretResponse(serverResponse, bidRequest);
+      for (let i = 0; i < result.length; i++) {
+        assert.ok(!result[i].gdpr);
+        assert.ok(!result[i].gdpr_consent);
+      };
+    });
+
+    describe('verifySizes', () => {
+      it('should respond with empty response when sizes doesn\'t match', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 100;
+        serverResponse.body[0].height = 150;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(serverResponse.body.length, 1);
+        assert.equal(serverResponse.body[0].response, 'banner');
+        assert.deepEqual(result, []);
+      });
+      it('should respond with empty response when sizes as a strings doesn\'t match', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 100;
+        serverResponse.body[0].height = 150;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+
+        bidRequest.bids[0].sizes = [['101', '150']];
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(serverResponse.body.length, 1);
+        assert.equal(serverResponse.body[0].response, 'banner');
+        assert.deepEqual(result, []);
+      });
+      it('should support size dimensions as a strings', () => {
+        serverResponse.body[0].response = 'banner';
+        serverResponse.body[0].width = 300;
+        serverResponse.body[0].height = 600;
+
+        serverResponse.body = [serverResponse.body[0]];
+        bidRequest.bids = [bidRequest.bids[0]];
+
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        let result = spec.interpretResponse(serverResponse, bidRequest);
+
+        assert.equal(result[0].width, 300);
+        assert.equal(result[0].height, 600);
+      });
+    })
   });
 
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', priceType: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }];
+    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
@@ -226,6 +343,28 @@ describe('Adform adapter', () => {
         bidder: 'adform',
         bidderRequestId: '1ab8d9',
         params: params[2],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[4],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[3],
+        placementCode: placementCode[2],
+        sizes: [],
+        transactionId: '5f33781f-9552-7ev3'
+      },
+      {
+        adUnitCode: placementCode[4],
+        auctionId: '7aefb970-2045',
+        bidId: '2a0cf6n',
+        bidder: 'adform',
+        bidderRequestId: '1ab8d9',
+        params: params[4],
         placementCode: placementCode[2],
         sizes: [],
         transactionId: '5f33781f-9552-7ev3'
@@ -285,7 +424,8 @@ describe('Adform adapter', () => {
       bidder: 'adform',
       bids: bids,
       method: 'GET',
-      url: 'url'
+      url: 'url',
+      netRevenue: 'net'
     };
   });
 });
