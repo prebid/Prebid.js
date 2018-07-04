@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import {spec, masSizeOrdering, resetUserSync} from 'modules/rubiconBidAdapter';
+import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
@@ -215,7 +215,7 @@ describe('the rubicon adapter', () => {
       'p_aso.video.ext.skipdelay': 15,
       'playerHeight': 320,
       'playerWidth': 640,
-      'size_id': 201,
+      'size_id': 203,
       'aeParams': {
         'p_aso.video.ext.skip': '1',
         'p_aso.video.ext.skipdelay': '15'
@@ -1214,7 +1214,9 @@ describe('the rubicon adapter', () => {
             },
             params: {
               accountId: 1001,
-              video: {}
+              video: {
+                size_id: 201
+              }
             },
             sizes: [[300, 250]]
           }
@@ -1271,13 +1273,17 @@ describe('the rubicon adapter', () => {
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
         });
 
-        it('should not validate bid request when video is outstream', () => {
+        it('bid request is valid when video context is outstream', () => {
           createVideoBidderRequestOutstream();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+          const bidRequestCopy = clone(bidderRequest);
+
+          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
+          expect(request.data.slots[0].size_id).to.equal(203);
         });
 
         it('should get size from bid.sizes too', () => {
@@ -1377,12 +1383,12 @@ describe('the rubicon adapter', () => {
       describe('hasVideoMediaType', () => {
         it('should return true if mediaType is video and size_id is set', () => {
           createVideoBidderRequest();
-          const legacyVideoTypeBidRequest = spec.hasVideoMediaType(bidderRequest.bids[0]);
+          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(true);
         });
 
         it('should return false if mediaType is video and size_id is not defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(spec.isBidRequestValid({
             bid: 99,
             mediaType: 'video',
             params: {
@@ -1392,17 +1398,17 @@ describe('the rubicon adapter', () => {
         });
 
         it('should return false if bidRequest.mediaType is not equal to video', () => {
-          expect(spec.hasVideoMediaType({
+          expect(hasVideoMediaType({
             mediaType: 'banner'
           })).is.equal(false);
         });
 
         it('should return false if bidRequest.mediaType is not defined', () => {
-          expect(spec.hasVideoMediaType({})).is.equal(false);
+          expect(hasVideoMediaType({})).is.equal(false);
         });
 
         it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(hasVideoMediaType({
             mediaTypes: {
               video: {
                 context: 'instream'
@@ -1417,7 +1423,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', () => {
-          expect(spec.hasVideoMediaType({
+          expect(spec.isBidRequestValid({
             mediaTypes: {
               video: {
                 context: 'instream'
