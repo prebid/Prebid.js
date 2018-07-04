@@ -337,30 +337,4 @@ describe('AdxcgAdapter', () => {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('//cdn.adxcg.net/pb-sync.html')
     })
   })
-
-  /*
-  describe('copyOptProperty', () => {
-    let sourceData = {
-      'bidder': 'adxcg',
-      'params': {
-        'adzoneid': '1'
-      }
-    }
-
-    it('should copy data if available', () => {
-      let destData = {}
-
-      spec.copyOptProperty(sourceData, 'bidder', destData)
-      expect(destData.bidder).to.equal('adxcg')
-
-      spec.copyOptProperty(sourceData, 'bidder', destData, 'dstName')
-      expect(destData.dstName).to.equal('adxcg')
-
-      spec.copyOptProperty(sourceData, 'notfound', destData)
-      expect(destData.notfound).to.equal(null)
-
-      // copyOptProperty(bid.params, 'biddder', video, 'pos');
-    })
-  })
-  */
 })
