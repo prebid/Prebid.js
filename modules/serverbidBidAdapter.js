@@ -73,7 +73,7 @@ export const spec = {
 
     // These variables are used in creating the user sync URL.
     siteId = validBidRequests[0].params.siteId;
-    bidder = validBidRequests[0].params.bidder;
+    bidder = validBidRequests[0].bidder;
 
     const data = Object.assign({
       placements: [],
