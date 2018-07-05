@@ -91,5 +91,10 @@ module.exports = {
         return !(count < 2 || neverBundle.includes(path.basename(module.resource)))
       }
     })
-  ]
+  ],
+  // Webpack provide unwanted dependencies, tell explicitely not to bundle them (issues/194)
+  node: {
+    Buffer: false,
+    crypto: 'empty'
+  }
 };
