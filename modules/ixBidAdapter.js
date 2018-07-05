@@ -172,12 +172,13 @@ export const spec = {
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
-      // @TODO: This is written thinking mediaTypes are in use, had to alter a bit because they aren't
-      // If the bid request is for banner, then transform the bid request based on banner format
-      // if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') || validBidRequest.mediaType === 'banner') {
-      bannerImp = bidToBannerImp(validBidRequest);
-      bannerImps.push(bannerImp);
-      // }
+      // If the bid request is for banner, then transform the bid request based on banner format.
+      if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
+        validBidRequest.mediaType === 'banner' ||
+        (validBidRequest.mediaType === undefined && utils.deepAccess(validBidRequest, 'mediaTypes.banner') === undefined)) {
+        bannerImp = bidToBannerImp(validBidRequest);
+        bannerImps.push(bannerImp);
+      }
     }
 
     // Since bidderRequestId are the same for diffrent bid request, just use the first one
