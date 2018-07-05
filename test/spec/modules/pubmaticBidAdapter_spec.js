@@ -25,7 +25,8 @@ describe('PubMatic adapter', () => {
     		  lon: '23.7',
     		  wiid: '1234567890',
     		  profId: '100',
-    		  verId: '200'
+    		  verId: '200',
+          bidfloorcur: 'AUD'
         },
         placementCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
@@ -247,7 +248,159 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
   		});
+
+      it('Request params multi size format object check', () => {
+        let bidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              bidfloorcur: 'AUD'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          }
+        ];
+        /* case 1 - size passed in adslot */
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+
+        expect(data.imp[0].banner.w).to.equal(300); // width
+        expect(data.imp[0].banner.h).to.equal(250); // height
+
+        /* case 2 - size passed in adslot as well as in sizes array */
+        bidRequests[0].sizes = [[300, 600], [300, 250]];
+        request = spec.buildRequests(bidRequests);
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].banner.w).to.equal(300); // width
+        expect(data.imp[0].banner.h).to.equal(250); // height
+
+        /* case 3 - size passed in sizes but not in adslot */
+        bidRequests[0].params.adSlot = '/15671365/DMDemo';
+        bidRequests[0].sizes = [[300, 250], [300, 600]];
+        request = spec.buildRequests(bidRequests);
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].banner.w).to.equal(300); // width
+        expect(data.imp[0].banner.h).to.equal(250); // height
+        expect(data.imp[0].banner.format).exist.and.to.be.an('array').with.length.above(0);
+        expect(data.imp[0].banner.format[0].w).to.equal(300); // width
+        expect(data.imp[0].banner.format[0].h).to.equal(600); // height
+      });
+
+      it('Request params currency check', () => {
+        let multipleBidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              bidfloorcur: 'AUD'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          },
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              bidfloorcur: 'GBP'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          }
+        ];
+
+        /* case 1 -
+            bidfloorcur specified in both adunits
+            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.bidfloorcur
+
+        */
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+
+        /* case 2 -
+            bidfloorcur specified in only 1st adunit
+            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.bidfloorcur
+
+        */
+        delete multipleBidRequests[1].params.bidfloorcur;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+
+        /* case 3 -
+            kadfloor not specified in any adunit
+            output: imp[0] and imp[1] both use default currency - USD
+
+        */
+        delete multipleBidRequests[0].params.bidfloorcur;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
+        expect(data.imp[0].bidfloorcur).to.equal('USD');
+        expect(data.imp[1].bidfloorcur).to.equal('USD');
+
+        /* case 4 -
+            kadfloor not specified in 1st adunit but specified in 2nd adunit
+            output: imp[0] and imp[1] both use default currency - USD
+
+        */
+        multipleBidRequests[1].params.bidfloorcur = 'AUD';
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
+        expect(data.imp[0].bidfloorcur).to.equal('USD');
+        expect(data.imp[1].bidfloorcur).to.equal('USD');
+      });
 
       it('Request params check with GDPR Consent', () => {
         let bidRequest = {
@@ -391,11 +544,11 @@ describe('PubMatic adapter', () => {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
 
-  		it('invalid adslot', () => {
+  		/* it('invalid adslot', () => {
   		  bidRequests[0].params.adSlot = '/15671365/DMDemo';
   		  let request = spec.buildRequests(bidRequests);
   		  expect(request).to.equal(undefined);
-  		});
+  		}); */
   	});
 
     describe('Response checking', () => {

@@ -6,7 +6,7 @@ const constants = require('src/constants.json');
 const BIDDER_CODE = 'pubmatic';
 const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
@@ -84,7 +84,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -94,19 +94,28 @@ function _parseAdSlot(bid) {
   if (splits.length == 2) {
     bid.params.adUnitIndex = splits[1];
   }
+  // check if size is mentioned in sizes array. in that case do not check for @ in adslot
   splits = slot.split('@');
   if (splits.length != 2) {
-    utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
+    if (!(sizesArrayExists)) {
+      utils.logWarn('AdSlot Error: adSlot not in required format');
+      return;
+    }
   }
   bid.params.adUnit = splits[0];
-  splits = splits[1].split('x');
-  if (splits.length != 2) {
-    utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
+  if (splits.length > 1) { // i.e size is specified in adslot, so consider that and ignore sizes array
+    splits = splits[1].split('x');
+    if (splits.length != 2) {
+      utils.logWarn('AdSlot Error: adSlot not in required format');
+      return;
+    }
+    bid.params.width = parseInt(splits[0]);
+    bid.params.height = parseInt(splits[1]);
+    delete bid.sizes;
+  } else if (sizesArrayExists) {
+    bid.params.width = parseInt(bid.sizes[0][0]);
+    bid.params.height = parseInt(bid.sizes[0][1]);
   }
-  bid.params.width = parseInt(splits[0]);
-  bid.params.height = parseInt(splits[1]);
 }
 
 function _initConf() {
@@ -149,7 +158,7 @@ function _createOrtbTemplate(conf) {
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
-    cur: [CURRENCY],
+    cur: [DEFAULT_CURRENCY],
     imp: [],
     site: {
       page: conf.pageURL,
@@ -204,6 +213,7 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
 
   impObj = {
     id: bid.bidId,
@@ -212,7 +222,8 @@ function _createImpressionObject(bid, conf) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
-    }
+    },
+    bidfloorcur: bid.params.bidfloorcur ? _parseSlotParam('bidfloorcur', bid.params.bidfloorcur) : DEFAULT_CURRENCY
   };
 
   if (bid.params.hasOwnProperty('video')) {
@@ -244,6 +255,14 @@ function _createImpressionObject(bid, conf) {
       w: bid.params.width,
       h: bid.params.height,
       topframe: utils.inIframe() ? 0 : 1,
+    }
+    if (utils.isArray(sizes) && sizes.length > 1) {
+      sizes = sizes.splice(1);
+      var format = [];
+      sizes.forEach(size => {
+        format.push({w: size[0], h: size[1]});
+      });
+      bannerObj.format = format;
     }
     impObj.banner = bannerObj;
   }
@@ -290,22 +309,29 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
+    var bidCurrency = '';
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn('PubMatic: Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
       } else {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
-          utils.logWarn('PubMatic: Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
       }
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
+      if (bidCurrency === '') {
+        bidCurrency = bid.params.bidfloorcur || undefined;
+      } else if (bid.params.hasOwnProperty('bidfloorcur') && bidCurrency !== bid.params.bidfloorcur) {
+        utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
+      }
+      bid.params.bidfloorcur = bidCurrency
       payload.imp.push(_createImpressionObject(bid, conf));
     });
 
@@ -375,7 +401,7 @@ export const spec = {
               height: bid.h,
               creativeId: bid.crid || bid.id,
               dealId: bid.dealid,
-              currency: CURRENCY,
+              currency: DEFAULT_CURRENCY,
               netRevenue: NET_REVENUE,
               ttl: 300,
               referrer: utils.getTopWindowUrl(),
