@@ -171,7 +171,7 @@ export const spec = {
 
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
-      
+
       // If the bid request is for banner, then transform the bid request based on banner format.
       if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
         validBidRequest.mediaType === 'banner' ||
