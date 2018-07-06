@@ -1,8 +1,8 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { gdprDataHandler } from 'src/adaptermanager';
-import { BANNER } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import {gdprDataHandler} from 'src/adaptermanager';
+import {BANNER} from 'src/mediaTypes';
+import {config} from 'src/config';
 
 const BIDDER_CODE = 'zid';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
@@ -11,26 +11,54 @@ const STORE_UID_TIMEOUT_MS = 500;
 
 var domainIsOnWhiteListVar = false;
 var domainIsOnLabListVar = false;
+var countryOnWhiteListVar = false;
 
 let consent_string = '';
 let gdpr_applies = false;
 let uids = {};
 let storeUIDTimeoutHandler = null;
 
+var urlParams;
+
+var personaGroup;
+
+var mgcVal;
+
+var mgcValRnd = Math.floor(Math.random() * 100) + 1;
+
+if(mgcValRnd == 100){
+  mgcVal = true;
+}
+else{
+  mgcVal = false;
+}
+
+(window.onpopstate = function () {
+  var match,
+    pl     = /\+/g,  // Regex for replacing addition symbol with a space
+    search = /([^&=]+)=?([^&]*)/g,
+    decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+    query  = window.location.search.substring(1);
+
+  urlParams = {};
+  while (match = search.exec(query))
+    urlParams[decode(match[1])] = decode(match[2]);
+})();
+
 var samplingVal = Math.floor(Math.random() * 1000) + 1;
-var labVal = Math.floor(Math.random() * 100) + 1;
+var labVal = Math.floor(Math.random() * 10) + 1;
 
 
-var createCookie = function(name, value, days) {
+var createCookie = function (name, value, days) {
   var date, expires;
   if (days) {
     date = new Date();
-    date.setTime(date.getTime()+(days*24*60*60*1000));
-    expires = "; expires="+date.toGMTString();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toGMTString();
   } else {
     expires = "";
   }
-  document.cookie = name+"="+value + expires+"; path=/";
+  document.cookie = name + "=" + value + expires + "; path=/";
 };
 
 var getCookie = function (key) {
@@ -94,44 +122,167 @@ var domReady = function (callback) {
   }
 };
 
-var callAdsIfNotABot = function(adsObj){
-  var testFunc = function(){
+var callAdsIfNotABot = function (adsObj) {
+
+  var adsObj = adsObj;
+
+  //var testFunc = function(){
 
 
-    var bdy = document.getElementsByTagName("body")[0]; // body element
-    var newDiv = document.createElement("div");
+  var bdy = document.getElementsByTagName("body")[0]; // body element
+  var newDiv = document.createElement("div");
 
-    newDiv.id = "te";
-    bdy.appendChild(newDiv);
+  newDiv.id = "te";
+  bdy.appendChild(newDiv);
 
-    var isElementInDOM = document.getElementById("te");
+  var isElementInDOM = document.getElementById("te");
 
-    if(isElementInDOM){
-      return adsObj;
-    }
+  if (isElementInDOM) {
+    return adsObj;
+  }
+  //};
+
+  //var testVar = domReady(testFunc);
+  //var testVar = setTimeout(testFunc, 50);
+
+  //return testVar;
+  //return testFunc();
+
+};
+var setDomainIsOnWhiteListVar = function(whtList){
+
+  var domainIsOnWhiteList = false;
+
+
+  var locatshun = window.location.hostname;
+
+  var hasWWW = locatshun.indexOf("www.");
+
+  if (hasWWW != -1) {
+    var indexPOS = hasWWW + 4;
+    locatshun = locatshun.slice(indexPOS);
   }
 
-  //domReady(testFunc);
-  return testFunc();
+  var domainCheck = whtList.indexOf(locatshun);
+
+  if (domainCheck == -1) {
+    domainIsOnWhiteList = false;
+  }
+  else {
+    domainIsOnWhiteList = true;
+  }
+
+
+  if (domainIsOnWhiteList) {
+    createCookie("__wl", 1, 1);
+  }
+  else {
+    createCookie("__wl", 0, 1);
+  }
+
+  domainIsOnWhiteListVar = domainIsOnWhiteList;
 
 };
 
-var domainIsOnLabList = function(){
+var setDomainIsOnLabListVar = function(labList){
+
   var domainIsOnLabList = false;
-  var labList;
 
-  var isOnLLCookie = getCookie("__lb");
+  var locatshun = window.location.hostname;
 
-  if(typeof isOnLLCookie != "undefined"  && isOnLLCookie == "1"){
-    domainIsOnLabListVar = true;
+  var hasWWW = locatshun.indexOf("www.");
+
+  if (hasWWW != -1) {
+    var indexPOS = hasWWW + 4;
+    locatshun = locatshun.slice(indexPOS);
   }
-  else if(typeof isOnLLCookie == "undefined"){
 
+  var domainCheck = labList.indexOf(locatshun);
+
+  if (domainCheck == -1) {
+    domainIsOnLabList = false;
+  }
+  else {
+    domainIsOnLabList = true;
+  }
+
+
+  if (domainIsOnLabList) {
+    createCookie("__lb", 1, 1);
+  }
+  else {
+    createCookie("__lb", 0, 1);
+  }
+
+  domainIsOnLabListVar = domainIsOnLabList;
+
+};
+
+var setCountryOnWhiteListVar = function(countryWhiteList){
+
+
+  var locale = window.navigator.userLanguage || window.navigator.language;
+
+  if(urlParams.zid_testLocale){
+    locale = urlParams.zid_testLocale;
+  }
+
+  if (locale) {
+    //en-gb ----> en-GB
+    locale = locale.split("-");
+
+    locale = locale[1].toUpperCase();
+
+  }
+
+  var countryIsOnWhiteList = false;
+
+  var countryCheck = countryWhiteList.indexOf(locale);
+
+  if (countryCheck == -1) {
+    countryIsOnWhiteList = false;
+  }
+  else {
+    countryIsOnWhiteList = true;
+  }
+
+  if (countryIsOnWhiteList) {
+    createCookie("__cwl", 1, 1);
+  }
+  else {
+    createCookie("__cwl", 0, 1);
+  }
+
+  countryOnWhiteListVar = countryIsOnWhiteList;
+
+};
+
+
+var getDataProtectionModuleData = function () {
+  var moduleHasData = getCookie("__ds");
+
+  if (typeof moduleHasData != "undefined" && moduleHasData == "1") {
+
+    var isOnWhiteListCookie = getCookie("__wl");
+    var isOnLabListCookie = getCookie("__lb");
+    var isOnCountryWhiteListCookie = getCookie("__cwl");
+
+    if (typeof isOnWhiteListCookie != "undefined" && isOnWhiteListCookie == "1") {
+      domainIsOnWhiteListVar = true;
+    }
+    if (typeof isOnLabListCookie != "undefined" && isOnLabListCookie == "1") {
+      domainIsOnLabListVar = true;
+    }
+    if (typeof isOnCountryWhiteListCookie != "undefined" && isOnCountryWhiteListCookie == "1") {
+      countryOnWhiteListVar = true;
+    }
+  }
+  else if (typeof moduleHasData == "undefined") {
 
     var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 
-    jaxReq.open('GET', "https://cdn.zeroidtech.com/lab.txt");
-    jaxReq.setRequestHeader('Content-Type', 'text/plain');
+    jaxReq.open('GET', "https://cdn.zeroidtech.com/dt.json");
+    jaxReq.setRequestHeader('Content-Type', 'application/json');
     jaxReq.setRequestHeader('Accept', '*');
     jaxReq.setRequestHeader('Access-Control-Allow-Origin', '*');
 
@@ -139,44 +290,19 @@ var domainIsOnLabList = function(){
     jaxReq.onload = function () {
       //if (xhr.status === 200 && xhr.responseText !== newName) {
       if (jaxReq.status === 200) {
+        createCookie("__ds", 1, 1);
 
-        var response = jaxReq.responseText;
-        labList = response.split(',');
+        var response = JSON.parse(jaxReq.responseText);
 
-        var locatshun = window.location.hostname;
-
-        var hasWWW = locatshun.indexOf("www.");
-
-
-        if(hasWWW != -1){
-          var indexPOS = hasWWW + 4;
-          locatshun = locatshun.slice(indexPOS);
-
+        if (response.wl) {
+          setDomainIsOnWhiteListVar(response.wl);
         }
-
-        var domainCheck = labList.indexOf(locatshun);
-
-
-        if (domainCheck == -1){
-          domainIsOnLabList = false;
+        if (response.lbl) {
+          setDomainIsOnLabListVar(response.lbl);
         }
-        else{
-          domainIsOnLabList = true;
+        if (response.cwl) {
+          setCountryOnWhiteListVar(response.cwl);
         }
-
-
-
-        if(domainIsOnLabList){
-          createCookie("__lb", 1 , 1);
-        }
-        else{
-          createCookie("__lb", 0 , 1);
-        }
-
-        domainIsOnLabListVar = domainIsOnLabList;
-
-        //return domainIsOnLabList;
-
       }
       else if (jaxReq.status !== 200) {
       }
@@ -184,90 +310,10 @@ var domainIsOnLabList = function(){
 
     jaxReq.send();
 
-  }
+  };
 
 
 };
-
-
-var domainIsOnWhitelist = function(){
-  var domainIsOnWhiteList = false;
-  var whtList;
-
-  var isOnWLCookie = getCookie("__wl");
-
-
-  if(typeof isOnWLCookie != "undefined" && isOnWLCookie == "1"){
-    domainIsOnWhiteListVar = true;
-  }
-  else if(typeof isOnWLCookie == "undefined"){
-
-
-
-    var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-
-    jaxReq.open('GET', "https://cdn.zeroidtech.com/whitelist.txt");
-    jaxReq.setRequestHeader('Content-Type', 'text/plain');
-    jaxReq.setRequestHeader('Accept', '*');
-    jaxReq.setRequestHeader('Access-Control-Allow-Origin', '*');
-
-
-    jaxReq.onload = function (setWhiteListVal) {
-      //if (xhr.status === 200 && xhr.responseText !== newName) {
-      if (jaxReq.status === 200) {
-
-        var response = jaxReq.responseText;
-        var whtList = response.split(',');
-
-
-        var locatshun = window.location.hostname;
-
-        var hasWWW = locatshun.indexOf("www.");
-
-
-        if (hasWWW != -1) {
-          var indexPOS = hasWWW + 4;
-          locatshun = locatshun.slice(indexPOS);
-
-        }
-
-        var domainCheck = whtList.indexOf(locatshun);
-
-
-        if (domainCheck == -1) {
-          domainIsOnWhiteList = false;
-        }
-        else {
-          domainIsOnWhiteList = true;
-        }
-
-
-        if (domainIsOnWhiteList) {
-          createCookie("__wl", 1, 1);
-        }
-        else {
-          createCookie("__wl", 0, 1);
-          domainIsOnLabList();
-        }
-
-
-        domainIsOnWhiteListVar = domainIsOnWhiteList
-
-        //return domainIsOnWhiteList;
-
-      }
-      else if (jaxReq.status !== 200) {
-      }
-    };
-
-    jaxReq.send();
-  }
-
-
-
-};
-
-domainIsOnWhitelist();
 
 /**
  * Read a cookie from the first party domain
@@ -371,7 +417,7 @@ const setConsentData = function (consent) {
 const checkConsent = function (cb) {
   let paused = false;
 
-  (function check () {
+  (function check() {
     fetchGDPRConsent(function (consent) {
       if (consent || paused) {
         // consent exists or already paused - continue
@@ -381,7 +427,7 @@ const checkConsent = function (cb) {
         // no pre-existing consent - pause for consent
         paused = true;
 
-        setTimeout(function() {
+        setTimeout(function () {
           check();
         }, GDPR_CONSENT_TIMEOUT_MS);
       }
@@ -408,7 +454,8 @@ const findCMPFrame = function () {
   while (!cmpFrame) {
     try {
       if (f.frames.__cmpLocator) cmpFrame = f;
-    } catch (e) {}
+    } catch (e) {
+    }
     if (f === window.top) break;
     f = f.parent;
   }
@@ -429,7 +476,7 @@ const fetchGDPRConsent = function (cb) {
     }
   };
 
-  function receiveMessage (event) {
+  function receiveMessage(event) {
     let json = (typeof event.data === 'string' && event.data.includes('cmpReturn'))
       ? JSON.parse(event.data)
       : event.data;
@@ -476,7 +523,8 @@ const setChainIDTargeting = function (adUnitCode, chainID) {
         }
       });
     });
-  } catch (e) {}
+  } catch (e) {
+  }
 }
 
 const isBidRequestValid = function (bid) {
@@ -502,6 +550,7 @@ const generateID = function () {
 
 const buildRequests = function (validBidRequests, bidderRequest) {
   let domain = "delivery.h.switchadhub.com";
+  //let domain = "delivery.zidtech.com";
   let loadID = generateID();
 
   window.googletag = window.googletag || {};
@@ -519,8 +568,15 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
   let uids = readCookie('__SWU');
+
   if (uids === null) {
     uids = '';
+  }
+
+  //magic
+  if(isEU){
+    bidderRequest.gdprConsent.consentString = "";
+    bidderRequest.gdprConsent.gdprApplies = true;
   }
 
   let request = {
@@ -562,7 +618,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if(swid != "" && domainIsOnWhiteListVar){
+  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -574,22 +630,10 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if(labVal == 1 && swid != "" && domainIsOnLabListVar){
+  else if (domainIsOnLabListVar && labVal == 10 && countryOnWhiteListVar) {
     //else if(domainIsOnLabListVar){
 
-
-    /*        return {
-                method: 'POST',
-                url: "//" + domain + "/prebid",
-                data: JSON.stringify(request),
-                bidderRequest,
-                options: {
-                    contentType: 'text/plain',
-                    withCredentials: true
-                }
-            };*/
-
-    return callAdsIfNotABot({
+    return {
       method: 'POST',
       url: "//" + domain + "/prebid",
       data: JSON.stringify(request),
@@ -598,10 +642,10 @@ const buildRequests = function (validBidRequests, bidderRequest) {
         contentType: 'text/plain',
         withCredentials: true
       }
-    });
+    };
 
   }
-  else if(!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1){
+  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -615,6 +659,37 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
+}
+
+if(!getCookie('personaGroup')) { // check group id cookie
+
+  var personpersonaFile = Math.floor(Math.random() * 40) + 1;
+
+  var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+  xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.setRequestHeader('Accept', '*');
+  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+  xhr.send();
+  if (xhr.status === 200) {
+
+    var response = xhr.responseText;
+    var responseArray = response.split(",");
+    var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
+    var groupid = responseArray[randomIndex];
+
+    //sC(cN,'anonymousPersonaID', groupid);
+    createCookie('personaGroup', groupid,30);
+
+    personaGroup = groupid;
+
+  }
+  else if (xhr.status !== 200) {
+    //createCookie('personaGroup', '');
+  }
+}
+else{
+  personaGroup = getCookie('personaGroup');
 }
 
 const interpretResponse = function (serverResponse, originalBidRequest) {
@@ -709,7 +784,7 @@ const triggerSync = function () {
 
     if (readCookie("switch-synchronised") != "1") {
 
-      const sync = function() {
+      const sync = function () {
 
         if (window.swSyncDone) {
           return;
@@ -718,9 +793,14 @@ const triggerSync = function () {
         window.swSyncDone = true;
 
         let syncUri = "//delivery.h.switchadhub.com/sync";
+        let zidSyncUri = "//delivery.zidtech.com/sync";
+
 
         syncUri += `?consent_string=${consent_string}`;
         syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
+
+        zidSyncUri += `?consent_string=${consent_string}`;
+        zidSyncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
 
         let swid = readCookie('__SW');
         if (swid === null) {
@@ -728,9 +808,11 @@ const triggerSync = function () {
         }
 
         syncUri += `&swid=${swid}`;
+        zidSyncUri += `&swid=${swid}`;
 
         // do sync
         const iframe = document.createElement('iframe');
+        const syncIframe = document.createElement('iframe');
 
         document.body.appendChild(iframe);
 
@@ -742,13 +824,26 @@ const triggerSync = function () {
         iframe.setAttribute('width', '0');
         iframe.setAttribute('height', '0');
         iframe.src = syncUri;
+
+        document.body.appendChild(syncIframe);
+
+        syncIframe.setAttribute('seamless', 'seamless');
+        syncIframe.setAttribute('frameBorder', '0');
+        syncIframe.setAttribute('frameSpacing', '0');
+        syncIframe.setAttribute('scrolling', 'no');
+        syncIframe.setAttribute('style', 'border:none; padding: 0px; margin: 0px; position: absolute;');
+        syncIframe.setAttribute('width', '0');
+        syncIframe.setAttribute('height', '0');
+        syncIframe.src = zidSyncUri;
+
+
         const d = new Date();
         d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
         const expires = "expires=" + d.toUTCString();
-        document.cookie ="switch-synchronised=1;" + expires + ";path=/";
+        document.cookie = "switch-synchronised=1;" + expires + ";path=/";
       };
 
-      if(document.readyState === "complete" || document.readyState === "interactive") {
+      if (document.readyState === "complete" || document.readyState === "interactive") {
         sync();
       }
       else {
@@ -756,23 +851,28 @@ const triggerSync = function () {
           document.addEventListener("DOMContentLoaded", sync, false);
         }
         else if (document.attachEvent) {
-          document.attachEvent( "onreadystatechange", function(){
-            if(document.readyState === "complete") {
+          document.attachEvent("onreadystatechange", function () {
+            if (document.readyState === "complete") {
               sync();
             }
-          } );
+          });
         }
-        setTimeout(function(){
-          if(document.readyState === "complete" || document.readyState === "interactive") {
+        setTimeout(function () {
+          if (document.readyState === "complete" || document.readyState === "interactive") {
             sync();
           }
         }, 10);
       }
     }
-  } catch (e) {}
+  } catch (e) {
+  }
 };
 
-(function initSync () {
+
+getDataProtectionModuleData();
+
+
+(function initSync() {
   if (cmpExists()) {
     checkConsent(function () {
       triggerSync();
@@ -808,7 +908,7 @@ const handlePostMessage = function (message) {
   }
 };
 
-(function bindPostMessageHandlers () {
+(function bindPostMessageHandlers() {
   if (window.addEventListener) {
     window.addEventListener('message', handlePostMessage, false);
   }
