@@ -203,7 +203,12 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
-    if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+    const adapter = _bidderRegistry[bidderCode];
+    if (!adapter) {
+      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+    }
+
+    if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
@@ -230,7 +235,10 @@ exports.checkBidRequestSizes = (adUnits) => {
     if (mediaTypes && mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit.sizes = banner.sizes;
+        // make sure we always send [[h,w]] format
+        const normalizedSize = utils.getAdUnitSizes(adUnit);
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
       } else {
         utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
@@ -273,13 +281,11 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
   }
-
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
 
   let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
@@ -287,6 +293,10 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   }, [[], []]);
 
   if (serverBidRequests.length) {
+    const s2sAjax = ajaxBuilder(serverBidRequests[0].timeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, 's2s'),
+      done: requestCallbacks.done
+    } : undefined);
     let adaptersServerSide = _s2sConfig.bidders;
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
@@ -331,7 +341,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           serverBidRequests,
           addBidResponse,
           () => doneCbs.forEach(done => done()),
-          ajax
+          s2sAjax
         );
       }
     }
@@ -342,15 +352,15 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-      bidRequest.doneCbCallCount = 0;
-      let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, done, ajax);
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-    }
+    utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    bidRequest.doneCbCallCount = 0;
+    let done = doneCb(bidRequest.bidderRequestId);
+    let ajax = ajaxBuilder(clientBidRequests[0].timeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+      done: requestCallbacks.done
+    } : undefined);
+    adapter.callBids(bidRequest, addBidResponse, done, ajax);
   });
 }
 
@@ -387,12 +397,20 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 };
 
 exports.aliasBidAdapter = function (bidderCode, alias) {
-  var existingAlias = _bidderRegistry[alias];
+  let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
-    var bidAdaptor = _bidderRegistry[bidderCode];
+    let bidAdaptor = _bidderRegistry[bidderCode];
     if (typeof bidAdaptor === 'undefined') {
-      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
+      const s2sConfig = config.getConfig('s2sConfig');
+      const s2sBidders = s2sConfig && s2sConfig.bidders;
+
+      if (!(s2sBidders && includes(s2sBidders, alias))) {
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      } else {
+        exports.aliasRegistry[alias] = bidderCode;
+      }
     } else {
       try {
         let newAdapter;

@@ -123,7 +123,7 @@ function queueSync(bidderCodes, gdprConsent) {
 
   if (gdprConsent) {
     // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
-    if (gdprConsent.consentString) {
+    if (typeof gdprConsent.consentString !== 'undefined') {
       payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
     }
     // attempt to populate gdpr_consent if we know gdprApplies or it may apply
@@ -589,7 +589,7 @@ const OPEN_RTB_PROTOCOL = {
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
           const bidRequest = utils.getBidRequest(
-            this.bidMap[`${bid.impid}${seatbid.seat}`],
+            this.bidMap[`${bid.impid}${seatbid.seat}`].bid_id,
             bidderRequests
           );
 
@@ -704,11 +704,12 @@ export function PrebidServer() {
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done) {
     let result;
+    let bids = [];
 
     try {
       result = JSON.parse(response);
 
-      const bids = protocolAdapter().interpretResponse(
+      bids = protocolAdapter().interpretResponse(
         result,
         bidderRequests,
         requestedBidders
@@ -734,7 +735,13 @@ export function PrebidServer() {
       utils.logError('error parsing response: ', result.status);
     }
 
-    done();
+    const videoBid = bids.some(bidResponse => bidResponse.bid.mediaType === 'video');
+    const cacheEnabled = config.getConfig('cache.url');
+
+    // video bids with cache enabled need to be cached first before they are considered done
+    if (!(videoBid && cacheEnabled)) {
+      done();
+    }
     doClientSideSyncs(requestedBidders);
   }
 
