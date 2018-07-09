@@ -6,18 +6,16 @@ const BIDDER_CODE = 'districtmDMX';
 
 const DMXURI = 'https://dmx.districtm.io/b/v1';
 
-export class DistrictmDmxAdapter {
-  constructor() {
-    this.code = BIDDER_CODE;
-    this.supportedFormat = ['banner'];
-  }
+export const spec = {
+  code: BIDDER_CODE,
+  supportedFormat: ['banner'],
   isBidRequestValid(bid) {
     return !!(bid.params.dmxid && bid.params.memberid);
-  }
+  },
   interpretResponse(response, bidRequest) {
     response = response.body || {};
     if (response.seatbid) {
-      if (Array.isArray(response.seatbid)) {
+      if (utils.isArray(response.seatbid)) {
         const {seatbid} = response;
         let winners = seatbid.reduce((bid, ads) => {
           let ad = ads.bid.reduce(function(oBid, nBid) {
@@ -59,7 +57,7 @@ export class DistrictmDmxAdapter {
     } else {
       return [];
     }
-  }
+  },
   buildRequests(bidRequest, bidderRequest) {
     let timeout = config.getConfig('bidderTimeout');
     let dmxRequest = {
@@ -108,11 +106,10 @@ export class DistrictmDmxAdapter {
       },
       bidderRequest
     }
-  }
+  },
   test() {
     return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0;
-  }
-
+  },
   getUserSyncs(optionsType) {
     if (optionsType.iframeEnabled) {
       return [{
@@ -155,4 +152,4 @@ export function defaultSize(thebidObj) {
   returnObject.height = checkDeepArray(sizes)[1];
   return returnObject;
 }
-registerBidder(new DistrictmDmxAdapter());
+registerBidder(spec);

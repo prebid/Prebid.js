@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {DistrictmDmxAdapter, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDmxAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDmxAdapter';
 
 const bidRequest = [{
   'bidder': 'districtmDMX',
@@ -421,7 +421,7 @@ const emptyResponse = { body: {} };
 const emptyResponseSeatBid = { body: { seatbid: [] } };
 
 describe('DistrictM Adaptor', () => {
-  const districtm = new DistrictmDmxAdapter();
+  const districtm = spec;
   describe('All needed functions are available', () => {
     it(`isBidRequestValid is present and type function`, () => {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
