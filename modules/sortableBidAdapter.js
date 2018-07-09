@@ -6,15 +6,15 @@ import { REPO_AND_VERSION } from 'src/constants';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'c.deployads.com';
-const SORTABLE_ID = config.getConfig('sortableId');
+const SORTABLE_CONFIG = config.getConfig('sortable') || {};
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    const haveSiteId = !!config.getConfig('sortableId');
-    return !!(bid.params.tagId && (haveSiteId || bid.params.siteId) && bid.sizes &&
+    const haveSiteId = !!SORTABLE_CONFIG.siteId || bid.params.siteId;
+    return !!(bid.params.tagId && haveSiteId && bid.sizes &&
       bid.sizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(Number.isInteger)));
   },
 
@@ -50,7 +50,7 @@ export const spec = {
         page: loc.href,
         ref: utils.getTopWindowReferrer(),
         publisher: {
-          id: SORTABLE_ID || validBidReqs[0].params.siteId,
+          id: SORTABLE_CONFIG.siteId || validBidReqs[0].params.siteId,
         },
         device: {
           w: screen.width,
@@ -113,14 +113,15 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
-    let syncUrl = `//${SERVER_URL}/sync?f=html&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
+    const siteId = SORTABLE_CONFIG.siteId;
+    if (syncOptions.iframeEnabled && siteId) {
+      let syncUrl = `//${SERVER_URL}/sync?f=html&s=${siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
 
-    if (gdprConsent) {
-      syncurl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
+      if (gdprConsent) {
+        syncurl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
+        syncurl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
+      }
 
-    if (syncOptions.iframeEnabled && SORTABLE_ID) {
       return [{
         type: 'iframe',
         url: syncUrl

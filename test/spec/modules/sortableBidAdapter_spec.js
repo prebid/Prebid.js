@@ -15,7 +15,7 @@ describe('sortableBidAdapter', function() {
         'bidder': 'sortable',
         'params': {
           'tagId': '403370',
-          'siteId': 1,
+          'siteId': 'example.com',
           'keywords': {
             'key1': 'val1',
             'key2': 'val2'
@@ -65,7 +65,7 @@ describe('sortableBidAdapter', function() {
       'bidder': 'sortable',
       'params': {
         'tagId': '403370',
-        'siteId': 1,
+        'siteId': 'example.com',
         'keywords': {
           'key1': 'val1',
           'key2': 'val2'
@@ -91,8 +91,8 @@ describe('sortableBidAdapter', function() {
     });
 
     it('sends screen dimensions', () => {
-      expect(requestBody.site.device.w).to.equal(800);
-      expect(requestBody.site.device.h).to.equal(600);
+      expect(requestBody.site.device.w).to.equal(screen.width);
+      expect(requestBody.site.device.h).to.equal(screen.height);
     });
 
     it('includes the ad size in the bid request', () => {
@@ -105,7 +105,7 @@ describe('sortableBidAdapter', function() {
         {'name': 'key1', 'value': 'val1'},
         {'name': 'key2', 'value': 'val2'}
       ]);
-      expect(requestBody.site.publisher.id).to.equal(1);
+      expect(requestBody.site.publisher.id).to.equal('example.com');
       expect(requestBody.imp[0].tagid).to.equal('403370');
     });
   });
