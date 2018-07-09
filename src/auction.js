@@ -133,10 +133,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       try {
         _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
-        const bids = [_bidsReceived
+        const bids = _bidsReceived
           .filter(adUnitsFilter.bind(this, adUnitCodes))
-          .reduce(groupByPlacement, {})];
-        _callback.apply($$PREBID_GLOBAL$$, bids);
+          .reduce(groupByPlacement, {});
+        _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
