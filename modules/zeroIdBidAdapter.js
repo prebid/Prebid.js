@@ -9,6 +9,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GDPR_CONSENT_TIMEOUT_MS = 10000; // 10 seconds
 const STORE_UID_TIMEOUT_MS = 500;
 
+
 var domainIsOnWhiteListVar = false;
 var domainIsOnLabListVar = false;
 var countryOnWhiteListVar = false;
@@ -20,17 +21,18 @@ let storeUIDTimeoutHandler = null;
 
 var urlParams;
 
-var personaGroup;
+var personaGroup = "";
+var mgVal;
 
-var mgcVal;
+var samplingVal = Math.floor(Math.random() * 1000) + 1;
+var labVal = Math.floor(Math.random() * 10) + 1;
+var mgValRnd = Math.floor(Math.random() * 100) + 1;
 
-var mgcValRnd = Math.floor(Math.random() * 100) + 1;
-
-if(mgcValRnd == 100){
-  mgcVal = true;
+if(mgValRnd == 100){
+  mgVal = true;
 }
 else{
-  mgcVal = false;
+  mgVal = false;
 }
 
 (window.onpopstate = function () {
@@ -45,8 +47,7 @@ else{
     urlParams[decode(match[1])] = decode(match[2]);
 })();
 
-var samplingVal = Math.floor(Math.random() * 1000) + 1;
-var labVal = Math.floor(Math.random() * 10) + 1;
+
 
 
 var createCookie = function (name, value, days) {
@@ -122,12 +123,9 @@ var domReady = function (callback) {
   }
 };
 
-var callAdsIfNotABot = function (adsObj) {
+var isABot = function () {
 
-  var adsObj = adsObj;
-
-  //var testFunc = function(){
-
+  var isABot = true;
 
   var bdy = document.getElementsByTagName("body")[0]; // body element
   var newDiv = document.createElement("div");
@@ -138,17 +136,13 @@ var callAdsIfNotABot = function (adsObj) {
   var isElementInDOM = document.getElementById("te");
 
   if (isElementInDOM) {
-    return adsObj;
+    isABot = false;
   }
-  //};
 
-  //var testVar = domReady(testFunc);
-  //var testVar = setTimeout(testFunc, 50);
-
-  //return testVar;
-  //return testFunc();
+  return isABot;
 
 };
+
 var setDomainIsOnWhiteListVar = function(whtList){
 
   var domainIsOnWhiteList = false;
@@ -174,10 +168,10 @@ var setDomainIsOnWhiteListVar = function(whtList){
 
 
   if (domainIsOnWhiteList) {
-    createCookie("__wl", 1, 1);
+    createCookie("__wl", 1, 3);
   }
   else {
-    createCookie("__wl", 0, 1);
+    createCookie("__wl", 0, 3);
   }
 
   domainIsOnWhiteListVar = domainIsOnWhiteList;
@@ -208,15 +202,17 @@ var setDomainIsOnLabListVar = function(labList){
 
 
   if (domainIsOnLabList) {
-    createCookie("__lb", 1, 1);
+    createCookie("__lb", 1, 3);
   }
   else {
-    createCookie("__lb", 0, 1);
+    createCookie("__lb", 0, 3);
   }
 
   domainIsOnLabListVar = domainIsOnLabList;
 
 };
+
+
 
 var setCountryOnWhiteListVar = function(countryWhiteList){
 
@@ -247,10 +243,10 @@ var setCountryOnWhiteListVar = function(countryWhiteList){
   }
 
   if (countryIsOnWhiteList) {
-    createCookie("__cwl", 1, 1);
+    createCookie("__cwl", 1, 3);
   }
   else {
-    createCookie("__cwl", 0, 1);
+    createCookie("__cwl", 0, 3);
   }
 
   countryOnWhiteListVar = countryIsOnWhiteList;
@@ -290,7 +286,7 @@ var getDataProtectionModuleData = function () {
     jaxReq.onload = function () {
       //if (xhr.status === 200 && xhr.responseText !== newName) {
       if (jaxReq.status === 200) {
-        createCookie("__ds", 1, 1);
+        createCookie("__ds", 1, 3);
 
         var response = JSON.parse(jaxReq.responseText);
 
@@ -548,7 +544,14 @@ const generateID = function () {
   });
 }
 
+const isFacebookApp  = function() {
+  var ua = navigator.userAgent || navigator.vendor || window.opera;
+  return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1);
+}
+
 const buildRequests = function (validBidRequests, bidderRequest) {
+
+
   let domain = "delivery.h.switchadhub.com";
   //let domain = "delivery.zidtech.com";
   let loadID = generateID();
@@ -573,12 +576,6 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     uids = '';
   }
 
-  //magic
-  if(isEU){
-    bidderRequest.gdprConsent.consentString = "";
-    bidderRequest.gdprConsent.gdprApplies = true;
-  }
-
   let request = {
     loadID: loadID,
     switch_user_id: swid,
@@ -593,6 +590,27 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false
     }
   };
+
+  var isEU = false;
+  var isFB = false;
+
+  //magic
+  if(isEU){
+    bidderRequest.gdprConsent.consentString = "";
+    bidderRequest.gdprConsent.gdprApplies = true;
+  }
+
+  if(isFacebookApp()){
+    isFB = true;
+  }
+
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+
+  if(isFB){
+    var personaVal = getPersonaVal();
+    request.switch_user_id = personaVal;
+  }
 
   if ('__sw_start_time' in window) {
     request.loadTime = window.__sw_start_time;
@@ -617,8 +635,13 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       domain = bid.params.domain;
     }
   });
+  /*
+    console.log("swid : ", swid);
+    console.log("domainIsOnWhiteListVar : ", domainIsOnWhiteListVar);
+    console.log("countryOnWhiteListVar : ", countryOnWhiteListVar);
+    console.log("domainIsOnLabListVar : ", domainIsOnLabListVar);*/
 
-  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
+  if (isFB) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -630,8 +653,8 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if (domainIsOnLabListVar && labVal == 10 && countryOnWhiteListVar) {
-    //else if(domainIsOnLabListVar){
+
+  else  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
 
     return {
       method: 'POST',
@@ -643,8 +666,27 @@ const buildRequests = function (validBidRequests, bidderRequest) {
         withCredentials: true
       }
     };
+  }
+  else if (swid != "" && domainIsOnLabListVar && countryOnWhiteListVar) {
+
+    var isBot = isABot();
+
+    if(!isBot){
+      return {
+        method: 'POST',
+        url: "//" + domain + "/prebid",
+        data: JSON.stringify(request),
+        bidderRequest,
+        options: {
+          contentType: 'text/plain',
+          withCredentials: true
+        }
+      };
+    }
 
   }
+
+
   else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
     return {
       method: 'POST',
@@ -661,36 +703,91 @@ const buildRequests = function (validBidRequests, bidderRequest) {
 
 }
 
-if(!getCookie('personaGroup')) { // check group id cookie
+var getPersonaVal = function () {
+  if(!getCookie('personaGroup')) { // check group id cookie
 
-  var personpersonaFile = Math.floor(Math.random() * 40) + 1;
+    var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
-  var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-  xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.setRequestHeader('Accept', '*');
-  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.send();
-  if (xhr.status === 200) {
+    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    xhr.setRequestHeader('Accept', '*');
+    xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+    xhr.send();
+    if (xhr.status === 200) {
 
-    var response = xhr.responseText;
-    var responseArray = response.split(",");
-    var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
-    var groupid = responseArray[randomIndex];
+      var response = xhr.responseText;
+      var responseArray = response.split(",");
+      var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
+      var groupid = responseArray[randomIndex];
 
-    //sC(cN,'anonymousPersonaID', groupid);
-    createCookie('personaGroup', groupid,30);
+      //sC(cN,'anonymousPersonaID', groupid);
+      createCookie('personaGroup', groupid,30);
 
-    personaGroup = groupid;
+      personaGroup = groupid;
 
+    }
+    else if (xhr.status !== 200) {
+      //createCookie('personaGroup', '');
+    }
   }
-  else if (xhr.status !== 200) {
-    //createCookie('personaGroup', '');
+  else{
+    personaGroup = getCookie('personaGroup');
+  }
+
+  return personaGroup;
+};
+
+//load persona cookie on prebid load hook
+const loadPersonaGroupHook = function (config, nextFn) {
+  const context = this;
+  const args = arguments;
+
+  let swid = readCookie('__SW');
+
+  if (swid === null) {
+    swid = '';
+  }
+
+  if(isFacebookApp() && !getCookie('personaGroup') && swid === '') { // check group id cookie
+
+    var personpersonaFile = Math.floor(Math.random() * 40) + 1;
+
+    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    xhr.setRequestHeader('Accept', '*');
+    xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+    xhr.send();
+    if (xhr.status === 200) {
+
+      var response = xhr.responseText;
+      var responseArray = response.split(",");
+      var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
+      var groupid = responseArray[randomIndex];
+
+      //sC(cN,'anonymousPersonaID', groupid);
+      createCookie('personaGroup', groupid,30);
+
+      personaGroup = groupid;
+      //notify hook to continue
+      return nextFn.apply(context, args);
+
+    }
+    else if (xhr.status !== 200) {
+      return nextFn.apply(context, args);
+    }
+  }
+  else if(isFacebookApp()){
+    personaGroup = getCookie('personaGroup');
+    return nextFn.apply(context, args);
+  }
+  else {
+    //notify hook to continue always continue
+    return nextFn.apply(context, args);
   }
 }
-else{
-  personaGroup = getCookie('personaGroup');
-}
+
 
 const interpretResponse = function (serverResponse, originalBidRequest) {
   window.googletag.cmd.push(function () {
@@ -770,6 +867,7 @@ export const spec = {
 registerBidder(spec);
 
 $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
+$$PREBID_GLOBAL$$.requestBids.addHook(loadPersonaGroupHook, 50);
 
 /**
  *=============================== User Sync ====================================
