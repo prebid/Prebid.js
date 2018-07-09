@@ -1,3 +1,5 @@
+import { BANNER, NATIVE } from 'src/mediaTypes';
+
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
 const END_POINT = '//papi.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
@@ -184,6 +186,7 @@ function interpretResponse(serverResponse) {
 
 const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse
