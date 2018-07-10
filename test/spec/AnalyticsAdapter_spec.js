@@ -1,7 +1,6 @@
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
-import * as ajax from 'src/ajax';
 
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
