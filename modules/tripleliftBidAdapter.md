@@ -27,11 +27,6 @@ var adUnits = [{
            inventoryCode: 'forbes_main',
            floor: 1.009
         }
-    },{
-        bidder: 'appnexus',
-        params: {
-           placementId: '10433394'
-        }
     }]
 }, {
     code: 'banner-div-2',
@@ -47,11 +42,6 @@ var adUnits = [{
            inventoryCode: 'foodgawker',
            floor: 0.00
         }
-    },{
-        bidder: 'appnexus',
-        params: {
-           placementId: '10433394'
-        }
     }]
 }, {
     code: 'banner-div-3',
@@ -66,11 +56,6 @@ var adUnits = [{
         params: {
            inventoryCode: 'forbes_main',
            floor: 0
-        }
-    },{
-        bidder: 'appnexus',
-        params: {
-           placementId: '10433394'
         }
     }]
 }];
