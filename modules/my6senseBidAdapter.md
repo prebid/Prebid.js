@@ -22,7 +22,7 @@ Banner formats are supported.
         //     bids: [{
         //         bidder: 'my6sense',
         //             params: {
-        //                 key: 'mW3mLht0kMT',
+        //                 key: 'OAJJBW2LRYi2CxfhzqogkA',
         //                 pageUrl: '[PAGE_URL]',
         //                 zone: '[ZONE]',
         //                 dataView: ''
