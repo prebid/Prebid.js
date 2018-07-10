@@ -20,6 +20,7 @@
     "prebidServerBidAdapter",
     "pubmaticBidAdapter",
     "pulsepointBidAdapter",
+    "quantcastBidAdapter",
     "rhythmoneBidAdapter",
     "rubiconBidAdapter",
     "sekindoUMBidAdapter",
