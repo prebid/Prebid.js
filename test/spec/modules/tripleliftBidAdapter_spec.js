@@ -90,7 +90,7 @@ describe('triplelift adapter', () => {
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
       expect(url).to.match(/(?:lib=prebid)/)
       expect(url).to.match(/(?:prebid.version)/)
-      expect(url).to.match(/(?:fe=)/)
+      // expect(url).to.match(/(?:fe=)/) //
       expect(url).to.match(/(?:referrer)/)
     })
   });

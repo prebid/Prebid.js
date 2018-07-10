@@ -22,7 +22,7 @@ export const tripleliftAdapterSpec = {
 
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
-    tlCall = utils.tryAppendQueryString(tlCall, 'fe', _isFlashEnabled().toString());
+    // tlCall = utils.tryAppendQueryString(tlCall, 'fe', _isFlashEnabled().toString());
     tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
 
     if (bidderRequest && bidderRequest.timeout) {
@@ -125,16 +125,16 @@ function _buildResponseObject(bidderRequest, bid) {
   return bidResponse;
 }
 
-function _isFlashEnabled() {
-  let flash;
-  try {
-    flash = Boolean(new ActiveXObject('ShockwaveFlash.ShockwaveFlash'));
-  } catch (e) {
-    flash = navigator.mimeTypes &&
-      navigator.mimeTypes['application/x-shockwave-flash'] !== undefined &&
-      navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin ? 1 : 0
-  }
-  return flash ? 1 : 0;
-}
+// function _isFlashEnabled() {
+//   let flash;
+//   try {
+//     flash = Boolean(new ActiveXObject('ShockwaveFlash.ShockwaveFlash'));
+//   } catch (e) {
+//     flash = navigator.mimeTypes &&
+//       navigator.mimeTypes['application/x-shockwave-flash'] !== undefined &&
+//       navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin ? 1 : 0
+//   }
+//   return flash ? 1 : 0;
+// }
 
 registerBidder(tripleliftAdapterSpec);
