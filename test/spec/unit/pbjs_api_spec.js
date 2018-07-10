@@ -1091,6 +1091,7 @@ describe('Unit: Prebid Module', function () {
     let xhr;
     let adUnits;
     let clock;
+    let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
     let bids = [{
@@ -1140,7 +1141,12 @@ describe('Unit: Prebid Module', function () {
         ]
       }];
       let adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+      let auction = auctionModule.newAuction({
+        adUnits,
+        adUnitCodes,
+        callback: bidsBackHandlerStub,
+        cbTimeout: 2000
+      });
       let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
     });
@@ -1169,7 +1175,7 @@ describe('Unit: Prebid Module', function () {
 
       clock = sinon.useFakeTimers();
       let requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
+        bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
         adUnits: adUnits
       };
@@ -1181,6 +1187,9 @@ describe('Unit: Prebid Module', function () {
 
       clock.tick(1);
       assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
+
+      expect(bidsBackHandlerStub.getCall(0).args[1]).to.equal(true,
+        'bidsBackHandler should be called with timedOut=true');
     });
   })
 
