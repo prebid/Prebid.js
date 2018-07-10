@@ -6,19 +6,21 @@ import { REPO_AND_VERSION } from 'src/constants';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'c.deployads.com';
-const SORTABLE_CONFIG = config.getConfig('sortable') || {};
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    const haveSiteId = !!SORTABLE_CONFIG.siteId || bid.params.siteId;
+    const sortableConfig = config.getConfig('sortable');
+    const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
     return !!(bid.params.tagId && haveSiteId && bid.sizes &&
       bid.sizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(Number.isInteger)));
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
+    const sortableConfig = config.getConfig('sortable') || {};
+    const globalSiteId = sortableConfig.siteId;
     let loc = utils.getTopWindowLocation();
 
     const sortableImps = utils._map(validBidReqs, bid => {
@@ -50,7 +52,7 @@ export const spec = {
         page: loc.href,
         ref: utils.getTopWindowReferrer(),
         publisher: {
-          id: SORTABLE_CONFIG.siteId || validBidReqs[0].params.siteId,
+          id: globalSiteId || validBidReqs[0].params.siteId,
         },
         device: {
           w: screen.width,
@@ -113,9 +115,9 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
-    const siteId = SORTABLE_CONFIG.siteId;
-    if (syncOptions.iframeEnabled && siteId) {
-      let syncUrl = `//${SERVER_URL}/sync?f=html&s=${siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
+    const sortableConfig = config.getConfig('sortable');
+    if (syncOptions.iframeEnabled && sortableConfig && !!sortableConfig.siteId) {
+      let syncUrl = `//${SERVER_URL}/sync?f=html&s=${sortableConfig.siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
 
       if (gdprConsent) {
         syncurl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
