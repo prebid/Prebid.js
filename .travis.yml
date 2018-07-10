@@ -14,7 +14,7 @@ addons:
 before_install:
 - npm install -g gulp
 - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
-- export -f travis_wai
+- export -f travis_wait
 script: |-
   travis_wait
   if [[ ${TRAVIS_PULL_REQUEST} == "false" ]]; then
