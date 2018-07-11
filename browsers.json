@@ -62,21 +62,5 @@
     "browser_version": "8.0",
     "device": null,
     "os": "OS X"
-  },
-  "bs_ios_9": {
-    "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "9.1",
-    "browser": "iphone",
-    "device": "iPhone 6S",
-    "browser_version": null
-  },
-  "bs_ios_8": {
-    "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "8.3",
-    "browser": "iphone",
-    "device": "iPhone 6",
-    "browser_version": null
   }
 }
