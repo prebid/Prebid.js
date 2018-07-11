@@ -130,8 +130,8 @@ function getSize(sizes) {
 function getRequestData(bid) {
   let loc = utils.getTopWindowLocation();
   let global = (window.top) ? window.top : window;
-  let page = (bid.params.site.page) ? (bid.params.site.page) : (loc.href);
-  let ref = (bid.params.site.referrer) ? bid.params.site.referrer : utils.getTopWindowReferrer();
+  let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
+  let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : utils.getTopWindowReferrer();
   let bidData = {
     id: utils.generateUUID(),
     at: 2,
@@ -176,7 +176,7 @@ function getRequestData(bid) {
   if (bid.params.video.position) {
     bidData.imp[0].video.pos = bid.params.video.position
   }
-  if (bid.params.site.id) {
+  if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
   return bidData;

@@ -41,7 +41,7 @@ describe('LKQD Bid Adapter Test', () => {
   });
 
   describe('buildRequests', () => {
-    const ENDPOINT = 'https://ssp.lkqd.net/ad?';
+    const ENDPOINT = 'https://v.lkqd.net/ad';
     let bidRequests = [
       {
         'bidder': 'lkqd',
@@ -76,41 +76,57 @@ describe('LKQD Bid Adapter Test', () => {
     it('should populate available parameters', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('?pid=263');
-      expect(r1).to.contain('&sid=662921');
-      expect(r1).to.contain('&width=300');
-      expect(r1).to.contain('&height=250');
-      const r2 = requests[1].url;
-      expect(r2).to.contain('?pid=263');
-      expect(r2).to.contain('&sid=662921');
-      expect(r2).to.contain('&width=640');
-      expect(r2).to.contain('&height=480');
+      const r1 = requests[0].data;
+      expect(r1).to.have.property('pid');
+      expect(r1.pid).to.equal('263');
+      expect(r1).to.have.property('sid');
+      expect(r1.sid).to.equal('662921');
+      expect(r1).to.have.property('width');
+      expect(r1.width).to.equal(300);
+      expect(r1).to.have.property('height');
+      expect(r1.height).to.equal(250);
+      const r2 = requests[1].data;
+      expect(r2).to.have.property('pid');
+      expect(r2.pid).to.equal('263');
+      expect(r2).to.have.property('sid');
+      expect(r2.sid).to.equal('662921');
+      expect(r2).to.have.property('width');
+      expect(r2.width).to.equal(640);
+      expect(r2).to.have.property('height');
+      expect(r2.height).to.equal(480);
     });
 
     it('should not populate unspecified parameters', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('‌&contentid=[CONTENT_ID]');
-      expect(r1).to.contain('‌&contenttitle=[CONTENT_TITLE]');
-      expect(r1).to.contain('‌&contentlength=[CONTENT_LENGTH]');
-      expect(r1).to.contain('&height=250');
-      const r2 = requests[1].url;
-      expect(r2).to.contain('‌&contentid=[CONTENT_ID]');
-      expect(r2).to.contain('‌&contenttitle=[CONTENT_TITLE]');
-      expect(r2).to.contain('‌&contentlength=[CONTENT_LENGTH]');
-      expect(r2).to.contain('‌&contenturl=[CONTENT_URL]');
+      const r1 = requests[0].data;
+      expect(r1).to.not.have.property('dnt');
+      expect(r1).to.not.have.property('pageurl');
+      expect(r1).to.not.have.property('contentid');
+      expect(r1).to.not.have.property('contenttitle');
+      expect(r1).to.not.have.property('contentlength');
+      expect(r1).to.not.have.property('contenturl');
+      const r2 = requests[1].data;
+      expect(r2).to.not.have.property('dnt');
+      expect(r2).to.not.have.property('pageurl');
+      expect(r2).to.not.have.property('contentid');
+      expect(r2).to.not.have.property('contenttitle');
+      expect(r2).to.not.have.property('contentlength');
+      expect(r2).to.not.have.property('contenturl');
     });
 
     it('should handle single size request', () => {
       const requests = spec.buildRequests(bidRequest);
       expect(requests.length).to.equal(1);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('?pid=263');
-      expect(r1).to.contain('&sid=662921');
-      expect(r1).to.contain('&width=640');
-      expect(r1).to.contain('&height=480');
+      const r1 = requests[0].data;
+      expect(r1).to.have.property('pid');
+      expect(r1.pid).to.equal('263');
+      expect(r1).to.have.property('sid');
+      expect(r1.sid).to.equal('662921');
+      expect(r1).to.have.property('width');
+      expect(r1.width).to.equal(640);
+      expect(r1).to.have.property('height');
+      expect(r1.height).to.equal(480);
     });
 
     it('sends bid request to ENDPOINT via GET', () => {

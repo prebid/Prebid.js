@@ -1,4 +1,4 @@
-import { assert } from 'chai';
+import { expect } from 'chai';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 
@@ -10,74 +10,57 @@ const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
-  url: 'http://localhost:9999/src/adapters/analytics/libraries/example.js',
-  analyticsType: 'library',
-  global: 'ExampleAnalyticsGlobalObject',
-  handler: 'on'
+  url: 'http://localhost:9999/endpoint',
+  analyticsType: 'endpoint'
 };
-
-window[config.global] = () => {};
 
 describe(`
 FEATURE: Analytics Adapters API
   SCENARIO: A publisher enables analytics
-    GIVEN a global object \`window['testGlobal']\`
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
-  describe(`WHEN an event occurs that is to be tracked\n`, () => {
+  let xhr;
+  let requests;
+  let adapter;
+
+  beforeEach(() => {
+    xhr = sinon.useFakeXMLHttpRequest();
+    requests = [];
+    xhr.onCreate = (request) => requests.push(request);
+    adapter = new AnalyticsAdapter(config);
+  });
+
+  afterEach(() => {
+    xhr.restore();
+    adapter.disableAnalytics();
+  });
+
+  it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, () => {
     const eventType = BID_REQUESTED;
     const args = { some: 'data' };
-    const adapter = new AnalyticsAdapter(config);
-    var spyTestGlobal = sinon.spy(window, config.global);
 
     adapter.track({ eventType, args });
 
-    it(`THEN should call \`window.${config.global}\` function\n`, () => {
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
-    });
-    window[config.global].restore();
+    let result = JSON.parse(requests[0].requestBody);
+    expect(result).to.deep.equal({args: {some: 'data'}, eventType: 'bidRequested'});
   });
 
-  describe(`WHEN an event occurs before tracking library is available\n`, () => {
+  it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, () => {
     const eventType = BID_RESPONSE;
     const args = { wat: 'wot' };
-    const adapter = new AnalyticsAdapter(config);
 
-    window[config.global] = null;
-    events.emit(BID_RESPONSE, args);
+    events.emit(eventType, args);
+    adapter.enableAnalytics();
 
-    describe(`AND the adapter is then enabled\n`, () => {
-      window[config.global] = () => {};
-
-      var spyTestGlobal = sinon.spy(window, config.global);
-
-      adapter.enableAnalytics();
-
-      it(`THEN should queue the event first and then track it\n`, () => {
-        assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-        assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
-      });
-
-      adapter.disableAnalytics();
-      window[config.global].restore();
-    });
+    let result = JSON.parse(requests[0].requestBody);
+    expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
   });
 
   describe(`WHEN an event occurs after enable analytics\n`, () => {
-    var spyTestGlobal,
-      adapter;
-
     beforeEach(() => {
-      adapter = new AnalyticsAdapter(config);
-      spyTestGlobal = sinon.spy(window, config.global);
-
       sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
     });
 
     afterEach(() => {
-      adapter.disableAnalytics();
-      window[config.global].restore();
-
       events.getEvents.restore();
     });
 
@@ -88,8 +71,8 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
     });
 
     it('SHOULD call global when a adRenderFailed event occurs', () => {
@@ -99,8 +82,8 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
     });
 
     it('SHOULD call global when a bidRequest event occurs', () => {
@@ -110,8 +93,8 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'bidRequested'});
     });
 
     it('SHOULD call global when a bidResponse event occurs', () => {
@@ -121,8 +104,8 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'response'}, eventType: 'bidResponse'});
     });
 
     it('SHOULD call global when a bidTimeout event occurs', () => {
@@ -132,8 +115,8 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-      assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'timeout'}, eventType: 'bidTimeout'});
     });
 
     it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', () => {
@@ -144,7 +127,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      assert(spyTestGlobal.calledOnce === true);
+      expect(requests.length).to.equal(1);
     });
 
     describe(`AND sampling is enabled\n`, () => {
@@ -167,7 +150,9 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        assert(spyTestGlobal.called === true);
+        expect(requests.length).to.equal(1);
+        let result = JSON.parse(requests[0].requestBody);
+        expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
       });
 
       it(`THEN should disable analytics when random number is outside sample range`, () => {
@@ -178,7 +163,7 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        assert(spyTestGlobal.called === false);
+        expect(requests.length).to.equal(0);
       });
     });
   });
