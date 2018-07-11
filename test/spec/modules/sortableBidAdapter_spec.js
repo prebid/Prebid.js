@@ -66,6 +66,7 @@ describe('sortableBidAdapter', function() {
       'params': {
         'tagId': '403370',
         'siteId': 'example.com',
+        'floor': 0.21,
         'keywords': {
           'key1': 'val1',
           'key2': 'val2'
@@ -107,6 +108,7 @@ describe('sortableBidAdapter', function() {
       ]);
       expect(requestBody.site.publisher.id).to.equal('example.com');
       expect(requestBody.imp[0].tagid).to.equal('403370');
+      expect(requestBody.imp[0].bidfloor).to.equal(0.21);
     });
   });
 

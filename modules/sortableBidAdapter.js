@@ -32,6 +32,9 @@ export const spec = {
         },
         ext: {}
       };
+      if (bid.params.floor) {
+        rv.bidfloor = bid.params.floor;
+      }
       if (bid.params.keywords) {
         let keywords = utils._map(bid.params.keywords, (foo, bar) => ({name: bar, value: foo}));
         rv.ext.keywords = keywords;
@@ -48,7 +51,7 @@ export const spec = {
       id: utils.getUniqueIdentifierStr(),
       imp: sortableImps,
       site: {
-        domain: loc.host,
+        domain: loc.hostname,
         page: loc.href,
         ref: utils.getTopWindowReferrer(),
         publisher: {
