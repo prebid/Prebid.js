@@ -81,7 +81,7 @@ describe('sovrnBidAdapter', function() {
       }];
       const request = spec.buildRequests(ivBidRequests);
 
-      expect(request.data).to.contain('"iv":"vet"')
+      expect(request.url).to.contain('iv=vet')
     });
 
     it('sends gdpr info if exists', () => {

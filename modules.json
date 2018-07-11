@@ -1,8 +1,9 @@
 [
+  "consentManagement",
+
   "guAnalyticsAdapter",
 
   "appnexusBidAdapter",
-  "consentManagement",
   "improvedigitalBidAdapter",
   "ixBidAdapter",
   "prebidServerBidAdapter",

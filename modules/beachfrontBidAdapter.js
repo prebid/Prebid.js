@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.1';
+const ADAPTER_VERSION = '1.2';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -15,6 +15,8 @@ export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/
 
 export const VIDEO_TARGETING = ['mimes'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
+
+let appId = '';
 
 export const spec = {
   code: 'beachfront',
@@ -29,14 +31,16 @@ export const spec = {
     let videoBids = bids.filter(bid => isVideoBidValid(bid));
     let bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
+      appId = getVideoBidParam(bid, 'appId');
       requests.push({
         method: 'POST',
-        url: VIDEO_ENDPOINT + getVideoBidParam(bid, 'appId'),
+        url: VIDEO_ENDPOINT + appId,
         data: createVideoRequestData(bid, bidderRequest),
         bidRequest: bid
       });
     });
     if (bannerBids.length) {
+      appId = getBannerBidParam(bannerBids[0], 'appId');
       requests.push({
         method: 'POST',
         url: BANNER_ENDPOINT,
@@ -77,23 +81,56 @@ export const spec = {
         utils.logWarn(`No valid banner bids from ${spec.code} bidder`);
         return [];
       }
-      return response.map((bid) => {
-        let request = find(bidRequest, req => req.adUnitCode === bid.slot);
-        return {
-          requestId: request.bidId,
-          bidderCode: spec.code,
-          ad: bid.adm,
-          creativeId: bid.crid,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          mediaType: BANNER,
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 300
-        };
+      return response
+        .filter(bid => bid.adm)
+        .map((bid) => {
+          let request = find(bidRequest, req => req.adUnitCode === bid.slot);
+          return {
+            requestId: request.bidId,
+            bidderCode: spec.code,
+            ad: bid.adm,
+            creativeId: bid.crid,
+            cpm: bid.price,
+            width: bid.w,
+            height: bid.h,
+            mediaType: BANNER,
+            currency: 'USD',
+            netRevenue: true,
+            ttl: 300
+          };
+        });
+    }
+  },
+
+  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}) {
+    let syncs = [];
+    let { gdprApplies, consentString } = gdprConsent;
+    let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
+
+    if (bannerResponse) {
+      if (syncOptions.iframeEnabled) {
+        bannerResponse.body
+          .filter(bid => bid.sync)
+          .forEach(bid => {
+            syncs.push({
+              type: 'iframe',
+              url: bid.sync
+            });
+          });
+      }
+    } else if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `//sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: `//sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
       });
     }
+
+    return syncs;
   }
 };
 

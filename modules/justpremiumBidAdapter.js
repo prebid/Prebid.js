@@ -3,6 +3,7 @@ import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.1'
 const pixels = []
 
 export const spec = {
@@ -44,6 +45,11 @@ export const spec = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
+    }
+
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
     }
 
     const payloadString = JSON.stringify(payload)
