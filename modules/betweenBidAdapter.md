@@ -1,12 +1,15 @@
 # Overview
 
-Module Name: Example Bidder Adapter
+Module Name: Between Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@example.com
+Maintainer: info@betweendigital.com
 
 # Description
 
-Module that connects to Example's demand sources
+You can use this adapter to get a bid from betweendigital.
+
+About us : http://betweendigital.com
+
 
 # Test Parameters
 ```
@@ -17,7 +20,6 @@ Module that connects to Example's demand sources
                 {
                     bidder: "between",
                     params: {
-                        placementId: '12345',
                         w: 200,
                         h: 400,
                         s: 111

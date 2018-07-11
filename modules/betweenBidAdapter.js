@@ -13,7 +13,7 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId && bid.params.w && bid.params.h && bid.params.s);
+    return !!(bid.params.w && bid.params.h && bid.params.s);
   },
   /**
    * Make a server request from the list of BidRequests.
