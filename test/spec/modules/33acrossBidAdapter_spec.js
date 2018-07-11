@@ -404,43 +404,43 @@ describe('33acrossBidAdapter:', function () {
         expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
       });
     });
+  });
 
-    context('and register user sync', function() {
-      it('via the production endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
-        }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `${SYNC_ENDPOINT}&id=${this.ttxRequest.site.id}`;
+  describe('getUserSyncs', function() {
+    beforeEach(function() {
+      this.syncs = [
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+        },
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+        },
+      ];
+    });
 
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
-      });
-
-      it('via the test endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-
+    context('when iframe is not enabled', function() {
+      it('returns empty sync array', function() {
         this.sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
-            'syncUrl': 'https://foo.com/deb/v2?m=xch'
-          }
+          return  ['id1', 'id1', 'id2'];
+        });
+        const syncOptions = {};
+        expect(getUserSyncs(syncOptions)).to.deep.equal([]);
+      });
+    });
+
+    context('when iframe is enabled', function() {
+      it('returns sync array equal to number of unique siteIDs', function() {
+        this.sandbox.stub(config, 'getConfig').callsFake(() => {
+          return  ['id1', 'id1', 'id2'];
         });
 
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
-        }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `https://foo.com/deb/v2?m=xch&id=${this.ttxRequest.site.id}`;
-
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
+        const syncOptions = {
+          iframeEnabled: true
+        };
+        const syncs = getUserSyncs(syncOptions);
+        expect(syncs).to.deep.equal(this.syncs);
       });
     });
   });

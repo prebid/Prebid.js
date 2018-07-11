@@ -1,7 +1,7 @@
-import { userSync } from 'src/userSync'
+import { userSync } from 'src/userSync';
+import { uniques } from 'src/utils';
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const { config } = require('../src/config');
-
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
@@ -70,30 +70,24 @@ function _createServerRequest(bidRequest) {
   }
 }
 
+
+// Sync object will always be of type iframe for ttx
+function _createSync(siteId) {
+  const ttxSettings = config.getConfig('ttxSettings');
+  const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
+
+  return {
+    type: 'iframe',
+    url: `${syncUrl}&id=${siteId}`
+  }
+}
+
 function _getFormatSize(sizeArr) {
   return {
     w: sizeArr[0],
     h: sizeArr[1],
     ext: {}
   }
-}
-
-// Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
-// Sync type will always be 'iframe' for 33Across
-function _registerUserSyncs(requestData) {
-  let ttxRequest;
-  try {
-    ttxRequest = JSON.parse(requestData);
-  } catch (err) {
-    // No point in trying to register sync since the requisite data cannot be parsed.
-    return;
-  }
-  const ttxSettings = config.getConfig('ttxSettings');
-
-  let syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
-
-  syncUrl = `${syncUrl}&id=${ttxRequest.site.id}`;
-  userSync.registerSync('iframe', BIDDER_CODE, syncUrl);
 }
 
 function isBidRequestValid(bid) {
@@ -110,16 +104,13 @@ function isBidRequestValid(bid) {
 
 // NOTE: At this point, 33exchange only accepts request for a single impression
 function buildRequests(bidRequests) {
+  const siteIds = bidRequests.map(req=> req.params.siteId);
+  config.setConfig({ttxSiteIds: siteIds});
   return bidRequests.map(_createServerRequest);
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
 function interpretResponse(serverResponse, bidRequest) {
-  // Register user sync first
-  if (bidRequest && bidRequest.data) {
-    _registerUserSyncs(bidRequest.data);
-  }
-
   const bidResponses = [];
 
   // If there are bids, look at the first bid of the first seatbid (see NOTE above for assumption about ttx)
@@ -130,11 +121,23 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
+// Register one sync per unique guid
+function getUserSyncs(syncOptions) {
+  let syncs = [];
+  const uniqueSiteIds = config.getConfig('ttxSiteIds').filter(uniques);
+  if (syncOptions.iframeEnabled) {
+    syncs = uniqueSiteIds.map(_createSync);
+  }
+
+  return syncs;
+}
+
 const spec = {
   code: BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  getUserSyncs
 }
 
 registerBidder(spec);
