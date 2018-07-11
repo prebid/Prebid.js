@@ -15,7 +15,7 @@ export const spec = {
     const sortableConfig = config.getConfig('sortable');
     const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
     return !!(bid.params.tagId && haveSiteId && bid.sizes &&
-      bid.sizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(Number.isInteger)));
+      bid.sizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => utils.isNumber(num))));
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
