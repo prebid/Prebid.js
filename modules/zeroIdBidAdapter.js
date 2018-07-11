@@ -404,6 +404,7 @@ const storeUID = function (uid) {
 const setConsentData = function (consent) {
   consent_string = consent.consentData || '';
   gdpr_applies = consent.gdprApplies;
+
 };
 
 /**
@@ -551,10 +552,9 @@ const isFacebookApp  = function() {
 
 const buildRequests = function (validBidRequests, bidderRequest) {
 
-
-  let domain = "delivery.h.switchadhub.com";
-  //let domain = "delivery.zidtech.com";
+  let domain = "delivery.zidtech.com";
   let loadID = generateID();
+
 
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
@@ -591,13 +591,11 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   };
 
-  var isEU = false;
   var isFB = false;
+  var dat = __cmp('getConsentData',1);
 
-  //magic
-  if(isEU){
-    bidderRequest.gdprConsent.consentString = "";
-    bidderRequest.gdprConsent.gdprApplies = true;
+  if(dat && dat.gdprApplies && personaGroup != ""){
+    request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
   }
 
   if(isFacebookApp()){
@@ -635,26 +633,8 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       domain = bid.params.domain;
     }
   });
-  /*
-    console.log("swid : ", swid);
-    console.log("domainIsOnWhiteListVar : ", domainIsOnWhiteListVar);
-    console.log("countryOnWhiteListVar : ", countryOnWhiteListVar);
-    console.log("domainIsOnLabListVar : ", domainIsOnLabListVar);*/
 
-  if (isFB) {
-    return {
-      method: 'POST',
-      url: "//" + domain + "/prebid",
-      data: JSON.stringify(request),
-      bidderRequest,
-      options: {
-        contentType: 'text/plain',
-        withCredentials: true
-      }
-    };
-  }
-
-  else  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
+  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
 
     return {
       method: 'POST',
@@ -667,7 +647,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if (swid != "" && domainIsOnLabListVar && countryOnWhiteListVar) {
+  else if (isFB &&  domainIsOnLabListVar) {
 
     var isBot = isABot();
 
@@ -749,7 +729,9 @@ const loadPersonaGroupHook = function (config, nextFn) {
     swid = '';
   }
 
-  if(isFacebookApp() && !getCookie('personaGroup') && swid === '') { // check group id cookie
+  var dat = __cmp('getConsentData',1);
+
+  if((isFacebookApp() && !getCookie('personaGroup')) || (dat && dat.gdprApplies && !getCookie('personaGroup'))) { // check group id cookie
 
     var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
