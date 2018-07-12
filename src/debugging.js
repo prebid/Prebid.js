@@ -81,7 +81,7 @@ export function sessionLoader() {
   let overrides;
   try {
     if (!window.localStorage || !window.sessionStorage) throw "exception";
-    storage = window.sessionStorage || window.localStorage;
+    let storage = window.sessionStorage || window.localStorage;
     overrides = JSON.parse(storage.getItem(OVERRIDE_KEY));
   } catch (e) {
   }
