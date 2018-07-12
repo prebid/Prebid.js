@@ -4,6 +4,9 @@ import parse from 'url-parse';
 import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
 import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
+import * as utils from 'src/utils';
+import { config } from 'src/config';
+import { targeting } from 'src/targeting';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -105,6 +108,79 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+  });
+
+  describe('special targeting unit test', () => {
+    const allTargetingData = {
+      'hb_format': 'video',
+      'hb_source': 'client',
+      'hb_size': '640x480',
+      'hb_pb': '5.00',
+      'hb_adid': '2c4f6cc3ba128a',
+      'hb_bidder': 'testBidder2',
+      'hb_format_testBidder2': 'video',
+      'hb_source_testBidder2': 'client',
+      'hb_size_testBidder2': '640x480',
+      'hb_pb_testBidder2': '5.00',
+      'hb_adid_testBidder2': '2c4f6cc3ba128a',
+      'hb_bidder_testBidder2': 'testBidder2',
+      'hb_format_appnexus': 'video',
+      'hb_source_appnexus': 'client',
+      'hb_size_appnexus': '640x480',
+      'hb_pb_appnexus': '5.00',
+      'hb_adid_appnexus': '44e0b5f2e5cace',
+      'hb_bidder_appnexus': 'appnexus'
+    };
+    let targetingStub;
+
+    before(() => {
+      targetingStub = sinon.stub(targeting, 'getAllTargeting');
+      targetingStub.returns({'video1': allTargetingData});
+
+      config.setConfig({
+        enableSendAllBids: true
+      });
+    });
+
+    after(() => {
+      config.resetConfig();
+      targetingStub.restore();
+    });
+
+    it('should include all adserver targeting in cust_params if pbjs.enableSendAllBids is true', () => {
+      const adUnitsCopy = utils.deepClone(adUnit);
+      adUnitsCopy.bids.push({
+        'bidder': 'testBidder2',
+        'params': {
+          'placementId': '9333431',
+          'video': {
+            'skipppable': false,
+            'playback_methods': ['auto_play_sound_off']
+          }
+        }
+      });
+
+      const bidCopy = Object.assign({ }, bid);
+      bidCopy.adserverTargeting = {
+        hb_adid: 'ad_id',
+      };
+
+      const url = parse(buildDfpVideoUrl({
+        adUnit: adUnitsCopy,
+        bid: bidCopy,
+        params: {
+          'iu': 'my/adUnit'
+        }
+      }));
+      const queryObject = parseQS(url.query);
+      const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+      expect(customParams).to.have.property('hb_adid', 'ad_id');
+      expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+      expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+      expect(customParams).to.have.property('hb_bidder_appnexus', 'appnexus');
+      expect(customParams).to.have.property('hb_bidder_testBidder2', 'testBidder2');
+    });
   });
 
   it('should merge the user-provided cust_params with the default ones', () => {

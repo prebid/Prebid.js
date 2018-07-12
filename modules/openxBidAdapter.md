@@ -21,6 +21,7 @@ Module that connects to OpenX's demand sources
                 {
                     bidder: 'openx',
                     params: {
+                        placementId: '/123/abcdefg'
                         unit: '539439964',
                         delDomain: 'se-demo-d.openx.net'
                     }
@@ -46,3 +47,10 @@ Module that connects to OpenX's demand sources
         }
     ];
 ```
+
+
+# Links
+[Banner Ads](https://docs.openx.com/Content/developers/containers/prebid-adapter.html)
+
+[Video Ads](https://docs.openx.com/Content/developers/containers/prebid-video-adapter.html)
+

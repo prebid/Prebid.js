@@ -42,7 +42,6 @@ export const spec = {
         page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
-    if (iv) sovrnBidReq.iv = iv;
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       sovrnBidReq.regs = {
@@ -55,9 +54,13 @@ export const spec = {
         }};
     }
 
+    let url = `//ap.lijit.com/rtb/bid?` +
+        `src=${REPO_AND_VERSION}`;
+    if (iv) url += `&iv=${iv}`;
+
     return {
       method: 'POST',
-      url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
+      url: url,
       data: JSON.stringify(sovrnBidReq),
       options: {contentType: 'text/plain'}
     };
