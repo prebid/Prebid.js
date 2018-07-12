@@ -44,8 +44,8 @@ export const spec = {
     };
 
     const options = {
-      contentType: 'application/json',
-      withCredentials: false
+      contentType: 'text/plain',
+      withCredentials: true
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
