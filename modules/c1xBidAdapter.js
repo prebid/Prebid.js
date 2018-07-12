@@ -50,23 +50,19 @@ export const c1xAdapter = {
       compress: 'gzip'
     }
 
-    if (pixelId) {
-      pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
-      userSync.registerSync('image', BIDDER_CODE, pixelUrl);
-    }
-
     // for GDPR support
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload['consent_string'] = bidderRequest.gdprConsent.consentString;
       payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true'
       ;
-      if (pixelUrl) {
-        pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-        pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
-      }
     }
 
     if (pixelId) {
+      pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
+      if(payload.consent_required) {
+        pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
+      }
       userSync.registerSync('image', BIDDER_CODE, pixelUrl);
     }
 
