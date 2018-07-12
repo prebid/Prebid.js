@@ -34,10 +34,11 @@ describe('bid overrides', () => {
     });
 
     it('should happen when configuration found in sessionStorage', () => {
-      sessionLoader({
-        getItem: () => ('{"enabled": true}')
-      });
+      const stub = sinon.stub(global.window.sessionStorage, 'getItem');
+      stub.returns('{"enabled": true}');
+      sessionLoader();
       expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      stub.reset();
     });
 
     it('should not throw if sessionStorage is inaccessible', () => {

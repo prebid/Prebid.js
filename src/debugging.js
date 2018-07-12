@@ -77,9 +77,11 @@ export function getConfig(debugging) {
 }
 config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 
-export function sessionLoader(storage = window.sessionStorage) {
+export function sessionLoader() {
   let overrides;
   try {
+    if (!window.localStorage || !window.sessionStorage) throw "exception";
+    let storage = window.sessionStorage || window.localStorage;
     overrides = JSON.parse(storage.getItem(OVERRIDE_KEY));
   } catch (e) {
   }
