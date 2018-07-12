@@ -43,11 +43,6 @@ export const spec = {
       imp: bidRequests.map(mapImpression)
     };
 
-    const options = {
-      contentType: 'text/plain',
-      withCredentials: true
-    };
-
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
@@ -58,7 +53,6 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: JSON.stringify(payload),
-      options,
       bidderRequest
     };
   },
