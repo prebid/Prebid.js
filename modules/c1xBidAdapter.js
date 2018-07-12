@@ -59,7 +59,7 @@ export const c1xAdapter = {
 
     if (pixelId) {
       pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
-      if(payload.consent_required) {
+      if (payload.consent_required) {
         pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
       }
