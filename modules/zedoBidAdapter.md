@@ -2,7 +2,7 @@
 
 Module Name: ZEDO Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: 
+Maintainer: prebidsupport@zedo.com
 
 # Description
 
@@ -18,7 +18,7 @@ Module that connects to ZEDO's demand sources.
                 {
                     bidder: 'zedo',
                     params: {
-                        code: 2264002816
+                        code: 2264004118
                     }
                 }
             ]
