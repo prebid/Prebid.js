@@ -80,7 +80,6 @@ describe('AdxcgAdapter', () => {
     it('creates a valid adxcg request url', () => {
       let request = spec.buildRequests([bid])
       expect(request).to.exist
-      
       expect(request.method).to.equal('GET')
       let parsedRequestUrl = url.parse(request.url)
       expect(parsedRequestUrl.hostname).to.equal('hbp.adxcg.net')
