@@ -61,8 +61,6 @@ describe('AdxcgAdapter', () => {
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
       simpleVideo.params.mimes = 'bad type'
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
-      // delete simpleVideo.params.mimes
-      // expect(spec.isBidRequestValid(simpleVideo)).to.be.true
     })
   })
 
@@ -82,11 +80,9 @@ describe('AdxcgAdapter', () => {
     it('creates a valid adxcg request url', () => {
       let request = spec.buildRequests([bid])
       expect(request).to.exist
-      // console.log('IS:' + JSON.stringify(request));
-
+      
       expect(request.method).to.equal('GET')
       let parsedRequestUrl = url.parse(request.url)
-
       expect(parsedRequestUrl.hostname).to.equal('hbp.adxcg.net')
       expect(parsedRequestUrl.pathname).to.equal('/get/adi')
 
