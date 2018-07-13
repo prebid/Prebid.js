@@ -100,6 +100,12 @@ export const spec = {
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'pixel',
+        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+      }];
+    }
   }
 }
 
