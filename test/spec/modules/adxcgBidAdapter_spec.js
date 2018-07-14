@@ -56,7 +56,6 @@ describe('AdxcgAdapter', () => {
       const simpleVideo = JSON.parse(JSON.stringify(bidVideo))
       simpleVideo.params.adzoneid = 123
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
-      // simpleVideo.params.site_id = siteId;
       simpleVideo.params.mimes = [1, 2, 3]
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
       simpleVideo.params.mimes = 'bad type'
