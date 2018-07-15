@@ -8,9 +8,10 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.1';
+const BIDDER_VERSION = '2.1.2';
 
 let shouldSendBoPixel = true;
+
 export function resetBoPixel() {
   shouldSendBoPixel = true;
 }
@@ -19,6 +20,10 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner) {
+      return !!((bidRequest.params.unit || bidRequest.params.placementId) && bidRequest.params.delDomain);
+    }
+
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
   },
   buildRequests: function (bidRequests, bidderRequest) {
@@ -48,14 +53,14 @@ export const spec = {
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function(syncOptions, responses) {
+  getUserSyncs: function (syncOptions, responses) {
     if (syncOptions.iframeEnabled) {
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
-                utils.deepAccess(responses, '0.body.pixels') ||
-                '//u.openx.net/w/1.0/pd';
+        utils.deepAccess(responses, '0.body.pixels') ||
+        '//u.openx.net/w/1.0/pd';
       return [{
         type: 'iframe',
-        url: url,
+        url: url
       }];
     }
   }
@@ -214,14 +219,22 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 }
 
 function buildOXBannerRequest(bids, bidderRequest) {
-  let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
-
-  queryParams.auid = utils._map(bids, bid => bid.params.unit).join(',');
-  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
-  queryParams.bc = bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
-
   let customParamsForAllBids = [];
   let hasCustomParam = false;
+  let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
+  let auids = utils._map(bids, bid => bid.params.unit);
+  let pids = utils._map(bids, bid => bid.params.placementId);
+  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
+  queryParams.bc = bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
+  queryParams.divs = utils._map(bids, bid => bid.adUnitCode).join(',');
+
+  if (auids.some(auid => auid)) {
+    queryParams.auid = auids.join(',');
+  }
+  if (pids.some(pid => pid)) {
+    queryParams.pids = pids.join(',');
+  }
+
   bids.forEach(function (bid) {
     if (bid.params.customParams) {
       let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
