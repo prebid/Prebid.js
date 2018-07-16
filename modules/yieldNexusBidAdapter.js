@@ -1,0 +1,157 @@
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
+
+const pixKey = 'utrk';
+
+function startsWith(str, search) {
+  return str.substr(0, search.length) === search;
+}
+
+export const spec = {
+  code: 'yieldnexus',
+  aliases: [],
+  supportedMediaTypes: ['banner', 'video'],
+
+  isBidRequestValid: function(bid) {
+    if (!bid.params.spid) {
+      return false;
+    } else if (typeof bid.params.spid !== 'string') {
+      return false;
+    }
+    return (typeof bid.params.instl === 'undefined' || bid.params.instl === 0 || bid.params.instl === 1) &&
+           (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'number') &&
+           (typeof bid.params['protocols'] === 'undefined' || Array.isArray(bid.params['protocols'])) &&
+           (typeof bid.params['adpos'] === 'undefined' || typeof bid.params['adpos'] === 'number');
+  },
+
+  buildRequests: function(validBidRequests, bidderRequest) {
+    return validBidRequests.map(bidRequest => {
+      let referrer = '';
+      try {
+        referrer = window.top.document.referrer;
+      } catch (e) {
+        try {
+          referrer = window.document.referrer;
+        } catch (e) {
+        }
+      }
+      const url = utils.getTopWindowUrl();
+      const domainStart = url.indexOf('://') + 3;
+      const req = {
+        id: bidRequest.auctionId,
+        site: {
+          domain: url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart)),
+          page: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
+          ref: referrer
+        },
+        device: {
+          ua: navigator.userAgent
+        },
+        imp: [],
+        ext: {}
+      };
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        req.ext.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
+      let topFrame;
+      try {
+        topFrame = window.top === window ? 1 : 0;
+      } catch (e) {
+        topFrame = 0;
+      }
+      const imp = {
+        id: bidRequest.transactionId,
+        instl: bidRequest.params.instl === 1 ? 1 : 0,
+        tagid: bidRequest.adUnitCode,
+        bidfloor: bidRequest.params.bidfloor || 0,
+        bidfloorcur: 'USD',
+        secure: startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
+      };
+      if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {
+        imp.banner = {
+          w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
+          h: bidRequest.sizes.length ? bidRequest.sizes[0][1] : 250,
+          pos: bidRequest.params.pos || 0,
+          topframe: topFrame
+        };
+      } else if (bidRequest.mediaTypes.video) {
+        imp.video = {
+          w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
+          h: bidRequest.sizes.length ? bidRequest.sizes[0][1] : 250,
+          protocols: bidRequest.params.protocols || [1, 2, 3, 4, 5, 6],
+          pos: bidRequest.params.pos || 0,
+          topframe: topFrame
+        };
+      } else {
+        return;
+      }
+      req.imp.push(imp);
+      return {
+        method: 'POST',
+        url: `https://ssp.ynxs.io/r/${bidRequest.params.spid}/bidr?bidder=prebid&rformat=open_rtb` + (bidRequest.params.query ? '&' + bidRequest.params.query : ''),
+        data: req,
+        bidRequest
+      };
+    });
+  },
+
+  interpretResponse: function(serverResponse, bidRequest) {
+    const outBids = [];
+    if (serverResponse && serverResponse.body) {
+      const bids = serverResponse.body.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
+      bids.forEach(bid => {
+        const outBid = {
+          requestId: bidRequest.bidRequest.bidId,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          ttl: 15 * 60,
+          creativeId: bid.crid,
+          netRevenue: true,
+          currency: bid.cur || serverResponse.body.cur
+        };
+        if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
+          outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
+        } else if (bidRequest.bidRequest.mediaTypes.video) {
+          outBids.push(Object.assign({}, outBid, { mediaType: 'video', vastUrl: bid.ext.vast_url, vastXml: bid.adm }));
+        }
+      });
+    }
+    return outBids;
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
+    const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
+    serverResponses.forEach(resp => {
+      if (resp.body) {
+        const bidResponse = resp.body;
+        if (bidResponse.ext && Array.isArray(bidResponse.ext[pixKey])) {
+          bidResponse.ext[pixKey].forEach(pixel => syncs.push({ type: pixel.type, url: pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix) }));
+        }
+        if (Array.isArray(bidResponse.seatbid)) {
+          bidResponse.seatbid.forEach(seatBid => {
+            if (Array.isArray(seatBid.bid)) {
+              seatBid.bid.forEach(bid => {
+                if (bid.ext && Array.isArray(bid.ext[pixKey])) {
+                  bid.ext[pixKey].forEach(pixel => syncs.push({ type: pixel.type, url: pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix) }));
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+    return syncs;
+  },
+
+  onTimeout: function(data) {
+    // no-op
+  }
+};
+registerBidder(spec);
