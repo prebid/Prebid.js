@@ -1838,12 +1838,27 @@ describe('Unit: Prebid Module', function () {
 
       // mark the bid and verify the state has changed to RENDERED
       const winningBid = targeting.getWinningBids(adUnitCode)[0];
-      $$PREBID_GLOBAL$$.markWinningBidAsUsed(adUnitCode);
+      $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: winningBid.adId });
       const markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode)
         .bids
         .find(bid => bid.adId === winningBid.adId);
 
       expect(markedBid.status).to.equal(RENDERED);
+      resetAuction();
+    });
+
+    it('try and mark the winning bid, but fail because we supplied the wrong adId', () => {
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
+      auction.getBidsReceived = function() { return bidsReceived.bids };
+
+      const winningBid = targeting.getWinningBids(adUnitCode)[0];
+      $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
+      const markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode)
+        .bids
+        .find(bid => bid.adId === winningBid.adId);
+
+      expect(markedBid.status).to.not.equal(RENDERED);
       resetAuction();
     });
   });
