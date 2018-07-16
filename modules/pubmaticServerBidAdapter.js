@@ -160,43 +160,36 @@ function mandatoryParamCheck(paramName, paramValue) {
   return true;
 }
 
-function cookieSyncCallBack(gdprConsent) {
-  return function (response, XMLReqObj) {
-    response = JSON.parse(response);
-    let serverResponse;
-    let syncOptions = {
-      iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-      pixelEnabled: config.getConfig('userSync.pixelEnabled')
-    };
-    // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
-    if (response.hasOwnProperty('bidder_status')) {
-      serverResponse = response.bidder_status;
-    }
-    serverResponse.forEach(bidder => {
-      if (bidder.usersync && bidder.usersync.url) {
-      // Attaching GDPR Consent Params in UserSync urls
-        if (gdprConsent) {
-          bidder.usersync.url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-          bidder.usersync.url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-        }
-        if (bidder.usersync.type === IFRAME) {
-          if (syncOptions.iframeEnabled) {
-            userSync.registerSync(IFRAME, bidder.bidder, bidder.usersync.url);
-          } else {
-            utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
-          }
-        } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
-          if (syncOptions.pixelEnabled) {
-            userSync.registerSync(IMAGE, bidder.bidder, bidder.usersync.url);
-          } else {
-            utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
-          }
-        } else {
-          utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
-        }
-      }
-    });
+function cookieSyncCallBack(response, XMLReqObj) {
+  response = JSON.parse(response);
+  let serverResponse;
+  let syncOptions = {
+    iframeEnabled: config.getConfig('userSync.iframeEnabled'),
+    pixelEnabled: config.getConfig('userSync.pixelEnabled')
+  };
+  // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
+  if (response.hasOwnProperty('bidder_status')) {
+    serverResponse = response.bidder_status;
   }
+  serverResponse.forEach(bidder => {
+    if (bidder.usersync && bidder.usersync.url) {
+      if (bidder.usersync.type === IFRAME) {
+        if (syncOptions.iframeEnabled) {
+          userSync.registerSync(IFRAME, bidder.bidder, bidder.usersync.url);
+        } else {
+          utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
+        }
+      } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
+        if (syncOptions.pixelEnabled) {
+          userSync.registerSync(IMAGE, bidder.bidder, bidder.usersync.url);
+        } else {
+          utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
+        }
+      } else {
+        utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
+      }
+    }
+  });
 }
 
 function logAllErrors(errors) {
@@ -358,7 +351,13 @@ export const spec = {
       uuid: UUID,
       bidders: bidders
     };
-    ajax.ajax(COOKIE_SYNC, cookieSyncCallBack(gdprConsent), JSON.stringify(data), {
+
+    if (gdprConsent) {
+      data['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
+      data['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {
       withCredentials: true,
       customHeaders: {
         'Access-Control-Allow-Origin': '*',
