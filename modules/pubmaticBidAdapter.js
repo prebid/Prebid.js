@@ -317,7 +317,7 @@ export const spec = {
       if (bidCurrency === '') {
         bidCurrency = bid.params.bidfloorcur || undefined;
       } else if (bid.params.hasOwnProperty('bidfloorcur') && bidCurrency !== bid.params.bidfloorcur) {
-        utils.logWarn('PubMatic: Currency specifier ignored. Only one currency permitted.');
+        utils.logWarn(BIDDER_CODE + ': Multiple currency specifiers will not be considered. Currency specified in the first adunit will only be considered.');
       }
       bid.params.bidfloorcur = bidCurrency
       payload.imp.push(_createImpressionObject(bid, conf));
