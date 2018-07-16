@@ -152,7 +152,7 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
           dealId: serverBid.dealid
         };
         if (!serverBid.w && !serverBid.h) {
-          bidResponse.vastXml = decodeURIComponent(serverBid.adm);
+          bidResponse.vastXml = serverBid.adm;
           bidResponse.mediaType = VIDEO;
           bidResponse.adResponse = {
             content: bidResponse.vastXml,
