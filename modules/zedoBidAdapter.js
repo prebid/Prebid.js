@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'zedo';
@@ -48,14 +48,15 @@ export const spec = {
         channel: channel,
         width: dims[0][0] ? dims[0][0] : 468,
         height: dims[0][1] ? dims[0][1] : 60,
-        dimension: dims[0][2] ? dims[0][2] : 9, // TODO : check default
+        dimension: dims[0][2] ? dims[0][2] : 0, // default to 0
         version: '$prebid.version$',
+        keyword: '',
         transactionId: bidRequest.transactionId
       }
       const videoMediaType = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`);
       if (bidRequest.mediaType === VIDEO || videoMediaType) {
         placement['renderers'] = [{
-          'name': 'Inarticle'
+          'name': 'Pre/Mid/Post roll'
         }]
       } else {
         placement['renderers'] = [{
@@ -123,9 +124,10 @@ function getCreative(ad) {
  * @return Bid
  */
 function newBid(serverBid, creativeBid, bidderRequest) {
+  let prShr = (parseInt(creativeBid.cpm) * 0.7) / 1000000;
   const bid = {
     requestId: serverBid.slotId,
-    cpm: creativeBid.cpm,
+    cpm: prShr,
     creativeId: creativeBid.adId,
     dealId: 99999999,
     currency: 'USD',
@@ -133,7 +135,7 @@ function newBid(serverBid, creativeBid, bidderRequest) {
     ttl: 300
   };
 
-  if (creativeBid.creativeDetails.type === 'Vast') {
+  if (creativeBid.creativeDetails.type === 'VAST') {
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
@@ -162,6 +164,8 @@ function getSizes(requestSizes) {
     let dim = SIZE[sizeObj.width + 'x' + sizeObj.height];
     if (dim) {
       dims.push([sizeObj.width, sizeObj.height, dim]);
+    } else {
+      dims.push([sizeObj.width, sizeObj.height, 0]);
     }
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
@@ -170,15 +174,19 @@ function getSizes(requestSizes) {
       sizeObj.width = parseInt(size[0], 10);
       sizeObj.height = parseInt(size[1], 10);
       let dim = SIZE[sizeObj.width + 'x' + sizeObj.height];
-      dims.push([sizeObj.width, sizeObj.height, dim]);
+      if (dim) {
+        dims.push([sizeObj.width, sizeObj.height, dim]);
+      } else {
+        dims.push([sizeObj.width, sizeObj.height, 0]);
+      }
     }
   }
   return dims;
 }
 
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
+function parseMediaType(creativeBid) {
+  const adType = creativeBid.creativeDetails.type;
+  if (adType === 'VAST') {
     return VIDEO;
   } else {
     return BANNER;

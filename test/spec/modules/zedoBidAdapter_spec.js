@@ -44,7 +44,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmb.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":250,"dimension":9,"version":"$prebid.version$","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":250,"dimension":9,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
     it('should properly build a channelCode request for video', () => {
@@ -68,7 +68,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmb.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Pre/Mid/Post roll"}]}]}');
     });
   });
   describe('interpretResponse', () => {
@@ -139,7 +139,7 @@ describe('The ZEDO bidding adapter', () => {
                     'type': 'StdBanner',
                     'adContent': '<a href="some_path"></a>'
                   },
-                  'cpm': '1.2'
+                  'cpm': '1200000'
                 }
               ]
             }
@@ -159,7 +159,7 @@ describe('The ZEDO bidding adapter', () => {
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('ad1d762');
-      expect(bids[0].cpm).to.equal('1.2');
+      expect(bids[0].cpm).to.equal(0.84);
       expect(bids[0].width).to.equal('160');
       expect(bids[0].height).to.equal('600');
     });
