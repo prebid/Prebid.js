@@ -531,13 +531,13 @@ function parseSizes(bid) {
   let params = bid.params;
   if (hasVideoMediaType(bid)) {
     let size = [];
-    if (typeof utils.deepAccess(bid, 'mediaTypes.video.playerSize') !== 'undefined') {
-      size = bid.mediaTypes.video.playerSize;
-    } else if (params.video && params.video.playerWidth && params.video.playerHeight) {
+    if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
       ];
+    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+      size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
     }
