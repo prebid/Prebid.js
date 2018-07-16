@@ -1,12 +1,12 @@
 import * as utils from 'src/utils';
-// import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER } from 'src/mediaTypes';
 const BIDDER_CODE = 'uol';
 const ENDPOINT_URL = 'https://prebid.adilligo.com/v1/prebid.json';
 const UOL_LOG_HEADER = 'UOL Bidder Error: '
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner'], // not required since it is default
+  supportedMediaTypes: [BANNER], // not required since it is default
   aliases: ['uol'], // short code
   /**
     * Determines whether or not the given bid request is valid.
@@ -19,10 +19,6 @@ export const spec = {
     if (bid.params) {
       if (!bid.params.placementId) {
         utils.logError(UOL_LOG_HEADER + 'Param placementId was not defined for bidID ' + bid.bidId);
-        isValid = false;
-      }
-      if (typeof bid.params.syncEnabled != 'undefined' && typeof bid.params.syncEnabled != 'boolean') {
-        utils.logError(UOL_LOG_HEADER + 'Invalid param definition for syncEnabled on bidID ' + bid.bidId);
         isValid = false;
       }
       if (typeof bid.params.cpmFactor != 'undefined' && !bid.params.test) {
@@ -98,22 +94,17 @@ export const spec = {
      */
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.iframeEnabled && serverResponses.body.trackingPixel) {
-      syncs.push({
-        type: 'iframe',
-        url: serverResponses.body.trackingPixel
-      });
+    if (syncOptions.iframeEnabled) {
+      for (var index = 0; index < serverResponses.length; index++) {
+        if (serverResponses[index].body && serverResponses[index].body.trackingPixel) {
+          syncs.push({
+            type: 'iframe',
+            url: serverResponses[index].body.trackingPixel
+          });
+        }
+      }
     }
     return syncs;
-  },
-
-  /**
-    * Register bidder specific code, which will execute if bidder timed out after an auction
-    * @param {data} Containing timeout specific data
-    */
-  onTimeout: function(data) {
-    // Bidder specifc code
-    return true;
   }
 }
 
@@ -174,13 +165,12 @@ function getUserCoordinates() {
         permission.state === 'granted'
           ? navigator.geolocation.getCurrentPosition(pos => resolve(pos.coords))
           : resolve(null)
-      ), error => reject(error));
+      ));
 }
 
 function extractCustomParams(data) {
   var params = {
-    placementId: data.placementId,
-    syncEnabled: data.syncEnabled || false
+    placementId: data.placementId
   }
   if (data.test) {
     params.test = data.test;

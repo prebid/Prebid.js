@@ -26,13 +26,6 @@ describe('UOL Bid Adapter', () => {
 
       delete clonedBid.params;
       clonedBid.params = {
-        'placementId': '19571276',
-        'syncEnabled': true
-      }
-      expect(spec.isBidRequestValid(clonedBid)).to.equal(true);
-
-      delete clonedBid.params;
-      clonedBid.params = {
         'placementId': '19571277',
         'test': 'true'
       }
@@ -58,13 +51,6 @@ describe('UOL Bid Adapter', () => {
       delete clonedBid.params;
       clonedBid.params = {
         'placementId': 0
-      }
-      expect(spec.isBidRequestValid(clonedBid)).to.equal(false);
-
-      delete clonedBid.params;
-      clonedBid.params = {
-        'placementId': '19571280',
-        'syncEnabled': 'no'
       }
       expect(spec.isBidRequestValid(clonedBid)).to.equal(false);
 
@@ -304,26 +290,23 @@ describe('UOL Bid Adapter', () => {
 
   describe('getUserSyncs', () => {
     let syncOptions = { iframeEnabled: true };
-    let serverResponse = { body: { trackingPixel: 'https://www.uol.com.br' } };
+    let serverResponses = [{ body: { trackingPixel: 'https://www.uol.com.br' } }, { body: { trackingPixel: 'http://www.dynad.net/' } }];
 
-    it('should return a single sync param for iframeEnabled bids with a trackingPixel response', () => {
-      expect(spec.getUserSyncs(syncOptions, serverResponse)).to.have.length(1);
+    it('should return the two sync params for iframeEnabled bids with a trackingPixel response', () => {
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.have.length(2);
     })
 
-    it('should not return any sync param if iframe is disabled or no trackingPixel is received', () => {
+    it('should not return any sync params if iframe is disabled or no trackingPixel is received', () => {
       let cloneOptions = Object.assign({}, syncOptions);
       delete cloneOptions.iframeEnabled;
-      expect(spec.getUserSyncs(cloneOptions, serverResponse)).to.have.length(0);
+      expect(spec.getUserSyncs(cloneOptions, serverResponses)).to.have.length(0);
 
-      let cloneResponse = Object.assign({}, serverResponse);
-      delete cloneResponse.body.trackingPixel;
-      expect(spec.getUserSyncs(syncOptions, cloneResponse)).to.have.length(0);
+      let cloneResponses = Object.assign({}, serverResponses);
+      delete cloneResponses[0].body.trackingPixel;
+      delete cloneResponses[1].body.trackingPixel;
+      expect(spec.getUserSyncs(syncOptions, cloneResponses)).to.have.length(0);
 
-      expect(spec.getUserSyncs(cloneOptions, cloneResponse)).to.have.length(0);
+      expect(spec.getUserSyncs(cloneOptions, cloneResponses)).to.have.length(0);
     })
   });
-
-  describe('onTimeout', () => {
-    expect(spec.onTimeout()).to.be.true;
-  })
 });
