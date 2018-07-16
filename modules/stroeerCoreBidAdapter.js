@@ -158,7 +158,9 @@ export const spec = {
       ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2
     };
 
-    if (bidderRequest.gdprConsent) {
+    const gdprConsent = bidderRequest.gdprConsent;
+
+    if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
       payload.gdpr = {
         consent: bidderRequest.gdprConsent.consentString,
         applies: bidderRequest.gdprConsent.gdprApplies

@@ -417,6 +417,25 @@ describe('stroeerCore bid adapter', function () {
             assert.propertyVal(actualGdpr, 'consent', sample.consentString);
           });
         });
+
+        const skippableGdprSamples = [
+          {consentString: null, gdprApplies: true}, //
+          {consentString: 'UGluZyBQb25n', gdprApplies: null}, //
+          {consentString: null, gdprApplies: null}, //
+          {consentString: undefined, gdprApplies: true}, //
+          {consentString: 'UGluZyBQb25n', gdprApplies: undefined}, //
+          {consentString: undefined, gdprApplies: undefined}];
+        skippableGdprSamples.forEach((sample) => {
+          it(`should not add GDPR info ${JSON.stringify(sample)} when one or more values are missing`, () => {
+            const bidderRequest = buildBidderRequest();
+            bidderRequest.gdprConsent = sample;
+
+            const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            const actualGdpr = serverRequestInfo.data.gdpr;
+            assert.isUndefined(actualGdpr);
+          });
+        });
       });
     });
   });
