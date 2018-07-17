@@ -612,8 +612,20 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @alias module:pbjs.markWinningBidAsUsed
 */
 $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
-  const bids = targeting.getWinningBids(markBidRequest.adUnitCode);
-  if (bids.length > 0 && bids[0].adId === markBidRequest.adId) {
+  let bids = [];
+
+  if (markBidRequest.adUnitCode && markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+  } else if (markBidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+  } else if (markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+  } else {
+    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+  }
+
+  if (bids.length > 0) {
     bids[0].status = RENDERED;
   }
 };
