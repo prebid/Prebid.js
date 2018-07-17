@@ -8,6 +8,8 @@ Maintainer: prebidsupport@zedo.com
 
 Module that connects to ZEDO's demand sources.
 
+For video integration, ZEDO returns content as vastXML and requires the publisher to define the cache url in config passed to Prebid for it to be valid in the auction
+
 # Test Parameters
 ```
     var adUnits = [
@@ -19,6 +21,7 @@ Module that connects to ZEDO's demand sources.
                     bidder: 'zedo',
                     params: {
                         code: 2264004118
+                        dimId: 9
                     }
                 }
             ]

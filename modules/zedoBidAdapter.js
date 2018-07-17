@@ -6,10 +6,10 @@ import find from 'core-js/library/fn/array/find';
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmb.json';
 const SECURE_URL = '//z2.zedo.com/asw/fmb.json';
-const SIZE = {
-  '300x250': 9,
-  '160x600': 88,
-  '640x480': 85 // TODO check for 1x1
+const RENDERER_TYPE = {
+  '9': 'display',
+  '88': 'display',
+  '85': 'Pre/Mid/Post roll',
 };
 
 export const spec = {
@@ -24,7 +24,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.channelCode);
+    return !!(bid.params && bid.params.channelCode && bid.params.dimId);
   },
 
   /**
@@ -41,24 +41,24 @@ export const spec = {
       let channelCode = parseInt(bidRequest.params.channelCode);
       let network = parseInt(channelCode / 1000000);
       let channel = channelCode % 1000000;
-      let dims = getSizes(bidRequest.sizes);
+      let dim = getSizes(bidRequest.sizes);
       let placement = {
         id: bidRequest.bidId,
         network: network,
         channel: channel,
-        width: dims[0][0] ? dims[0][0] : 468,
-        height: dims[0][1] ? dims[0][1] : 60,
-        dimension: dims[0][2] ? dims[0][2] : 0, // default to 0
+        width: dim[0],
+        height: dim[1],
+        dimension: bidRequest.params.dimId,
         version: '$prebid.version$',
         keyword: '',
         transactionId: bidRequest.transactionId
       }
-      const videoMediaType = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`);
-      if (bidRequest.mediaType === VIDEO || videoMediaType) {
+      let renderName = RENDERER_TYPE[String(bidRequest.params.dimId)]
+      if (renderName) {
         placement['renderers'] = [{
-          'name': 'Pre/Mid/Post roll'
+          'name': renderName
         }]
-      } else {
+      } else { // default to display
         placement['renderers'] = [{
           'name': 'display'
         }]
@@ -106,8 +106,10 @@ export const spec = {
 
   getUserSyncs: function (syncOptions) {
     if (syncOptions.iframeEnabled) {
+      let url = utils.getTopWindowLocation().protocol === 'http:' ? 'http://d3.zedo.com/rs/us/fcs.html' : 'https://tt3.zedo.com/rs/us/fcs.html';
       return [{
-        // TODO implement user sync
+        type: 'iframe',
+        url: url
       }];
     }
   }
@@ -143,10 +145,17 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       ttl: 3600
     });
   } else {
+    let tracker = '';
+    if (creativeBid.trackingData && creativeBid.trackingData.impressionTrackers) {
+      let trackerArr = creativeBid.trackingData.impressionTrackers;
+      for (let i in trackerArr) {
+        tracker = tracker + '<img src=' + trackerArr[i] + '/>';
+      }
+    }
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
-      ad: creativeBid.creativeDetails.adContent
+      ad: creativeBid.creativeDetails.adContent + tracker
     });
   }
 
@@ -154,34 +163,21 @@ function newBid(serverBid, creativeBid, bidderRequest) {
 }
 /* Turn bid request sizes into ut-compatible format */
 function getSizes(requestSizes) {
-  let dims = [];
-  let sizeObj = {};
-
+  let width = 0;
+  let height = 0;
   if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
     !utils.isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    let dim = SIZE[sizeObj.width + 'x' + sizeObj.height];
-    if (dim) {
-      dims.push([sizeObj.width, sizeObj.height, dim]);
-    } else {
-      dims.push([sizeObj.width, sizeObj.height, 0]);
-    }
+    width = parseInt(requestSizes[0], 10);
+    height = parseInt(requestSizes[1], 10);
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
       let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      let dim = SIZE[sizeObj.width + 'x' + sizeObj.height];
-      if (dim) {
-        dims.push([sizeObj.width, sizeObj.height, dim]);
-      } else {
-        dims.push([sizeObj.width, sizeObj.height, 0]);
-      }
+      width = parseInt(size[0], 10);
+      height = parseInt(size[1], 10);
+      break;
     }
   }
-  return dims;
+  return [width, height];
 }
 
 function parseMediaType(creativeBid) {

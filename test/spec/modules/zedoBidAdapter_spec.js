@@ -16,6 +16,7 @@ describe('The ZEDO bidding adapter', () => {
         bidder: 'zedo',
         params: {
           channelCode: 20000000,
+          dimId: 9
         },
       };
       const isValid = spec.isBidRequestValid(bid);
@@ -37,6 +38,7 @@ describe('The ZEDO bidding adapter', () => {
           sizes: [[300, 250]],
           params: {
             channelCode: 20000000,
+            dimId: 9
           },
         },
       ];
@@ -61,6 +63,7 @@ describe('The ZEDO bidding adapter', () => {
           },
           params: {
             channelCode: 20000000,
+            dimId: 85
           },
         },
       ];
@@ -115,6 +118,7 @@ describe('The ZEDO bidding adapter', () => {
           bidId: 'test-bidId',
           params: {
             channelCode: 2000000,
+            dimId: 9
           }
         }]
       };
@@ -152,7 +156,8 @@ describe('The ZEDO bidding adapter', () => {
           adUnitCode: 'test-requestId',
           bidId: 'test-bidId',
           params: {
-            zoneId: 123,
+            channelCode: 2000000,
+            dimId: 9
           },
         }]
       };
