@@ -358,11 +358,7 @@ export const spec = {
     }
 
     ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {
-      withCredentials: true,
-      customHeaders: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true
-      }
+      withCredentials: true
     });
     return urls;
   }
