@@ -224,6 +224,12 @@ function parseBidResponse(bid) {
       if (typeof fn === 'function') {
         return Number(fn('USD'));
       }
+      // use bidCpmAdjustment
+      let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
+      let cpmAdjustment = bidder_settings[bid.bidder]["bidCpmAdjustment"] || bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]["bidCpmAdjustment"];
+      if (typeof cpmAdjustment !== 'undefined' !) {
+        return Number(bid.cpm/cpmAdjustment(1));
+       }
       // TODO: throw error or something if not USD and currency module wasn't present?
     },
     'dealId',
