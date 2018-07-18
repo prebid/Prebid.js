@@ -51,9 +51,11 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
           }
         }
       };
-      x.ontimeout = function () {
-        utils.logError('  xhr timeout after ', x.timeout, 'ms');
-      };
+
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      // x.ontimeout = function () {
+      //   utils.logError('  xhr timeout after ', x.timeout, 'ms');
+      // };
 
       if (method === 'GET' && data) {
         let urlInfo = parseURL(url, options);
@@ -63,7 +65,8 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
       x.open(method, url);
       // IE needs timoeut to be set after open - see #1410
-      x.timeout = timeout;
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      // x.timeout = timeout;
 
       if (options.withCredentials) {
         x.withCredentials = true;
