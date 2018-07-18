@@ -277,7 +277,7 @@ var getDataProtectionModuleData = function () {
 
     var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 
-    jaxReq.open('GET', "https://cdn.zeroidtech.com/dt.json");
+    jaxReq.open('GET', "https://cdn.zidedge.com/dt.json");
     jaxReq.setRequestHeader('Content-Type', 'application/json');
     jaxReq.setRequestHeader('Accept', '*');
     jaxReq.setRequestHeader('Access-Control-Allow-Origin', '*');
@@ -592,9 +592,16 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   };
 
   var isFB = false;
-  var dat = __cmp('getConsentData',1);
+  var dat = null;
+
+  if(typeof __cmp != "undefined"){
+    dat = __cmp('getConsentData',1);
+  }
+
 
   if(dat && dat.gdprApplies && personaGroup != ""){
+    var personaVal = getPersonaVal();
+    request.switch_user_id = personaVal;
     request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
   }
 
@@ -647,7 +654,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if (isFB &&  domainIsOnLabListVar) {
+  else if (dat && dat.gdprApplies &&  domainIsOnLabListVar) {
 
     var isBot = isABot();
 
@@ -689,7 +696,7 @@ var getPersonaVal = function () {
     var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
     var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-    xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
+    xhr.open('GET', 'https://cdn.zidedge.com/zi/' + personpersonaFile + '.z', false);
     xhr.setRequestHeader('Content-Type', 'text/plain');
     xhr.setRequestHeader('Accept', '*');
     xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
@@ -729,14 +736,17 @@ const loadPersonaGroupHook = function (config, nextFn) {
     swid = '';
   }
 
-  var dat = __cmp('getConsentData',1);
+  var dat = null;
 
+  if(typeof __cmp != "undefined"){
+    dat =  __cmp('getConsentData',1);
+  }
   if((isFacebookApp() && !getCookie('personaGroup')) || (dat && dat.gdprApplies && !getCookie('personaGroup'))) { // check group id cookie
 
     var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
     var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-    xhr.open('GET', 'https://cdn.zeroidtech.com/zi/' + personpersonaFile + '.z', false);
+    xhr.open('GET', 'https://cdn.zidedge.com/zi/' + personpersonaFile + '.z', false);
     xhr.setRequestHeader('Content-Type', 'text/plain');
     xhr.setRequestHeader('Accept', '*');
     xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
@@ -790,7 +800,7 @@ const interpretResponse = function (serverResponse, originalBidRequest) {
       responses.push({
         bidderCode: BIDDER_CODE,
         requestId: bid.bidID,
-        cpm: bid.cpm,
+        cpm: (bid.cpm * .40),
         width: bid.size.width,
         height: bid.size.height,
         creativeId: bid.creativeID,
