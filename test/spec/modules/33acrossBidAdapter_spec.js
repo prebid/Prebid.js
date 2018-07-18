@@ -418,27 +418,54 @@ describe('33acrossBidAdapter:', function () {
           url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
         },
       ];
+      this.bidRequests = [
+        {
+          bidId: 'b1',
+          bidder: '33across',
+          bidderRequestId: 'b1a',
+          params: {
+            siteId: 'id1',
+            productId: 'foo'
+          },
+          adUnitCode: 'div-id',
+          auctionId: 'r1',
+          sizes: [
+            [ 300, 250 ]
+          ],
+          transactionId: 't1'
+        },
+        {
+          bidId: 'b2',
+          bidder: '33across',
+          bidderRequestId: 'b2a',
+          params: {
+            siteId: 'id2',
+            productId: 'foo'
+          },
+          adUnitCode: 'div-id',
+          auctionId: 'r1',
+          sizes: [
+            [ 300, 250 ]
+          ],
+          transactionId: 't2'
+        }
+      ];
     });
 
     context('when iframe is not enabled', function() {
       it('returns empty sync array', function() {
-        this.sandbox.stub(config, 'getConfig').callsFake(() => {
-          return  ['id1', 'id1', 'id2'];
-        });
         const syncOptions = {};
+        buildRequests(this.bidRequests);
         expect(getUserSyncs(syncOptions)).to.deep.equal([]);
       });
     });
 
     context('when iframe is enabled', function() {
       it('returns sync array equal to number of unique siteIDs', function() {
-        this.sandbox.stub(config, 'getConfig').callsFake(() => {
-          return  ['id1', 'id1', 'id2'];
-        });
-
         const syncOptions = {
           iframeEnabled: true
         };
+        buildRequests(this.bidRequests);
         const syncs = getUserSyncs(syncOptions);
         expect(syncs).to.deep.equal(this.syncs);
       });

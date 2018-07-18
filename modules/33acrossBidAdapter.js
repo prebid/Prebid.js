@@ -1,10 +1,11 @@
-import { userSync } from 'src/userSync';
 import { uniques } from 'src/utils';
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const { config } = require('../src/config');
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
+
+const adapterState = {};
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -42,9 +43,11 @@ function _createServerRequest(bidRequest) {
     }
   }
   ttxRequest.site = { id: params.siteId };
+
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
+
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
@@ -70,8 +73,7 @@ function _createServerRequest(bidRequest) {
   }
 }
 
-
-// Sync object will always be of type iframe for ttx
+// Sync object will always be of type iframe for TTX
 function _createSync(siteId) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
@@ -102,10 +104,10 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-// NOTE: At this point, 33exchange only accepts request for a single impression
+// NOTE: At this point, TTX only accepts request for a single impression
 function buildRequests(bidRequests) {
-  const siteIds = bidRequests.map(req=> req.params.siteId);
-  config.setConfig({ttxSiteIds: siteIds});
+  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
+
   return bidRequests.map(_createServerRequest);
 }
 
@@ -123,13 +125,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
 // Register one sync per unique guid
 function getUserSyncs(syncOptions) {
-  let syncs = [];
-  const uniqueSiteIds = config.getConfig('ttxSiteIds').filter(uniques);
-  if (syncOptions.iframeEnabled) {
-    syncs = uniqueSiteIds.map(_createSync);
-  }
-
-  return syncs;
+  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
 }
 
 const spec = {
