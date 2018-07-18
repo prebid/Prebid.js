@@ -50,6 +50,8 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.c).to.not.equal('undefined')
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
+      expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.1')
     })
   })
 
