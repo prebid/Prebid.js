@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import { spec } from 'modules/justpremiumBidAdapter'
 
 describe('justpremium adapter', () => {
+  window.pbjs.onEvent = () => {}
   let adUnits = [
     {
       bidder: 'justpremium',
