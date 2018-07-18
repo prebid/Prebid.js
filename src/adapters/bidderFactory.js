@@ -381,7 +381,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
   function errorMessage(msg) {
