@@ -61,7 +61,7 @@ describe('triplelift adapter', () => {
           floor: 1.0,
         },
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250], [300, 600]],
+        sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
@@ -71,6 +71,12 @@ describe('triplelift adapter', () => {
     it('exists and is an object', () => {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests);
       expect(request).to.exist.and.to.be.a('object');
+    });
+
+    it('should only parse sizes that are of the proper length and format', () => {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+      expect(request.data.imp[0].banner.format).to.have.length(2);
+      expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should be a post request and populate the payload', () => {
@@ -90,7 +96,6 @@ describe('triplelift adapter', () => {
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
       expect(url).to.match(/(?:lib=prebid)/)
       expect(url).to.match(/(?:prebid.version)/)
-      expect(url).to.match(/(?:fe=)/)
       expect(url).to.match(/(?:referrer)/)
     })
   });
