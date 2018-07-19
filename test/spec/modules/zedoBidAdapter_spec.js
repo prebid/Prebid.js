@@ -29,16 +29,16 @@ describe('The ZEDO bidding adapter', () => {
       timeout: 3000,
     };
 
-    it('should properly build a channelCode request for banner', () => {
+    it('should properly build a channelCode request for dim Id with type not defined', () => {
       const bidRequests = [
         {
           bidder: 'zedo',
           adUnitCode: 'p12345',
           transactionId: '12345667',
-          sizes: [[300, 250]],
+          sizes: [[300, 200]],
           params: {
             channelCode: 20000000,
-            dimId: 9
+            dimId: 10
           },
         },
       ];
@@ -46,10 +46,10 @@ describe('The ZEDO bidding adapter', () => {
       expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmb.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":250,"dimension":9,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
-    it('should properly build a channelCode request for video', () => {
+    it('should properly build a channelCode request for video with type defined', () => {
       const bidRequests = [
         {
           bidder: 'zedo',
@@ -71,7 +71,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmb.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Pre/Mid/Post roll"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
     });
   });
   describe('interpretResponse', () => {
@@ -126,7 +126,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response with valid creative', () => {
+    it('should properly parse a bid response with valid display creative', () => {
       const response = {
         body: {
           ad: [
@@ -167,6 +167,62 @@ describe('The ZEDO bidding adapter', () => {
       expect(bids[0].cpm).to.equal(0.84);
       expect(bids[0].width).to.equal('160');
       expect(bids[0].height).to.equal('600');
+    });
+
+    it('should properly parse a bid response with valid video creative', () => {
+      const response = {
+        body: {
+          ad: [
+            {
+              'slotId': 'ad1d762',
+              'network': '2000',
+              'creatives': [
+                {
+                  'adId': '12345',
+                  'height': '480',
+                  'width': '640',
+                  'isFoc': true,
+                  'creativeDetails': {
+                    'type': 'VAST',
+                    'adContent': '<VAST></VAST>'
+                  },
+                  'cpm': '1200000'
+                }
+              ]
+            }
+          ]
+        }
+      };
+      const request = {
+        bidRequests: [{
+          bidder: 'zedo',
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            channelCode: 2000000,
+            dimId: 85
+          },
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('ad1d762');
+      expect(bids[0].cpm).to.equal(0.84);
+      expect(bids[0].width).to.equal('640');
+      expect(bids[0].height).to.equal('480');
+      expect(bids[0].vastXml).to.not.equal('');
+      expect(bids[0].ad).to.be.an('undefined');
+    });
+  });
+
+  describe('user sync', () => {
+    it('should register the iframe sync url', () => {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
     });
   });
 });

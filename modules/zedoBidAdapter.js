@@ -6,10 +6,16 @@ import find from 'core-js/library/fn/array/find';
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmb.json';
 const SECURE_URL = '//z2.zedo.com/asw/fmb.json';
-const RENDERER_TYPE = {
+const DIM_TYPE = {
+  '7': 'display',
   '9': 'display',
-  '88': 'display',
-  '85': 'Pre/Mid/Post roll',
+  '14': 'display',
+  '70': 'SBR',
+  '83': 'CurtainRaiser',
+  '85': 'Inarticle',
+  '86': 'pswipeup',
+  '88': 'Inview',
+  // '85': 'pre-mid-post-roll',
 };
 
 export const spec = {
@@ -53,10 +59,10 @@ export const spec = {
         keyword: '',
         transactionId: bidRequest.transactionId
       }
-      let renderName = RENDERER_TYPE[String(bidRequest.params.dimId)]
-      if (renderName) {
+      let dimType = DIM_TYPE[String(bidRequest.params.dimId)]
+      if (dimType) {
         placement['renderers'] = [{
-          'name': renderName
+          'name': dimType
         }]
       } else { // default to display
         placement['renderers'] = [{
@@ -145,23 +151,16 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       ttl: 3600
     });
   } else {
-    let tracker = '';
-    if (creativeBid.trackingData && creativeBid.trackingData.impressionTrackers) {
-      let trackerArr = creativeBid.trackingData.impressionTrackers;
-      for (let i in trackerArr) {
-        tracker = tracker + '<img src=' + trackerArr[i] + '/>';
-      }
-    }
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
-      ad: creativeBid.creativeDetails.adContent + tracker
+      ad: creativeBid.creativeDetails.adContent
     });
   }
 
   return bid;
 }
-/* Turn bid request sizes into ut-compatible format */
+/* Turn bid request sizes into compatible format */
 function getSizes(requestSizes) {
   let width = 0;
   let height = 0;
