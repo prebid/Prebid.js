@@ -1,6 +1,5 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const pixKey = 'utrk';
