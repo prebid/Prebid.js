@@ -1,4 +1,5 @@
 import {parse as parseURL, format as formatURL} from './url';
+import { config } from 'src/config';
 
 var utils = require('./utils');
 
@@ -53,9 +54,11 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       };
 
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
-      // x.ontimeout = function () {
-      //   utils.logError('  xhr timeout after ', x.timeout, 'ms');
-      // };
+      if (!config.getConfig('disableAjaxTimeout')) {
+        x.ontimeout = function () {
+          utils.logError('  xhr timeout after ', x.timeout, 'ms');
+        };
+      }
 
       if (method === 'GET' && data) {
         let urlInfo = parseURL(url, options);
@@ -66,7 +69,9 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       x.open(method, url);
       // IE needs timoeut to be set after open - see #1410
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
-      // x.timeout = timeout;
+      if (!config.getConfig('disableAjaxTimeout')) {
+        x.timeout = timeout;
+      }
 
       if (options.withCredentials) {
         x.withCredentials = true;
