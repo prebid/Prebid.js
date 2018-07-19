@@ -19,21 +19,27 @@ const CUSTOM_PARAMS = {
   'profId': '', // OpenWrap Legacy: Profile ID
   'verId': '' // OpenWrap Legacy: version ID
 };
+const DATA_TYPES = {
+  'NUMBER': 'number',
+  'STRING': 'string',
+  'BOOLEAN': 'boolean',
+  'ARRAY': 'array'
+};
 const VIDEO_CUSTOM_PARAMS = {
-  'mimes': constants.DATA_TYPES.ARRAY,
-  'minduration': constants.DATA_TYPES.NUMBER,
-  'maxduration': constants.DATA_TYPES.NUMBER,
-  'startdelay': constants.DATA_TYPES.NUMBER,
-  'playbackmethod': constants.DATA_TYPES.ARRAY,
-  'api': constants.DATA_TYPES.ARRAY,
-  'protocols': constants.DATA_TYPES.ARRAY,
-  'w': constants.DATA_TYPES.NUMBER,
-  'h': constants.DATA_TYPES.NUMBER,
-  'battr': constants.DATA_TYPES.ARRAY,
-  'linearity': constants.DATA_TYPES.NUMBER,
-  'placement': constants.DATA_TYPES.NUMBER,
-  'minbitrate': constants.DATA_TYPES.NUMBER,
-  'maxbitrate': constants.DATA_TYPES.NUMBER
+  'mimes': DATA_TYPES.ARRAY,
+  'minduration': DATA_TYPES.NUMBER,
+  'maxduration': DATA_TYPES.NUMBER,
+  'startdelay': DATA_TYPES.NUMBER,
+  'playbackmethod': DATA_TYPES.ARRAY,
+  'api': DATA_TYPES.ARRAY,
+  'protocols': DATA_TYPES.ARRAY,
+  'w': DATA_TYPES.NUMBER,
+  'h': DATA_TYPES.NUMBER,
+  'battr': DATA_TYPES.ARRAY,
+  'linearity': DATA_TYPES.NUMBER,
+  'placement': DATA_TYPES.NUMBER,
+  'minbitrate': DATA_TYPES.NUMBER,
+  'maxbitrate': DATA_TYPES.NUMBER
 }
 const NET_REVENUE = false;
 const dealChannelValues = {
@@ -182,25 +188,25 @@ function _createOrtbTemplate(conf) {
 function _checkParamDataType(key, value, datatype) {
   var errMsg = 'PubMatic: Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   switch (datatype) {
-    case constants.DATA_TYPES.BOOLEAN:
+    case DATA_TYPES.BOOLEAN:
       if (!utils.isBoolean(value)) {
         utils.logWarn(errMsg);
         return UNDEFINED;
       }
       return value;
-    case constants.DATA_TYPES.NUMBER:
+    case DATA_TYPES.NUMBER:
       if (!utils.isNumber(value)) {
         utils.logWarn(errMsg);
         return UNDEFINED;
       }
       return value;
-    case constants.DATA_TYPES.STRING:
+    case DATA_TYPES.STRING:
       if (!utils.isStr(value)) {
         utils.logWarn(errMsg);
         return UNDEFINED;
       }
       return value;
-    case constants.DATA_TYPES.ARRAY:
+    case DATA_TYPES.ARRAY:
       if (!utils.isArray(value)) {
         utils.logWarn(errMsg);
         return UNDEFINED;
@@ -407,7 +413,7 @@ export const spec = {
               referrer: utils.getTopWindowUrl(),
               ad: bid.adm
             };
-            var parsedRequest = JSON.parse(request.data);
+            let parsedRequest = JSON.parse(request.data);
             if (parsedRequest.imp && parsedRequest.imp.length > 0) {
               parsedRequest.imp.forEach(req => {
                 if (bid.impid === req.id && req.hasOwnProperty('video')) {

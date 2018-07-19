@@ -543,12 +543,6 @@ describe('PubMatic adapter', () => {
         expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
-
-  		/* it('invalid adslot', () => {
-  		  bidRequests[0].params.adSlot = '/15671365/DMDemo';
-  		  let request = spec.buildRequests(bidRequests);
-  		  expect(request).to.equal(undefined);
-  		}); */
   	});
 
     describe('Response checking', () => {
