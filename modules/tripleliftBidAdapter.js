@@ -99,7 +99,7 @@ function _sizes(sizeArray) {
         w: size[0],
         h: size[1]
       };
-
+    };
   });
 }
 
