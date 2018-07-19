@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const pixKey = 'utrk';
 
@@ -11,7 +12,7 @@ function startsWith(str, search) {
 export const spec = {
   code: 'yieldnexus',
   aliases: [],
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     if (!bid.params.spid) {
@@ -42,7 +43,7 @@ export const spec = {
         id: bidRequest.auctionId,
         site: {
           domain: url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart)),
-          page: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
+          page: url,
           ref: referrer
         },
         device: {
@@ -148,10 +149,6 @@ export const spec = {
       }
     });
     return syncs;
-  },
-
-  onTimeout: function(data) {
-    // no-op
   }
 };
 registerBidder(spec);
