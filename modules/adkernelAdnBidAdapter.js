@@ -55,15 +55,10 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
-  let loc = utils.getTopWindowLocation();
   let req = {
     id: auctionId,
     tid: transactionId,
-    site: {
-      page: loc.href,
-      ref: utils.getTopWindowReferrer(),
-      secure: ~~(loc.protocol === 'https:')
-    },
+    site: buildSite(),
     imp: tags
   };
 
@@ -77,6 +72,20 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
     }
   }
   return req;
+}
+
+function buildSite() {
+  let loc = utils.getTopWindowLocation();
+  let result = {
+    page: loc.href,
+    ref: utils.getTopWindowReferrer(),
+    secure: ~~(loc.protocol === 'https:')
+  };
+  let keywords = document.getElementsByTagName('meta').namedItem('keywords');
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+  return result;
 }
 
 function buildBid(tag) {
