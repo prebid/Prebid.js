@@ -94,10 +94,12 @@ function _buildPostBody(bidRequests) {
 
 function _sizes(sizeArray) {
   return sizeArray.map(function(size) {
-    return {
-      w: size[0],
-      h: size[1]
-    };
+    if (size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number') {
+      return {
+        w: size[0],
+        h: size[1]
+      };
+
   });
 }
 
