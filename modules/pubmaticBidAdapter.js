@@ -318,6 +318,7 @@ export const spec = {
     var bidCurrency = '';
     var dctr = '';
     var dctrLen;
+    var dctrArr = [];
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
@@ -340,6 +341,10 @@ export const spec = {
         utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
       }
       bid.params.bidfloorcur = bidCurrency;
+      //check if dctr is added to more than 1 adunit
+      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
+        dctrArr.push(bid.params.dctr);
+      }
       payload.imp.push(_createImpressionObject(bid, conf));
     });
 
@@ -381,14 +386,10 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
-    // set dctr value in site.ext, if present in validBidRequests[0], else ignore.
+    // set dctr value in site.ext, if present in validBidRequests[0], else ignore
     if (validBidRequests[0].params.hasOwnProperty('dctr')) {
       dctr = validBidRequests[0].params.dctr;
       if (utils.isStr(dctr) && dctr.length > 0) {
-        if (dctr.length > 512) {
-          utils.logWarn(BIDDER_CODE + ': dctr value found to be more than 512 characters. Trimming to 512 characters');
-          dctr = dctr.substring(0, 512);
-        }
         var arr = dctr.split("|"),
         dctr = "";
         arr.forEach(val => {
@@ -404,6 +405,11 @@ export const spec = {
       } else {
         utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
       }
+      if (dctrArr.length > 1) {
+        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');   
+      }
+    } else {
+      utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
 
     return {
