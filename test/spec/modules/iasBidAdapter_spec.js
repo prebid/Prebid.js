@@ -89,6 +89,9 @@ describe('iasBidAdapter is an adapter that', () => {
           url: IAS_HOST
         });
       });
+      it('only includes the first `bidRequest` as the bidRequest variable on a multiple slot request', () => {
+        expect(spec.buildRequests(bidRequests).bidRequest.adUnitCode).to.equal(bidRequests[0].adUnitCode);
+      });
       describe('has property `data` that is an encode query string containing information such as', () => {
         let val;
         const ANID_PARAM = 'anId';
@@ -124,8 +127,41 @@ describe('iasBidAdapter is an adapter that', () => {
       expect(spec.interpretResponse).to.be.a('function');
     });
     describe('returns a list of bid response that', () => {
-      let bidResponse, slots;
+      let bidRequests, bidResponse, slots, serverResponse;
       beforeEach(() => {
+        bidRequests = [
+          {
+            adUnitCode: 'one-div-id',
+            auctionId: 'someAuctionId',
+            bidId: 'someBidId1',
+            bidder: 'ias',
+            bidderRequestId: 'someBidderRequestId',
+            params: {
+              pubId: '1234',
+              adUnitPath: '/a/b/c'
+            },
+            sizes: [
+              [10, 20],
+              [300, 400]
+            ],
+            transactionId: 'someTransactionId'
+          },
+          {
+            adUnitCode: 'two-div-id',
+            auctionId: 'someAuctionId',
+            bidId: 'someBidId2',
+            bidder: 'ias',
+            bidderRequestId: 'someBidderRequestId',
+            params: {
+              pubId: '1234',
+              adUnitPath: '/d/e/f'
+            },
+            sizes: [
+              [50, 60]
+            ],
+            transactionId: 'someTransactionId'
+          }
+        ];
         const request = {
           bidRequest: {
             bidId: '102938'
@@ -140,7 +176,7 @@ describe('iasBidAdapter is an adapter that', () => {
           id: '5678',
           vw: ['80', '90']
         };
-        const serverResponse = {
+        serverResponse = {
           body: {
             brandSafety: {
               adt: 'adtVal',
@@ -184,6 +220,11 @@ describe('iasBidAdapter is an adapter that', () => {
       });
       it('has property `slots`', () => {
         expect(bidResponse[0]).to.deep.include({ slots: slots });
+      });
+      it('response is the same for multiple slots', () => {
+        var adapter = spec;
+        var requests = adapter.buildRequests(bidRequests);
+        expect(adapter.interpretResponse(serverResponse, requests)).to.length(2);
       });
     });
   });

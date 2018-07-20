@@ -126,9 +126,9 @@ export const spec = {
         currency: bid.cur || response.cur
       };
       if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
-        outBids.push(Object.assign({}, outBid, { ad: bid.adm }));
-      } else if (bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video) {
-        outBids.push(Object.assign({}, outBid, { vastXml: bid.adm }));
+        outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
+      } else if (bidRequest.bidRequest.mediaTypes.video) {
+        outBids.push(Object.assign({}, outBid, { mediaType: 'video', vastUrl: bid.ext.vast_url, vastXml: bid.adm }));
       }
     });
     return outBids;
