@@ -385,14 +385,18 @@ export const spec = {
     if (validBidRequests[0].params.hasOwnProperty('dctr')) {
       dctr = validBidRequests[0].params.dctr;
       if (utils.isStr(dctr) && dctr.length > 0) {
-        dctr = dctr.trim();
-        dctrLen = dctr.length;
-        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-          dctr = dctr.substring(0, dctrLen - 1);
-        }
         if (dctr.length > 512) {
           utils.logWarn(BIDDER_CODE + ': dctr value found to be more than 512 characters. Trimming to 512 characters');
           dctr = dctr.substring(0, 512);
+        }
+        var arr = dctr.split("|"),
+        dctr = "";
+        arr.forEach(val => {
+          dctr += (val.length > 0) ? (val.trim() + "|") : '';
+        });
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
         }
         payload.site.ext = {
           key_val: dctr.trim()
