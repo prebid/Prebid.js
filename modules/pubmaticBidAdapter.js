@@ -316,6 +316,8 @@ export const spec = {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
+    var dctr = '';
+    var dctrLen;
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
@@ -337,7 +339,7 @@ export const spec = {
       } else if (bid.params.hasOwnProperty('bidfloorcur') && bidCurrency !== bid.params.bidfloorcur) {
         utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
       }
-      bid.params.bidfloorcur = bidCurrency
+      bid.params.bidfloorcur = bidCurrency;
       payload.imp.push(_createImpressionObject(bid, conf));
     });
 
@@ -378,6 +380,28 @@ export const spec = {
     payload.device.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // set dctr value in site.ext, if present in validBidRequests[0], else ignore.
+    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+      dctr = validBidRequests[0].params.dctr;
+      if (utils.isStr(dctr) && dctr.length > 0) {
+        dctr = dctr.trim();
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
+        }
+        if (dctr.length > 512) {
+          utils.logWarn(BIDDER_CODE + ': dctr value found to be more than 512 characters. Trimming to 512 characters');
+          dctr = dctr.substring(0, 512);
+        }
+        payload.site.ext = {
+          key_val: dctr.trim()
+        }
+      } else {
+        utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+      }
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
