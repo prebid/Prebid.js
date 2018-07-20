@@ -1,10 +1,13 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
 import {
-  QUANTCAST_CALLBACK_URL_TEST,
-  QUANTCAST_CALLBACK_URL,
+  QUANTCAST_DOMAIN,
+  QUANTCAST_TEST_DOMAIN,
   QUANTCAST_NET_REVENUE,
   QUANTCAST_TTL,
+  QUANTCAST_TEST_PUBLISHER,
+  QUANTCAST_PROTOCOL,
+  QUANTCAST_PORT,
   spec as qcSpec
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
@@ -21,7 +24,7 @@ describe('Quantcast adapter', () => {
       bidderRequestId: '1cc026909c24c8',
       placementCode: 'div-gpt-ad-1438287399331-0',
       params: {
-        publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
+        publisherId: QUANTCAST_TEST_PUBLISHER, // REQUIRED - Publisher ID provided by Quantcast
         battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
       },
       sizes: [[300, 250]]
@@ -53,50 +56,35 @@ describe('Quantcast adapter', () => {
   });
 
   describe('`buildRequests`', () => {
-    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
-      const requests = qcSpec.buildRequests([bidRequest]);
-
+    it('selects protocol and port', () => {
       switch (window.location.protocol) {
         case 'https:':
-          expect(requests[0]['url']).to.equal(
-            `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`
-          );
+          expect(QUANTCAST_PROTOCOL).to.equal('https');
+          expect(QUANTCAST_PORT).to.equal('8443');
           break;
         default:
-          expect(requests[0]['url']).to.equal(
-            `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`
-          );
+          expect(QUANTCAST_PROTOCOL).to.equal('http');
+          expect(QUANTCAST_PORT).to.equal('8080');
           break;
       }
     });
 
-    it('sends bid requests to Quantcast Global Endpoint for regular `publisherId`', () => {
-      const bidRequest = {
-        bidder: 'quantcast',
-        bidId: '2f7b179d443f14',
-        auctionId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
-        bidderRequestId: '1cc026909c24c8',
-        placementCode: 'div-gpt-ad-1438287399331-0',
-        params: {
-          publisherId: 'regular-publisher', // REQUIRED - Publisher ID provided by Quantcast
-          battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
-        },
-        sizes: [[300, 250]]
-      };
+    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
       const requests = qcSpec.buildRequests([bidRequest]);
+      const url = new URL(requests[0]['url']);
+      expect(url.hostname).to.equal(QUANTCAST_TEST_DOMAIN);
+    });
 
-      switch (window.location.protocol) {
-        case 'https:':
-          expect(requests[0]['url']).to.equal(
-            `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`
-          );
-          break;
-        default:
-          expect(requests[0]['url']).to.equal(
-            `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`
-          );
-          break;
-      }
+    it('sends bid requests to default endpoint for non standard publisher IDs', () => {
+      const modifiedBidRequest = Object.assign({}, bidRequest, {
+        params: Object.assign({}, bidRequest.params, {
+          publisherId: 'foo-bar',
+        }),
+      });
+      const requests = qcSpec.buildRequests([modifiedBidRequest]);
+      expect(requests[0]['url']).to.equal(
+        `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb`
+      );
     });
 
     it('sends bid requests to Quantcast Header Bidding Endpoints via POST', () => {
@@ -112,7 +100,7 @@ describe('Quantcast adapter', () => {
 
       const requests = qcSpec.buildRequests([bidRequest]);
       const expectedBidRequest = {
-        publisherId: 'test-publisher',
+        publisherId: QUANTCAST_TEST_PUBLISHER,
         requestId: '2f7b179d443f14',
         imp: [
           {
