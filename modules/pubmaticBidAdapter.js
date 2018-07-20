@@ -341,7 +341,7 @@ export const spec = {
         utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
       }
       bid.params.bidfloorcur = bidCurrency;
-      //check if dctr is added to more than 1 adunit
+      // check if dctr is added to more than 1 adunit
       if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
         dctrArr.push(bid.params.dctr);
       }
@@ -390,10 +390,10 @@ export const spec = {
     if (validBidRequests[0].params.hasOwnProperty('dctr')) {
       dctr = validBidRequests[0].params.dctr;
       if (utils.isStr(dctr) && dctr.length > 0) {
-        var arr = dctr.split("|"),
-        dctr = "";
+        var arr = dctr.split('|');
+        dctr = '';
         arr.forEach(val => {
-          dctr += (val.length > 0) ? (val.trim() + "|") : '';
+          dctr += (val.length > 0) ? (val.trim() + '|') : '';
         });
         dctrLen = dctr.length;
         if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
@@ -406,7 +406,7 @@ export const spec = {
         utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
       }
       if (dctrArr.length > 1) {
-        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');   
+        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
       }
     } else {
       utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
