@@ -22,7 +22,7 @@ var adUnits = [
      bids: [{
        bidder: 'yieldnexus',
        params: {
-         spid: '1249',      // your supply ID in your YieldNexus dashboard
+         spid: '1253',      // your supply ID in your YieldNexus dashboard
          bidfloor: 0.03,    // an optional custom bid floor
          adpos: 1,          // ad position on the page (optional)
          instl: 0           // interstitial placement? (0 or 1, optional)
@@ -42,7 +42,7 @@ var adUnits = [
      bids: [ {
        bidder: 'yieldnexus',
        params: {
-         spid: '1249',      // your supply ID in your YieldNexus dashboard
+         spid: '1254',      // your supply ID in your YieldNexus dashboard
          bidfloor: 0.03,    // an optional custom bid floor
          adpos: 1,          // ad position on the page (optional)
          instl: 0           // interstitial placement? (0 or 1, optional)
