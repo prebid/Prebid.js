@@ -41,7 +41,7 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-      if ( query.gdpr ) {
+      if (query.gdpr) {
         query.consent = bidderRequest.gdprConsent.consentString
       }
     }
