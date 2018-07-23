@@ -2,6 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 import * as utils from 'src/utils'
 
 const BIDDER_CODE = 'rdn'
+const ENDPOINT = ''
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,7 +14,7 @@ export const spec = {
       const params = bid.params
       bidRequests.push({
         method: 'GET',
-        url: ENDPOINT_URL,
+        url: ENDPOINT,
         data: {
           a: params.adSpotId,
           s: document.location.protocol,
