@@ -26,7 +26,8 @@ describe('PubMatic adapter', () => {
     		  wiid: '1234567890',
     		  profId: '100',
     		  verId: '200',
-          bidfloorcur: 'AUD'
+          bidfloorcur: 'AUD',
+          dctr: 'key1:val1,val2|key2:val1'
         },
         placementCode: '/19968336/header-bid-tag-1',
         sizes: [[300, 250], [300, 600]],
@@ -230,6 +231,8 @@ describe('PubMatic adapter', () => {
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
   		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
   		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
@@ -544,6 +547,89 @@ describe('PubMatic adapter', () => {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
   	});
+
+    it('Request params dctr check', () => {
+      let multipleBidRequests = [
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            bidfloorcur: 'AUD',
+            dctr: 'key1=val1|key2=val2,!val3'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        },
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            bidfloorcur: 'GBP',
+            dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        }
+      ];
+
+      let request = spec.buildRequests(multipleBidRequests);
+      let data = JSON.parse(request.data);
+
+      /* case 1 -
+        dctr is found in adunit[0]
+      */
+
+      expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+      expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
+
+      /* case 2 -
+        dctr not present in adunit[0]
+      */
+      delete multipleBidRequests[0].params.dctr;
+      request = spec.buildRequests(multipleBidRequests);
+      data = JSON.parse(request.data);
+
+      expect(data.site.ext).to.not.exist;
+
+      /* case 3 -
+        dctr is present in adunit[0], but is not a string value
+      */
+      multipleBidRequests[0].params.dctr = 123;
+      request = spec.buildRequests(multipleBidRequests);
+      data = JSON.parse(request.data);
+
+      expect(data.site.ext).to.not.exist;
+    });
 
     describe('Response checking', () => {
       it('should check for valid response values', () => {
