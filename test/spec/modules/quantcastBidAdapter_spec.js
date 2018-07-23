@@ -71,8 +71,8 @@ describe('Quantcast adapter', () => {
 
     it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
       const requests = qcSpec.buildRequests([bidRequest]);
-      const url = requests[0]['url'].split(/[:/]/)[3];
-      expect(url).to.equal(QUANTCAST_TEST_DOMAIN);
+      const hostname = requests[0]['url'].split(/[:/]/)[3];
+      expect(hostname).to.equal(QUANTCAST_TEST_DOMAIN);
     });
 
     it('sends bid requests to default endpoint for non standard publisher IDs', () => {
