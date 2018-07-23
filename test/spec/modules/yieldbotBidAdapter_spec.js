@@ -44,7 +44,8 @@ const YB_BID_FIXTURE = {
     ybot_ad: 'y',
     ybot_slot: 'medrec',
     ybot_cpm: '200',
-    ybot_size: '300x250'
+    ybot_size: '300x250',
+    ybot_pvi: '0a1b2c3d4e5f-1234'
   },
   leaderboard: {
     ybot_ad: 'n'
@@ -53,7 +54,8 @@ const YB_BID_FIXTURE = {
     ybot_ad: 'y',
     ybot_slot: 'noop',
     ybot_cpm: '200',
-    ybot_size: '300x250'
+    ybot_size: '300x250',
+    ybot_pvi: '0a1b2c3d4e5f-1234'
   }
 };
 
@@ -270,11 +272,12 @@ describe('Yieldbot adapter tests', function() {
       expect(pb_bid1.ybot_slot).to.equal('medrec');
       expect(pb_bid1.ybot_cpm).to.equal('200');
       expect(pb_bid1.ybot_size).to.equal('300x250');
+      expect(pb_bid1.ybot_pvi).to.equal('0a1b2c3d4e5f-1234');
 
       expect(pb_bid1.width).to.equal('300');
       expect(pb_bid1.height).to.equal('250');
       expect(pb_bid1.ad).to.match(/src="\/\/cdn\.yldbt\.com\/js\/yieldbot\.intent\.js/);
-      expect(pb_bid1.ad).to.match(/yieldbot\.renderAd\('medrec:300x250'\)/);
+      expect(pb_bid1.ad).to.match(/yieldbot\.renderAd\('medrec:300x250:0a1b2c3d4e5f-1234'\)/);
 
       const plc2 = bidManagerStub.secondCall.args[0];
       expect(plc2).to.equal(localRequest.bids[1].placementCode);
@@ -306,7 +309,8 @@ describe('Yieldbot adapter tests', function() {
         ybot_ad: 'y',
         ybot_slot: 'medrec',
         ybot_cpm: '200',
-        ybot_size: '300x250'
+        ybot_size: '300x250',
+        ybot_pvi: '0a1b2c3d4e5f-1234'
       };
 
       localRequest.bids = [invalidSizeBid];
@@ -329,7 +333,8 @@ describe('Yieldbot adapter tests', function() {
         ybot_ad: 'y',
         ybot_slot: 'medrec',
         ybot_cpm: '200',
-        ybot_size: '300x250'
+        ybot_size: '300x250',
+        ybot_pvi: '0a1b2c3d4e5f-1234'
       };
 
       const bidResponseNone = {
@@ -450,7 +455,8 @@ describe('Yieldbot adapter tests', function() {
         ybot_ad: 'y',
         ybot_slot: 'medrec',
         ybot_cpm: '200',
-        ybot_size: '300x250'
+        ybot_size: '300x250',
+        ybot_pvi: '0a1b2c3d4e5f-1234'
       };
 
       const bidResponseNone = {
