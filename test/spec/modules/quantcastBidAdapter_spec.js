@@ -11,6 +11,7 @@ import {
   spec as qcSpec
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
+import { parse } from 'src/url';
 
 describe('Quantcast adapter', () => {
   const quantcastAdapter = newBidder(qcSpec);
@@ -71,8 +72,8 @@ describe('Quantcast adapter', () => {
 
     it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
       const requests = qcSpec.buildRequests([bidRequest]);
-      const hostname = requests[0]['url'].split(/[:/]/)[3];
-      expect(hostname).to.equal(QUANTCAST_TEST_DOMAIN);
+      const url = parse(requests[0]['url']);
+      expect(url.hostname).to.equal(QUANTCAST_TEST_DOMAIN);
     });
 
     it('sends bid requests to default endpoint for non standard publisher IDs', () => {
