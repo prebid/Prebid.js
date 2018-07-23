@@ -297,23 +297,21 @@ export const spec = {
    * Register the user sync pixels which should be dropped after the auction.
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {ServerResponse} serverResponse A successful response from the server
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      });
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: serverResponses[0].body.sync[0]
-      });
-    }
+  getUserSyncs: function (syncOptions, serverResponse) {
+    const syncs = [];
+    utils._each(serverResponse, function(serverResponse) {
+      if (serverResponse.body && serverResponse.body.sync) {
+        utils._each(serverResponse.body.sync, function (pixel) {
+          syncs.push({
+            type: 'image',
+            url: pixel
+          });
+        });
+      }
+    });
     return syncs;
   }
 }

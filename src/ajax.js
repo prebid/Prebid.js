@@ -1,6 +1,7 @@
 import {parse as parseURL, format as formatURL} from './url';
 import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
+import { config } from 'src/config';
 
 var utils = require('./utils');
 
@@ -17,12 +18,13 @@ const XHR_DONE = 4;
  */
 export const ajax = ajaxBuilder();
 
-export function ajaxBuilder(timeout = 3000) {
+export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
   return function(url, callback, data, options = {}) {
     try {
       let x;
-      let useXDomainRequest = false;
       let method = options.method || (data ? 'POST' : 'GET');
+      let parser = document.createElement('a');
+      parser.href = url;
 
       let callbacks = typeof callback === 'object' && callback !== null ? callback : {
         success: function() {
@@ -37,14 +39,7 @@ export function ajaxBuilder(timeout = 3000) {
         callbacks.success = callback;
       }
 
-      if (!window.XMLHttpRequest) {
-        useXDomainRequest = true;
-      } else {
-        x = new window.XMLHttpRequest();
-        if (x.responseType === undefined) {
-          useXDomainRequest = true;
-        }
-      }
+      x = new window.XMLHttpRequest();
 
       if (useXDomainRequest) {
         x = new window.XDomainRequest();
@@ -66,14 +61,21 @@ export function ajaxBuilder(timeout = 3000) {
       } else {
         x.onreadystatechange = function () {
           if (x.readyState === XHR_DONE) {
-            let status = x.status;
-            if ((status >= 200 && status < 300) || status === 304) {
-              callbacks.success(x.responseText, x);
-            } else {
-              callbacks.error(x.statusText, x);
+            if (typeof done === 'function') {
+              done(parser.origin);
             }
           }
-        };
+          let status = x.status;
+          if ((status >= 200 && status < 300) || status === 304) {
+            callbacks.success(x.responseText, x);
+          } else {
+            callbacks.error(x.statusText, x);
+          }
+        }
+      };
+
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      if (!config.getConfig('disableAjaxTimeout')) {
         x.ontimeout = function () {
           utils.logError('  xhr timeout after ', x.timeout, 'ms');
           events.emit(CONSTANTS.INTERNAL_EVENTS.XHR_TIMEDOUT, url);
@@ -88,20 +90,26 @@ export function ajaxBuilder(timeout = 3000) {
 
       x.open(method, url);
       // IE needs timoeut to be set after open - see #1410
-      x.timeout = timeout;
-
-      if (!useXDomainRequest) {
-        if (options.withCredentials) {
-          x.withCredentials = true;
-        }
-        utils._each(options.customHeaders, (value, header) => {
-          x.setRequestHeader(header, value);
-        });
-        if (options.preflight) {
-          x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        }
-        x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      if (!config.getConfig('disableAjaxTimeout')) {
+        x.timeout = timeout;
       }
+
+      if (options.withCredentials) {
+        x.withCredentials = true;
+      }
+      utils._each(options.customHeaders, (value, header) => {
+        x.setRequestHeader(header, value);
+      });
+      if (options.preflight) {
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      }
+      x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
+
+      if (typeof request === 'function') {
+        request(parser.origin);
+      }
+
       if (method === 'POST' && data) {
         x.send(data);
       } else {

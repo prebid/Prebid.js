@@ -313,4 +313,23 @@ describe('Platform.io Adapter Tests', () => {
     expect(ortbRequest.app.storeurl).to.equal('http://platform.io/apps');
     expect(ortbRequest.app.domain).to.equal('platform.io');
   });
+
+  it('Verify GDPR', () => {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gpdr_data'
+      }
+    };
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest.user).to.not.equal(null);
+    expect(ortbRequest.user.ext).to.not.equal(null);
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
+    expect(ortbRequest.regs).to.not.equal(null);
+    expect(ortbRequest.regs.ext).to.not.equal(null);
+    expect(ortbRequest.regs.ext.gdpr).to.equal(1);
+  });
 });
