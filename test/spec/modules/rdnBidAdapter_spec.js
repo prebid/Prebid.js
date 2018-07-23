@@ -54,4 +54,48 @@ describe('rdnBidAdapter', function() {
       expect(request.method).to.equal('GET')
     })
   })
+
+  describe('interpretResponse', () => {
+    const bidRequests = {
+      banner: {
+        method: 'GET',
+        url: '',
+        data: {
+          a: '56789',
+          s: 'https',
+          ua:
+            'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Mobile Safari/537.36',
+          l: 'ja',
+          d: 'examples.com',
+          tp: 'https://examples.com/foo/fuga',
+          pp: 'https://examples.com/hoge/muga'
+        }
+      }
+    }
+
+    const serverResponse = {
+      noAd: [],
+      banner: {
+        requestId: 'biequa9oaph4we',
+        cpm: 37.66,
+        width: 300,
+        height: 250,
+        creativeId: 140281,
+        dealId: 'phoh3pad-ai4ah-xoh7x-ahk7cheasae3oh',
+        currency: 'JPY',
+        netRevenue: 300,
+        ttl: 3000,
+        referrer: utils.getTopWindowUrl(),
+        ad: '<!-- adtag -->'
+      }
+    }
+
+    it('handles nobid responses', () => {
+      const result = spec.interpretResponse(
+        { body: serverResponse.noAd },
+        bidRequests.banner
+      )
+      expect(result.length).to.equal(0)
+    })
+  })
 })
