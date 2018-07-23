@@ -39,7 +39,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     let data = {
       placements: []
     };
@@ -58,6 +58,12 @@ export const spec = {
         version: '$prebid.version$',
         keyword: '',
         transactionId: bidRequest.transactionId
+      }
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          data.gdpr = Number(bidderRequest.gdprConsent.gdprApplies);
+        }
+        data.gdpr_consent = bidderRequest.gdprConsent.consentString;
       }
       let dimType = DIM_TYPE[String(bidRequest.params.dimId)]
       if (dimType) {
@@ -110,9 +116,17 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (syncOptions.iframeEnabled) {
       let url = utils.getTopWindowLocation().protocol === 'http:' ? 'http://d3.zedo.com/rs/us/fcs.html' : 'https://tt3.zedo.com/rs/us/fcs.html';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          url += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          url += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
       return [{
         type: 'iframe',
         url: url
@@ -132,10 +146,8 @@ function getCreative(ad) {
  * @return Bid
  */
 function newBid(serverBid, creativeBid, bidderRequest) {
-  let prShr = (parseInt(creativeBid.cpm) * 0.7) / 1000000;
   const bid = {
     requestId: serverBid.slotId,
-    cpm: prShr,
     creativeId: creativeBid.adId,
     dealId: 99999999,
     currency: 'USD',
@@ -148,12 +160,14 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       width: creativeBid.width,
       height: creativeBid.height,
       vastXml: creativeBid.creativeDetails.adContent,
+      cpm: (parseInt(creativeBid.cpm) * 0.65) / 1000000,
       ttl: 3600
     });
   } else {
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
+      cpm: (parseInt(creativeBid.cpm) * 0.6) / 1000000,
       ad: creativeBid.creativeDetails.adContent
     });
   }
