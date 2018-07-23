@@ -19,7 +19,7 @@ function isBidRequestValid(bid) {
   return !!(params.cId && params.pId);
 }
 
-function buildRequest(bid, topWindowUrl, size) {
+function buildRequest(bid, topWindowUrl, size, bidderRequest) {
   const {params, bidId} = bid;
   const {bidFloor, cId, pId, ext} = params;
   // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
@@ -34,6 +34,7 @@ function buildRequest(bid, topWindowUrl, size) {
       bidFloor: bidFloor,
       bidId: bidId,
       publisherId: pId,
+      consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
       width,
       height
     }
@@ -46,13 +47,13 @@ function buildRequest(bid, topWindowUrl, size) {
   return dto;
 }
 
-function buildRequests(validBidRequests) {
+function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = utils.getTopWindowUrl();
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = utils.parseSizesInput(validBidRequest.sizes);
     sizes.forEach(size => {
-      const request = buildRequest(validBidRequest, topWindowUrl, size);
+      const request = buildRequest(validBidRequest, topWindowUrl, size, bidderRequest);
       requests.push(request);
     });
   });
