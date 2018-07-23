@@ -94,7 +94,7 @@ export function newConfig() {
       },
 
       // calls existing function which may be moved after deprecation
-      _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
+      _priceGranularity: GRANULARITY_OPTIONS.HIGH,
       set priceGranularity(val) {
         if (validatePriceGranularity(val)) {
           if (typeof val === 'string') {
