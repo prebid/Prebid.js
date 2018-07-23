@@ -40,8 +40,10 @@ export const spec = {
     })
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      query.consent = bidderRequest.gdprConsent.consentString
       query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      if (query.gdpr) {
+        query.consent = bidderRequest.gdprConsent.consentString
+      }
     }
 
     const adslots = adslotIds.join(',')
