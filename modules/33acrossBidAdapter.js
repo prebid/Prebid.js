@@ -54,10 +54,10 @@ function _createServerRequest(bidRequest) {
   }
 
   /*
-   * Now construt the full server request
+   * Now construct the full server request
    */
   const options = {
-    contentType: 'application/json',
+    contentType: 'text/plain',
     withCredentials: true
   };
   // Allow the ability to configure the HB endpoint for testing purposes.

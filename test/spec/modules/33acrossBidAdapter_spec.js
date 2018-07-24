@@ -145,7 +145,7 @@ describe('33acrossBidAdapter:', function () {
         'url': END_POINT,
         'data': JSON.stringify(ttxRequest),
         'options': {
-          'contentType': 'application/json',
+          'contentType': 'text/plain',
           'withCredentials': true
         }
       }
@@ -193,7 +193,7 @@ describe('33acrossBidAdapter:', function () {
         url: 'https://foo.com/hb/',
         data: JSON.stringify(ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         }
       };
@@ -243,7 +243,7 @@ describe('33acrossBidAdapter:', function () {
         url: 'https://foo.com/hb/',
         data: JSON.stringify(ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         }
       };
@@ -293,7 +293,7 @@ describe('33acrossBidAdapter:', function () {
         url: '//staging-ssc.33across.com/api/v1/hb',
         data: JSON.stringify(this.ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false
         }
       };
