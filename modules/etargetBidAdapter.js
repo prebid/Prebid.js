@@ -75,8 +75,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const VALID_RESPONSES = {
       banner: 1,
-      vast_content: 1,
-      vast_url: 1
+      video: 1
     };
     var bidObject, bid, type;
     var bidRespones = [];
