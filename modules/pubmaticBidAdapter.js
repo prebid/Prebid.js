@@ -229,7 +229,7 @@ function _createImpressionObject(bid, conf) {
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     },
-    bidfloorcur: bid.params.bidfloorcur ? _parseSlotParam('bidfloorcur', bid.params.bidfloorcur) : DEFAULT_CURRENCY
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
 
   if (bid.params.hasOwnProperty('video')) {
@@ -336,11 +336,11 @@ export const spec = {
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
       if (bidCurrency === '') {
-        bidCurrency = bid.params.bidfloorcur || undefined;
-      } else if (bid.params.hasOwnProperty('bidfloorcur') && bidCurrency !== bid.params.bidfloorcur) {
+        bidCurrency = bid.params.currency || undefined;
+      } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
         utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
       }
-      bid.params.bidfloorcur = bidCurrency;
+      bid.params.currency = bidCurrency;
       // check if dctr is added to more than 1 adunit
       if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
         dctrArr.push(bid.params.dctr);
@@ -427,9 +427,11 @@ export const spec = {
   */
   interpretResponse: (response, request) => {
     const bidResponses = [];
+    var respCur = DEFAULT_CURRENCY;
     try {
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
+        respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
           utils.isArray(seatbidder.bid) &&
@@ -441,7 +443,7 @@ export const spec = {
               height: bid.h,
               creativeId: bid.crid || bid.id,
               dealId: bid.dealid,
-              currency: DEFAULT_CURRENCY,
+              currency: respCur,
               netRevenue: NET_REVENUE,
               ttl: 300,
               referrer: utils.getTopWindowUrl(),

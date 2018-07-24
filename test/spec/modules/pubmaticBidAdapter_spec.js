@@ -26,7 +26,7 @@ describe('PubMatic adapter', () => {
     		  wiid: '1234567890',
     		  profId: '100',
     		  verId: '200',
-          bidfloorcur: 'AUD',
+          currency: 'AUD',
           dctr: 'key1:val1,val2|key2:val1'
         },
         placementCode: '/19968336/header-bid-tag-1',
@@ -251,7 +251,7 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
-        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
   		});
 
       it('Request params multi size format object check', () => {
@@ -271,7 +271,7 @@ describe('PubMatic adapter', () => {
               wiid: '1234567890',
               profId: '100',
               verId: '200',
-              bidfloorcur: 'AUD'
+              currency: 'AUD'
             },
             placementCode: '/19968336/header-bid-tag-1',
             bidId: '23acc48ad47af5',
@@ -325,7 +325,7 @@ describe('PubMatic adapter', () => {
               wiid: '1234567890',
               profId: '100',
               verId: '200',
-              bidfloorcur: 'AUD'
+              currency: 'AUD'
             },
             placementCode: '/19968336/header-bid-tag-1',
             sizes: [[300, 250], [300, 600]],
@@ -349,7 +349,7 @@ describe('PubMatic adapter', () => {
               wiid: '1234567890',
               profId: '100',
               verId: '200',
-              bidfloorcur: 'GBP'
+              currency: 'GBP'
             },
             placementCode: '/19968336/header-bid-tag-1',
             sizes: [[300, 250], [300, 600]],
@@ -361,44 +361,44 @@ describe('PubMatic adapter', () => {
         ];
 
         /* case 1 -
-            bidfloorcur specified in both adunits
-            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.bidfloorcur
+            currency specified in both adunits
+            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.currency
 
         */
         let request = spec.buildRequests(multipleBidRequests);
         let data = JSON.parse(request.data);
 
-        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
-        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.currency);
 
         /* case 2 -
-            bidfloorcur specified in only 1st adunit
-            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.bidfloorcur
+            currency specified in only 1st adunit
+            output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.currency
 
         */
-        delete multipleBidRequests[1].params.bidfloorcur;
+        delete multipleBidRequests[1].params.currency;
         request = spec.buildRequests(multipleBidRequests);
         data = JSON.parse(request.data);
-        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
-        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.bidfloorcur);
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[1].bidfloorcur).to.equal(bidRequests[0].params.currency);
 
         /* case 3 -
-            kadfloor not specified in any adunit
+            currency specified in only 1st adunit
             output: imp[0] and imp[1] both use default currency - USD
 
         */
-        delete multipleBidRequests[0].params.bidfloorcur;
+        delete multipleBidRequests[0].params.currency;
         request = spec.buildRequests(multipleBidRequests);
         data = JSON.parse(request.data);
         expect(data.imp[0].bidfloorcur).to.equal('USD');
         expect(data.imp[1].bidfloorcur).to.equal('USD');
 
         /* case 4 -
-            kadfloor not specified in 1st adunit but specified in 2nd adunit
+            currency not specified in 1st adunit but specified in 2nd adunit
             output: imp[0] and imp[1] both use default currency - USD
 
         */
-        multipleBidRequests[1].params.bidfloorcur = 'AUD';
+        multipleBidRequests[1].params.currency = 'AUD';
         request = spec.buildRequests(multipleBidRequests);
         data = JSON.parse(request.data);
         expect(data.imp[0].bidfloorcur).to.equal('USD');
@@ -565,7 +565,7 @@ describe('PubMatic adapter', () => {
             wiid: '1234567890',
             profId: '100',
             verId: '200',
-            bidfloorcur: 'AUD',
+            currency: 'AUD',
             dctr: 'key1=val1|key2=val2,!val3'
           },
           placementCode: '/19968336/header-bid-tag-1',
@@ -590,7 +590,7 @@ describe('PubMatic adapter', () => {
             wiid: '1234567890',
             profId: '100',
             verId: '200',
-            bidfloorcur: 'GBP',
+            currency: 'GBP',
             dctr: 'key1=val3|key2=val1,!val3|key3=val123'
           },
           placementCode: '/19968336/header-bid-tag-1',
