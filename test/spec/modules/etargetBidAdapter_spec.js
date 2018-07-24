@@ -31,7 +31,7 @@ describe('etarget adapter', () => {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/etarget');
+      assert.equal(parsedUrl.path, '//newDomain/hb');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
