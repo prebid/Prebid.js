@@ -6,7 +6,7 @@ const constants = require('src/constants.json');
 const BIDDER_CODE = 'pubmatic';
 const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
@@ -155,7 +155,7 @@ function _createOrtbTemplate(conf) {
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
-    cur: [CURRENCY],
+    cur: [DEFAULT_CURRENCY],
     imp: [],
     site: {
       page: conf.pageURL,
@@ -218,7 +218,8 @@ function _createImpressionObject(bid, conf) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
-    }
+    },
+    bidfloorcur: bid.params.bidfloorcur ? _parseSlotParam('bidfloorcur', bid.params.bidfloorcur) : DEFAULT_CURRENCY
   };
 
   if (bid.params.hasOwnProperty('video')) {
@@ -296,6 +297,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
+    var bidCurrency = '';
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
@@ -312,6 +314,12 @@ export const spec = {
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
+      if (bidCurrency === '') {
+        bidCurrency = bid.params.bidfloorcur || undefined;
+      } else if (bid.params.hasOwnProperty('bidfloorcur') && bidCurrency !== bid.params.bidfloorcur) {
+        utils.logWarn(BIDDER_CODE + ': Multiple currency specifiers will not be considered. Currency specified in the first adunit will only be considered.');
+      }
+      bid.params.bidfloorcur = bidCurrency
       payload.imp.push(_createImpressionObject(bid, conf));
     });
 
@@ -381,7 +389,7 @@ export const spec = {
               height: bid.h,
               creativeId: bid.crid || bid.id,
               dealId: bid.dealid,
-              currency: CURRENCY,
+              currency: DEFAULT_CURRENCY,
               netRevenue: NET_REVENUE,
               ttl: 300,
               referrer: utils.getTopWindowUrl(),
