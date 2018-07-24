@@ -10,7 +10,7 @@ describe('etarget adapter', () => {
     let bid = {
       'bidder': 'etarget',
       'params': {
-        'refid': '55410'
+        'refid': '55410',
         'country': '1'
       }
     };
