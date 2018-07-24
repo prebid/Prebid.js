@@ -31,7 +31,7 @@ describe('etarget adapter', () => {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/hb');
+      assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
@@ -41,7 +41,7 @@ describe('etarget adapter', () => {
 
     it('should set correct request method', () => {
       let request = spec.buildRequests([bids[0]]);
-      assert.equal(request.method, 'GET');
+      assert.equal(request.method, 'POST');
     });
 
     it('should correctly form bid items', () => {
@@ -51,36 +51,43 @@ describe('etarget adapter', () => {
       assert.deepEqual(parsedUrl.items, [
         {
           refid: '1',
+          country: '1',
           transactionId: '5f33781f-9552-4ca1'
         },
         {
           refid: '2',
+          country: '1',
           someVar: 'someValue',
           pt: 'gross',
           transactionId: '5f33781f-9552-4iuy'
         },
         {
           refid: '3',
+          country: '1',
           pdom: 'home',
           transactionId: '5f33781f-9552-7ev3'
         },
         {
           refid: '3',
+          country: '1',
           pdom: 'home',
           transactionId: '5f33781f-9552-7ev3'
         },
         {
           refid: '3',
+          country: '1',
           pdom: 'home',
           transactionId: '5f33781f-9552-7ev3'
         },
         {
           refid: '5',
+          country: '1',
           pt: 'net',
           transactionId: '5f33781f-9552-7ev3',
         },
         {
           refid: '6',
+          country: '1',
           pt: 'gross',
           transactionId: '5f33781f-9552-7ev3'
         }
