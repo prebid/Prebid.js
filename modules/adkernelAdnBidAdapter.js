@@ -81,7 +81,7 @@ function buildSite() {
     ref: utils.getTopWindowReferrer(),
     secure: ~~(loc.protocol === 'https:')
   };
-  let keywords = document.getElementsByTagName('meta').namedItem('keywords');
+  let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
     result.keywords = keywords.content;
   }
