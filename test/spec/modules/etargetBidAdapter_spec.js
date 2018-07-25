@@ -29,10 +29,7 @@ describe('etarget adapter', () => {
 
     it('should handle global request parameters', () => {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
-      let query = parsedUrl.query;
-
       assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
-      assert.equal(query.url, encodeURIComponent('some// there'));
     });
 
     it('should set correct request method', () => {
@@ -282,7 +279,6 @@ describe('etarget adapter', () => {
         bidder: 'etarget',
         bidderRequestId: '1ab8d9',
         params: params[0],
-        adxDomain: 'newDomain',
         tid: 45,
         placementCode: placementCode[0],
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
@@ -400,7 +396,7 @@ describe('etarget adapter', () => {
           width: 600,
           win_bid: 10,
           win_cur: 'EUR',
-          vast_url: 'vast://url'
+          vast_link: 'vast://url'
         }
       ],
       headers: {}
