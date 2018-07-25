@@ -43,11 +43,11 @@ jobs:
             # Unzip it
             unzip BrowserStackLocal-linux-x64.zip
             # Run the file with user's access key
-            ./BrowserStackLocal ${BROWSERSTACK_KEY} &
+            ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
       # run tests!
       - run: 
           name: BrowserStack testing
           command: gulp test --browserstack
           environment:
             BROWSERSTACK_USERNAME: # Refer to circleci.com/docs/2.0/env-vars documentation for info
-            BROWSERSTACK_KEY: # about setting up environment variables for auth secrets
+            BROWSERSTACK_ACCESS_KEY: # about setting up environment variables for auth secrets
