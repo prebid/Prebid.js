@@ -85,7 +85,7 @@ function setBrowsers(karmaConf, browserstack) {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY
     }
-    if (process.env.TRAVIS) {
+    if (process.env.TRAVIS || process.env.CI) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
