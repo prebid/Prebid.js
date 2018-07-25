@@ -268,7 +268,7 @@ describe('etarget adapter', () => {
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ refid: 1, country: 1, url: 'some// there' }, { refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, { refid: 3, country: 1, pdom: 'home' }, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
+    let params = [{refid: 1, country: 1, url: 'some// there'}, {refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, {refid: 3, country: 1, pdom: 'home'}, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
