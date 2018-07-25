@@ -114,6 +114,24 @@ describe('C1XAdapter', () => {
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.pageurl).to.equal('http://c1exchange.com/');
     });
+
+    it('should convert GDPR Consent to proper form and attach to request', () => {
+      let consentString = 'BOP2gFWOQIFovABABAENBGAAAAAAMw';
+      let bidderRequest = {
+        'bidderCode': 'c1x',
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true
+        }
+      }
+      bidderRequest.bids = bidRequests;
+
+      const request = c1xAdapter.buildRequests(bidRequests, bidderRequest);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj['consent_string']).to.equal('BOP2gFWOQIFovABABAENBGAAAAAAMw');
+      expect(payloadObj['consent_required']).to.equal('true');
+    });
   });
 
   describe('interpretResponse', () => {

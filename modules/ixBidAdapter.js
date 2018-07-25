@@ -11,10 +11,19 @@ const BANNER_INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER];
 const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
-const TIME_TO_LIVE = 60;
+const TIME_TO_LIVE = 35;
 const NET_REVENUE = true;
-const isSecureWeb = utils.getTopWindowLocation().protocol === 'https:';
+
+// Always start by assuming the protocol is HTTPS. This way, it will work
+// whether the page protocol is HTTP or HTTPS. Then check if the page is
+// actually HTTP.If we can guarantee it is, then, and only then, set protocol to
+// HTTP.
+let isSecureWeb = true;
+if (utils.getTopWindowLocation().protocol.indexOf('https') !== 0) {
+  isSecureWeb = false;
+}
 const baseUrl = isSecureWeb ? BANNER_SECURE_BID_URL : BANNER_INSECURE_BID_URL;
+
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
@@ -22,8 +31,8 @@ const PRICE_TO_DOLLAR_FACTOR = {
 /**
  * Transform valid bid request config object to impression object that will be sent to ad server.
  *
- * @param {object} bid A valid bid request config object.
- * @return {object} A impression object that will be sent to ad server.
+ * @param  {object} bid A valid bid request config object.
+ * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToBannerImp(bid) {
   const imp = {};
@@ -31,16 +40,19 @@ function bidToBannerImp(bid) {
   imp.id = bid.bidId;
 
   imp.banner = {};
-  // imp.banner.w = bid.params.size[0];
-  // imp.banner.h = bid.params.size[1];
-  // @TODO: This is written thinking mediaTypes are in use, had to alter a bit because they aren't
-  imp.banner.w = bid.sizes[0][0];
-  imp.banner.h = bid.sizes[0][1];
+  imp.banner.w = bid.params.size[0];
+  imp.banner.h = bid.params.size[1];
   imp.banner.topframe = utils.inIframe() ? 0 : 1;
 
   imp.ext = {};
-  imp.ext.sid = `${imp.banner.w}x${imp.banner.h}`;
   imp.ext.siteID = bid.params.siteId;
+
+  if (bid.params.hasOwnProperty('id') &&
+    (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
+    imp.ext.sid = String(bid.params.id);
+  } else {
+    imp.ext.sid = `${bid.params.size[0]}x${bid.params.size[1]}`;
+  }
 
   if (bid.params.hasOwnProperty('bidFloor') && bid.params.hasOwnProperty('bidFloorCur')) {
     imp.bidfloor = bid.params.bidFloor;
@@ -53,9 +65,9 @@ function bidToBannerImp(bid) {
 /**
  * Parses a raw bid for the relevant information.
  *
- * @param {object} rawBid The bid to be parsed.
- * @param {string} currency Global currency in bid response.
- * @return {object} bid The parsed bid.
+ * @param  {object} rawBid   The bid to be parsed.
+ * @param  {string} currency Global currency in bid response.
+ * @return {object} bid      The parsed bid.
  */
 function parseBid(rawBid, currency) {
   const bid = {};
@@ -82,19 +94,21 @@ function parseBid(rawBid, currency) {
 /**
  * Determines whether or not the given object is valid size format.
  *
- * @param {*} size The object to de validated.
- * @return {boolean} True if this is a valid size format, and false otherwise.
+ * @param  {*}       size The object to be validated.
+ * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
   return isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
 }
 
 /**
- * Determines whether or not the given size object is an element of the size array.
+ * Determines whether or not the given size object is an element of the size
+ * array.
  *
- * @param {array} sizeArray The size array.
- * @param {object} size The size object.
- * @return {boolean} True if the size object is an element of the size array, and false otherwise.
+ * @param  {array}  sizeArray The size array.
+ * @param  {object} size      The size object.
+ * @return {boolean}          True if the size object is an element of the size array, and false
+ *                            otherwise.
  */
 function includesSize(sizeArray, size) {
   if (isValidSize(sizeArray)) {
@@ -113,14 +127,16 @@ function includesSize(sizeArray, size) {
 /**
  * Determines whether or not the given bidFloor parameters are valid.
  *
- * @param {*} bidFloor The bidFloor parameter inside bid request config.
- * @param {*} bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {boolean} True if this is a valid biFfloor parameters format, and false otherwise.
+ * @param  {*}       bidFloor    The bidFloor parameter inside bid request config.
+ * @param  {*}       bidFloorCur The bidFloorCur parameter inside bid request config.
+ * @return {boolean}             True if this is a valid biFfloor parameters format, and false
+ *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
   const curRegex = /^[A-Z]{3}$/;
 
-  return Boolean(typeof bidFloor === 'number' && typeof bidFloorCur === 'string' && bidFloorCur.match(curRegex));
+  return Boolean(typeof bidFloor === 'number' && typeof bidFloorCur === 'string' &&
+    bidFloorCur.match(curRegex));
 }
 
 export const spec = {
@@ -131,20 +147,27 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
-   * @return {boolean} True if this is a valid bid, and false otherwise.
+   * @param  {object}  bid The bid to validate.
+   * @return {boolean}     True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    // @TODO: This is written thinking mediaTypes are in use, had to alter a bit because they aren't
-    // if (!isValidSize(bid.params.size)) {
-    //   return false;
-    // }
+    if (!isValidSize(bid.params.size)) {
+      return false;
+    }
 
-    // if (!includesSize(bid.sizes, bid.params.size)) {
-    //   return false;
-    // }
+    if (!includesSize(bid.sizes, bid.params.size)) {
+      return false;
+    }
 
-    if (typeof bid.params.siteId !== 'string') {
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType !== 'banner') {
+      return false;
+    }
+
+    if (bid.hasOwnProperty('mediaTypes') && !utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
+      return false;
+    }
+
+    if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
       return false;
     }
 
@@ -152,7 +175,8 @@ export const spec = {
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
 
     if (hasBidFloor || hasBidFloorCur) {
-      return hasBidFloor && hasBidFloorCur && isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur);
+      return hasBidFloor && hasBidFloorCur &&
+        isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur);
     }
 
     return true;
@@ -161,10 +185,11 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {array} validBidRequests A list of valid bid request config objects.
-   * @return {object} Info describing the request to the server.
+   * @param  {array}  validBidRequests A list of valid bid request config objects.
+   * @param  {object} options          A object contains bids and other info like gdprConsent.
+   * @return {object}                  Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, options) {
     const bannerImps = [];
     let validBidRequest = null;
     let bannerImp = null;
@@ -172,18 +197,16 @@ export const spec = {
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
-      // If the bid request is for banner, then transform the bid request based on banner format.
-      if (utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
-        validBidRequest.mediaType === 'banner' ||
-        (validBidRequest.mediaType === undefined && utils.deepAccess(validBidRequest, 'mediaTypes.banner') === undefined)) {
-        bannerImp = bidToBannerImp(validBidRequest);
-        bannerImps.push(bannerImp);
-      }
+      // Transform the bid request based on the banner format.
+      bannerImp = bidToBannerImp(validBidRequest);
+      bannerImps.push(bannerImp);
     }
 
-    // Since bidderRequestId are the same for diffrent bid request, just use the first one
     const r = {};
+
+    // Since bidderRequestId are the same for different bid request, just use the first one.
     r.id = validBidRequests[0].bidderRequestId;
+
     r.imp = bannerImps;
     r.site = {};
     r.site.page = utils.getTopWindowUrl();
@@ -191,25 +214,55 @@ export const spec = {
     r.ext = {};
     r.ext.source = 'prebid';
 
-    // Append firstPartyData to r.site.page if firstPartyData exists
-    const otherIxConfig = config.getConfig('ix');
+    // Apply GDPR information to the request if GDPR is enabled.
+    if (options && options.gdprConsent) {
+      const gdprConsent = options.gdprConsent;
 
-    if (otherIxConfig && otherIxConfig.firstPartyData) {
-      const firstPartyData = otherIxConfig.firstPartyData;
-      let firstPartyString = '?';
-      for (const key in firstPartyData) {
-        if (firstPartyData.hasOwnProperty(key)) {
-          firstPartyString += `${encodeURIComponent(key)}=${encodeURIComponent(firstPartyData[key])}&`;
-        }
+      if (gdprConsent.hasOwnProperty('gdprApplies')) {
+        r.regs = {
+          ext: {
+            gdpr: gdprConsent.gdprApplies ? 1 : 0
+          }
+        };
       }
-      firstPartyString = firstPartyString.slice(0, -1);
 
-      r.site.page += firstPartyString;
+      if (gdprConsent.hasOwnProperty('consentString')) {
+        r.user = {
+          ext: {
+            consent: gdprConsent.consentString || ''
+          }
+        };
+      }
     }
 
-    // Use the siteId in the first bid request as the main siteId
     const payload = {};
+
+    // Parse additional runtime configs.
+    const otherIxConfig = config.getConfig('ix');
+    if (otherIxConfig) {
+      // Append firstPartyData to r.site.page if firstPartyData exists.
+      if (typeof otherIxConfig.firstPartyData === 'object') {
+        const firstPartyData = otherIxConfig.firstPartyData;
+        let firstPartyString = '?';
+        for (const key in firstPartyData) {
+          if (firstPartyData.hasOwnProperty(key)) {
+            firstPartyString += `${encodeURIComponent(key)}=${encodeURIComponent(firstPartyData[key])}&`;
+          }
+        }
+        firstPartyString = firstPartyString.slice(0, -1);
+
+        r.site.page += firstPartyString;
+      }
+
+      // Create t in payload if timeout is configured.
+      if (typeof otherIxConfig.timeout === 'number') {
+        payload.t = otherIxConfig.timeout;
+      }
+    }
+
+    // Use the siteId in the first bid request as the main siteId.
     payload.s = validBidRequests[0].params.siteId;
+
     payload.v = ENDPOINT_VERSION;
     payload.r = JSON.stringify(r);
     payload.ac = 'j';
@@ -225,8 +278,8 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {object} serverResponse A successful response from the server.
-   * @return {array} An array of bids which were nested inside the server.
+   * @param  {object} serverResponse A successful response from the server.
+   * @return {array}                 An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
     const bids = [];
@@ -243,7 +296,7 @@ export const spec = {
         continue;
       }
 
-      // Transform rawBid in bid response to the format that will be accepted by prebid
+      // Transform rawBid in bid response to the format that will be accepted by prebid.
       const innerBids = seatbid[i].bid;
       for (let j = 0; j < innerBids.length; j++) {
         bid = parseBid(innerBids[j], responseBody.cur);
