@@ -11,7 +11,7 @@ const VIDEO_PROPERTIES = [
   'protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'
 ];
 const OPTIONAL_PROPERTIES = [
-  'cur', 'floor'
+  'cur', 'floor', 'sid'
 ];
 
 export const spec = {
@@ -99,7 +99,8 @@ function buildGiBidRequest(bidRequest) {
     tid: bidRequest.params.tid, // required
     known: bidRequest.params.known || 1,
     is_video: bidRequest.mediaType === 'video',
-    resp_type: 'JSON'
+    resp_type: 'JSON',
+    provider: 'direct.prebidjs'
   };
   if (bidRequest.sizes) {
     giBidRequest.size = produceSize(bidRequest.sizes);
