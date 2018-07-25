@@ -17,21 +17,14 @@ RDN bid adapter supports Banner currently.
 ```
   var adUnits = [
     {
-      code: 'rdn-ad-test-div',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [300, 250],
-            [300, 100],
-            [320, 50]
-          ]
-        }
-      },
+      code: 'test-ad-div',
+      sizes: [[300, 250]],
+      mediaTypes: {banner: {}},
       bids: [
         {
           bidder: 'rdn',
           params: {
-           adSpotId: 445999
+            adSpotId: '445999'
           }
         }
       ]
