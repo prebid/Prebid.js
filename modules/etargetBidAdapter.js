@@ -88,7 +88,7 @@ export const spec = {
       bid = bids[i];
       if (VALID_RESPONSES[data.response] && (verifySize(data, bid.sizes) || type === VIDEO)) {
         bidObject = {
-          requestId: data.bidId,
+          requestId: bid.bidId,
           cpm: data.win_bid ? data.win_bid : 0,
           width: data.width,
           height: data.height,
