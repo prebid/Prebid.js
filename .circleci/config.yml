@@ -43,7 +43,7 @@ jobs:
             # Unzip it
             unzip BrowserStackLocal-linux-x64.zip
             # Run the file with user's access key
-            ./BrowserStackLocal ${BROWSERSTACK_KEY}
+            ./BrowserStackLocal ${BROWSERSTACK_KEY} &
       # run tests!
       - run: 
           name: BrowserStack testing
