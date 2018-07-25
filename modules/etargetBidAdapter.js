@@ -99,7 +99,8 @@ export const spec = {
           ad: data.banner,
           vastXml: data.vast_content,
           vastUrl: data.vast_link,
-          mediaType: data.response
+          mediaType: data.response,
+          transactionId: bid.transactionId
         };
         if (bidRequest.gdpr) {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
