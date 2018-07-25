@@ -44,6 +44,13 @@ jobs:
             unzip BrowserStackLocal-linux-x64.zip
             # Run the file with user's access key
             ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
+
+      - run: 
+          name: echo vars
+          command: echo $BROWSERSTACK_USERNAME
+          environment:
+            BROWSERSTACK_USERNAME: # Refer to circleci.com/docs/2.0/env-vars documentation for info
+            BROWSERSTACK_ACCESS_KEY: # about setting up environment variables for auth secrets
       # run tests!
       - run: 
           name: BrowserStack testing
