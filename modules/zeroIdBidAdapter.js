@@ -13,6 +13,7 @@ const STORE_UID_TIMEOUT_MS = 500;
 var domainIsOnWhiteListVar = false;
 var domainIsOnLabListVar = false;
 var countryOnWhiteListVar = false;
+var isEU = false;
 
 let consent_string = '';
 let gdpr_applies = false;
@@ -25,15 +26,56 @@ var personaGroup = "";
 var mgVal;
 
 var samplingVal = Math.floor(Math.random() * 1000) + 1;
-var labVal = Math.floor(Math.random() * 10) + 1;
-var mgValRnd = Math.floor(Math.random() * 100) + 1;
+var labVal = Math.floor(Math.random() * 50) + 1;
+var mgValRnd = Math.floor(Math.random() * 4) + 1;
 
-if(mgValRnd == 100){
+if(mgValRnd == 1){
   mgVal = true;
 }
 else{
   mgVal = false;
 }
+
+if(navigator.language == "en-GB" ||
+  navigator.language == "sv-SE" ||
+  navigator.language == "es-ES" ||
+  navigator.language == "sl-SI" ||
+  navigator.language == "sk-SK" ||
+  navigator.language == "ro-RO" ||
+  navigator.language == "en-NL" ||
+  navigator.language == "nl-NL" ||
+  navigator.language == "pt-PT" ||
+  navigator.language == "pl-PL" ||
+  navigator.language == "mt-MT" ||
+  navigator.language == "en-MA" ||
+  navigator.language == "de-LU" ||
+  navigator.language == "lu-FR" ||
+  navigator.language == "lt-LT" ||
+  navigator.language == "lv-LV" ||
+  navigator.language == "en-LV" ||
+  navigator.language == "it-IT" ||
+  navigator.language == "en-IE" ||
+  navigator.language == "hu-HU" ||
+  navigator.language == "el-GR" ||
+  navigator.language == "de-DE" ||
+  navigator.language == "fr-FR" ||
+  navigator.language == "sv-FI" ||
+  navigator.language == "fi-FI" ||
+  navigator.language == "et-EE" ||
+  navigator.language == "da-DK" ||
+  navigator.language == "cs-CZ" ||
+  navigator.language == "el-CY" ||
+  navigator.language == "hr-HR" ||
+  navigator.language == "bg-BG" ||
+  navigator.language == "fr-BE" ||
+  navigator.language == "nl-BE" ||
+  navigator.language == "at-AT" ||
+  navigator.language == "hu-AT" ||
+  navigator.language == "de-AT" ||
+  navigator.language == "ga-IE"){
+  isEU = true;
+}
+
 
 (window.onpopstate = function () {
   var match,
@@ -599,7 +641,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
-  if(dat && dat.gdprApplies && personaGroup != ""){
+  if(isEU && personaGroup != "" && labVal == 1){
     var personaVal = getPersonaVal();
     request.switch_user_id = personaVal;
     request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
@@ -654,7 +696,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if (dat && dat.gdprApplies &&  domainIsOnLabListVar) {
+  else if (isEU) {
 
     var isBot = isABot();
 
@@ -891,6 +933,7 @@ const triggerSync = function () {
 
         zidSyncUri += `?consent_string=${consent_string}`;
         zidSyncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
+        zidSyncUri += `&dsync=delivery.zidtech.com`;
 
         let swid = readCookie('__SW');
         if (swid === null) {
@@ -904,16 +947,16 @@ const triggerSync = function () {
         const iframe = document.createElement('iframe');
         const syncIframe = document.createElement('iframe');
 
-        document.body.appendChild(iframe);
+        /*                document.body.appendChild(iframe);
 
-        iframe.setAttribute('seamless', 'seamless');
-        iframe.setAttribute('frameBorder', '0');
-        iframe.setAttribute('frameSpacing', '0');
-        iframe.setAttribute('scrolling', 'no');
-        iframe.setAttribute('style', 'border:none; padding: 0px; margin: 0px; position: absolute;');
-        iframe.setAttribute('width', '0');
-        iframe.setAttribute('height', '0');
-        iframe.src = syncUri;
+                        iframe.setAttribute('seamless', 'seamless');
+                        iframe.setAttribute('frameBorder', '0');
+                        iframe.setAttribute('frameSpacing', '0');
+                        iframe.setAttribute('scrolling', 'no');
+                        iframe.setAttribute('style', 'border:none; padding: 0px; margin: 0px; position: absolute;');
+                        iframe.setAttribute('width', '0');
+                        iframe.setAttribute('height', '0');
+                        iframe.src = syncUri;*/
 
         document.body.appendChild(syncIframe);
 
