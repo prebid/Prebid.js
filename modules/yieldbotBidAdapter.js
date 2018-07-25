@@ -10,7 +10,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
  * @private
  */
 export const YieldbotAdapter = {
-  _adapterLoaded: Date.now(),
+  _adapterLoaded: utils.timestamp(),
   _navigationStart: 0,
   _version: 'pbjs-yb-0.0.1',
   _bidRequestCount: 0,
@@ -205,7 +205,7 @@ export const YieldbotAdapter = {
 
       const bidUrl = this.urlPrefix() + yieldbotSlotParams.psn + '/v1/init';
 
-      searchParams['cts_ini'] = Date.now();
+      searchParams['cts_ini'] = utils.timestamp();
       requests.push({
         method: 'GET',
         url: bidUrl,
@@ -325,7 +325,7 @@ export const YieldbotAdapter = {
 
   buildAdUrl: function(urlPrefix, publisherNumber, commonSearchParams, bid) {
     const searchParams = Object.assign({}, commonSearchParams);
-    searchParams['cts_res'] = Date.now();
+    searchParams['cts_res'] = utils.timestamp();
     searchParams['slot'] = bid.slot + ':' + bid.size;
     searchParams['ioa'] = this.intersectionObserverAvailable(window);
 
@@ -369,7 +369,7 @@ export const YieldbotAdapter = {
     const adUrl = this.buildAdUrl(urlPrefix, publisherNumber, commonSearchParams, bid);
     const impressionUrl = this.buildImpressionUrl(urlPrefix, publisherNumber, commonSearchParams);
 
-    const htmlMarkup = `<div id="ybot-${ybotAdRequestId}"></div><script type="text/javascript">var yieldbot={iframeType:function(win){var it='none';while(win !== window.top){try{win=win.parent;var doc=win.document;it=doc?'so':'co';}catch(e){it='co';}}return it;},'_render':function(data){try{yieldbot['cts_rend_'+'${ybotAdRequestId}']=Date.now();var bodyHtml=data.html,width=data.size[0]||0,height=data.size[1]||0,divEl=document.createElement('div');divEl.style.width=width+'px';divEl.style.height=height+'px';divEl.className='ybot-creativecreative-wrapper';var containerEl=document.getElementById(data.wrapper_id||'ybot-'+data.request_id);containerEl.appendChild(divEl);var iframeHtml='<!DOCTYPE html><head><meta charset=utf-8><style>'+data.style+'</style></head><body>'+data.html+'</body>',innerFrame=document.createElement('iframe');innerFrame.width=width;innerFrame.height=height;innerFrame.scrolling='no';innerFrame.marginWidth='0';innerFrame.marginHeight='0';innerFrame.frameBorder='0';innerFrame.style.border='0px';innerFrame.style['vertical-align']='bottom';innerFrame.id='ybot-'+data.request_id+'-iframe';divEl.appendChild(innerFrame);var innerFrameDoc=innerFrame.contentWindow.document;innerFrameDoc.open();innerFrameDoc.write(iframeHtml);innerFrameDoc.close();var image=new Image(1,1);image.onload=function(){};var cts_rend=yieldbot['cts_rend_'+'${ybotAdRequestId}']||0;image.src='${impressionUrl}'+'&cts_imp='+Date.now()+'&cts_rend='+cts_rend+'&e';}catch(err){}}};</script><script type="text/javascript">var jsEl=document.createElement('script');var src='${adUrl}'+'&it='+yieldbot.iframeType(window)+'&cts_ad='+Date.now()+'&e';jsEl.src=src;var firstEl=document.getElementsByTagName('script')[0];firstEl.parentNode.insertBefore(jsEl,firstEl);</script>`;
+    const htmlMarkup = `<div id="ybot-${ybotAdRequestId}"></div><script type="text/javascript">var yieldbot={iframeType:function(win){var it='none';while(win !== window.top){try{win=win.parent;var doc=win.document;it=doc?'so':'co';}catch(e){it='co';}}return it;},'_render':function(data){try{yieldbot['cts_rend_'+'${ybotAdRequestId}']=(new Date()).getTime();var bodyHtml=data.html,width=data.size[0]||0,height=data.size[1]||0,divEl=document.createElement('div');divEl.style.width=width+'px';divEl.style.height=height+'px';divEl.className='ybot-creativecreative-wrapper';var containerEl=document.getElementById(data.wrapper_id||'ybot-'+data.request_id);containerEl.appendChild(divEl);var iframeHtml='<!DOCTYPE html><head><meta charset=utf-8><style>'+data.style+'</style></head><body>'+data.html+'</body>',innerFrame=document.createElement('iframe');innerFrame.width=width;innerFrame.height=height;innerFrame.scrolling='no';innerFrame.marginWidth='0';innerFrame.marginHeight='0';innerFrame.frameBorder='0';innerFrame.style.border='0px';innerFrame.style['vertical-align']='bottom';innerFrame.id='ybot-'+data.request_id+'-iframe';divEl.appendChild(innerFrame);var innerFrameDoc=innerFrame.contentWindow.document;innerFrameDoc.open();innerFrameDoc.write(iframeHtml);innerFrameDoc.close();var image=new Image(1,1);image.onload=function(){};var cts_rend=yieldbot['cts_rend_'+'${ybotAdRequestId}']||0;image.src='${impressionUrl}'+'&cts_imp='+(new Date()).getTime()+'&cts_rend='+cts_rend+'&e';}catch(err){}}};</script><script type="text/javascript">var jsEl=document.createElement('script');var src='${adUrl}'+'&it='+yieldbot.iframeType(window)+'&cts_ad='+(new Date()).getTime()+'&e';jsEl.src=src;var firstEl=document.getElementsByTagName('script')[0];firstEl.parentNode.insertBefore(jsEl,firstEl);</script>`;
     return { ad: htmlMarkup, creativeId: ybotAdRequestId };
   },
 
@@ -410,7 +410,7 @@ export const YieldbotAdapter = {
     const userId = this.userId;
     const sessionId = this.sessionId;
     const pageviewId = this.newId();
-    const currentBidTime = Date.now();
+    const currentBidTime = utils.timestamp();
     const lastBidTime = this.lastPageviewTime;
     const lastBidId = this.lastPageviewId;
     this.lastPageviewTime = currentBidTime;
@@ -537,7 +537,7 @@ export const YieldbotAdapter = {
   setCookie: function(name, value, expireMillis, path, domain, secure) {
     const dataValue = encodeURIComponent(value);
     const cookieStr = name + '=' + dataValue +
-            (expireMillis ? ';expires=' + new Date(Date.now() + expireMillis).toGMTString() : '') +
+            (expireMillis ? ';expires=' + new Date(utils.timestamp() + expireMillis).toGMTString() : '') +
             (path ? ';path=' + path : '') +
             (domain ? ';domain=' + domain : '') +
             (secure ? ';secure' : '');
@@ -567,7 +567,7 @@ export const YieldbotAdapter = {
    * @private
    */
   newId: function() {
-    return (+new Date()).toString(36) + 'xxxxxxxxxx'
+    return (utils.timestamp()).toString(36) + 'xxxxxxxxxx'
       .replace(/[x]/g, function() {
         return (0 | Math.random() * 36).toString(36);
       });
@@ -600,5 +600,5 @@ export const spec = {
   getUserSyncs: YieldbotAdapter.createDelegate(YieldbotAdapter, YieldbotAdapter.getUserSyncs)
 };
 
-YieldbotAdapter._navigationStart = Date.now();
+YieldbotAdapter._navigationStart = utils.timestamp();
 registerBidder(spec);
