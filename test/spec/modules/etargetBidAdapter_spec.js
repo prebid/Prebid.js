@@ -153,7 +153,6 @@ describe('etarget adapter', () => {
       assert.equal(result.cpm, 13.9);
       assert.equal(result.width, 300);
       assert.equal(result.height, 250);
-      assert.equal(result.dealId, '123abc');
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
       assert.equal(result.ttl, 360);
