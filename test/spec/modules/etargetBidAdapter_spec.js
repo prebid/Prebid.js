@@ -32,7 +32,6 @@ describe('etarget adapter', () => {
       let query = parsedUrl.query;
 
       assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
-      assert.equal(query.stid, '7aefb970-2045');
       assert.equal(query.url, encodeURIComponent('some// there'));
     });
 
@@ -98,18 +97,6 @@ describe('etarget adapter', () => {
       assert.deepEqual(resultBids, bids[0]);
     });
 
-    it('should set gross to the request, if there is any gross priceType', () => {
-      let request = spec.buildRequests([bids[5], bids[5]]);
-      let parsedUrl = parseUrl(request.url);
-
-      assert.equal(parsedUrl.query.pt, 'net');
-
-      request = spec.buildRequests([bids[4], bids[3]]);
-      parsedUrl = parseUrl(request.url);
-
-      assert.equal(parsedUrl.query.pt, 'gross');
-    });
-
     describe('gdpr', () => {
       it('should send GDPR Consent data to etarget if gdprApplies', () => {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
@@ -169,7 +156,6 @@ describe('etarget adapter', () => {
       assert.equal(result.cpm, 13.9);
       assert.equal(result.width, 300);
       assert.equal(result.height, 250);
-      assert.equal(result.creativeId, '2a0cf4e');
       assert.equal(result.dealId, '123abc');
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
