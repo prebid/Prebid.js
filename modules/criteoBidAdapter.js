@@ -51,7 +51,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
+      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -158,6 +158,7 @@ function buildCdbUrl(context) {
   let url = CDB_ENDPOINT;
   url += '?profileId=' + PROFILE_ID;
   url += '&av=' + String(ADAPTER_VERSION);
+  url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
   if (context.integrationMode in INTEGRATION_MODES) {
