@@ -32,9 +32,6 @@ describe('etarget adapter', () => {
       let query = parsedUrl.query;
 
       assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
-      assert.equal(query.tid, 45);
-      assert.equal(query.rp, 4);
-      assert.equal(query.fd, 1);
       assert.equal(query.stid, '7aefb970-2045');
       assert.equal(query.url, encodeURIComponent('some// there'));
     });
@@ -289,7 +286,7 @@ describe('etarget adapter', () => {
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
+    let params = [{ refid: 1, country:1, url: 'some// there' }, {adxDomain: null, refid: 2, country:1, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, refid: 3, country:1, pdom: 'home' }, {refid: 5, country:1, pt: 'net'}, {refid: 6, country:1, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
