@@ -49,7 +49,8 @@ describe('etarget adapter', () => {
         {
           refid: '1',
           country: '1',
-          transactionId: '5f33781f-9552-4ca1'
+          transactionId: '5f33781f-9552-4ca1',
+          url: 'some// there'
         },
         {
           refid: '2',
@@ -184,7 +185,7 @@ describe('etarget adapter', () => {
       bidRequest.netRevenue = 'net';
       let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
-      assert.equal(result.netRevenue, false);
+      assert.equal(result.netRevenue, true);
     });
 
     it('should create bid response item for every requested item', () => {
@@ -214,7 +215,7 @@ describe('etarget adapter', () => {
       bidRequest.netRevenue = 'gross';
       const result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
-        assert.equal(result[i].netRevenue, false);
+        assert.equal(result[i].netRevenue, true);
       }
     });
 
@@ -286,7 +287,7 @@ describe('etarget adapter', () => {
   beforeEach(() => {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{ refid: 1, country:1, url: 'some// there' }, {adxDomain: null, refid: 2, country:1, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, refid: 3, country:1, pdom: 'home' }, {refid: 5, country:1, pt: 'net'}, {refid: 6, country:1, pt: 'gross'}];
+    let params = [{ refid: 1, country: 1, url: 'some// there' }, { refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, { refid: 3, country: 1, pdom: 'home' }, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],
@@ -400,7 +401,7 @@ describe('etarget adapter', () => {
         {
           deal_id: '123abc',
           height: 300,
-          response: 'vast_content',
+          response: 'video',
           width: 600,
           win_bid: 10,
           win_cur: 'EUR',
@@ -409,7 +410,7 @@ describe('etarget adapter', () => {
         {
           deal_id: '123abc',
           height: 300,
-          response: 'vast_url',
+          response: 'video',
           width: 600,
           win_bid: 10,
           win_cur: 'EUR',
@@ -421,7 +422,7 @@ describe('etarget adapter', () => {
     bidRequest = {
       bidder: 'etarget',
       bids: bids,
-      method: 'GET',
+      method: 'POST',
       url: 'url',
       netRevenue: 'net'
     };
