@@ -44,10 +44,6 @@ jobs:
             unzip BrowserStackLocal-linux-x64.zip
             # Run the file with user's access key
             ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
-
-      - run: 
-          name: echo vars
-          command: echo $BROWSERSTACK_USERNAME
       # run tests!
       - run: 
           name: BrowserStack testing
