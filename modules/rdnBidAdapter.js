@@ -16,7 +16,7 @@ export const spec = {
         method: 'GET',
         url: ENDPOINT,
         data: {
-          a: params.adSpotId,
+          t: params.adSpotId,
           s: document.location.protocol,
           ua: navigator.userAgent,
           l:
