@@ -5,7 +5,7 @@ import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../src/ajax';
 
 const store = require('store');
-const ENDPOINT = 'http://localhost:3000';
+const ENDPOINT = 'http://js-download.prebid.org/logger';
 
 const {
   EVENTS: {
