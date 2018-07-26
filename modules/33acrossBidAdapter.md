@@ -3,7 +3,7 @@
 ```
 Module Name:  33Across Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: aparna.hegde@33across.com
+Maintainer: headerbidding@33across.com
 ```
 
 # Description
