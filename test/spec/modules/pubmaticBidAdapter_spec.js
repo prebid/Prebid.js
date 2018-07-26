@@ -303,7 +303,8 @@ describe('PubMatic adapter', () => {
 
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.imp[0].banner.format).exist.and.to.be.an('array').with.length.above(0);
+        expect(data.imp[0].banner.format).exist.and.to.be.an('array');
+        expect(data.imp[0].banner.format[0]).exist.and.to.be.an('object');
         expect(data.imp[0].banner.format[0].w).to.equal(300); // width
         expect(data.imp[0].banner.format[0].h).to.equal(600); // height
       });
