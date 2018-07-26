@@ -23,7 +23,9 @@ export const sharethroughAdapterSpec = {
     })
   },
   interpretResponse: ({ body }, req) => {
-    if (!Object.keys(body).length) return [];
+    if (!body || !body.creatives || !body.creatives.length) {
+      return [];
+    }
 
     const creative = body.creatives[0];
 
