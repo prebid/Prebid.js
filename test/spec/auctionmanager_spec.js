@@ -8,6 +8,7 @@ import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 import find from 'core-js/library/fn/array/find';
+import { addBidResponse } from '../../src/auction';
 
 const adloader = require('../../src/adloader');
 var assert = require('assert');
@@ -855,6 +856,68 @@ describe('auctionmanager.js', function () {
 
       config.getConfig.restore();
       store.store.restore();
+    });
+  });
+
+  describe('done callback', () => {
+    const ADUNIT_CODE = 'code';
+    const BIDDER_CODE = 'sampleBidder';
+    let auction;
+    let doneSpy;
+    let xhr;
+    let requests;
+
+    beforeEach(() => {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = (request) => requests.push(request);
+
+      doneSpy = sinon.spy();
+      let adUnits = [{
+        code: ADUNIT_CODE,
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }];
+      let adUnitCodes = adUnits.map(({ code }) => code);
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+    });
+
+    it('should be called in case of banner', () => {
+      let bid = mockBid({bidderCode: BIDDER_CODE});
+      let bidRequests = [mockBidRequest(bid, {bidderCode: BIDDER_CODE, adUnitCode: ADUNIT_CODE})];
+
+      auction = Object.assign(auction, {
+        getBidRequests: () => { return bidRequests },
+        getAuctionId: () => { return bidRequests[0].auctionId },
+      });
+      const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequests[0]), bid);
+      let addBidResponseHook = addBidResponse.bind(auction);
+      addBidResponseHook(ADUNIT_CODE, prebidBid, doneSpy);
+      assert(doneSpy.calledOnce);
+    });
+
+    it('should be called in case of video', () => {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
+      let bid = mockBid({bidderCode: BIDDER_CODE});
+      bid = Object.assign({}, bid, { mediaType: 'video' });
+      let bidRequests = [mockBidRequest(bid, {bidderCode: BIDDER_CODE, adUnitCode: ADUNIT_CODE})];
+
+      auction = Object.assign(auction, {
+        getBidRequests: () => { return bidRequests },
+        getAuctionId: () => { return bidRequests[0].auctionId },
+      });
+      const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequests[0]), bid);
+      let addBidResponseHook = addBidResponse.bind(auction);
+      addBidResponseHook(ADUNIT_CODE, prebidBid, doneSpy);
+      requests[0].respond(200, { 'Content-Type': 'application/json' }, `{"responses": [{"uuid": "1234"}]}`);
+
+      assert(doneSpy.calledOnce);
+      config.resetConfig();
     });
   });
 });

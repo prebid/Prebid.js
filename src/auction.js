@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -157,22 +157,24 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
   function done(bidRequestId) {
     const innerBidRequestId = bidRequestId;
-    return delayExecution(function() {
+    return function() {
       const request = find(_bidderRequests, (bidRequest) => {
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
-
-      // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
       request.doneCbCallCount += 1;
+      // emit BIDDER_DONE when all bids are added to auction
+      if (request.doneCbCallCount === request.bids.length) {
+        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, request);
+      }
       bidsBackAll();
-    }, 1);
+    };
   }
 
   /**
    * Execute bidBackHandler if all bidders have called done.
    */
   function bidsBackAll() {
-    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
+    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount === bidRequest.bids.length)) {
       // when all bidders have called done callback atleast once it means auction is complete
       utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
       _auctionStatus = AUCTION_COMPLETED;
@@ -311,7 +313,7 @@ function addBidToAuction(auctionInstance, bidResponse) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
+function tryAddVideoBid(auctionInstance, bidResponse, bidRequest, done) {
   let addBid = true;
   if (config.getConfig('cache.url')) {
     if (!bidResponse.videoCacheKey) {
@@ -326,10 +328,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
           if (!bidResponse.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
-          // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
-          bidRequest.doneCbCallCount += 1;
           addBidToAuction(auctionInstance, bidResponse);
-          auctionInstance.bidsBackAll();
+          done();
         }
       });
     } else if (!bidResponse.vastUrl) {
@@ -339,10 +339,11 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
   }
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
+    done();
   }
 }
 
-export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
+export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid, done) {
   let auctionInstance = this;
   let bidRequests = auctionInstance.getBidRequests();
   let auctionId = auctionInstance.getAuctionId();
@@ -351,9 +352,10 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
 
   if (bidResponse.mediaType === 'video') {
-    tryAddVideoBid(auctionInstance, bidResponse, bidRequest);
+    tryAddVideoBid(auctionInstance, bidResponse, bidRequest, done);
   } else {
     addBidToAuction(auctionInstance, bidResponse);
+    done();
   }
 }, 'addBidResponse');
 

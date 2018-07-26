@@ -304,7 +304,6 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
-      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should call spec.interpretResponse() once for each request made', () => {
@@ -328,7 +327,6 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.interpretResponse.calledTwice).to.equal(true);
-      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', () => {
@@ -360,7 +358,6 @@ describe('bidders created by newBidder', () => {
 
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-      expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
@@ -458,7 +455,6 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(spec.interpretResponse.called).to.equal(false);
-      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should not add bids for each adunit code into the auction', () => {
@@ -476,7 +472,6 @@ describe('bidders created by newBidder', () => {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(addBidResponseStub.callCount).to.equal(0);
-      expect(doneStub.calledOnce).to.equal(true);
     });
 
     it('should call spec.getUserSyncs() with no responses', () => {
@@ -494,7 +489,6 @@ describe('bidders created by newBidder', () => {
 
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
-      expect(doneStub.calledOnce).to.equal(true);
     });
   });
 });
