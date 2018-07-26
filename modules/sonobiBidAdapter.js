@@ -46,7 +46,7 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().host,
+      'ref': getTopWindowLocation().href,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
@@ -183,12 +183,12 @@ const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
   if (mediaType === 'video') {
     return _videoCreative(sbi_dc, sbi_aid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().href;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
 function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().href}`
 }
 
 function _getBidIdFromTrinityKey (key) {

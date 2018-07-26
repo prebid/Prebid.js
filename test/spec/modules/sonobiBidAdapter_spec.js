@@ -220,7 +220,7 @@ describe('SonobiBidAdapter', () => {
       'url': 'https://apex.go.sonobi.com/trinity.json',
       'withCredentials': true,
       'data': {
-        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'localhost:9876', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
+        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'http://localhost:9876/', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
       },
       'bidderRequests': [
         {
@@ -294,7 +294,7 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=localhost:9876"></script>',
+        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=http://localhost:9876/"></script>',
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
@@ -306,7 +306,7 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=localhost:9876',
+        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http://localhost:9876/',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
