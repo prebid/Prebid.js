@@ -1,8 +1,11 @@
 import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
 import CONSTANTS from 'src/constants.json';
+import includes from 'core-js/library/fn/array/includes';
+import { ajax } from '../src/ajax';
 
 const store = require('store');
+const ENDPOINT = 'http://localhost:3000';
 
 const {
   EVENTS: {
@@ -16,7 +19,8 @@ const {
     SET_TARGETING
   },
   INTERNAL_EVENTS: {
-    XHR_TIMEDOUT
+    XHR_TIMEDOUT,
+    SRA
   },
 } = CONSTANTS;
 
@@ -52,6 +56,7 @@ function mergeDeep(target, ...sources) {
   return mergeDeep(target, ...sources);
 }
 
+let sraBidders = [];
 let result = {};
 let counter;
 // https://stackoverflow.com/questions/14341156/calculating-page-load-time-in-javascript
@@ -77,6 +82,8 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
   },
   track({eventType, args}) {
     let key = 'prebid-' + counter;
+    let temp = {};
+    let auctionId;
     switch (eventType) {
       case AUCTION_INIT:
         result[args.auctionId] = {
@@ -91,14 +98,17 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case BID_REQUESTED:
-        let temp = {}
-        let auctionId = args.auctionId;
+        temp = {};
+        auctionId = args.auctionId;
         let numberOfBidsRequested = result[auctionId]['numberOfBidsRequested'];
         temp[auctionId] = {
           'numberOfBidsRequested': ++numberOfBidsRequested
         }
 
         result = mergeDeep(result, temp);
+        break;
+      case SRA:
+        sraBidders.push(args.bidder);
         break;
       case BID_RESPONSE:
         auctionId = args.auctionId;
@@ -107,6 +117,10 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
         temp[auctionId] = {
           'numberOfBidsReceived': ++numberOfBidsReceived
         };
+
+        if ((typeof result[auctionId]['bidder'] !== 'undefined' && typeof result[auctionId]['bidder'][args.bidderCode] !== 'undefined') && !includes(sraBidders, args.bidderCode)) {
+          break;
+        }
 
         temp[auctionId]['bidder'] = {};
         let timingObject = {
@@ -148,6 +162,7 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
           'auctionDuration': args.timestamp - result[args.auctionId].auctionStart
         }
         result = mergeDeep(result, temp);
+        sendData(args.auctionId);
         store.set(key, result);
         break;
       case BID_TIMEOUT:
@@ -179,6 +194,12 @@ let consoleAnalyticsAdapter = Object.assign({}, baseAdapter, {
     }
   }
 });
+
+function sendData(auctionId) {
+  let data = Object.assign(result[auctionId], {auctionId});
+  ajax(`${ENDPOINT}/csv`, null, JSON.stringify(data));
+  ajax(`${ENDPOINT}/raw`, null, JSON.stringify(result[auctionId]));
+}
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: consoleAnalyticsAdapter,

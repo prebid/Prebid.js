@@ -18,7 +18,8 @@ const {
     AD_RENDER_FAILED
   },
   INTERNAL_EVENTS: {
-    XHR_TIMEDOUT
+    XHR_TIMEDOUT,
+    SRA
   },
 } = CONSTANTS;
 
@@ -115,6 +116,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
           this.enqueue({ eventType: AUCTION_INIT, args });
         },
         [XHR_TIMEDOUT]: args => this.enqueue({ eventType: XHR_TIMEDOUT, args }),
+        [SRA]: args => this.enqueue({ eventType: SRA, args }),
       };
 
       utils._each(_handlers, (handler, event) => {

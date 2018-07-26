@@ -213,8 +213,16 @@ export function newBidder(spec) {
         afterAllResponses();
         return;
       }
+
       if (!Array.isArray(requests)) {
         requests = [requests];
+      }
+
+      if (requests.length > 1) {
+        events.emit(CONSTANTS.INTERNAL_EVENTS.SRA, {
+          auctionId: bidderRequest.auctionId,
+          bidder: spec.code
+        });
       }
 
       // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the

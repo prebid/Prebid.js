@@ -38,7 +38,8 @@
     "AD_RENDER_FAILED" : "adRenderFailed"
   },
   "INTERNAL_EVENTS": {
-    "XHR_TIMEDOUT": "xhrTimedOut"
+    "XHR_TIMEDOUT": "xhrTimedOut",
+    "SRA": "SRA"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
