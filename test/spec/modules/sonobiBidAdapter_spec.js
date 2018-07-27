@@ -318,6 +318,10 @@ describe('SonobiBidAdapter', () => {
 
     it('should map bidResponse to prebidResponse', () => {
       const response = spec.interpretResponse(bidResponse, bidRequests);
+      response.forEach(resp => {
+        let regx = /http:\/\/localhost:9876\/.*?(?="|$)/
+        resp.ad = resp.ad.replace(regx, 'http://localhost:9876/');
+      });
       expect(response).to.deep.equal(prebidResponse);
     })
   })
