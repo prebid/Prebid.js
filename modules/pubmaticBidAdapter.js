@@ -6,7 +6,7 @@ const constants = require('src/constants.json');
 const BIDDER_CODE = 'pubmatic';
 const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
@@ -90,7 +90,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -100,19 +100,28 @@ function _parseAdSlot(bid) {
   if (splits.length == 2) {
     bid.params.adUnitIndex = splits[1];
   }
+  // check if size is mentioned in sizes array. in that case do not check for @ in adslot
   splits = slot.split('@');
   if (splits.length != 2) {
-    utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
+    if (!(sizesArrayExists)) {
+      utils.logWarn('AdSlot Error: adSlot not in required format');
+      return;
+    }
   }
   bid.params.adUnit = splits[0];
-  splits = splits[1].split('x');
-  if (splits.length != 2) {
-    utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
+  if (splits.length > 1) { // i.e size is specified in adslot, so consider that and ignore sizes array
+    splits = splits[1].split('x');
+    if (splits.length != 2) {
+      utils.logWarn('AdSlot Error: adSlot not in required format');
+      return;
+    }
+    bid.params.width = parseInt(splits[0]);
+    bid.params.height = parseInt(splits[1]);
+    delete bid.sizes;
+  } else if (sizesArrayExists) {
+    bid.params.width = parseInt(bid.sizes[0][0]);
+    bid.params.height = parseInt(bid.sizes[0][1]);
   }
-  bid.params.width = parseInt(splits[0]);
-  bid.params.height = parseInt(splits[1]);
 }
 
 function _initConf() {
@@ -155,7 +164,7 @@ function _createOrtbTemplate(conf) {
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
-    cur: [CURRENCY],
+    cur: [DEFAULT_CURRENCY],
     imp: [],
     site: {
       page: conf.pageURL,
@@ -210,6 +219,7 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
 
   impObj = {
     id: bid.bidId,
@@ -218,7 +228,8 @@ function _createImpressionObject(bid, conf) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
-    }
+    },
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
 
   if (bid.params.hasOwnProperty('video')) {
@@ -251,6 +262,14 @@ function _createImpressionObject(bid, conf) {
       h: bid.params.height,
       topframe: utils.inIframe() ? 0 : 1,
     }
+    if (utils.isArray(sizes) && sizes.length > 1) {
+      sizes = sizes.splice(1, sizes.length - 1);
+      var format = [];
+      sizes.forEach(size => {
+        format.push({w: size[0], h: size[1]});
+      });
+      bannerObj.format = format;
+    }
     impObj.banner = bannerObj;
   }
   return impObj;
@@ -268,17 +287,17 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn('PubMatic Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
         return false;
       }
       if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn('PubMatic: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn('PubMatic: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent.');
+          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent.');
           return false;
         }
       }
@@ -296,22 +315,36 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
+    var bidCurrency = '';
+    var dctr = '';
+    var dctrLen;
+    var dctrArr = [];
     validBidRequests.forEach(bid => {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn('PubMatic: Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
       } else {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
-          utils.logWarn('PubMatic: Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
       }
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
+      if (bidCurrency === '') {
+        bidCurrency = bid.params.currency || undefined;
+      } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
+        utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
+      }
+      bid.params.currency = bidCurrency;
+      // check if dctr is added to more than 1 adunit
+      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
+        dctrArr.push(bid.params.dctr);
+      }
       payload.imp.push(_createImpressionObject(bid, conf));
     });
 
@@ -352,6 +385,33 @@ export const spec = {
     payload.device.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // set dctr value in site.ext, if present in validBidRequests[0], else ignore
+    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+      dctr = validBidRequests[0].params.dctr;
+      if (utils.isStr(dctr) && dctr.length > 0) {
+        var arr = dctr.split('|');
+        dctr = '';
+        arr.forEach(val => {
+          dctr += (val.length > 0) ? (val.trim() + '|') : '';
+        });
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
+        }
+        payload.site.ext = {
+          key_val: dctr.trim()
+        }
+      } else {
+        utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+      }
+      if (dctrArr.length > 1) {
+        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+      }
+    } else {
+      utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -367,9 +427,11 @@ export const spec = {
   */
   interpretResponse: (response, request) => {
     const bidResponses = [];
+    var respCur = DEFAULT_CURRENCY;
     try {
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
+        respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
           utils.isArray(seatbidder.bid) &&
@@ -381,7 +443,7 @@ export const spec = {
               height: bid.h,
               creativeId: bid.crid || bid.id,
               dealId: bid.dealid,
-              currency: CURRENCY,
+              currency: respCur,
               netRevenue: NET_REVENUE,
               ttl: 300,
               referrer: utils.getTopWindowUrl(),
