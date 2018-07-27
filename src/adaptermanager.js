@@ -190,7 +190,6 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionId,
         bidderRequestId,
         tid,
-        adUnitsS2SCopy,
         bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
@@ -199,6 +198,21 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
       }
+    });
+
+    // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
+    // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
+    adUnitsS2SCopy.forEach((adUnitCopy) => {
+      let validBids = adUnitCopy.bids.filter((adUnitBid) => {
+        return find(bidRequests, request => {
+          return find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id);
+        });
+      });
+      adUnitCopy.bids = validBids;
+    });
+
+    bidRequests.forEach(request => {
+      request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
     });
   }
 
@@ -313,17 +327,6 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
     let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
-    adUnitsS2SCopy.forEach((adUnitCopy) => {
-      let validBids = adUnitCopy.bids.filter((bid) => {
-        return find(serverBidRequests, request => {
-          return request.bidderCode === bid.bidder &&
-          find(request.bids, (reqBid) => reqBid.adUnitCode === adUnitCopy.code);
-        });
-      });
-      adUnitCopy.bids = validBids;
-    });
-
-    adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
 
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
