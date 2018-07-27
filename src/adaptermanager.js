@@ -47,21 +47,16 @@ function getLabels(bidOrAdUnit, activeLabels) {
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
-    let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
+    let bannerSizes = utils.deepAccess(adUnit, 'mediaTypes.banner.sizes');
+
+    let {active, sizes: filteredAdUnitSizes} = resolveStatus(
+      getLabels(adUnit, labels),
+      bannerSizes || adUnit.sizes
+    );
 
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
-          if (adUnit.mediaTypes) {
-            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-              bid = Object.assign({}, bid, {mediaTypes: adUnit.mediaTypes});
-            } else {
-              utils.logError(
-                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-              );
-            }
-          }
-
           const nativeParams =
             adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
           if (nativeParams) {
@@ -76,6 +71,22 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
           ]));
 
           let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+
+          if (adUnit.mediaTypes) {
+            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
+              if (bannerSizes) {
+                adUnit.mediaTypes.banner.sizes = sizes;
+              }
+
+              bid = Object.assign({}, bid, {
+                mediaTypes: adUnit.mediaTypes
+              });
+            } else {
+              utils.logError(
+                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+              );
+            }
+          }
 
           if (active) {
             bids.push(Object.assign({}, bid, {
