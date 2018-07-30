@@ -171,10 +171,6 @@ export const spec = {
       }
     });
     return syncs;
-  },
-
-  onTimeout: function(data) {
-    utils.logWarn('Gambid request timed out.', data);
   }
 };
 
