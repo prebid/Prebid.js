@@ -129,7 +129,7 @@ export const spec = {
       if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
         outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
       } else if (bidRequest.bidRequest.mediaTypes.video) {
-        const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+        const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
         outBids.push(Object.assign({}, outBid, {
           mediaType: 'video',
           vastUrl: bid.ext.vast_url,
