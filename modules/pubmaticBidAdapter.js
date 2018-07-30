@@ -295,6 +295,22 @@ export const spec = {
             bidResponses.push(newBid);
           });
         });
+      } else {
+        if (response.body === '') {
+          let requestData = JSON.parse(request.data);
+          bidResponses.push({
+            requestId: requestData.imp[0].id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: CURRENCY,
+            referrer: utils.getTopWindowUrl()
+          });
+        }
       }
     } catch (error) {
       utils.logError(error);
