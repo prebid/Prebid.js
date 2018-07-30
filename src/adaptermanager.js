@@ -8,11 +8,13 @@ import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
+import { getGlobal } from './prebidGlobal';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
 let s2sTestingModule; // store s2sTesting module if it's loaded
+const $$PREBID_GLOBAL$$ = getGlobal();
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -95,7 +97,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
               sizes: sizes,
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
-              auctionId
+              auctionId,
+              displayCount: $$PREBID_GLOBAL$$.displayCount[adUnit.code]
             }));
           }
           return bids;
