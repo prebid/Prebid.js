@@ -180,13 +180,13 @@ export const spec = {
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-                                      url: '//s.gamoshi.io/video/latest/renderer.js',
-                                      config: rendererOptions,
-                                      loaded: false,
-                                    });
+    url: '//s.gamoshi.io/video/latest/renderer.js',
+    config: rendererOptions,
+    loaded: false,
+  });
   try {
     renderer.setRender(renderOutstream);
-  } catch(err) {
+  } catch (err) {
     utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
@@ -196,18 +196,18 @@ function renderOutstream(bid) {
   bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
     window['GamoshiPlayer'].renderAd({
-                                       id: unitId,
-                                       debug: window.location.href.indexOf('pbjsDebug') >= 0,
-                                       placement: document.getElementById(bid.adUnitCode),
-                                       width: bid.width,
-                                       height: bid.height,
-                                       events: {
-                                         ALL_ADS_COMPLETED: () => window.setTimeout(() => {
-                                           window[ 'GamoshiPlayer' ].removeAd( unitId );
-                                         }, 300)
-                                       },
-                                       vastXml: bid.vastXml
-                                     } );
+      id: unitId,
+      debug: window.location.href.indexOf('pbjsDebug') >= 0,
+      placement: document.getElementById(bid.adUnitCode),
+      width: bid.width,
+      height: bid.height,
+      events: {
+        ALL_ADS_COMPLETED: () => window.setTimeout(() => {
+          window[ 'GamoshiPlayer' ].removeAd( unitId );
+        }, 300)
+      },
+      vastXml: bid.vastXml
+    });
   });
 }
 
