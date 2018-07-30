@@ -695,7 +695,10 @@ export function PrebidServer() {
 
     ajax(
       _s2sConfig.endpoint,
-      response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+      {
+        success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+        error: done
+      },
       requestJson,
       { contentType: 'text/plain', withCredentials: true }
     );
