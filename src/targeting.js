@@ -16,7 +16,7 @@ const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
 
 // return unexpired bids
-export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+export const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
@@ -160,9 +160,9 @@ export function newTargeting(auctionManager) {
    * Sets targeting for DFP
    * @param {Object.<string,Object.<string,string>>} targetingConfig
    */
-  targeting.setTargetingForGPT = function(targetingConfig) {
+  targeting.setTargetingForGPT = function(targetingConfig, customSlotMatching) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      Object.keys(targetingConfig).filter(isAdUnitCodeMatchingSlot(slot))
+      Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
         .forEach(targetId =>
           Object.keys(targetingConfig[targetId]).forEach(key => {
             let valueArr = targetingConfig[targetId][key].split(',');
@@ -195,7 +195,7 @@ export function newTargeting(auctionManager) {
   function getBidsReceived() {
     const bidsReceived = auctionManager.getBidsReceived()
       .filter(isUnusedBid)
-      .filter(exports.isBidExpired)
+      .filter(exports.isBidNotExpired)
     ;
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);

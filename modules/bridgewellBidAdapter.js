@@ -5,7 +5,7 @@ import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
-const BIDDER_VERSION = '0.0.1';
+const BIDDER_VERSION = '0.0.2';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -66,6 +66,9 @@ export const spec = {
           prebid: '$prebid.version$',
           bridgewell: BIDDER_VERSION
         },
+        inIframe: utils.inIframe(),
+        url: utils.getTopWindowUrl(),
+        referrer: utils.getTopWindowReferrer(),
         adUnits: adUnits
       },
       validBidRequests: validBidRequests

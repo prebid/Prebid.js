@@ -18,6 +18,9 @@ const COOKIE_NAME = '_pubcid';
 const TIMEOUT = 2000;
 
 describe('Publisher Common ID', function () {
+  afterEach(() => {
+    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
+  });
   describe('Decorate adUnits', function () {
     before(function() {
       window.document.cookie = COOKIE_NAME + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
