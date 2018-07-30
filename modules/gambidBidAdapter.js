@@ -199,7 +199,7 @@ function renderOutstream(bid) {
       height: bid.height,
       events: {
         ALL_ADS_COMPLETED: () => window.setTimeout(() => {
-          window[ 'GamoshiPlayer' ].removeAd( unitId );
+          window['GamoshiPlayer'].removeAd(unitId);
         }, 300)
       },
       vastXml: bid.vastXml
