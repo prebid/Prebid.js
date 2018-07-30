@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import * as url from 'src/url';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes';
+import * as utils from 'src/utils'
+import * as url from 'src/url'
+import { registerBidder } from 'src/adapters/bidderFactory'
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes'
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -9,9 +9,9 @@ import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes';
  * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  */
 
-const BIDDER_CODE = 'adxcg';
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
-const SOURCE = 'pbjs10';
+const BIDDER_CODE = 'adxcg'
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
+const SOURCE = 'pbjs10'
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -23,7 +23,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.adzoneid);
+    return !!(bid.params.adzoneid)
   },
 
   /**
@@ -33,24 +33,24 @@ export const spec = {
    * Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    utils.logMessage(`buildRequests: ${JSON.stringify(validBidRequests)}`);
+    utils.logMessage(`buildRequests: ${JSON.stringify(validBidRequests)}`)
 
-    let adZoneIds = [];
-    let prebidBidIds = [];
-    let sizes = [];
+    let adZoneIds = []
+    let prebidBidIds = []
+    let sizes = []
 
     validBidRequests.forEach(bid => {
-      adZoneIds.push(utils.getBidIdParameter('adzoneid', bid.params));
-      prebidBidIds.push(bid.bidId);
-      sizes.push(utils.parseSizesInput(bid.sizes).join('|'));
-    });
+      adZoneIds.push(utils.getBidIdParameter('adzoneid', bid.params))
+      prebidBidIds.push(bid.bidId)
+      sizes.push(utils.parseSizesInput(bid.sizes).join('|'))
+    })
 
-    let location = utils.getTopWindowLocation();
-    let secure = location.protocol === 'https:';
+    let location = utils.getTopWindowLocation()
+    let secure = location.protocol === 'https:'
 
-    let requestUrl = url.parse(location.href);
-    requestUrl.search = null;
-    requestUrl.hash = null;
+    let requestUrl = url.parse(location.href)
+    requestUrl.search = null
+    requestUrl.hash = null
 
     let beaconParams = {
       renderformat: 'javascript',
@@ -62,11 +62,11 @@ export const spec = {
       secure: secure ? '1' : '0',
       source: SOURCE,
       pbjs: '$prebid.version$'
-    };
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      beaconParams.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
-      beaconParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      beaconParams.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0'
+      beaconParams.gdpr_consent = bidderRequest.gdprConsent.consentString
     }
 
     let adxcgRequestUrl = url.format({
@@ -74,12 +74,12 @@ export const spec = {
       hostname: secure ? 'hbps.adxcg.net' : 'hbp.adxcg.net',
       pathname: '/get/adi',
       search: beaconParams
-    });
+    })
 
     return {
       method: 'GET',
       url: adxcgRequestUrl,
-    };
+    }
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -88,76 +88,76 @@ export const spec = {
    * @return {bidRequests[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequests) {
-    let bids = [];
+    let bids = []
 
-    serverResponse = serverResponse.body;
+    serverResponse = serverResponse.body
     if (serverResponse) {
       serverResponse.forEach(serverResponseOneItem => {
-        let bid = {};
+        let bid = {}
 
-        bid.requestId = serverResponseOneItem.bidId;
-        bid.cpm = serverResponseOneItem.cpm;
-        bid.creativeId = parseInt(serverResponseOneItem.creativeId);
-        bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD';
-        bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
-        bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300;
+        bid.requestId = serverResponseOneItem.bidId
+        bid.cpm = serverResponseOneItem.cpm
+        bid.creativeId = parseInt(serverResponseOneItem.creativeId)
+        bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD'
+        bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true
+        bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300
 
         if (serverResponseOneItem.deal_id != null && serverResponseOneItem.deal_id.trim().length > 0) {
-          bid.dealId = serverResponseOneItem.deal_id;
+          bid.dealId = serverResponseOneItem.deal_id
         }
 
         if (serverResponseOneItem.ad) {
-          bid.ad = serverResponseOneItem.ad;
+          bid.ad = serverResponseOneItem.ad
         } else if (serverResponseOneItem.vastUrl) {
-          bid.vastUrl = serverResponseOneItem.vastUrl;
-          bid.mediaType = 'video';
+          bid.vastUrl = serverResponseOneItem.vastUrl
+          bid.mediaType = 'video'
         } else if (serverResponseOneItem.nativeResponse) {
-          bid.mediaType = 'native';
+          bid.mediaType = 'native'
 
-          let nativeResponse = serverResponseOneItem.nativeResponse;
+          let nativeResponse = serverResponseOneItem.nativeResponse
 
           bid['native'] = {
             clickUrl: encodeURIComponent(nativeResponse.link.url),
             impressionTrackers: nativeResponse.imptrackers
-          };
+          }
 
           nativeResponse.assets.forEach(asset => {
             if (asset.title && asset.title.text) {
-              bid['native'].title = asset.title.text;
+              bid['native'].title = asset.title.text
             }
 
             if (asset.img && asset.img.url) {
-              bid['native'].image = asset.img.url;
+              bid['native'].image = asset.img.url
             }
 
             if (asset.data && asset.data.label === 'DESC' && asset.data.value) {
-              bid['native'].body = asset.data.value;
+              bid['native'].body = asset.data.value
             }
 
             if (asset.data && asset.data.label === 'SPONSORED' && asset.data.value) {
-              bid['native'].sponsoredBy = asset.data.value;
+              bid['native'].sponsoredBy = asset.data.value
             }
-          });
+          })
         }
 
-        bid.width = serverResponseOneItem.width;
-        bid.height = serverResponseOneItem.height;
-        utils.logMessage(`submitting bid[${serverResponseOneItem.bidId}]: ${JSON.stringify(bid)}`);
-        bids.push(bid);
-      });
+        bid.width = serverResponseOneItem.width
+        bid.height = serverResponseOneItem.height
+        utils.logMessage(`submitting bid[${serverResponseOneItem.bidId}]: ${JSON.stringify(bid)}`)
+        bids.push(bid)
+      })
     } else {
-      utils.logMessage(`empty bid response`);
+      utils.logMessage(`empty bid response`)
     }
-    return bids;
+    return bids
   },
   getUserSyncs: function (syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
         url: '//cdn.adxcg.net/pb-sync.html'
-      }];
+      }]
     }
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
