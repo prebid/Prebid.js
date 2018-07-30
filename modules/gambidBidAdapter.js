@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import { Renderer } from "../src/Renderer";
+import { Renderer } from '../src/Renderer';
 
 function getTopFrame() {
   try {
@@ -129,7 +129,13 @@ export const spec = {
       if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
         outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
       } else if (bidRequest.bidRequest.mediaTypes.video) {
-        outBids.push(Object.assign({}, outBid, { mediaType: 'video', vastUrl: bid.ext.vast_url, vastXml: bid.adm, renderer: newRenderer( bidRequest, bid ) }));
+        const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+        outBids.push(Object.assign({}, outBid, {
+          mediaType: 'video',
+          vastUrl: bid.ext.vast_url,
+          vastXml: bid.adm,
+          renderer: context === 'outstream' ? newRenderer(bidRequest, bid) : undefined
+        }));
       }
     });
     return outBids;
@@ -172,37 +178,37 @@ export const spec = {
   }
 };
 
-function newRenderer( adUnitCode, bid, rendererOptions = {} ) {
-  const renderer = Renderer.install( {
-                                       url: '//s.gamoshi.io/video/latest/renderer.js',
-                                       config: rendererOptions,
-                                       loaded: false,
-                                     } );
+function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+                                      url: '//s.gamoshi.io/video/latest/renderer.js',
+                                      config: rendererOptions,
+                                      loaded: false,
+                                    });
   try {
-    renderer.setRender( renderOutstream );
-  } catch( err ) {
-    utils.logWarn( 'Prebid Error calling setRender on renderer', err );
+    renderer.setRender(renderOutstream);
+  } catch(err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
 
-function renderOutstream( bid ) {
-  bid.renderer.push( () => {
+function renderOutstream(bid) {
+  bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
-    window[ 'GamoshiPlayer' ].renderAd( {
-                                          id: unitId,
-                                          debug: window.location.href.indexOf( 'pbjsDebug' ) >= 0,
-                                          placement: document.getElementById( bid.adUnitCode ),
-                                          width: bid.width,
-                                          height: bid.height,
-                                          events: {
-                                            ALL_ADS_COMPLETED: () => window.setTimeout( () => {
-                                              window[ 'GamoshiPlayer' ].removeAd( unitId );
-                                            }, 300 )
-                                          },
-                                          vastXml: bid.vastXml
-                                        } );
-  } );
+    window['GamoshiPlayer'].renderAd({
+                                       id: unitId,
+                                       debug: window.location.href.indexOf('pbjsDebug') >= 0,
+                                       placement: document.getElementById(bid.adUnitCode),
+                                       width: bid.width,
+                                       height: bid.height,
+                                       events: {
+                                         ALL_ADS_COMPLETED: () => window.setTimeout(() => {
+                                           window[ 'GamoshiPlayer' ].removeAd( unitId );
+                                         }, 300)
+                                       },
+                                       vastXml: bid.vastXml
+                                     } );
+  });
 }
 
 registerBidder(spec);
