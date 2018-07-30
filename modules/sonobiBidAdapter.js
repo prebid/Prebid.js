@@ -2,6 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -51,8 +52,13 @@ export const spec = {
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
       'lib_name': 'prebid',
-      'lib_v': '$prebid.version$'
+      'lib_v': '$prebid.version$',
+      'us': 0,
     };
+
+    if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+      payload.us = config.getConfig('userSync').syncsPerBidder;
+    }
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
