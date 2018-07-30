@@ -495,6 +495,19 @@ exports.setS2STestingModule = function (module) {
   s2sTestingModule = module;
 };
 
+function tryCallBidderMethod(bidder, method, param) {
+  try {
+    const adapter = _bidderRegistry[bidder];
+    const spec = adapter.getSpec();
+    if (spec && spec[method] && typeof spec[method] === 'function') {
+      utils.logInfo(`Invoking ${bidder}.${method}`);
+      spec[method](param);
+    }
+  } catch (e) {
+    utils.logWarn(`Error calling ${method} of ${bidder}`);
+  }
+}
+
 exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = timedOutBidders.map((timedOutBidder) => {
     // Adding user configured params & timeout to timeout event data
@@ -505,15 +518,10 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
 
   Object.keys(timedOutBidders).forEach((bidder) => {
-    try {
-      const adapter = _bidderRegistry[bidder];
-      const spec = adapter.getSpec();
-      if (spec && spec.onTimeout && typeof spec.onTimeout === 'function') {
-        utils.logInfo(`Invoking ${bidder}.onTimeout`);
-        spec.onTimeout(timedOutBidders[bidder]);
-      }
-    } catch (e) {
-      utils.logWarn(`Error calling onTimeout of ${bidder}`);
-    }
+    tryCallBidderMethod(bidder, 'onTimeout', timedOutBidders[bidder]);
   });
 }
+
+exports.callBidWonBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onBidWon', bid);
+};
