@@ -8,7 +8,7 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.2';
+const BIDDER_VERSION = '2.1.3';
 
 let shouldSendBoPixel = true;
 
@@ -20,8 +20,8 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner) {
-      return !!((bidRequest.params.unit || bidRequest.params.placementId) && bidRequest.params.delDomain);
+    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
+      return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
 
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
@@ -223,16 +223,20 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let hasCustomParam = false;
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
   let auids = utils._map(bids, bid => bid.params.unit);
-  let pids = utils._map(bids, bid => bid.params.placementId);
   queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
   queryParams.bc = bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
-  queryParams.divs = utils._map(bids, bid => bid.adUnitCode).join(',');
+  queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
 
   if (auids.some(auid => auid)) {
     queryParams.auid = auids.join(',');
   }
-  if (pids.some(pid => pid)) {
-    queryParams.pids = pids.join(',');
+
+  if (bids.some(bid => bid.params.doNotTrack)) {
+    queryParams.ns = 1;
+  }
+
+  if (bids.some(bid => bid.params.coppa)) {
+    queryParams.tfcd = 1;
   }
 
   bids.forEach(function (bid) {

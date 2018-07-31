@@ -47,6 +47,9 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
+// store the number of times requestBids has been called per ad Unit
+$$PREBID_GLOBAL$$.displayCount = $$PREBID_GLOBAL$$.displayCount || {};
+
 // Allow publishers who enable user sync override to trigger their sync
 $$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
@@ -367,6 +370,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       }
     });
+    // increment the number of times requestBids has been called for this adUnit
+    $$PREBID_GLOBAL$$.displayCount[adUnit.code] = ($$PREBID_GLOBAL$$.displayCount[adUnit.code] + 1) || 1;
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -601,6 +606,33 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
   return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
+};
+
+/**
+ * Mark the winning bid as used, should only be used in conjunction with video
+ * @typedef {Object} MarkBidRequest
+ * @property {string} adUnitCode The ad unit code
+ * @property {string} adId The id representing the ad we want to mark
+ *
+ * @alias module:pbjs.markWinningBidAsUsed
+*/
+$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
+  let bids = [];
+
+  if (markBidRequest.adUnitCode && markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+  } else if (markBidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+  } else if (markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+  } else {
+    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+  }
+
+  if (bids.length > 0) {
+    bids[0].status = RENDERED;
+  }
 };
 
 /**
