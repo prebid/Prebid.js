@@ -518,6 +518,12 @@ const OPEN_RTB_PROTOCOL = {
             }
           });
         }
+
+        if (bid.bidder === 'ix') {
+          bid.params.siteID = tryConvertType('number', bid.params.siteId);
+          if (bid.params.siteId) { delete bid.params.siteId; }
+        }
+
         acc[bid.bidder] = bid.params;
         return acc;
       }, {});
@@ -545,6 +551,7 @@ const OPEN_RTB_PROTOCOL = {
       request.user = { ext: { digitrust: digiTrust } };
     }
 
+    aliases.ix = 'indexExchange';
     if (!utils.isEmpty(aliases)) {
       request.ext = { prebid: { aliases } };
     }

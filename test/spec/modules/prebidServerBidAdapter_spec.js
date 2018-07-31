@@ -623,7 +623,8 @@ describe('S2S Adapter', () => {
       expect(requestBid.ext).to.deep.equal({
         prebid: {
           aliases: {
-            brealtime: 'appnexus'
+            brealtime: 'appnexus',
+            ix: 'indexExchange'
           }
         }
       });
@@ -653,7 +654,8 @@ describe('S2S Adapter', () => {
       expect(requestBid.ext).to.deep.equal({
         prebid: {
           aliases: {
-            [alias]: 'appnexus'
+            [alias]: 'appnexus',
+            ix: 'indexExchange'
           }
         }
       });
