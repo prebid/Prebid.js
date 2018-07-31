@@ -86,6 +86,26 @@ describe('onetag', () => {
         console.log('Error while parsing');
       }
     });
+    it('should send GDPR consent data', () => {
+      let consentString = 'consentString';
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload).to.exist;
+      expect(payload.gdprConsent).to.exist;
+      expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
+    });
   });
   describe('interpretResponse', () => {
     const resObject = {

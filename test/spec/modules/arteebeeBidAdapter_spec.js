@@ -94,6 +94,34 @@ describe('Arteebee adapater', () => {
       expect(req).to.not.have.property('test');
       expect(req.imp[0]).to.not.have.property('secure');
     });
+
+    it('test gdpr', () => {
+      let bid = {
+        bidder: 'arteebee',
+        params: {
+          pub: 'prebidtest',
+          source: 'prebidtest'
+        },
+        sizes: [[300, 250]]
+      };
+      let consentString = 'ABCD';
+      let bidderRequest = {
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+
+      const req = JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+
+      expect(req.regs).to.exist;
+      expect(req.regs.ext).to.exist;
+      expect(req.regs.ext).to.have.property('gdpr', 1);
+
+      expect(req.user).to.exist;
+      expect(req.user.ext).to.exist;
+      expect(req.user.ext).to.have.property('consent', consentString);
+    });
   });
 
   describe('Test interpret response', () => {

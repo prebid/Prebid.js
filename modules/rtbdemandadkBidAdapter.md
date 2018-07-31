@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: RtbdemandAdk Bidder Adapter
+Module Name: Rtbdemandadk Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: shreyanschopra@rtbdemand.com
 ```
 
 # Description
 
-Connects to RtbdemandAdk whitelabel platform.
+Connects to Rtbdemandadk whitelabel platform.
 Banner and video formats are supported.
 
 

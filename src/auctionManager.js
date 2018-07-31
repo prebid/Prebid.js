@@ -88,6 +88,11 @@ export function newAuctionManager() {
     return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   };
 
+  auctionManager.setStatusForBids = function(adId, status) {
+    let bid = auctionManager.findBidByAdId(adId);
+    if (bid) bid.status = status;
+  }
+
   function _addAuction(auction) {
     _auctions.push(auction);
   }
