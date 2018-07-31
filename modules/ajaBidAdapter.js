@@ -79,9 +79,10 @@ export const spec = {
         mediaType: BANNER
       });
       try {
-        const url = bannerAd.imps[0];
-        const tracker = utils.createTrackPixelHtml(url);
-        bid.ad += tracker;
+        bannerAd.imps.forEach(impTracker => {
+          const tracker = utils.createTrackPixelHtml(impTracker);
+          bid.ad += tracker;
+        });
       } catch (error) {
         utils.logError('Error appending tracking pixel', error);
       }
