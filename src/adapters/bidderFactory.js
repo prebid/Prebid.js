@@ -2,10 +2,11 @@ import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
-import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
+import CONSTANTS from 'src/constants.json';
+import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
@@ -184,7 +185,13 @@ export function newBidder(spec) {
           done();
         }
 
-        registerSyncs(responses);
+        // TODO: the code above needs to be refactored. We should always call done when we're done. if the auction
+        // needs to do cleanup before _it_ can be done it should handle that itself in the auction.  It should _not_
+        // require us, the bidders, to conditionally call done.  That makes the whole done API very flaky.
+        // As soon as that is refactored, we can move this emit event where it should be, within the done function.
+        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+
+        registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -296,7 +303,7 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
@@ -320,12 +327,13 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses) {
+  function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
+      let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-      }, responses);
+        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
+        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
+      }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];

@@ -21,7 +21,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
    */
-  buildRequests: function(bidReqs) {
+  buildRequests: function(bidReqs, bidderRequest) {
     const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
     let iv;
@@ -42,11 +42,25 @@ export const spec = {
         page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
-    if (iv) sovrnBidReq.iv = iv;
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      sovrnBidReq.regs = {
+        ext: {
+          gdpr: +bidderRequest.gdprConsent.gdprApplies
+        }};
+      sovrnBidReq.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString
+        }};
+    }
+
+    let url = `//ap.lijit.com/rtb/bid?` +
+        `src=${REPO_AND_VERSION}`;
+    if (iv) url += `&iv=${iv}`;
 
     return {
       method: 'POST',
-      url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
+      url: url,
       data: JSON.stringify(sovrnBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -70,13 +84,13 @@ export const spec = {
           cpm: parseFloat(sovrnBid.price),
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
-          creativeId: sovrnBid.id,
+          creativeId: sovrnBid.crid || sovrnBid.id,
           dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,
           ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-          ttl: 60000
+          ttl: 60
         });
       });
     }
