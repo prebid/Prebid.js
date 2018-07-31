@@ -50,6 +50,7 @@ describe('nanointeractive adapter tests', function () {
       [LOC_PARAM]: loc,
     };
   }
+
   function getBidRequest (params) {
     return {
       bidder: BIDDER_CODE,
@@ -191,6 +192,7 @@ describe('nanointeractive adapter tests', function () {
       });
 
       let sandbox;
+
       function getMocks () {
         // mock window.location.href
         let mockWindowLocationAddress = DATA_PARTNER_PIXEL_ID_VALUE;
@@ -202,13 +204,13 @@ describe('nanointeractive adapter tests', function () {
           'refAddress': mockRefAddress,
         };
       }
+
       function setUpMocks (mockRefAddress = null) {
         sandbox = sinon.sandbox.create();
         sandbox.stub(utils, 'getOrigin').callsFake(() => getMocks()['originAddress']);
         if (mockRefAddress == null) {
           sandbox.stub(utils, 'getTopWindowReferrer').callsFake(() => getMocks()['refAddress']);
-        }
-        else {
+        } else {
           sandbox.stub(utils, 'getTopWindowReferrer').callsFake(() => mockRefAddress);
         }
         sandbox.stub(utils, 'getParameterByName').callsFake((arg) => {
@@ -220,6 +222,7 @@ describe('nanointeractive adapter tests', function () {
           }
         });
       }
+
       function assert (
         request,
         expectedPid,
@@ -244,9 +247,11 @@ describe('nanointeractive adapter tests', function () {
           ),
         ]));
       }
+
       function tearDownMocks () {
         sandbox.restore();
       }
+
       it('Test buildRequest() - pid', function () {
         setUpMocks();
         let requestParams = {

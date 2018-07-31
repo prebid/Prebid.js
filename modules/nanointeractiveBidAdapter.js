@@ -89,7 +89,7 @@ function createRefParam (bid) {
 
 function createLocationParam (bid) {
   try {
-    if(bid.params[DATA_PARTNER_PIXEL_ID] === 'testPID') {
+    if (bid.params[DATA_PARTNER_PIXEL_ID] === 'testPID') {
       // for testing purposes
       return bid.params[DATA_PARTNER_PIXEL_ID];
     }
@@ -98,8 +98,7 @@ function createLocationParam (bid) {
       currentWindow = currentWindow.parent;
     }
     return currentWindow.location.href;
-  }
-  catch (error) {}
+  } catch (error) {}
   return null;
 }
 
