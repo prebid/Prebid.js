@@ -189,12 +189,12 @@ const _creative = (mediaType) => (sbiDc, sbiAid) => {
   if (mediaType === 'video') {
     return _videoCreative(sbiDc, sbiAid)
   }
-  const src = 'https://' + sbiDc + 'apex.go.sonobi.com/sbi.js?aid=' + sbiid + '&as=null' + '&ref=' + getTopWindowLocation().href;
+  const src = 'https://' + sbiDc + 'apex.go.sonobi.com/sbi.js?aid=' + sbiAid + '&as=null' + '&ref=' + getTopWindowLocation().href;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbiDc, sbiid) {
-  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().href}`
+function _videoCreative(sbiDc, sbiAid) {
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${getTopWindowLocation().href}`
 }
 
 function _getBidIdFromTrinityKey (key) {
