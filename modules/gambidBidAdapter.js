@@ -202,6 +202,7 @@ function renderOutstream(bid) {
           window['GamoshiPlayer'].removeAd(unitId);
         }, 300)
       },
+      vastUrl: bid.vastUrl,
       vastXml: bid.vastXml
     });
   });
