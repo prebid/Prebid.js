@@ -4,11 +4,19 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
-export const QUANTCAST_CALLBACK_URL = 'global.qc.rtb.quantserve.com';
-export const QUANTCAST_CALLBACK_URL_TEST = 's2s-canary.quantserve.com';
+export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
+export const QUANTCAST_PROTOCOL =
+  window.location.protocol === 'http:'
+    ? 'http'
+    : 'https';
+export const QUANTCAST_PORT =
+  QUANTCAST_PROTOCOL === 'http'
+    ? '8080'
+    : '8443';
 
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
@@ -51,21 +59,6 @@ export const spec = {
     const loc = utils.getTopWindowLocation();
     const domain = loc.hostname;
 
-    let publisherTagURL;
-    let publisherTagURLTest;
-
-    // Switch the callback URL to Quantcast Canary Endpoint for testing purpose
-    // `//` is not used because we have different port setting at our end
-    switch (window.location.protocol) {
-      case 'https:':
-        publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
-        publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
-        break;
-      default:
-        publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
-        publisherTagURLTest = `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
-    }
-
     const bidRequestsList = bids.map(bid => {
       const bidSizes = [];
 
@@ -104,10 +97,10 @@ export const spec = {
 
       const data = JSON.stringify(requestData);
 
-      const url =
-        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
-          ? publisherTagURLTest
-          : publisherTagURL;
+      const qcDomain = bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
+        ? QUANTCAST_TEST_DOMAIN
+        : QUANTCAST_DOMAIN;
+      const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
       return {
         data,
