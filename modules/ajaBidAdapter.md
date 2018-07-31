@@ -3,7 +3,7 @@
 ```
 Module Name: Aja Bid adapter
 Module Type: Bidder adapter
-Maintainer:
+Maintainer: ssp_support@aja-kk.co.jp
 ```
 
 # Description
@@ -20,7 +20,7 @@ var adUnits = [
        bids: [{
          bidder: 'aja',
          params: {
-           asi: ''
+           asi: 'szs4htFiR'
          }
        }]
    },
@@ -37,7 +37,7 @@ var adUnits = [
        {
          bidder: 'aja',
          params: {
-           asi: ''
+           asi: 'Kp2O2tFig'
          }
        }
      ]
