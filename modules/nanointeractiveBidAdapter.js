@@ -12,6 +12,7 @@ export const CATEGORY = 'category';
 export const CATEGORY_NAME = 'categoryName';
 export const SUB_ID = 'subId';
 export const REF = 'ref';
+export const LOCATION = 'loc';
 
 export const spec = {
 
@@ -52,6 +53,7 @@ function createSingleBidRequest (bid) {
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
     cors: utils.getOrigin(),
+    [LOCATION]: createLocationParam(bid),
   };
 }
 
@@ -83,6 +85,22 @@ function createSubIdParam (bid) {
 
 function createRefParam (bid) {
   return bid.params[REF] ? null : utils.getTopWindowReferrer() || null;
+}
+
+function createLocationParam (bid) {
+  try {
+    if(bid.params[DATA_PARTNER_PIXEL_ID] === 'testPID') {
+      // for testing purposes
+      return bid.params[DATA_PARTNER_PIXEL_ID];
+    }
+    let currentWindow = window;
+    while (currentWindow.parent !== null && currentWindow.location !== currentWindow.parent.location) {
+      currentWindow = currentWindow.parent;
+    }
+    return currentWindow.location.href;
+  }
+  catch (error) {}
+  return null;
 }
 
 function isEngineResponseValid (response) {
