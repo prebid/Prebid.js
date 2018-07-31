@@ -696,7 +696,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       }
     };
   }
-  else if (isEU) {
+  else if (isEU && 1==2) {
 
     var isBot = isABot();
 
@@ -716,7 +716,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
-  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
+  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1 && 1==2) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
