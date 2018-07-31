@@ -125,7 +125,6 @@ describe('AjaAdapter', () => {
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
-      console.log(result);
       expect(result[0]).to.have.property('vastXml');
       expect(result[0]).to.have.property('renderer');
       expect(result[0]).to.have.property('mediaType', 'video');
