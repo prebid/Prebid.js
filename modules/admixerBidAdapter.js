@@ -25,7 +25,7 @@ export const spec = {
   buildRequests: function (bidderRequest) {
     const payload = {
       imps: [],
-      referrer: utils.getTopWindowUrl(),
+      referrer: encodeURIComponent(utils.getTopWindowUrl()),
     };
     bidderRequest.forEach((bid) => {
       if (bid.bidder === BIDDER_CODE) {

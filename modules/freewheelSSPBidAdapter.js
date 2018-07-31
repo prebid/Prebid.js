@@ -208,7 +208,7 @@ export const spec = {
   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     // var currency = config.getConfig(currency);
 
     var currentBidRequest = bidRequests[0];
@@ -222,6 +222,24 @@ export const spec = {
       zoneId: currentBidRequest.params.zoneId,
       componentId: getComponentId(currentBidRequest.params.format)
     };
+
+    // Add GDPR flag and consent string
+    if (bidderRequest.gdprConsent) {
+      requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
+
+      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        requestParams._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
+      }
+    }
+
+    var vastParams = currentBidRequest.params.vastUrlParams;
+    if (typeof vastParams === 'object') {
+      for (var key in vastParams) {
+        if (vastParams.hasOwnProperty(key)) {
+          requestParams[key] = vastParams[key];
+        }
+      }
+    }
 
     var location = utils.getTopWindowUrl();
     if (isValidUrl(location)) {

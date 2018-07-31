@@ -28,7 +28,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const topLocation = utils.getTopWindowLocation();
-    const payload = JSON.stringify({
+    const payload = {
       id: bidRequests[0].auctionId,
       site: {
         domain: window.location.protocol + '//' + topLocation.hostname,
@@ -41,18 +41,18 @@ export const spec = {
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
       },
       imp: bidRequests.map(mapImpression)
-    });
-
-    const options = {
-      contentType: 'application/json',
-      withCredentials: false
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      payload.regs = {ext: {gdpr: gdpr}};
+    }
 
     return {
       method: 'POST',
       url: URL,
-      data: payload,
-      options,
+      data: JSON.stringify(payload),
       bidderRequest
     };
   },
@@ -98,6 +98,12 @@ export const spec = {
       return [{
         type: 'iframe',
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+      }];
+    }
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'pixel',
+        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
       }];
     }
   }

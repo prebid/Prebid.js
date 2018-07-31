@@ -12,10 +12,13 @@ var t_Str = 'String';
 var t_Fn = 'Function';
 var t_Numb = 'Number';
 var t_Object = 'Object';
+var t_Boolean = 'Boolean';
 var toString = Object.prototype.toString;
 let infoLogger = null;
+let warnLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
+  warnLogger = console.warn.bind(window.console);
 } catch (e) {
 }
 
@@ -257,9 +260,15 @@ exports.getTopWindowReferrer = function() {
   }
 };
 
-exports.logWarn = function (msg) {
+exports.logWarn = function (msg, args) {
   if (debugTurnedOn() && console.warn) {
-    console.warn('WARNING: ' + msg);
+    if (warnLogger) {
+      if (!args || args.length === 0) {
+        args = '';
+      }
+
+      warnLogger('WARNING: ' + msg + ((args === '') ? '' : ' : params : '), args);
+    }
   }
 };
 
@@ -413,6 +422,10 @@ exports.isNumber = function(object) {
 
 exports.isPlainObject = function(object) {
   return exports.isA(object, t_Object);
+}
+
+exports.isBoolean = function(object) {
+  return exports.isA(object, t_Boolean);
 }
 
 /**
