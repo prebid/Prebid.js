@@ -1,4 +1,5 @@
 import {parse as parseURL, format as formatURL} from './url';
+import { config } from 'src/config'; 
 
 var utils = require('./utils');
 
@@ -54,9 +55,11 @@ export function ajaxBuilder(timeout = 3000) {
         x.onerror = function () {
           callbacks.error('error', x);
         };
-        x.ontimeout = function () {
-          callbacks.error('timeout', x);
-        };
+        if (!config.getConfig('disableAjaxTimeout')) {
+          x.ontimeout = function () {
+            utils.logError('  xhr timeout after ', x.timeout, 'ms');
+          };
+        }
         x.onprogress = function() {
           utils.logMessage('xhr onprogress');
         };
@@ -71,9 +74,11 @@ export function ajaxBuilder(timeout = 3000) {
             }
           }
         };
-        x.ontimeout = function () {
-          utils.logError('  xhr timeout after ', x.timeout, 'ms');
-        };
+        if (!config.getConfig('disableAjaxTimeout')) {
+          x.ontimeout = function () {
+            utils.logError('  xhr timeout after ', x.timeout, 'ms');
+          };
+        }
       }
 
       if (method === 'GET' && data) {
@@ -84,7 +89,10 @@ export function ajaxBuilder(timeout = 3000) {
 
       x.open(method, url);
       // IE needs timoeut to be set after open - see #1410
-      x.timeout = timeout;
+     // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      if (!config.getConfig('disableAjaxTimeout')) {
+        x.timeout = timeout;
+      }
 
       if (!useXDomainRequest) {
         if (options.withCredentials) {
