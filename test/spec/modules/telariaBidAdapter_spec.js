@@ -1,7 +1,6 @@
 import {expect} from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
-import {spec} from '../../../modules/telariaBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/telariaBidAdapter';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -67,9 +66,7 @@ describe('TelariaAdapter', () => {
 
     it('should return false when required params are not passed', () => {
       let tempBid = bid;
-      tempBid.params = {
-
-      };
+      tempBid.params = {};
       expect(spec.isBidRequestValid(tempBid)).to.equal(false);
     });
   });
@@ -148,7 +145,7 @@ describe('TelariaAdapter', () => {
 
       let bidRequest = spec.buildRequests(stub)[0];
       bidRequest.bidId = '1234';
-      let result = spec.interpretResponse({ body: responseStub }, bidRequest);
+      let result = spec.interpretResponse({body: responseStub}, bidRequest);
       expect(Object.keys(result[0])).to.have.members(expectedResponseKeys);
     });
 
@@ -159,7 +156,7 @@ describe('TelariaAdapter', () => {
       let bidRequest = spec.buildRequests(stub)[0];
       bidRequest.bidId = '1234';
 
-      let result = spec.interpretResponse({ body: tempResponse }, bidRequest);
+      let result = spec.interpretResponse({body: tempResponse}, bidRequest);
       expect(result.length).to.equal(0);
     });
 
