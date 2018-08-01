@@ -1,4 +1,4 @@
-/** @module pbjs */
+/** @module pbjs this is the main entry point for the prebid.js library */
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
