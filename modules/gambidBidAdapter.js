@@ -174,7 +174,7 @@ export const spec = {
   }
 };
 
-function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
     url: '//s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
