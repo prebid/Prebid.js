@@ -73,7 +73,7 @@ export default function buildDfpVideoUrl(options) {
     urlComponents = parse(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
-      return buildUrlFromAdserverUrlComponents(urlComponents, bid);
+      return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
     }
   }
 
@@ -108,13 +108,14 @@ export default function buildDfpVideoUrl(options) {
  * Prebid-specific key-values.
  * @param {Object} components base video adserver url parsed into components object
  * @param {AdapterBidResponse} bid winning bid object to append parameters from
+ * @param {Object} options Options which should be used to construct the URL (used for custom params).
  * @return {string} video url
  */
-function buildUrlFromAdserverUrlComponents(components, bid) {
+function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const encodedCustomParams = getCustParams(bid);
+  const encodedCustomParams = getCustParams(bid, options);
   components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
 
   return buildUrl(components);
@@ -147,8 +148,17 @@ function getDescriptionUrl(bid, components, prop) {
  */
 function getCustParams(bid, options) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
+
+  let allTargetingData = {};
+  const adUnit = options && options.adUnit;
+  if (adUnit) {
+    let allTargeting = targeting.getAllTargeting(adUnit.code);
+    allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {};
+  }
+
   const optCustParams = deepAccess(options, 'params.cust_params');
   let customParams = Object.assign({},
+    allTargetingData,
     adserverTargeting,
     { hb_uuid: bid && bid.videoCacheKey },
     // hb_uuid will be deprecated and replaced by hb_cache_id

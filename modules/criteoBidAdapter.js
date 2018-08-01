@@ -4,14 +4,15 @@ import { parse } from 'src/url';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 
-const ADAPTER_VERSION = 8;
+const ADAPTER_VERSION = 11;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
-const PROFILE_ID = 207;
+const PROFILE_ID_INLINE = 207;
+const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
@@ -51,7 +52,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
+      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -156,8 +157,9 @@ function buildContext(bidRequests) {
  */
 function buildCdbUrl(context) {
   let url = CDB_ENDPOINT;
-  url += '?profileId=' + PROFILE_ID;
+  url += '?profileId=' + PROFILE_ID_INLINE;
   url += '&av=' + String(ADAPTER_VERSION);
+  url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
   if (context.integrationMode in INTEGRATION_MODES) {

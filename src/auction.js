@@ -229,7 +229,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
               }
             }
           }
-        });
+        }, _timeout);
       }
     };
 
@@ -279,12 +279,17 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
+  function addWinningBid(winningBid) {
+    _winningBids = _winningBids.concat(winningBid);
+    adaptermanager.callBidWonBidder(winningBid.bidder, winningBid);
+  }
+
   return {
     addBidReceived,
     executeCallback,
     callBids,
     bidsBackAll,
-    addWinningBid: (winningBid) => { _winningBids = _winningBids.concat(winningBid) },
+    addWinningBid,
     getWinningBids: () => _winningBids,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
