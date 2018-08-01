@@ -176,7 +176,7 @@ export const spec = {
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url: '//s.gamoshi.io/video/latest/renderer.js',
+    url: bid.ext && bid.ext.renderer_url || '//s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false,
   });
