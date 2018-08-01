@@ -1096,5 +1096,21 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
+
+    it('should configure the s2sConfig adapterOptions with rubicon vendor defaults unless specified by user', () => {
+      const options = {
+        accountId: 'abc',
+        bidders: ['rubicon'],
+        defaultVendor: 'rubicon',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect()
+      console.log('VENDOR CONFIG: %O', vendorConfig);
+    })
   });
 });

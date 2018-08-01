@@ -21,11 +21,39 @@ const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
 
+/**
+ * @typedef {Object} AdapterOptions
+ * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
+ * @example
+ * // example of multiple bidder configuration
+ * pbjs.setConfig({
+ *    s2sConfig: {
+ *       adapterOptions: {
+ *          rubicon: {singleRequest: false}
+ *          appnexus: {key: "value"}
+ *       }
+ *    }
+ * });
+ */
+
+/**
+ * @typedef {Object} S2SDefaultConfig
+ * @property {boolean} enabled
+ * @property {number} timeout
+ * @property {number} maxBids
+ * @property {string} adapter
+ * @property {AdapterOptions} adapterOptions
+ */
+
+/**
+ * @type {S2SDefaultConfig}
+ */
 const s2sDefaultConfig = {
   enabled: false,
   timeout: 1000,
   maxBids: 1,
-  adapter: 'prebidServer'
+  adapter: 'prebidServer',
+  adapterOptions: {}
 };
 
 config.setDefaults({
@@ -48,7 +76,10 @@ const availVendorDefaults = {
     enabled: true,
     endpoint: '//prebid-server.rubiconproject.com/auction',
     syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
-    timeout: 500
+    timeout: 500,
+    adapterOptions: {
+      rubicon: { singleRequest: false }
+    }
   }
 };
 
@@ -64,6 +95,7 @@ const availVendorDefaults = {
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
+ * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
