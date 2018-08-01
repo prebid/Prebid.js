@@ -53,7 +53,7 @@ function createSingleBidRequest (bid) {
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
     cors: utils.getOrigin(),
-    [LOCATION]: createLocationParam(bid),
+    [LOCATION]: createLocationParam(),
   };
 }
 
