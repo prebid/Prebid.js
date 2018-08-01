@@ -66,14 +66,14 @@ export const spec = {
           mid.useCount = 0;
         }
 
-        var size_not_found = true;
+        var sizeNotFound = true;
         utils.parseSizesInput(bidParam.sizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
-            size_not_found = false;
+            sizeNotFound = false;
           }
         });
 
-        if (size_not_found) {
+        if (sizeNotFound) {
           return;
         }
 
