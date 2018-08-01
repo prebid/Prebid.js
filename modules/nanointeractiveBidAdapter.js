@@ -87,19 +87,8 @@ function createRefParam (bid) {
   return bid.params[REF] ? null : utils.getTopWindowReferrer() || null;
 }
 
-function createLocationParam (bid) {
-  try {
-    if (bid.params[DATA_PARTNER_PIXEL_ID] === 'testPID') {
-      // for testing purposes
-      return bid.params[DATA_PARTNER_PIXEL_ID];
-    }
-    let currentWindow = window;
-    while (currentWindow.parent !== null && currentWindow.location !== currentWindow.parent.location) {
-      currentWindow = currentWindow.parent;
-    }
-    return currentWindow.location.href;
-  } catch (error) {}
-  return null;
+function createLocationParam () {
+  return utils.getTopWindowLocation().href;
 }
 
 function isEngineResponseValid (response) {

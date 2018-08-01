@@ -194,8 +194,7 @@ describe('nanointeractive adapter tests', function () {
       let sandbox;
 
       function getMocks () {
-        // mock window.location.href
-        let mockWindowLocationAddress = DATA_PARTNER_PIXEL_ID_VALUE;
+        let mockWindowLocationAddress = 'http://some-location.test';
         let mockOriginAddress = 'http://localhost';
         let mockRefAddress = 'http://some-ref.test';
         return {
@@ -208,6 +207,11 @@ describe('nanointeractive adapter tests', function () {
       function setUpMocks (mockRefAddress = null) {
         sandbox = sinon.sandbox.create();
         sandbox.stub(utils, 'getOrigin').callsFake(() => getMocks()['originAddress']);
+        sandbox.stub(utils, 'getTopWindowLocation').callsFake(() => {
+          return {
+            'href': getMocks()['windowLocationAddress']
+          };
+        });
         if (mockRefAddress == null) {
           sandbox.stub(utils, 'getTopWindowReferrer').callsFake(() => getMocks()['refAddress']);
         } else {
