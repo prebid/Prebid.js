@@ -171,7 +171,7 @@ function createBid(status, reqBid, response, width, height, bidderCode) {
     Object.assign(bid, {
       requestId: reqBid.bidId,
       cpm: response.price,
-      creativeId: response.crid || null,
+      creativeId: response.crid || '-1',
       vastXml: response.adm,
       vastUrl: reqBid.vastUrl,
       mediaType: 'video',
