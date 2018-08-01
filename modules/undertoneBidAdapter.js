@@ -25,9 +25,9 @@ export const spec = {
     let domain = null;
     if (domains != null && domains.length > 0) {
       domain = domains[0];
-      for (let i=1; i<domains.length; i++) {
+      for (let i = 1; i < domains.length; i++) {
         if (domains[i].length > domain.length) {
-          domain=domains[i];
+          domain = domains[i];
         }
       }
     }
