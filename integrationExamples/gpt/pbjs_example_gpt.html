@@ -290,12 +290,20 @@
                         }
                     },
                     {
+                        bidder: 'bizzclick',
+                        params: {
+                            placementId: 0,
+                            type: "banner"
+                        }
+                    },
+                    {
                         bidder: 'zedo',
                         params: {
                             channelCode: 2264002816,   //REQUIRED
                             dimId: 9 //REQUIRED
                         }
                     }
+
                 ]
             }, {
                 code: 'div-gpt-ad-12345678-1',
@@ -427,6 +435,13 @@
                         params: {
                             zone: '276' // REQUIRED Zone Id (276 is a test zone)
                         }
+                    },
+                    {
+                      bidder: 'bizzclick',
+                      params: {
+                        placementId: 0,
+                        type: "banner"
+                      }
                     }
                 ]
             }
