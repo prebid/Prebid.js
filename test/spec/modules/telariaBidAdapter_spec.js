@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
-import {spec} from "../../../modules/telariaBidAdapter";
+import {spec} from '../../../modules/telariaBidAdapter';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -172,7 +172,6 @@ describe('TelariaAdapter', () => {
       let result = spec.interpretResponse({body: {error: 'Invalid request'}}, {bbidderCode: 'telaria'});
       expect(result.length).to.equal(0);
     });
-
   });
 
   describe('getUserSyncs', () => {
@@ -187,9 +186,7 @@ describe('TelariaAdapter', () => {
     };
 
     it('should get the correct number of sync urls', () => {
-
       let urls = spec.getUserSyncs({pixelEnabled: true}, responses);
-
       expect(urls.length).to.equal(2);
     });
   });
