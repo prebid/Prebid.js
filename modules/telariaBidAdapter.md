@@ -27,7 +27,7 @@ Telaria bid adapter supports insteream Video.
         params: {
             supplyCode: 'ssp-demo-rm6rh',
             adCode: 'ssp-!demo!-lufip',
-            mediaId: 'MyCoolVideo'
+            videoId: 'MyCoolVideo'
         }
     }]
 }

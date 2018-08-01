@@ -14,7 +14,7 @@ const REQUEST = {
   'bids': [{
     'bidder': 'tremor',
     'params': {
-      'mediaId': 'MyCoolVideo',
+      'videoId': 'MyCoolVideo',
       'inclSync': true
     }
   }]
@@ -81,7 +81,7 @@ describe('TelariaAdapter', () => {
       params: {
         supplyCode: 'ssp-demo-rm6rh',
         adCode: 'ssp-!demo!-lufip',
-        mediaId: 'MyCoolVideo'
+        videoId: 'MyCoolVideo'
       }
     }];
 
@@ -137,19 +137,19 @@ describe('TelariaAdapter', () => {
       params: {
         supplyCode: 'ssp-demo-rm6rh',
         adCode: 'ssp-!demo!-lufip',
-        mediaId: 'MyCoolVideo'
+        videoId: 'MyCoolVideo'
       }
     }];
 
     it('should get correct bid response', () => {
-      let expectedResponse = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
+      let expectedResponseKeys = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
         'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
         'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
 
       let bidRequest = spec.buildRequests(stub)[0];
       bidRequest.bidId = '1234';
       let result = spec.interpretResponse({ body: responseStub }, bidRequest);
-      expect(Object.keys(result[0])).to.have.members(expectedResponse);
+      expect(Object.keys(result[0])).to.have.members(expectedResponseKeys);
     });
 
     it('handles nobid responses', () => {

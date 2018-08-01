@@ -7,13 +7,6 @@ import {STATUS} from 'src/constants';
 
 const BIDDER_CODE = 'telaria';
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
-const OPTIONAL_PARAMS = [
-  'mediaId', 'mediaUrl', 'mediaTitle', 'contentLength', 'floor',
-  'efloor', 'custom', 'categories', 'keywords', 'blockDomains',
-  'c2', 'c3', 'c4', 'skip', 'skipmin', 'skipafter', 'delivery',
-  'placement', 'videoMinBitrate', 'videoMaxBitrate', 'minDur',
-  'maxDur', 'incIdSync', 'gdpr', 'gdpr_consent'
-];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -144,12 +137,16 @@ function generateUrl(bid) {
     url += ('&playerWidth=' + width);
     url += ('&playerHeight=' + height);
 
-    OPTIONAL_PARAMS.forEach(param => {
-      if (bid.params[param]) {
-        url += ('&' + param + '=' + bid.params[param]);
+    for(let key in bid.params){
+      if(bid.params.hasOwnProperty(key) && bid.params[key]){
+        url += ('&' + key + '=' + bid.params[key]);
       }
-    });
-    url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
+    }
+
+    if(!bid.params['srcPageUrl']){
+      url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
+    }
+
     url += ('&transactionId=' + bid.transactionId);
     url += ('&referrer=' + config.getConfig('pageUrl') || utils.getTopWindowUrl());
 
