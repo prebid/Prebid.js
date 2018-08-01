@@ -119,7 +119,7 @@ function newRenderer(bidderResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err)
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;
