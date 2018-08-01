@@ -134,7 +134,7 @@ export const spec = {
           mediaType: 'video',
           vastUrl: bid.ext.vast_url,
           vastXml: bid.adm,
-          renderer: context === 'outstream' ? newRenderer( bidRequest.bidRequest, bid) : undefined
+          renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
         }));
       }
     });
@@ -176,7 +176,7 @@ export const spec = {
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url: bidRequest.params && bidRequest.params.rendererUrl || bid.ext && bid.ext.renderer_url || '//s.gamoshi.io/video/latest/renderer.js',
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || '//s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false,
   });
