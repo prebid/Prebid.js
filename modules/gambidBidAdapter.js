@@ -53,7 +53,7 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       const { adUnitCode, auctionId, mediaTypes, params, sizes, transactionId } = bidRequest;
       const baseEndpoint = params[ 'rtbEndpoint' ] || 'https://rtb.gambid.io';
-      const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&bidder=prebid` + (params.query ? '&' + params.query : '');
+      const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         'id': auctionId,
         'site': {
