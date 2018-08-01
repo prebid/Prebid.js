@@ -4,14 +4,16 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 
 describe('kargo adapter tests', function () {
-  var sandbox;
+  var sandbox, clock, frozenNow = new Date();
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+    clock = sinon.useFakeTimers(frozenNow.getTime());
   });
 
   afterEach(() => {
     sandbox.restore();
+    clock.restore();
   });
 
   describe('bid request validity', function() {
@@ -36,7 +38,7 @@ describe('kargo adapter tests', function () {
     var bids, cookies = [], localStorageItems = [];
 
     beforeEach(() => {
-      sandbox.stub(config, 'getConfig', function(key) {
+      sandbox.stub(config, 'getConfig').callsFake(function(key) {
         if (key === 'currency') {
           return 'USD';
         }
@@ -166,11 +168,12 @@ describe('kargo adapter tests', function () {
         timeout: 200,
         currency: 'USD',
         cpmGranularity: 1,
+        timestamp: frozenNow.getTime(),
         cpmRange: {
           floor: 0,
           ceil: 20
         },
-        adSlotIds: [
+        adSlotIDs: [
           'foo',
           'bar'
         ],

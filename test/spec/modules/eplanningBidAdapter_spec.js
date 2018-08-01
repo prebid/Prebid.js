@@ -252,11 +252,24 @@ describe('E-Planning Adapter', () => {
 
     it('should return fr parameter when there is a referrer', () => {
       const referrer = 'thisisafakereferrer';
-      const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer').returns(referrer);
-      after(() => stubGetReferrer.restore());
-
+      const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer');
+      stubGetReferrer.returns(referrer);
       const fr = spec.buildRequests(bidRequests).data.fr;
       expect(fr).to.equal(referrer);
+      stubGetReferrer.restore()
+    });
+
+    it('should return crs parameter with document charset', () => {
+      let expected;
+      try {
+        expected = window.top.document.characterSet;
+      } catch (e) {
+        expected = document.characterSet;
+      }
+
+      const chset = spec.buildRequests(bidRequests).data.crs;
+
+      expect(chset).to.equal(expected);
     });
 
     it('should return the testing url when the request has the t parameter', () => {

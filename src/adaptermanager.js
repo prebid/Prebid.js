@@ -7,6 +7,7 @@ import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -15,6 +16,7 @@ let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
+exports.aliasRegistry = {};
 
 let _s2sConfig = {};
 config.getConfig('s2sConfig', config => {
@@ -45,21 +47,16 @@ function getLabels(bidOrAdUnit, activeLabels) {
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
-    let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
+    let bannerSizes = utils.deepAccess(adUnit, 'mediaTypes.banner.sizes');
+
+    let {active, sizes: filteredAdUnitSizes} = resolveStatus(
+      getLabels(adUnit, labels),
+      bannerSizes || adUnit.sizes
+    );
 
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
-          if (adUnit.mediaTypes) {
-            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-              bid = Object.assign({}, bid, {mediaTypes: adUnit.mediaTypes});
-            } else {
-              utils.logError(
-                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-              );
-            }
-          }
-
           const nativeParams =
             adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
           if (nativeParams) {
@@ -74,6 +71,22 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
           ]));
 
           let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+
+          if (adUnit.mediaTypes) {
+            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
+              if (bannerSizes) {
+                adUnit.mediaTypes.banner.sizes = sizes;
+              }
+
+              bid = Object.assign({}, bid, {
+                mediaTypes: adUnit.mediaTypes
+              });
+            } else {
+              utils.logError(
+                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+              );
+            }
+          }
 
           if (active) {
             bids.push(Object.assign({}, bid, {
@@ -93,27 +106,11 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
 
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
-  });
-  return sizesObj;
-}
-
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
-    adUnit.sizes = transformHeightWidth(adUnit);
-
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
       return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
@@ -146,6 +143,16 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
   return adUnitsClientCopy;
 }
+
+exports.gdprDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    this.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return this.consentData;
+  }
+};
 
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
@@ -183,7 +190,6 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionId,
         bidderRequestId,
         tid,
-        adUnitsS2SCopy,
         bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
@@ -192,6 +198,21 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
       }
+    });
+
+    // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
+    // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
+    adUnitsS2SCopy.forEach((adUnitCopy) => {
+      let validBids = adUnitCopy.bids.filter((adUnitBid) => {
+        return find(bidRequests, request => {
+          return find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id);
+        });
+      });
+      adUnitCopy.bids = validBids;
+    });
+
+    bidRequests.forEach(request => {
+      request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
     });
   }
 
@@ -207,37 +228,60 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       auctionStart: auctionStart,
       timeout: cbTimeout
     };
-    if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+    const adapter = _bidderRegistry[bidderCode];
+    if (!adapter) {
+      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+    }
+
+    if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
       bidRequests.push(bidderRequest);
     }
   });
+
+  if (exports.gdprDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['gdprConsent'] = exports.gdprDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
 };
 
 exports.checkBidRequestSizes = (adUnits) => {
-  Array.prototype.forEach.call(adUnits, adUnit => {
-    if (adUnit.sizes) {
-      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-    }
+  function isArrayOfNums(val) {
+    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
+  }
 
+  adUnits.forEach((adUnit) => {
     const mediaTypes = adUnit.mediaTypes;
+    const normalizedSize = utils.getAdUnitSizes(adUnit);
+
     if (mediaTypes && mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit.sizes = banner.sizes;
+        // make sure we always send [[h,w]] format
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
       } else {
         utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
       }
+    } else if (adUnit.sizes) {
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      adUnit.sizes = normalizedSize;
     }
 
     if (mediaTypes && mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 2 && utils.isInteger(video.playerSize[0]) && utils.isInteger(video.playerSize[1])) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
           adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from ${video.playerSize} to ${newPlayerSize} so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
         } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [640, 480]. Removing invalid mediaTypes.video.playerSize property from request.');
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
         }
       }
@@ -262,13 +306,11 @@ exports.checkBidRequestSizes = (adUnits) => {
   return adUnits;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
   }
-
-  let ajax = ajaxBuilder(bidRequests[0].timeout);
 
   let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
@@ -276,6 +318,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   }, [[], []]);
 
   if (serverBidRequests.length) {
+    // s2s should get the same client side timeout as other client side requests.
+    const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, 's2s'),
+      done: requestCallbacks.done
+    } : undefined);
     let adaptersServerSide = _s2sConfig.bidders;
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
@@ -309,7 +356,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
           serverBidRequests,
           addBidResponse,
           () => doneCbs.forEach(done => done()),
-          ajax
+          s2sAjax
         );
       }
     }
@@ -320,15 +367,15 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    if (adapter) {
-      utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-      bidRequest.doneCbCallCount = 0;
-      let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, done, ajax);
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
-    }
+    utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    bidRequest.doneCbCallCount = 0;
+    let done = doneCb(bidRequest.bidderRequestId);
+    let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+      request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+      done: requestCallbacks.done
+    } : undefined);
+    adapter.callBids(bidRequest, addBidResponse, done, ajax);
   });
 }
 
@@ -365,12 +412,20 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 };
 
 exports.aliasBidAdapter = function (bidderCode, alias) {
-  var existingAlias = _bidderRegistry[alias];
+  let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
-    var bidAdaptor = _bidderRegistry[bidderCode];
+    let bidAdaptor = _bidderRegistry[bidderCode];
     if (typeof bidAdaptor === 'undefined') {
-      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
+      const s2sConfig = config.getConfig('s2sConfig');
+      const s2sBidders = s2sConfig && s2sConfig.bidders;
+
+      if (!(s2sBidders && includes(s2sBidders, alias))) {
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      } else {
+        exports.aliasRegistry[alias] = bidderCode;
+      }
     } else {
       try {
         let newAdapter;
@@ -383,6 +438,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
         } else {
           let spec = bidAdaptor.getSpec();
           newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+          exports.aliasRegistry[alias] = bidderCode;
         }
         this.registerBidAdapter(newAdapter, alias, {
           supportedMediaTypes
@@ -434,4 +490,35 @@ exports.getBidAdapter = function(bidder) {
 // importing it causes the packager to include it even when it's not explicitly included in the build
 exports.setS2STestingModule = function (module) {
   s2sTestingModule = module;
+};
+
+function tryCallBidderMethod(bidder, method, param) {
+  try {
+    const adapter = _bidderRegistry[bidder];
+    const spec = adapter.getSpec();
+    if (spec && spec[method] && typeof spec[method] === 'function') {
+      utils.logInfo(`Invoking ${bidder}.${method}`);
+      spec[method](param);
+    }
+  } catch (e) {
+    utils.logWarn(`Error calling ${method} of ${bidder}`);
+  }
+}
+
+exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
+  timedOutBidders = timedOutBidders.map((timedOutBidder) => {
+    // Adding user configured params & timeout to timeout event data
+    timedOutBidder.params = utils.getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
+    timedOutBidder.timeout = cbTimeout;
+    return timedOutBidder;
+  });
+  timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
+
+  Object.keys(timedOutBidders).forEach((bidder) => {
+    tryCallBidderMethod(bidder, 'onTimeout', timedOutBidders[bidder]);
+  });
+}
+
+exports.callBidWonBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onBidWon', bid);
 };

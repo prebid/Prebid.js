@@ -6,7 +6,7 @@ import { userSync } from 'src/userSync';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.1.0',
+  version: '4.2.0',
   code: BIDDER_CODE,
   aliases: ['id'],
 
@@ -26,7 +26,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     let normalizedBids = bidRequests.map((bidRequest) => {
       return getNormalizedBidRequest(bidRequest);
     });
@@ -34,10 +34,13 @@ export const spec = {
     let idClient = new ImproveDigitalAdServerJSClient('hb');
     let requestParameters = {
       singleRequestMode: false,
-      httpRequestType: idClient.CONSTANTS.HTTP_REQUEST_TYPE.GET,
-      returnObjType: idClient.CONSTANTS.RETURN_OBJ_TYPE.PREBID,
+      returnObjType: idClient.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT,
       libVersion: this.version
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
+      requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
+    }
 
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
@@ -154,10 +157,6 @@ registerBidder(spec);
 
 function ImproveDigitalAdServerJSClient(endPoint) {
   this.CONSTANTS = {
-    HTTP_REQUEST_TYPE: {
-      GET: 0,
-      POST: 1
-    },
     HTTP_SECURITY: {
       STANDARD: 0,
       SECURE: 1
@@ -165,16 +164,15 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ad.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-4.3.3',
+    CLIENT_VERSION: 'JS-5.1',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
-      BAD_HTTP_REQUEST_TYPE_PARAM: 1,
       MISSING_PLACEMENT_PARAMS: 2,
       LIB_VERSION_MISSING: 3
     },
     RETURN_OBJ_TYPE: {
       DEFAULT: 0,
-      PREBID: 1
+      URL_PARAMS_SPLIT: 1
     }
   };
 
@@ -187,9 +185,6 @@ function ImproveDigitalAdServerJSClient(endPoint) {
   };
 
   this.createRequest = function(requestObject, requestParameters, extraRequestParameters) {
-    if (requestParameters.httpRequestType !== this.CONSTANTS.HTTP_REQUEST_TYPE.GET) {
-      return this.getErrorReturn(this.CONSTANTS.ERROR_CODES.BAD_HTTP_REQUEST_TYPE_PARAM);
-    }
     if (!requestParameters.libVersion) {
       return this.getErrorReturn(this.CONSTANTS.ERROR_CODES.LIB_VERSION_MISSING);
     }
@@ -198,9 +193,8 @@ function ImproveDigitalAdServerJSClient(endPoint) {
 
     let impressionObjects = [];
     let impressionObject;
-    let counter;
     if (utils.isArray(requestObject)) {
-      for (counter = 0; counter < requestObject.length; counter++) {
+      for (let counter = 0; counter < requestObject.length; counter++) {
         impressionObject = this.createImpressionObject(requestObject[counter]);
         impressionObjects.push(impressionObject);
       }
@@ -210,7 +204,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     }
 
     let returnIdMappings = true;
-    if (requestParameters.returnObjType === this.CONSTANTS.RETURN_OBJ_TYPE.PREBID) {
+    if (requestParameters.returnObjType === this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT) {
       returnIdMappings = false;
     }
 
@@ -226,7 +220,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     let bidRequestObject = {
       bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
     };
-    for (counter = 0; counter < impressionObjects.length; counter++) {
+    for (let counter = 0; counter < impressionObjects.length; counter++) {
       impressionObject = impressionObjects[counter];
 
       if (impressionObject.errorCode) {
@@ -279,7 +273,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
 
   this.formatRequest = function(requestParameters, bidRequestObject) {
     switch (requestParameters.returnObjType) {
-      case this.CONSTANTS.RETURN_OBJ_TYPE.PREBID:
+      case this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT:
         return {
           method: 'GET',
           url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
@@ -319,6 +313,12 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.libVersion) {
       impressionBidRequestObject.version = requestParameters.libVersion + '-' + this.CONSTANTS.CLIENT_VERSION;
+    }
+    if (requestParameters.referrer) {
+      impressionBidRequestObject.referrer = requestParameters.referrer;
+    }
+    if (requestParameters.gdpr) {
+      impressionBidRequestObject.gdpr = requestParameters.gdpr;
     }
     if (extraRequestParameters) {
       for (let prop in extraRequestParameters) {

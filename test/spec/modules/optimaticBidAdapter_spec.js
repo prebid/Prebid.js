@@ -106,7 +106,7 @@ describe('OptimaticBidAdapter', () => {
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return no bids if the response "adm" is missing', () => {
+    it('should return no bids if the response "nurl" and "adm" are missing', () => {
       const serverResponse = {seatbid: [{bid: [{price: 5.01}]}]};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
@@ -118,7 +118,7 @@ describe('OptimaticBidAdapter', () => {
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response', () => {
+    it('should return a valid bid response with just "adm"', () => {
       const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -127,6 +127,44 @@ describe('OptimaticBidAdapter', () => {
         cpm: serverResponse.seatbid[0].bid[0].price,
         creativeId: serverResponse.seatbid[0].bid[0].id,
         vastXml: serverResponse.seatbid[0].bid[0].adm,
+        width: 640,
+        height: 480,
+        mediaType: 'video',
+        currency: 'USD',
+        ttl: 300,
+        netRevenue: true
+      };
+      expect(bidResponse).to.deep.equal(o);
+    });
+
+    it('should return a valid bid response with just "nurl"', () => {
+      const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, nurl: 'https://mg-bid-win.optimatic.com/win/134eb262-948a-463e-ad93-bc8b622d399c?wp=${AUCTION_PRICE}'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      let o = {
+        requestId: bidRequest.bidId,
+        bidderCode: spec.code,
+        cpm: serverResponse.seatbid[0].bid[0].price,
+        creativeId: serverResponse.seatbid[0].bid[0].id,
+        vastUrl: serverResponse.seatbid[0].bid[0].nurl,
+        width: 640,
+        height: 480,
+        mediaType: 'video',
+        currency: 'USD',
+        ttl: 300,
+        netRevenue: true
+      };
+      expect(bidResponse).to.deep.equal(o);
+    });
+
+    it('should return a valid bid response with "nurl" when both nurl and adm exist', () => {
+      const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, adm: '<VAST></VAST>', nurl: 'https://mg-bid-win.optimatic.com/win/134eb262-948a-463e-ad93-bc8b622d399c?wp=${AUCTION_PRICE}'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      let o = {
+        requestId: bidRequest.bidId,
+        bidderCode: spec.code,
+        cpm: serverResponse.seatbid[0].bid[0].price,
+        creativeId: serverResponse.seatbid[0].bid[0].id,
+        vastUrl: serverResponse.seatbid[0].bid[0].nurl,
         width: 640,
         height: 480,
         mediaType: 'video',

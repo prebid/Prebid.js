@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -73,6 +73,15 @@ export const spec = {
     if (member > 0) {
       payload.member_id = member;
     }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      // note - objects for impbus use underscore instead of camelCase
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -148,32 +157,6 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   return renderer;
 }
 
-/* Turn keywords parameter into ut-compatible format */
-function getKeywords(keywords) {
-  let arrs = [];
-
-  utils._each(keywords, (v, k) => {
-    if (utils.isArray(v)) {
-      let values = [];
-      utils._each(v, (val) => {
-        val = utils.getValueString('keywords.' + k, val);
-        if (val) { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = utils.getValueString('keywords.' + k, v);
-      if (utils.isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
-}
-
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
@@ -189,7 +172,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    appnexus: {
+      buyerMemberId: rtbBid.buyer_member_id
+    }
   };
 
   if (rtbBid.rtb.video) {
@@ -197,6 +183,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
+      vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
     // This supports Outstream Video
@@ -223,6 +210,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers,
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
@@ -281,7 +269,7 @@ function bidToTag(bid) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = getSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes);
   }
   if (bid.params.supplyType) {
     tag.supply_type = bid.params.supplyType;
@@ -296,7 +284,7 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = getKeywords(bid.params.keywords);
+    tag.keywords = utils.transformBidderParamKeywords(bid.params.keywords);
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {

@@ -1,9 +1,10 @@
 import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
-import * as events from 'src/events';
 import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
+
+const events = require('../../../src/events');
 
 const DIRECT = {
   source: '(direct)',
@@ -41,6 +42,7 @@ describe('', () => {
 
   after(() => {
     sandbox.restore();
+    analyticsAdapter.disableAnalytics();
   });
 
   describe('UTM source parser', () => {
@@ -152,7 +154,7 @@ describe('', () => {
     bids: [{
       bidder: 'adapter',
       params: {},
-      placementCode: 'container-1',
+      adUnitCode: 'container-1',
       transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
       sizes: [[300, 250]],
       bidId: '208750227436c1',
@@ -189,6 +191,16 @@ describe('', () => {
     before(() => {
       ajaxStub = sandbox.stub(ajax, 'ajax');
       timer = sandbox.useFakeTimers(0);
+    });
+
+    beforeEach(() => {
+      sandbox.stub(events, 'getEvents').callsFake(() => {
+        return []
+      });
+    });
+
+    afterEach(() => {
+      events.getEvents.restore();
     });
 
     it('should be configurable', () => {

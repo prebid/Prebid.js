@@ -3,7 +3,7 @@
 ```
 Module Name:  Yieldmo Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: melody@yieldmo.com
+Maintainer: opensource@yieldmo.com
 Note: Our ads will only render in mobile
 ```
 

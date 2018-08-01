@@ -10,6 +10,7 @@ describe('user sync', () => {
   let timeoutStub;
   let shuffleStub;
   let getUniqueIdentifierStrStub;
+  let insertUserSyncIframeStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
@@ -23,13 +24,21 @@ describe('user sync', () => {
       browserSupportsCookies: !disableBrowserCookies,
     })
   }
+  let clock;
+  before(() => {
+    clock = sinon.useFakeTimers();
+  });
+
+  after(() => {
+    clock.restore();
+  });
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
-    shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
-    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
-    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
+    insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
   });
 
   afterEach(() => {
@@ -37,7 +46,7 @@ describe('user sync', () => {
     logWarnStub.restore();
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
-    timeoutStub.restore();
+    insertUserSyncIframeStub.restore();
   });
 
   it('should register and fire a pixel URL', () => {
@@ -59,7 +68,8 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     // This implicitly tests cookie and browser support
     userSync.syncUsers(999);
-    expect(timeoutStub.getCall(0).args[1]).to.equal(999);
+    clock.tick(1000);
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
   });
 
   it('should register and fires multiple pixel URLs', () => {
@@ -85,9 +95,7 @@ describe('user sync', () => {
     const userSync = newTestUserSync({iframeEnabled: true});
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
-    let iframe = window.document.getElementById(idPrefix + lastId);
-    expect(iframe).to.exist;
-    expect(iframe.src).to.equal('http://example.com/iframe');
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
   it('should only trigger syncs once per page', () => {
@@ -183,5 +191,154 @@ describe('user sync', () => {
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+  });
+
+  it('should register both image and iframe pixels with filterSettings.all config', () => {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        all: {
+          bidders: ['atestBidder', 'testBidder'],
+          filter: 'include'
+        },
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should register iframe and not register image pixels based on filterSettings config', () => {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: '*',
+          filter: 'exclude'
+        },
+        iframe: {
+          bidders: ['testBidder']
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.be.null;
+    expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should throw a warning and default to basic resgistration rules when filterSettings config is invalid', () => {
+    // invalid config - passed invalid filter option
+    const userSync1 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder'],
+          filter: 'includes'
+        }
+      }
+    });
+    userSync1.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync1.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync1.syncUsers();
+    expect(logWarnStub.getCall(0).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - bidders is not an array of strings
+    const userSync2 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder', 0],
+          filter: 'include'
+        }
+      }
+    });
+    userSync2.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync2.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync2.syncUsers();
+    expect(logWarnStub.getCall(1).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - bidders list includes wildcard
+    const userSync3 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: ['testBidder', '*'],
+          filter: 'include'
+        }
+      }
+    });
+    userSync3.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync3.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync3.syncUsers();
+    expect(logWarnStub.getCall(2).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(2)).to.not.be.null;
+    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - incorrect wildcard
+    const userSync4 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: '***',
+          filter: 'include'
+        }
+      }
+    });
+    userSync4.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync4.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync4.syncUsers();
+    expect(logWarnStub.getCall(3).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(3)).to.not.be.null;
+    expect(triggerPixelStub.getCall(3).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+
+    // invalid config - missing bidders field
+    const userSync5 = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          filter: 'include'
+        }
+      }
+    });
+    userSync5.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync5.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync5.syncUsers();
+    expect(logWarnStub.getCall(4).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(4)).to.not.be.null;
+    expect(triggerPixelStub.getCall(4).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
+  });
+
+  it('should overwrite logic of deprecated fields when filterSettings is defined', () => {
+    const userSync = newTestUserSync({
+      pixelsEnabled: false,
+      iframeEnabled: true,
+      enabledBidders: ['ctestBidder'],
+      filterSettings: {
+        image: {
+          bidders: '*',
+          filter: 'include'
+        },
+        iframe: {
+          bidders: ['testBidder'],
+          filter: 'exclude'
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(logWarnStub.getCall(0).args[0]).to.exist;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
   });
 });

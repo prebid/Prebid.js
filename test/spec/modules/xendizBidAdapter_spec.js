@@ -78,7 +78,7 @@ describe('xendizBidAdapter', () => {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.device).to.deep.equal([
-        navigator.language,
+        navigator.language || '',
         window.screen.width,
         window.screen.height
       ]);

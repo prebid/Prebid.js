@@ -27,22 +27,22 @@ describe('PeakAdapter', () => {
     });
   });
 
-  xdescribe('buildRequests', () => {
-    const bidRequests = [
-      {
-        params: {
-          uid: '1234'
-        }
-      }
-    ];
+  // xdescribe('buildRequests', () => {
+  //   const bidRequests = [
+  //     {
+  //       params: {
+  //         uid: '1234'
+  //       }
+  //     }
+  //   ];
 
-    it('sends bid request to URL via GET', () => {
-      const request = spec.buildRequests(bidRequests);
+  //   it('sends bid request to URL via GET', () => {
+  //     const request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.equal(`${URL}?uids=1234`);
-      expect(request.method).to.equal('GET');
-    });
-  });
+  //     expect(request.url).to.equal(`${URL}?uids=1234`);
+  //     expect(request.method).to.equal('GET');
+  //   });
+  // });
 
   describe('interpretResponse', () => {
     it('should handle empty response', () => {
