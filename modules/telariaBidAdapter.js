@@ -89,12 +89,9 @@ export const spec = {
         errorMessage += `: ${bidResult.error}`;
       }
       utils.logError(errorMessage);
-    }
-
-    if (bidResult.seatbid && bidResult.seatbid.length > 0) {
+    } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        let status = STATUS.GOOD;
-        bids.push(createBid(status, bidderRequest, tag, width, height, bidResult.seatbid[0].seat));
+        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat));
       });
     }
 
@@ -132,7 +129,7 @@ function generateUrl(bid) {
     return '';
   }
 
-  if (utils.isArray(bid.sizes) && bid.sizes.length === 2 && (!isNaN(bid.sizes[0]) && !isNaN(bid.sizes[1]))) {
+  if (utils.isArray(bid.sizes) && (bid.sizes.length === 2) && (!isNaN(bid.sizes[0]) && !isNaN(bid.sizes[1]))) {
     width = bid.sizes[0];
     height = bid.sizes[1];
   } else if (typeof bid.sizes === 'object') {

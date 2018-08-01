@@ -112,6 +112,12 @@ describe('TelariaAdapter', () => {
       expect(tempRequest.length).to.equal(0);
     });
 
+    it('generates a valid request with sizes as an array of two elements', () => {
+      let tempBid = stub;
+      tempBid[0].sizes = [640, 480];
+      expect(spec.buildRequests(tempBid).length).to.equal(1);
+    });
+
     it('requires ad code and supply code to make a request', () => {
       let tempBid = stub;
       tempBid[0].params.adCode = null;
@@ -156,6 +162,17 @@ describe('TelariaAdapter', () => {
       let result = spec.interpretResponse({ body: tempResponse }, bidRequest);
       expect(result.length).to.equal(0);
     });
+
+    it('handles invalid responses', () => {
+      let result = spec.interpretResponse(null, {bbidderCode: 'telaria'});
+      expect(result.length).to.equal(0);
+    });
+
+    it('handles error responses', () => {
+      let result = spec.interpretResponse({body: {error: 'Invalid request'}}, {bbidderCode: 'telaria'});
+      expect(result.length).to.equal(0);
+    });
+
   });
 
   describe('getUserSyncs', () => {

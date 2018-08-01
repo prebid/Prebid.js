@@ -1,8 +1,8 @@
 # Overview
 
 ```
-Module Name:  Telaria Bid Adapter
-Module Type:  Bidder Adapter
+Module Name: Telaria Bid Adapter
+Module Type: Bidder Adapter
 Maintainer: github@telaria.com
 ```
 
