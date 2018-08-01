@@ -16,7 +16,13 @@ var adUnits = [
    // Banner adUnit
    {
        code: 'banner-div',
-       sizes: [[300, 250]],
+       mediaTypes: {
+         banner: {
+           sizes: [
+             [300, 250]
+           ],
+         }
+       },
        bids: [{
          bidder: 'aja',
          params: {
@@ -27,10 +33,10 @@ var adUnits = [
    // Video outstream adUnit
    {
      code: 'video-outstream',
-     sizes: [[640, 480]],
      mediaTypes: {
        video: {
-         context: 'outstream'
+         context: 'outstream',
+         playerSize: [300, 250]
        }
      },
      bids: [
