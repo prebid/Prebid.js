@@ -101,7 +101,8 @@ export const spec = {
     return bids;
   },
   /**
-   * We support pixel syncing only at the moment.
+   * We support pixel syncing only at the moment. Telaria ad server returns 'ext'
+   * as an optional parameter if the tag has 'incIdSync' parameter set to true
    * @param syncOptions
    * @param serverResponses
    * @returns {Array}
