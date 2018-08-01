@@ -118,7 +118,7 @@ export const spec = {
  */
 function generateUrl(bid) {
   let width, height;
-  if(!bid.sizes){
+  if (!bid.sizes) {
     return '';
   }
 
@@ -137,13 +137,13 @@ function generateUrl(bid) {
     url += ('&playerWidth=' + width);
     url += ('&playerHeight=' + height);
 
-    for(let key in bid.params){
-      if(bid.params.hasOwnProperty(key) && bid.params[key]){
+    for (let key in bid.params) {
+      if (bid.params.hasOwnProperty(key) && bid.params[key]) {
         url += ('&' + key + '=' + bid.params[key]);
       }
     }
 
-    if(!bid.params['srcPageUrl']){
+    if (!bid.params['srcPageUrl']) {
       url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
     }
 
