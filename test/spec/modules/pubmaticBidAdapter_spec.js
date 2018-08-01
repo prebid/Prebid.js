@@ -6,6 +6,7 @@ const constants = require('src/constants.json');
 describe('PubMatic adapter', () => {
   let bidRequests;
   let bidResponses;
+  let emptyBidResponse;
 
   beforeEach(() => {
     bidRequests = [
@@ -63,6 +64,10 @@ describe('PubMatic adapter', () => {
           }]
         }]
       }
+    };
+
+    emptyBidResponse = {
+      'body': ''
     };
   });
 
@@ -260,6 +265,24 @@ describe('PubMatic adapter', () => {
 
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].dealChannel).to.equal(null);
+      });
+
+      it('should add a dummy bid when, empty bid is returned by hbopenbid', () => {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(emptyBidResponse, request);
+
+        request = JSON.parse(request.data);
+        expect(response).to.exist.and.be.an('array').with.length.above(0);
+        expect(response[0].requestId).to.equal(request.imp[0].id);
+        expect(response[0].width).to.equal(0);
+        expect(response[0].height).to.equal(0);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ad).to.equal('');
+        expect(response[0].creativeId).to.equal(0);
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].cpm).to.equal(0);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].referrer).to.equal(utils.getTopWindowUrl());
       });
     });
   });
