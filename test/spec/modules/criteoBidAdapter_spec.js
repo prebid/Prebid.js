@@ -73,7 +73,7 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -113,7 +113,7 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -152,7 +152,7 @@ describe('The Criteo bidding adapter', () => {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&cb=\d/);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
