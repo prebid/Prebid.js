@@ -1323,4 +1323,51 @@ describe('Yieldbot Adapter Unit Tests', function() {
       done();
     });
   });
+
+  describe('Adapter Request Timestamps', function() {
+    let sandbox;
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(Date, 'now').callsFake(() => {
+        return new Date();
+      });
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should have overridden Date.now() function', function() {
+      expect(Date.now().getTime()).to.match(/^[0-9]+/);
+    });
+
+    it('should be milliseconds past epoch query param values', function() {
+      const request = YieldbotAdapter.buildRequests(FIXTURE_BID_REQUESTS)[0];
+      expect(request.data).to.not.equal(undefined);
+
+      const timestampParams = [
+        'cts_ns',
+        'cts_js',
+        'cts_ini'
+      ];
+
+      timestampParams.forEach((item) => {
+        expect(!isNaN(request.data[item])).to.equal(true);
+        expect(request.data[item] > 0).to.equal(true);
+        expect(request.data[item]).to.match(/^[0-9]+/);
+      });
+    });
+
+    it('should use (new Date()).getTime() for timestamps in ad markup', function() {
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      const responses = YieldbotAdapter.interpretResponse(
+        FIXTURE_SERVER_RESPONSE,
+        FIXTURE_BID_REQUEST
+      );
+
+      expect(responses[0].ad).to.match(/cts_rend_.*='\+\(new Date\(\)\)\.getTime\(\)/);
+      expect(responses[0].ad).to.match(/cts_ad='\+\(new Date\(\)\)\.getTime\(\)/);
+      expect(responses[0].ad).to.match(/cts_imp='\+\(new Date\(\)\)\.getTime\(\)/);
+    });
+  });
 });

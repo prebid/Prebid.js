@@ -145,7 +145,7 @@ describe('33acrossBidAdapter:', function () {
         'url': END_POINT,
         'data': JSON.stringify(ttxRequest),
         'options': {
-          'contentType': 'application/json',
+          'contentType': 'text/plain',
           'withCredentials': true
         }
       }
@@ -193,7 +193,7 @@ describe('33acrossBidAdapter:', function () {
         url: 'https://foo.com/hb/',
         data: JSON.stringify(ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         }
       };
@@ -243,7 +243,7 @@ describe('33acrossBidAdapter:', function () {
         url: 'https://foo.com/hb/',
         data: JSON.stringify(ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         }
       };
@@ -293,7 +293,7 @@ describe('33acrossBidAdapter:', function () {
         url: '//staging-ssc.33across.com/api/v1/hb',
         data: JSON.stringify(this.ttxRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false
         }
       };
@@ -404,43 +404,70 @@ describe('33acrossBidAdapter:', function () {
         expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
       });
     });
+  });
 
-    context('and register user sync', function() {
-      it('via the production endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
+  describe('getUserSyncs', function() {
+    beforeEach(function() {
+      this.syncs = [
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+        },
+        {
+          type: 'iframe',
+          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+        },
+      ];
+      this.bidRequests = [
+        {
+          bidId: 'b1',
+          bidder: '33across',
+          bidderRequestId: 'b1a',
+          params: {
+            siteId: 'id1',
+            productId: 'foo'
+          },
+          adUnitCode: 'div-id',
+          auctionId: 'r1',
+          sizes: [
+            [ 300, 250 ]
+          ],
+          transactionId: 't1'
+        },
+        {
+          bidId: 'b2',
+          bidder: '33across',
+          bidderRequestId: 'b2a',
+          params: {
+            siteId: 'id2',
+            productId: 'foo'
+          },
+          adUnitCode: 'div-id',
+          auctionId: 'r1',
+          sizes: [
+            [ 300, 250 ]
+          ],
+          transactionId: 't2'
         }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `${SYNC_ENDPOINT}&id=${this.ttxRequest.site.id}`;
+      ];
+    });
 
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
+    context('when iframe is not enabled', function() {
+      it('returns empty sync array', function() {
+        const syncOptions = {};
+        buildRequests(this.bidRequests);
+        expect(getUserSyncs(syncOptions)).to.deep.equal([]);
       });
+    });
 
-      it('via the test endpoint', function() {
-        const spy = this.sandbox.spy(userSync, 'registerSync');
-
-        this.sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
-            'syncUrl': 'https://foo.com/deb/v2?m=xch'
-          }
-        });
-
-        const serverResponse = {
-          cur: 'USD',
-          ext: {},
-          id: 'b1',
-          seatbid: []
-        }
-        interpretResponse({ body: serverResponse }, this.serverRequest);
-        const syncUrl = `https://foo.com/deb/v2?m=xch&id=${this.ttxRequest.site.id}`;
-
-        const registerSyncCalled = spy.calledWith('iframe', '33across', syncUrl);
-        expect(registerSyncCalled).to.be.true;
+    context('when iframe is enabled', function() {
+      it('returns sync array equal to number of unique siteIDs', function() {
+        const syncOptions = {
+          iframeEnabled: true
+        };
+        buildRequests(this.bidRequests);
+        const syncs = getUserSyncs(syncOptions);
+        expect(syncs).to.deep.equal(this.syncs);
       });
     });
   });
