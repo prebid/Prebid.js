@@ -306,6 +306,7 @@ export const spec = {
                   br.ttl = 300;
                   br.referrer = utils.getTopWindowUrl();
                   br.ad = bid.adm;
+
                   if (bid.ext && bid.ext.deal_channel) {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }

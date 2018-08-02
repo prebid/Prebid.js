@@ -1,5 +1,5 @@
 import {parse as parseURL, format as formatURL} from './url';
-import { config } from 'src/config'; 
+import { config } from 'src/config';
 
 var utils = require('./utils');
 
@@ -89,7 +89,7 @@ export function ajaxBuilder(timeout = 3000) {
 
       x.open(method, url);
       // IE needs timoeut to be set after open - see #1410
-     // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {
         x.timeout = timeout;
       }
