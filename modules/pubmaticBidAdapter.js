@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
-const ENDPOINT = '//hbopenbid.pubmatic.com:8080/translator?source=prebid-client';
+const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
