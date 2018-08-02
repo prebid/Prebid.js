@@ -1,4 +1,4 @@
-/** @module pbjs */
+/** @module pbjs test commit */
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
