@@ -42,8 +42,8 @@ export const spec = {
       bidResponses.push({
         requestId: bids[adUnitId].bidId,
         cpm: Number(adUnit.cpm),
-        width: adUnit.width,
-        height: adUnit.height,
+        width: bids[adUnitId].sizes[0][0],
+        height: bids[adUnitId].sizes[0][1],
         ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnitId,
