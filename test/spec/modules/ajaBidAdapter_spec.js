@@ -1,7 +1,7 @@
 import { spec } from 'modules/ajaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//ad.as.amanad.adtdp.com/v1/prebid';
+const ENDPOINT = '//ad.as.amanad.adtdp.com/v2/prebid';
 
 describe('AjaAdapter', () => {
   const adapter = newBidder(spec);

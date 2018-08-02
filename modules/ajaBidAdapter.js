@@ -4,7 +4,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'aja';
-const URL = '//ad.as.amanad.adtdp.com/v1/prebid';
+const URL = '//ad.as.amanad.adtdp.com/v2/prebid';
 const SDK_TYPE = 5;
 const AD_TYPE = {
   BANNER: 1,
