@@ -130,6 +130,8 @@ function outstreamRender(bid) {
     window.aja_vast_player.init({
       vast_tag: bid.adResponse.ad.video.vtag,
       ad_unit_code: bid.adUnitCode, // target div id to render video
+      width: bid.width,
+      height: bid.height,
       progress: bid.adResponse.ad.video.progress,
       loop: bid.adResponse.ad.video.loop,
       inread: bid.adResponse.ad.video.inread
