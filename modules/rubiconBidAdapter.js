@@ -653,14 +653,8 @@ function appendSiteAppDevice(request) {
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
   } else {
-    let page_url = config.getConfig('pageUrl');
-    if (bidRequest.params.referrer) {
-      page_url = bidRequest.params.referrer;
-    } else if (!page_url) {
-      page_url = utils.getTopWindowUrl();
-    }
     request.site = {
-      page: page_url
+      page: utils.getTopWindowUrl()
     }
   }
   if (typeof config.getConfig('device') === 'object') {
@@ -699,7 +693,6 @@ function addFrankParameters(data, bidRequest) {
       data.imp[0].video.h = bidRequest.sizes[0][1];
     }
   }
-
 }
 
 function mapSizes(sizes) {
