@@ -322,11 +322,17 @@ describe('kargo adapter tests', function () {
         currency: 'USD',
         bids: [{
           bidId: 'fake bid id 1',
+          sizes: [
+            [320, 50]
+          ],
           params: {
             placementId: 'foo'
           }
         }, {
           bidId: 'fake bid id 2',
+          sizes: [
+            [300, 250]
+          ],
           params: {
             placementId: 'bar'
           }
