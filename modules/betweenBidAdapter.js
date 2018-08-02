@@ -27,9 +27,9 @@ export const spec = {
       let params = {
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
-        tz: get_tz(),
-        fl: get_fl(),
-        rr: get_rr(),
+        tz: getTz(),
+        fl: getFl(),
+        rr: getRr(),
         w: i.params.w,
         h: i.params.h,
         s: i.params.s,
@@ -114,7 +114,7 @@ export const spec = {
   }
 }
 
-function get_rr() {
+function getRr() {
   try {
     var td = top.document;
     var rr = td.referrer;
@@ -127,7 +127,7 @@ function get_rr() {
   }
 }
 
-function get_fl() {
+function getFl() {
   if (navigator.plugins !== undefined && navigator.plugins !== null) {
     if (navigator.plugins['Shockwave Flash'] !== undefined && navigator.plugins['Shockwave Flash'] !== null && typeof navigator.plugins['Shockwave Flash'] === 'object') {
       var description = navigator.plugins['Shockwave Flash'].description;
@@ -142,7 +142,7 @@ function get_fl() {
   return 0;
 }
 
-function get_tz() {
+function getTz() {
   return new Date().getTimezoneOffset();
 }
 
