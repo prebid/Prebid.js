@@ -10,7 +10,7 @@ import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
-import { S2S_VENDORS, paramTypes } from './s2sVendors.js';
+import { S2S_VENDORS, paramTypes } from './config.js';
 
 const getConfig = config.getConfig;
 
