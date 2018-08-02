@@ -1,5 +1,4 @@
 import CONSTANTS from './constants';
-import { loadScript } from './adloader';
 import { ajax } from './ajax';
 
 const events = require('./events');
@@ -20,7 +19,6 @@ const {
   }
 } = CONSTANTS;
 
-const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
@@ -31,10 +29,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   var _eventCount = 0;
   var _enableCheck = true;
   var _handlers;
-
-  if (analyticsType === LIBRARY) {
-    loadScript(url, _emptyQueue);
-  }
 
   if (analyticsType === ENDPOINT || BUNDLE) {
     _emptyQueue();
@@ -52,7 +46,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   };
 
   function _track({ eventType, args }) {
-    if (this.getAdapterType() === LIBRARY || BUNDLE) {
+    if (this.getAdapterType() === BUNDLE) {
       window[global](handler, eventType, args);
     }
 

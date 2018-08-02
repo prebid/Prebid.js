@@ -1,6 +1,6 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 
-const VERSION = '3.0.0';
+const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/header-bid/v1';
 
@@ -32,6 +32,7 @@ export const sharethroughAdapterSpec = {
       // but we need as part of interpretResponse()
       const strData = {
         stayInIframe: bid.params.iframe,
+        iframeSize: bid.params.iframeSize,
         sizes: bid.sizes
       }
 
@@ -52,7 +53,9 @@ export const sharethroughAdapterSpec = {
     const creative = body.creatives[0];
     let size = [0, 0];
     if (req.strData.stayInIframe) {
-      size = getLargestSize(req.strData.sizes);
+      size = req.strData.iframeSize != undefined
+        ? req.strData.iframeSize
+        : getLargestSize(req.strData.sizes);
     }
 
     return [{
