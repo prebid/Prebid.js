@@ -147,7 +147,7 @@ function interpretResponse(serverResponse, bidRequest) {
 // Register one sync per unique guid
 // NOTE: If gdpr applies do not sync
 function getUserSyncs(syncOptions, responses, gdprConsent) {
-  if (typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
+  if (gdprConsent && gdprConsent.gdprApplies === true) {
     return []
   } else {
     return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
