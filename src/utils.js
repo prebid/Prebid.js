@@ -7,12 +7,12 @@ const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
-var t_Arr = 'Array';
-var t_Str = 'String';
-var t_Fn = 'Function';
-var t_Numb = 'Number';
-var t_Object = 'Object';
-var t_Boolean = 'Boolean';
+var tArr = 'Array';
+var tStr = 'String';
+var tFn = 'Function';
+var tNumb = 'Number';
+var tObject = 'Object';
+var tBoolean = 'Boolean';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 let warnLogger = null;
@@ -405,27 +405,27 @@ exports.isA = function (object, _t) {
 };
 
 exports.isFn = function (object) {
-  return exports.isA(object, t_Fn);
+  return exports.isA(object, tFn);
 };
 
 exports.isStr = function (object) {
-  return exports.isA(object, t_Str);
+  return exports.isA(object, tStr);
 };
 
 exports.isArray = function (object) {
-  return exports.isA(object, t_Arr);
+  return exports.isA(object, tArr);
 };
 
 exports.isNumber = function(object) {
-  return exports.isA(object, t_Numb);
+  return exports.isA(object, tNumb);
 };
 
 exports.isPlainObject = function(object) {
-  return exports.isA(object, t_Object);
+  return exports.isA(object, tObject);
 }
 
 exports.isBoolean = function(object) {
-  return exports.isA(object, t_Boolean);
+  return exports.isA(object, tBoolean);
 }
 
 /**
