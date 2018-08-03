@@ -3,6 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { BANNER } from 'src/mediaTypes';
 import { REPO_AND_VERSION } from 'src/constants';
+import { ajax } from 'src/ajax';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'c.deployads.com';
@@ -129,13 +130,8 @@ export const spec = {
   },
 
   onTimeout(details) {
-    fetch(`//${SERVER_URL}/prebid/timeout`, {
-      method: 'POST',
-      body: JSON.stringify(details),
-      mode: 'no-cors',
-      headers: new Headers({
-        'Content-Type': 'text/plain'
-      })
+    ajax(`//${SERVER_URL}/prebid/timeout`, null, JSON.stringify(details), {
+      method: 'POST'
     });
   }
 };
