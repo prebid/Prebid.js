@@ -558,23 +558,40 @@ describe('33acrossBidAdapter:', function () {
       ];
     });
 
-    context('when iframe is not enabled', function() {
-      it('returns empty sync array', function() {
-        const syncOptions = {};
-        buildRequests(this.bidRequests);
-        expect(getUserSyncs(syncOptions)).to.deep.equal([]);
+    context('when gdpr does not apply', function() {
+      beforeEach(function() {
+        this.gdprConsent = {}
+      });
+
+      context('when iframe is not enabled', function() {
+        it('returns empty sync array', function() {
+          const syncOptions = {};
+          buildRequests(this.bidRequests);
+          expect(getUserSyncs(syncOptions, {}, this.gdprConsent)).to.deep.equal([]);
+        });
+      });
+
+      context('when iframe is enabled', function() {
+        it('returns sync array equal to number of unique siteIDs', function() {
+          const syncOptions = {
+            iframeEnabled: true
+          };
+          buildRequests(this.bidRequests);
+          const syncs = getUserSyncs(syncOptions, {}, this.gdprConsent);
+          expect(syncs).to.deep.equal(this.syncs);
+        });
       });
     });
 
-    context('when iframe is enabled', function() {
-      it('returns sync array equal to number of unique siteIDs', function() {
-        const syncOptions = {
-          iframeEnabled: true
-        };
+    context('when gdpr applies', function() {
+      it('returns empty sync array', function() {
+        const syncOptions = {};
+        const gdprConsent = {
+          gdprApplies: true
+        }
         buildRequests(this.bidRequests);
-        const syncs = getUserSyncs(syncOptions);
-        expect(syncs).to.deep.equal(this.syncs);
+        expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
       });
-    });
+    })
   });
 });

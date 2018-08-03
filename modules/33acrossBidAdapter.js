@@ -23,7 +23,8 @@ function _createBidResponse(response) {
   }
 }
 
-// infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
+// Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
+// NOTE: At this point, TTX only accepts request for a single impression
 function _createServerRequest(bidRequest, gdprConsent) {
   const ttxRequest = {};
   const params = bidRequest.params;
@@ -117,7 +118,10 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-// NOTE: At this point, TTX only accepts request for a single impression
+// NOTE: With regards to gdrp consent data,
+// - the server independently infers gdpr applicability therefore, setting the default value to false
+// - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
+//    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
   const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent)
 
@@ -141,8 +145,13 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 // Register one sync per unique guid
-function getUserSyncs(syncOptions) {
-  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
+// NOTE: If gdpr applies do not sync
+function getUserSyncs(syncOptions, responses, gdprConsent) {
+  if (typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
+    return []
+  } else {
+    return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
+  }
 }
 
 const spec = {
