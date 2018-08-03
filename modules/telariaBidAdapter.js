@@ -105,8 +105,6 @@ export const spec = {
       } catch (e) {}
     }
     return syncs;
-  },
-  onTimeout: function (timeoutData) {
   }
 };
 
