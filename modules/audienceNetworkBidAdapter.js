@@ -4,7 +4,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
-import { generateUUID, getTopWindowUrl, isSafariBrowser } from 'src/utils';
+import { generateUUID, getTopWindowUrl, isSafariBrowser, convertTypes } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -242,12 +242,25 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
     });
 };
 
+/**
+ * Covert bid param types for S2S
+ * @param {Object} params bid params
+ * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+ * @return {Object} params bid params
+ */
+const transformBidParams = (params, isOpenRtb) => {
+  return convertTypes({
+    'placementId': 'string'
+  }, params);
+}
+
 export const spec = {
   code,
   supportedMediaTypes,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  transformBidParams
 };
 
 registerBidder(spec);

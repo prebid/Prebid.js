@@ -1,4 +1,4 @@
-import { transformBidderParamKeywords } from 'src/utils';
+// import { transformBidderParamKeywords } from 'src/utils';
 
 // accountId and bidders params are not included here, should be configured by end-user
 export const S2S_VENDORS = {
@@ -20,45 +20,45 @@ export const S2S_VENDORS = {
   }
 }
 
-export const paramTypes = {
-  'appnexus': {
-    'member': 'string',
-    'invCode': 'string',
-    'placementId': 'number',
-    'keywords': transformBidderParamKeywords
-  },
-  'rubicon': {
-    'accountId': 'number',
-    'siteId': 'number',
-    'zoneId': 'number'
-  },
-  'indexExchange': {
-    'siteID': 'number'
-  },
-  'audienceNetwork': {
-    'placementId': 'string'
-  },
-  'pubmatic': {
-    'publisherId': 'string',
-    'adSlot': 'string'
-  },
-  'districtm': {
-    'member': 'string',
-    'invCode': 'string',
-    'placementId': 'number'
-  },
-  'pulsepoint': {
-    'cf': 'string',
-    'cp': 'number',
-    'ct': 'number'
-  },
-  'conversant': {
-    'site_id': 'string',
-    'secure': 'number',
-    'mobile': 'number'
-  },
-  'openx': {
-    'unit': 'string',
-    'customFloor': 'number'
-  },
-};
+// export const paramTypes = {
+//   'appnexus': {
+//     'member': 'string',
+//     'invCode': 'string',
+//     'placementId': 'number',
+//     'keywords': transformBidderParamKeywords
+//   },
+//   'rubicon': {
+//     'accountId': 'number',
+//     'siteId': 'number',
+//     'zoneId': 'number'
+//   },
+//   'indexExchange': {
+//     'siteID': 'number'
+//   },
+//   'audienceNetwork': {
+//     'placementId': 'string'
+//   },
+//   'pubmatic': {
+//     'publisherId': 'string',
+//     'adSlot': 'string'
+//   },
+//   'districtm': {
+//     'member': 'string',
+//     'invCode': 'string',
+//     'placementId': 'number'
+//   },
+//   'pulsepoint': {
+//     'cf': 'string',
+//     'cp': 'number',
+//     'ct': 'number'
+//   },
+//   'conversant': {
+//     'site_id': 'string',
+//     'secure': 'number',
+//     'mobile': 'number'
+//   },
+//   'openx': {
+//     'unit': 'string',
+//     'customFloor': 'number'
+//   },
+// };

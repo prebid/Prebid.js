@@ -10,7 +10,7 @@ import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
-import { S2S_VENDORS, paramTypes } from './config.js';
+import { S2S_VENDORS } from './config.js';
 
 const getConfig = config.getConfig;
 
@@ -164,51 +164,6 @@ function doClientSideSyncs(bidders) {
   });
 }
 
-/**
- * Try to convert a value to a type.
- * If it can't be done, the value will be returned.
- *
- * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
- * @param {*} value The value to be converted into typeToConvert.
- */
-function tryConvertType(typeToConvert, value) {
-  if (typeToConvert === 'string') {
-    return value && value.toString();
-  } else if (typeToConvert === 'number') {
-    return Number(value);
-  } else {
-    return value;
-  }
-}
-
-/*
- * Modify an adunit's bidder parameters to match the expected parameter types
- */
-function convertTypes(adUnits) {
-  adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
-      // aliases use the base bidder's paramTypes
-      const bidder = adaptermanager.aliasRegistry[bid.bidder] || bid.bidder;
-      const types = paramTypes[bidder] || {};
-
-      Object.keys(types).forEach(key => {
-        if (bid.params[key]) {
-          if (utils.isFn(types[key])) {
-            bid.params[key] = types[key](bid.params[key]);
-          } else {
-            bid.params[key] = tryConvertType(types[key], bid.params[key]);
-          }
-
-          // don't send invalid values
-          if (isNaN(bid.params[key])) {
-            delete bid.params.key;
-          }
-        }
-      });
-    });
-  });
-}
-
 function _getDigiTrustQueryParams() {
   function getDigiTrustId() {
     let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
@@ -265,6 +220,15 @@ function transformHeightWidth(adUnit) {
 const LEGACY_PROTOCOL = {
 
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
+    adUnits.forEach(adUnit => {
+      adUnit.bids.forEach(bid => {
+        const adapter = adaptermanager.bidderRegistry[bid.bidder];
+        if (adapter && adapter.getSpec().transformBidParams) {
+          bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
+        }
+      });
+    });
+
     // pbs expects an ad_unit.video attribute if the imp is video
     adUnits.forEach(adUnit => {
       adUnit.sizes = transformHeightWidth(adUnit);
@@ -444,7 +408,7 @@ const OPEN_RTB_PROTOCOL = {
       const ext = adUnit.bids.reduce((acc, bid) => {
         const adapter = adaptermanager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
-          bid.params = adapter.getSpec().transformBidParams(bid.params);
+          bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
         acc[bid.bidder] = bid.params;
         return acc;
@@ -571,6 +535,13 @@ const OPEN_RTB_PROTOCOL = {
   }
 };
 
+const isOpenRtb = () => {
+  const OPEN_RTB_PATH = '/openrtb2/';
+
+  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
+  return ~endpoint.indexOf(OPEN_RTB_PATH);
+}
+
 /*
  * Returns the required protocol adapter to communicate with the configured
  * endpoint. The adapter is an object containing `buildRequest` and
@@ -584,12 +555,7 @@ const OPEN_RTB_PROTOCOL = {
  * const bids = protocol().interpretResponse(response, bidRequests, requestedBidders);
  */
 const protocolAdapter = () => {
-  const OPEN_RTB_PATH = '/openrtb2/';
-
-  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
-  const isOpenRtb = ~endpoint.indexOf(OPEN_RTB_PATH);
-
-  return isOpenRtb ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
+  return isOpenRtb() ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
 };
 
 /**
@@ -601,8 +567,6 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
-
-    convertTypes(adUnits);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const adUnitsWithSizes = adUnits.filter(unit => unit.sizes && unit.sizes.length);
