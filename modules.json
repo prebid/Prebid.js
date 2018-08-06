@@ -30,5 +30,7 @@
     "sonobiBidAdapter",
     "sovrnBidAdapter",
     "tripleliftBidAdapter",
-    "zeroIdBidAdapter"
+    "zeroIdBidAdapter",
+    "trustxBidAdapter",
+    "unrulyBidAdapter"
 ]
