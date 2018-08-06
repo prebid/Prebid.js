@@ -329,9 +329,10 @@ export function newBidder(spec) {
 
   function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
+      let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
+        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
+        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
       }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
@@ -380,7 +381,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
   function errorMessage(msg) {

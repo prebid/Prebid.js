@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
 import * as utils from 'src/utils';
+
 const BID = {
   'bidId': '2d52001cabd527',
   'params': {
@@ -17,6 +18,12 @@ const BID = {
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a'
+};
+
+const BIDDER_REQUEST = {
+  'gdprConsent': {
+    'consentString': 'consent_string'
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -109,12 +116,13 @@ describe('VidazooBidAdapter', () => {
     });
 
     it('should build request for each size', () => {
-      const requests = adapter.buildRequests([BID]);
+      const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
+          consent: 'consent_string',
           width: '300',
           height: '250',
           url: 'http://www.greatsite.com',
@@ -130,6 +138,7 @@ describe('VidazooBidAdapter', () => {
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
+          consent: 'consent_string',
           width: '300',
           height: '600',
           url: 'http://www.greatsite.com',

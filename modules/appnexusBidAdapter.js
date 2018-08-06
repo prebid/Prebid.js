@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -155,32 +155,6 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
     }
   });
   return renderer;
-}
-
-/* Turn keywords parameter into ut-compatible format */
-function getKeywords(keywords) {
-  let arrs = [];
-
-  utils._each(keywords, (v, k) => {
-    if (utils.isArray(v)) {
-      let values = [];
-      utils._each(v, (val) => {
-        val = utils.getValueString('keywords.' + k, val);
-        if (val) { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = utils.getValueString('keywords.' + k, v);
-      if (utils.isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
 }
 
 /**
@@ -310,7 +284,7 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = getKeywords(bid.params.keywords);
+    tag.keywords = utils.transformBidderParamKeywords(bid.params.keywords);
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
