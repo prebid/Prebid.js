@@ -60,13 +60,18 @@ export const spec = {
       r: reqId
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        payload.wtimeout = bidderRequest.timeout;
       }
-      payload.gdpr_applies =
-        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
     }
 
     return {
