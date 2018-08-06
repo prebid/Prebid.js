@@ -506,13 +506,13 @@ function _getDigiTrustQueryParams() {
  * @returns {string}
  */
 function _getPageUrl(bidRequest) {
-  let page_url = config.getConfig('pageUrl');
+  let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
-    page_url = bidRequest.params.referrer;
-  } else if (!page_url) {
-    page_url = utils.getTopWindowUrl();
+    pageUrl = bidRequest.params.referrer;
+  } else if (!pageUrl) {
+    pageUrl = utils.getTopWindowUrl();
   }
-  return bidRequest.params.secure ? page_url.replace(/^http:/i, 'https:') : page_url;
+  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
 
 function _renderCreative(script, impId) {

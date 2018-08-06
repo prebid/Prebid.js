@@ -90,7 +90,7 @@ export const spec = {
           netRevenue: true,
           mediaType: BANNER,
           ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-          ttl: 60000
+          ttl: 60
         });
       });
     }

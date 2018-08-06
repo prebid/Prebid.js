@@ -43,11 +43,6 @@ export const spec = {
       imp: bidRequests.map(mapImpression)
     };
 
-    const options = {
-      contentType: 'application/json',
-      withCredentials: false
-    };
-
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
@@ -58,7 +53,6 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: JSON.stringify(payload),
-      options,
       bidderRequest
     };
   },
@@ -104,6 +98,12 @@ export const spec = {
       return [{
         type: 'iframe',
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+      }];
+    }
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'pixel',
+        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
       }];
     }
   }
