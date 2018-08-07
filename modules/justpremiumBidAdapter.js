@@ -63,11 +63,6 @@ export const spec = {
     const payloadString = JSON.stringify(payload)
 
     LAST_PAYLOAD = payload
-    $$PREBID_GLOBAL$$.onEvent('bidWon', (data) => {
-      if (AD_UNIT_IDS.indexOf(data.adUnitCode) != -1) {
-        track(data, LAST_PAYLOAD, 'bae')
-      }
-    })
 
     return {
       method: 'POST',
@@ -128,20 +123,11 @@ export const spec = {
 }
 
 function track (data, payload, type) {
-  let jp = {}
   let pubUrl = ''
 
-  if (type === 'bae') {
-    jp = {
-      cpm: data.cpm,
-      auc: data.adUnitCode,
-      ttr: data.timeToRespond
-    }
-  } else {
-    jp = {
-      auc: data.adUnitCode,
-      to: data.timeout
-    }
+  let jp = {
+    auc: data.adUnitCode,
+    to: data.timeout
   }
 
   if (window.top == window) {
