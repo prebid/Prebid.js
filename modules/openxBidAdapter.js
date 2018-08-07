@@ -63,6 +63,12 @@ export const spec = {
         url: url
       }];
     }
+  },
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'unit': 'string',
+      'customFloor': 'number'
+    }, params);
   }
 };
 
