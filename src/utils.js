@@ -1098,6 +1098,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
  *
  * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
  * @param {*} value The value to be converted into typeToConvert.
+ * @returns {string|number|Object} value Converted value
  */
 function tryConvertType(typeToConvert, value) {
   if (typeToConvert === 'string') {
