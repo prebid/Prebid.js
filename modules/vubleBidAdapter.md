@@ -26,7 +26,7 @@ Module that connects to Vuble's demand sources
                     bidder: "vuble",
                     params: {
                         env: 'net',
-                        pubId: '3',
+                        pubId: '18',
                         zoneId: '12345',
                         referrer: "http://www.vuble.tv/", // optional
                         floorPrice: 5.00 // optional
@@ -47,7 +47,7 @@ Module that connects to Vuble's demand sources
                     bidder: "vuble",
                     params: {
                         env: 'net',
-                        pubId: '3',
+                        pubId: '18',
                         zoneId: '12345',
                         referrer: "http://www.vuble.tv/", // optional
                         floorPrice: 5.00 // optional

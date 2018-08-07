@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
+[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
@@ -105,11 +105,6 @@ To run the unit tests:
 
 ```bash
 gulp test
-```
-To run tests for a single file:
-
-```bash
-gulp test --file "path/to/spec/file.js"
 ```
 
 To generate and view the code coverage reports:
