@@ -560,7 +560,9 @@ describe('33acrossBidAdapter:', function () {
 
     context('when gdpr does not apply', function() {
       beforeEach(function() {
-        this.gdprConsent = {}
+        this.gdprConsent = {
+          gdprApplies: false
+        }
       });
 
       context('when iframe is not enabled', function() {
@@ -578,6 +580,27 @@ describe('33acrossBidAdapter:', function () {
           };
           buildRequests(this.bidRequests);
           const syncs = getUserSyncs(syncOptions, {}, this.gdprConsent);
+          expect(syncs).to.deep.equal(this.syncs);
+        });
+      });
+    });
+
+    context('when consent data is not defined', function() {
+      context('when iframe is not enabled', function() {
+        it('returns empty sync array', function() {
+          const syncOptions = {};
+          buildRequests(this.bidRequests);
+          expect(getUserSyncs(syncOptions)).to.deep.equal([]);
+        });
+      });
+
+      context('when iframe is enabled', function() {
+        it('returns sync array equal to number of unique siteIDs', function() {
+          const syncOptions = {
+            iframeEnabled: true
+          };
+          buildRequests(this.bidRequests);
+          const syncs = getUserSyncs(syncOptions);
           expect(syncs).to.deep.equal(this.syncs);
         });
       });
