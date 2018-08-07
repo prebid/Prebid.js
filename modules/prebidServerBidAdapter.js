@@ -518,6 +518,13 @@ const OPEN_RTB_PROTOCOL = {
             }
           });
         }
+
+        if (bid.bidder === 'ix') {
+          aliases.ix = 'indexExchange';
+          bid.params.siteID = tryConvertType('number', bid.params.siteId);
+          if (bid.params.siteId) { delete bid.params.siteId; }
+        }
+
         acc[bid.bidder] = bid.params;
         return acc;
       }, {});
