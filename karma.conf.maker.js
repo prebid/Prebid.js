@@ -110,7 +110,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: './',
-
+    failOnEmptyTestSuite: false,
     webpack: webpackConfig,
     webpackMiddleware: {
       noInfo: true

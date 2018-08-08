@@ -41,6 +41,8 @@ gulp.task('default', ['webpack']);
 
 gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
+gulp.task('serve-prod', ['connect-prod']);
+
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['lint', 'test-coverage']);
@@ -239,6 +241,15 @@ gulp.task('watch', function () {
     port: port,
     root: './',
     livereload: true
+  });
+});
+
+gulp.task('connect-prod', function() {
+  connect.server({
+    https: argv.https,
+    port: port,
+    root: './build/dist/',
+    livereload: false,
   });
 });
 
