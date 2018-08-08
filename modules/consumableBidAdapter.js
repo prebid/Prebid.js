@@ -16,7 +16,7 @@ const SYNC_TYPES = {
   }
 };
 
-const pubapiTemplate = ({host, network, placement, alias}) => `//${host}/pubapi/3.0/${network}/${placement}/0/0/ADTECH;v=2;cmd=bid;cors=yes;alias=${alias};misc=${new Date().getTime()}`
+const pubapiTemplate = ({host, network, placement}) => `//${host}/pubapi/3.0/${network}/${placement}/0/0/ADTECH;v=2;cmd=bid;cors=yes;misc=${new Date().getTime()}`
 const CONSUMABLE_URL = 'adserver-us.adtech.advertising.com';
 const CONSUMABLE_TTL = 60;
 const CONSUMABLE_NETWORK = '10947.1';
