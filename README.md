@@ -32,6 +32,12 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 
 <a name="Build"></a>
 
+## STANZA
+
+To update the prebid.js file used in Stanza-Cal, run:
+
+    $ gulp serve --modules=consentManagement,rubiconBidAdapter,ixBidAdapter,aolBidAdapter,sonobiBidAdapter, pulsepointBidAdapter
+
 ## Build for Development
 
 To build the project on your local machine, run:
@@ -61,11 +67,11 @@ Building with just these adapters will result in a smaller bundle which should a
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
-        
+
 Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
 
     $ gulp build --modules=modules.json
-        
+
 With `modules.json` containing the following
 ```json modules.json
 [

@@ -1,0 +1,40 @@
+# background info -> https://circleci.com/docs/configuration/
+machine:
+  services:
+    - docker
+  node:
+    version: 6.11.1
+  environment:
+    DOCKER_USER: stanza
+    DOCKER_PASS: sh0tc4ll3r
+    DOCKER_EMAIL: founders@stanza.co
+    AWS_DEFAULT_REGION: us-west-2
+    PORT: 3090
+
+dependencies:
+  override:
+    - pip install --allow-all-external --allow-unverified awscli awscli
+    - docker build -t stanza/prebid:$CIRCLE_SHA1 .
+
+test:
+  pre:
+    - npm install -g yarn
+    - yarn install
+  override:
+    - npm test
+
+deployment:
+  staging:
+    branch: /^master|^staging|^EN-.*/
+    commands:
+      - docker login -u $DOCKER_USER -p $DOCKER_PASS -e $DOCKER_EMAIL
+      - chmod +x deploy.sh
+      - ./deploy.sh $CIRCLE_SHA1 staging $PORT
+      - ./gittags.sh staging
+  production:
+    branch: production
+    commands:
+      - docker login -u $DOCKER_USER -p $DOCKER_PASS -e $DOCKER_EMAIL
+      - chmod +x deploy.sh
+      - ./deploy.sh $CIRCLE_SHA1 production $PORT
+      - ./gittags.sh production

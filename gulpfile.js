@@ -41,6 +41,8 @@ gulp.task('default', ['webpack']);
 
 gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
+gulp.task('serve-prod', ['connect-prod']);
+
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['lint', 'test-coverage']);
@@ -194,7 +196,7 @@ gulp.task('test', ['clean'], function (done) {
     karmaConf.browsers = browserOverride;
   }
 
-  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+  new KarmaServer(karmaConf).start();
 });
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
@@ -239,6 +241,15 @@ gulp.task('watch', function () {
     port: port,
     root: './',
     livereload: true
+  });
+});
+
+gulp.task('connect-prod', function() {
+  connect.server({
+    https: argv.https,
+    port: port,
+    root: './build/dist/',
+    livereload: false,
   });
 });
 
