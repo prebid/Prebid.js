@@ -153,7 +153,7 @@ describe('OpenxAdapter', () => {
           bannerBid.params = {delDomain: 'test-delivery-domain'}
         });
 
-        it('should return false when there is no ad unit id and no placement id', () => {
+        it('should return false when there is no ad unit id and size', () => {
           expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
         });
 
@@ -162,9 +162,18 @@ describe('OpenxAdapter', () => {
           expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
         });
 
-        it('should return true if there is an placement id ', () => {
-          bannerBid.params.placementId = '/12345678/aaaa/bbbb';
+        it('should return true if there is no adunit id and sizes are defined', () => {
+          bannerBid.mediaTypes.banner.sizes = [720, 90];
           expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+        });
+
+        it('should return false if no sizes are defined ', () => {
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
+        });
+
+        it('should return false if sizes empty ', () => {
+          bannerBid.mediaTypes.banner.sizes = [];
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
         });
       });
     });
@@ -245,7 +254,7 @@ describe('OpenxAdapter', () => {
         'unit': '11',
         'delDomain': 'test-del-domain'
       },
-      'adUnitCode': 'adunit-code',
+      'adUnitCode': '/adunit-code/test-path',
       mediaTypes: {
         banner: {
           sizes: [[300, 250], [300, 600]]
@@ -285,11 +294,11 @@ describe('OpenxAdapter', () => {
 
     it('should send the adunit codes', () => {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
-      expect(request[0].data.divs).to.equal(`${bidRequestsWithMediaTypes[0].adUnitCode},${bidRequestsWithMediaTypes[1].adUnitCode}`);
+      expect(request[0].data.divIds).to.equal(`${encodeURIComponent(bidRequestsWithMediaTypes[0].adUnitCode)},${encodeURIComponent(bidRequestsWithMediaTypes[1].adUnitCode)}`);
     });
 
     it('should send ad unit ids when any are defined', () => {
-      const bidRequestsWithPlacementIds = [{
+      const bidRequestsWithUnitIds = [{
         'bidder': 'openx',
         'params': {
           'delDomain': 'test-del-domain'
@@ -319,12 +328,12 @@ describe('OpenxAdapter', () => {
         'bidderRequestId': 'test-bid-request-2',
         'auctionId': 'test-auction-2'
       }];
-      const request = spec.buildRequests(bidRequestsWithPlacementIds);
-      expect(request[0].data.auid).to.equal(`,${bidRequestsWithPlacementIds[1].params.unit}`);
+      const request = spec.buildRequests(bidRequestsWithUnitIds);
+      expect(request[0].data.auid).to.equal(`,${bidRequestsWithUnitIds[1].params.unit}`);
     });
 
     it('should not send any ad unit ids when none are defined', () => {
-      const bidRequestsWithoutPlacementIds = [{
+      const bidRequestsWithoutUnitIds = [{
         'bidder': 'openx',
         'params': {
           'delDomain': 'test-del-domain'
@@ -353,81 +362,8 @@ describe('OpenxAdapter', () => {
         'bidderRequestId': 'test-bid-request-2',
         'auctionId': 'test-auction-2'
       }];
-      const request = spec.buildRequests(bidRequestsWithoutPlacementIds);
+      const request = spec.buildRequests(bidRequestsWithoutUnitIds);
       expect(request[0].data).to.not.have.any.keys('auid');
-    });
-
-    it('should send placement ids when any are defined', () => {
-      const bidRequestsWithPlacementIds = [{
-        'bidder': 'openx',
-        'params': {
-          'unit': '11',
-          'delDomain': 'test-del-domain'
-        },
-        'adUnitCode': 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          }
-        },
-        'bidId': 'test-bid-id-1',
-        'bidderRequestId': 'test-bid-request-1',
-        'auctionId': 'test-auction-1'
-      }, {
-        'bidder': 'openx',
-        'params': {
-          'unit': '22',
-          'delDomain': 'test-del-domain',
-          placementId: 'test-placement-id-2'
-        },
-        'adUnitCode': 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[728, 90]]
-          }
-        },
-        'bidId': 'test-bid-id-2',
-        'bidderRequestId': 'test-bid-request-2',
-        'auctionId': 'test-auction-2'
-      }];
-      const request = spec.buildRequests(bidRequestsWithPlacementIds);
-      expect(request[0].data.pids).to.equal(`,${bidRequestsWithPlacementIds[1].params.placementId}`);
-    });
-
-    it('should not send any placement ids when none are defined', () => {
-      const bidRequestsWithoutPlacementIds = [{
-        'bidder': 'openx',
-        'params': {
-          'unit': '11',
-          'delDomain': 'test-del-domain'
-        },
-        'adUnitCode': 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          }
-        },
-        'bidId': 'test-bid-id-1',
-        'bidderRequestId': 'test-bid-request-1',
-        'auctionId': 'test-auction-1'
-      }, {
-        'bidder': 'openx',
-        'params': {
-          'unit': '22',
-          'delDomain': 'test-del-domain'
-        },
-        'adUnitCode': 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[728, 90]]
-          }
-        },
-        'bidId': 'test-bid-id-2',
-        'bidderRequestId': 'test-bid-request-2',
-        'auctionId': 'test-auction-2'
-      }];
-      const request = spec.buildRequests(bidRequestsWithoutPlacementIds);
-      expect(request[0].data).to.not.have.any.keys('pids');
     });
 
     describe('when there is a legacy request with no media type', function () {
@@ -694,6 +630,156 @@ describe('OpenxAdapter', () => {
           expect(request[1].data).to.not.have.property('x_gdpr_f');
         });
       });
+    });
+
+    it('should not send a coppa query param when there are no coppa param settings in the bid requests', () => {
+      const bidRequestsWithoutCoppa = [{
+        bidder: 'openx',
+        params: {
+          unit: '11',
+          delDomain: 'test-del-domain',
+          coppa: false
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidId: 'test-bid-id-1',
+        bidderRequestId: 'test-bid-request-1',
+        auctionId: 'test-auction-1'
+      }, {
+        bidder: 'openx',
+        params: {
+          unit: '22',
+          delDomain: 'test-del-domain'
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bidId: 'test-bid-id-2',
+        bidderRequestId: 'test-bid-request-2',
+        auctionId: 'test-auction-2'
+      }];
+      const request = spec.buildRequests(bidRequestsWithoutCoppa);
+      expect(request[0].data).to.not.have.any.keys('tfcd');
+    });
+
+    it('should send a coppa flag there is when there is coppa param settings in the bid requests', () => {
+      const bidRequestsWithCoppa = [{
+        bidder: 'openx',
+        params: {
+          unit: '11',
+          delDomain: 'test-del-domain',
+          coppa: false
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidId: 'test-bid-id-1',
+        bidderRequestId: 'test-bid-request-1',
+        auctionId: 'test-auction-1'
+      }, {
+        bidder: 'openx',
+        params: {
+          unit: '22',
+          delDomain: 'test-del-domain',
+          coppa: true
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bidId: 'test-bid-id-2',
+        bidderRequestId: 'test-bid-request-2',
+        auctionId: 'test-auction-2'
+      }];
+      const request = spec.buildRequests(bidRequestsWithCoppa);
+      expect(request[0].data.tfcd).to.equal(1);
+    });
+
+    it('should not send a "no segmentation" flag there no DoNotTrack setting that is set to true', () => {
+      const bidRequestsWithoutDnt = [{
+        bidder: 'openx',
+        params: {
+          unit: '11',
+          delDomain: 'test-del-domain',
+          doNotTrack: false
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidId: 'test-bid-id-1',
+        bidderRequestId: 'test-bid-request-1',
+        auctionId: 'test-auction-1'
+      }, {
+        bidder: 'openx',
+        params: {
+          unit: '22',
+          delDomain: 'test-del-domain'
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bidId: 'test-bid-id-2',
+        bidderRequestId: 'test-bid-request-2',
+        auctionId: 'test-auction-2'
+      }];
+      const request = spec.buildRequests(bidRequestsWithoutDnt);
+      expect(request[0].data).to.not.have.any.keys('ns');
+    });
+
+    it('should send a "no segmentation" flag there is any DoNotTrack setting that is set to true', () => {
+      const bidRequestsWithDnt = [{
+        bidder: 'openx',
+        params: {
+          unit: '11',
+          delDomain: 'test-del-domain',
+          doNotTrack: false
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidId: 'test-bid-id-1',
+        bidderRequestId: 'test-bid-request-1',
+        auctionId: 'test-auction-1'
+      }, {
+        bidder: 'openx',
+        params: {
+          unit: '22',
+          delDomain: 'test-del-domain',
+          doNotTrack: true
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bidId: 'test-bid-id-2',
+        bidderRequestId: 'test-bid-request-2',
+        auctionId: 'test-auction-2'
+      }];
+      const request = spec.buildRequests(bidRequestsWithDnt);
+      expect(request[0].data.ns).to.equal(1);
     });
   });
 
