@@ -69,10 +69,14 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(
-    find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
-      .getSlotElementId()).querySelector('iframe');
-
-  iframe.width = '' + width;
-  iframe.height = '' + height;
+  // resize both container div + iframe
+  ['div', 'iframe'].forEach(elmType => {
+    var element = getElementByAdUnit(elmType);
+    element.style.width = width;
+    element.style.height = height;
+  });
+  function getElementByAdUnit(elmType) {
+    return document.getElementById(find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
+      .getSlotElementId()).querySelector(elmType);
+  }
 }
