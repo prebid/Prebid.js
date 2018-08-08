@@ -196,7 +196,7 @@ gulp.task('test', ['clean'], function (done) {
     karmaConf.browsers = browserOverride;
   }
 
-  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+  new KarmaServer(karmaConf).start();
 });
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.

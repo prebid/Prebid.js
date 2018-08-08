@@ -41,9 +41,9 @@ function newPluginsArray(browserstack) {
     'karma-webpack',
     'karma-mocha-reporter'
   ];
-  if (browserstack) {
-    plugins.push('karma-browserstack-launcher');
-  }
+  // if (browserstack) {
+  //   plugins.push('karma-browserstack-launcher');
+  // }
   plugins.push('karma-firefox-launcher');
   plugins.push('karma-opera-launcher');
   plugins.push('karma-safari-launcher');
