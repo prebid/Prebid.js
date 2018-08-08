@@ -4,7 +4,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import { formatQS } from 'src/url';
-import { generateUUID, getTopWindowUrl, isSafariBrowser } from 'src/utils';
+import { generateUUID, getTopWindowUrl, isSafariBrowser, convertTypes } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -14,7 +14,7 @@ const method = 'GET';
 const url = 'https://an.facebook.com/v2/placementbid.json';
 const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
-const hb_bidder = 'fan';
+const hbBidder = 'fan';
 const platver = '$prebid.version$';
 const platform = '241394079772386';
 const adapterver = '1.0.0';
@@ -205,14 +205,14 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
     // transform to bidResponse
     .map((bid, i) => {
       const {
-        bid_id: fb_bidid,
+        bid_id: fbBidid,
         placement_id: creativeId,
         bid_price_cents: cpm
       } = bid;
 
       const format = adformats[i];
       const [width, height] = expandSize(flattenSize(sizes[i]));
-      const ad = createAdHtml(creativeId, format, fb_bidid);
+      const ad = createAdHtml(creativeId, format, fbBidid);
       const requestId = requestIds[i];
 
       const bidResponse = {
@@ -227,8 +227,8 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
         netRevenue,
         currency,
         // Audience Network attributes
-        hb_bidder,
-        fb_bidid,
+        hb_bidder: hbBidder,
+        fb_bidid: fbBidid,
         fb_format: format,
         fb_placementid: creativeId
       };
@@ -236,18 +236,31 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
       if (isVideo(format)) {
         const pageurl = getTopWindowUrlEncoded();
         bidResponse.mediaType = 'video';
-        bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fb_bidid}`;
+        bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fbBidid}`;
       }
       return bidResponse;
     });
 };
+
+/**
+ * Covert bid param types for S2S
+ * @param {Object} params bid params
+ * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+ * @return {Object} params bid params
+ */
+const transformBidParams = (params, isOpenRtb) => {
+  return convertTypes({
+    'placementId': 'string'
+  }, params);
+}
 
 export const spec = {
   code,
   supportedMediaTypes,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  transformBidParams
 };
 
 registerBidder(spec);

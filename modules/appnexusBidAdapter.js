@@ -29,7 +29,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -129,6 +129,30 @@ export const spec = {
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
+  },
+
+  transformBidParams: function(params, isOpenRtb) {
+    params = utils.convertTypes({
+      'member': 'string',
+      'invCode': 'string',
+      'placementId': 'number',
+      'keywords': utils.transformBidderParamKeywords
+    }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 }
 
