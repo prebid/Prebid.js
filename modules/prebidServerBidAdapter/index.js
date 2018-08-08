@@ -564,6 +564,13 @@ const OPEN_RTB_PROTOCOL = {
   }
 };
 
+const isOpenRtb = () => {
+  const OPEN_RTB_PATH = '/openrtb2/';
+
+  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
+  return ~endpoint.indexOf(OPEN_RTB_PATH);
+}
+
 /*
  * Returns the required protocol adapter to communicate with the configured
  * endpoint. The adapter is an object containing `buildRequest` and
@@ -577,12 +584,7 @@ const OPEN_RTB_PROTOCOL = {
  * const bids = protocol().interpretResponse(response, bidRequests, requestedBidders);
  */
 const protocolAdapter = () => {
-  const OPEN_RTB_PATH = '/openrtb2/';
-
-  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
-  const isOpenRtb = ~endpoint.indexOf(OPEN_RTB_PATH);
-
-  return isOpenRtb ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
+  return isOpenRtb() ? OPEN_RTB_PROTOCOL : LEGACY_PROTOCOL;
 };
 
 /**
@@ -594,8 +596,6 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
-
-    convertTypes(adUnits);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const adUnitsWithSizes = adUnits.filter(unit => unit.sizes && unit.sizes.length);
