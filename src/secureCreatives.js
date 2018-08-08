@@ -71,9 +71,9 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
-    var element = getElementByAdUnit(elmType);
-    element.style.width = width;
-    element.style.height = height;
+    let elementStyle = getElementByAdUnit(elmType).style;
+    elementStyle.width = width;
+    elementStyle.height = height;
   });
   function getElementByAdUnit(elmType) {
     return document.getElementById(find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
