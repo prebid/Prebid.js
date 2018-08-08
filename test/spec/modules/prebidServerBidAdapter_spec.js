@@ -708,6 +708,28 @@ describe('S2S Adapter', () => {
         value: ['buzz']
       }]);
     });
+
+    it('adds s2sConfig adapterOptions to request for ORTB', () => {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
+      expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+    });
   });
 
   describe('response handler', () => {
@@ -1097,20 +1119,89 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
-    it('should configure the s2sConfig adapterOptions with rubicon vendor defaults unless specified by user', () => {
-      const options = {
+    it('should return proper defaults', () => {
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        'accountId': 'abc',
+        'adapter': 'prebidServer',
+        'adapterOptions': {
+          'rubicon': {
+            'singleRequest': false
+          }
+        },
+        'bidders': ['rubicon'],
+        'cookieSet': false,
+        'defaultVendor': 'rubicon',
+        'enabled': true,
+        'endpoint': '//prebid-server.rubiconproject.com/auction',
+        'syncEndpoint': '//prebid-server.rubiconproject.com/cookie_sync',
+        'timeout': 750
+      })
+    });
+
+    it('should return default adapterOptions if not set', () => {
+      config.setConfig({
+        s2sConfig: {
+          accountId: 'abc',
+          bidders: ['rubicon'],
+          defaultVendor: 'rubicon',
+          timeout: 750
+        }
+      });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        enabled: true,
+        timeout: 750,
+        adapter: 'prebidServer',
+        adapterOptions: {
+          rubicon: {
+            singleRequest: false
+          }
+        },
         accountId: 'abc',
         bidders: ['rubicon'],
         defaultVendor: 'rubicon',
-        timeout: 750
-      };
+        cookieSet: false,
+        endpoint: '//prebid-server.rubiconproject.com/auction',
+        syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync'
+      })
+    });
 
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
+    it('should overwrite default adapterOptions if set', () => {
+      config.setConfig({
+        s2sConfig: {
+          adapterOptions: {
+            rubicon: {
+              singleRequest: true
+            }
+          }
+        }
+      });
+      const configResult = config.getConfig('s2sConfig');
+      expect(configResult).to.deep.equal({
+        adapterOptions: {
+          rubicon: {
+            singleRequest: true
+          }
+        }
+      })
+    });
 
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect()
-      console.log('VENDOR CONFIG: %O', vendorConfig);
-    })
+    it('should set adapterOptions that do not exist as default', () => {
+      config.setConfig({
+        s2sConfig: {
+          adapterOptions: {
+            rubicon: {
+              singleRequest: true,
+              foo: 'bar'
+            }
+          }
+        }
+      });
+      expect(config.getConfig('s2sConfig').adapterOptions).to.deep.equal({
+        rubicon: {
+          singleRequest: true,
+          foo: 'bar'
+        }
+      })
+    });
   });
 });
