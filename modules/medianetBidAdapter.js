@@ -123,7 +123,7 @@ function slotParams(bidRequest) {
     id: bidRequest.bidId,
     ext: {
       dfp_id: bidRequest.adUnitCode,
-      display_count: bidRequest.displayCount
+      display_count: bidRequest.bidRequestsCount
     },
     banner: transformSizes(bidRequest.sizes),
     all: bidRequest.params

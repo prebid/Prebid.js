@@ -97,7 +97,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
-              displayCount: adunitCounter.getCounter(adUnit.code)
+              bidRequestsCount: adunitCounter.getCounter(adUnit.code)
             }));
           }
           return bids;
