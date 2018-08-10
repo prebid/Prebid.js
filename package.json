@@ -105,6 +105,7 @@
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
     "gulp-sourcemaps": "^2.6.0",
+    "is-docker": "^1.1.0",
     "just-clone": "^1.0.2"
   }
 }
