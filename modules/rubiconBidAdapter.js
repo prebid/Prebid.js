@@ -476,6 +476,19 @@ export const spec = {
         url: SYNC_ENDPOINT + params
       };
     }
+  },
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'accountId': 'number',
+      'siteId': 'number',
+      'zoneId': 'number'
+    }, params);
   }
 };
 
