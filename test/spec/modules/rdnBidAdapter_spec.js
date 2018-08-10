@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory'
 
 describe('rdnBidAdapter', function() {
   const adapter = newBidder(spec)
-  const ENDPOINT = ''
+  const ENDPOINT = 'http://localhost:5000/h'
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -95,7 +95,7 @@ describe('rdnBidAdapter', function() {
         { body: serverResponse.noAd },
         bidRequests.banner
       )
-      expect(result.length).to.equal(0)
+      expect(result.length).to.equal(1)
     })
   })
 })
