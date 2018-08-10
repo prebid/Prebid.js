@@ -2,7 +2,8 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 import * as utils from 'src/utils'
 
 const BIDDER_CODE = 'rdn'
-const ENDPOINT = ''
+// TODO
+const ENDPOINT = 'http://localhost:5000/h'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -32,22 +33,20 @@ export const spec = {
     return bidRequests
   },
   interpretResponse: (response, request) => {
+    const sb = response.body
     const bidResponses = []
-    response.body.forEach(sb => {
-      const bidResponse = {
-        requestId: sb.RequestId,
-        cpm: sb.CPM * 1000 || 0,
-        width: sb.Width || 0,
-        height: sb.Height || 0,
-        creativeId: sb.CreativeId || 0,
-        dealId: sb.DealId || '',
-        currency: sb.Currency || 'JPY',
-        netRevenue: sb.NetRevenue,
-        ttl: sb.TTL,
-        referrer: utils.getTopWindowUrl(),
-        ad: sb.ad
-      }
-      bidResponses.push(bidResponse)
+    bidResponses.push({
+      requestId: sb.RequestId,
+      cpm: sb.CPM * 1000 || 0,
+      width: sb.Width || 0,
+      height: sb.Height || 0,
+      creativeId: sb.CreativeId || 0,
+      dealId: sb.DealId || '',
+      currency: sb.Currency || 'JPY',
+      netRevenue: sb.NetRevenue,
+      ttl: sb.TTL,
+      referrer: utils.getTopWindowUrl(),
+      ad: sb.ad
     })
 
     return bidResponses
