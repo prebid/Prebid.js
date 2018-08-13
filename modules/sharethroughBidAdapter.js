@@ -1,7 +1,7 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'sharethrough';
-const VERSION = '2.0.0';
+const VERSION = '2.0.0-legacy';
 const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/header-bid/v1';
 
 export const sharethroughAdapterSpec = {
@@ -23,7 +23,9 @@ export const sharethroughAdapterSpec = {
     })
   },
   interpretResponse: ({ body }, req) => {
-    if (!Object.keys(body).length) return [];
+    if (!body || !body.creatives || !body.creatives.length) {
+      return [];
+    }
 
     const creative = body.creatives[0];
 

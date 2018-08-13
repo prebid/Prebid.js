@@ -103,6 +103,21 @@ describe('sharethrough adapter spec', () => {
   });
 
   describe('.interpretResponse', () => {
+    it('returns a blank array if there are no creatives', () => {
+      const bidResponse = { body: { creatives: [] } };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
+    it('returns a blank array if body object is empty', () => {
+      const bidResponse = { body: {} };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
+    it('returns a blank array if body is null', () => {
+      const bidResponse = { body: null };
+      expect(spec.interpretResponse(bidResponse, prebidRequest[0])).to.be.an('array').that.is.empty;
+    });
+
     it('returns a correctly parsed out response', () => {
       expect(spec.interpretResponse(bidderResponse, prebidRequest[0])[0]).to.include(
         {

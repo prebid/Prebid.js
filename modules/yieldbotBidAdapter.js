@@ -31,10 +31,10 @@ function YieldbotAdapter() {
      * @param {String} size - The dimenstions of the slot
      * @private
      */
-    buildCreative: function (slot, size) {
+    buildCreative: function (slot, size, pageviewId) {
       return '<script type="text/javascript" src="//cdn.yldbt.com/js/yieldbot.intent.js"></script>' +
         '<script type="text/javascript">var ybotq = ybotq || [];' +
-        'ybotq.push(function () {yieldbot.renderAd(\'' + slot + ':' + size + '\');});</script>';
+        'ybotq.push(function () {yieldbot.renderAd(\'' + slot + ':' + size + ':' + pageviewId + '\');});</script>';
     },
     /**
      * Bid response builder.
@@ -53,11 +53,12 @@ function YieldbotAdapter() {
         var szArr = slotCriteria.ybot_size ? slotCriteria.ybot_size.split('x') : [0, 0];
         var slot = slotCriteria.ybot_slot || '';
         var sizeStr = slotCriteria.ybot_size || ''; // Creative template needs the dimensions string
+        var pageviewId = slotCriteria.ybot_pvi || '';
 
         bid.width = szArr[0] || 0;
         bid.height = szArr[1] || 0;
 
-        bid.ad = ybotlib.buildCreative(slot, sizeStr);
+        bid.ad = ybotlib.buildCreative(slot, sizeStr, pageviewId);
 
         // Add Yieldbot parameters to allow publisher bidderSettings.yieldbot specific targeting
         for (var k in slotCriteria) {

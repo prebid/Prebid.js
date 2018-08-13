@@ -321,6 +321,7 @@ describe('Sonobi adapter tests', () => {
         {
           'sbi_size': '300x250',
           'sbi_apoc': 'premium',
+          'sbi_crid': 'abcd1234',
           'sbi_aid': '159.60.7533347',
           'sbi_mouse': 4.20
         }
@@ -337,6 +338,7 @@ describe('Sonobi adapter tests', () => {
           'sbi_apoc': 'premium',
           'sbi_aid': '159.60.7533347',
           'sbi_mouse': 4.20,
+          'sbi_ct': 'video'
         }
       },
       'sbi_dc': 'mco-1-'
@@ -386,6 +388,7 @@ describe('Sonobi adapter tests', () => {
     it('should create bid object for outstream video bid return', () => {
       adapter.parseResponse(sbi_video_bid);
       expect(spyAddBidResponse.called).to.be.true;
+      expect(spyAddBidResponse.args[0][1].vastUrl).to.be.ok;
       expect(stubFailBid.callCount).to.equal(0);
     });
 
