@@ -62,7 +62,7 @@ describe('YieldNexusAdapter', () => {
     it('uses yieldnexus dns', () => {
       const response = spec.buildRequests([ bidRequest ])[ 0 ];
       expect(response.method).to.equal('POST');
-      expect(response.url).to.match(new RegExp(`^https://ssp\\.ynxs\\.io/r/${spid}/bidr\\?bidder=prebid&rformat=open_rtb$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://ssp\\.ynxs\\.io/r/${spid}/bidr\\?bidder=prebid&rformat=open_rtb&reqformat=rtb_json$`, 'g'));
       expect(response.data.id).to.equal(bidRequest.auctionId);
     });
 
