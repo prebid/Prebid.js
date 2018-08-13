@@ -69,9 +69,14 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(
+  const adslotDiv = document.getElementById(
     find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
-      .getSlotElementId()).querySelector('iframe');
+      .getSlotElementId());
+  const iframe = adslotDiv.querySelector('iframe');
+  const adContainer = adslotDiv.querySelector('div');
+
+  adContainer.style.width = width + 'px';
+  adContainer.style.height = height + 'px';
 
   iframe.width = '' + width;
   iframe.height = '' + height;
