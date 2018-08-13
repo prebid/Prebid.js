@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
+import {parse as parseUrl} from 'src/url';
 
 describe('Adkernel adapter', () => {
   const bid1_zone1 = {
@@ -14,7 +15,7 @@ describe('Adkernel adapter', () => {
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      sizes: [728, 90]
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
@@ -41,14 +42,19 @@ describe('Adkernel adapter', () => {
       sizes: [[728, 90]]
     }, bid_video = {
       bidder: 'adkernel',
+      transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
       bidId: 'Bid_Video',
-      sizes: [640, 480],
-      mediaType: 'video',
+      bidderRequestId: '18b2a61ea5d9a7',
+      auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
+      sizes: [[640, 480]],
       params: {
         zoneId: 1,
-        host: 'rtb.adkernel.com',
+        host: 'rtb.adkernel.com'
+      },
+      mediaTypes: {
         video: {
-          mimes: ['video/mp4', 'video/webm', 'video/x-flv']
+          context: 'instream',
+          playerSize: [[640, 480]]
         }
       },
       adUnitCode: 'ad-unit-1'
@@ -107,6 +113,20 @@ describe('Adkernel adapter', () => {
       }
     };
 
+  function buildRequest(bidRequests, bidderRequest = {}, url = 'https://example.com/index.html', dnt = true) {
+    let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
+      let loc = parseUrl(url);
+      loc.protocol += ':';
+      return loc;
+    });
+    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
+    wmock.restore();
+    dntmock.restore();
+    let rtbRequests = pbRequests.map(r => JSON.parse(r.data.r));
+    return [pbRequests, rtbRequests];
+  }
+
   describe('input parameters validation', () => {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({
@@ -128,20 +148,10 @@ describe('Adkernel adapter', () => {
   });
 
   describe('banner request building', () => {
-    let bidRequest;
+    let bidRequest, bidRequests, _;
     before(() => {
-      let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
-        protocol: 'https:',
-        hostname: 'example.com',
-        host: 'example.com',
-        pathname: '/index.html',
-        href: 'https://example.com/index.html'
-      }));
-      let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => true);
-      let request = spec.buildRequests([bid1_zone1])[0];
-      bidRequest = JSON.parse(request.data.r);
-      wmock.restore();
-      dntmock.restore();
+      [_, bidRequests] = buildRequest([bid1_zone1]);
+      bidRequest = bidRequests[0];
     });
 
     it('should be a first-price auction', () => {
@@ -176,40 +186,67 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
+
+    it('shouldn\'t contain gdpr-related information for default request', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests[0]).to.not.have.property('regs');
+      expect(bidRequests[0]).to.not.have.property('user');
+    });
+
+    it('should contain gdpr-related information if consent is configured', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1],
+        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}});
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1});
+      expect(bidRequest).to.have.property('user');
+      expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
+    });
+
+    it('should\'t contain consent string if gdpr isn\'t applied', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1], {gdprConsent: {gdprApplies: false}});
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
+      expect(bidRequest).to.not.have.property('user');
+    });
+
+    it('should\'t pass dnt if state is unknown', () => {
+      let [_, bidRequests] = buildRequest([bid1_zone1], {}, 'https://example.com/index.html', false);
+      expect(bidRequests[0].device).to.not.have.property('dnt');
+    });
   });
 
   describe('video request building', () => {
-    let bidRequest;
-
+    let _, bidRequests;
     before(() => {
-      let request = spec.buildRequests([bid_video])[0];
-      bidRequest = JSON.parse(request.data.r);
+      [_, bidRequests] = buildRequest([bid_video]);
     });
 
     it('should have video object', () => {
-      expect(bidRequest.imp[0]).to.have.property('video');
+      expect(bidRequests[0].imp[0]).to.have.property('video');
     });
 
     it('should have h/w', () => {
-      expect(bidRequest.imp[0].video).to.have.property('w', 640);
-      expect(bidRequest.imp[0].video).to.have.property('h', 480);
+      expect(bidRequests[0].imp[0].video).to.have.property('w', 640);
+      expect(bidRequests[0].imp[0].video).to.have.property('h', 480);
     });
 
     it('should have tagid', () => {
-      expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
+      expect(bidRequests[0].imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
   });
 
   describe('requests routing', () => {
     it('should issue a request for each host', () => {
-      let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
+      let [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.have.string(`//${bid1_zone1.params.host}/`);
       expect(pbRequests[1].url).to.have.string(`//${bid3_host2.params.host}/`);
     });
 
     it('should issue a request for each zone', () => {
-      let pbRequests = spec.buildRequests([bid1_zone1, bid2_zone2]);
+      let [pbRequests, _] = buildRequest([bid1_zone1, bid2_zone2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].data.zone).to.be.equal(bid1_zone1.params.zoneId);
       expect(pbRequests[1].data.zone).to.be.equal(bid2_zone2.params.zoneId);
@@ -218,8 +255,8 @@ describe('Adkernel adapter', () => {
 
   describe('responses processing', () => {
     it('should return fully-initialized banner bid-response', () => {
-      let request = spec.buildRequests([bid1_zone1])[0];
-      let resp = spec.interpretResponse({body: bidResponse1}, request)[0];
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 3.01);
       expect(resp).to.have.property('width', 300);
@@ -233,8 +270,8 @@ describe('Adkernel adapter', () => {
     });
 
     it('should return fully-initialized video bid-response', () => {
-      let request = spec.buildRequests([bid_video])[0];
-      let resp = spec.interpretResponse({body: videoBidResponse}, request)[0];
+      let [pbRequests, _] = buildRequest([bid_video]);
+      let resp = spec.interpretResponse({body: videoBidResponse}, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
       expect(resp.mediaType).to.equal('video');
       expect(resp.cpm).to.equal(0.00145);
@@ -244,15 +281,15 @@ describe('Adkernel adapter', () => {
     });
 
     it('should add nurl as pixel for banner response', () => {
-      let request = spec.buildRequests([bid1_zone1])[0];
-      let resp = spec.interpretResponse({body: bidResponse1}, request)[0];
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
       let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
       expect(resp.ad).to.have.string(expectedNurl);
     });
 
     it('should handle bidresponse with user-sync only', () => {
-      let request = spec.buildRequests([bid1_zone1])[0];
-      let resp = spec.interpretResponse({body: usersyncOnlyResponse}, request);
+      let [pbRequests, _] = buildRequest([bid1_zone1]);
+      let resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
       expect(resp).to.have.length(0);
     });
 

@@ -63,6 +63,64 @@ describe('BeachfrontAdapter', () => {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
+
+    describe('for multi-format bids', () => {
+      it('should return true when the required params are passed for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for video', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+
+      it('should return true when the required params are passed for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      });
+
+      it('should return false when the required params are missing for banner', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          banner: {}
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      });
+    });
   });
 
   describe('spec.buildRequests', () => {
@@ -173,7 +231,7 @@ describe('BeachfrontAdapter', () => {
         const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
         const bidderRequest = {
           gdprConsent: {
-            consentRequired: true,
+            gdprApplies: true,
             consentString
           }
         };
@@ -288,7 +346,7 @@ describe('BeachfrontAdapter', () => {
         const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
         const bidderRequest = {
           gdprConsent: {
-            consentRequired: true,
+            gdprApplies: true,
             consentString
           }
         };
@@ -296,6 +354,61 @@ describe('BeachfrontAdapter', () => {
         const data = requests[0].data;
         expect(data.gdpr).to.equal(1);
         expect(data.gdprConsent).to.equal(consentString);
+      });
+    });
+
+    describe('for multi-format bids', () => {
+      it('should create a POST request for each bid format', () => {
+        const width = 300;
+        const height = 250;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          },
+          banner: {
+            sizes: [ width, height ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests.length).to.equal(2);
+        expect(requests[0].url).to.contain(VIDEO_ENDPOINT);
+        expect(requests[1].url).to.contain(BANNER_ENDPOINT);
+      });
+
+      it('must parse bid sizes for each bid format', () => {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ 640, 360 ]
+          },
+          banner: {
+            sizes: [ 300, 250 ]
+          }
+        };
+        bidRequest.params = {
+          video: {
+            bidfloor: 2.00,
+            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+          },
+          banner: {
+            bidfloor: 1.00,
+            appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ]);
+        expect(requests[0].data.imp[0].video).to.deep.contain({ w: 640, h: 360 });
+        expect(requests[1].data.slots[0].sizes).to.deep.equal([{ w: 300, h: 250 }]);
       });
     });
   });
@@ -438,6 +551,121 @@ describe('BeachfrontAdapter', () => {
             ttl: 300
           });
         }
+      });
+    });
+  });
+
+  describe('spec.getUserSyncs', () => {
+    describe('for video bids', () => {
+      let bidResponse;
+
+      beforeEach(() => {
+        bidResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+      });
+
+      it('should return an iframe user sync if iframes are enabled', () => {
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs.length).to.equal(1);
+        expect(userSyncs[0].type).to.equal('iframe');
+      });
+
+      it('should return an image user sync if iframes are disabled', () => {
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs.length).to.equal(1);
+        expect(userSyncs[0].type).to.equal('image');
+      });
+
+      it('should not return user syncs if none are enabled', () => {
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: false
+        };
+        const serverResponses = [{
+          body: bidResponse
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
+      });
+    });
+
+    describe('for banner bids', () => {
+      let bidResponse;
+
+      beforeEach(() => {
+        bidResponse = {
+          slot: bidRequests[0].adUnitCode,
+          adm: '<div id="44851937"></div>',
+          crid: 'crid_1',
+          price: 3.02,
+          w: 728,
+          h: 90
+        };
+      });
+
+      it('should return user syncs defined the bid response', () => {
+        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            { sync: syncUrl },
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([
+          { type: 'iframe', url: syncUrl }
+        ]);
+      });
+
+      it('should not return user syncs if iframes are disabled', () => {
+        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncOptions = {
+          iframeEnabled: false,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            { sync: syncUrl },
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
+      });
+
+      it('should not return user syncs if there are none in the bid response', () => {
+        const syncOptions = {
+          iframeEnabled: true,
+          pixelEnabled: true
+        };
+        const serverResponses = [{
+          body: [
+            bidResponse
+          ]
+        }];
+        const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+        expect(userSyncs).to.deep.equal([]);
       });
     });
   });

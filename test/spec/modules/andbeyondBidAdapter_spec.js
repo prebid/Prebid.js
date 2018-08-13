@@ -1,57 +1,49 @@
 import {expect} from 'chai';
-import {spec} from 'modules/rtbdemandAdkBidAdapter';
+import {spec} from 'modules/andbeyondBidAdapter';
 import * as utils from 'src/utils';
 
-describe('RtbdemandAdk adapter', () => {
+describe('andbeyond adapter', () => {
   const bid1_zone1 = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_01',
-      params: {zoneId: 1, host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 1, host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-1',
       sizes: [[300, 250], [300, 200]]
     }, bid2_zone2 = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 2, host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 2, host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid3_host2 = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 1, host: 'rtb-private.rtbdemand.com'},
+      params: {zoneId: 1, host: 'rtb-private.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
     }, bid_without_zone = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_W',
-      params: {host: 'rtb-private.rtbdemand.com'},
+      params: {host: 'rtb-private.andbeyond.com'},
       placementCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_without_host = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_W',
       params: {zoneId: 1},
       placementCode: 'ad-unit-1',
       sizes: [[728, 90]]
     }, bid_with_wrong_zoneId = {
-      bidder: 'rtbdemandadk',
+      bidder: 'andbeyond',
       bidId: 'Bid_02',
-      params: {zoneId: 'wrong id', host: 'rtb.rtbdemand.com'},
+      params: {zoneId: 'wrong id', host: 'rtb.andbeyond.com'},
       placementCode: 'ad-unit-2',
       sizes: [[728, 90]]
-    }, bid_video = {
-      bidder: 'rtbdemandadk',
-      bidId: 'Bid_Video',
-      sizes: [640, 480],
-      mediaType: 'video',
-      params: {
-        zoneId: 1,
-        host: 'rtb.rtbdemand.com',
-        video: {
-          mimes: ['video/mp4', 'video/webm', 'video/x-flv']
-        }
-      },
-      placementCode: 'ad-unit-1'
+    }, usersyncOnlyResponse = {
+      id: 'nobid1',
+      ext: {
+        adk_usersync: ['http://adk.sync.com/sync']
+      }
     };
 
   const bidResponse1 = {
@@ -86,31 +78,12 @@ describe('RtbdemandAdk adapter', () => {
         }]
       }],
       cur: 'USD'
-    }, videoBidResponse = {
-      id: '47ce4badcf7482',
-      seatbid: [{
-        bid: [{
-          id: 'sZSYq5zYMxo_0',
-          impid: 'Bid_Video',
-          crid: '100_003',
-          price: 0.00145,
-          adid: '158801',
-          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855'
-        }]
-      }],
-      cur: 'USD'
-    }, usersyncOnlyResponse = {
-      id: 'nobid1',
-      ext: {
-        adk_usersync: ['http://adk.sync.com/sync']
-      }
     };
 
   describe('input parameters validation', () => {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({
-        bidderCode: 'rtbdemandadk'
+        bidderCode: 'andbeyond'
       })).to.be.equal(false);
     });
 
@@ -178,28 +151,6 @@ describe('RtbdemandAdk adapter', () => {
     });
   });
 
-  describe('video request building', () => {
-    let bidRequest;
-
-    before(() => {
-      let request = spec.buildRequests([bid_video])[0];
-      bidRequest = JSON.parse(request.data.r);
-    });
-
-    it('should have video object', () => {
-      expect(bidRequest.imp[0]).to.have.property('video');
-    });
-
-    it('should have h/w', () => {
-      expect(bidRequest.imp[0].video).to.have.property('w', 640);
-      expect(bidRequest.imp[0].video).to.have.property('h', 480);
-    });
-
-    it('should have tagid', () => {
-      expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
-    });
-  });
-
   describe('requests routing', () => {
     it('should issue a request for each host', () => {
       let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
@@ -230,17 +181,6 @@ describe('RtbdemandAdk adapter', () => {
       expect(resp).to.have.property('mediaType', 'banner');
       expect(resp).to.have.property('ad');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
-    });
-
-    it('should return fully-initialized video bid-response', () => {
-      let request = spec.buildRequests([bid_video])[0];
-      let resp = spec.interpretResponse({body: videoBidResponse}, request)[0];
-      expect(resp).to.have.property('requestId', 'Bid_Video');
-      expect(resp.mediaType).to.equal('video');
-      expect(resp.cpm).to.equal(0.00145);
-      expect(resp.vastUrl).to.equal('https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl');
-      expect(resp.width).to.equal(640);
-      expect(resp.height).to.equal(480);
     });
 
     it('should add nurl as pixel for banner response', () => {

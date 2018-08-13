@@ -3,9 +3,8 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
-const URL = '//media.msg.dotomi.com/s2s/header/24';
-const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
-const VERSION = '2.2.2';
+const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const VERSION = '2.2.3';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -48,7 +47,7 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {ServerRequest} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const loc = utils.getTopWindowLocation();
     const page = loc.href;
     const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
@@ -115,12 +114,29 @@ export const spec = {
       at: 1
     };
 
+    let userExt = {};
+
+    // Add GDPR flag and consent string
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      userExt.consent = bidderRequest.gdprConsent.consentString;
+
+      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        payload.regs = {
+          ext: {
+            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+          }
+        };
+      }
+    }
+
+    // Add common id if available
     if (pubcid) {
-      payload.user = {
-        ext: {
-          fpc: pubcid
-        }
-      };
+      userExt.fpc = pubcid;
+    }
+
+    // Only add the user object if it's not empty
+    if (!utils.isEmpty(userExt)) {
+      payload.user = {ext: userExt};
     }
 
     return {
@@ -183,18 +199,17 @@ export const spec = {
   },
 
   /**
-   * Return use sync info
-   *
-   * @param {SyncOptions} syncOptions - Info about usersyncs that the adapter should obey
-   * @return {UserSync} Adapter sync type and url
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
    */
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: SYNC_URL
-      }];
-    }
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'site_id': 'string',
+      'secure': 'number',
+      'mobile': 'number'
+    }, params);
   }
 };
 

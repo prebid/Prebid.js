@@ -1,22 +1,18 @@
 import * as utils from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import { BANNER } from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
 
-const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
-  'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
-  'pos', 'api', 'ext'];
 const VERSION = '1.1';
 
 /**
- * Adapter for requesting bids from RtbdemandAdk white-label display platform
+ * Adapter for requesting bids from andbeyond white-label display platform
  */
 export const spec = {
 
-  code: 'rtbdemandadk',
+  code: 'andbeyond',
   aliases: ['headbidding'],
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && typeof bidRequest.params.host !== 'undefined' &&
       'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
@@ -80,12 +76,6 @@ export const spec = {
         prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
       }
-      if ('video' in imp) {
-        prBid.mediaType = VIDEO;
-        prBid.vastUrl = rtbBid.nurl;
-        prBid.width = imp.video.w;
-        prBid.height = imp.video.h;
-      }
       return prBid;
     });
   },
@@ -96,7 +86,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
   }
 };
 
@@ -112,19 +102,10 @@ function buildImp(bid) {
     'tagid': bid.placementCode
   };
 
-  if (bid.mediaType === 'video') {
-    imp.video = {w: sizes[0], h: sizes[1]};
-    if (bid.params.video) {
-      Object.keys(bid.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bid.params.video[param]);
-    }
-  } else {
-    imp.banner = {
-      format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
-      topframe: 0
-    };
-  }
+  imp.banner = {
+    format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
+    topframe: 0
+  };
   if (utils.getTopWindowLocation().protocol === 'https:') {
     imp.secure = 1;
   }
