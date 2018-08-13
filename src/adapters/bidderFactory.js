@@ -53,6 +53,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSiz
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
  *   important ones should come first, since publishers may limit how many are dropped on their page.
+ * @property {function(object): object} transformBidParams Updates bid params before creating bid request
+ }}
  */
 
 /**
@@ -381,7 +383,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
   function errorMessage(msg) {
