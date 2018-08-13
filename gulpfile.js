@@ -5,7 +5,6 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
-// var path = require('path');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
@@ -15,8 +14,6 @@ var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
-var del = require('del');
-var gulpDocumentation = require('gulp-documentation');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
@@ -54,11 +51,6 @@ function clean() {
   })
     .pipe(gulpClean());
 }
-
-function cleandocs() {
-  del(['docs']);
-};
-cleandocs.displayName = 'clean-docs';
 
 function e2etestReport() {
   var reportPort = 9010;
@@ -250,20 +242,24 @@ function newKarmaCallback(done) {
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
+// If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function test(done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
+  if (argv.notest) {
+    done();
+  } else {
+    var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-  var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
-  if (browserOverride.length > 0) {
-    karmaConf.browsers = browserOverride;
+    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    if (browserOverride.length > 0) {
+      karmaConf.browsers = browserOverride;
+    }
+
+    new KarmaServer(karmaConf, newKarmaCallback(done)).start();
   }
-
-  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 }
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
-
 function testCoverage(done) {
   new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 }
@@ -273,15 +269,6 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
-}
-
-function docs() {
-  return gulp.src('src/prebid.js')
-    .pipe(gulpDocumentation('md'))
-    .on('error', function (err) {
-      gutil.log('`gulp-documentation` failed:', err.message);
-    })
-    .pipe(gulp.dest('docs'));
 }
 
 function e2eTest() {
@@ -329,7 +316,6 @@ gulp.task(lint);
 gulp.task(watch);
 
 gulp.task(clean);
-gulp.task(cleandocs);
 
 gulp.task(escapePostbidConfig);
 
@@ -357,7 +343,5 @@ gulp.task('e2etest', gulp.series(clean, gulp.parallel(makeDevpackPkg, makeWebpac
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 gulp.task('serve-nw', gulp.parallel(lint, watch, 'e2etest'));
-gulp.task('docs', gulp.series(cleandocs, docs));
-gulp.task('run-tests', gulp.series(lint, 'test-coverage'));
 
 module.exports = nodeBundle;
