@@ -10,6 +10,8 @@ const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const APP_DEVICE_PARAMS = ['geo', 'device_id'];  // appid is collected separately
+const AST_DEBUG = ['ast_debug', 'ast_dongle', 'ast_debug_member', 'ast_debug_timeout']
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -59,6 +61,43 @@ export const spec = {
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
+    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    let appDeviceObj;
+    if (appDeviceObjBid) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    }
+
+    const appIdObjBid = find(bidRequests, hasAppId);
+    let appIdObj;
+    if (appIdObjBid) {
+      appIdObj = {
+        appid: appIdObjBid.params.app.id
+      };
+    }
+
+    const debugObjParams = getURLparams();
+    let debugObj = {};
+    if (hasParams(debugObjParams)) {
+      Object.keys(debugObjParams)
+        .filter(param => includes(AST_DEBUG, param))
+        .forEach(param => {
+          debugObj['enabled'] = true;
+          if (param == 'ast_dongle'){
+            debugObj['dongle'] = debugObjParams[param];
+          }
+          if (param == 'ast_debug_member'){
+            debugObj['member_id'] = parseInt(debugObjParams[param]);
+          }
+          if (param == 'ast_debug_timeout'){
+            debugObj['debug_timeout'] = parseInt(debugObjParams[param]);
+          }
+        }
+      );
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -72,6 +111,17 @@ export const spec = {
     };
     if (member > 0) {
       payload.member_id = member;
+    }
+
+    if (appDeviceObjBid) {
+      payload.device = appDeviceObj
+    }
+    if (appIdObjBid) {
+      payload.app = appIdObj;
+    }
+
+    if (hasParams(debugObj)) {
+      payload.debug = debugObj
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -379,6 +429,36 @@ function hasUserInfo(bid) {
 
 function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
+}
+
+function hasAppDeviceInfo(bid) {
+  return !!bid.params.app
+}
+
+function hasAppId(bid) {
+  if (!!bid.params.app) {
+    return !!bid.params.app.id
+  }
+  return !!bid.params.app
+}
+
+function hasParams(obj) {
+  if (Object.keys(obj).length > 0){
+    return true
+  }
+  return false
+}
+
+function getURLparams() {
+  let obj = {};
+  if (window.location.search.length > 0){
+    window.location.search.substr(1).split('&').forEach(keyvalue => {
+      let key = keyvalue.split('=')[0];
+      let val = keyvalue.split('=')[1];
+      obj[key] = val
+    });
+  }
+  return obj
 }
 
 function getRtbBid(tag) {
