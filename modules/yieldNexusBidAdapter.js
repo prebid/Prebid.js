@@ -92,7 +92,7 @@ export const spec = {
       req.imp.push(imp);
       return {
         method: 'POST',
-        url: `https://ssp.ynxs.io/r/${bidRequest.params.spid}/bidr?bidder=prebid&rformat=open_rtb` + (bidRequest.params.query ? '&' + bidRequest.params.query : ''),
+        url: `https://ssp.ynxs.io/r/${bidRequest.params.spid}/bidr?bidder=prebid&rformat=open_rtb&reqformat=rtb_json` + (bidRequest.params.query ? '&' + bidRequest.params.query : ''),
         data: req,
         bidRequest
       };
@@ -117,7 +117,13 @@ export const spec = {
         if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
           outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
         } else if (bidRequest.bidRequest.mediaTypes.video) {
-          outBids.push(Object.assign({}, outBid, { mediaType: 'video', vastUrl: bid.ext.vast_url, vastXml: bid.adm }));
+          const context = utils.deepAccess( bidRequest.bidRequest, 'mediaTypes.video.context' );
+          outBids.push(Object.assign({}, outBid, {
+            mediaType: 'video',
+            vastUrl: bid.ext.vast_url,
+            vastXml: bid.adm,
+            renderer: context === 'outstream' ? newRenderer( bidRequest.bidRequest, bid ) : undefined
+          }));
         }
       });
     }
@@ -150,4 +156,37 @@ export const spec = {
     return syncs;
   }
 };
+
+function newRenderer( bidRequest, bid, rendererOptions = {} ) {
+  let rendererUrl = '//s.gambid.io/video/latest/renderer.js';
+  if(bid.ext && bid.ext.renderer_url) {
+    rendererUrl = bid.ext.renderer_url;
+  }
+  if(bidRequest.params && bidRequest.params.rendererUrl) {
+    rendererUrl = bidRequest.params.rendererUrl;
+  }
+  const renderer = Renderer.install( { url: rendererUrl, config: rendererOptions, loaded: false, } );
+  renderer.setRender( renderOutstream );
+  return renderer;
+}
+
+function renderOutstream( bid ) {
+  bid.renderer.push( () => {
+    window[ 'GambidPlayer' ].renderAd( {
+                                         id: bid.adUnitCode + '/' + bid.adId,
+                                         debug: window.location.href.indexOf( 'pbjsDebug' ) >= 0,
+                                         placement: document.getElementById( bid.adUnitCode ),
+                                         width: bid.width,
+                                         height: bid.height,
+                                         events: {
+                                           ALL_ADS_COMPLETED: () => window.setTimeout( () => {
+                                             window[ 'GambidPlayer' ].removeAd( bid.adUnitCode + '/' + bid.adId );
+                                           }, 300 )
+                                         },
+                                         vastUrl: bid.vastUrl,
+                                         vastXml: bid.vastXml
+                                       } );
+  } );
+}
+
 registerBidder(spec);
