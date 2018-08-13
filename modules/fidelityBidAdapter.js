@@ -68,7 +68,7 @@ export const spec = {
 
       return [{
         type: 'iframe',
-        url: url + '?' +  utils.parseQueryStringParameters(payload).replace(/\&$/, '')
+        url: url + '?' + utils.parseQueryStringParameters(payload).replace(/\&$/, '')
       }];
     }
   }
