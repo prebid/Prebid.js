@@ -72,13 +72,13 @@ describe('GambidAdapter', () => {
 
       response = spec.buildRequests([ bidRequest ])[ 0 ];
       expect(response.method).to.equal('POST');
-      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
       expect(response.data.id).to.equal(bidRequest.auctionId);
 
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gambid.io/a12';
       response = spec.buildRequests([ bidRequestWithEndpoint ])[ 0 ];
-      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
     });
 
     it('builds request correctly', () => {
