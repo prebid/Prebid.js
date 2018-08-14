@@ -8,6 +8,7 @@ import { ajaxBuilder } from 'src/ajax';
 import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
+import { adunitCounter } from './adUnits';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -95,7 +96,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
               sizes: sizes,
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
-              auctionId
+              auctionId,
+              bidRequestsCount: adunitCounter.getCounter(adUnit.code)
             }));
           }
           return bids;
