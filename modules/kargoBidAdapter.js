@@ -12,7 +12,8 @@ export const spec = {
     return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const currency = config.getConfig('currency');
+    const currencyObj = config.getConfig('currency');
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
     const bidIds = {};
     utils._each(validBidRequests, bid => bidIds[bid.bidId] = bid.params.placementId);
     const transformedParams = Object.assign({}, {
