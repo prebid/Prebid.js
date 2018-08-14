@@ -12,7 +12,10 @@ export const spec = {
     return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const currency = config.getConfig('currency');
+    const currencyObj = config.getConfig('currency');
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
+    const bidIds = {};
+    utils._each(validBidRequests, bid => bidIds[bid.bidId] = bid.params.placementId);
     const transformedParams = Object.assign({}, {
       timeout: bidderRequest.timeout,
       currency: currency,
@@ -22,31 +25,29 @@ export const spec = {
         floor: 0,
         ceil: 20
       },
-      adSlotIDs: utils._map(validBidRequests, bid => bid.params.placementId)
+      bidIDs: bidIds
     }, spec._getAllMetadata());
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
-      url: `${HOST}/api/v1/bid`,
+      url: `${HOST}/api/v2/bid`,
       data: `json=${encodedParams}`,
       currency: currency
     });
   },
   interpretResponse: function(response, bidRequest) {
-    let adUnits = response.body;
-    let bids = {};
-    utils._each(bidRequest.bids, bid => bids[bid.params.placementId] = bid);
+    let bids = response.body;
     const bidResponses = [];
-    for (let adUnitId in adUnits) {
-      let adUnit = adUnits[adUnitId];
+    for (let bidId in bids) {
+      let adUnit = bids[bidId];
       bidResponses.push({
-        requestId: bids[adUnitId].bidId,
+        requestId: bidId,
         cpm: Number(adUnit.cpm),
         width: adUnit.width,
         height: adUnit.height,
         ad: adUnit.adm,
         ttl: 300,
-        creativeId: adUnitId,
+        creativeId: adUnit.id,
         netRevenue: true,
         currency: bidRequest.currency
       });
