@@ -3,24 +3,19 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { parse } from 'src/url';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
-import { hex_to_bytes, base64_to_bytes, string_to_bytes } from 'asmcrypto.js/dist_es5/other/exportedUtils';
-import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
-import { RSA_PKCS1_v1_5 } from 'asmcrypto.js/dist_es5/rsa/pkcs1';
 
-const ADAPTER_VERSION = 9;
+const ADAPTER_VERSION = 11;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
-const PROFILE_ID = 185;
+const PROFILE_ID_INLINE = 207;
+const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
-
-export const FAST_BID_PUBKEY_HEX_MODULUS = '00ced418c02139054ed3f420cce617baacaa1a6ecb57466933c79e3314f66459b2b9df4770b4b04379a5813311c1513e79098c9ba11fc467879f8213e2dc2a0d19f1967b3a63928f4fea9d84c0602bb4711e4b8b2586efd2a522053231ba7ddae946836e200321ab567e3ebffe1ce775a5384529e185af6fcd86d020f935c0cda5';
-export const FAST_BID_PUBKEY_HEX_EXPONENT = '10001';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -57,7 +52,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
+      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -162,8 +157,9 @@ function buildContext(bidRequests) {
  */
 function buildCdbUrl(context) {
   let url = CDB_ENDPOINT;
-  url += '?profileId=' + PROFILE_ID;
+  url += '?profileId=' + PROFILE_ID_INLINE;
   url += '&av=' + String(ADAPTER_VERSION);
+  url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
   if (context.integrationMode in INTEGRATION_MODES) {
@@ -255,43 +251,6 @@ function createNativeAd(id, payload, callback) {
   </script>`;
 }
 
-export function cryptoVerify(key, hash, code) {
-  try {
-    var rsaPssVerify = new RSA_PKCS1_v1_5(key, new Sha256());
-    rsaPssVerify.verify(base64_to_bytes(hash), string_to_bytes(code));
-    return true;
-  } catch (error) {
-    // Return false only if the verification fails because the signature is incorrect
-    return error.message === 'Bad signature' ? false : undefined;
-  }
-}
-
-function validateFastBid(fastBid) {
-  // The value stored must contain the file's encrypted hash as first line
-  const firstLineEnd = fastBid.indexOf('\n');
-  const firstLine = fastBid.substr(0, firstLineEnd).trim();
-  if (firstLine.substr(0, 9) !== '// Hash: ') {
-    utils.logWarn('No hash found in FastBid');
-    return false;
-  }
-
-  // Remove the hash part from the locally stored value
-  const fileEncryptedHash = firstLine.substr(9);
-  const publisherTag = fastBid.substr(firstLineEnd + 1);
-
-  // Verify the hash using cryptography
-  try {
-    const publicKey = [
-      hex_to_bytes(FAST_BID_PUBKEY_HEX_MODULUS),
-      hex_to_bytes(FAST_BID_PUBKEY_HEX_EXPONENT),
-    ];
-    return cryptoVerify(publicKey, fileEncryptedHash, publisherTag);
-  } catch (e) {
-    utils.logWarn('Failed to verify Criteo FastBid');
-    return undefined;
-  }
-}
-
 /**
  * @return {boolean}
  */
@@ -299,16 +258,13 @@ function tryGetCriteoFastBid() {
   try {
     const fastBid = localStorage.getItem('criteo_fast_bid');
     if (fastBid !== null) {
-      if (validateFastBid(fastBid) === false) {
-        utils.logWarn('Invalid Criteo FastBid found');
-        localStorage.removeItem('criteo_fast_bid');
-      } else {
-        utils.logInfo('Using Criteo FastBid');
-        eval(fastBid); // eslint-disable-line no-eval
-      }
+      eval(fastBid); // eslint-disable-line no-eval
+      return true;
     }
   } catch (e) {
     // Unable to get fast bid
   }
+  return false;
 }
+
 registerBidder(spec);
