@@ -15,6 +15,7 @@ export const spec = {
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
+    var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
@@ -60,7 +61,7 @@ export const spec = {
       url: request.join('&'),
       bids: validBidRequests,
       netRevenue: netRevenue,
-      bidder: 'adform',
+      bidder,
       gdpr: gdprObject
     };
 
