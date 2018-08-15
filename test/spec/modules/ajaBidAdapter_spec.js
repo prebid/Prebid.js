@@ -61,7 +61,7 @@ describe('AjaAdapter', () => {
         'ad_type': 1,
         'prebid_id': '51ef8751f9aead',
         'price': 12.34,
-        'currency': 'JPY',
+        'currency': 'USD',
         'creative_id': '123abc',
         'banner': {
           'w': 300,
@@ -88,7 +88,7 @@ describe('AjaAdapter', () => {
           'height': 250,
           'ad': '<div></div>',
           'mediaType': 'banner',
-          'currency': 'JPY',
+          'currency': 'USD',
           'ttl': 300,
           'netRevenue': true
         }

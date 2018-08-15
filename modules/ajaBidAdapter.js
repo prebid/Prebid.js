@@ -55,7 +55,7 @@ export const spec = {
       cpm: ad.price,
       creativeId: ad.creative_id,
       dealId: ad.deal_id,
-      currency: ad.currency || 'JPY',
+      currency: ad.currency || 'USD',
       netRevenue: true,
       ttl: 300, // 5 minutes
     }
