@@ -85,12 +85,12 @@ function buildTrionUrlParams(bid) {
   var url = utils.getTopWindowUrl();
   var sizes = utils.parseSizesInput(bid.sizes).join(',');
 
-  var int_t = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
-  if (!int_t) {
-    int_t = getStorageData(BASE_KEY + 'int_t');
+  var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
+  if (!intT) {
+    intT = getStorageData(BASE_KEY + 'int_t');
   }
-  if (int_t) {
-    setStorageData(BASE_KEY + 'int_t', int_t)
+  if (intT) {
+    setStorageData(BASE_KEY + 'int_t', intT)
   }
   setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
   var trionUrl = '';
@@ -105,8 +105,8 @@ function buildTrionUrlParams(bid) {
   if (sizes) {
     trionUrl += 'sizes=' + sizes + '&';
   }
-  if (int_t) {
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(int_t));
+  if (intT) {
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(intT));
   }
 
   // remove the trailing "&"
@@ -150,8 +150,8 @@ export function acceptPostMessage(e) {
   if (message.indexOf(BASE_KEY + 'userId') !== 0) {
     return;
   }
-  var int_t = message.split(BASE_KEY + 'userId=')[1];
-  if (int_t) {
-    setStorageData(BASE_KEY + 'int_t', int_t);
+  var intT = message.split(BASE_KEY + 'userId=')[1];
+  if (intT) {
+    setStorageData(BASE_KEY + 'int_t', intT);
   }
 }

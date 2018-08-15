@@ -72,13 +72,13 @@ describe('GambidAdapter', () => {
 
       response = spec.buildRequests([ bidRequest ])[ 0 ];
       expect(response.method).to.equal('POST');
-      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
       expect(response.data.id).to.equal(bidRequest.auctionId);
 
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gambid.io/a12';
       response = spec.buildRequests([ bidRequestWithEndpoint ])[ 0 ];
-      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
     });
 
     it('builds request correctly', () => {
@@ -214,6 +214,7 @@ describe('GambidAdapter', () => {
               'h': 600,
               'w': 120,
               'ext': {
+                'vast_url': 'http://my.vast.com',
                 'utrk': [
                   { 'type': 'iframe', 'url': '//p.partner1.io/user/sync/1' }
                 ]
@@ -306,6 +307,7 @@ describe('GambidAdapter', () => {
       expect(ad0.currency).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].cur || rtbResponse.cur || 'USD');
       expect(ad0.ad).to.be.an('undefined');
       expect(ad0.vastXml).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].adm);
+      expect(ad0.vastUrl).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.vast_url);
 
       expect(ad1.requestId).to.equal(videoBidRequest.bidId);
       expect(ad1.cpm).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].price);
@@ -317,6 +319,7 @@ describe('GambidAdapter', () => {
       expect(ad1.currency).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].cur || rtbResponse.cur || 'USD');
       expect(ad1.ad).to.be.an('undefined');
       expect(ad1.vastXml).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].adm);
+      expect(ad1.vastUrl).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.vast_url);
     });
     it('aggregates user-sync pixels', () => {
       const response = spec.getUserSyncs({}, [ { body: rtbResponse } ]);

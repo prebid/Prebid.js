@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name:    VIS.X Bidder Adapter
+Module Name:    YOC VIS.X Bidder Adapter
 Module Type:    Bidder Adapter
 Maintainer:     service@yoc.com
 ```
 
 # Description
 
-Module that connects to VIS.X demand source to fetch bids.
+Module that connects to YOC VIS.X® demand source to fetch bids.
 
 # Test Parameters
 ```

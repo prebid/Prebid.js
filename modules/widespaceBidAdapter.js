@@ -38,7 +38,7 @@ export const spec = {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
     const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
     const LC_UID = getLcuid();
 
