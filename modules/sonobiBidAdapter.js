@@ -74,6 +74,9 @@ export const spec = {
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
+    if (validBidRequests[0].params.render) {
+      payload.render = validBidRequests[0].params.render;
+    }
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
