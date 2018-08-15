@@ -387,4 +387,97 @@ describe('kargo adapter tests', function () {
       expect(resp).to.deep.equal(expectation);
     });
   });
+
+  describe('user sync handler', function() {
+    const clientId = '74c81cbb-7d07-46d9-be9b-68ccb291c949';
+    var shouldSimulateOutdatedBrowser, uid, isActuallyOutdatedBrowser;
+
+    beforeEach(() => {
+      uid = {};
+      shouldSimulateOutdatedBrowser = false;
+      isActuallyOutdatedBrowser = false;
+
+      // IE11 fails these tests in the Prebid test suite. Since this
+      // browser won't support any of this stuff we expect all user
+      // syncing to fail gracefully. Kargo is mobile only, so this
+      // doesn't really matter.
+      if (!window.crypto) {
+        isActuallyOutdatedBrowser = true;
+      } else {
+        sandbox.stub(crypto, 'getRandomValues').callsFake(function(buf) {
+          if (shouldSimulateOutdatedBrowser) {
+            throw new Error('Could not generate random values');
+          }
+          var bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
+          for (var i = 0; i < bytes.length; i++) {
+            buf[i] = bytes[i];
+          }
+          return buf;
+        });
+      }
+
+      sandbox.stub(spec, '_getUid').callsFake(function() {
+        return uid;
+      });
+    });
+
+    function getUserSyncsWhenAllowed() {
+      return spec.getUserSyncs({iframeEnabled: true});
+    }
+
+    function getUserSyncsWhenForbidden() {
+      return spec.getUserSyncs({});
+    }
+
+    function turnOnClientId() {
+      uid.clientId = clientId;
+    }
+
+    function simulateOutdatedBrowser() {
+      shouldSimulateOutdatedBrowser = true;
+    }
+
+    function getSyncUrl(index) {
+      return {
+        type: 'iframe',
+        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}`
+      };
+    }
+
+    function getSyncUrls() {
+      var syncs = [];
+      for (var i = 0; i < 5; i++) {
+        syncs[i] = getSyncUrl(i);
+      }
+      return syncs;
+    }
+
+    function safelyRun(runExpectation) {
+      if (isActuallyOutdatedBrowser) {
+        expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty;
+      } else {
+        runExpectation();
+      }
+    }
+
+    it('handles user syncs when there is a client id', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.deep.equal(getSyncUrls()));
+    });
+
+    it('no user syncs when there is no client id', function() {
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty);
+    });
+
+    it('no user syncs when there is outdated browser', function() {
+      turnOnClientId();
+      simulateOutdatedBrowser();
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty);
+    });
+
+    it('no user syncs when no iframe syncing allowed', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenForbidden()).to.be.an('array').that.is.empty);
+    });
+  });
 });
