@@ -14,13 +14,11 @@ var tNumb = 'Number';
 var tObject = 'Object';
 var tBoolean = 'Boolean';
 var toString = Object.prototype.toString;
-let infoLogger = null;
-let warnLogger = null;
-try {
-  infoLogger = console.info.bind(window.console);
-  warnLogger = console.warn.bind(window.console);
-} catch (e) {
-}
+let consoleExists = Boolean(window.console);
+let consoleLogExists = Boolean(consoleExists && window.console.log);
+let consoleInfoExists = Boolean(consoleExists && window.console.info);
+let consoleWarnExists = Boolean(consoleExists && window.console.warn);
+let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -260,42 +258,43 @@ exports.getTopWindowReferrer = function() {
   }
 };
 
-exports.logWarn = function (msg, args) {
-  if (debugTurnedOn() && console.warn) {
-    if (warnLogger) {
-      if (!args || args.length === 0) {
-        args = '';
-      }
-
-      warnLogger('WARNING: ' + msg + ((args === '') ? '' : ' : params : '), args);
-    }
+/**
+ * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
+ */
+exports.logMessage = function () {
+  if (debugTurnedOn() && consoleLogExists) {
+    console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
   }
 };
 
-exports.logInfo = function (msg, args) {
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    if (infoLogger) {
-      if (!args || args.length === 0) {
-        args = '';
-      }
-
-      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '), args);
-    }
+exports.logInfo = function () {
+  if (debugTurnedOn() && consoleInfoExists) {
+    console.info.apply(console, decorateLog(arguments, 'INFO:'));
   }
 };
 
-exports.logMessage = function (msg) {
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console.log('MESSAGE: ' + msg);
+exports.logWarn = function () {
+  if (debugTurnedOn() && consoleWarnExists) {
+    console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
 };
 
-function hasConsoleLogger() {
-  return (window.console && window.console.log);
+exports.logError = function () {
+  if (debugTurnedOn() && consoleErrorExists) {
+    console.error.apply(console, decorateLog(arguments, 'ERROR:'));
+  }
+};
+
+function decorateLog(args, prefix) {
+  args = [].slice.call(args);
+  prefix && args.unshift(prefix);
+  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
+  args.unshift('%cPrebid');
+  return args;
 }
 
-function hasConsoleError() {
-  return (window.console && window.console.error);
+function hasConsoleLogger() {
+  return consoleLogExists;
 }
 
 exports.hasConsoleLogger = hasConsoleLogger;
@@ -311,15 +310,6 @@ var debugTurnedOn = function () {
 };
 
 exports.debugTurnedOn = debugTurnedOn;
-
-/**
- * Wrapper to console.error. Takes N arguments to log the same as console.error.
- */
-exports.logError = function () {
-  if (debugTurnedOn() && hasConsoleError()) {
-    console.error.apply(console, arguments);
-  }
-};
 
 exports.createInvisibleIframe = function _createInvisibleIframe() {
   var f = document.createElement('iframe');
