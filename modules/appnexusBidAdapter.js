@@ -10,7 +10,7 @@ const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
-const APP_DEVICE_PARAMS = ['geo', 'device_id'];  // appid is collected separately
+const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -407,13 +407,13 @@ function hasMemberId(bid) {
 }
 
 function hasAppDeviceInfo(bid) {
-  if (!!bid.params) {
+  if (bid.params) {
     return !!bid.params.app
   }
 }
 
 function hasAppId(bid) {
-  if (!!bid.params.app) {
+  if (bid.params && bid.params.app) {
     return !!bid.params.app.id
   }
   return !!bid.params.app
