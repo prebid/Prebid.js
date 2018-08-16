@@ -82,8 +82,6 @@ export const spec = {
 };
 
 function bidResponseAvailable(bidRequest, bidResponse) {
-  console.log(bidRequest);
-  console.log(bidResponse);
   let bidResponses = [];
   if (bidResponse.body) {
     let bidData = bidResponse.body.seatbid[0].bid[0];

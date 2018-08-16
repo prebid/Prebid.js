@@ -1,20 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/somoaudienceBidAdapter';
 import * as utils from 'src/utils';
-import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('Somo Audience Adapter Tests', () => {
-  describe('verifies bidder params', () => {
-    it('Verifies bidder code', () => {
-      expect(spec.code).to.equal('somoaudience');
-    });
-
-    it('Verifies bidder aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(1);
-      expect(spec.aliases[0]).to.equal('somo');
-    });
-  });
-
   describe('isBidRequestValid', () => {
     it('should return false when given an invalid bid', () => {
       const bid = {
@@ -261,7 +249,7 @@ describe('Somo Audience Adapter Tests', () => {
         }];
         const request = spec.buildRequests(bidRequests);
         const ortbRequest = request[0].data;
-        expect(ortbRequest.aoo).to.equal(undefined);
+        expect(ortbRequest.app).to.equal(undefined);
         expect(ortbRequest.site).to.not.equal(null);
         expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
         expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
@@ -284,7 +272,7 @@ describe('Somo Audience Adapter Tests', () => {
         }];
         const request = spec.buildRequests(bidRequests);
         const ortbRequest = request[0].data;
-        expect(ortbRequest.aoo).to.equal(undefined);
+        expect(ortbRequest.app).to.equal(undefined);
         expect(ortbRequest.site).to.not.equal(null);
         expect(ortbRequest.site.name).to.equal('Somo Audience');
         expect(ortbRequest.site.domain).to.equal('somoaudience.com');
