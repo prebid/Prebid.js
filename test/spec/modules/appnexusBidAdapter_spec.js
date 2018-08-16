@@ -356,16 +356,16 @@ describe('AppNexusAdapter', () => {
       expect(payload.app).to.deep.equal({
         appid: "B1O2W3M4AN.com.prebid.webview"
       });
-      expect(payload.app.device_id).to.exist;
-      expect(payload.app.device_id).to.deep.equal({
+      expect(payload.device.device_id).to.exist;
+      expect(payload.device.device_id).to.deep.equal({
         aaid: "38400000-8cf0-11bd-b23e-10b96e40000d",
         idfa: "4D12078D-3246-4DA4-AD5E-7610481E7AE",
         md5udid: "5756ae9022b2ea1e47d84fead75220c8",
         sha1udid: "4DFAA92388699AC6539885AEF1719293879985BF",
         windowsadid: "750c6be243f1c4b5c9912b95a5742fc5"
       });
-      expect(payload.app.geo).to.exist;
-      expect(payload.app.geo).to.deep.equal({
+      expect(payload.device.geo).to.exist;
+      expect(payload.device.geo).to.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
       });
