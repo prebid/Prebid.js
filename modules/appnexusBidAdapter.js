@@ -62,19 +62,25 @@ export const spec = {
 
     const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
     let appDeviceObj;
-    if (appDeviceObjBid) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    if (appDeviceObjBid && !!appDeviceObjBid.params) {
+      if (!!appDeviceObjBid.params.app) {
+        appDeviceObj = {};
+        Object.keys(appDeviceObjBid.params.app)
+          .filter(param => includes(APP_DEVICE_PARAMS, param))
+          .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+      }
     }
 
     const appIdObjBid = find(bidRequests, hasAppId);
     let appIdObj;
-    if (appIdObjBid) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
+    if (appIdObjBid && !!appIdObjBid.params) {
+      if (!!appDeviceObjBid.params.app) {
+        if (!!appDeviceObjBid.params.app.id) {
+          appIdObj = {
+            appid: appIdObjBid.params.app.id
+          };
+        }
+      }
     }
 
     const memberIdBid = find(bidRequests, hasMemberId);
@@ -407,7 +413,9 @@ function hasMemberId(bid) {
 }
 
 function hasAppDeviceInfo(bid) {
-  return !!bid.params.app
+  if (!!bid.params) {
+    return !!bid.params.app
+  }
 }
 
 function hasAppId(bid) {
