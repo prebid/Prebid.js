@@ -22,7 +22,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     id: masterId,
   };
   if (gdprConsent) {
-    payload.gdpr_consent = gdprConsent.consentString;
+    payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
 
