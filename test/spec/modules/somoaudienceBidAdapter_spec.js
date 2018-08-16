@@ -249,7 +249,7 @@ describe('Somo Audience Adapter Tests', () => {
         }];
         const request = spec.buildRequests(bidRequests);
         const ortbRequest = request[0].data;
-        expect(ortbRequest.app).to.equal(undefined);
+        expect(ortbRequest.app).to.equal(null);
         expect(ortbRequest.site).to.not.equal(null);
         expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
         expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
@@ -272,7 +272,7 @@ describe('Somo Audience Adapter Tests', () => {
         }];
         const request = spec.buildRequests(bidRequests);
         const ortbRequest = request[0].data;
-        expect(ortbRequest.app).to.equal(undefined);
+        expect(ortbRequest.app).to.equal(null);
         expect(ortbRequest.site).to.not.equal(null);
         expect(ortbRequest.site.name).to.equal('Somo Audience');
         expect(ortbRequest.site.domain).to.equal('somoaudience.com');
