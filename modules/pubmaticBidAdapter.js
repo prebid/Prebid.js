@@ -76,7 +76,7 @@ function _parseAdSlot(bid) {
 
     slot = splits[0];
     if (splits.length == 2) {
-      bid.params.adUnitIndex = splits[1].split(":").length == 2 ? splits[1].split(":")[1] : 0;
+      bid.params.adUnitIndex = splits[1].split(":").length == 2 ? splits[1].split(":")[1] : "0";
     }
     splits = splits[1].split(":")[0].split("x");
     if (splits.length != 2) {
