@@ -52,7 +52,7 @@ describe('FidelityAdapter', () => {
   describe('buildRequests', () => {
     let bidderRequest = {
       bidderCode: 'fidelity',
-      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
       bids: [
         {
@@ -66,7 +66,7 @@ describe('FidelityAdapter', () => {
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
-          auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
@@ -85,11 +85,31 @@ describe('FidelityAdapter', () => {
       expect(payload.zoneid).to.exist;
       expect(payload.floor).to.exist;
       expect(payload.charset).to.exist;
-      expect(payload.defloc).to.exist;
-      expect(payload.altloc).to.exist;
       expect(payload.subid).to.exist;
       expect(payload.flashver).to.exist;
       expect(payload.tmax).to.exist;
+      expect(payload.defloc).to.exist;
+    });
+
+    it('should add gdpr consent information to the request', () => {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        consentString: consentString,
+        vendorData: {
+          vendorConsents: {
+            '408': 1
+          },
+        },
+      };
+      const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const payload = request.data;
+      expect(payload.gdpr).to.exist.and.to.be.a('number');
+      expect(payload.gdpr).to.equal(1);
+      expect(payload.consent_str).to.exist.and.to.be.a('string');
+      expect(payload.consent_str).to.equal(consentString);
+      expect(payload.consent_given).to.exist.and.to.be.a('number');
+      expect(payload.consent_given).to.equal(1);
     });
 
     it('sends bid request to ENDPOINT via GET', () => {

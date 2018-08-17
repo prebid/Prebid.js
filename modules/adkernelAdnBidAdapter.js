@@ -165,7 +165,7 @@ export const spec = {
     return serverResponses.filter(rps => rps.body && rps.body.syncpages)
       .map(rsp => rsp.body.syncpages)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
   }
 };
 

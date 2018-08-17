@@ -41,9 +41,9 @@ function mapBanner(slot) {
 /**
  * Produce openRTB banner.format object
  */
-function mapSizes(slot_sizes) {
+function mapSizes(slotSizes) {
   const format = [];
-  slot_sizes.forEach(elem => {
+  slotSizes.forEach(elem => {
     format.push({
       w: elem[0],
       h: elem[1]
