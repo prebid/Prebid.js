@@ -53,7 +53,7 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       const { adUnitCode, auctionId, mediaTypes, params, sizes, transactionId } = bidRequest;
       const baseEndpoint = params[ 'rtbEndpoint' ] || 'https://rtb.gambid.io';
-      const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&bidder=prebid` + (params.query ? '&' + params.query : '');
+      const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         'id': auctionId,
         'site': {
@@ -134,7 +134,7 @@ export const spec = {
           mediaType: 'video',
           vastUrl: bid.ext.vast_url,
           vastXml: bid.adm,
-          renderer: context === 'outstream' ? newRenderer(bidRequest, bid) : undefined
+          renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
         }));
       }
     });
@@ -174,9 +174,9 @@ export const spec = {
   }
 };
 
-function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url: '//s.gamoshi.io/video/latest/renderer.js',
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || '//s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false,
   });
@@ -202,6 +202,7 @@ function renderOutstream(bid) {
           window['GamoshiPlayer'].removeAd(unitId);
         }, 300)
       },
+      vastUrl: bid.vastUrl,
       vastXml: bid.vastXml
     });
   });

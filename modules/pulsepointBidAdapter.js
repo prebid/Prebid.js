@@ -66,8 +66,14 @@ export const spec = {
         url: '//bh.contextweb.com/visitormatch/prebid'
       }];
     }
+  },
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'cf': 'string',
+      'cp': 'number',
+      'ct': 'number'
+    }, params);
   }
-
 };
 
 /**
