@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 // import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import {BANNER, NATIVE} from 'src/mediaTypes';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -61,37 +61,40 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param {BidRequest} bidRequest
+   * @param {BidRequest} bidRequests
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequests) {
     const body = serverResponse.body;
-    const bidResponses = [];
-    let bidRequest = {};
-    if (body.results && body.results.length > 0) {
-      bidRequest = bidRequests.bidRequest;
-      const bidResponse = {
-        requestId: bidRequest.bidId,
-        cpm: body.cpm || 0,
-        width: bidRequest.sizes[0][0],
-        height: bidRequest.sizes[0][1],
-        creativeId: body.creativeid || '',
-        dealId: body.dealid || '',
-        currency: 'JPY',
-        netRevenue: true,
-        ttl: body.ttl || 10,
-        referrer: utils.getTopWindowUrl(),
-      };
-      if (bidRequest.mediaTypes && bidRequest.mediaTypes.native) {
-        bidResponse.native = createNativeAd(body);
-        bidResponse.mediaType = NATIVE;
-      } else {
-        // banner
-        bidResponse.ad = createAd(body, bidRequest);
-      }
-      bidResponses.push(bidResponse);
+    if (!body.results || body.results.length < 1) {
+      return [];
     }
-    return bidResponses; // noAdは空を返す
+    const bidRequest = bidRequests.bidRequest;
+    if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {
+      if (!body.w || !body.h) {
+        return [];
+      }
+    }
+    const bidResponse = {
+      requestId: bidRequest.bidId,
+      cpm: body.cpm || 0,
+      width: body.w ? body.w : 1,
+      height: body.h ? body.h : 1,
+      creativeId: body.creativeid || '',
+      dealId: body.dealid || '',
+      currency: 'JPY',
+      netRevenue: true,
+      ttl: body.ttl || 10,
+      referrer: utils.getTopWindowUrl(),
+    };
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes.native) {
+      bidResponse.native = createNativeAd(body);
+      bidResponse.mediaType = NATIVE;
+    } else {
+      // banner
+      bidResponse.ad = createAd(body, bidRequest);
+    }
+    return [bidResponse];
   },
 
   /**

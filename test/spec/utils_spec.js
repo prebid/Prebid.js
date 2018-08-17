@@ -1,4 +1,5 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { expect } from 'chai';
 
 var assert = require('assert');
 var utils = require('src/utils');
@@ -358,6 +359,33 @@ describe('Utils', function () {
     });
   });
 
+  describe('isPlainObject', function () {
+    it('should return false with input string', function () {
+      var output = utils.isPlainObject(obj_string);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input number', function () {
+      var output = utils.isPlainObject(obj_number);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return true with input object', function () {
+      var output = utils.isPlainObject(obj_object);
+      assert.deepEqual(output, true);
+    });
+
+    it('should return false with input array', function () {
+      var output = utils.isPlainObject(obj_array);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input function', function () {
+      var output = utils.isPlainObject(obj_function);
+      assert.deepEqual(output, false);
+    });
+  });
+
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
       var output = utils.isEmpty(obj_object);
@@ -478,11 +506,11 @@ describe('Utils', function () {
 
   describe('getHighestCpm', function () {
     it('should pick the existing highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 2,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 100
       };
@@ -490,11 +518,11 @@ describe('Utils', function () {
     });
 
     it('should pick the new highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 2,
         timeToRespond: 100
       };
@@ -502,15 +530,43 @@ describe('Utils', function () {
     });
 
     it('should pick the fastest cpm in case of tie', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 50
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the oldest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
+    });
+
+    it('should pick the latest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -622,6 +678,47 @@ describe('Utils', function () {
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
     });
   });
+
+  describe('getUserConfiguredParams', () => {
+    const adUnits = [{
+      code: 'adUnit1',
+      bids: [{
+        bidder: 'bidder1',
+        params: {
+          key1: 'value1'
+        }
+      }, {
+        bidder: 'bidder2'
+      }]
+    }];
+
+    it('should return params configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
+      const expected = [{
+        key1: 'value1'
+      }];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return array containting empty object, if bidder present and no params are configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
+      const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if bidder is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if adUnit is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+  });
+
   describe('getTopWindowLocation', () => {
     let sandbox;
 
@@ -679,10 +776,11 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.google.com');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
     });
 
     it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
@@ -699,11 +797,52 @@ describe('Utils', function () {
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
       expect(topWindowLocation.protocol).to.equal('https');
       expect(topWindowLocation.hostname).to.equal('www.example.com');
-      expect(topWindowLocation.port).to.equal(0);
       expect(topWindowLocation.pathname).to.equal('/');
       expect(topWindowLocation.hash).to.equal('');
       expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.example.com');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
+    });
+  });
+
+  describe('convertCamelToUnderscore', () => {
+    it('returns converted string value using underscore syntax instead of camelCase', () => {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
+    });
+  });
+
+  describe('getAdUnitSizes', () => {
+    it('returns an empty response when adUnits is undefined', () => {
+      let sizes = utils.getAdUnitSizes();
+      expect(sizes).to.be.undefined;
+    });
+
+    it('returns an empty array when invalid data is present in adUnit object', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: 300 });
+      expect(sizes).to.deep.equal([]);
+    });
+
+    it('retuns an array of arrays when reading from adUnit.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+
+    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 });

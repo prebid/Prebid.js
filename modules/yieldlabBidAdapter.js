@@ -24,19 +24,32 @@ export const spec = {
    * @param validBidRequests
    * @returns {{method: string, url: string}}
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const adslotIds = []
     const timestamp = Date.now()
+    const query = {
+      ts: timestamp,
+      json: true
+    }
 
     utils._each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId)
+      if (bid.params.targeting) {
+        query.t = createQueryString(bid.params.targeting)
+      }
     })
 
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      query.consent = bidderRequest.gdprConsent.consentString
+      query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+    }
+
     const adslots = adslotIds.join(',')
+    const queryString = createQueryString(query)
 
     return {
       method: 'GET',
-      url: `${ENDPOINT}/yp/${adslots}?ts=${timestamp}&json=true`,
+      url: `${ENDPOINT}/yp/${adslots}?${queryString}`,
       validBidRequests: validBidRequests
     }
   },
@@ -102,6 +115,21 @@ function isVideo (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a querystring out of an object with key-values
+ * @param {Object} obj
+ * @returns {String}
+ */
+function createQueryString (obj) {
+  let str = []
+  for (var p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+    }
+  }
+  return str.join('&')
 }
 
 registerBidder(spec)

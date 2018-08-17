@@ -7,10 +7,10 @@
 /**
  * @typedef {Object} AuctionManager
  *
- * @property {function(): Array} getBidsRequested - returns cosolidated bid requests
- * @property {function(): Array} getBidsReceived - returns cosolidated bid received
- * @property {function(): Array} getAdUnits - returns cosolidated adUnits
- * @property {function(): Array} getAdUnitCodes - returns cosolidated adUnitCodes
+ * @property {function(): Array} getBidsRequested - returns consolidated bid requests
+ * @property {function(): Array} getBidsReceived - returns consolidated bid received
+ * @property {function(): Array} getAdUnits - returns consolidated adUnits
+ * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
  * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
@@ -35,14 +35,14 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
-      auction.setWinningBid(bid);
+      auction.addWinningBid(bid);
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
   }
 
   auctionManager.getAllWinningBids = function() {
-    return _auctions.map(auction => auction.getWinningBid())
+    return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
   }
 
@@ -87,6 +87,11 @@ export function newAuctionManager() {
   auctionManager.getStandardBidderAdServerTargeting = function() {
     return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   };
+
+  auctionManager.setStatusForBids = function(adId, status) {
+    let bid = auctionManager.findBidByAdId(adId);
+    if (bid) bid.status = status;
+  }
 
   function _addAuction(auction) {
     _auctions.push(auction);
