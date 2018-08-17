@@ -57,22 +57,35 @@ describe('AdoceanAdapter', () => {
       }
     ];
 
+    const bidderRequest = {
+      gdprConsent: {
+        consentString: 'BOQHk-4OSlWKFBoABBPLBd-AAAAgWAHAACAAsAPQBSACmgFTAOkA',
+        gdprApplies: true
+      }
+    };
+
     it('should add bidIdMap with slaveId => bidId mapping', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.bidIdMap).to.exists;
       const bidIdMap = request.bidIdMap;
       expect(bidIdMap[bidRequests[0].params.slaveId]).to.equal(bidRequests[0].bidId);
     });
 
     it('sends bid request to url via GET', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
     });
 
     it('should attach id to url', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('id=' + bidRequests[0].params.masterId);
+    });
+
+    it('should attach consent information to url', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.include('gdpr=1');
+      expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
   })
 
