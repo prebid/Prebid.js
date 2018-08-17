@@ -15,7 +15,6 @@ function buildEndpointUrl(emiter, payload) {
   return 'https://' + emiter + '/ad.json?' + payloadString;
 }
 
-// FIXME: ADOCEAN-15635 - duplikacja slaveow
 function buildRequest(masterBidRequests, masterId, gdprConsent) {
   const firstBid = masterBidRequests[0];
   const payload = {
