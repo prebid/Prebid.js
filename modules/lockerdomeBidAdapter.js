@@ -12,6 +12,7 @@ export const spec = {
     const adUnitBidRequests = bidRequests.map(function (bid) {
       return {
         requestId: bid.bidId,
+        adUnitCode: bid.adUnitCode,
         adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
         sizes: bid.sizes
       }
