@@ -54,7 +54,7 @@ describe('adapterManager tests', () => {
       }];
 
       AdapterManager.callBids({adUnits});
-
+      // test comment
       sinon.assert.called(utils.logError);
     });
 
