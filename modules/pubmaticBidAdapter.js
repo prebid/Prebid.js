@@ -76,7 +76,7 @@ function _parseAdSlot(bid) {
 
     slot = splits[0];
     if (splits.length == 2) {
-      bid.params.adUnitIndex = splits[1].split(":")[1];
+      bid.params.adUnitIndex = splits[1].split(":").length == 2 ? splits[1].split(":")[1] : 0;
     }
     splits = splits[1].split(":")[0].split("x");
     if (splits.length != 2) {
@@ -85,7 +85,7 @@ function _parseAdSlot(bid) {
     }
     bid.params.width = parseInt(splits[0]);
     bid.params.height = parseInt(splits[1]);
-    bid.params.adUnit = splits[0];
+    bid.params.adUnit = slot;
   }
   catch(e){
     utils.logWarn('AdSlot Error: adSlot not in required format');
