@@ -22,7 +22,7 @@ Module that connects to Trafficroots demand sources
                     bidder: 'trafficroots',
                     params: {
                         zoneId: 'aa0444af31',
-                        deliveryUrl: location.protocol + '//service.trafficroosts.com/prebid'
+                        deliveryUrl: location.protocol + '//service.trafficroots.com/prebid'
                     }
                },{
                     bidder: 'trafficroots',
