@@ -236,6 +236,7 @@ function openRtbApp(bidRequest) {
 
 function openRtbDevice() {
   return {
+    ip: 'check',
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
   };
