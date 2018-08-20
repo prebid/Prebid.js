@@ -60,6 +60,7 @@
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.0",
     "ignore-loader": "^0.1.2",
+    "is-docker": "^1.1.0",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.0",
     "json-loader": "^0.5.1",
