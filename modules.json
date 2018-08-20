@@ -3,6 +3,7 @@
 
   "guAnalyticsAdapter",
 
+  "adyoulikeBidAdapter",
   "appnexusBidAdapter",
   "improvedigitalBidAdapter",
   "ixBidAdapter",
