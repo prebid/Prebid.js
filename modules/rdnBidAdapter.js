@@ -37,7 +37,7 @@ export const spec = {
     const bidResponses = []
     bidResponses.push({
       requestId: sb.RequestId,
-      cpm: sb.CPM * 1000 || 0,
+      cpm: sb.CPM || 0,
       width: sb.Width || 0,
       height: sb.Height || 0,
       creativeId: sb.CreativeId || 0,
