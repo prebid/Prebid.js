@@ -23,8 +23,9 @@ function _createBidResponse(response) {
   }
 }
 
-// infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest(bidRequest) {
+// Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
+// NOTE: At this point, TTX only accepts request for a single impression
+function _createServerRequest(bidRequest, gdprConsent) {
   const ttxRequest = {};
   const params = bidRequest.params;
 
@@ -48,10 +49,23 @@ function _createServerRequest(bidRequest) {
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
 
+  // Set GDPR related fields
+  ttxRequest.user = {
+    ext: {
+      consent: gdprConsent.consentString
+    }
+  }
+  ttxRequest.regs = {
+    ext: {
+      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0
+    }
+  }
+
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
   }
+
 
   /*
    * Now construct the full server request
@@ -104,11 +118,18 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-// NOTE: At this point, TTX only accepts request for a single impression
-function buildRequests(bidRequests) {
+// NOTE: With regards to gdrp consent data,
+// - the server independently infers gdpr applicability therefore, setting the default value to false
+// - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
+//    value whether set or not, for the sake of future dev.
+function buildRequests(bidRequests, bidderRequest) {
+  const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent)
+
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
-  return bidRequests.map(_createServerRequest);
+  return bidRequests.map((req) => {
+    return _createServerRequest(req, gdprConsent);
+  });
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
@@ -124,8 +145,13 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 // Register one sync per unique guid
-function getUserSyncs(syncOptions) {
-  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
+// NOTE: If gdpr applies do not sync
+function getUserSyncs(syncOptions, responses, gdprConsent) {
+  if (gdprConsent && gdprConsent.gdprApplies === true) {
+    return []
+  } else {
+    return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
+  }
 }
 
 const spec = {
