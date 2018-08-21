@@ -10,6 +10,7 @@ These are the ways in which the Guardian optimised build differs from the [gener
     * has an extra request parameter, `gmgt`, holding AppNexus targeting key-values
     * has a customised `pv` parameter, holding the Ophan-generated pageview ID
 * The [AppNexus adapter](https://github.com/guardian/Prebid.js/blob/master/modules/appnexusBidAdapter.js) has an alias `xhb` for Xaxis and the alias `and` for AppNexus direct.
+* The [OpenX adapter](https://github.com/guardian/Prebid.js/blob/master/modules/openxBidAdapter.js) has an alias `oxd` for OpenX direct, instead of via server-side header bidding.
 ## Analytics adapters
 * We have built two analytics adapters:
     * an [adapter](https://github.com/guardian/Prebid.js/blob/master/modules/guAnalyticsAdapter.js) to send analytics to the data lake
