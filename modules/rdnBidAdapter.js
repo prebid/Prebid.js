@@ -1,5 +1,6 @@
 import { registerBidder } from 'src/adapters/bidderFactory'
 import * as utils from 'src/utils'
+import { BANNER } from 'src/mediaTypes'
 
 const BIDDER_CODE = 'rdn'
 // TODO
@@ -17,6 +18,7 @@ export const spec = {
         method: 'GET',
         url: ENDPOINT,
         data: {
+          bi: bid.bidId,
           t: params.adSpotId,
           s: document.location.protocol,
           ua: navigator.userAgent,
@@ -36,15 +38,16 @@ export const spec = {
     const sb = response.body
     const bidResponses = []
     bidResponses.push({
-      requestId: sb.RequestId,
-      cpm: sb.CPM * 1000 || 0,
-      width: sb.Width || 0,
-      height: sb.Height || 0,
-      creativeId: sb.CreativeId || 0,
-      dealId: sb.DealId || '',
-      currency: sb.Currency || 'JPY',
-      netRevenue: sb.NetRevenue,
-      ttl: sb.TTL,
+      requestId: sb.bid_id,
+      cpm: sb.cpm * 1000 || 0,
+      width: sb.width || 0,
+      height: sb.height || 0,
+      creativeId: sb.creative_id || 0,
+      dealId: sb.deal_id || '',
+      currency: sb.currency || 'JPY',
+      netRevenue: (sb.net_revenue === undefined) ? true : sb.net_revenue,
+      mediaType: BANNER,
+      ttl: sb.ttl,
       referrer: utils.getTopWindowUrl(),
       ad: sb.ad
     })
