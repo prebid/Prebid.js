@@ -353,7 +353,7 @@ function bidToTag(bid) {
   }
 
   // instream gets vastUrl, outstream gets vastXml
-  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
+  if (bid.mediaType ===VIDEO || (videoMediaType && context !== 'outstream')) {
     tag.require_asset_url = true;
   }
 
