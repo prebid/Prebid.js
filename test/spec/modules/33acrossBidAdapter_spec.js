@@ -113,12 +113,11 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('buildRequests:', function() {
-
     context('when gdpr consent data exists', function() {
       beforeEach(function() {
-        this.bidderRequest= {
+        this.bidderRequest = {
           gdprConsent: {
-            consentString: "foobarMyPreference",
+            consentString: 'foobarMyPreference',
             gdprApplies: true
           }
         }
@@ -151,9 +150,9 @@ describe('33acrossBidAdapter:', function () {
             id: SITE_ID
           },
           id: 'b1',
-          user:  {
+          user: {
             ext: {
-              consent: "foobarMyPreference"
+              consent: 'foobarMyPreference'
             }
           },
           regs: {
@@ -210,9 +209,9 @@ describe('33acrossBidAdapter:', function () {
             id: SITE_ID
           },
           id: 'b1',
-          user:  {
+          user: {
             ext: {
-              consent: "foobarMyPreference"
+              consent: 'foobarMyPreference'
             }
           },
           regs: {
@@ -243,7 +242,7 @@ describe('33acrossBidAdapter:', function () {
 
     context('when gdpr consent data does not exist', function() {
       beforeEach(function() {
-        this.bidderRequest= { }
+        this.bidderRequest = { }
       });
 
       it('returns corresponding server requests with default gdpr consent data', function() {
@@ -273,7 +272,7 @@ describe('33acrossBidAdapter:', function () {
             id: SITE_ID
           },
           id: 'b1',
-          user:  {
+          user: {
             ext: {
               consent: undefined
             }
@@ -332,7 +331,7 @@ describe('33acrossBidAdapter:', function () {
             id: SITE_ID
           },
           id: 'b1',
-          user:  {
+          user: {
             ext: {
               consent: undefined
             }

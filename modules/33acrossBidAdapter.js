@@ -66,7 +66,6 @@ function _createServerRequest(bidRequest, gdprConsent) {
     ttxRequest.test = 1;
   }
 
-
   /*
    * Now construct the full server request
    */
