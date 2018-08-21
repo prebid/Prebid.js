@@ -117,7 +117,7 @@ function watch(done) {
     livereload: true
   });
 
-  mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', 'test')));
+  mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
   loaderWatcher.on('all', gulp.series(lint));
   done();
 };
@@ -323,7 +323,7 @@ gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, 
 gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('test', gulp.series(clean, test));
+gulp.task('test', gulp.series(clean, lint, test));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
@@ -333,7 +333,7 @@ gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
 gulp.task(e2etestReport);
