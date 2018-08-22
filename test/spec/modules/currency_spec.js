@@ -62,7 +62,9 @@ describe('currency', function () {
       	innerBid = bid;
       });
 
-      expect(innerBid.currency).to.equal('GBP')
+      expect(innerBid.currency).to.equal('GBP');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('GBP')).to.equal('1.000');
     });
 
     it('uses adapter currency over currency override if specified', () => {
@@ -82,7 +84,9 @@ describe('currency', function () {
       	innerBid = bid;
       });
 
-      expect(innerBid.currency).to.equal('JPY')
+      expect(innerBid.currency).to.equal('JPY');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('1.000');
     });
 
     it('uses rates specified in json when provided', () => {
@@ -103,6 +107,8 @@ describe('currency', function () {
       });
 
       expect(innerBid.cpm).to.equal('1.0000');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
     it('uses default rates when currency file fails to load', () => {
@@ -128,6 +134,8 @@ describe('currency', function () {
       });
 
       expect(innerBid.cpm).to.equal('1.0000');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
   });
 

@@ -17,7 +17,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 ## Release Process
 
-1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build [here](https://travis-ci.org/prebid/Prebid.js/branches) for master branch will show you detailed results. 
+1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid) for master branch will show you detailed results. 
   
    In case of failure do following, 
      - Try to fix the failing tests.

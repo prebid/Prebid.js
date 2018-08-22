@@ -1092,7 +1092,7 @@ describe('S2S Adapter', () => {
       expect(vendorConfig.cookieSet).to.be.false;
       expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/auction');
+      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
