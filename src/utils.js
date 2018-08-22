@@ -280,7 +280,6 @@ exports.logWarn = function () {
 };
 
 exports.logError = function () {
-  console.log(arguments)
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }

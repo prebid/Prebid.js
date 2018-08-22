@@ -199,7 +199,6 @@ describe('Publisher Common ID', function () {
 
     it('test hook', function() {
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.property('crumbs.pubcid');
