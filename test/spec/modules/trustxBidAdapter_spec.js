@@ -39,6 +39,14 @@ describe('TrustXAdapter', function () {
   });
 
   describe('buildRequests', () => {
+    function parseRequest(url) {
+      const res = {};
+      url.split('&').forEach((it) => {
+        const couple = it.split('=');
+        res[couple[0]] = decodeURIComponent(couple[1]);
+      });
+      return res;
+    }
     let bidRequests = [
       {
         'bidder': 'trustx',
@@ -77,8 +85,8 @@ describe('TrustXAdapter', function () {
 
     it('should attach valid params to the tag', () => {
       const request = spec.buildRequests([bidRequests[0]]);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
@@ -87,8 +95,8 @@ describe('TrustXAdapter', function () {
 
     it('auids must not be duplicated', () => {
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
@@ -98,8 +106,8 @@ describe('TrustXAdapter', function () {
     it('pt parameter must be "gross" if params.priceType === "gross"', () => {
       bidRequests[1].params.priceType = 'gross';
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,45');
@@ -110,8 +118,8 @@ describe('TrustXAdapter', function () {
     it('pt parameter must be "net" or "gross"', () => {
       bidRequests[1].params.priceType = 'some';
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
