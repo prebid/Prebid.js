@@ -115,7 +115,7 @@ export const spec = {
   getUserSyncs: function(syncOptions) {
     if(syncURLs.length > 0) {
       let tmp = syncURLs.filter((syncURL) => {
-        console.log('freestar::', 'syncURL', syncURL);
+        // console.log('freestar::', 'syncURL', syncURL);
       });
     }
     return false;
