@@ -137,7 +137,7 @@ import {
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['requestId'];
-const GOOD_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const GOOD_BID_RESPONSE_KEYS = COMMON_BID_RESPONSE_KEYS.concat(['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency']);
 
 /**
  * Register a bidder with prebid, using the given spec.
