@@ -255,5 +255,15 @@ describe('sortableBidAdapter', function() {
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
+
+    it('should keep custom properties', () => {
+      const customProperties = {test: 'a test message', param: {testParam: 1}};
+      const expectedResult = Object.assign({}, expectedBid, {[spec.code]: customProperties});
+      const response = makeResponse();
+      response.body.seatbid[0].bid[0].ext = customProperties;
+      const result = spec.interpretResponse(response);
+      expect(result.length).to.equal(1);
+      expect(result[0]).to.deep.equal(expectedResult);
+    });
   });
 });
