@@ -95,7 +95,22 @@ export const spec = {
       });
     }
     return sovrnBidResponses;
-  }
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses) {
+    if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
+      let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
+        .map(rsp => { return rsp.body.ext.iid });
+      if (iidArr[0]) {
+        return [{
+          type: 'iframe',
+          url: '//ap.lijit.com/www/sovrn_beacon_standalone/sovrn_standalone_beacon.js?iid=' + iidArr[0],
+        }];
+      }
+    }
+    return [];
+  },
+
 };
 
 registerBidder(spec);
