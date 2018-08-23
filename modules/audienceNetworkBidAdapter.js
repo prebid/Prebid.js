@@ -2,7 +2,6 @@
  * @file AudienceNetwork adapter.
  */
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
 import { formatQS } from 'src/url';
 import { generateUUID, getTopWindowUrl, isSafariBrowser, convertTypes } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
@@ -15,9 +14,11 @@ const url = 'https://an.facebook.com/v2/placementbid.json';
 const supportedMediaTypes = ['banner', 'video'];
 const netRevenue = true;
 const hbBidder = 'fan';
+const ttl = 600;
+const videoTtl = 3600;
 const platver = '$prebid.version$';
 const platform = '241394079772386';
-const adapterver = '1.0.0';
+const adapterver = '1.0.1';
 
 /**
  * Does this bid request contain valid parameters?
@@ -94,6 +95,13 @@ const isFullWidth = format => format === 'fullwidth';
 const sdkVersion = format => isVideo(format) ? '' : '5.5.web';
 
 /**
+ * Which platform identifier should be used?
+ * @param {Array<String>} platforms Possible platform identifiers
+ * @returns {String} First valid platform found, or default if none found
+ */
+const findPlatform = platforms => [...platforms.filter(Boolean), platform][0];
+
+/**
  * Does the search part of the URL contain "anhb_testmode"
  * and therefore indicate testmode should be used?
  * @returns {String} "true" or "false"
@@ -133,6 +141,7 @@ const getTopWindowUrlEncoded = () => encodeURIComponent(getTopWindowUrl());
  * @param {String} bids[].placementCode - Prebid placement identifier
  * @param {Object} bids[].params
  * @param {String} bids[].params.placementId - Audience Network placement identifier
+ * @param {String} bids[].params.platform - Audience Network platform identifier (optional)
  * @param {String} bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
  * @param {Array} bids[].sizes - list of desired advert sizes
  * @param {Array} bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
@@ -144,6 +153,7 @@ const buildRequests = bids => {
   const adformats = [];
   const sizes = [];
   const sdk = [];
+  const platforms = [];
   const requestIds = [];
 
   bids.forEach(bid => bid.sizes
@@ -155,6 +165,7 @@ const buildRequests = bids => {
       adformats.push(bid.params.format || size);
       sizes.push(size);
       sdk.push(sdkVersion(bid.params.format));
+      platforms.push(bid.params.platform);
       requestIds.push(bid.bidId);
     })
   );
@@ -162,6 +173,7 @@ const buildRequests = bids => {
   // Build URL
   const testmode = isTestmode();
   const pageurl = getTopWindowUrlEncoded();
+  const platform = findPlatform(platforms);
   const search = {
     placementids,
     adformats,
@@ -194,8 +206,6 @@ const buildRequests = bids => {
  * @returns {Array<Object>} A list of bid response objects
  */
 const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
-  const ttl = Number(config.getConfig().bidderTimeout);
-
   const { bids = {} } = body;
   return Object.keys(bids)
     // extract Array of bid responses
@@ -237,6 +247,7 @@ const interpretResponse = ({ body }, { adformats, requestIds, sizes }) => {
         const pageurl = getTopWindowUrlEncoded();
         bidResponse.mediaType = 'video';
         bidResponse.vastUrl = `https://an.facebook.com/v1/instream/vast.xml?placementid=${creativeId}&pageurl=${pageurl}&playerwidth=${width}&playerheight=${height}&bidid=${fbBidid}`;
+        bidResponse.ttl = videoTtl;
       }
       return bidResponse;
     });
