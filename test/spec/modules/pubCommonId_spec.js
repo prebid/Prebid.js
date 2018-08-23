@@ -172,7 +172,21 @@ describe('Publisher Common ID', function () {
         ]
       }];
       adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: TIMEOUT});
+      let auction = {
+        addBidReceived: () => {},
+        executeCallback: () => {},
+        callBids: () => {},
+        bidsBackAll: () => {},
+        addWinningBid: () => {},
+        getWinningBids: () => [],
+        getTimeout: () => [],
+        getAuctionId: () => [],
+        getAuctionStatus: () => [],
+        getAdUnits: () => [],
+        getAdUnitCodes: () => [],
+        getBidRequests: () => [],
+        getBidsReceived: () => [],
+      }
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       initPubcid();

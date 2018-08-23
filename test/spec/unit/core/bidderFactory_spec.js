@@ -2,10 +2,9 @@ import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
-import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
-import { config } from 'src/config';
+import CONSTANTS from 'src/constants.json';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -331,12 +330,12 @@ describe('bidders created by newBidder', () => {
       expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', () => {
+    it('should only add bids for valid adUnit code into the auction, when a there is no bid it should be recorded as such', () => {
       const bidder = newBidder(spec);
 
       const bid = {
         creativeId: 'creative-id',
-        requestId: '1',
+        requestId: 1,
         ad: 'ad-url.com',
         cpm: 0.5,
         height: 200,
@@ -358,8 +357,9 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.calledTwice).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      expect(addBidResponseStub.secondCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID)
       expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
     });
@@ -491,7 +491,7 @@ describe('bidders created by newBidder', () => {
       expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it('should not add bids for each adunit code into the auction', () => {
+    it('should add bids as no_bid for each adunit code into the auction', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -505,7 +505,9 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.callCount).to.equal(0);
+      expect(addBidResponseStub.callCount).to.equal(2);
+      expect(addBidResponseStub.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID)
+      expect(addBidResponseStub.secondCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID)
       expect(doneStub.calledOnce).to.equal(true);
     });
 

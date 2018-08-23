@@ -1513,7 +1513,7 @@ describe('Unit: Prebid Module', function () {
           adUnits: auction2.getAdUnits()
         };
 
-        assert.equal(auctionManager.getBidsReceived().length, 8, '_bidsReceived contains 8 bids');
+        assert.equal(auctionManager.getBidsReceived().length, 9, '_bidsReceived contains 9 bids');
 
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
