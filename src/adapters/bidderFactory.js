@@ -199,11 +199,17 @@ export function newBidder(spec) {
         const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
         // bidderRequest.end = timestamp();
         let bidIds = bidsArray.map(bid => {
-          return bid.requestId.toString();
+          if (bid.requestId)
+            return bid.requestId.toString();
+          }
+          return ''
         });
 
         let missingBids = bidderRequest.bids.filter(bid => {
-          return bidIds.indexOf(bid.bidId.toString()) === -1;
+          if (bid.bidId) {
+            return bidIds.indexOf(bid.bidId.toString()) === -1;
+          }
+          return false
         });
 
         missingBids.forEach(bid => {
