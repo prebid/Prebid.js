@@ -11,6 +11,7 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const AST_DEBUG = ['ast_debug', 'ast_dongle', 'ast_debug_member', 'ast_debug_timeout']
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -77,6 +78,28 @@ export const spec = {
       };
     }
 
+    const debugObjParams = getURLparams();
+    let debugObj = {};
+    if (debugObjParams && debugObjParams.params) {
+      Object.keys(debugObjParams.params)
+        .filter(param => includes(AST_DEBUG, param))
+        .forEach(param => {
+          debugObj['debug'] = debugObj['debug'] || {
+            'enabled': true
+          }
+          if (param == 'ast_dongle'){
+            debugObj['debug']['dongle'] = debugObjParams.params[param];
+          }
+          if (param == 'ast_debug_member'){
+            debugObj['debug']['member_id'] = 958 ? parseInt(debugObjParams.params[param], 10) : 0;
+          }
+          if (param == 'ast_debug_timeout'){
+            debugObj['debug']['debug_timeout'] = 3000 ? parseInt(debugObjParams.params[param], 10) : 0;
+          }
+        }
+      );
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -97,6 +120,10 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    if (debugObj && debugObj.debug) {
+      payload.debug = debugObj.debug
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -144,6 +171,21 @@ export const spec = {
         }
       });
     }
+
+    if (serverResponse.debug && serverResponse.debug.debug_info) {
+      let title = 'AppNexus Debug Auction for Prebid'
+      let debugHTML = '<html><head><title>' +title+ '</title></head><body><h2>' + title + '</h2>' + serverResponse.debug.debug_info + '<style>body {margin:40px;}</style></body></html>';
+      debugHTML = debugHTML.replace(/(.*)([^>])$/gm,"$1$2<br>").replace(/(\t)/gm, '<span style="margin-left:20px"></span>'); // Format newlines and tabs
+      let debugStream = debugHTML.split('\n');
+
+      utils.logMessage('AppNexus debug auction for prebid was opened in new tab');
+      let debugWindow = window.open();
+      for (var ln in debugStream){
+        debugWindow.document.write(debugStream[ln]);
+      }
+      setTimeout(function() { debugWindow.document.close() }, 1000); // Close the debugStream
+    }
+
     return bids;
   },
 
@@ -417,6 +459,19 @@ function hasAppId(bid) {
     return !!bid.params.app.id
   }
   return !!bid.params.app
+}
+
+function getURLparams() {
+  let obj = {};
+  if (utils.getTopWindowLocation() && utils.getTopWindowLocation().search){
+    obj['params'] = {};
+    utils.getTopWindowLocation().search.substr(1).split('&').forEach(keyvalue => {
+      let key = keyvalue.split('=')[0];
+      let val = keyvalue.split('=')[1];
+      obj['params'][key] = val
+    });
+  }
+  return obj
 }
 
 function getRtbBid(tag) {

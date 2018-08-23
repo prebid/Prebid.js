@@ -370,6 +370,24 @@ describe('AppNexusAdapter', () => {
         lng: -75.3009142
       });
     });
+
+    it('sends a debug auction', () => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(utils, 'getTopWindowLocation').callsFake(() => {
+        return {
+          'search': '?pbjs_debug=true&ast_debug=true&ast_dongle=QWERTY&ast_debug_member=958&ast_debug_timeout=1000'
+        };
+      });
+      const request = spec.buildRequests([bidRequests[0]]);
+      const payload = JSON.parse(request.data);
+      expect(payload.debug).to.exist;
+      expect(payload.debug).to.deep.equal({
+        enabled: true,
+        dongle: 'QWERTY',
+        member_id: 958,
+        debug_timeout: 1000
+      });
+    });
   })
 
   describe('interpretResponse', () => {
@@ -534,6 +552,31 @@ describe('AppNexusAdapter', () => {
       expect(result[0].renderer.config).to.deep.equal(
         bidderRequest.bids[0].renderer.options
       );
+    });
+
+    it('returns a debug auction', () => {
+      describe('interpretResponse', () => {
+        let response = {
+          'version': '0.0.1',
+          'tags': [{
+            'uuid': '84ab500420319d',
+            'tag_id': 5976557,
+            'auction_id': '297492697822162468',
+            'nobid': true
+          }],
+          'debug': {
+            'debug_info': '<html><body>Debug Auction HTML</body></html>',
+            'request_time' : 32786.428
+          }
+        };
+      let bidderRequest;
+
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+
+      expect(result[0].debug).to.exist;
+      /*expect(payload.app).to.deep.equal({
+        appid: 'B1O2W3M4AN.com.prebid.webview'
+      });*/
     });
   });
 });
