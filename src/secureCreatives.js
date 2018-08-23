@@ -44,7 +44,7 @@ function receiveMessage(ev) {
     //   message: 'Prebid Native',
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
-    if (data.message === 'Prebid Native') {
+    else if (data.message === 'Prebid Native') {
       fireNativeTrackers(data, adObject);
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
