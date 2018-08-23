@@ -190,7 +190,7 @@ function getRequestData(bid, consentData) {
   if (isConsentRequired(consentData)) {
     bidData.regs = {
       ext: {
-        gdpr: NUMERIC_VALUES.TRUE
+        gdpr: 1
       }
     };
 
