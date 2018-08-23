@@ -1,12 +1,11 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import { userSync } from 'src/userSync';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.2.0',
+  version: '4.3.0',
   code: BIDDER_CODE,
   aliases: ['id'],
 
@@ -91,15 +90,34 @@ export const spec = {
       bid.width = bidObject.w;
 
       bids.push(bid);
-
-      // Register user sync URLs
-      if (utils.isArray(bidObject.sync)) {
-        utils._each(bidObject.sync, function (syncElement) {
-          userSync.registerSync('image', spec.code, syncElement);
-        });
-      }
     });
     return bids;
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    if (syncOptions.pixelEnabled) {
+      const syncs = [];
+      serverResponses.forEach(response => {
+        response.body.bid.forEach(bidObject => {
+          if (utils.isArray(bidObject.sync)) {
+            bidObject.sync.forEach(syncElement => {
+              if (syncs.indexOf(syncElement) === -1) {
+                syncs.push(syncElement);
+              }
+            });
+          }
+        });
+      });
+      return syncs.map(sync => ({ type: 'image', url: sync }));
+    }
+    return [];
   }
 };
 
