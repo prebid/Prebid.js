@@ -22,58 +22,59 @@ var adUnits = [
         banner: {
           sizes: [[300, 250], [300,600]]
         }
-      }
+      },
       bids: [{
          bidder: 'appnexus',
          params: {
-           placementId: '10433394'
+           placementId: 13144370
          }
        }]
    },
    // Native adUnit
    {
       code: 'native-div',
-      sizes: [[300, 250], [300,600]],
+      sizes: [[1, 1]],
       mediaTypes: {
         native: {
           title: {
-            required: true,
-            len: 80
-          },
-          body: {
             required: true
           },
-          brand: {
+          body: {
             required: true
           },
           image: {
             required: true
           },
-          clickUrl: {
+          sponsoredBy: {
             required: true
           },
+          icon: {
+            required: false
+          }
         }
       },
       bids: [{
         bidder: 'appnexus',
         params: {
-          placementId: '9880618'
+          placementId: 13232354,
+          allowSmallerSizes: true
         }
       }]
    },
    // Video instream adUnit
    {
       code: 'video-instream',
-      sizes: [640, 480],
+      sizes: [[640, 480]],
       mediaTypes: {
         video: {
+          playerSize: [[640, 480]],
           context: 'instream'
         },
       },
       bids: [{
         bidder: 'appnexus',
         params: {
-          placementId: '9333431',
+          placementId: 13232361,
           video: {
             skippable: true,
             playback_methods: ['auto_play_sound_off']
@@ -84,9 +85,10 @@ var adUnits = [
    // Video outstream adUnit
    {
      code: 'video-outstream',
-     sizes: [[640, 480]],
+     sizes: [[300, 250]],
      mediaTypes: {
        video: {
+         playerSize: [[300, 250]],
          context: 'outstream'
        }
      },
@@ -94,7 +96,7 @@ var adUnits = [
        {
          bidder: 'appnexus',
          params: {
-           placementId: '5768085',
+           placementId: 13232385,
            video: {
              skippable: true,
              playback_method: ['auto_play_sound_off']
@@ -116,7 +118,7 @@ var adUnits = [
      bids: [{
        bidder: 'appnexus',
        params: {
-         placementId: '10433394',
+         placementId: 13144370,
          app: {
            id: "B1O2W3M4AN.com.prebid.webview",
            geo: {
