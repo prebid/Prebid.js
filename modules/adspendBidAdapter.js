@@ -34,10 +34,6 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    console.log('DEBUG 1');
-    console.log(bidRequests);
-    console.log(bidderRequest);
-
     const req = bidRequests[Math.floor(Math.random() * bidRequests.length)];
 
     const conf = config.getConfig();
@@ -55,7 +51,7 @@ export const spec = {
         'ua': navigator.userAgent,
         'ip': ''
       },
-      'user': { 'id': getUserID(document.cookie) },
+      'user': { 'id': getUserID() },
       'imp': [
         {
           'id': req.params.placement,
@@ -80,10 +76,6 @@ export const spec = {
   },
 
   interpretResponse: function(resp, {bidderRequest}) {
-    alert('Hello, world!');
-    console.log('DEBUG 2');
-    console.log(resp);
-
     const bids = [];
 
     if (resp.body === '') return bids;
@@ -97,14 +89,14 @@ export const spec = {
     const bid = {
       cpm: respBid.price,
       requestId: resp.body.id,
-      width: 300,
-      height: 250,
+      width: respBid.w,
+      height: respBid.h,
       creativeId: respBid.adid,
       dealId: respBid.dealid,
       currency: resp.body.cur,
       netRevenue: true,
       ttl: 10000,
-      ad: respBid.adm
+      ad: respBid.adm,
     };
 
     bids.push(bid);

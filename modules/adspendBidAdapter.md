@@ -25,6 +25,7 @@ var adUnits = [
                   [300, 600],
                   [240, 400],
                   [728, 90],
+                  [160, 600],
                 ]
             }
         },
@@ -56,3 +57,5 @@ pbjs.que.push(() => {
   });
 });
 ```
+
+It's a test banner, so you'll see some errors in console cause it will be trying to call our system's events.
