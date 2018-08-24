@@ -12,7 +12,7 @@ const COOKIE_EXPIRE = 600;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adspend'],
+  aliases: ['as'],
   supportedMediaTypes: [BANNER],
 
   onBidWon: function(winObj) {

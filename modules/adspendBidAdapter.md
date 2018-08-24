@@ -58,4 +58,4 @@ pbjs.que.push(() => {
 });
 ```
 
-It's a test banner, so you'll see some errors in console cause it will be trying to call our system's events.
+**It's a test banner, so you'll see some errors in console cause it will be trying to call our system's events.**
