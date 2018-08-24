@@ -17,7 +17,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [[300, 250]],
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -33,7 +34,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }],
   VALID_BID_REQUEST_INVALID_BIDFLOOR = [{
     'bidder': 'medianet',
@@ -51,7 +53,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [[300, 250]],
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -67,7 +70,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }],
   VALID_AUCTIONDATA = {
     'timeout': config.getConfig('bidderTimeout'),
@@ -103,7 +107,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,
@@ -133,7 +138,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,
@@ -181,7 +187,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,
@@ -210,7 +217,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,
@@ -372,7 +380,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [300, 250],
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -388,7 +397,8 @@ let VALID_BID_REQUEST = [{
     'sizes': [300, 251],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
-    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d'
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
   }],
   VALID_BIDDER_REQUEST_WITH_GDPR = {
     'gdprConsent': {
@@ -429,7 +439,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,
@@ -458,7 +469,8 @@ let VALID_BID_REQUEST = [{
             x: 100,
             y: 100
           }
-        }
+        },
+        'display_count': 1
       },
       'banner': [{
         'w': 300,

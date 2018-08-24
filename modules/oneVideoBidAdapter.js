@@ -36,14 +36,17 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bids) {
+  buildRequests: function(bids, bidRequest) {
+    let consentData = bidRequest ? bidRequest.gdprConsent : null;
+
     return bids.map(bid => {
       return {
         method: 'POST',
         url: location.protocol + spec.ENDPOINT + bid.params.pubId,
-        data: getRequestData(bid),
+        data: getRequestData(bid, consentData),
         options: {contentType: 'application/json'},
         bidRequest: bid
       }
@@ -127,7 +130,11 @@ function getSize(sizes) {
   };
 }
 
-function getRequestData(bid) {
+function isConsentRequired(consentData) {
+  return !!(consentData && consentData.gdprApplies);
+}
+
+function getRequestData(bid, consentData) {
   let loc = utils.getTopWindowLocation();
   let global = (window.top) ? window.top : window;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
@@ -179,6 +186,23 @@ function getRequestData(bid) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
+
+  if (isConsentRequired(consentData)) {
+    bidData.regs = {
+      ext: {
+        gdpr: 1
+      }
+    };
+
+    if (consentData.consentString) {
+      bidData.user = {
+        ext: {
+          consent: consentData.consentString
+        }
+      };
+    }
+  }
+
   return bidData;
 }
 

@@ -326,6 +326,50 @@ describe('AppNexusAdapter', () => {
       expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
+
+    it('supports sending hybrid mobile app parameters', () => {
+      let appRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            app: {
+              id: 'B1O2W3M4AN.com.prebid.webview',
+              geo: {
+                lat: 40.0964439,
+                lng: -75.3009142
+              },
+              device_id: {
+                idfa: '4D12078D-3246-4DA4-AD5E-7610481E7AE', // Apple advertising identifier
+                aaid: '38400000-8cf0-11bd-b23e-10b96e40000d', // Android advertising identifier
+                md5udid: '5756ae9022b2ea1e47d84fead75220c8', // MD5 hash of the ANDROID_ID
+                sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF', // SHA1 hash of the ANDROID_ID
+                windowsadid: '750c6be243f1c4b5c9912b95a5742fc5' // Windows advertising identifier
+              }
+            }
+          }
+        }
+      );
+      const request = spec.buildRequests([appRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.app).to.exist;
+      expect(payload.app).to.deep.equal({
+        appid: 'B1O2W3M4AN.com.prebid.webview'
+      });
+      expect(payload.device.device_id).to.exist;
+      expect(payload.device.device_id).to.deep.equal({
+        aaid: '38400000-8cf0-11bd-b23e-10b96e40000d',
+        idfa: '4D12078D-3246-4DA4-AD5E-7610481E7AE',
+        md5udid: '5756ae9022b2ea1e47d84fead75220c8',
+        sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF',
+        windowsadid: '750c6be243f1c4b5c9912b95a5742fc5'
+      });
+      expect(payload.device.geo).to.exist;
+      expect(payload.device.geo).to.deep.equal({
+        lat: 40.0964439,
+        lng: -75.3009142
+      });
+    });
   })
 
   describe('interpretResponse', () => {

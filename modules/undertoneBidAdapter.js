@@ -70,7 +70,7 @@ export const spec = {
             creativeId: bidRes.adId,
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
-            ttl: bidRes.ttl,
+            ttl: bidRes.ttl || 360,
             ad: bidRes.ad
           };
           bids.push(bid);
