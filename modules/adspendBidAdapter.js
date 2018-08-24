@@ -26,9 +26,11 @@ export const spec = {
   },
 
   isBidRequestValid: function(bid) {
-    const conf = config.getConfig();
-    return !!(conf.currency &&
-      conf.currency.adServerCurrency &&
+    const cur = config.getConfig('currency');
+    const adServerCur = config.getConfig('currency.adServerCurrency');
+
+    return !!(cur &&
+      adServerCur &&
       bid.crumbs.pubcid &&
       utils.checkCookieSupport() &&
       utils.cookiesAreEnabled()
