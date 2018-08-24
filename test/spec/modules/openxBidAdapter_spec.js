@@ -839,6 +839,13 @@ describe('OpenxAdapter', () => {
       expect(dataParams.vwd).to.equal(640);
     });
 
+    it('should send a bc parameter', () => {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes);
+      const dataParams = request[0].data;
+
+      expect(dataParams.bc).to.have.string('hb_pb');
+    });
+
     describe('when using the video param', function () {
       let videoBidRequest;
 
