@@ -9,7 +9,8 @@ const BID_URL = '//rtb.com.ru/headerbidding-bid';
 const SYNC_URL = '//rtb.com.ru/headerbidding-sync?uid={UUID}';
 const COOKIE_NAME = 'hb-adspend-id';
 const UUID_LEN = 36;
-const COOKIE_EXPIRE = 600;
+
+const storage = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,7 +20,7 @@ export const spec = {
   onBidWon: function(winObj) {
     const requestId = winObj.requestId;
     const cpm = winObj.cpm;
-    const event = getWinEvent(requestId).replace(/\$\{AUCTION_PRICE\}/, cpm);
+    const event = storage[requestId].replace(/\$\{AUCTION_PRICE\}/, cpm);
 
     ajax(event, null);
   },
@@ -84,8 +85,7 @@ export const spec = {
     const respBid = resp.body.seatbid[0].bid[0];
     const requestId = resp.body.id;
 
-    document.cookie =
-      `on_win_event__${requestId}=${respBid.nurl}; max-age=${COOKIE_EXPIRE}`;
+    storage[requestId] = respBid.nurl
 
     const bid = {
       cpm: respBid.price,
@@ -132,16 +132,6 @@ const getUserID = () => {
 
   const j = i + COOKIE_NAME.length + 1;
   return document.cookie.substring(j, j + UUID_LEN);
-};
-
-const getWinEvent = (requestId) => {
-  const cookieName = `on_win_event__${requestId}`;
-  const event = document.cookie
-    .split(';')
-    .find(item => item.includes(cookieName))
-    .split(`${cookieName}=`)[1];
-
-  return event;
 };
 
 const getFormats = arr => arr.map((s) => {
