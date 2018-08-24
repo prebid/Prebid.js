@@ -90,7 +90,7 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    Jenkins job is moving files to appnexus cdn, pushing prebid.js to npm, purging cache and sending notification to slack.
    Move all the files from Appnexus CDN to jsDelivr and create bash script to do above tasks.
 
-7. Post Release Steps
+7. Post Release Version
    
    Update the version
    Manually edit Prebid's package.json to become "1.x.x-pre" (using the values for the next release). Then commit your changes.
@@ -98,6 +98,17 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    git commit -m "Increment pre version"
    git push
    ```
+   
+8. Create new release draft
+
+   Go to [github releases](https://github.com/prebid/Prebid.js/releases) and add a new draft for the next version of Prebid.js with the following template:
+```
+    ## 🚀New Features
+    
+    ## 🛠Maintenance
+    
+    ## 🐛Bug Fixes
+```
 
 ## Beta Releases
 
