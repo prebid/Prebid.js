@@ -103,11 +103,11 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
 
    Go to [github releases](https://github.com/prebid/Prebid.js/releases) and add a new draft for the next version of Prebid.js with the following template:
 ```
-    ## 🚀New Features
-    
-    ## 🛠Maintenance
-    
-    ## 🐛Bug Fixes
+ ## 🚀New Features
+ 
+ ## 🛠Maintenance
+ 
+ ## 🐛Bug Fixes
 ```
 
 ## Beta Releases
