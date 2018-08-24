@@ -65,12 +65,14 @@ describe('LockerDomeAdapter', () => {
       expect(bids).to.have.lengthOf(2);
 
       expect(bids[0].requestId).to.equal('2652ca954bce9');
+      expect(bids[0].adUnitCode).to.equal('ad-1');
       expect(bids[0].adUnitId).to.equal(10809467961050726);
       expect(bids[0].sizes).to.have.lengthOf(1);
       expect(bids[0].sizes[0][0]).to.equal(300);
       expect(bids[0].sizes[0][1]).to.equal(250);
 
       expect(bids[1].requestId).to.equal('4510f2834773ce');
+      expect(bids[1].adUnitCode).to.equal('ad-2');
       expect(bids[1].adUnitId).to.equal(9434769725128806);
       expect(bids[1].sizes).to.have.lengthOf(1);
       expect(bids[1].sizes[0][0]).to.equal(300);
