@@ -29,7 +29,8 @@
     "sonobiBidAdapter",
     "sovrnBidAdapter",
     "tripleliftBidAdapter",
-    "zeroIdBidAdapter",
     "trustxBidAdapter",
-    "unrulyBidAdapter"
+    "undertoneBidAdapter",
+    "unrulyBidAdapter",
+    "zeroIdBidAdapter"
 ]
