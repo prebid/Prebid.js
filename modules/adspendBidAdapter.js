@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { ajax } from 'src/ajax'
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
@@ -20,7 +21,7 @@ export const spec = {
     const cpm = winObj.cpm;
     const event = getWinEvent(requestId).replace(/\$\{AUCTION_PRICE\}/, cpm);
 
-    fetch(event);
+    ajax(event, null);
   },
 
   isBidRequestValid: function(bid) {
