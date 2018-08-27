@@ -9,8 +9,13 @@ const BID_URL = '//rtb.com.ru/headerbidding-bid';
 const SYNC_URL = '//rtb.com.ru/headerbidding-sync?uid={UUID}';
 const COOKIE_NAME = 'hb-adspend-id';
 const UUID_LEN = 36;
+const TTL = 10000;
+const RUB = 'RUB';
+const FIRST_PRICE = 1;
+const NET_REVENUE = true;
 
-const storage = {};
+const winEventURLs = {};
+const placementToBidMap = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -20,17 +25,20 @@ export const spec = {
   onBidWon: function(winObj) {
     const requestId = winObj.requestId;
     const cpm = winObj.cpm;
-    const event = storage[requestId].replace(/\$\{AUCTION_PRICE\}/, cpm);
+    const event = winEventURLs[requestId].replace(
+      /\$\{AUCTION_PRICE\}/,
+      cpm
+    );
 
     ajax(event, null);
   },
 
   isBidRequestValid: function(bid) {
-    const cur = config.getConfig('currency');
-    const adServerCur = config.getConfig('currency.adServerCurrency');
+    const adServerCur = config.getConfig('currency.adServerCurrency') === RUB;
 
-    return !!(cur &&
-      adServerCur &&
+    return !!(adServerCur &&
+      bid.params &&
+      bid.params.bidfloor &&
       bid.crumbs.pubcid &&
       utils.checkCookieSupport() &&
       utils.cookiesAreEnabled()
@@ -39,37 +47,45 @@ export const spec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     const req = bidRequests[Math.floor(Math.random() * bidRequests.length)];
+    const bidId = req.bidId;
+    const at = FIRST_PRICE;
+    const site = { id: req.crumbs.pubcid, domain: document.domain };
+    const device = { ua: navigator.userAgent, ip: '' };
+    const user = { id: getUserID() }
+    const cur = [ RUB ];
+    const tmax = bidderRequest.timeout;
 
-    const conf = config.getConfig();
-    const cur = conf.currency.adServerCurrency;
+    const imp = bidRequests.map(req => {
+      const params = req.params;
 
-    const bidfloor = req.params.bidfloor;
+      const tagId = params.tagId;
+      const id = params.placement;
+      const banner = { 'format': getFormats(req.sizes) };
+      const bidfloor = params.bidfloor !== undefined
+        ? Number(params.bidfloor) : 1;
+      const bidfloorcur = RUB;
+
+      placementToBidMap[id] = bidId;
+
+      return {
+        id,
+        tagId,
+        banner,
+        bidfloor,
+        bidfloorcur,
+        secure: 0,
+      };
+    });
 
     const payload = {
-      'id': req.bidId,
-      'site': {
-        'id': req.crumbs.pubcid,
-        'domain': document.domain
-      },
-      'device': {
-        'ua': navigator.userAgent,
-        'ip': ''
-      },
-      'user': { 'id': getUserID() },
-      'imp': [
-        {
-          'id': req.params.placement,
-          'tagId': req.params.tagId,
-          'banner': { 'format': getFormats(req.sizes) },
-          'bidfloor': bidfloor !== undefined ? Number(bidfloor) : 1,
-          'bidfloorcur': cur,
-          'secure': 0
-        }
-      ],
-      'cur': [
-        cur
-      ],
-      'tmax': bidderRequest.timeout
+      bidId,
+      at,
+      site,
+      device,
+      user,
+      imp,
+      cur,
+      tmax,
     };
 
     return {
@@ -80,29 +96,35 @@ export const spec = {
   },
 
   interpretResponse: function(resp, {bidderRequest}) {
-    const bids = [];
+    if (resp.body === '') return [];
 
-    if (resp.body === '') return bids;
+    const bids = resp.body.seatbid[0].bid.map(bid => {
+      const cpm = bid.price;
+      const impid = bid.impid;
+      const requestId = placementToBidMap[impid];
+      const width = bid.w;
+      const height = bid.h;
+      const creativeId = bid.adid;
+      const dealId = bid.dealid;
+      const currency = resp.body.cur;
+      const netRevenue = NET_REVENUE;
+      const ttl = TTL;
+      const ad = bid.adm;
 
-    const respBid = resp.body.seatbid[0].bid[0];
-    const requestId = resp.body.id;
+      return {
+        cpm,
+        requestId,
+        width,
+        height,
+        creativeId,
+        dealId,
+        currency,
+        netRevenue,
+        ttl,
+        ad,
+      };
+    });
 
-    storage[requestId] = respBid.nurl
-
-    const bid = {
-      cpm: respBid.price,
-      requestId: resp.body.id,
-      width: respBid.w,
-      height: respBid.h,
-      creativeId: respBid.adid,
-      dealId: respBid.dealid,
-      currency: resp.body.cur,
-      netRevenue: true,
-      ttl: 10000,
-      ad: respBid.adm,
-    };
-
-    bids.push(bid);
     return bids;
   },
 

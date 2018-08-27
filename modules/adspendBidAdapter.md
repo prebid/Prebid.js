@@ -16,7 +16,7 @@ AdSpend adapter supports only Banner at the moment. Video and Native will be add
 var adUnits = [
     // Banner
     {
-        code: 'any_code',
+        code: 'div-gpt-ad-1460505748561-0',
         mediaTypes: {
             banner: {
                 // You can choose one of them
@@ -25,7 +25,6 @@ var adUnits = [
                   [300, 600],
                   [240, 400],
                   [728, 90],
-                  [160, 600],
                 ]
             }
         },
@@ -33,7 +32,7 @@ var adUnits = [
             {
                 bidder: "adspend",
                 params: {
-                    // These params is required for getting test banner
+                    bidfloor: 1,
                     placement: 'test',
                     tagId: 'test-ad',
                 }
