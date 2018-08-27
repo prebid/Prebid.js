@@ -1,9 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter';
 import * as utils from 'src/utils';
+import {config} from 'src/config';
 
 describe('OneVideoBidAdapter', () => {
   let bidRequest;
+  let bidderRequest;
+  let mockConfig;
 
   beforeEach(() => {
     bidRequest = {
@@ -130,6 +133,35 @@ describe('OneVideoBidAdapter', () => {
         netRevenue: true
       };
       expect(bidResponse).to.deep.equal(o);
+    });
+  });
+
+  describe('when GDPR applies', function () {
+    beforeEach(function () {
+      bidderRequest = {
+        gdprConsent: {
+          consentString: 'test-gdpr-consent-string',
+          gdprApplies: true
+        }
+      };
+
+      mockConfig = {
+        consentManagement: {
+          cmpApi: 'iab',
+          timeout: 1111,
+          allowAuctionWithoutConsent: 'cancel'
+        }
+      };
+    });
+
+    it('should send a signal to specify that GDPR applies to this request', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.gdpr).to.equal(1);
+    });
+
+    it('should send the consent string', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
     });
   });
 });

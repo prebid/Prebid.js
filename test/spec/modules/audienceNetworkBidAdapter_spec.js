@@ -19,7 +19,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
-const debug = 'adapterver=1.0.0&platform=241394079772386&platver=$prebid.version$';
+const debug = 'adapterver=1.0.1&platform=241394079772386&platver=$prebid.version$';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
 describe('AudienceNetwork adapter', () => {
@@ -182,13 +182,17 @@ describe('AudienceNetwork adapter', () => {
       }]);
     });
 
-    it('can build URL for fullwidth 300x250 unit', () => {
+    it('can build URL for fullwidth 300x250 unit, overriding platform', () => {
+      const platform = 'test-platform';
+      const debugPlatform = debug.replace('241394079772386', platform);
+
       expect(buildRequests([{
         bidder,
         bidId: requestId,
         sizes: [[300, 250]],
         params: {
           placementId,
+          platform,
           format: 'fullwidth'
         }
       }])).to.deep.equal([{
@@ -197,7 +201,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
+        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debugPlatform}`
       }]);
     });
 
@@ -249,6 +253,7 @@ describe('AudienceNetwork adapter', () => {
         .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
         .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
         .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.ttl).to.equal(600);
       expect(bidResponse.creativeId).to.equal(placementId);
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.currency).to.equal('USD');
@@ -287,6 +292,7 @@ describe('AudienceNetwork adapter', () => {
         .to.contain(`placementid:'${placementId}',format:'300x250',bidid:'test-bid-id'`, 'ad missing parameters')
         .and.not.to.contain('getElementsByTagName("style")', 'ad should not contain native styles')
         .and.not.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad should not contain native container');
+      expect(bidResponse.ttl).to.equal(600);
       expect(bidResponse.creativeId).to.equal(placementId);
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.currency).to.equal('USD');
@@ -320,6 +326,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.requestId).to.equal(requestId);
       expect(bidResponse.width).to.equal(300);
       expect(bidResponse.height).to.equal(250);
+      expect(bidResponse.ttl).to.equal(600);
       expect(bidResponse.creativeId).to.equal(placementId);
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.currency).to.equal('USD');
@@ -364,6 +371,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseNative.width).to.equal(300);
       expect(bidResponseNative.height).to.equal(250);
       expect(bidResponseNative.ad).to.contain(`placementid:'${placementIdNative}',format:'native',bidid:'test-bid-id-native'`, 'ad missing parameters');
+      expect(bidResponseNative.ttl).to.equal(600);
       expect(bidResponseNative.creativeId).to.equal(placementIdNative);
       expect(bidResponseNative.netRevenue).to.equal(true);
       expect(bidResponseNative.currency).to.equal('USD');
@@ -377,6 +385,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseIab.width).to.equal(300);
       expect(bidResponseIab.height).to.equal(250);
       expect(bidResponseIab.ad).to.contain(`placementid:'${placementIdIab}',format:'300x250',bidid:'test-bid-id-iab'`, 'ad missing parameters');
+      expect(bidResponseIab.ttl).to.equal(600);
       expect(bidResponseIab.creativeId).to.equal(placementIdIab);
       expect(bidResponseIab.netRevenue).to.equal(true);
       expect(bidResponseIab.currency).to.equal('USD');
@@ -410,6 +419,7 @@ describe('AudienceNetwork adapter', () => {
 
       expect(bidResponse.cpm).to.equal(1.23);
       expect(bidResponse.requestId).to.equal(requestId);
+      expect(bidResponse.ttl).to.equal(3600);
       expect(bidResponse.mediaType).to.equal('video');
       expect(bidResponse.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=${pageUrl}&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${bidId}`);
       expect(bidResponse.width).to.equal(playerwidth);
@@ -450,6 +460,7 @@ describe('AudienceNetwork adapter', () => {
 
       expect(bidResponseVideo.cpm).to.equal(1.23);
       expect(bidResponseVideo.requestId).to.equal(requestId);
+      expect(bidResponseVideo.ttl).to.equal(3600);
       expect(bidResponseVideo.mediaType).to.equal('video');
       expect(bidResponseVideo.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${videoPlacementId}&pageurl=${pageUrl}&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${videoBidId}`);
       expect(bidResponseVideo.width).to.equal(playerwidth);
@@ -457,6 +468,7 @@ describe('AudienceNetwork adapter', () => {
 
       expect(bidResponseNative.cpm).to.equal(4.56);
       expect(bidResponseNative.requestId).to.equal(requestId);
+      expect(bidResponseNative.ttl).to.equal(600);
       expect(bidResponseNative.width).to.equal(300);
       expect(bidResponseNative.height).to.equal(250);
       expect(bidResponseNative.ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
@@ -490,6 +502,7 @@ describe('AudienceNetwork adapter', () => {
         .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
         .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
         .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.ttl).to.equal(600);
       expect(bidResponse.creativeId).to.equal(placementId);
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.currency).to.equal('USD');
