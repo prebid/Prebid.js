@@ -11,7 +11,8 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
-const AST_DEBUG = ['ast_debug', 'ast_dongle', 'ast_debug_member', 'ast_debug_timeout']
+const AST_DEBUG_URL = ['ast_debug', 'ast_dongle', 'ast_debug_member', 'ast_debug_timeout']
+const AST_DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout']
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -78,26 +79,36 @@ export const spec = {
       };
     }
 
-    const debugObjParams = getURLparams();
     let debugObj = {};
-    if (debugObjParams && debugObjParams.params) {
-      Object.keys(debugObjParams.params)
-        .filter(param => includes(AST_DEBUG, param))
+    const debugObjParams = find(bidRequests, hasDebug);
+    if (debugObjParams && debugObjParams.debug) {
+      Object.keys(debugObjParams.debug)
+        .filter(param => includes(AST_DEBUG_PARAMS, param))
         .forEach(param => {
-          debugObj['debug'] = debugObj['debug'] || {
-            'enabled': true
+          debugObj['debug'] = debugObj['debug'] || {};
+          debugObj.debug[param] = debugObjParams.debug[param]
+        });
+    }
+
+    const debugUrlParams = getURLparams();
+    if (debugUrlParams && debugUrlParams.params) {
+      Object.keys(debugUrlParams.params)
+        .filter(param => includes(AST_DEBUG_URL, param))
+        .forEach(param => {
+          debugObj['debug'] = debugObj['debug'] || {};
+          if (param == 'ast_debug') {
+            debugObj['debug']['enabled'] = (debugUrlParams.params[param] === 'true');
           }
-          if (param == 'ast_dongle'){
-            debugObj['debug']['dongle'] = debugObjParams.params[param];
+          if (param == 'ast_dongle') {
+            debugObj['debug']['dongle'] = debugUrlParams.params[param];
           }
-          if (param == 'ast_debug_member'){
-            debugObj['debug']['member_id'] = 958 ? parseInt(debugObjParams.params[param], 10) : 0;
+          if (param == 'ast_debug_member') {
+            debugObj['debug']['member_id'] = parseInt(debugUrlParams.params[param], 10);
           }
-          if (param == 'ast_debug_timeout'){
-            debugObj['debug']['debug_timeout'] = 3000 ? parseInt(debugObjParams.params[param], 10) : 0;
+          if (param == 'ast_debug_timeout') {
+            debugObj['debug']['debug_timeout'] = parseInt(debugUrlParams.params[param], 10);
           }
-        }
-      );
+        });
     }
 
     const memberIdBid = find(bidRequests, hasMemberId);
@@ -176,12 +187,12 @@ export const spec = {
       let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
       let debugText = debugHeader + serverResponse.debug.debug_info
       debugText = debugText
-        .replace(/(?:<td>|<th>)*(<br>)(\n)/gm,'\n\t\t') // Table <br>
-        .replace(/(<td>|<th>)/gm,'\t') // Tables
-        .replace(/^<br>/gm,'') // Remove leading <br>
-        .replace(/(<br>\n|<br>)/gm,'\n') // <br>
-        .replace(/<h1>(.*)<\/h1>/gm,'\n\n===== $1 =====\n\n') // Header H1
-        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm,'\n\n*** $1 ***\n\n') // Headers
+        .replace(/(<td>|<th>)/gm, '\t') // Tables
+        .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
+        .replace(/^<br>/gm, '') // Remove leading <br>
+        .replace(/(<br>\n|<br>)/gm, '\n') // <br>
+        .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
+        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
         .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
       utils.logMessage(debugText);
     }
@@ -461,9 +472,13 @@ function hasAppId(bid) {
   return !!bid.params.app
 }
 
+function hasDebug(bid) {
+  return !!bid.debug
+}
+
 function getURLparams() {
   let obj = {};
-  if (utils.getTopWindowLocation() && utils.getTopWindowLocation().search){
+  if (utils.getTopWindowLocation() && utils.getTopWindowLocation().search) {
     obj['params'] = {};
     utils.getTopWindowLocation().search.substr(1).split('&').forEach(keyvalue => {
       let key = keyvalue.split('=')[0];
