@@ -207,11 +207,6 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
-    it('should return a properly formatted request with render', () => {
-      bidRequest[0].params.render = 'safeframe'
-      const bidRequests = spec.buildRequests(bidRequest)
-      expect(bidRequests.data.render).to.equal('safeframe')
-    })
 
     it('should return null if there is nothing to bid on', () => {
       const bidRequests = spec.buildRequests([{params: {}}])
