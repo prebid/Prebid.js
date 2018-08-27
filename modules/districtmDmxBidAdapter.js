@@ -76,9 +76,9 @@ export const spec = {
       dmxRequest.regs = {};
       dmxRequest.regs.ext = {};
       dmxRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
-      if (dmxRequest.regs.ext.gdpr) {
-        dmxRequest.regs.ext.consent = bidderRequest.gdprConsent.consentString;
-      }
+      dmxRequest.user = {};
+      dmxRequest.user.ext = {};
+      dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
     }
     let tosendtags = bidRequest.map(dmx => {
       var obj = {};
