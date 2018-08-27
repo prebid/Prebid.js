@@ -91,7 +91,7 @@ export const spec = {
         h: dmx.sizes[0][1] || 0,
         format: dmx.sizes.map(s => {
           return {w: s[0], h: s[1]};
-        })
+        }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
       };
       return obj;
     });
