@@ -1,5 +1,7 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import {
+  registerBidder
+} from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
@@ -71,25 +73,25 @@ function _parseAdSlot(bid) {
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
-  var splits = slot.split(':');
+  try{
+    var splits = slot.split('@');
 
-  slot = splits[0];
-  if (splits.length == 2) {
-    bid.params.adUnitIndex = splits[1];
+    slot = splits[0];
+    if (splits.length == 2) {
+      bid.params.adUnitIndex = splits[1].split(":").length == 2 ? splits[1].split(":")[1] : "0";
+    }
+    splits = splits[1].split(":")[0].split("x");
+    if (splits.length != 2) {
+      utils.logWarn('AdSlot Error: adSlot not in required format');
+      return;
+    }
+    bid.params.width = parseInt(splits[0]);
+    bid.params.height = parseInt(splits[1]);
+    bid.params.adUnit = slot;
   }
-  splits = slot.split('@');
-  if (splits.length != 2) {
+  catch(e){
     utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
   }
-  bid.params.adUnit = splits[0];
-  splits = splits[1].split('x');
-  if (splits.length != 2) {
-    utils.logWarn('AdSlot Error: adSlot not in required format');
-    return;
-  }
-  bid.params.width = parseInt(splits[0]);
-  bid.params.height = parseInt(splits[1]);
 }
 
 function _initConf() {
@@ -174,11 +176,11 @@ export const spec = {
   code: BIDDER_CODE,
 
   /**
-  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
@@ -195,11 +197,11 @@ export const spec = {
   },
 
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
@@ -260,40 +262,57 @@ export const spec = {
   },
 
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {*} response A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} response A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (response, request) => {
     const bidResponses = [];
     try {
+      let requestData = JSON.parse(request.data);
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        requestData.imp.forEach(impData => {
+          bidResponses.push({
+            requestId: impData.id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: CURRENCY,
+            referrer: utils.getTopWindowUrl()
+          })
+        });
+      }
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
-          utils.isArray(seatbidder.bid) &&
-          seatbidder.bid.forEach(bid => {
-            let newBid = {
-              requestId: bid.impid,
-              cpm: (parseFloat(bid.price) || 0).toFixed(2),
-              width: bid.w,
-              height: bid.h,
-              creativeId: bid.crid || bid.id,
-              dealId: bid.dealid,
-              currency: CURRENCY,
-              netRevenue: NET_REVENUE,
-              ttl: 300,
-              referrer: utils.getTopWindowUrl(),
-              ad: bid.adm
-            };
+            utils.isArray(seatbidder.bid) &&
+            seatbidder.bid.forEach(bid => {
+              bidResponses.forEach(br => {
+                if (br.requestId == bid.impid) {
+                  br.requestId = bid.impid;
+                  br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
+                  br.width = bid.w;
+                  br.height = bid.h;
+                  br.creativeId = bid.crid || bid.id;
+                  br.dealId = bid.dealid;
+                  br.currency = CURRENCY;
+                  br.netRevenue = NET_REVENUE;
+                  br.ttl = 300;
+                  br.referrer = utils.getTopWindowUrl();
+                  br.ad = bid.adm;
 
-            if (bid.ext && bid.ext.deal_channel) {
-              newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-            }
-
-            bidResponses.push(newBid);
-          });
+                  if (bid.ext && bid.ext.deal_channel) {
+                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+                  }
+                }
+              })
+            });
         });
       }
     } catch (error) {
@@ -303,8 +322,8 @@ export const spec = {
   },
 
   /**
-  * Register User Sync.
-  */
+   * Register User Sync.
+   */
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
     let syncurl = USYNCURL + publisherId;
 
