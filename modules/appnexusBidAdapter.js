@@ -173,17 +173,17 @@ export const spec = {
     }
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
-      let title = 'AppNexus Debug Auction for Prebid'
-      let debugHTML = '<html><head><title>' +title+ '</title></head><body><h2>' + title + '</h2>' + serverResponse.debug.debug_info + '<style>body {margin:40px;}</style></body></html>';
-      debugHTML = debugHTML.replace(/(.*)([^>])$/gm,"$1$2<br>").replace(/(\t)/gm, '<span style="margin-left:20px"></span>'); // Format newlines and tabs
-      let debugStream = debugHTML.split('\n');
-
-      utils.logMessage('AppNexus debug auction for prebid was opened in new tab');
-      let debugWindow = window.open();
-      for (var ln in debugStream){
-        debugWindow.document.write(debugStream[ln]);
-      }
-      setTimeout(function() { debugWindow.document.close() }, 1000); // Close the debugStream
+      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
+      let debugText = debugHeader + serverResponse.debug.debug_info
+      debugText = debugText
+        .replace(/(?:<td>|<th>)*(<br>)(\n)/gm,'\n\t\t') // Table <br>
+        .replace(/(<td>|<th>)/gm,'\t') // Tables
+        .replace(/^<br>/gm,'') // Remove leading <br>
+        .replace(/(<br>\n|<br>)/gm,'\n') // <br>
+        .replace(/<h1>(.*)<\/h1>/gm,'\n\n===== $1 =====\n\n') // Header H1
+        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm,'\n\n*** $1 ***\n\n') // Headers
+        .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
+      utils.logMessage(debugText);
     }
 
     return bids;
