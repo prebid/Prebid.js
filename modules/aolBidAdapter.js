@@ -407,11 +407,10 @@ export const spec = {
     let formattedPixels = pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
 
     return '<script>var w=window,prebid;' +
-      'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
+      'try{for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
       'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
-      'try{prebid.aolGlobals.pixelsDropped=true;' + formattedPixels + 'break;}' +
-      'catch(e){continue;}' +
-      '}}</script>';
+      'prebid.aolGlobals.pixelsDropped=true;' + formattedPixels + 'break;}' +
+      '}}catch(e){' + formattedPixels + '}</script>';
   },
   isOneMobileBidder: _isOneMobileBidder,
   isSecureProtocol() {
