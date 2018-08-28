@@ -769,6 +769,7 @@ describe('Utils', function () {
       sandbox.stub(utils, 'getWindowTop').returns(
         { top: 'is not same as self' }
       );
+      sandbox.stub(utils, 'getTopFrameReferrer').returns(null);
       sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
