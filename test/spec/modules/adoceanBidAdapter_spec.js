@@ -36,6 +36,7 @@ describe('AdoceanAdapter', () => {
       bid.params = {
         'masterId': 0
       };
+
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
