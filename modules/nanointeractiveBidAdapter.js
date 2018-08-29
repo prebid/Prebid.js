@@ -12,6 +12,7 @@ export const CATEGORY = 'category';
 export const CATEGORY_NAME = 'categoryName';
 export const SUB_ID = 'subId';
 export const REF = 'ref';
+export const LOCATION = 'loc';
 
 export const spec = {
 
@@ -52,6 +53,7 @@ function createSingleBidRequest (bid) {
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
     cors: utils.getOrigin(),
+    [LOCATION]: createLocationParam(),
   };
 }
 
@@ -83,6 +85,10 @@ function createSubIdParam (bid) {
 
 function createRefParam (bid) {
   return bid.params[REF] ? null : utils.getTopWindowReferrer() || null;
+}
+
+function createLocationParam () {
+  return utils.getTopWindowLocation().href;
 }
 
 function isEngineResponseValid (response) {

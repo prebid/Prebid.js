@@ -1809,12 +1809,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getHighestCpm', () => {
-    // it('returns an array of winning bid objects for each adUnit', () => {
-    //   const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
-    //   expect(highestCpmBids.length).to.equal(2);
-    //   expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[1]);
-    //   expect(highestCpmBids[1]).to.deep.equal(auctionManager.getBidsReceived()[2]);
-    // });
+    after(() => {
+      resetAuction();
+    });
 
     it('returns an array containing the highest bid object for the given adUnitCode', () => {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
@@ -1834,7 +1831,23 @@ describe('Unit: Prebid Module', function () {
 
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
       expect(highestCpmBids.length).to.equal(0);
-      resetAuction();
+    });
+
+    it('should not return rendered bid', function() {
+      let _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 12;
+      _bidsReceived[0].status = 'rendered';
+      _bidsReceived[1].cpm = 9;
+      _bidsReceived[2].cpm = 11;
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[2]);
     });
   });
 
