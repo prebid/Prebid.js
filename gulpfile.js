@@ -39,7 +39,7 @@ var port = 9999;
 // Tasks
 gulp.task('default', ['webpack']);
 
-gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
+gulp.task('serve', ['build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
@@ -49,8 +49,8 @@ gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
-      read: false
-    })
+    read: false
+  })
     .pipe(clean());
 });
 
@@ -78,13 +78,13 @@ var explicitModules = [
 
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules(),
-      allModules = helpers.getModuleNames(modules);
+    allModules = helpers.getModuleNames(modules);
 
-  if(modules.length === 0) {
+  if (modules.length === 0) {
     modules = allModules.filter(module => !explicitModules.includes(module));
   } else {
     var diff = _.difference(modules, allModules);
-    if(diff.length !== 0) {
+    if (diff.length !== 0) {
       throw new gutil.PluginError({
         plugin: 'bundle',
         message: 'invalid modules: ' + diff.join(', ')
@@ -106,13 +106,13 @@ function bundle(dev, moduleArr) {
   gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
-      entries
-    )
+    entries
+  )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-        global: prebid.globalVarName
-      }
+      global: prebid.globalVarName
+    }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
@@ -186,7 +186,7 @@ gulp.task('webpack', ['clean'], function () {
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
-gulp.task('test', ['clean'], function (done) {
+gulp.task('test', ['clean', 'lint'], function (done) {
   var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
   var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
@@ -229,7 +229,7 @@ gulp.task('watch', function () {
     'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['lint', 'build-bundle-dev', 'test']);
+  ], ['build-bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
@@ -264,7 +264,7 @@ gulp.task('docs', ['clean-docs'], function () {
 
 gulp.task('e2etest', ['devpack', 'webpack'], function() {
   var cmdQueue = [];
-  if(argv.browserstack) {
+  if (argv.browserstack) {
     var browsers = require('./browsers.json');
     delete browsers['bs_ie_9_windows_7'];
 
@@ -276,11 +276,11 @@ gulp.task('e2etest', ['devpack', 'webpack'], function() {
 
     var startWith = 'bs';
 
-    Object.keys(browsers).filter(function(v){
+    Object.keys(browsers).filter(function(v) {
       return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
-    }).map(function(v,i,arr) {
-      var newArr = (i%2 === 0) ? arr.slice(i,i+2) : null;
-      if(newArr) {
+    }).map(function(v, i, arr) {
+      var newArr = (i % 2 === 0) ? arr.slice(i, i + 2) : null;
+      if (newArr) {
         var cmd = 'nightwatch --env ' + newArr.join(',') + cmdStr;
         cmdQueue.push(cmd);
       }

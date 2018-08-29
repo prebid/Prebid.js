@@ -10,6 +10,7 @@ const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -59,6 +60,23 @@ export const spec = {
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
+    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    let appDeviceObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    }
+
+    const appIdObjBid = find(bidRequests, hasAppId);
+    let appIdObj;
+    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {
+        appid: appIdObjBid.params.app.id
+      };
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -72,6 +90,13 @@ export const spec = {
     };
     if (member > 0) {
       payload.member_id = member;
+    }
+
+    if (appDeviceObjBid) {
+      payload.device = appDeviceObj
+    }
+    if (appIdObjBid) {
+      payload.app = appIdObj;
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -129,6 +154,30 @@ export const spec = {
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
+  },
+
+  transformBidParams: function(params, isOpenRtb) {
+    params = utils.convertTypes({
+      'member': 'string',
+      'invCode': 'string',
+      'placementId': 'number',
+      'keywords': utils.transformBidderParamKeywords
+    }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 }
 
@@ -355,6 +404,19 @@ function hasUserInfo(bid) {
 
 function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
+}
+
+function hasAppDeviceInfo(bid) {
+  if (bid.params) {
+    return !!bid.params.app
+  }
+}
+
+function hasAppId(bid) {
+  if (bid.params && bid.params.app) {
+    return !!bid.params.app.id
+  }
+  return !!bid.params.app
 }
 
 function getRtbBid(tag) {
