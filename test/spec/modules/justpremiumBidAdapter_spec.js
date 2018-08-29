@@ -4,6 +4,7 @@ import { spec } from 'modules/justpremiumBidAdapter'
 describe('justpremium adapter', () => {
   let adUnits = [
     {
+      adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
       params: {
         zone: 28313,
@@ -11,6 +12,7 @@ describe('justpremium adapter', () => {
       }
     },
     {
+      adUnitCode: 'div-gpt-ad-1471513102552-2',
       bidder: 'justpremium',
       params: {
         zone: 32831,
@@ -51,7 +53,7 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.1')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.2')
     })
   })
 
@@ -126,6 +128,34 @@ describe('justpremium adapter', () => {
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
       expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
+    })
+  })
+
+  describe('onTimeout', () => {
+    it('onTimeout', (done) => {
+      spec.onTimeout([{
+        'bidId': '25cd3ec3fd6ed7',
+        'bidder': 'justpremium',
+        'adUnitCode': 'div-gpt-ad-1471513102552-1',
+        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
+        'params': [{
+          'adType': 'iab',
+          'zone': 21521
+        }],
+        'timeout': 1
+      }, {
+        'bidId': '3b51df1f254e32',
+        'bidder': 'justpremium',
+        'adUnitCode': 'div-gpt-ad-1471513102552-3',
+        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
+        'params': [{
+          'adType': 'iab',
+          'zone': 21521
+        }],
+        'timeout': 1
+      }])
+
+      done()
     })
   })
 })

@@ -50,13 +50,19 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'foo'
           },
-          placementCode: 1
+          bidId: 1
         },
         {
           params: {
             placementId: 'bar'
           },
-          placementCode: 2
+          bidId: 2
+        },
+        {
+          params: {
+            placementId: 'bar'
+          },
+          bidId: 3
         }
       ];
     });
@@ -173,10 +179,11 @@ describe('kargo adapter tests', function () {
           floor: 0,
           ceil: 20
         },
-        adSlotIDs: [
-          'foo',
-          'bar'
-        ],
+        bidIDs: {
+          1: 'foo',
+          2: 'bar',
+          3: 'bar'
+        },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
           clientID: '2410d8f2-c111-4811-88a5-7b5e190e475f',
@@ -235,7 +242,7 @@ describe('kargo adapter tests', function () {
       var request = spec.buildRequests(bids, {timeout: 200, foo: 'bar'});
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));
       expect(request.data.slice(0, 5)).to.equal('json=');
-      expect(request.url).to.equal('https://krk.kargo.com/api/v1/bid');
+      expect(request.url).to.equal('https://krk.kargo.com/api/v2/bid');
       expect(request.method).to.equal('GET');
       expect(request.currency).to.equal('USD');
       expect(request.timeout).to.equal(200);
@@ -306,13 +313,22 @@ describe('kargo adapter tests', function () {
   describe('response handler', function() {
     it('handles bid responses', function() {
       var resp = spec.interpretResponse({body: {
-        foo: {
+        1: {
+          id: 'foo',
           cpm: 3,
           adm: '<div id="1"></div>',
           width: 320,
           height: 50
         },
-        bar: {
+        2: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<div id="2"></div>',
+          width: 300,
+          height: 250
+        },
+        3: {
+          id: 'bar',
           cpm: 2.5,
           adm: '<div id="2"></div>',
           width: 300,
@@ -321,19 +337,24 @@ describe('kargo adapter tests', function () {
       }}, {
         currency: 'USD',
         bids: [{
-          bidId: 'fake bid id 1',
+          bidId: 1,
           params: {
             placementId: 'foo'
           }
         }, {
-          bidId: 'fake bid id 2',
+          bidId: 2,
+          params: {
+            placementId: 'bar'
+          }
+        }, {
+          bidId: 3,
           params: {
             placementId: 'bar'
           }
         }]
       });
       var expectation = [{
-        requestId: 'fake bid id 1',
+        requestId: '1',
         cpm: 3,
         width: 320,
         height: 50,
@@ -343,7 +364,17 @@ describe('kargo adapter tests', function () {
         netRevenue: true,
         currency: 'USD'
       }, {
-        requestId: 'fake bid id 2',
+        requestId: '2',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        ad: '<div id="2"></div>',
+        ttl: 300,
+        creativeId: 'bar',
+        netRevenue: true,
+        currency: 'USD'
+      }, {
+        requestId: '3',
         cpm: 2.5,
         width: 300,
         height: 250,
