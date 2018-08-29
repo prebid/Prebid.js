@@ -91,36 +91,36 @@ function _parseAdSlot(bid) {
   bid.params.width = 0;
   bid.params.height = 0;
   var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
+
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
-  var splits = slot.split(':');
-
-  slot = splits[0];
-  if (splits.length == 2) {
-    bid.params.adUnitIndex = splits[1];
-  }
-  // check if size is mentioned in sizes array. in that case do not check for @ in adslot
-  splits = slot.split('@');
-  if (splits.length != 2) {
-    if (!(sizesArrayExists)) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
+  try {
+    var splits = slot.split('@');
+    // check if size is mentioned in sizes array. in that case do not check for @ in adslot
+    slot = splits[0];
+    if (splits.length == 2) {
+      bid.params.adUnitIndex = splits[1].split(':').length == 2 ? splits[1].split(':')[1] : '0';
+      splits = splits[1].split(':')[0].split('x');
+      if (splits.length != 2) {
+        utils.logWarn('AdSlot Error: adSlot not in required format');
+        return;
+      }
+      bid.params.width = parseInt(splits[0]);
+      bid.params.height = parseInt(splits[1]);
+      delete bid.sizes;
+    } else {
+      if (!(sizesArrayExists)) {
+        utils.logWarn('AdSlot Error: adSlot not in required format');
+        return;
+      }
+      bid.params.width = parseInt(bid.sizes[0][0]);
+      bid.params.height = parseInt(bid.sizes[0][1]);
+      bid.params.adUnitIndex = slot.split(':').length > 1 ? slot.split(':')[slot.split(':').length - 1] : '0';
     }
-  }
-  bid.params.adUnit = splits[0];
-  if (splits.length > 1) { // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
-    if (splits.length != 2) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
-    }
-    bid.params.width = parseInt(splits[0]);
-    bid.params.height = parseInt(splits[1]);
-    delete bid.sizes;
-  } else if (sizesArrayExists) {
-    bid.params.width = parseInt(bid.sizes[0][0]);
-    bid.params.height = parseInt(bid.sizes[0][1]);
+    bid.params.adUnit = slot;
+  } catch (e) {
+    utils.logWarn('AdSlot Error: adSlot not in required format');
   }
 }
 
@@ -279,11 +279,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
-  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
@@ -307,11 +307,11 @@ export const spec = {
   },
 
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
@@ -420,52 +420,69 @@ export const spec = {
   },
 
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {*} response A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} response A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     try {
+      let requestData = JSON.parse(request.data);
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        requestData.imp.forEach(impData => {
+          bidResponses.push({
+            requestId: impData.id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: respCur,
+            referrer: utils.getTopWindowUrl()
+          })
+        });
+      }
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
-        respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
+          respCur = response.body.cur || respCur;
           seatbidder.bid &&
-          utils.isArray(seatbidder.bid) &&
-          seatbidder.bid.forEach(bid => {
-            let newBid = {
-              requestId: bid.impid,
-              cpm: (parseFloat(bid.price) || 0).toFixed(2),
-              width: bid.w,
-              height: bid.h,
-              creativeId: bid.crid || bid.id,
-              dealId: bid.dealid,
-              currency: respCur,
-              netRevenue: NET_REVENUE,
-              ttl: 300,
-              referrer: utils.getTopWindowUrl(),
-              ad: bid.adm
-            };
-            let parsedRequest = JSON.parse(request.data);
-            if (parsedRequest.imp && parsedRequest.imp.length > 0) {
-              parsedRequest.imp.forEach(req => {
-                if (bid.impid === req.id && req.hasOwnProperty('video')) {
-                  newBid.mediaType = 'video';
-                  newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                  newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                  newBid.vastXml = bid.adm;
+            utils.isArray(seatbidder.bid) &&
+            seatbidder.bid.forEach(bid => {
+              bidResponses.forEach(br => {
+                if (br.requestId == bid.impid) {
+                  br.requestId = bid.impid;
+                  br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
+                  br.width = bid.w;
+                  br.height = bid.h;
+                  br.creativeId = bid.crid || bid.id;
+                  br.dealId = bid.dealid;
+                  br.currency = respCur;
+                  br.netRevenue = NET_REVENUE;
+                  br.ttl = 300;
+                  br.referrer = utils.getTopWindowUrl();
+                  br.ad = bid.adm;
+                  let parsedRequest = JSON.parse(request.data);
+                  if (parsedRequest.imp && parsedRequest.imp.length > 0) {
+                    parsedRequest.imp.forEach(req => {
+                      if (bid.impid === req.id && req.hasOwnProperty('video')) {
+                        br.mediaType = 'video';
+                        br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                        br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                        br.vastXml = bid.adm;
+                      }
+                    });
+                  }
+                  if (bid.ext && bid.ext.deal_channel) {
+                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+                  }
                 }
-              });
-            }
-            if (bid.ext && bid.ext.deal_channel) {
-              newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-            }
-
-            bidResponses.push(newBid);
-          });
+              })
+            });
         });
       }
     } catch (error) {
@@ -475,8 +492,8 @@ export const spec = {
   },
 
   /**
-  * Register User Sync.
-  */
+   * Register User Sync.
+   */
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
     let syncurl = USYNCURL + publisherId;
 

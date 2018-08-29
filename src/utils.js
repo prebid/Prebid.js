@@ -250,6 +250,16 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowHostName = function () {
+  let hostname;
+  try {
+    hostname = this.getTopWindowLocation().hostname;
+  } catch (e) {
+    hostname = '';
+  }
+  return hostname;
+};
+
 exports.getTopWindowReferrer = function() {
   try {
     return window.top.document.referrer;
