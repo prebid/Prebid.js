@@ -4,7 +4,7 @@ import { config } from 'src/config';
 const utils = require('../../src/utils');
 let { newUserSync } = require('../../src/userSync');
 
-describe('user sync', () => {
+describe('user sync', function () {
   let triggerPixelStub;
   let logWarnStub;
   let timeoutStub;

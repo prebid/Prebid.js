@@ -1,8 +1,8 @@
 import {format, parse} from '../../src/url';
 import { expect } from 'chai';
 
-describe('helpers.url', () => {
-  describe('parse()', () => {
+describe('helpers.url', function () {
+  describe('parse()', function () {
     let parsed;
 
     beforeEach(() => {
@@ -43,7 +43,7 @@ describe('helpers.url', () => {
     });
   });
 
-  describe('parse(url, {noDecodeWholeURL: true})', () => {
+  describe('parse(url, {noDecodeWholeURL: true})', function () {
     let parsed;
 
     beforeEach(() => {
@@ -60,7 +60,7 @@ describe('helpers.url', () => {
     });
   });
 
-  describe('format()', () => {
+  describe('format()', function () {
     it('formats an object in to a URL', () => {
       expect(format({
         protocol: 'http',
@@ -79,7 +79,7 @@ describe('helpers.url', () => {
     });
   });
 
-  describe('parse(url, {decodeSearchAsString: true})', () => {
+  describe('parse(url, {decodeSearchAsString: true})', function () {
     let parsed;
 
     beforeEach(() => {

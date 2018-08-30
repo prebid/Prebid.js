@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/a4gBidAdapter';
 
-describe('a4gAdapterTests', () => {
-  describe('bidRequestValidity', () => {
+describe('a4gAdapterTests', function () {
+  describe('bidRequestValidity', function () {
     it('bidRequest with zoneId and deliveryUrl params', () => {
       expect(spec.isBidRequestValid({
         bidder: 'a4g',
@@ -32,7 +32,7 @@ describe('a4gAdapterTests', () => {
     });
   });
 
-  describe('bidRequest', () => {
+  describe('bidRequest', function () {
     const bidRequests = [{
       'bidder': 'a4g',
       'bidId': '51ef8751f9aead',
@@ -99,7 +99,7 @@ describe('a4gAdapterTests', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequest = [{
       'bidder': 'a4g',
       'bidId': '51ef8751f9aead',

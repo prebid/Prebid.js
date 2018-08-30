@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import * as url from 'src/url'
 import { spec } from 'modules/adxcgBidAdapter'
 
-describe('AdxcgAdapter', () => {
-  describe('isBidRequestValid', () => {
+describe('AdxcgAdapter', function () {
+  describe('isBidRequestValid', function () {
     let bidBanner = {
       'bidder': 'adxcg',
       'params': {
@@ -63,7 +63,7 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('request function http', () => {
+  describe('request function http', function () {
     let bid = {
       'bidder': 'adxcg',
       'params': {
@@ -96,7 +96,7 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('gdpr compliance', () => {
+  describe('gdpr compliance', function () {
     let bid = {
       'bidder': 'adxcg',
       'params': {
@@ -133,7 +133,7 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('response handler', () => {
+  describe('response handler', function () {
     let BIDDER_REQUEST = {
       'bidder': 'adxcg',
       'params': {
@@ -321,7 +321,7 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncoptionsIframe = {
       'iframeEnabled': 'true'
     }

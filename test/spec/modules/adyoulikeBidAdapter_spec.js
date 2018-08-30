@@ -4,7 +4,7 @@ import { parse } from '../../../src/url';
 import { spec } from 'modules/adyoulikeBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('Adyoulike Adapter', () => {
+describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'http://canonical.url/?t=%26';
   const defaultDC = 'hb-api';
   const bidderCode = 'adyoulike';
@@ -136,13 +136,13 @@ describe('Adyoulike Adapter', () => {
 
   let getEndpoint = (dc = defaultDC) => `http://${dc}.omnitagjs.com/hb-api/prebid`;
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
@@ -175,7 +175,7 @@ describe('Adyoulike Adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let canonicalQuery;
 
     beforeEach(() => {
@@ -269,7 +269,7 @@ describe('Adyoulike Adapter', () => {
     });
   });
   //
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
 
     beforeEach(() => {

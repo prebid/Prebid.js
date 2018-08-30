@@ -3,7 +3,7 @@ import { spec } from 'modules/ebdrBidAdapter';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
-describe('ebdrBidAdapter', () => {
+describe('ebdrBidAdapter', function () {
   let bidRequests;
 
   beforeEach(() => {
@@ -51,7 +51,7 @@ describe('ebdrBidAdapter', () => {
     ];
   });
 
-  describe('spec.isBidRequestValid', () => {
+  describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed', () => {
       const bidRequest = bidRequests[0];
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
@@ -86,8 +86,8 @@ describe('ebdrBidAdapter', () => {
     });
   });
 
-  describe('spec.buildRequests', () => {
-    describe('for banner bids', () => {
+  describe('spec.buildRequests', function () {
+    describe('for banner bids', function () {
       it('must handle an empty bid size', () => {
         bidRequests[0].mediaTypes = { banner: {} };
         const requests = spec.buildRequests(bidRequests);
@@ -112,7 +112,7 @@ describe('ebdrBidAdapter', () => {
         expect(requests.bids['2c5e8a1a84522d']).to.deep.equal(data['2c5e8a1a84522d']);
       });
     });
-    describe('for video bids', () => {
+    describe('for video bids', function () {
       it('must handle an empty bid size', () => {
         bidRequests[1].mediaTypes = { video: {} };
         const requests = spec.buildRequests(bidRequests);
@@ -129,8 +129,8 @@ describe('ebdrBidAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
-    describe('for video bids', () => {
+  describe('spec.interpretResponse', function () {
+    describe('for video bids', function () {
       it('should return no bids if the response is not valid', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -165,7 +165,7 @@ describe('ebdrBidAdapter', () => {
       });
     });
 
-    describe('for banner bids', () => {
+    describe('for banner bids', function () {
       it('should return no bids if the response is not valid', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
@@ -206,7 +206,7 @@ describe('ebdrBidAdapter', () => {
       });
     });
   });
-  describe('spec.getUserSyncs', () => {
+  describe('spec.getUserSyncs', function () {
     let syncOptions
     beforeEach(() => {
       syncOptions = {

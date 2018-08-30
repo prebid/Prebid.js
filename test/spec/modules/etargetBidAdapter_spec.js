@@ -3,10 +3,10 @@ import * as url from 'src/url';
 import {spec} from 'modules/etargetBidAdapter';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-describe('etarget adapter', () => {
+describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'etarget',
       'params': {
@@ -20,7 +20,7 @@ describe('etarget adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
@@ -94,7 +94,7 @@ describe('etarget adapter', () => {
       assert.deepEqual(resultBids, bids[0]);
     });
 
-    describe('gdpr', () => {
+    describe('gdpr', function () {
       it('should send GDPR Consent data to etarget if gdprApplies', () => {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
@@ -131,7 +131,7 @@ describe('etarget adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should respond with empty response when there is empty serverResponse', () => {
       let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
@@ -219,7 +219,7 @@ describe('etarget adapter', () => {
       };
     });
 
-    describe('verifySizes', () => {
+    describe('verifySizes', function () {
       it('should respond with empty response when sizes doesn\'t match', () => {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 100;

@@ -72,22 +72,22 @@ const mock = {
   }
 };
 
-describe('FyberAdapter', () => {
+describe('FyberAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('callBids exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('Verifies bidder code', () => {
+  describe('Verifies bidder code', function () {
     it('Verifies bidder code', () => {
       expect(spec.code).to.equal('fyber');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       const bid = Object.assign({}, mock.bid);
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -106,7 +106,7 @@ describe('FyberAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidsRequest = Object.assign([], mock.bidsRequest);
     const requests = spec.buildRequests(bidsRequest);
 
@@ -125,7 +125,7 @@ describe('FyberAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = Object.assign([], mock.bidsRequest)[0];
     const validResponse = Object.assign({}, mock.validResponse);
     const validResult = spec.interpretResponse(validResponse, request);

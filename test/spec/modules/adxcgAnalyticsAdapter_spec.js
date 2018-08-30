@@ -5,7 +5,7 @@ let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('adxcg analytics adapter', () => {
+describe('adxcg analytics adapter', function () {
   let xhr;
   let requests;
 
@@ -21,7 +21,7 @@ describe('adxcg analytics adapter', () => {
     events.getEvents.restore();
   });
 
-  describe('track', () => {
+  describe('track', function () {
     let initOptions = {
       publisherId: '42'
     };

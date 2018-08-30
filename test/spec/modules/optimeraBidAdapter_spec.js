@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/optimeraBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('OptimeraAdapter', () => {
+describe('OptimeraAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   })
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'optimera',
       'params': {
@@ -29,7 +29,7 @@ describe('OptimeraAdapter', () => {
     });
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bid = [
       {
         'adUnitCode': 'div-0',
@@ -51,7 +51,7 @@ describe('OptimeraAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse = {};
     serverResponse.body = JSON.parse('{"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"]}');
     var bidRequest = {

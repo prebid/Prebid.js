@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/huddledmassesBidAdapter';
 
-describe('HuddledmassesAdapter', () => {
+describe('HuddledmassesAdapter', function () {
   let bid = {
     bidId: '2dd581a2b6281d',
     bidder: 'huddledmasses',
@@ -15,7 +15,7 @@ describe('HuddledmassesAdapter', () => {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Should return true when placement_id can be cast to a number, and when at least one of the sizes passed is allowed', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -29,7 +29,7 @@ describe('HuddledmassesAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', () => {
       expect(serverRequest).to.exist;
@@ -68,7 +68,7 @@ describe('HuddledmassesAdapter', () => {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let resObject = {
       body: [ {
         requestId: '123',
@@ -106,7 +106,7 @@ describe('HuddledmassesAdapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', () => {
       expect(userSync).to.be.an('array').with.lengthOf(1);

@@ -75,7 +75,7 @@ let getPixels = () => {
     '<iframe src="pixels1.org"></iframe>\');</script>';
 };
 
-describe('AolAdapter', () => {
+describe('AolAdapter', function () {
   const MARKETPLACE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';
   const NEXAGE_URL = '//hb.nexage.com/bidRequest?';
   const ONE_DISPLAY_TTL = 60;
@@ -92,7 +92,7 @@ describe('AolAdapter', () => {
     return bidderRequest;
   }
 
-  describe('interpretResponse()', () => {
+  describe('interpretResponse()', function () {
     let bidderSettingsBackup;
     let bidResponse;
     let bidRequest;
@@ -162,12 +162,12 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('buildRequests()', () => {
+  describe('buildRequests()', function () {
     it('method exists and is a function', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    describe('Marketplace', () => {
+    describe('Marketplace', function () {
       it('should not return request when no bids are present', () => {
         let [request] = spec.buildRequests([]);
         expect(request).to.be.empty;
@@ -371,7 +371,7 @@ describe('AolAdapter', () => {
       });
     });
 
-    describe('One Mobile', () => {
+    describe('One Mobile', function () {
       it('should return One Mobile url when One Mobile get params are present', () => {
         let bidRequest = createCustomBidRequest({
           params: getNexageGetBidParams()
@@ -491,7 +491,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('getUserSyncs()', () => {
+  describe('getUserSyncs()', function () {
     let bidResponse;
     let bidRequest;
 
@@ -537,7 +537,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('formatPixels()', () => {
+  describe('formatPixels()', function () {
     it('should return pixels wrapped for dropping them once and within nested frames ', () => {
       let pixels = '<script>document.write(\'<pixels-dom-elements/>\');</script>';
       let formattedPixels = spec.formatPixels(pixels);
@@ -553,7 +553,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('isOneMobileBidder()', () => {
+  describe('isOneMobileBidder()', function () {
     it('should return false when when bidderCode is not present', () => {
       expect(spec.isOneMobileBidder(null)).to.be.false;
     });
@@ -571,7 +571,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('isConsentRequired()', () => {
+  describe('isConsentRequired()', function () {
     it('should return false when consentData object is not present', () => {
       expect(spec.isConsentRequired(null)).to.be.false;
     });
@@ -604,7 +604,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('formatMarketplaceDynamicParams()', () => {
+  describe('formatMarketplaceDynamicParams()', function () {
     let formatConsentDataStub;
     let formatKeyValuesStub;
 
@@ -647,7 +647,7 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('formatOneMobileDynamicParams()', () => {
+  describe('formatOneMobileDynamicParams()', function () {
     let consentRequiredStub;
     let secureProtocolStub;
 

@@ -7,8 +7,8 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 describe('consentManagement', function () {
-  describe('setConfig tests:', () => {
-    describe('empty setConfig value', () => {
+  describe('setConfig tests:', function () {
+    describe('empty setConfig value', function () {
       beforeEach(() => {
         sinon.stub(utils, 'logInfo');
       });
@@ -27,7 +27,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('valid setConfig value', () => {
+    describe('valid setConfig value', function () {
       afterEach(() => {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
@@ -47,7 +47,7 @@ describe('consentManagement', function () {
     });
   });
 
-  describe('requestBidsHook tests:', () => {
+  describe('requestBidsHook tests:', function () {
     let goodConfigWithCancelAuction = {
       cmpApi: 'iab',
       timeout: 7500,
@@ -67,7 +67,7 @@ describe('consentManagement', function () {
       resetConsentData();
     });
 
-    describe('error checks:', () => {
+    describe('error checks:', function () {
       beforeEach(() => {
         didHookReturn = false;
         sinon.stub(utils, 'logWarn');
@@ -112,7 +112,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('already known consentData:', () => {
+    describe('already known consentData:', function () {
       let cmpStub = sinon.stub();
 
       beforeEach(() => {
@@ -158,7 +158,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('CMP workflow for safeframe page', () => {
+    describe('CMP workflow for safeframe page', function () {
       let registerStub = sinon.stub();
 
       beforeEach(() => {
@@ -215,7 +215,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('CMP workflow for iframed page', () => {
+    describe('CMP workflow for iframed page', function () {
       let ifr = null;
       let stringifyResponse = false;
 
@@ -288,7 +288,7 @@ describe('consentManagement', function () {
       }
     });
 
-    describe('CMP workflow for normal pages:', () => {
+    describe('CMP workflow for normal pages:', function () {
       let cmpStub = sinon.stub();
 
       beforeEach(() => {

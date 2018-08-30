@@ -4,16 +4,16 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//media.adfrontiers.com/';
 
-describe('jcmAdapter', () => {
+describe('jcmAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'jcm',
       'params': {
@@ -37,7 +37,7 @@ describe('jcmAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'jcm',
@@ -75,7 +75,7 @@ describe('jcmAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should get correct bid response', () => {
       let serverResponse = {'bids': [{'width': 300, 'height': 250, 'creativeId': '29681110', 'ad': '<!-- Creative -->', 'cpm': 0.5, 'callbackId': '30b31c1838de1e'}]};
 
@@ -116,7 +116,7 @@ describe('jcmAdapter', () => {
       expect(result.length).to.equal(0);
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     it('Verifies sync iframe option', () => {
       expect(spec.getUserSyncs({})).to.be.undefined;
       expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;

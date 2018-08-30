@@ -4,16 +4,16 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
 
-describe('VertozAdapter', () => {
+describe('VertozAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'vertoz',
       'params': {
@@ -40,7 +40,7 @@ describe('VertozAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'vertoz',
@@ -62,7 +62,7 @@ describe('VertozAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'vzhPlacementId': 'VZ-HB-B784382V6C6G3C',
       'bid': '76021e56-adaf-4114-b68d-ccacd1b3e551_1',

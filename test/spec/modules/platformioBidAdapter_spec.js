@@ -3,7 +3,7 @@ import {spec} from 'modules/platformioBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('Platform.io Adapter Tests', () => {
+describe('Platform.io Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',

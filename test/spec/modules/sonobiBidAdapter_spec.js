@@ -2,22 +2,22 @@ import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
 
-describe('SonobiBidAdapter', () => {
+describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  describe('.code', () => {
+  describe('.code', function () {
     it('should return a bidder code of sonobi', () => {
       expect(spec.code).to.equal('sonobi')
     })
   })
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('should exist and be a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
 
-  describe('.isBidRequestValid', () => {
+  describe('.isBidRequestValid', function () {
     let bid = {
       'bidder': 'sonobi',
       'params': {
@@ -100,7 +100,7 @@ describe('SonobiBidAdapter', () => {
     })
   })
 
-  describe('.buildRequests', () => {
+  describe('.buildRequests', function () {
     let bidRequest = [{
       'bidder': 'sonobi',
       'params': {
@@ -214,7 +214,7 @@ describe('SonobiBidAdapter', () => {
     })
   })
 
-  describe('.interpretResponse', () => {
+  describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'GET',
       'url': 'https://apex.go.sonobi.com/trinity.json',
@@ -326,7 +326,7 @@ describe('SonobiBidAdapter', () => {
     })
   })
 
-  describe('.getUserSyncs', () => {
+  describe('.getUserSyncs', function () {
     let bidResponse = [{
       'body': {
         'sbi_px': [{
@@ -359,7 +359,7 @@ describe('SonobiBidAdapter', () => {
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
     });
   })
-  describe('_getPlatform', () => {
+  describe('_getPlatform', function () {
     it('should return mobile', () => {
       expect(_getPlatform({innerWidth: 767})).to.equal('mobile')
     })

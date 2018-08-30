@@ -15,7 +15,7 @@ const bid = {
   }
 };
 
-describe('native.js', () => {
+describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
@@ -50,7 +50,7 @@ describe('native.js', () => {
   });
 });
 
-describe('validate native', () => {
+describe('validate native', function () {
   let bidReq = [{
     bids: [{
       bidderCode: 'test_bidder',

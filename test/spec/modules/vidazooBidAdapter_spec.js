@@ -54,8 +54,8 @@ const SYNC_OPTIONS = {
   'pixelEnabled': true
 };
 
-describe('VidazooBidAdapter', () => {
-  describe('validtae spec', () => {
+describe('VidazooBidAdapter', function () {
+  describe('validtae spec', function () {
     it('exists and is a function', () => {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -77,7 +77,7 @@ describe('VidazooBidAdapter', () => {
     });
   });
 
-  describe('validate bid requests', () => {
+  describe('validate bid requests', function () {
     it('should require cId', () => {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -107,7 +107,7 @@ describe('VidazooBidAdapter', () => {
     });
   });
 
-  describe('build requests', () => {
+  describe('build requests', function () {
     let sandbox;
     before(() => {
       sandbox = sinon.sandbox.create();
@@ -157,7 +157,7 @@ describe('VidazooBidAdapter', () => {
     });
   });
 
-  describe('interpret response', () => {
+  describe('interpret response', function () {
     it('should return empty array when there is no response', () => {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;

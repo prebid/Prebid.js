@@ -3,7 +3,7 @@ import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
 import {parse as parseUrl} from 'src/url';
 
-describe('Adkernel adapter', () => {
+describe('Adkernel adapter', function () {
   const bid1_zone1 = {
       bidder: 'adkernel',
       bidId: 'Bid_01',
@@ -127,7 +127,7 @@ describe('Adkernel adapter', () => {
     return [pbRequests, rtbRequests];
   }
 
-  describe('input parameters validation', () => {
+  describe('input parameters validation', function () {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({
         bidderCode: 'adkernel'
@@ -147,7 +147,7 @@ describe('Adkernel adapter', () => {
     });
   });
 
-  describe('banner request building', () => {
+  describe('banner request building', function () {
     let bidRequest, bidRequests, _;
     before(() => {
       [_, bidRequests] = buildRequest([bid1_zone1]);
@@ -217,7 +217,7 @@ describe('Adkernel adapter', () => {
     });
   });
 
-  describe('video request building', () => {
+  describe('video request building', function () {
     let _, bidRequests;
     before(() => {
       [_, bidRequests] = buildRequest([bid_video]);
@@ -237,7 +237,7 @@ describe('Adkernel adapter', () => {
     });
   });
 
-  describe('requests routing', () => {
+  describe('requests routing', function () {
     it('should issue a request for each host', () => {
       let [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
@@ -253,7 +253,7 @@ describe('Adkernel adapter', () => {
     });
   });
 
-  describe('responses processing', () => {
+  describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', () => {
       let [pbRequests, _] = buildRequest([bid1_zone1]);
       let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];

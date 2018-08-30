@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { spec } from 'modules/iasBidAdapter';
 
-describe('iasBidAdapter is an adapter that', () => {
+describe('iasBidAdapter is an adapter that', function () {
   it('has the correct bidder code', () => {
     expect(spec.code).to.equal('ias');
   });
-  describe('has a method `isBidRequestValid` that', () => {
+  describe('has a method `isBidRequestValid` that', function () {
     it('exists', () => {
       expect(spec.isBidRequestValid).to.be.a('function');
     });
@@ -37,11 +37,11 @@ describe('iasBidAdapter is an adapter that', () => {
     });
   });
 
-  describe('has a method `buildRequests` that', () => {
+  describe('has a method `buildRequests` that', function () {
     it('exists', () => {
       expect(spec.buildRequests).to.be.a('function');
     });
-    describe('given bid requests, returns a `ServerRequest` instance that', () => {
+    describe('given bid requests, returns a `ServerRequest` instance that', function () {
       let bidRequests, IAS_HOST;
       beforeEach(() => {
         IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
@@ -92,7 +92,7 @@ describe('iasBidAdapter is an adapter that', () => {
       it('only includes the first `bidRequest` as the bidRequest variable on a multiple slot request', () => {
         expect(spec.buildRequests(bidRequests).bidRequest.adUnitCode).to.equal(bidRequests[0].adUnitCode);
       });
-      describe('has property `data` that is an encode query string containing information such as', () => {
+      describe('has property `data` that is an encode query string containing information such as', function () {
         let val;
         const ANID_PARAM = 'anId';
         const SLOT_PARAM = 'slot';
@@ -122,11 +122,11 @@ describe('iasBidAdapter is an adapter that', () => {
       });
     });
   });
-  describe('has a method `interpretResponse` that', () => {
+  describe('has a method `interpretResponse` that', function () {
     it('exists', () => {
       expect(spec.interpretResponse).to.be.a('function');
     });
-    describe('returns a list of bid response that', () => {
+    describe('returns a list of bid response that', function () {
       let bidRequests, bidResponse, slots, serverResponse;
       beforeEach(() => {
         bidRequests = [

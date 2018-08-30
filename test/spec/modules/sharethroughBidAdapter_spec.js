@@ -104,14 +104,14 @@ const b64EncodeUnicode = (str) => {
       }));
 }
 
-describe('sharethrough adapter spec', () => {
-  describe('.code', () => {
+describe('sharethrough adapter spec', function () {
+  describe('.code', function () {
     it('should return a bidder code of sharethrough', () => {
       expect(spec.code).to.eql('sharethrough');
     });
   })
 
-  describe('.isBidRequestValid', () => {
+  describe('.isBidRequestValid', function () {
     it('should return false if req has no pkey', () => {
       const invalidBidRequest = {
         bidder: 'sharethrough',
@@ -138,7 +138,7 @@ describe('sharethrough adapter spec', () => {
     })
   });
 
-  describe('.buildRequests', () => {
+  describe('.buildRequests', function () {
     it('should return an array of requests', () => {
       const bidRequests = spec.buildRequests(bidderRequest);
 
@@ -165,7 +165,7 @@ describe('sharethrough adapter spec', () => {
     });
   });
 
-  describe('.interpretResponse', () => {
+  describe('.interpretResponse', function () {
     it('returns a correctly parsed out response', () => {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.include(
         {
@@ -254,7 +254,7 @@ describe('sharethrough adapter spec', () => {
     });
   });
 
-  describe('.getUserSyncs', () => {
+  describe('.getUserSyncs', function () {
     const cookieSyncs = ['cookieUrl1', 'cookieUrl2', 'cookieUrl3'];
     const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 

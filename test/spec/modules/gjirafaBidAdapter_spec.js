@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gjirafaBidAdapter';
 
-describe('gjirafaAdapterTest', () => {
-  describe('bidRequestValidity', () => {
+describe('gjirafaAdapterTest', function () {
+  describe('bidRequestValidity', function () {
     it('bidRequest with placementId, minCPM and minCPC params', () => {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
@@ -42,7 +42,7 @@ describe('gjirafaAdapterTest', () => {
     });
   });
 
-  describe('bidRequest', () => {
+  describe('bidRequest', function () {
     const bidRequests = [{
       'bidder': 'gjirafa',
       'params': {
@@ -111,7 +111,7 @@ describe('gjirafaAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequest = {
       'method': 'GET',
       'url': 'https://gjc.gjirafa.com/Home/GetBid',

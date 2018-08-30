@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/smartyadsBidAdapter';
 
-describe('SmartyadsAdapter', () => {
+describe('SmartyadsAdapter', function () {
   let bid = {
     bidId: '23fhj33i987f',
     bidder: 'smartyads',
@@ -11,7 +11,7 @@ describe('SmartyadsAdapter', () => {
     }
   };
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and placementId parameters present', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -21,7 +21,7 @@ describe('SmartyadsAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', () => {
       expect(serverRequest).to.exist;
@@ -57,7 +57,7 @@ describe('SmartyadsAdapter', () => {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('Should interpret banner response', () => {
       const banner = {
         body: [{
@@ -217,7 +217,7 @@ describe('SmartyadsAdapter', () => {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', () => {
       expect(userSync).to.be.an('array').with.lengthOf(1);

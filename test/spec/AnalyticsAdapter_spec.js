@@ -55,7 +55,7 @@ FEATURE: Analytics Adapters API
     expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
   });
 
-  describe(`WHEN an event occurs after enable analytics\n`, () => {
+  describe(`WHEN an event occurs after enable analytics\n`, function () {
     beforeEach(() => {
       sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
     });
@@ -130,7 +130,7 @@ FEATURE: Analytics Adapters API
       expect(requests.length).to.equal(1);
     });
 
-    describe(`AND sampling is enabled\n`, () => {
+    describe(`AND sampling is enabled\n`, function () {
       const eventType = BID_WON;
       const args = { more: 'info' };
 

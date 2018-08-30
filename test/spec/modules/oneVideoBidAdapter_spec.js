@@ -3,7 +3,7 @@ import { spec } from 'modules/oneVideoBidAdapter';
 import * as utils from 'src/utils';
 import {config} from 'src/config';
 
-describe('OneVideoBidAdapter', () => {
+describe('OneVideoBidAdapter', function () {
   let bidRequest;
   let bidderRequest;
   let mockConfig;
@@ -33,7 +33,7 @@ describe('OneVideoBidAdapter', () => {
     };
   });
 
-  describe('spec.isBidRequestValid', () => {
+  describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
@@ -66,7 +66,7 @@ describe('OneVideoBidAdapter', () => {
     });
   });
 
-  describe('spec.buildRequests', () => {
+  describe('spec.buildRequests', function () {
     it('should create a POST request for every bid', () => {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].method).to.equal('POST');
@@ -98,7 +98,7 @@ describe('OneVideoBidAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
+  describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', () => {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);

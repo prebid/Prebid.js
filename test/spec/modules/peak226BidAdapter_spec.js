@@ -4,10 +4,10 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const URL = 'a.ad216.com/header_bid';
 
-describe('PeakAdapter', () => {
+describe('PeakAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       const bid = {
         params: {
@@ -27,7 +27,7 @@ describe('PeakAdapter', () => {
     });
   });
 
-  // xdescribe('buildRequests', () => {
+  // xdescribe('buildRequests', function () {
   //   const bidRequests = [
   //     {
   //       params: {
@@ -44,7 +44,7 @@ describe('PeakAdapter', () => {
   //   });
   // });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should handle empty response', () => {
       let bids = spec.interpretResponse(
         {},

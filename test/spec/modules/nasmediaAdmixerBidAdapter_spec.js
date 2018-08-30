@@ -2,16 +2,16 @@ import {expect} from 'chai';
 import {spec} from 'modules/nasmediaAdmixerBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('nasmediaAdmixerBidAdapter', () => {
+describe('nasmediaAdmixerBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'nasmediaAdmixer',
       'params': {
@@ -38,7 +38,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       {
         'bidder': 'nasmediaAdmixer',
@@ -60,7 +60,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       'body': {
         'bidder': 'nasmedia_admixer',

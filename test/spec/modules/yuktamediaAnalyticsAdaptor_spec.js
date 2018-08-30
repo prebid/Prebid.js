@@ -4,7 +4,7 @@ let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('YuktaMedia analytics adapter', () => {
+describe('YuktaMedia analytics adapter', function () {
   let xhr;
   let requests;
 
@@ -20,7 +20,7 @@ describe('YuktaMedia analytics adapter', () => {
     events.getEvents.restore();
   });
 
-  describe('track', () => {
+  describe('track', function () {
     let initOptions = {
       pubId: '1',
       pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT=='

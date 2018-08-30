@@ -4,8 +4,8 @@ import { spec } from 'modules/papyrusBidAdapter';
 const ENDPOINT = '//prebid.papyrus.global';
 const BIDDER_CODE = 'papyrus';
 
-describe('papyrus Adapter', () => {
-  describe('isBidRequestValid', () => {
+describe('papyrus Adapter', function () {
+  describe('isBidRequestValid', function () {
     let validBidReq = {
       bidder: BIDDER_CODE,
       params: {
@@ -30,7 +30,7 @@ describe('papyrus Adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         bidder: BIDDER_CODE,
@@ -68,7 +68,7 @@ describe('papyrus Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequests = [
       {
         bidder: BIDDER_CODE,

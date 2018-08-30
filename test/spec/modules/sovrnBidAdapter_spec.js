@@ -8,7 +8,7 @@ const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'sovrn',
       'params': {
@@ -39,7 +39,7 @@ describe('sovrnBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [{
       'bidder': 'sovrn',
       'params': {
@@ -128,7 +128,7 @@ describe('sovrnBidAdapter', function() {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response;
     beforeEach(() => {
       response = {

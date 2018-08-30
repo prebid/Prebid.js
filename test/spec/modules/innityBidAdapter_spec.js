@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/innityBidAdapter';
 
-describe('innityAdapterTest', () => {
-  describe('bidRequestValidity', () => {
+describe('innityAdapterTest', function () {
+  describe('bidRequestValidity', function () {
     it('bidRequest with pub ID and zone ID param', () => {
       expect(spec.isBidRequestValid({
         bidder: 'innity',
@@ -22,7 +22,7 @@ describe('innityAdapterTest', () => {
     });
   });
 
-  describe('bidRequest', () => {
+  describe('bidRequest', function () {
     const bidRequests = [{
       'bidder': 'innity',
       'params': {
@@ -54,7 +54,7 @@ describe('innityAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequest = {
       'method': 'GET',
       'url': 'https://as.innity.com/synd/?',

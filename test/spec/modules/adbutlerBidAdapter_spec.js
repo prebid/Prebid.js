@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adbutlerBidAdapter';
 
-describe('AdButler adapter', () => {
+describe('AdButler adapter', function () {
   let bidRequests;
 
   beforeEach(() => {
@@ -25,8 +25,8 @@ describe('AdButler adapter', () => {
     ];
   });
 
-  describe('implementation', () => {
-    describe('for requests', () => {
+  describe('implementation', function () {
+    describe('for requests', function () {
       it('should accept valid bid', () => {
         let validBid = {
             bidder: 'adbutler',
@@ -118,7 +118,7 @@ describe('AdButler adapter', () => {
       });
     });
 
-    describe('bid responses', () => {
+    describe('bid responses', function () {
       it('should return complete bid response', () => {
         let serverResponse = {
             body: {

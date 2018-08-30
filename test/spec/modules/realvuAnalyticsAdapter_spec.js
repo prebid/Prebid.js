@@ -22,7 +22,7 @@ function addDiv(id) {
   return dv;
 }
 
-describe('RealVu Analytics Adapter.', () => {
+describe('RealVu Analytics Adapter.', function () {
   before(() => {
     addDiv('ad1');
     addDiv('ad2');
@@ -112,7 +112,7 @@ describe('RealVu Analytics Adapter.', () => {
   });
 });
 
-describe('RealVu Boost.', () => {
+describe('RealVu Boost.', function () {
   before(() => {
     addDiv('ad1');
     addDiv('ad2');

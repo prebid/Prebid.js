@@ -4,7 +4,7 @@ import { registerVideoSupport } from 'src/adServerManager';
 
 const prebid = getGlobal();
 
-describe('The ad server manager', () => {
+describe('The ad server manager', function () {
   beforeEach(() => {
     delete prebid.adServers;
   });

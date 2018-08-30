@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Renderer } from 'src/Renderer';
 const adloader = require('../../src/adloader');
 
-describe('Renderer: A renderer installed on a bid response', () => {
+describe('Renderer: A renderer installed on a bid response', function () {
   let testRenderer1;
   let testRenderer2;
   let spyRenderFn;

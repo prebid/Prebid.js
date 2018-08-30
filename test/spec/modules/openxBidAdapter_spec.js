@@ -8,7 +8,7 @@ import * as utils from 'src/utils';
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';
 
-describe('OpenxAdapter', () => {
+describe('OpenxAdapter', function () {
   const adapter = newBidder(spec);
 
   /**
@@ -121,14 +121,14 @@ describe('OpenxAdapter', () => {
     }
   };
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    describe('when request is for a banner ad', () => {
+  describe('isBidRequestValid', function () {
+    describe('when request is for a banner ad', function () {
       let bannerBid;
       beforeEach(() => {
         bannerBid = {
@@ -148,7 +148,7 @@ describe('OpenxAdapter', () => {
         expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
       });
 
-      describe('when there is a delivery domain', () => {
+      describe('when there is a delivery domain', function () {
         beforeEach(function () {
           bannerBid.params = {delDomain: 'test-delivery-domain'}
         });
@@ -234,7 +234,7 @@ describe('OpenxAdapter', () => {
     });
   });
 
-  describe('buildRequests for banner ads', () => {
+  describe('buildRequests for banner ads', function () {
     const bidRequestsWithMediaType = [{
       'bidder': 'openx',
       'params': {
@@ -459,7 +459,7 @@ describe('OpenxAdapter', () => {
       expect(request[0].data.x_gdpr_f).to.equal(undefined);
     });
 
-    describe('when there is a consent management framework', () => {
+    describe('when there is a consent management framework', function () {
       let bidRequests;
       let mockConfig;
       let bidderRequest;
@@ -783,7 +783,7 @@ describe('OpenxAdapter', () => {
     });
   });
 
-  describe('buildRequests for video', () => {
+  describe('buildRequests for video', function () {
     const bidRequestsWithMediaTypes = [{
       'bidder': 'openx',
       'mediaTypes': {
@@ -933,7 +933,7 @@ describe('OpenxAdapter', () => {
     });
   });
 
-  describe('interpretResponse for banner ads', () => {
+  describe('interpretResponse for banner ads', function () {
     beforeEach(() => {
       sinon.spy(userSync, 'registerSync');
     });
@@ -1215,7 +1215,7 @@ describe('OpenxAdapter', () => {
     });
   });
 
-  describe('interpretResponse for video ads', () => {
+  describe('interpretResponse for video ads', function () {
     beforeEach(() => {
       sinon.spy(userSync, 'registerSync');
     });
@@ -1336,7 +1336,7 @@ describe('OpenxAdapter', () => {
     });
   });
 
-  describe('user sync', () => {
+  describe('user sync', function () {
     const syncUrl = 'http://testpixels.net';
 
     it('should register the pixel iframe from banner ad response', () => {

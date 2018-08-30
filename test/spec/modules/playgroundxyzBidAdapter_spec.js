@@ -6,16 +6,16 @@ import { deepClone } from 'src/utils';
 const URL = 'https://ads.playground.xyz/host-config/prebid';
 const GDPR_CONSENT = 'XYZ-CONSENT';
 
-describe('playgroundxyzBidAdapter', () => {
+describe('playgroundxyzBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'playgroundxyz',
       'params': {
@@ -42,7 +42,7 @@ describe('playgroundxyzBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'playgroundxyz',
@@ -72,7 +72,7 @@ describe('playgroundxyzBidAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'id': 'bidd_id',
       'seatbid': [ {
@@ -135,7 +135,7 @@ describe('playgroundxyzBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'playgroundxyz',

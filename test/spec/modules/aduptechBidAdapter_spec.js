@@ -3,16 +3,16 @@ import { BIDDER_CODE, PUBLISHER_PLACEHOLDER, ENDPOINT_URL, ENDPOINT_METHOD, spec
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-describe('AduptechBidAdapter', () => {
+describe('AduptechBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when necessary information is given', () => {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
@@ -85,7 +85,7 @@ describe('AduptechBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should send one bid request per ad unit to the endpoint via POST', () => {
       const bidRequests = [
         {
@@ -201,7 +201,7 @@ describe('AduptechBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should correctly interpret the server response', () => {
       const serverResponse = {
         body: {

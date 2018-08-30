@@ -96,16 +96,16 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('vertamediaBidAdapter', () => {
+describe('vertamediaBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
     });
@@ -117,7 +117,7 @@ describe('vertamediaBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let videoBidRequests = [VIDEO_REQUEST];
     let dispalyBidRequests = [DISPLAY_REQUEST];
 
@@ -163,7 +163,7 @@ describe('vertamediaBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
     let bidderRequest;
     let eqResponse;

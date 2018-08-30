@@ -29,16 +29,16 @@ const RESPONSE = {
   pid: 2222
 }
 
-describe('yieldlabBidAdapter', () => {
+describe('yieldlabBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       const request = {
         'params': {
@@ -55,7 +55,7 @@ describe('yieldlabBidAdapter', () => {
     })
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [REQUEST]
     const request = spec.buildRequests(bidRequests)
 
@@ -84,7 +84,7 @@ describe('yieldlabBidAdapter', () => {
     })
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const validRequests = {
       validBidRequests: [REQUEST]
     }

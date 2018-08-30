@@ -17,16 +17,16 @@ function buildEndpointUrl(region) {
 	* endof Helpers
 	*/
 
-describe('RTBHouseAdapter', () => {
+describe('RTBHouseAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'rtbhouse',
       'params': {
@@ -54,7 +54,7 @@ describe('RTBHouseAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
 	      'bidder': 'rtbhouse',
@@ -112,7 +112,7 @@ describe('RTBHouseAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = [{
   	  'id': 'bidder_imp_identifier',
 	    'impid': '552b8922e28f27',

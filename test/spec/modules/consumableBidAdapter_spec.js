@@ -104,7 +104,7 @@ const RESPONSE = {
   }
 };
 
-describe('Consumable BidAdapter', () => {
+describe('Consumable BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
@@ -128,7 +128,7 @@ describe('Consumable BidAdapter', () => {
     ];
   });
 
-  describe('bid request validation', () => {
+  describe('bid request validation', function () {
     it('should accept valid bid requests', () => {
       let bid = {
         bidder: 'consumable',
@@ -181,7 +181,7 @@ describe('Consumable BidAdapter', () => {
     });
   });
 
-  describe('buildRequests validation', () => {
+  describe('buildRequests validation', function () {
     it('creates request data', () => {
       let request = spec.buildRequests(bidRequests);
 
@@ -205,7 +205,7 @@ describe('Consumable BidAdapter', () => {
       expect(request.method).to.have.string('POST');
     });
   });
-  describe('interpretResponse validation', () => {
+  describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', () => {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
       let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
@@ -251,7 +251,7 @@ describe('Consumable BidAdapter', () => {
       expect(bids).to.be.empty;
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncOptions = {'iframeEnabled': true};
 
     it('handles empty sync options', () => {

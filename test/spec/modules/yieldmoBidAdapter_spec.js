@@ -3,7 +3,7 @@ import { spec } from 'modules/yieldmoBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-describe('YieldmoAdapter', () => {
+describe('YieldmoAdapter', function () {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 
@@ -18,7 +18,7 @@ describe('YieldmoAdapter', () => {
   };
   let bidArray = [bid];
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when necessary information is found', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -40,7 +40,7 @@ describe('YieldmoAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should attempt to send bid requests to the endpoint via GET', () => {
       const request = spec.buildRequests(bidArray);
       expect(request.method).to.equal('GET');
@@ -93,7 +93,7 @@ describe('YieldmoAdapter', () => {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
 
     beforeEach(() => {
@@ -137,7 +137,7 @@ describe('YieldmoAdapter', () => {
     });
   });
 
-  describe('getUserSync', () => {
+  describe('getUserSync', function () {
     const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
     let options = {
       iframeEnabled: true,

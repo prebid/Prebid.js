@@ -22,8 +22,8 @@ const requestId = 'test-request-id';
 const debug = 'adapterver=1.0.1&platform=241394079772386&platver=$prebid.version$';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
-describe('AudienceNetwork adapter', () => {
-  describe('Public API', () => {
+describe('AudienceNetwork adapter', function () {
+  describe('Public API', function () {
     it('code', () => {
       expect(code).to.equal(bidder);
     });
@@ -41,7 +41,7 @@ describe('AudienceNetwork adapter', () => {
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('missing placementId parameter', () => {
       expect(isBidRequestValid({
         bidder,
@@ -118,7 +118,7 @@ describe('AudienceNetwork adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let isSafariBrowserStub;
     before(() => {
       isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
@@ -216,7 +216,7 @@ describe('AudienceNetwork adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('error in response', () => {
       expect(interpretResponse({
         body: {

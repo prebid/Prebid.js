@@ -409,7 +409,7 @@ function performStandardAuction() {
   events.emit(BID_WON, MOCK.BID_WON[1]);
 }
 
-describe('rubicon analytics adapter', () => {
+describe('rubicon analytics adapter', function () {
   let sandbox;
   let xhr;
   let requests;
@@ -466,7 +466,7 @@ describe('rubicon analytics adapter', () => {
     expect(utils.logError.called).to.equal(true);
   });
 
-  describe('sampling', () => {
+  describe('sampling', function () {
     beforeEach(() => {
       sandbox.stub(Math, 'random').returns(0.08);
       sandbox.stub(utils, 'logError');
@@ -476,7 +476,7 @@ describe('rubicon analytics adapter', () => {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 
-    describe('with options.samplingFactor', () => {
+    describe('with options.samplingFactor', function () {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
@@ -520,7 +520,7 @@ describe('rubicon analytics adapter', () => {
         expect(utils.logError.called).to.equal(true);
       });
     });
-    describe('with options.sampling', () => {
+    describe('with options.sampling', function () {
       it('should sample', () => {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
@@ -566,7 +566,7 @@ describe('rubicon analytics adapter', () => {
     });
   });
 
-  describe('when handling events', () => {
+  describe('when handling events', function () {
     beforeEach(() => {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {

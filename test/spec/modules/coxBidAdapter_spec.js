@@ -3,10 +3,10 @@ import { spec } from 'modules/coxBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
-describe('CoxBidAdapter', () => {
+describe('CoxBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     const CONFIG = {
       'bidder': 'cox',
       'params': {
@@ -35,7 +35,7 @@ describe('CoxBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const PROD_DOMAIN = 'ad.afy11.net';
     const PPE_DOMAIN = 'ppe-ad.afy11.net';
     const STG_DOMAIN = 'staging-ad.afy11.net';
@@ -91,7 +91,7 @@ describe('CoxBidAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const BID_INFO_1 = [{
       'bidder': 'cox',
       'params': {
@@ -198,7 +198,7 @@ describe('CoxBidAdapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const RESPONSE = [{ body: {
       'zones': {},
       'tpCookieSync': ['http://pixel.foo.com/', 'http://pixel.bar.com/']

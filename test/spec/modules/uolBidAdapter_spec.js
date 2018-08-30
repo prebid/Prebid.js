@@ -4,10 +4,10 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://prebid.adilligo.com/v1/prebid.json';
 
-describe('UOL Bid Adapter', () => {
+describe('UOL Bid Adapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'uol',
       'params': {
@@ -87,7 +87,7 @@ describe('UOL Bid Adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let queryPermission;
     let cleanup = function() {
       navigator.permissions.query = queryPermission;
@@ -148,7 +148,7 @@ describe('UOL Bid Adapter', () => {
       'timeout': 3000
     };
 
-    describe('buildRequest basic params', () => {
+    describe('buildRequest basic params', function () {
       const requestObject = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(requestObject.data);
 
@@ -170,7 +170,7 @@ describe('UOL Bid Adapter', () => {
     });
 
     if (navigator.permissions && navigator.permissions.query && navigator.geolocation) {
-      describe('buildRequest geolocation param', () => { // shall only be tested if browser engine supports geolocation and permissions API.
+      describe('buildRequest geolocation param', function () { // shall only be tested if browser engine supports geolocation and permissions API.
         let geolocation = { lat: 4, long: 3, timestamp: 123121451 };
 
         it('should contain user coordinates if (i) DNT is off; (ii) browser supports implementation; (iii) localStorage contains geolocation history', () => {
@@ -201,7 +201,7 @@ describe('UOL Bid Adapter', () => {
         })
       })
     }
-    describe('buildRequest test params', () => {
+    describe('buildRequest test params', function () {
       it('should return test and cpmFactor params if defined', () => {
         let clonedBid = JSON.parse(JSON.stringify(bidRequests));
         delete clonedBid[0].params;
@@ -229,7 +229,7 @@ describe('UOL Bid Adapter', () => {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse = {
       'body': {
         'bidderRequestId': '2a21a2fc993ef9',
@@ -289,7 +289,7 @@ describe('UOL Bid Adapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncOptions = { iframeEnabled: true };
     let serverResponses = [{ body: { trackingPixel: 'https://www.uol.com.br' } }, { body: { trackingPixel: 'http://www.dynad.net/' } }];
 

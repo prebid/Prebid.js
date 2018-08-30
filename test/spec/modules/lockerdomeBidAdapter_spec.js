@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/lockerdomeBidAdapter';
 import * as utils from 'src/utils';
 
-describe('LockerDomeAdapter', () => {
+describe('LockerDomeAdapter', function () {
   const bidRequests = [{
     bidder: 'lockerdome',
     params: {
@@ -37,7 +37,7 @@ describe('LockerDomeAdapter', () => {
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
   }];
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true if the adUnitId parameter is present', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
       expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
@@ -49,7 +49,7 @@ describe('LockerDomeAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should generate a valid single POST request for multiple bid requests', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('POST');
@@ -95,7 +95,7 @@ describe('LockerDomeAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should return an empty array if an invalid response is passed', () => {
       const interpretedResponse = spec.interpretResponse({ body: {} });
       expect(interpretedResponse).to.be.an('array').that.is.empty;

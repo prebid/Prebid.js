@@ -41,7 +41,7 @@ var rubiconAdapterMock = {
 };
 let loadScriptStub;
 
-describe('adapterManager tests', () => {
+describe('adapterManager tests', function () {
   let orgAppnexusAdapter;
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
@@ -65,7 +65,7 @@ describe('adapterManager tests', () => {
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
-  describe('callBids', () => {
+  describe('callBids', function () {
     before(() => {
       config.setConfig({s2sConfig: { enabled: false }});
     });
@@ -140,7 +140,7 @@ describe('adapterManager tests', () => {
     });
   });
 
-  describe('S2S tests', () => {
+  describe('S2S tests', function () {
     beforeEach(() => {
       config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
@@ -460,7 +460,7 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
 
-    describe('BID_REQUESTED event', () => {
+    describe('BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
       let cnt, count = () => cnt++;
 
@@ -502,7 +502,7 @@ describe('adapterManager tests', () => {
     });
   }); // end s2s tests
 
-  describe('s2sTesting', () => {
+  describe('s2sTesting', function () {
     let doneStub = sinon.stub();
     let ajaxStub = sinon.stub();
 
@@ -722,7 +722,7 @@ describe('adapterManager tests', () => {
       });
     });
 
-    describe('special case for s2s-only bidders', () => {
+    describe('special case for s2s-only bidders', function () {
       beforeEach(() => {
         sinon.stub(utils, 'logError');
       });
@@ -753,7 +753,7 @@ describe('adapterManager tests', () => {
     });
   });
 
-  describe('makeBidRequests', () => {
+  describe('makeBidRequests', function () {
     let adUnits;
     beforeEach(() => {
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
@@ -762,7 +762,7 @@ describe('adapterManager tests', () => {
       })
     });
 
-    describe('setBidderSequence', () => {
+    describe('setBidderSequence', function () {
       beforeEach(() => {
         sinon.spy(utils, 'shuffle');
       });
@@ -785,7 +785,7 @@ describe('adapterManager tests', () => {
       });
     });
 
-    describe('sizeMapping', () => {
+    describe('sizeMapping', function () {
       beforeEach(() => {
         sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
       });
@@ -917,7 +917,7 @@ describe('adapterManager tests', () => {
       });
     });
 
-    describe('gdpr consent module', () => {
+    describe('gdpr consent module', function () {
       it('inserts gdprConsent object to bidRequest only when module was enabled', () => {
         AdapterManager.gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
@@ -948,8 +948,8 @@ describe('adapterManager tests', () => {
     });
   });
 
-  describe('isValidBidRequest', () => {
-    describe('positive tests for validating bid request', () => {
+  describe('isValidBidRequest', function () {
+    describe('positive tests for validating bid request', function () {
       beforeEach(() => {
         sinon.stub(utils, 'logInfo');
       });
@@ -1058,7 +1058,7 @@ describe('adapterManager tests', () => {
       });
     });
 
-    describe('negative tests for validating bid requests', () => {
+    describe('negative tests for validating bid requests', function () {
       beforeEach(() => {
         sinon.stub(utils, 'logError');
       });

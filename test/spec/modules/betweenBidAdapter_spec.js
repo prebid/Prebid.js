@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/betweenBidAdapter';
 
-describe('betweenBidAdapterTests', () => {
+describe('betweenBidAdapterTests', function () {
   it('validate_pub_params', () => {
     expect(spec.isBidRequestValid({
       bidder: 'between',

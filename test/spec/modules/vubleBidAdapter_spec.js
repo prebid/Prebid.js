@@ -4,8 +4,8 @@ import {expect} from 'chai';
 import {spec as adapter} from 'modules/vubleBidAdapter';
 import * as utils from 'src/utils';
 
-describe('VubleAdapter', () => {
-  describe('Check methods existance', () => {
+describe('VubleAdapter', function () {
+  describe('Check methods existance', function () {
     it('exists and is a function', () => {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -20,7 +20,7 @@ describe('VubleAdapter', () => {
     });
   });
 
-  describe('Check method isBidRequestValid return', () => {
+  describe('Check method isBidRequestValid return', function () {
     let bid = {
       bidder: 'vuble',
       params: {
@@ -84,7 +84,7 @@ describe('VubleAdapter', () => {
     });
   });
 
-  describe('Check buildRequests method', () => {
+  describe('Check buildRequests method', function () {
     let sandbox;
     before(() => {
       sandbox = sinon.sandbox.create();
@@ -171,7 +171,7 @@ describe('VubleAdapter', () => {
     });
   });
 
-  describe('Check interpretResponse method return', () => {
+  describe('Check interpretResponse method return', function () {
     // Server's response
     let response = {
       body: {
@@ -245,7 +245,7 @@ describe('VubleAdapter', () => {
     });
   });
 
-  describe('Check getUserSyncs method return', () => {
+  describe('Check getUserSyncs method return', function () {
     // Sync options
     let syncOptions = {
       iframeEnabled: false

@@ -4,16 +4,16 @@ import { spec } from 'modules/gumgumBidAdapter';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 
-describe('gumgumAdapter', () => {
+describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'gumgum',
       'params': {
@@ -50,7 +50,7 @@ describe('gumgumAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'gumgum',
@@ -84,7 +84,7 @@ describe('gumgumAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse = {
       'ad': {
         'id': 29593,
@@ -184,7 +184,7 @@ describe('gumgumAdapter', () => {
       expect(result[0].height).to.equal('1');
     })
   })
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const syncOptions = {
       'iframeEnabled': 'true'
     }

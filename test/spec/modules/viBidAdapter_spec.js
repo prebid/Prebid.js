@@ -7,7 +7,7 @@ const ENDPOINT = `//pb.vi-serve.com/prebid/bid`;
 describe('viBidAdapter', function() {
   newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'vi',
       'params': {
@@ -37,7 +37,7 @@ describe('viBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [{
       'bidder': 'vi',
       'params': {
@@ -68,7 +68,7 @@ describe('viBidAdapter', function() {
     });
   });
 
-  describe('buildRequests can handle size in 1-dim array', () => {
+  describe('buildRequests can handle size in 1-dim array', function () {
     let bidRequests = [{
       'bidder': 'vi',
       'params': {
@@ -97,7 +97,7 @@ describe('viBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: [{
         'id': '29b891ad542377',

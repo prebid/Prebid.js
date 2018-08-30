@@ -3,8 +3,8 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import {spec} from 'modules/madvertiseBidAdapter';
 
-describe('madvertise adapater', () => {
-  describe('Test validate req', () => {
+describe('madvertise adapater', function () {
+  describe('Test validate req', function () {
     it('should accept minimum valid bid', () => {
       let bid = {
         bidder: 'madvertise',
@@ -71,7 +71,7 @@ describe('madvertise adapater', () => {
     });
   });
 
-  describe('Test build request', () => {
+  describe('Test build request', function () {
     beforeEach(function () {
       let mockConfig = {
         consentManagement: {
@@ -139,7 +139,7 @@ describe('madvertise adapater', () => {
     });
   });
 
-  describe('Test interpret response', () => {
+  describe('Test interpret response', function () {
     it('General banner response', () => {
       let bid = {
         bidder: 'madvertise',

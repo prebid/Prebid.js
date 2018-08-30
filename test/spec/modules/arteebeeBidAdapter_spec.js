@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/arteebeeBidAdapter';
 
-describe('Arteebee adapater', () => {
-  describe('Test validate req', () => {
+describe('Arteebee adapater', function () {
+  describe('Test validate req', function () {
     it('should accept minimum valid bid', () => {
       let bid = {
         bidder: 'arteebee',
@@ -41,7 +41,7 @@ describe('Arteebee adapater', () => {
     });
   });
 
-  describe('Test build request', () => {
+  describe('Test build request', function () {
     it('minimum request', () => {
       let bid = {
         bidder: 'arteebee',
@@ -124,7 +124,7 @@ describe('Arteebee adapater', () => {
     });
   });
 
-  describe('Test interpret response', () => {
+  describe('Test interpret response', function () {
     it('General banner response', () => {
       let resp = spec.interpretResponse({
         body: {

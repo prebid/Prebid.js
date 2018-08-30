@@ -5,13 +5,13 @@ import { newBidder } from 'src/adapters/bidderFactory';
 describe('DAN_Marketplace Adapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'danmarket',
       'params': {
@@ -38,7 +38,7 @@ describe('DAN_Marketplace Adapter', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'danmarket',
@@ -140,7 +140,7 @@ describe('DAN_Marketplace Adapter', function () {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 4, 'h': 250, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 5, 'h': 90, 'w': 728}], 'seat': '1'},

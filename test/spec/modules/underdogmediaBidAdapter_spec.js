@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/underdogmediaBidAdapter';
 
-describe('UnderdogMedia adapter', () => {
+describe('UnderdogMedia adapter', function () {
   let bidRequests;
   let bidderRequest;
 
@@ -35,8 +35,8 @@ describe('UnderdogMedia adapter', () => {
     }
   });
 
-  describe('implementation', () => {
-    describe('for requests', () => {
+  describe('implementation', function () {
+    describe('for requests', function () {
       it('should accept valid bid', () => {
         let validBid = {
           bidder: 'underdogmedia',
@@ -220,7 +220,7 @@ describe('UnderdogMedia adapter', () => {
       });
     });
 
-    describe('bid responses', () => {
+    describe('bid responses', function () {
       it('should return complete bid response', () => {
         let serverResponse = {
           body: {

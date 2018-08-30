@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/zedoBidAdapter';
 
-describe('The ZEDO bidding adapter', () => {
-  describe('isBidRequestValid', () => {
+describe('The ZEDO bidding adapter', function () {
+  describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', () => {
       const bid = {
         bidder: 'zedo',
@@ -24,7 +24,7 @@ describe('The ZEDO bidding adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidderRequest = {
       timeout: 3000,
     };
@@ -74,7 +74,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
     });
 
-    describe('buildGDPRRequests', () => {
+    describe('buildGDPRRequests', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       const bidderRequest = {
         timeout: 3000,
@@ -104,7 +104,7 @@ describe('The ZEDO bidding adapter', () => {
       });
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should return an empty array when there is bid response', () => {
       const response = {};
       const request = { bidRequests: [] };
@@ -245,7 +245,7 @@ describe('The ZEDO bidding adapter', () => {
     });
   });
 
-  describe('user sync', () => {
+  describe('user sync', function () {
     it('should register the iframe sync url', () => {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true

@@ -87,8 +87,8 @@ const bidResArray = [
   }
 ];
 
-describe('Undertone Adapter', () => {
-  describe('request', () => {
+describe('Undertone Adapter', function () {
+  describe('request', function () {
     it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
@@ -96,7 +96,7 @@ describe('Undertone Adapter', () => {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
-  describe('build request', () => {
+  describe('build request', function () {
     it('should send request to correct url via POST', () => {
       const request = spec.buildRequests(bidReq);
       const domain = null;
@@ -121,7 +121,7 @@ describe('Undertone Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should build bid array', () => {
       let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);

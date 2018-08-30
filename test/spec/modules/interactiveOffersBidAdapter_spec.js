@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/interactiveOffersBidAdapter';
 
-describe('interactiveOffers adapter', () => {
-  describe('implementation', () => {
-    describe('for requests', () => {
+describe('interactiveOffers adapter', function () {
+  describe('implementation', function () {
+    describe('for requests', function () {
       it('should accept valid bid', () => {
         let validBid = {
             bidder: 'interactiveOffers',
@@ -25,7 +25,7 @@ describe('interactiveOffers adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('for requests', () => {
+    describe('for requests', function () {
       it('should accept valid bid with optional params', () => {
         let validBid = {
             bidder: 'interactiveOffers',
@@ -70,7 +70,7 @@ describe('interactiveOffers adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('bid responses', () => {
+    describe('bid responses', function () {
       it('should return complete bid response', () => {
         let serverResponse = {
           body: {

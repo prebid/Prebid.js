@@ -203,16 +203,16 @@ const nativeServerResponse = {
   ]
 }
 
-describe('quantumBidAdapter', () => {
+describe('quantumBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
     })
@@ -224,7 +224,7 @@ describe('quantumBidAdapter', () => {
     })
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [REQUEST]
 
     const request = spec.buildRequests(bidRequests, {})
@@ -234,7 +234,7 @@ describe('quantumBidAdapter', () => {
     })
   })
 
-  describe('GDPR conformity', () => {
+  describe('GDPR conformity', function () {
     const bidRequests = [{
       'bidder': 'quantum',
       'mediaType': 'native',
@@ -264,7 +264,7 @@ describe('quantumBidAdapter', () => {
     });
   });
 
-  describe('GDPR absence conformity', () => {
+  describe('GDPR absence conformity', function () {
     const bidRequests = [{
       'bidder': 'quantum',
       'mediaType': 'native',
@@ -291,7 +291,7 @@ describe('quantumBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidderRequest = {
       bidderCode: 'bidderCode',
       bids: []

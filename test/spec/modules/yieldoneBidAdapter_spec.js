@@ -7,7 +7,7 @@ const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'yieldone',
       'params': {
@@ -38,7 +38,7 @@ describe('yieldoneBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'yieldone',
@@ -81,7 +81,7 @@ describe('yieldoneBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequest = [
       {
         'method': 'GET',

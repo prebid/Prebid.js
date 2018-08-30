@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { spec, internals } from 'modules/rockyouBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('RockYouAdapter', () => {
+describe('RockYouAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('bid validator', () => {
+  describe('bid validator', function () {
     it('rejects a bid that is missing the placementId', () => {
       let testBid = {};
       expect(spec.isBidRequestValid(testBid)).to.be.false;
@@ -22,7 +22,7 @@ describe('RockYouAdapter', () => {
     });
   });
 
-  describe('request builder', () => {
+  describe('request builder', function () {
     // Taken from the docs, so used as much as is valid
     const sampleBidRequest = {
       'bidder': 'tests',
@@ -278,7 +278,7 @@ describe('RockYouAdapter', () => {
     });
   });
 
-  describe('response interpreter', () => {
+  describe('response interpreter', function () {
     it('returns an empty array when no bids present', () => {
       // an empty JSON body indicates no ad was found
 

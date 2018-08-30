@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/atomxBidAdapter';
 
-describe('atomxAdapterTest', () => {
-  describe('bidRequestValidity', () => {
+describe('atomxAdapterTest', function () {
+  describe('bidRequestValidity', function () {
     it('bidRequest with id param', () => {
       expect(spec.isBidRequestValid({
         bidder: 'atomx',
@@ -21,7 +21,7 @@ describe('atomxAdapterTest', () => {
     });
   });
 
-  describe('bidRequest', () => {
+  describe('bidRequest', function () {
     const bidRequests = [{
       'bidder': 'atomx',
       'params': {
@@ -72,7 +72,7 @@ describe('atomxAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequest = {
       'method': 'GET',
       'url': 'https://p.ato.mx/placement',

@@ -4,7 +4,7 @@ import {spec} from 'modules/pulsepointBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('PulsePoint Adapter Tests', () => {
+describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',

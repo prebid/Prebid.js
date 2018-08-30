@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adkernelAdnBidAdapter';
 import * as utils from 'src/utils';
 
-describe('AdkernelAdn adapter', () => {
+describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
       bidder: 'adkernelAdn',
       transactionId: 'transact0',
@@ -110,7 +110,7 @@ describe('AdkernelAdn adapter', () => {
       syncpages: ['https://dsp.adkernel.com/sync']
     };
 
-  describe('input parameters validation', () => {
+  describe('input parameters validation', function () {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({bidderCode: 'adkernelAdn'
       })).to.be.equal(false);
@@ -157,7 +157,7 @@ describe('AdkernelAdn adapter', () => {
     return [pbRequests, tagRequests];
   }
 
-  describe('banner request building', () => {
+  describe('banner request building', function () {
     let [_, tagRequests] = buildRequest([bid1_pub1]);
     let tagRequest = tagRequests[0];
 
@@ -207,7 +207,7 @@ describe('AdkernelAdn adapter', () => {
     });
   });
 
-  describe('video request building', () => {
+  describe('video request building', function () {
     let [_, tagRequests] = buildRequest([bid_video1, bid_video2]);
     let tagRequest = tagRequests[0];
 
@@ -227,7 +227,7 @@ describe('AdkernelAdn adapter', () => {
     });
   });
 
-  describe('requests routing', () => {
+  describe('requests routing', function () {
     it('should issue a request for each publisher', () => {
       let [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid_video1]);
       expect(pbRequests).to.have.length(2);
@@ -246,7 +246,7 @@ describe('AdkernelAdn adapter', () => {
     });
   });
 
-  describe('responses processing', () => {
+  describe('responses processing', function () {
     let responses;
     before(() => {
       responses = spec.interpretResponse({body: response});

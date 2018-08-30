@@ -5,16 +5,16 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const ENDPOINT = 'https://ht.c1exchange.com/ht';
 const BIDDER_CODE = 'c1x';
 
-describe('C1XAdapter', () => {
+describe('C1XAdapter', function () {
   const adapter = newBidder(c1xAdapter);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': BIDDER_CODE,
       'adUnitCode': 'adunit-code',
@@ -38,7 +38,7 @@ describe('C1XAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': BIDDER_CODE,
@@ -134,7 +134,7 @@ describe('C1XAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'bid': true,
       'cpm': 1.5,

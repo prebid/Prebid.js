@@ -97,8 +97,8 @@ const bid3 = {
   'ttl': 300
 };
 
-describe('targeting tests', () => {
-  describe('getAllTargeting', () => {
+describe('targeting tests', function () {
+  describe('getAllTargeting', function () {
     let amBidsReceivedStub;
     let amGetAdUnitsStub;
     let bidExpiryStub;
@@ -136,7 +136,7 @@ describe('targeting tests', () => {
     });
   }); // end getAllTargeting tests
 
-  describe('getAllTargeting without bids return empty object', () => {
+  describe('getAllTargeting without bids return empty object', function () {
     let amBidsReceivedStub;
     let amGetAdUnitsStub;
     let bidExpiryStub;
@@ -166,8 +166,8 @@ describe('targeting tests', () => {
     });
   }); // end getAllTargeting without bids return empty object
 
-  describe('Targeting in concurrent auctions', () => {
-    describe('check getOldestBid', () => {
+  describe('Targeting in concurrent auctions', function () {
+    describe('check getOldestBid', function () {
       let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(() => {
@@ -231,7 +231,7 @@ describe('targeting tests', () => {
       });
     });
 
-    describe('check bidExpiry', () => {
+    describe('check bidExpiry', function () {
       let auctionManagerStub;
       let timestampStub;
       beforeEach(() => {

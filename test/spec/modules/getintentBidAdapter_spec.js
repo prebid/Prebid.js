@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/getintentBidAdapter'
 
-describe('GetIntent Adapter Tests:', () => {
+describe('GetIntent Adapter Tests:', function () {
   const bidRequests = [{
     bidId: 'bid12345',
     params: {

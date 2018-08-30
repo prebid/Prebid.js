@@ -8,7 +8,7 @@ let getConfig;
 let setConfig;
 let setDefaults;
 
-describe('config API', () => {
+describe('config API', function () {
   let logErrorSpy;
   let logWarnSpy;
   beforeEach(() => {

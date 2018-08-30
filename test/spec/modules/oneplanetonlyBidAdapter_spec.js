@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/oneplanetonlyBidAdapter';
 
-describe('OnePlanetOnlyAdapter', () => {
+describe('OnePlanetOnlyAdapter', function () {
   let bid = {
     bidId: '51ef8751f9aead',
     bidder: 'oneplanetonly',
@@ -16,7 +16,7 @@ describe('OnePlanetOnlyAdapter', () => {
     auctionId: '18fd8b8b0bd757'
   };
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Should return true if there are params.siteId and params.adUnitId parameters present', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -26,7 +26,7 @@ describe('OnePlanetOnlyAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', () => {
       expect(serverRequest).to.exist;
@@ -58,7 +58,7 @@ describe('OnePlanetOnlyAdapter', () => {
       expect(data.adUnits).to.be.an('array').that.is.empty;
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('Should interpret banner response', () => {
       const serverResponse = {
         body: {

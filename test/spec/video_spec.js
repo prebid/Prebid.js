@@ -1,6 +1,6 @@
 import { isValidVideoBid } from 'src/video';
 
-describe('video.js', () => {
+describe('video.js', function () {
   it('validates valid instream bids', () => {
     const bid = {
       adId: '123abc',

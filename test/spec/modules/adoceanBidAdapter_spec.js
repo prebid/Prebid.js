@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('AdoceanAdapter', () => {
+describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'adocean',
       'params': {
@@ -40,7 +40,7 @@ describe('AdoceanAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       {
         'bidder': 'adocean',
@@ -89,7 +89,7 @@ describe('AdoceanAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       'body': [
         {

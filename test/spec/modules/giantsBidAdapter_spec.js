@@ -6,16 +6,16 @@ import * as utils from 'src/utils';
 
 const ENDPOINT = '//d.admp.io/hb/multi?url=';
 
-describe('GiantsAdapter', () => {
+describe('GiantsAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'giants',
       'params': {
@@ -42,7 +42,7 @@ describe('GiantsAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'giants',
@@ -246,7 +246,7 @@ describe('GiantsAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'version': '3.0.0',
       'tags': [

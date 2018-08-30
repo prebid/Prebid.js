@@ -15,7 +15,7 @@ describe('adLoader', function () {
     utilsLogErrorStub.restore();
   });
 
-  describe('loadExternalScript', () => {
+  describe('loadExternalScript', function () {
     it('requires moduleCode to be included on the request', () => {
       adLoader.loadExternalScript('someURL');
       expect(utilsLogErrorStub.called).to.be.true;

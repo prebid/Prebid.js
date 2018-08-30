@@ -99,7 +99,7 @@ const RESPONSE = {
   }
 };
 
-describe('InSkin BidAdapter', () => {
+describe('InSkin BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
@@ -121,7 +121,7 @@ describe('InSkin BidAdapter', () => {
     ];
   });
 
-  describe('bid request validation', () => {
+  describe('bid request validation', function () {
     it('should accept valid bid requests', () => {
       let bid = {
         bidder: 'inskin',
@@ -166,7 +166,7 @@ describe('InSkin BidAdapter', () => {
     });
   });
 
-  describe('buildRequests validation', () => {
+  describe('buildRequests validation', function () {
     it('creates request data', () => {
       let request = spec.buildRequests(bidRequests);
 
@@ -210,7 +210,7 @@ describe('InSkin BidAdapter', () => {
       expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
     });
   });
-  describe('interpretResponse validation', () => {
+  describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', () => {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
       let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
@@ -255,7 +255,7 @@ describe('InSkin BidAdapter', () => {
       expect(bids).to.be.empty;
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     it('handles empty sync options', () => {
       let opts = spec.getUserSyncs({});
 

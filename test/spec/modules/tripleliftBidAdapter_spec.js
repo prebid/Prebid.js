@@ -5,16 +5,16 @@ import { deepClone } from 'src/utils';
 
 const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 
-describe('triplelift adapter', () => {
+describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       bidder: 'triplelift',
       params: {
@@ -52,7 +52,7 @@ describe('triplelift adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         bidder: 'triplelift',
@@ -101,7 +101,7 @@ describe('triplelift adapter', () => {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: {
         bids: [

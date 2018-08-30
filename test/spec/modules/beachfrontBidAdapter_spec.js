@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
 
-describe('BeachfrontAdapter', () => {
+describe('BeachfrontAdapter', function () {
   let bidRequests;
 
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('BeachfrontAdapter', () => {
     ];
   });
 
-  describe('spec.isBidRequestValid', () => {
+  describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed', () => {
       const bidRequest = bidRequests[0];
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
@@ -64,7 +64,7 @@ describe('BeachfrontAdapter', () => {
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
 
-    describe('for multi-format bids', () => {
+    describe('for multi-format bids', function () {
       it('should return true when the required params are passed for video', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
@@ -123,8 +123,8 @@ describe('BeachfrontAdapter', () => {
     });
   });
 
-  describe('spec.buildRequests', () => {
-    describe('for video bids', () => {
+  describe('spec.buildRequests', function () {
+    describe('for video bids', function () {
       it('should attach the bid request object', () => {
         bidRequests[0].mediaTypes = { video: {} };
         bidRequests[1].mediaTypes = { video: {} };
@@ -242,7 +242,7 @@ describe('BeachfrontAdapter', () => {
       });
     });
 
-    describe('for banner bids', () => {
+    describe('for banner bids', function () {
       it('should attach the bid requests array', () => {
         bidRequests[0].mediaTypes = { banner: {} };
         bidRequests[1].mediaTypes = { banner: {} };
@@ -357,7 +357,7 @@ describe('BeachfrontAdapter', () => {
       });
     });
 
-    describe('for multi-format bids', () => {
+    describe('for multi-format bids', function () {
       it('should create a POST request for each bid format', () => {
         const width = 300;
         const height = 250;
@@ -413,8 +413,8 @@ describe('BeachfrontAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
-    describe('for video bids', () => {
+  describe('spec.interpretResponse', function () {
+    describe('for video bids', function () {
       it('should return no bids if the response is not valid', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -493,7 +493,7 @@ describe('BeachfrontAdapter', () => {
       });
     });
 
-    describe('for banner bids', () => {
+    describe('for banner bids', function () {
       it('should return no bids if the response is not valid', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
@@ -555,8 +555,8 @@ describe('BeachfrontAdapter', () => {
     });
   });
 
-  describe('spec.getUserSyncs', () => {
-    describe('for video bids', () => {
+  describe('spec.getUserSyncs', function () {
+    describe('for video bids', function () {
       let bidResponse;
 
       beforeEach(() => {
@@ -606,7 +606,7 @@ describe('BeachfrontAdapter', () => {
       });
     });
 
-    describe('for banner bids', () => {
+    describe('for banner bids', function () {
       let bidResponse;
 
       beforeEach(() => {

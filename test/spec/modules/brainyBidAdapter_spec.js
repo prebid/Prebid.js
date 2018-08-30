@@ -64,8 +64,8 @@ const invalidSyncBidResponse = [{
   }
 }];
 
-describe('brainy Adapter', () => {
-  describe('request', () => {
+describe('brainy Adapter', function () {
+  describe('request', function () {
     it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
@@ -73,7 +73,7 @@ describe('brainy Adapter', () => {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(false);
     });
   });
-  describe('build request', () => {
+  describe('build request', function () {
     it('Verify bid request', () => {
       const request = spec.buildRequests(bidReq);
       expect(request[0].method).to.equal('GET');
@@ -83,7 +83,7 @@ describe('brainy Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should build bid array', () => {
       const request = spec.buildRequests(bidReq);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
@@ -101,7 +101,7 @@ describe('brainy Adapter', () => {
     });
   });
 
-  describe('spec.getUserSyncs', () => {
+  describe('spec.getUserSyncs', function () {
     let syncOptions
     beforeEach(() => {
       syncOptions = {

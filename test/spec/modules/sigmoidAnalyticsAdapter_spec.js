@@ -46,7 +46,7 @@ describe('sigmoid Prebid Analytic', function () {
       sinon.assert.callCount(sigmoidAnalytic.track, 5);
     });
   });
-  describe('build utm tag data', () => {
+  describe('build utm tag data', function () {
     beforeEach(() => {
       localStorage.setItem('sigmoid_analytics_utm_source', 'utm_source');
       localStorage.setItem('sigmoid_analytics_utm_medium', 'utm_medium');

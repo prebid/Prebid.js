@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/rxrtbBidAdapter';
 
-describe('rxrtb adapater', () => {
-  describe('Test validate req', () => {
+describe('rxrtb adapater', function () {
+  describe('Test validate req', function () {
     it('should accept minimum valid bid', () => {
       let bid = {
         bidder: 'rxrtb',
@@ -58,7 +58,7 @@ describe('rxrtb adapater', () => {
     });
   });
 
-  describe('Test build request', () => {
+  describe('Test build request', function () {
     it('minimum request', () => {
       let bid = {
         bidder: 'rxrtb',
@@ -88,7 +88,7 @@ describe('rxrtb adapater', () => {
     });
   });
 
-  describe('Test interpret response', () => {
+  describe('Test interpret response', function () {
     it('General banner response', () => {
       let resp = spec.interpretResponse({
         body: {

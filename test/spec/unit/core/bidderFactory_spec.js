@@ -29,7 +29,7 @@ const MOCK_BIDS_REQUEST = {
   ]
 }
 
-describe('bidders created by newBidder', () => {
+describe('bidders created by newBidder', function () {
   let spec;
   let bidder;
   let addBidResponseStub;
@@ -48,7 +48,7 @@ describe('bidders created by newBidder', () => {
     doneStub = sinon.stub();
   });
 
-  describe('when the ajax response is irrelevant', () => {
+  describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
 
     beforeEach(() => {
@@ -259,7 +259,7 @@ describe('bidders created by newBidder', () => {
     });
   });
 
-  describe('when the ajax call succeeds', () => {
+  describe('when the ajax call succeeds', function () {
     let ajaxStub;
     let userSyncStub;
     let logErrorSpy;
@@ -459,7 +459,7 @@ describe('bidders created by newBidder', () => {
     });
   });
 
-  describe('when the ajax call fails', () => {
+  describe('when the ajax call fails', function () {
     let ajaxStub;
 
     beforeEach(() => {
@@ -529,7 +529,7 @@ describe('bidders created by newBidder', () => {
   });
 });
 
-describe('registerBidder', () => {
+describe('registerBidder', function () {
   let registerBidAdapterStub;
   let aliasBidAdapterStub;
 
@@ -586,7 +586,7 @@ describe('registerBidder', () => {
   });
 })
 
-describe('validate bid response: ', () => {
+describe('validate bid response: ', function () {
   let spec;
   let bidder;
   let addBidResponseStub;

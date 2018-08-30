@@ -3,7 +3,7 @@ import {spec} from 'modules/pubmaticBidAdapter';
 import * as utils from 'src/utils';
 const constants = require('src/constants.json');
 
-describe('PubMatic adapter', () => {
+describe('PubMatic adapter', function () {
   let bidRequests;
   let videoBidRequests;
   let multipleMediaRequests;
@@ -155,8 +155,8 @@ describe('PubMatic adapter', () => {
     };
   });
 
-  describe('implementation', () => {
-  	describe('Bid validations', () => {
+  describe('implementation', function () {
+  	describe('Bid validations', function () {
   		it('valid bid case', () => {
 		  let validBid = {
 	        bidder: 'pubmatic',
@@ -216,7 +216,7 @@ describe('PubMatic adapter', () => {
       });
     });
 
-  	describe('Request formation', () => {
+  	describe('Request formation', function () {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
@@ -632,7 +632,7 @@ describe('PubMatic adapter', () => {
       expect(data.site.ext).to.not.exist;
     });
 
-    describe('Response checking', () => {
+    describe('Response checking', function () {
       it('should check for valid response values', () => {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);

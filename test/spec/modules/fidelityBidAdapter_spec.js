@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/fidelityBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('FidelityAdapter', () => {
+describe('FidelityAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'fidelity',
       'params': {
@@ -49,7 +49,7 @@ describe('FidelityAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidderRequest = {
       bidderCode: 'fidelity',
       requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -119,7 +119,7 @@ describe('FidelityAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'id': '543210',
       'seatbid': [ {
@@ -164,7 +164,7 @@ describe('FidelityAdapter', () => {
     });
   });
 
-  describe('user sync', () => {
+  describe('user sync', function () {
     const syncUrl = '//x.fidelity-media.com/delivery/matches.php?type=iframe';
 
     it('should register the sync iframe', () => {

@@ -22,7 +22,7 @@ describe('gammaBidAdapter', function() {
   };
   let bidArray = [bid];
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -40,7 +40,7 @@ describe('gammaBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should attempt to send bid requests to the endpoint via GET', () => {
       const requests = spec.buildRequests(bidArray);
       requests.forEach(function(requestItem) {
@@ -50,7 +50,7 @@ describe('gammaBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
 
     beforeEach(() => {

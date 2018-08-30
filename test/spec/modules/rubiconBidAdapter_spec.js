@@ -12,7 +12,7 @@ var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
-describe('the rubicon adapter', () => {
+describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap;
@@ -331,7 +331,7 @@ describe('the rubicon adapter', () => {
     sandbox.restore();
   });
 
-  describe('MAS mapping / ordering', () => {
+  describe('MAS mapping / ordering', function () {
     it('should sort values without any MAS priority sizes in regular ascending order', () => {
       let ordering = masSizeOrdering([126, 43, 65, 16]);
       expect(ordering).to.deep.equal([16, 43, 65, 126]);
@@ -349,9 +349,9 @@ describe('the rubicon adapter', () => {
     });
   });
 
-  describe('buildRequests implementation', () => {
-    describe('for requests', () => {
-      describe('to fastlane', () => {
+  describe('buildRequests implementation', function () {
+    describe('for requests', function () {
+      describe('to fastlane', function () {
         it('should make a well-formed request objects', () => {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -634,7 +634,7 @@ describe('the rubicon adapter', () => {
           delete window.DigiTrust;
         });
 
-        describe('digiTrustId config', () => {
+        describe('digiTrustId config', function () {
           var origGetConfig;
           beforeEach(() => {
             window.DigiTrust = {
@@ -758,7 +758,7 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        describe('GDPR consent config', () => {
+        describe('GDPR consent config', function () {
           it('should send "gdpr" and "gdpr_consent", when gdprConsent defines consentString and gdprApplies', () => {
             createGdprBidderRequest(true);
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -798,7 +798,7 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        describe('singleRequest config', () => {
+        describe('singleRequest config', function () {
           it('should group all bid requests with the same site id', () => {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);
 
@@ -1009,7 +1009,7 @@ describe('the rubicon adapter', () => {
         });
       });
 
-      describe('for video requests', () => {
+      describe('for video requests', function () {
         it('should make a well-formed video request with legacy mediaType config', () => {
           createLegacyVideoBidderRequest();
 
@@ -1315,7 +1315,7 @@ describe('the rubicon adapter', () => {
         });
       });
 
-      describe('combineSlotUrlParams', () => {
+      describe('combineSlotUrlParams', function () {
         it('should combine an array of slot url params', () => {
           expect(spec.combineSlotUrlParams([])).to.deep.equal({});
 
@@ -1341,7 +1341,7 @@ describe('the rubicon adapter', () => {
         });
       });
 
-      describe('createSlotParams', () => {
+      describe('createSlotParams', function () {
         it('should return a valid slot params object', () => {
           let expectedQuery = {
             'account_id': '14062',
@@ -1380,7 +1380,7 @@ describe('the rubicon adapter', () => {
         });
       });
 
-      describe('hasVideoMediaType', () => {
+      describe('hasVideoMediaType', function () {
         it('should return true if mediaType is video and size_id is set', () => {
           createVideoBidderRequest();
           const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
@@ -1437,8 +1437,8 @@ describe('the rubicon adapter', () => {
       });
     });
 
-    describe('interpretResponse', () => {
-      describe('for fastlane', () => {
+    describe('interpretResponse', function () {
+      describe('for fastlane', function () {
         it('should handle a success response and sort by cpm', () => {
           let response = {
             'status': 'ok',
@@ -1644,7 +1644,7 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.be.equal(0);
         });
 
-        describe('singleRequest enabled', () => {
+        describe('singleRequest enabled', function () {
           it('handles bidRequest of type Array and returns associated adUnits', () => {
             const overrideMap = [];
             overrideMap[0] = { impression_id: '1' };
@@ -1795,7 +1795,7 @@ describe('the rubicon adapter', () => {
         });
       });
 
-      describe('for video', () => {
+      describe('for video', function () {
         beforeEach(() => {
           createVideoBidderRequest();
         });
@@ -1849,7 +1849,7 @@ describe('the rubicon adapter', () => {
     });
   });
 
-  describe('user sync', () => {
+  describe('user sync', function () {
     const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
     beforeEach(() => {

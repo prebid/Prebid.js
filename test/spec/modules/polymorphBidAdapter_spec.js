@@ -33,14 +33,14 @@ const bidRequests = [{
   'auctionId': '1d1a030790a476',
 }];
 
-describe('Polymorph adapter test', () => {
-  describe('.code', () => {
+describe('Polymorph adapter test', function () {
+  describe('.code', function () {
     it('should return a bidder code of polymorph', () => {
       expect(spec.code).to.eql(BIDDER_CODE);
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
@@ -66,7 +66,7 @@ describe('Polymorph adapter test', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('payload test', () => {
       const requests = spec.buildRequests(bidRequests);
       var payload1 = {};
@@ -99,7 +99,7 @@ describe('Polymorph adapter test', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       body: {
         'status': 'OK',

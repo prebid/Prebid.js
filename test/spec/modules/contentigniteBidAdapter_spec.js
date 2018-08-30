@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/contentigniteBidAdapter';
 
-describe('Content Ignite adapter', () => {
+describe('Content Ignite adapter', function () {
   let bidRequests;
 
   beforeEach(() => {
@@ -25,8 +25,8 @@ describe('Content Ignite adapter', () => {
     ];
   });
 
-  describe('implementation', () => {
-    describe('for requests', () => {
+  describe('implementation', function () {
+    describe('for requests', function () {
       it('should accept valid bid', () => {
         const validBid = {
             bidder: 'contentignite',
@@ -87,7 +87,7 @@ describe('Content Ignite adapter', () => {
       });
     });
 
-    describe('bid responses', () => {
+    describe('bid responses', function () {
       it('should return complete bid response', () => {
         const serverResponse = {
             body: {

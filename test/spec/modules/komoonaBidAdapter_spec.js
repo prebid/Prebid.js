@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/komoonaBidAdapter';
 
-describe('Komoona.com Adapter Tests', () => {
+describe('Komoona.com Adapter Tests', function () {
   const bidsRequest = [
     {
       bidder: 'komoona',

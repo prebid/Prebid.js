@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import {spec} from 'modules/mantisBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('MantisAdapter', () => {
+describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'mantis',
       'params': {
@@ -31,7 +31,7 @@ describe('MantisAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'mantis',
@@ -107,7 +107,7 @@ describe('MantisAdapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     it('iframe', () => {
       let result = spec.getUserSyncs({
         iframeEnabled: true
@@ -127,7 +127,7 @@ describe('MantisAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('display ads returned', () => {
       let response = {
         body: {

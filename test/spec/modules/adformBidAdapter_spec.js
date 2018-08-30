@@ -3,10 +3,10 @@ import * as url from 'src/url';
 import {spec} from 'modules/adformBidAdapter';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-describe('Adform adapter', () => {
+describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'adform',
       'params': {
@@ -26,7 +26,7 @@ describe('Adform adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should pass multiple bids via single request', () => {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
@@ -111,7 +111,7 @@ describe('Adform adapter', () => {
       assert.equal(parsedUrl.query.pt, 'gross');
     });
 
-    describe('gdpr', () => {
+    describe('gdpr', function () {
       it('should send GDPR Consent data to adform if gdprApplies', () => {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
@@ -148,7 +148,7 @@ describe('Adform adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should respond with empty response when there is empty serverResponse', () => {
       let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
@@ -239,7 +239,7 @@ describe('Adform adapter', () => {
       };
     });
 
-    describe('verifySizes', () => {
+    describe('verifySizes', function () {
       it('should respond with empty response when sizes doesn\'t match', () => {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 100;

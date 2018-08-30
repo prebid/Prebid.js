@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/widespaceBidAdapter';
 import includes from 'core-js/library/fn/array/includes';
 
-describe('+widespaceAdatperTest', () => {
+describe('+widespaceAdatperTest', function () {
   // Dummy bid request
   const bidRequest = [{
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -110,7 +110,7 @@ describe('+widespaceAdatperTest', () => {
     navigator.connection.type = 'wifi';
   }
 
-  describe('+bidRequestValidity', () => {
+  describe('+bidRequestValidity', function () {
     it('bidRequest with sid and currency params', () => {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
@@ -140,7 +140,7 @@ describe('+widespaceAdatperTest', () => {
     });
   });
 
-  describe('+bidRequest', () => {
+  describe('+bidRequest', function () {
     const request = spec.buildRequests(bidRequest, bidderRequest);
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
 
@@ -169,7 +169,7 @@ describe('+widespaceAdatperTest', () => {
     });
   });
 
-  describe('+interpretResponse', () => {
+  describe('+interpretResponse', function () {
     it('-required params available in response', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       let requiredKeys = [
@@ -212,7 +212,7 @@ describe('+widespaceAdatperTest', () => {
     });
   });
 
-  describe('+getUserSyncs', () => {
+  describe('+getUserSyncs', function () {
     it('-always return an array', () => {
       const userSync_test1 = spec.getUserSyncs({}, [bidResponse]);
       expect(Array.isArray(userSync_test1)).to.equal(true);

@@ -40,7 +40,7 @@ describe('Improve Digital Adapter Tests', function () {
     },
   };
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return false when no bid', () => {
       expect(spec.isBidRequestValid()).to.equal(false);
     });
@@ -81,7 +81,7 @@ describe('Improve Digital Adapter Tests', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should make a well-formed request objects', () => {
       const requests = spec.buildRequests([simpleBidRequest]);
       expect(requests).to.be.an('array');
@@ -164,7 +164,7 @@ describe('Improve Digital Adapter Tests', function () {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const serverResponse = {
       'body': {
         'id': '687a06c541d8d1',

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/iqmBidAdapter'
 import * as utils from 'src/utils';
 
-describe('iqmBidAdapter', () => {
+describe('iqmBidAdapter', function () {
   const ENDPOINT_URL = 'https://pbd.bids.iqm.com';
   const bidRequests = [{
     bidder: 'iqm',
@@ -80,7 +80,7 @@ describe('iqmBidAdapter', () => {
     headers: {}
   };
 
-  describe('Request verification', () => {
+  describe('Request verification', function () {
     it('basic property verification', () => {
       expect(spec.code).to.equal('iqm');
       expect(spec.aliases).to.be.an('array');
@@ -88,7 +88,7 @@ describe('iqmBidAdapter', () => {
       expect(spec.aliases).to.have.lengthOf(1);
     });
 
-    describe('isBidRequestValid', () => {
+    describe('isBidRequestValid', function () {
       let bid = {
         'bidder': 'iqm',
         'params': {
@@ -127,7 +127,7 @@ describe('iqmBidAdapter', () => {
       });
     });
 
-    describe('buildRequests', () => {
+    describe('buildRequests', function () {
       it('sends every bid request to ENDPOINT_URL via POST method', () => {
         const requests = spec.buildRequests(bidRequests);
         expect(requests[0].method).to.equal('POST');
@@ -175,7 +175,7 @@ describe('iqmBidAdapter', () => {
       });
     });
 
-    describe('interpretResponse', () => {
+    describe('interpretResponse', function () {
       it('should handle no bid response', () => {
         const response = spec.interpretResponse({ body: null }, { bidRequests });
         expect(response.length).to.equal(0);

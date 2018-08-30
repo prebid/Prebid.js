@@ -6,16 +6,16 @@ const BIDDER_CODE = 'admixer';
 const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
-describe('AdmixerAdapter', () => {
+describe('AdmixerAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.be.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': BIDDER_CODE,
       'params': {
@@ -42,7 +42,7 @@ describe('AdmixerAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': BIDDER_CODE,
@@ -71,7 +71,7 @@ describe('AdmixerAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: [{
         'currency': 'USD',

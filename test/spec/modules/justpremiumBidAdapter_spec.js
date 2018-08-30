@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/justpremiumBidAdapter'
 
-describe('justpremium adapter', () => {
+describe('justpremium adapter', function () {
   let adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
@@ -21,7 +21,7 @@ describe('justpremium adapter', () => {
     },
   ]
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Verifies bidder code', () => {
       expect(spec.code).to.equal('justpremium')
     })
@@ -34,7 +34,7 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('Verify build request and parameters', () => {
       const request = spec.buildRequests(adUnits)
       expect(request.method).to.equal('POST')
@@ -57,7 +57,7 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits)
     it('Verify server response', () => {
       let response = {
@@ -122,7 +122,7 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     it('Verifies sync options', () => {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
@@ -131,7 +131,7 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('onTimeout', () => {
+  describe('onTimeout', function () {
     it('onTimeout', (done) => {
       spec.onTimeout([{
         'bidId': '25cd3ec3fd6ed7',

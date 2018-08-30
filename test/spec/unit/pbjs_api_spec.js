@@ -1085,7 +1085,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('requestBids', () => {
+  describe('requestBids', function () {
     let logMessageSpy;
     let makeRequestsStub;
     let xhr;
@@ -1193,7 +1193,7 @@ describe('Unit: Prebid Module', function () {
     });
   })
 
-  describe('requestBids', () => {
+  describe('requestBids', function () {
     let xhr;
     let requests;
 
@@ -1217,7 +1217,7 @@ describe('Unit: Prebid Module', function () {
     };
     registerBidder(spec);
 
-    describe('part 1', () => {
+    describe('part 1', function () {
       let auctionArgs;
 
       beforeEach(() => {
@@ -1295,7 +1295,7 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('multiformat requests', () => {
+    describe('multiformat requests', function () {
       let spyCallBids;
       let createAuctionStub;
       let adUnits;
@@ -1351,7 +1351,7 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('part 2', () => {
+    describe('part 2', function () {
       let spyCallBids;
       let createAuctionStub;
       let adUnits;
@@ -1440,7 +1440,7 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('part-3', () => {
+    describe('part-3', function () {
       let auctionManagerInstance = newAuctionManager();
       let auctionManagerStub;
       let adUnits1 = getAdUnits().filter((adUnit) => {
@@ -1543,7 +1543,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('onEvent', () => {
+  describe('onEvent', function () {
     it('should log an error when handler is not a function', () => {
       var spyLogError = sinon.spy(utils, 'logError');
       var event = 'testEvent';
@@ -1570,7 +1570,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('offEvent', () => {
+  describe('offEvent', function () {
     it('should return when id provided is not valid for event', () => {
       var spyEventsOff = sinon.spy(events, 'off');
       $$PREBID_GLOBAL$$.offEvent('bidWon', Function, 'testId');
@@ -1586,7 +1586,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('emit', () => {
+  describe('emit', function () {
     it('should be able to emit event without arguments', () => {
       var spyEventsEmit = sinon.spy(events, 'emit');
       events.emit(CONSTANTS.EVENTS.AUCTION_END);
@@ -1595,7 +1595,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('registerBidAdapter', () => {
+  describe('registerBidAdapter', function () {
     it('should register bidAdaptor with adaptermanager', () => {
       var registerBidAdapterSpy = sinon.spy(adaptermanager, 'registerBidAdapter');
       $$PREBID_GLOBAL$$.registerBidAdapter(Function, 'biddercode');
@@ -1616,7 +1616,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('createBid', () => {
+  describe('createBid', function () {
     it('should return a bid object', () => {
       const statusCode = 1;
       const bid = $$PREBID_GLOBAL$$.createBid(statusCode);
@@ -1629,7 +1629,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('loadScript', () => {
+  describe('loadScript', function () {
     it('should call adloader.loadScript', () => {
       const loadScriptSpy = sinon.spy(adloader, 'loadScript');
       const tagSrc = '';
@@ -1642,7 +1642,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('aliasBidder', () => {
+  describe('aliasBidder', function () {
     it('should call adaptermanager.aliasBidder', () => {
       const aliasBidAdapterSpy = sinon.spy(adaptermanager, 'aliasBidAdapter');
       const bidderCode = 'testcode';
@@ -1663,7 +1663,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('setPriceGranularity', () => {
+  describe('setPriceGranularity', function () {
     it('should log error when not passed granularity', () => {
       const logErrorSpy = sinon.spy(utils, 'logError');
       const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
@@ -1715,7 +1715,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('emit event', () => {
+  describe('emit event', function () {
     let auctionManagerStub;
     beforeEach(() => {
       auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
@@ -1728,7 +1728,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('removeAdUnit', () => {
+  describe('removeAdUnit', function () {
     it('should remove given adUnit in adUnits array', () => {
       const adUnit1 = {
         code: 'adUnit1',
@@ -1757,7 +1757,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('getDealTargeting', () => {
+  describe('getDealTargeting', function () {
     beforeEach(() => {
       resetAuction();
     });
@@ -1808,7 +1808,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('getHighestCpm', () => {
+  describe('getHighestCpm', function () {
     after(() => {
       resetAuction();
     });
@@ -1851,7 +1851,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('markWinningBidAsUsed', () => {
+  describe('markWinningBidAsUsed', function () {
     it('marks the bid object as used for the given adUnitCode/adId combination', () => {
       // make sure the auction has "state" and does not reload the fixtures
       const adUnitCode = '/19968336/header-bid-tag-0';
@@ -1919,7 +1919,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('setTargetingForAst', () => {
+  describe('setTargetingForAst', function () {
     let targeting;
     let auctionManagerInstance;
 
@@ -2006,7 +2006,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('getAllPrebidWinningBids', () => {
+  describe('getAllPrebidWinningBids', function () {
     let auctionManagerStub;
     beforeEach(() => {
       auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');

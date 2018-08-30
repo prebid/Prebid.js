@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { spec } from 'modules/criteoBidAdapter';
 import * as utils from 'src/utils';
 
-describe('The Criteo bidding adapter', () => {
-  describe('isBidRequestValid', () => {
+describe('The Criteo bidding adapter', function () {
+  describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', () => {
       const bid = {
         bidder: 'criteo',
@@ -47,7 +47,7 @@ describe('The Criteo bidding adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidderRequest = { timeout: 3000,
       gdprConsent: {
         gdprApplies: 1,
@@ -194,7 +194,7 @@ describe('The Criteo bidding adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should return an empty array when parsing a no bid response', () => {
       const response = {};
       const request = { bidRequests: [] };

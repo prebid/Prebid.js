@@ -56,11 +56,11 @@ let getDefaultBidResponse = (isBanner, noBid = 0) => {
   };
 };
 
-describe('LifestreetAdapter', () => {
+describe('LifestreetAdapter', function () {
   const LIFESTREET_URL = '//ads.lfstmedia.com/gate/';
   const ADAPTER_VERSION = 'prebidJS-2.0';
 
-  describe('buildRequests()', () => {
+  describe('buildRequests()', function () {
     it('method exists and is a function', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
@@ -155,7 +155,7 @@ describe('LifestreetAdapter', () => {
       expect(request.url).to.contain('__consent=test');
     });
   });
-  describe('interpretResponse()', () => {
+  describe('interpretResponse()', function () {
     it('should return formatted bid response with required properties', () => {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(true) };

@@ -639,7 +639,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('getDefinedParams', () => {
+  describe('getDefinedParams', function () {
     it('builds an object consisting of defined params', () => {
       const adUnit = {
         mediaType: 'video',
@@ -658,7 +658,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepClone', () => {
+  describe('deepClone', function () {
     it('deep copies objects', () => {
       const adUnit = [{
         code: 'swan',
@@ -679,7 +679,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('getUserConfiguredParams', () => {
+  describe('getUserConfiguredParams', function () {
     const adUnits = [{
       code: 'adUnit1',
       bids: [{
@@ -719,7 +719,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('getTopWindowLocation', () => {
+  describe('getTopWindowLocation', function () {
     let sandbox;
 
     beforeEach(() => {
@@ -806,7 +806,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('convertCamelToUnderscore', () => {
+  describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', () => {
       let var1 = 'placementIdTest';
       let test1 = utils.convertCamelToUnderscore(var1);
@@ -818,7 +818,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('getAdUnitSizes', () => {
+  describe('getAdUnitSizes', function () {
     it('returns an empty response when adUnits is undefined', () => {
       let sizes = utils.getAdUnitSizes();
       expect(sizes).to.be.undefined;

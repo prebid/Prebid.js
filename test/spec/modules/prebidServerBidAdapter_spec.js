@@ -329,7 +329,7 @@ const RESPONSE_UNSUPPORTED_BIDDER = {
   }]
 };
 
-describe('S2S Adapter', () => {
+describe('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();
@@ -375,7 +375,7 @@ describe('S2S Adapter', () => {
     done.resetHistory();
   });
 
-  describe('request function', () => {
+  describe('request function', function () {
     let xhr;
     let requests;
 
@@ -402,7 +402,7 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
-    describe('gdpr tests', () => {
+    describe('gdpr tests', function () {
       afterEach(() => {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
@@ -710,7 +710,7 @@ describe('S2S Adapter', () => {
     });
   });
 
-  describe('response handler', () => {
+  describe('response handler', function () {
     let server;
     let logWarnSpy;
 
@@ -990,7 +990,7 @@ describe('S2S Adapter', () => {
     });
   });
 
-  describe('s2sConfig', () => {
+  describe('s2sConfig', function () {
     let logErrorSpy;
 
     beforeEach(() => {

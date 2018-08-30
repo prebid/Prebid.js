@@ -5,7 +5,7 @@ import includes from 'core-js/library/fn/array/includes';
 let utils = require('src/utils');
 let deepClone = utils.deepClone;
 
-describe('sizeMapping', () => {
+describe('sizeMapping', function () {
   var testSizes = [[970, 90], [728, 90], [300, 250], [300, 100], [80, 80]];
 
   var sizeConfig = [{
@@ -70,7 +70,7 @@ describe('sizeMapping', () => {
     sandbox.restore();
   });
 
-  describe('when handling sizes', () => {
+  describe('when handling sizes', function () {
     it('should log a warning when mediaQuery property missing from sizeConfig', () => {
       let errorConfig = deepClone(sizeConfig);
 
@@ -137,7 +137,7 @@ describe('sizeMapping', () => {
     });
   });
 
-  describe('when handling labels', () => {
+  describe('when handling labels', function () {
     it('should activate/deactivate adUnits/bidders based on sizeConfig.labels', () => {
       matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 

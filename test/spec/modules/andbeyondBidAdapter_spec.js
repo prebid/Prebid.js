@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/andbeyondBidAdapter';
 import * as utils from 'src/utils';
 
-describe('andbeyond adapter', () => {
+describe('andbeyond adapter', function () {
   const bid1_zone1 = {
       bidder: 'andbeyond',
       bidId: 'Bid_01',
@@ -80,7 +80,7 @@ describe('andbeyond adapter', () => {
       cur: 'USD'
     };
 
-  describe('input parameters validation', () => {
+  describe('input parameters validation', function () {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({
         bidderCode: 'andbeyond'
@@ -100,7 +100,7 @@ describe('andbeyond adapter', () => {
     });
   });
 
-  describe('banner request building', () => {
+  describe('banner request building', function () {
     let bidRequest;
     before(() => {
       let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
@@ -151,7 +151,7 @@ describe('andbeyond adapter', () => {
     });
   });
 
-  describe('requests routing', () => {
+  describe('requests routing', function () {
     it('should issue a request for each host', () => {
       let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
@@ -167,7 +167,7 @@ describe('andbeyond adapter', () => {
     });
   });
 
-  describe('responses processing', () => {
+  describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', () => {
       let request = spec.buildRequests([bid1_zone1])[0];
       let resp = spec.interpretResponse({body: bidResponse1}, request)[0];

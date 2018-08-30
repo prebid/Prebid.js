@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/aardvarkBidAdapter';
 
-describe('aardvarkAdapterTest', () => {
-  describe('forming valid bidRequests', () => {
+describe('aardvarkAdapterTest', function () {
+  describe('forming valid bidRequests', function () {
     it('should accept valid bidRequests', () => {
       expect(spec.isBidRequestValid({
         bidder: 'aardvark',
@@ -25,7 +25,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('executing network requests', () => {
+  describe('executing network requests', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -78,7 +78,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('splitting multi-auction ad units into own requests', () => {
+  describe('splitting multi-auction ad units into own requests', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -138,7 +138,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('GDPR conformity', () => {
+  describe('GDPR conformity', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -168,7 +168,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('GDPR absence conformity', () => {
+  describe('GDPR absence conformity', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -195,7 +195,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should handle bid responses', () => {
       const serverResponse = {
         body: [

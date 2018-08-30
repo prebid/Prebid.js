@@ -169,13 +169,13 @@ describe('bridgewellBidAdapter', function () {
   ];
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bidWithoutCpmWeight = {
       'bidder': 'bridgewell',
       'params': {
@@ -272,7 +272,7 @@ describe('bridgewellBidAdapter', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should attach valid params to the tag', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
@@ -293,7 +293,7 @@ describe('bridgewellBidAdapter', function () {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = spec.buildRequests(bidRequests);
     const serverResponses = [
       {

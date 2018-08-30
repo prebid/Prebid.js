@@ -4,8 +4,8 @@ import * as utils from 'src/utils';
 
 const supplyPartnerId = '123';
 
-describe('GambidAdapter', () => {
-  describe('isBidRequestValid', () => {
+describe('GambidAdapter', function () {
+  describe('isBidRequestValid', function () {
     it('should validate supply-partner ID', () => {
       expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: 123 } })).to.equal(false);
@@ -35,7 +35,7 @@ describe('GambidAdapter', () => {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: 2 } })).to.equal(false);
     });
   });
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',
@@ -158,7 +158,7 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',

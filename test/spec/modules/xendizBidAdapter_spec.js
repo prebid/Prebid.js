@@ -34,16 +34,16 @@ const bidResponse = {
 
 const noBidResponse = { body: { id: '1d1a030790a475', bids: [] } };
 
-describe('xendizBidAdapter', () => {
+describe('xendizBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return false', () => {
       let bid = Object.assign({}, bidRequest);
       bid.params = {};
@@ -55,7 +55,7 @@ describe('xendizBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should format valid url', () => {
       const request = spec.buildRequests([bidRequest]);
       expect(request.url).to.equal(VALID_ENDPOINT);
@@ -92,7 +92,7 @@ describe('xendizBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should get correct bid response', () => {
       const result = spec.interpretResponse(bidResponse);
       const validResponse = [{

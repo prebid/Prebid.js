@@ -184,7 +184,7 @@ const REQUEST_TWO_UNITS = {
   ]
 };
 
-describe('ServerBid S2S Adapter', () => {
+describe('ServerBid S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();
@@ -196,7 +196,7 @@ describe('ServerBid S2S Adapter', () => {
     done.resetHistory();
   });
 
-  describe('request function', () => {
+  describe('request function', function () {
     let xhr;
     let requests;
 
@@ -213,7 +213,7 @@ describe('ServerBid S2S Adapter', () => {
     });
   });
 
-  describe('response handler', () => {
+  describe('response handler', function () {
     let server;
 
     beforeEach(() => {

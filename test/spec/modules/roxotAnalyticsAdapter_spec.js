@@ -427,7 +427,7 @@ describe('Roxot Prebid Analytic', function () {
     });
   });
 
-  describe('build utm tag data', () => {
+  describe('build utm tag data', function () {
     beforeEach(() => {
       localStorage.setItem('roxot_analytics_utm_source', 'utm_source');
       localStorage.setItem('roxot_analytics_utm_medium', 'utm_medium');

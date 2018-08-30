@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import { createHook, hooks } from 'src/hook';
 
-describe('the hook module', () => {
+describe('the hook module', function () {
   let sandbox;
 
   beforeEach(() => {
@@ -85,7 +85,7 @@ describe('the hook module', () => {
     expect(calledBoundContext).to.equal(boundContext);
   });
 
-  describe('asyncSeries', () => {
+  describe('asyncSeries', function () {
     it('should call function as normal if no hooks attached', () => {
       let fn = sandbox.spy();
       let hookFn = createHook('asyncSeries', fn);

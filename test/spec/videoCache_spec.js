@@ -5,7 +5,7 @@ import { config } from 'src/config';
 
 const should = chai.should();
 
-describe('The video cache', () => {
+describe('The video cache', function () {
   function assertError(callbackSpy) {
     callbackSpy.calledOnce.should.equal(true);
     callbackSpy.firstCall.args[0].should.be.an('error');
@@ -16,7 +16,7 @@ describe('The video cache', () => {
     should.not.exist(callbackSpy.firstCall.args[0]);
   }
 
-  describe('when the cache server is unreachable', () => {
+  describe('when the cache server is unreachable', function () {
     let xhr;
     let requests;
 
@@ -41,7 +41,7 @@ describe('The video cache', () => {
     });
   });
 
-  describe('when the cache server is available', () => {
+  describe('when the cache server is available', function () {
     let xhr;
     let requests;
 
@@ -150,7 +150,7 @@ describe('The video cache', () => {
   });
 });
 
-describe('The getCache function', () => {
+describe('The getCache function', function () {
   beforeEach(() => {
     config.setConfig({
       cache: {

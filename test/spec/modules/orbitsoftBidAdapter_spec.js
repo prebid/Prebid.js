@@ -2,9 +2,9 @@ import {expect} from 'chai';
 import {spec} from 'modules/orbitsoftBidAdapter';
 
 const ENDPOINT_URL = 'https://orbitsoft.com/php/ads/hb.phps';
-describe('Orbitsoft adapter', () => {
-  describe('implementation', () => {
-    describe('for requests', () => {
+describe('Orbitsoft adapter', function () {
+  describe('implementation', function () {
+    describe('for requests', function () {
       it('should accept valid bid', () => {
         let validBid = {
             bidder: 'orbitsoft',
@@ -27,7 +27,7 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('for requests', () => {
+    describe('for requests', function () {
       it('should accept valid bid with styles', () => {
         let validBid = {
             bidder: 'orbitsoft',
@@ -136,7 +136,7 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('bid responses', () => {
+    describe('bid responses', function () {
       it('should return complete bid response', () => {
         let serverResponse = {
           body: {

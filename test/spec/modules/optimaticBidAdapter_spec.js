@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/optimaticBidAdapter';
 import * as utils from 'src/utils';
 
-describe('OptimaticBidAdapter', () => {
+describe('OptimaticBidAdapter', function () {
   let bidRequest;
 
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe('OptimaticBidAdapter', () => {
     };
   });
 
-  describe('spec.isBidRequestValid', () => {
+  describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
@@ -50,7 +50,7 @@ describe('OptimaticBidAdapter', () => {
     });
   });
 
-  describe('spec.buildRequests', () => {
+  describe('spec.buildRequests', function () {
     it('should create a POST request for every bid', () => {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].method).to.equal('POST');
@@ -100,7 +100,7 @@ describe('OptimaticBidAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
+  describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', () => {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);

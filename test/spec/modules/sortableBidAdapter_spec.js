@@ -9,7 +9,7 @@ const ENDPOINT = `//c.deployads.com/openrtb2/auction?src=${REPO_AND_VERSION}&hos
 describe('sortableBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     function makeBid() {
       return {
         'bidder': 'sortable',
@@ -103,7 +103,7 @@ describe('sortableBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [{
       'bidder': 'sortable',
       'params': {
@@ -166,7 +166,7 @@ describe('sortableBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     function makeResponse() {
       return {
         body: {

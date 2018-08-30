@@ -13,7 +13,7 @@ const bid = {
   adserverTargeting: { },
 };
 
-describe('The DFP video support module', () => {
+describe('The DFP video support module', function () {
   it('should make a legal request URL when given the required params', () => {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -110,7 +110,7 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
 
-  describe('special targeting unit test', () => {
+  describe('special targeting unit test', function () {
     const allTargetingData = {
       'hb_format': 'video',
       'hb_source': 'client',

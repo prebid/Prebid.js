@@ -1,4 +1,4 @@
-describe('mobfox adapter tests', () => {
+describe('mobfox adapter tests', function () {
   const expect = require('chai').expect;
   const utils = require('src/utils');
   const adapter = require('modules/mobfoxBidAdapter');
@@ -18,7 +18,7 @@ describe('mobfox adapter tests', () => {
     transactionId: '31f42cba-5920-4e47-adad-69c79d0d4fb4'
   }];
 
-  describe('validRequests', () => {
+  describe('validRequests', function () {
     let bidRequestInvalid1 = [{
       code: 'div-gpt-ad-1460505748561-0',
       sizes: [[320, 480], [300, 250], [300, 600]],
@@ -44,7 +44,7 @@ describe('mobfox adapter tests', () => {
     });
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('test build MF request', () => {
       let request = adapter.spec.buildRequests(bidRequest);
       let payload = request.data.split('&');
@@ -70,7 +70,7 @@ describe('mobfox adapter tests', () => {
     });
   })
 
-  describe('interceptResponse', () => {
+  describe('interceptResponse', function () {
     let mockServerResponse = {
       body: {
         request: {

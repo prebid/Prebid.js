@@ -20,7 +20,7 @@ describe('s2sTesting', function () {
     mathRandomStub.restore();
   });
 
-  describe('getSource', () => {
+  describe('getSource', function () {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
       // set random number for testing
@@ -89,8 +89,8 @@ describe('s2sTesting', function () {
     });
   });
 
-  describe('getSourceBidderMap', () => {
-    describe('setting source through s2sConfig', () => {
+  describe('getSourceBidderMap', function () {
+    describe('setting source through s2sConfig', function () {
       beforeEach(() => {
         // set random number for testing
         randomNumber = 0.7;
@@ -157,7 +157,7 @@ describe('s2sTesting', function () {
       });
     });
 
-    describe('setting source through adUnits', () => {
+    describe('setting source through adUnits', function () {
       beforeEach(() => {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
@@ -275,7 +275,7 @@ describe('s2sTesting', function () {
       });
     });
 
-    describe('setting source through s2sconfig and adUnits', () => {
+    describe('setting source through s2sconfig and adUnits', function () {
       beforeEach(() => {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});

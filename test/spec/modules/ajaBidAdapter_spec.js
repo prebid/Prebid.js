@@ -3,10 +3,10 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//ad.as.amanad.adtdp.com/v2/prebid';
 
-describe('AjaAdapter', () => {
+describe('AjaAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'aja',
       'params': {
@@ -33,7 +33,7 @@ describe('AjaAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'aja',
@@ -54,7 +54,7 @@ describe('AjaAdapter', () => {
       expect(requests[0].method).to.equal('GET');
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'is_ad_return': true,
       'ad': {

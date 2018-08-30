@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/readpeakBidAdapter';
 import * as utils from 'src/utils';
 
-describe('ReadPeakAdapter', () => {
+describe('ReadPeakAdapter', function () {
   let bidRequest
   let serverResponse
   let serverRequest
@@ -113,7 +113,7 @@ describe('ReadPeakAdapter', () => {
     }
   });
 
-  describe('spec.isBidRequestValid', () => {
+  describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
@@ -141,7 +141,7 @@ describe('ReadPeakAdapter', () => {
     });
   });
 
-  describe('spec.buildRequests', () => {
+  describe('spec.buildRequests', function () {
     it('should create a POST request for every bid', () => {
       const request = spec.buildRequests([ bidRequest ]);
       expect(request.method).to.equal('POST');
@@ -171,7 +171,7 @@ describe('ReadPeakAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
+  describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', () => {
       const bidResponse = spec.interpretResponse({ body: null }, serverRequest);
       expect(bidResponse.length).to.equal(0);

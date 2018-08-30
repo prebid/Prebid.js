@@ -4,7 +4,7 @@ import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHo
 import { addBidResponse } from 'src/auction';
 import { config } from 'src/config';
 
-describe('bid overrides', () => {
+describe('bid overrides', function () {
   let sandbox;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('bid overrides', () => {
     sandbox.restore();
   });
 
-  describe('initialization', () => {
+  describe('initialization', function () {
     beforeEach(() => {
       sandbox.stub(config, 'setConfig');
     });
@@ -51,7 +51,7 @@ describe('bid overrides', () => {
     });
   });
 
-  describe('hook', () => {
+  describe('hook', function () {
     let mockBids;
     let bids;
 

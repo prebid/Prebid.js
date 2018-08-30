@@ -483,7 +483,7 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe('adjustBids', () => {
+  describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', () => {
       const bid = Object.assign({},
         bidfactory.createBid(2),
@@ -532,7 +532,7 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe('addBidResponse', () => {
+  describe('addBidResponse', function () {
     let createAuctionStub;
     let adUnits;
     let adUnitCodes;
@@ -553,7 +553,7 @@ describe('auctionmanager.js', function () {
       adaptermanager.makeBidRequests.restore();
     });
 
-    describe('when auction timeout is 3000', () => {
+    describe('when auction timeout is 3000', function () {
       let loadScriptStub;
       before(() => {
         makeRequestsStub.returns(TEST_BID_REQS);
@@ -675,7 +675,7 @@ describe('auctionmanager.js', function () {
       });
     });
 
-    describe('when auction timeout is 20', () => {
+    describe('when auction timeout is 20', function () {
       let loadScriptStub;
       let eventsEmitSpy;
       let getBidderRequestStub;
@@ -736,7 +736,7 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe('addBidResponse', () => {
+  describe('addBidResponse', function () {
     let createAuctionStub;
     let adUnits;
     let adUnitCodes;

@@ -33,7 +33,7 @@ const CAMPAIGN = {
   c5: '5'
 
 };
-describe('', () => {
+describe('', function () {
   let sandbox;
 
   before(() => {
@@ -45,7 +45,7 @@ describe('', () => {
     analyticsAdapter.disableAnalytics();
   });
 
-  describe('UTM source parser', () => {
+  describe('UTM source parser', function () {
     let stubSetItem;
     let stubGetItem;
 
@@ -115,7 +115,7 @@ describe('', () => {
     });
   });
 
-  describe('ExpiringQueue', () => {
+  describe('ExpiringQueue', function () {
     let timer;
     before(() => {
       timer = sandbox.useFakeTimers(0);
@@ -184,7 +184,7 @@ describe('', () => {
     size: '300x250'
   };
 
-  describe('Analytics adapter', () => {
+  describe('Analytics adapter', function () {
     let ajaxStub;
     let timer;
 

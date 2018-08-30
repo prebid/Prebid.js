@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/sekindoUMBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('sekindoUMAdapter', () => {
+describe('sekindoUMAdapter', function () {
   const adapter = newBidder(spec);
 
   const bannerParams = {
@@ -29,13 +29,13 @@ describe('sekindoUMAdapter', () => {
     'mediaType': 'banner'
   };
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
@@ -55,7 +55,7 @@ describe('sekindoUMAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('banner data should be a query string and method = GET', () => {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
@@ -81,7 +81,7 @@ describe('sekindoUMAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('banner should get correct bid response', () => {
       let response = {
         'headers': function(header) {

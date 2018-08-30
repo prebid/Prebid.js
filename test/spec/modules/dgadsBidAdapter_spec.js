@@ -4,17 +4,17 @@ import {spec} from 'modules/dgadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import { BANNER, NATIVE } from 'src/mediaTypes';
 
-describe('dgadsBidAdapter', () => {
+describe('dgadsBidAdapter', function () {
   const adapter = newBidder(spec);
   const VALID_ENDPOINT = 'https://ads-tr.bigmining.com/ad/p/bid';
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'dgads',
       params: {
@@ -45,7 +45,7 @@ describe('dgadsBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       { // banner
         bidder: 'dgads',
@@ -121,7 +121,7 @@ describe('dgadsBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
         bidRequest: {

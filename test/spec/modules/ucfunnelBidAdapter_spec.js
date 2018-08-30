@@ -89,8 +89,8 @@ const validNativeBidRes = {
   width: 1
 };
 
-describe('ucfunnel Adapter', () => {
-  describe('request', () => {
+describe('ucfunnel Adapter', function () {
+  describe('request', function () {
     it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBannerBidReq)).to.equal(true);
     });
@@ -98,7 +98,7 @@ describe('ucfunnel Adapter', () => {
       expect(spec.isBidRequestValid(invalidBannerBidReq)).to.equal(false);
     });
   });
-  describe('build request', () => {
+  describe('build request', function () {
     const request = spec.buildRequests([validBannerBidReq]);
     it('should create a POST request for every bid', () => {
       expect(request[0].method).to.equal('GET');
@@ -127,8 +127,8 @@ describe('ucfunnel Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    describe('should support banner', () => {
+  describe('interpretResponse', function () {
+    describe('should support banner', function () {
       const request = spec.buildRequests([ validBannerBidReq ]);
       const result = spec.interpretResponse({body: validBannerBidRes}, request[0]);
       it('should build bid array for banner', () => {
@@ -147,7 +147,7 @@ describe('ucfunnel Adapter', () => {
       });
     });
 
-    describe('should support video', () => {
+    describe('should support video', function () {
       const request = spec.buildRequests([ validVideoBidReq ]);
       const result = spec.interpretResponse({body: validVideoBidRes}, request[0]);
       it('should build bid array', () => {
@@ -167,7 +167,7 @@ describe('ucfunnel Adapter', () => {
       });
     });
 
-    describe('should support native', () => {
+    describe('should support native', function () {
       const request = spec.buildRequests([ validNativeBidReq ]);
       const result = spec.interpretResponse({body: validNativeBidRes}, request[0]);
       it('should build bid array', () => {

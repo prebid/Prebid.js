@@ -86,7 +86,7 @@ describe('invibesBidAdapter:', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);

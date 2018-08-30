@@ -3,7 +3,7 @@ import {spec} from 'modules/kummaBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('Kumma Adapter Tests', () => {
+describe('Kumma Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     sizes: [[300, 250]],

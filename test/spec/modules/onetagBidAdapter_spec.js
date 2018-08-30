@@ -1,7 +1,7 @@
 import { spec } from 'modules/onetagBidAdapter';
 import { expect } from 'chai';
 
-describe('onetag', () => {
+describe('onetag', function () {
   let bid = {
     'bidder': 'onetag',
     'params': {
@@ -15,7 +15,7 @@ describe('onetag', () => {
     'transactionId': 'qwerty123'
   };
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Should return true when required params are found', () => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -33,7 +33,7 @@ describe('onetag', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', () => {
       expect(serverRequest).to.exist;
@@ -107,7 +107,7 @@ describe('onetag', () => {
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const resObject = {
       body: {
         nobid: false,

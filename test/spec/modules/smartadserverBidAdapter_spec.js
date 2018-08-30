@@ -14,7 +14,7 @@ import * as utils from 'src/utils';
 import { requestBidsHook } from 'modules/consentManagement';
 
 // Default params with optional ones
-describe('Smart bid adapter tests', () => {
+describe('Smart bid adapter tests', function () {
   var DEFAULT_PARAMS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -100,7 +100,7 @@ describe('Smart bid adapter tests', () => {
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
-  describe('gdpr tests', () => {
+  describe('gdpr tests', function () {
     afterEach(() => {
       config.resetConfig();
       $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);

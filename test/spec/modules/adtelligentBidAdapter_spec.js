@@ -96,16 +96,16 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', () => {
+describe('adtelligentBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
     });
@@ -117,7 +117,7 @@ describe('adtelligentBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let videoBidRequests = [VIDEO_REQUEST];
     let displayBidRequests = [DISPLAY_REQUEST];
     let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
@@ -185,7 +185,7 @@ describe('adtelligentBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
     let bidderRequest;
     let eqResponse;

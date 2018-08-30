@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/rtbdemandadkBidAdapter';
 import * as utils from 'src/utils';
 
-describe('rtbdemandadk adapter', () => {
+describe('rtbdemandadk adapter', function () {
   const bid1_zone1 = {
       bidder: 'rtbdemandadk',
       bidId: 'Bid_01',
@@ -107,7 +107,7 @@ describe('rtbdemandadk adapter', () => {
       }
     };
 
-  describe('input parameters validation', () => {
+  describe('input parameters validation', function () {
     it('empty request shouldn\'t generate exception', () => {
       expect(spec.isBidRequestValid({
         bidderCode: 'rtbdemandadk'
@@ -127,7 +127,7 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('banner request building', () => {
+  describe('banner request building', function () {
     let bidRequest;
     before(() => {
       let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
@@ -178,7 +178,7 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('video request building', () => {
+  describe('video request building', function () {
     let bidRequest;
 
     before(() => {
@@ -200,7 +200,7 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('requests routing', () => {
+  describe('requests routing', function () {
     it('should issue a request for each host', () => {
       let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
@@ -216,7 +216,7 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('responses processing', () => {
+  describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', () => {
       let request = spec.buildRequests([bid1_zone1])[0];
       let resp = spec.interpretResponse({body: bidResponse1}, request)[0];

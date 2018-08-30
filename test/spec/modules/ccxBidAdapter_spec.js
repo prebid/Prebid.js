@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/ccxBidAdapter';
 import * as utils from 'src/utils';
 
-describe('ccxAdapter', () => {
+describe('ccxAdapter', function () {
   let bids = [
     {
       adUnitCode: 'banner',
@@ -39,7 +39,7 @@ describe('ccxAdapter', () => {
       transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     }
   ];
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('Valid bid requests', () => {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
       expect(spec.isBidRequestValid(bids[1])).to.be.true;

@@ -29,7 +29,7 @@ describe('currency', function () {
     fakeCurrencyFileServer.restore();
   });
 
-  describe('setConfig', () => {
+  describe('setConfig', function () {
     it('results in currencySupportEnabled = false when currency not configured', () => {
       setConfig({});
       expect(currencySupportEnabled).to.equal(false);
@@ -44,7 +44,7 @@ describe('currency', function () {
     });
   });
 
-  describe('bidder override', () => {
+  describe('bidder override', function () {
     it('allows setConfig to set bidder currency', () => {
       setConfig({});
 
@@ -139,7 +139,7 @@ describe('currency', function () {
     });
   });
 
-  describe('currency.addBidResponseDecorator bidResponseQueue', () => {
+  describe('currency.addBidResponseDecorator bidResponseQueue', function () {
     it('not run until currency rates file is loaded', () => {
       setConfig({});
 
@@ -161,7 +161,7 @@ describe('currency', function () {
     });
   });
 
-  describe('currency.addBidResponseDecorator', () => {
+  describe('currency.addBidResponseDecorator', function () {
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', () => {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'USD' };

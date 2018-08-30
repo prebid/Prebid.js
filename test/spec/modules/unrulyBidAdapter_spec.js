@@ -6,7 +6,7 @@ import { VIDEO } from 'src/mediaTypes'
 import { Renderer } from 'src/Renderer'
 import { adapter } from 'modules/unrulyBidAdapter'
 
-describe('UnrulyAdapter', () => {
+describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
     adUnitCode = 'placement2',
     statusCode = 1,
@@ -63,7 +63,7 @@ describe('UnrulyAdapter', () => {
     expect(adapter.supportedMediaTypes).to.deep.equal([ VIDEO ])
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should be a function', () => {
       expect(typeof adapter.isBidRequestValid).to.equal('function')
     });
@@ -91,7 +91,7 @@ describe('UnrulyAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should be a function', () => {
       expect(typeof adapter.buildRequests).to.equal('function');
     });
@@ -121,7 +121,7 @@ describe('UnrulyAdapter', () => {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should be a function', () => {
       expect(typeof adapter.interpretResponse).to.equal('function');
     });

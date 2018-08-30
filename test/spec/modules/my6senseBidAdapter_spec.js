@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import spec from 'modules/my6senseBidAdapter';
 
-describe('My6sense Bid adapter test', () => {
+describe('My6sense Bid adapter test', function () {
   let bidRequests, serverResponses;
   beforeEach(() => {
     bidRequests = [
@@ -99,7 +99,7 @@ describe('My6sense Bid adapter test', () => {
     ]
   });
 
-  describe('test if requestIsValid function', () => {
+  describe('test if requestIsValid function', function () {
     it('with valid data 1', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
@@ -114,13 +114,13 @@ describe('My6sense Bid adapter test', () => {
     });
   });
 
-  describe('test if buildRequests function', () => {
+  describe('test if buildRequests function', function () {
     it('normal', () => {
       var requests = spec.buildRequests([bidRequests[0]]);
       expect(requests).to.be.lengthOf(1);
     });
   });
-  describe('test bid responses', () => {
+  describe('test bid responses', function () {
     it('success 1', () => {
       var bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
       expect(bids).to.be.lengthOf(1);

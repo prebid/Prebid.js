@@ -2,16 +2,16 @@ import { spec } from 'modules/lkqdBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 const { expect } = require('chai');
 
-describe('LKQD Bid Adapter Test', () => {
+describe('LKQD Bid Adapter Test', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'lkqd',
       'params': {
@@ -40,7 +40,7 @@ describe('LKQD Bid Adapter Test', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const ENDPOINT = 'https://v.lkqd.net/ad';
     let bidRequests = [
       {
@@ -141,7 +141,7 @@ describe('LKQD Bid Adapter Test', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequest = {
       'url': 'https://ssp.lkqd.net/ad?pid=263&sid=662921&output=vast&execution=any&placement=&playinit=auto&volume=100&timeout=&width=300%E2%80%8C&height=250&pbt=[PREBID_TOKEN]%E2%80%8C&dnt=[DO_NOT_TRACK]%E2%80%8C&pageurl=[PAGEURL]%E2%80%8C&contentid=[CONTENT_ID]%E2%80%8C&contenttitle=[CONTENT_TITLE]%E2%80%8C&contentlength=[CONTENT_LENGTH]%E2%80%8C&contenturl=[CONTENT_URL]&prebid=true%E2%80%8C&rnd=874313435?bidId=253dcb69fb2577&bidWidth=300&bidHeight=250&',
       'data': {

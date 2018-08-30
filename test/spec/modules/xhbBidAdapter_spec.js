@@ -5,16 +5,16 @@ import { deepClone } from 'src/utils';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
-describe('xhbAdapter', () => {
+describe('xhbAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'xhb',
       'params': {
@@ -52,7 +52,7 @@ describe('xhbAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'xhb',
@@ -328,7 +328,7 @@ describe('xhbAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'version': '3.0.0',
       'tags': [

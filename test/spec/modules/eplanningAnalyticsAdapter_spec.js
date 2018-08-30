@@ -6,7 +6,7 @@ let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('eplanning analytics adapter', () => {
+describe('eplanning analytics adapter', function () {
   let xhr;
   let requests;
 
@@ -23,7 +23,7 @@ describe('eplanning analytics adapter', () => {
     eplAnalyticsAdapter.disableAnalytics();
   });
 
-  describe('track', () => {
+  describe('track', function () {
     it('builds and sends auction data', () => {
       sinon.spy(eplAnalyticsAdapter, 'track');
 

@@ -420,9 +420,9 @@ const responsesNegative = {
 const emptyResponse = { body: {} };
 const emptyResponseSeatBid = { body: { seatbid: [] } };
 
-describe('DistrictM Adaptor', () => {
+describe('DistrictM Adaptor', function () {
   const districtm = spec;
-  describe('All needed functions are available', () => {
+  describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, () => {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
     });
@@ -440,7 +440,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`these properties are available or not`, () => {
+  describe(`these properties are available or not`, function () {
     it(`code should have a value of districtmDMX`, () => {
       expect(districtm.code).to.be.equal('districtmDMX');
     });
@@ -450,7 +450,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`isBidRequestValid test response`, () => {
+  describe(`isBidRequestValid test response`, function () {
     let params = {
       dmxid: 10001,
       memberid: 10003,
@@ -467,7 +467,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`getUserSyncs test usage`, () => {
+  describe(`getUserSyncs test usage`, function () {
     it(`return value should be an array`, () => {
       expect(districtm.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
     });
@@ -479,7 +479,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`buildRequests test usage`, () => {
+  describe(`buildRequests test usage`, function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
     it(`the function should return an array`, () => {
       expect(buildRequestResults).to.be.an('object');
@@ -489,7 +489,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`interpretResponse test usage`, () => {
+  describe(`interpretResponse test usage`, function () {
     const responseResults = districtm.interpretResponse(responses, {bidderRequest});
     const emptyResponseResults = districtm.interpretResponse(emptyResponse, {bidderRequest});
     const emptyResponseResultsNegation = districtm.interpretResponse(responsesNegative, {bidderRequest});
@@ -512,7 +512,7 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`Helper function testing`, () => {
+  describe(`Helper function testing`, function () {
     const bid = matchRequest('29a28a1bbc8a8d', {bidderRequest});
     const {width, height} = defaultSize(bid);
     it(`test matchRequest`, () => {

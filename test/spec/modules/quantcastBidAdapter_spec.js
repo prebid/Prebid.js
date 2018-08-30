@@ -13,7 +13,7 @@ import {
 import { newBidder } from '../../../src/adapters/bidderFactory';
 import { parse } from 'src/url';
 
-describe('Quantcast adapter', () => {
+describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
   let bidRequest;
 
@@ -32,13 +32,13 @@ describe('Quantcast adapter', () => {
     };
   });
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(quantcastAdapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('`isBidRequestValid`', () => {
+  describe('`isBidRequestValid`', function () {
     it('should return `false` when bid is not passed', () => {
       expect(qcSpec.isBidRequestValid()).to.equal(false);
     });
@@ -56,7 +56,7 @@ describe('Quantcast adapter', () => {
     });
   });
 
-  describe('`buildRequests`', () => {
+  describe('`buildRequests`', function () {
     it('selects protocol and port', () => {
       switch (window.location.protocol) {
         case 'https:':
@@ -134,7 +134,7 @@ describe('Quantcast adapter', () => {
     expect(parsed.gdprConsent).to.equal(gdprConsent.consentString);
   });
 
-  describe('`interpretResponse`', () => {
+  describe('`interpretResponse`', function () {
     // The sample response is from https://wiki.corp.qc/display/adinf/QCX
     const body = {
       bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name

@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/clickforceBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('ClickforceAdapter', () => {
+describe('ClickforceAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'clickforce',
       'params': {
@@ -40,7 +40,7 @@ describe('ClickforceAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [{
       'bidder': 'clickforce',
       'params': {
@@ -62,7 +62,7 @@ describe('ClickforceAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = [{
       'cpm': 0.5,
       'width': '300',
@@ -168,7 +168,7 @@ describe('ClickforceAdapter', () => {
     });
   });
 
-  describe('getUserSyncs function', () => {
+  describe('getUserSyncs function', function () {
     it('should register type is iframe', () => {
       const syncOptions = {
         'iframeEnabled': 'true'

@@ -3,7 +3,7 @@ import { spec } from 'modules/eplanningBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-describe('E-Planning Adapter', () => {
+describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
   const CI = '12345';
   const ADUNIT_CODE = 'adunit-code';
@@ -167,13 +167,13 @@ describe('E-Planning Adapter', () => {
     }
   };
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when bid has ci parameter', () => {
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
     });
@@ -187,7 +187,7 @@ describe('E-Planning Adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [validBid];
 
     it('should create the url correctly', () => {
@@ -284,7 +284,7 @@ describe('E-Planning Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should return an empty array when there is no ads in the response', () => {
       const bidResponses = spec.interpretResponse(responseWithNoAd);
       expect(bidResponses).to.be.empty;
@@ -312,7 +312,7 @@ describe('E-Planning Adapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const sOptionsAllEnabled = {
       pixelEnabled: true,
       iframeEnabled: true
@@ -352,7 +352,7 @@ describe('E-Planning Adapter', () => {
     });
   });
 
-  describe('adUnits mapping to bidId', () => {
+  describe('adUnits mapping to bidId', function () {
     it('should correctly map the bidId to the adunit', () => {
       const requests = spec.buildRequests([validBid, validBid2]);
       const responses = spec.interpretResponse(responseWithTwoAdunits, requests);

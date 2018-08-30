@@ -488,7 +488,7 @@ let VALID_BID_REQUEST = [{
     'tmax': 3000,
   };
 
-describe('Media.net bid adapter', () => {
+describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -498,7 +498,7 @@ describe('Media.net bid adapter', () => {
     sandbox.restore();
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should accept valid bid params', () => {
       let isValid = spec.isBidRequestValid(VALID_PARAMS);
       expect(isValid).to.equal(true);
@@ -520,7 +520,7 @@ describe('Media.net bid adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     beforeEach(() => {
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
@@ -562,7 +562,7 @@ describe('Media.net bid adapter', () => {
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GDPR);
     });
 
-    describe('build requests: when page meta-data is available', () => {
+    describe('build requests: when page meta-data is available', function () {
       it('should pass canonical, twitter and fb paramters if available', () => {
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
@@ -580,7 +580,7 @@ describe('Media.net bid adapter', () => {
     });
   });
 
-  describe('slot visibility', () => {
+  describe('slot visibility', function () {
     let documentStub;
     beforeEach(() => {
       let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
@@ -653,7 +653,7 @@ describe('Media.net bid adapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     it('should exclude iframe syncs if iframe is disabled', () => {
       let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_PIXEL_ENABLED, SERVER_CSYNC_RESPONSE);
       expect(userSyncs).to.deep.equal(ENABLED_SYNC_PIXEL);
@@ -670,7 +670,7 @@ describe('Media.net bid adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('should not push bid response if cpm missing', () => {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_CPM_MISSING, []);

@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/somoaudienceBidAdapter';
 import * as utils from 'src/utils';
 
-describe('Somo Audience Adapter Tests', () => {
-  describe('isBidRequestValid', () => {
+describe('Somo Audience Adapter Tests', function () {
+  describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', () => {
       const bid = {
         bidder: 'somoaudience',
@@ -23,8 +23,8 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    describe('buildBannerRequests', () => {
+  describe('buildRequests', function () {
+    describe('buildBannerRequests', function () {
       it('should properly build a banner request with type not defined and sizes not defined', () => {
         const bidRequests = [{
           bidder: 'somoaudience',
@@ -125,7 +125,7 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildVideoRequests', () => {
+    describe('buildVideoRequests', function () {
       it('should properly build a video request with sizes defined', () => {
         const bidRequests = [{
           bidder: 'somoaudience',
@@ -239,7 +239,7 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildSiteRequests', () => {
+    describe('buildSiteRequests', function () {
       it('should fill in basic site parameters', () => {
         const bidRequests = [{
           bidder: 'somoaudience',
@@ -282,7 +282,7 @@ describe('Somo Audience Adapter Tests', () => {
       })
     });
 
-    describe('buildAppRequests', () => {
+    describe('buildAppRequests', function () {
       it('should fill in app parameters', () => {
         const bidRequests = [{
           bidder: 'somoaudience',
@@ -315,7 +315,7 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildGDPRRequests', () => {
+    describe('buildGDPRRequests', function () {
       const bidderRequest = {
         gdprConsent: {
           gdprApplies: true,
@@ -358,7 +358,7 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildExtraArgsRequests', () => {
+    describe('buildExtraArgsRequests', function () {
       it('should populate optional parameters', () => {
         const bidRequests = [
           {
@@ -385,7 +385,7 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('Verify banner parse response', () => {
       const bidRequests = [
         {
@@ -447,7 +447,7 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('user sync', () => {
+  describe('user sync', function () {
     it('should register the pixel sync url', () => {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true

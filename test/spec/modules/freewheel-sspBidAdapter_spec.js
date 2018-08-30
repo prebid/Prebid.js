@@ -4,16 +4,16 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 
-describe('freewheel-ssp BidAdapter Test', () => {
+describe('freewheel-ssp BidAdapter Test', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'freewheel-ssp',
       'params': {
@@ -40,7 +40,7 @@ describe('freewheel-ssp BidAdapter Test', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'freewheel-ssp',
@@ -78,7 +78,7 @@ describe('freewheel-ssp BidAdapter Test', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequests = [
       {
         'bidder': 'freewheel-ssp',

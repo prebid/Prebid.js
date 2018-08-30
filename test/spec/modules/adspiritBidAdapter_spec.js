@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adspiritBidAdapter';
 
-describe('Adspirit adapter tests', () => {
+describe('Adspirit adapter tests', function () {
   let bidRequests, serverResponses;
 
   beforeEach(() => {
@@ -89,7 +89,7 @@ describe('Adspirit adapter tests', () => {
     ]
   });
 
-  describe('test bid request', () => {
+  describe('test bid request', function () {
     it('with valid data 1', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
@@ -110,14 +110,14 @@ describe('Adspirit adapter tests', () => {
     });
   });
 
-  describe('test request build', () => {
+  describe('test request build', function () {
     it('normal', () => {
       var requests = spec.buildRequests([bidRequests[0]]);
       expect(requests).to.be.lengthOf(1);
     });
   });
 
-  describe('test bid responses', () => {
+  describe('test bid responses', function () {
     it('success 1', () => {
       var bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
       expect(bids).to.be.lengthOf(1);

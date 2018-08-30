@@ -35,7 +35,7 @@ const TRION_BID_RESPONSE = {
 
 };
 
-describe('Trion adapter tests', () => {
+describe('Trion adapter tests', function () {
   let adapter;
 
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('Trion adapter tests', () => {
 
   afterEach(() => document.body.appendChild.restore());
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true with correct params', () => {
       expect(spec.isBidRequestValid(TRION_BID)).to.equal(true);
     });
@@ -85,7 +85,7 @@ describe('Trion adapter tests', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     it('should return bids requests with empty params', () => {
       let bidRequests = spec.buildRequests([]);
       expect(bidRequests.length).to.equal(0);
@@ -119,7 +119,7 @@ describe('Trion adapter tests', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     it('when there is no response do not bid', () => {
       let response = spec.interpretResponse(null, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
@@ -169,7 +169,7 @@ describe('Trion adapter tests', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
     const BASE_KEY = '_trion_';
 

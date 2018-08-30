@@ -4,17 +4,17 @@ import {spec} from 'modules/adgenerationBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {NATIVE} from 'src/mediaTypes';
 
-describe('AdgenerationAdapter', () => {
+describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
   const ENDPOINT = ['http://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'adg',
       'params': {
@@ -33,7 +33,7 @@ describe('AdgenerationAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       { // banner
         bidder: 'adg',
@@ -115,7 +115,7 @@ describe('AdgenerationAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
         bidRequest: {

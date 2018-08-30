@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/ixBidAdapter';
 
-describe('IndexexchangeAdapter', () => {
+describe('IndexexchangeAdapter', function () {
   const IX_ENDPOINT = 'http://as.casalemedia.com/cygnus';
   const BIDDER_VERSION = 7.2;
 
@@ -58,14 +58,14 @@ describe('IndexexchangeAdapter', () => {
     ]
   };
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('should exists and is a function', () => {
       const adapter = newBidder(spec);
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found for a banner ad', () => {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
     });
@@ -197,7 +197,7 @@ describe('IndexexchangeAdapter', () => {
     });
   });
 
-  describe('buildRequestsBanner', () => {
+  describe('buildRequestsBanner', function () {
     const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
     const requestUrl = request.url;
     const requestMethod = request.method;
@@ -403,7 +403,7 @@ describe('IndexexchangeAdapter', () => {
     });
   });
 
-  describe('interpretResponseBanner', () => {
+  describe('interpretResponseBanner', function () {
     it('should get correct bid response', () => {
       const expectedParse = [
         {

@@ -34,16 +34,16 @@ const RESPONSE = {
   }]
 };
 
-describe('TelariaAdapter', () => {
+describe('TelariaAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
+  describe('inherited functions', function () {
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = REQUEST.bids[0];
 
     it('should return true when required params found', () => {
@@ -71,7 +71,7 @@ describe('TelariaAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const stub = [{
       bidder: 'tremor',
       sizes: [[300, 250], [300, 600]],
@@ -126,7 +126,7 @@ describe('TelariaAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const responseStub = RESPONSE;
     const stub = [{
       bidder: 'tremor',
@@ -171,7 +171,7 @@ describe('TelariaAdapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const responses = [{body: RESPONSE}];
     responses[0].body.ext = {
       telaria: {
