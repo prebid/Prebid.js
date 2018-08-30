@@ -54,8 +54,17 @@ function sendAuction() {
   let req = Object.assign({}, {Auction: auctionObject});
   rivrAnalytics.context.auctionObject = fulfillAuctionObject();
   logInfo('sending request to analytics => ', req);
-  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`, () => {
-  }, JSON.stringify(req));
+  ajax(
+    `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
+    () => {},
+    JSON.stringify(req),
+    {
+      customHeaders: {
+        'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI=',
+        'Content-type': 'application/json'
+      }
+    }
+  );
 };
 
 function sendImpressions() {
@@ -63,8 +72,17 @@ function sendImpressions() {
   if (impressions.length !== 0) {
     let impressionsReq = Object.assign({}, {impressions});
     logInfo('sending impressions request to analytics => ', impressionsReq);
-    ajax(`http://${rivrAnalytics.context.host}/impressions`, () => {
-    }, JSON.stringify(impressionsReq));
+    ajax(
+      `http://${rivrAnalytics.context.host}/impressions`,
+      () => {},
+      JSON.stringify(impressionsReq),
+      {
+        customHeaders: {
+          'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI=',
+          'Content-type': 'application/json'
+        }
+      }
+    );
   }
 };
 
