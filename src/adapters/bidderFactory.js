@@ -1,30 +1,15 @@
 import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
-import {
-  config
-} from 'src/config';
+import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
-import {
-  userSync
-} from 'src/userSync';
-import {
-  nativeBidIsValid
-} from 'src/native';
-import {
-  isValidVideoBid
-} from 'src/video';
+import { userSync } from 'src/userSync';
+import { nativeBidIsValid } from 'src/native';
+import { isValidVideoBid } from 'src/video';
 import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
-import {
-  logWarn,
-  logError,
-  parseQueryStringParameters,
-  delayExecution,
-  parseSizesInput,
-  getBidderRequest
-} from 'src/utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -158,9 +143,7 @@ export function registerBidder(spec) {
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
       adaptermanager.aliasRegistry[alias] = spec.code;
-      putBidder(Object.assign({}, spec, {
-        code: alias
-      }));
+      putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
 }
@@ -173,17 +156,16 @@ export function registerBidder(spec) {
  */
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    getSpec: function () {
+    getSpec: function() {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function (bidderRequest, addBidResponse, done, ajax) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
 
       const adUnitCodesHandled = {};
-
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
         if (isValid(adUnitCode, bid, [bidderRequest])) {
@@ -281,7 +263,8 @@ export function newBidder(spec) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}${formatGetParameters(request.data)}`, {
+              `${request.url}${formatGetParameters(request.data)}`,
+              {
                 success: onSuccess,
                 error: onFailure
               },
@@ -294,7 +277,8 @@ export function newBidder(spec) {
             break;
           case 'POST':
             ajax(
-              request.url, {
+              request.url,
+              {
                 success: onSuccess,
                 error: onFailure
               },
@@ -412,7 +396,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [width, height] = parsedSizes[0].split('x');
+    const [ width, height ] = parsedSizes[0].split('x');
     bid.width = width;
     bid.height = height;
     return true;
