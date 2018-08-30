@@ -1,5 +1,10 @@
-import {parse as parseURL, format as formatURL} from './url';
-import { config } from 'src/config';
+import {
+  parse as parseURL,
+  format as formatURL
+} from './url';
+import {
+  config
+} from 'src/config';
 
 var utils = require('./utils');
 
@@ -16,8 +21,11 @@ const XHR_DONE = 4;
  */
 export const ajax = ajaxBuilder();
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
-  return function(url, callback, data, options = {}) {
+export function ajaxBuilder(timeout = 3000, {
+  request,
+  done
+} = {}) {
+  return function (url, callback, data, options = {}) {
     try {
       let x;
       let method = options.method || (data ? 'POST' : 'GET');
@@ -25,10 +33,10 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       parser.href = url;
 
       let callbacks = typeof callback === 'object' && callback !== null ? callback : {
-        success: function() {
+        success: function () {
           utils.logMessage('xhr success');
         },
-        error: function(e) {
+        error: function (e) {
           utils.logError('xhr error', null, e);
         }
       };
@@ -39,43 +47,23 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
       x = new window.XMLHttpRequest();
 
-      if (useXDomainRequest) {
-        x = new window.XDomainRequest();
-        x.onload = function () {
-          callbacks.success(x.responseText, x);
-        };
-
-        // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-        x.onerror = function () {
-          callbacks.error('error', x);
-        };
-        if (!config.getConfig('disableAjaxTimeout')) {
-          x.ontimeout = function () {
-            utils.logError('  xhr timeout after ', x.timeout, 'ms');
-          };
-        }
-        x.onprogress = function() {
-          utils.logMessage('xhr onprogress');
-        };
-      } else {
-        x.onreadystatechange = function () {
-          if (x.readyState === XHR_DONE) {
-            if (typeof done === 'function') {
-              done(parser.origin);
-            }
-            let status = x.status;
-            if ((status >= 200 && status < 300) || status === 304) {
-              callbacks.success(x.responseText, x);
-            } else {
-              callbacks.error(x.statusText, x);
-            }
+      x.onreadystatechange = function () {
+        if (x.readyState === XHR_DONE) {
+          if (typeof done === 'function') {
+            done(parser.origin);
           }
-        };
-        // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
-        if (!config.getConfig('disableAjaxTimeout')) {
-          x.ontimeout = function () {
-            utils.logError('  xhr timeout after ', x.timeout, 'ms');
-          };
+          let status = x.status;
+          if ((status >= 200 && status < 300) || status === 304) {
+            callbacks.success(x.responseText, x);
+          } else {
+            callbacks.error(x.statusText, x);
+          }
+        }
+      };
+      // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
+      if (!config.getConfig('disableAjaxTimeout')) {
+        x.ontimeout = function () {
+          utils.logError('  xhr timeout after ', x.timeout, 'ms');
         }
       }
 

@@ -327,7 +327,7 @@ export const spec = {
           return;
         }
       } else {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
+        if (!(bid.params.width && bid.params.height && bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
           utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
