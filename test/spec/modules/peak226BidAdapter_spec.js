@@ -8,7 +8,7 @@ describe('PeakAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       const bid = {
         params: {
           uid: 123
@@ -18,7 +18,7 @@ describe('PeakAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       const bid = {
         params: {}
       };
@@ -36,7 +36,7 @@ describe('PeakAdapter', function () {
   //     }
   //   ];
 
-  //   it('sends bid request to URL via GET', () => {
+  //   it('sends bid request to URL via GET', function () {
   //     const request = spec.buildRequests(bidRequests);
 
   //     expect(request.url).to.equal(`${URL}?uids=1234`);
@@ -45,7 +45,7 @@ describe('PeakAdapter', function () {
   // });
 
   describe('interpretResponse', function () {
-    it('should handle empty response', () => {
+    it('should handle empty response', function () {
       let bids = spec.interpretResponse(
         {},
         {
@@ -56,7 +56,7 @@ describe('PeakAdapter', function () {
       expect(bids).to.be.lengthOf(0);
     });
 
-    it('should handle no seatbid returned', () => {
+    it('should handle no seatbid returned', function () {
       let response = {};
 
       let bids = spec.interpretResponse(
@@ -69,7 +69,7 @@ describe('PeakAdapter', function () {
       expect(bids).to.be.lengthOf(0);
     });
 
-    it('should handle empty seatbid returned', () => {
+    it('should handle empty seatbid returned', function () {
       let response = { seatbid: [] };
 
       let bids = spec.interpretResponse(
@@ -82,7 +82,7 @@ describe('PeakAdapter', function () {
       expect(bids).to.be.lengthOf(0);
     });
 
-    it('should handle seatbid returned bids', () => {
+    it('should handle seatbid returned bids', function () {
       const bidsMap = { 1: [{ bidId: 11 }] };
       const bid = {
         price: 0.2,

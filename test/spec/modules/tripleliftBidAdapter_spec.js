@@ -9,7 +9,7 @@ describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -28,11 +28,11 @@ describe('triplelift adapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true for valid bid request', () => {
+    it('should return true for valid bid request', function () {
       expect(tripleliftAdapterSpec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,7 +42,7 @@ describe('triplelift adapter', function () {
       expect(tripleliftAdapterSpec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -68,18 +68,18 @@ describe('triplelift adapter', function () {
       }
     ];
 
-    it('exists and is an object', () => {
+    it('exists and is an object', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests);
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('should only parse sizes that are of the proper length and format', () => {
+    it('should only parse sizes that are of the proper length and format', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests);
       expect(request.data.imp[0].banner.format).to.have.length(2);
       expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('should be a post request and populate the payload', () => {
+    it('should be a post request and populate the payload', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests);
       const payload = request.data;
       expect(payload).to.exist;
@@ -88,7 +88,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('should return a query string for TL call', () => {
+    it('should return a query string for TL call', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests);
       const url = request.url;
       expect(url).to.exist;
@@ -136,7 +136,7 @@ describe('triplelift adapter', function () {
       }
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           requestId: '3db3773286ee59',
@@ -156,7 +156,7 @@ describe('triplelift adapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('should return multile responses to support SRA', () => {
+    it('should return multile responses to support SRA', function () {
       let response = {
         body: {
           bids: [

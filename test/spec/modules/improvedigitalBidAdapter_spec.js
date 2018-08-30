@@ -41,21 +41,21 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   describe('isBidRequestValid', function () {
-    it('should return false when no bid', () => {
+    it('should return false when no bid', function () {
       expect(spec.isBidRequestValid()).to.equal(false);
     });
 
-    it('should return false when no bid.params', () => {
+    it('should return false when no bid.params', function () {
       let bid = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when both placementId and placementKey + publisherId are missing', () => {
+    it('should return false when both placementId and placementKey + publisherId are missing', function () {
       let bid = { 'params': {} };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when only one of placementKey and publisherId is present', () => {
+    it('should return false when only one of placementKey and publisherId is present', function () {
       let bid = {
         params: {
           publisherId: 1234
@@ -70,19 +70,19 @@ describe('Improve Digital Adapter Tests', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return true when placementId is passed', () => {
+    it('should return true when placementId is passed', function () {
       let bid = { 'params': {} };
       expect(spec.isBidRequestValid(simpleBidRequest)).to.equal(true);
     });
 
-    it('should return true when both placementKey and publisherId are passed', () => {
+    it('should return true when both placementKey and publisherId are passed', function () {
       let bid = { 'params': {} };
       expect(spec.isBidRequestValid(simpleSmartTagBidRequest)).to.equal(true);
     });
   });
 
   describe('buildRequests', function () {
-    it('should make a well-formed request objects', () => {
+    it('should make a well-formed request objects', function () {
       const requests = spec.buildRequests([simpleBidRequest]);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(1);
@@ -106,14 +106,14 @@ describe('Improve Digital Adapter Tests', function () {
       ]);
     });
 
-    it('should set placementKey and publisherId for smart tags', () => {
+    it('should set placementKey and publisherId for smart tags', function () {
       const requests = spec.buildRequests([simpleSmartTagBidRequest]);
       const params = JSON.parse(requests[0].data.substring(PARAM_PREFIX.length));
       expect(params.bid_request.imp[0].pubid).to.equal(1032);
       expect(params.bid_request.imp[0].pkey).to.equal('data_team_test_hb_smoke_test');
     });
 
-    it('should add keyValues', () => {
+    it('should add keyValues', function () {
       let bidRequest = Object.assign({}, simpleBidRequest);
       const keyValues = {
         testKey: [
@@ -126,7 +126,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].kvw).to.deep.equal(keyValues);
     });
 
-    it('should add size', () => {
+    it('should add size', function () {
       let bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
@@ -138,7 +138,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
     });
 
-    it('should add currency', () => {
+    it('should add currency', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
       const request = spec.buildRequests([bidRequest])[0];
@@ -147,14 +147,14 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub.restore();
     });
 
-    it('should add GDPR consent string', () => {
+    it('should add GDPR consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const request = spec.buildRequests([bidRequest], bidderRequest)[0];
       const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
 
-    it('should return 2 requests', () => {
+    it('should return 2 requests', function () {
       const requests = spec.buildRequests([
         simpleBidRequest,
         simpleSmartTagBidRequest
@@ -250,17 +250,17 @@ describe('Improve Digital Adapter Tests', function () {
       }
     ];
 
-    it('should return a well-formed bid', () => {
+    it('should return a well-formed bid', function () {
       const bids = spec.interpretResponse(serverResponse);
       expect(bids).to.deep.equal(expectedBid);
     });
 
-    it('should return two bids', () => {
+    it('should return two bids', function () {
       const bids = spec.interpretResponse(serverResponseTwoBids);
       expect(bids).to.deep.equal(expectedTwoBids);
     });
 
-    it('should register user syncs', () => {
+    it('should register user syncs', function () {
       const registerSyncSpy = sinon.spy(userSync, 'registerSync');
       const bids = spec.interpretResponse(serverResponse);
       expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
@@ -268,7 +268,7 @@ describe('Improve Digital Adapter Tests', function () {
       registerSyncSpy.restore();
     });
 
-    it('should set dealId correctly', () => {
+    it('should set dealId correctly', function () {
       let response = JSON.parse(JSON.stringify(serverResponse));
       let bids;
 
@@ -287,14 +287,14 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.equal(268515);
     });
 
-    it('should set currency', () => {
+    it('should set currency', function () {
       let response = JSON.parse(JSON.stringify(serverResponse));
       response.body.bid[0].currency = 'eur';
       const bids = spec.interpretResponse(response);
       expect(bids[0].currency).to.equal('EUR');
     });
 
-    it('should return empty array for bad response or no price', () => {
+    it('should return empty array for bad response or no price', function () {
       let response = JSON.parse(JSON.stringify(serverResponse));
       let bids;
 
@@ -331,7 +331,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids).to.deep.equal([]);
     });
 
-    it('should set netRevenue', () => {
+    it('should set netRevenue', function () {
       let response = JSON.parse(JSON.stringify(serverResponse));
       response.body.bid[0].isNet = true;
       const bids = spec.interpretResponse(response);

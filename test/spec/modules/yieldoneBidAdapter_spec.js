@@ -22,16 +22,16 @@ describe('yieldoneBidAdapter', function() {
       'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when placementId not passed correctly', () => {
+    it('should return false when placementId not passed correctly', function () {
       bid.params.placementId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when require params are not passed', () => {
+    it('should return false when require params are not passed', function () {
       let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -70,12 +70,12 @@ describe('yieldoneBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('sends bid request to our endpoint via GET', () => {
+    it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
       expect(request[1].method).to.equal('GET');
     });
 
-    it('attaches source and version to endpoint URL as query params', () => {
+    it('attaches source and version to endpoint URL as query params', function () {
       expect(request[0].url).to.equal(ENDPOINT);
       expect(request[1].url).to.equal(ENDPOINT);
     });
@@ -111,7 +111,7 @@ describe('yieldoneBidAdapter', function() {
       }
     };
 
-    it('should get the correct bid response', () => {
+    it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
@@ -129,7 +129,7 @@ describe('yieldoneBidAdapter', function() {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
-    it('handles empty bid response', () => {
+    it('handles empty bid response', function () {
       let response = {
         body: {
           'uid': '2c0b634db95a01',

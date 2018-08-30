@@ -3,7 +3,7 @@ import { spec } from 'modules/zedoBidAdapter';
 
 describe('The ZEDO bidding adapter', function () {
   describe('isBidRequestValid', function () {
-    it('should return false when given an invalid bid', () => {
+    it('should return false when given an invalid bid', function () {
       const bid = {
         bidder: 'zedo',
       };
@@ -11,7 +11,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(isValid).to.equal(false);
     });
 
-    it('should return true when given a channelcode bid', () => {
+    it('should return true when given a channelcode bid', function () {
       const bid = {
         bidder: 'zedo',
         params: {
@@ -29,7 +29,7 @@ describe('The ZEDO bidding adapter', function () {
       timeout: 3000,
     };
 
-    it('should properly build a channelCode request for dim Id with type not defined', () => {
+    it('should properly build a channelCode request for dim Id with type not defined', function () {
       const bidRequests = [
         {
           bidder: 'zedo',
@@ -49,7 +49,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
-    it('should properly build a channelCode request for video with type defined', () => {
+    it('should properly build a channelCode request for video with type defined', function () {
       const bidRequests = [
         {
           bidder: 'zedo',
@@ -84,7 +84,7 @@ describe('The ZEDO bidding adapter', function () {
         }
       };
 
-      it('should properly build request with gdpr consent', () => {
+      it('should properly build request with gdpr consent', function () {
         const bidRequests = [
           {
             bidder: 'zedo',
@@ -105,14 +105,14 @@ describe('The ZEDO bidding adapter', function () {
     });
   });
   describe('interpretResponse', function () {
-    it('should return an empty array when there is bid response', () => {
+    it('should return an empty array when there is bid response', function () {
       const response = {};
       const request = { bidRequests: [] };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response with no valid creative', () => {
+    it('should properly parse a bid response with no valid creative', function () {
       const response = {
         body: {
           ad: [
@@ -156,7 +156,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response with valid display creative', () => {
+    it('should properly parse a bid response with valid display creative', function () {
       const response = {
         body: {
           ad: [
@@ -199,7 +199,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(bids[0].height).to.equal('600');
     });
 
-    it('should properly parse a bid response with valid video creative', () => {
+    it('should properly parse a bid response with valid video creative', function () {
       const response = {
         body: {
           ad: [
@@ -246,7 +246,7 @@ describe('The ZEDO bidding adapter', function () {
   });
 
   describe('user sync', function () {
-    it('should register the iframe sync url', () => {
+    it('should register the iframe sync url', function () {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
@@ -255,7 +255,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(syncs[0].type).to.equal('iframe');
     });
 
-    it('should pass gdpr params', () => {
+    it('should pass gdpr params', function () {
       let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
         gdprApplies: false, consentString: 'test'
       });

@@ -389,11 +389,11 @@ describe('S2S Adapter', function () {
 
     afterEach(() => xhr.restore());
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
-    it('exists converts types', () => {
+    it('exists converts types', function () {
       config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
@@ -408,7 +408,7 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
       });
 
-      it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
+      it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
         let ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
 
@@ -437,7 +437,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user).to.not.exist;
       });
 
-      it('check gdpr info gets added into cookie_sync request: have consent data', () => {
+      it('check gdpr info gets added into cookie_sync request: have consent data', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -458,7 +458,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.gdpr_consent).is.equal('abc123def');
       });
 
-      it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+      it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -478,7 +478,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.gdpr_consent).is.undefined;
       });
 
-      it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+      it('checks gdpr info gets added to cookie_sync request: consent data unknown', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -499,7 +499,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('sets invalid cacheMarkup value to 0', () => {
+    it('sets invalid cacheMarkup value to 0', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         cacheMarkup: 999
       });
@@ -509,7 +509,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.have.property('cache_markup', 0);
     });
 
-    it('adds digitrust id is present and user is not optout', () => {
+    it('adds digitrust id is present and user is not optout', function () {
       let digiTrustObj = {
         success: true,
         identity: {
@@ -544,7 +544,7 @@ describe('S2S Adapter', function () {
       delete window.DigiTrust;
     });
 
-    it('adds device and app objects to request', () => {
+    it('adds device and app objects to request', function () {
       const _config = { s2sConfig: CONFIG,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
         app: { bundle: 'com.test.app' },
@@ -562,7 +562,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device and app objects to request for ORTB', () => {
+    it('adds device and app objects to request for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -585,7 +585,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds site if app is not present', () => {
+    it('adds site if app is not present', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -602,7 +602,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.site.page).to.exist.and.to.be.a('string');
     });
 
-    it('adds appnexus aliases to request', () => {
+    it('adds appnexus aliases to request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -629,7 +629,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds dynamic aliases to request', () => {
+    it('adds dynamic aliases to request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -659,7 +659,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('converts appnexus params to expected format for PBS', () => {
+    it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -735,7 +735,7 @@ describe('S2S Adapter', function () {
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
-    it('registers bids and calls BIDDER_DONE', () => {
+    it('registers bids and calls BIDDER_DONE', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -758,7 +758,7 @@ describe('S2S Adapter', function () {
       expect(response).to.not.have.property('vastUrl');
     });
 
-    it('registers video bids', () => {
+    it('registers video bids', function () {
       server.respondWith(JSON.stringify(VIDEO_RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -776,7 +776,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('vastUrl', 'video_cache_url');
     });
 
-    it('does not call addBidResponse and calls done when ad unit not set', () => {
+    it('does not call addBidResponse and calls done when ad unit not set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -787,7 +787,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(done);
     });
 
-    it('does not call addBidResponse and calls done when server requests cookie sync', () => {
+    it('does not call addBidResponse and calls done when server requests cookie sync', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -798,7 +798,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(done);
     });
 
-    it('does not call addBidResponse and calls done  when ad unit is set', () => {
+    it('does not call addBidResponse and calls done  when ad unit is set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -809,7 +809,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(done);
     });
 
-    it('registers successful bids and calls done when there are less bids than requests', () => {
+    it('registers successful bids and calls done when there are less bids than requests', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -827,7 +827,7 @@ describe('S2S Adapter', function () {
         .to.have.property('statusMessage', 'Bid available');
     });
 
-    it('should have dealId in bidObject', () => {
+    it('should have dealId in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -837,7 +837,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('dealId', 'test-dealid');
     });
 
-    it('should pass through default adserverTargeting if present in bidObject', () => {
+    it('should pass through default adserverTargeting if present in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -847,7 +847,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('adserverTargeting').that.deep.equals({'foo': 'bar'});
     });
 
-    it('registers client user syncs when client bid adapter is present', () => {
+    it('registers client user syncs when client bid adapter is present', function () {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
@@ -864,7 +864,7 @@ describe('S2S Adapter', function () {
       adapterManager.getBidAdapter.restore();
     });
 
-    it('registers client user syncs when using OpenRTB endpoint', () => {
+    it('registers client user syncs when using OpenRTB endpoint', function () {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
@@ -884,7 +884,7 @@ describe('S2S Adapter', function () {
       adapterManager.getBidAdapter.restore();
     });
 
-    it('registers bid responses when server requests cookie sync', () => {
+    it('registers bid responses when server requests cookie sync', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -903,7 +903,7 @@ describe('S2S Adapter', function () {
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
+    it('does not call cookieSet cookie sync when no_cookie response && not opted in', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       let myConfig = Object.assign({}, CONFIG);
@@ -914,7 +914,7 @@ describe('S2S Adapter', function () {
       sinon.assert.notCalled(cookie.cookieSet);
     });
 
-    it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
+    it('calls cookieSet cookie sync when no_cookie response && opted in', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
       let myConfig = Object.assign({
         cookieSet: true,
@@ -927,7 +927,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(cookie.cookieSet);
     });
 
-    it('handles OpenRTB responses and call BIDDER_DONE', () => {
+    it('handles OpenRTB responses and call BIDDER_DONE', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -950,7 +950,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 0.5);
     });
 
-    it('handles OpenRTB video responses', () => {
+    it('handles OpenRTB video responses', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
       });
@@ -970,7 +970,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 10);
     });
 
-    it('should log warning for unsupported bidder', () => {
+    it('should log warning for unsupported bidder', function () {
       server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));
 
       const s2sConfig = Object.assign({}, CONFIG, {
@@ -1001,7 +1001,7 @@ describe('S2S Adapter', function () {
       utils.logError.restore();
     });
 
-    it('should log an error when accountId is missing', () => {
+    it('should log an error when accountId is missing', function () {
       const options = {
         enabled: true,
         bidders: ['appnexus'],
@@ -1014,7 +1014,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when bidders is missing', () => {
+    it('should log an error when bidders is missing', function () {
       const options = {
         accountId: '1',
         enabled: true,
@@ -1027,7 +1027,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when endpoint is missing', () => {
+    it('should log an error when endpoint is missing', function () {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
@@ -1040,7 +1040,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when using an unknown vendor', () => {
+    it('should log an error when using an unknown vendor', function () {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
@@ -1051,7 +1051,7 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', () => {
+    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', function () {
       const options = {
         accountId: '123',
         bidders: ['appnexus'],
@@ -1074,7 +1074,7 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
-    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', () => {
+    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', function () {
       const options = {
         accountId: 'abc',
         bidders: ['rubicon'],

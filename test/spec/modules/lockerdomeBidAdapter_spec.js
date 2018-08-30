@@ -38,11 +38,11 @@ describe('LockerDomeAdapter', function () {
   }];
 
   describe('isBidRequestValid', function () {
-    it('should return true if the adUnitId parameter is present', () => {
+    it('should return true if the adUnitId parameter is present', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
       expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     });
-    it('should return false if the adUnitId parameter is not present', () => {
+    it('should return false if the adUnitId parameter is not present', function () {
       let bidRequest = utils.deepClone(bidRequests[0]);
       delete bidRequest.params.adUnitId;
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
@@ -50,7 +50,7 @@ describe('LockerDomeAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('should generate a valid single POST request for multiple bid requests', () => {
+    it('should generate a valid single POST request for multiple bid requests', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://lockerdome.com/ladbid/prebid');
@@ -79,7 +79,7 @@ describe('LockerDomeAdapter', function () {
       expect(bids[1].sizes[0][1]).to.equal(600);
     });
 
-    it('should add GDPR data to request if available', () => {
+    it('should add GDPR data to request if available', function () {
       const bidderRequest = {
         gdprConsent: {
           consentString: 'AAABBB',
@@ -96,12 +96,12 @@ describe('LockerDomeAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should return an empty array if an invalid response is passed', () => {
+    it('should return an empty array if an invalid response is passed', function () {
       const interpretedResponse = spec.interpretResponse({ body: {} });
       expect(interpretedResponse).to.be.an('array').that.is.empty;
     });
 
-    it('should return valid response when passed valid server response', () => {
+    it('should return valid response when passed valid server response', function () {
       const serverResponse = {
         body: {
           bids: [{

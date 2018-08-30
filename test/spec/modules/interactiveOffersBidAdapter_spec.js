@@ -4,7 +4,7 @@ import {spec} from 'modules/interactiveOffersBidAdapter';
 describe('interactiveOffers adapter', function () {
   describe('implementation', function () {
     describe('for requests', function () {
-      it('should accept valid bid', () => {
+      it('should accept valid bid', function () {
         let validBid = {
             bidder: 'interactiveOffers',
             params: {
@@ -16,7 +16,7 @@ describe('interactiveOffers adapter', function () {
         expect(isValid).to.equal(true);
       });
 
-      it('should reject invalid bid', () => {
+      it('should reject invalid bid', function () {
         let invalidBid = {
             bidder: 'interactiveOffers'
           },
@@ -26,7 +26,7 @@ describe('interactiveOffers adapter', function () {
       });
     });
     describe('for requests', function () {
-      it('should accept valid bid with optional params', () => {
+      it('should accept valid bid with optional params', function () {
         let validBid = {
             bidder: 'interactiveOffers',
             params: {
@@ -44,7 +44,7 @@ describe('interactiveOffers adapter', function () {
         expect(requestUrlCustomParams).have.property('tmax', 1500);
       });
 
-      it('should accept valid bid without optional params', () => {
+      it('should accept valid bid without optional params', function () {
         let validBid = {
             bidder: 'interactiveOffers',
             params: {
@@ -60,7 +60,7 @@ describe('interactiveOffers adapter', function () {
         expect(requestUrlCustomParams).have.property('tmax');
       });
 
-      it('should reject invalid bid without pubId', () => {
+      it('should reject invalid bid without pubId', function () {
         let invalidBid = {
             bidder: 'interactiveOffers',
             params: {}
@@ -71,7 +71,7 @@ describe('interactiveOffers adapter', function () {
       });
     });
     describe('bid responses', function () {
-      it('should return complete bid response', () => {
+      it('should return complete bid response', function () {
         let serverResponse = {
           body: {
             'success': 'true',
@@ -104,7 +104,7 @@ describe('interactiveOffers adapter', function () {
         expect(bids[0].ad).to.have.length.above(1);
       });
 
-      it('should return empty bid response', () => {
+      it('should return empty bid response', function () {
         let bidRequests = [
           {
             bidder: 'interactiveOffers',
@@ -128,7 +128,7 @@ describe('interactiveOffers adapter', function () {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response with error', () => {
+      it('should return empty bid response with error', function () {
         let bidRequests = [
           {
             bidder: 'interactiveOffers',
@@ -143,7 +143,7 @@ describe('interactiveOffers adapter', function () {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response without payload', () => {
+      it('should return empty bid response without payload', function () {
         let bidRequests = [
           {
             bidder: 'interactiveOffers',
@@ -158,7 +158,7 @@ describe('interactiveOffers adapter', function () {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response on empty body', () => {
+      it('should return empty bid response on empty body', function () {
         let bidRequests = [
           {
             bidder: 'interactiveOffers',

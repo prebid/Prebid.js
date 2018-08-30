@@ -8,7 +8,7 @@ describe('VertozAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -26,11 +26,11 @@ describe('VertozAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -55,7 +55,7 @@ describe('VertozAdapter', function () {
       }
     ];
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(BASE_URI);
       expect(request.method).to.equal('POST');
@@ -75,7 +75,7 @@ describe('VertozAdapter', function () {
       'statusText': 'Vertoz:Success'
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           'requestId': '44b3fcfd24aa93',
@@ -97,7 +97,7 @@ describe('VertozAdapter', function () {
       expect(result[0].cpm).to.not.equal(null);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'vzhPlacementId': 'VZ-HB-I617046VBGE3EH',
         'slotBidId': 'f00412ac86b79',

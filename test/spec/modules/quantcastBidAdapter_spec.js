@@ -33,23 +33,23 @@ describe('Quantcast adapter', function () {
   });
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(quantcastAdapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
   describe('`isBidRequestValid`', function () {
-    it('should return `false` when bid is not passed', () => {
+    it('should return `false` when bid is not passed', function () {
       expect(qcSpec.isBidRequestValid()).to.equal(false);
     });
 
-    it('should return `false` when bid `mediaType` is `video`', () => {
+    it('should return `false` when bid `mediaType` is `video`', function () {
       const bidRequest = { mediaType: 'video' };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return `true` when bid contains required params', () => {
+    it('should return `true` when bid contains required params', function () {
       const bidRequest = { mediaType: 'banner' };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(true);
@@ -57,7 +57,7 @@ describe('Quantcast adapter', function () {
   });
 
   describe('`buildRequests`', function () {
-    it('selects protocol and port', () => {
+    it('selects protocol and port', function () {
       switch (window.location.protocol) {
         case 'https:':
           expect(QUANTCAST_PROTOCOL).to.equal('https');
@@ -70,13 +70,13 @@ describe('Quantcast adapter', function () {
       }
     });
 
-    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
+    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
       const url = parse(requests[0]['url']);
       expect(url.hostname).to.equal(QUANTCAST_TEST_DOMAIN);
     });
 
-    it('sends bid requests to default endpoint for non standard publisher IDs', () => {
+    it('sends bid requests to default endpoint for non standard publisher IDs', function () {
       const modifiedBidRequest = Object.assign({}, bidRequest, {
         params: Object.assign({}, bidRequest.params, {
           publisherId: 'foo-bar',
@@ -88,13 +88,13 @@ describe('Quantcast adapter', function () {
       );
     });
 
-    it('sends bid requests to Quantcast Header Bidding Endpoints via POST', () => {
+    it('sends bid requests to Quantcast Header Bidding Endpoints via POST', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
 
       expect(requests[0].method).to.equal('POST');
     });
 
-    it('sends bid requests contains all the required parameters', () => {
+    it('sends bid requests contains all the required parameters', function () {
       const referrer = utils.getTopWindowUrl();
       const loc = utils.getTopWindowLocation();
       const domain = loc.hostname;
@@ -126,7 +126,7 @@ describe('Quantcast adapter', function () {
     });
   });
 
-  it('propagates GDPR consent string and signal', () => {
+  it('propagates GDPR consent string and signal', function () {
     const gdprConsent = { gdprApplies: true, consentString: 'consentString' }
     const requests = qcSpec.buildRequests([bidRequest], { gdprConsent });
     const parsed = JSON.parse(requests[0].data)
@@ -159,25 +159,25 @@ describe('Quantcast adapter', function () {
       headers: {}
     };
 
-    it('should return an empty array if `serverResponse` is `undefined`', () => {
+    it('should return an empty array if `serverResponse` is `undefined`', function () {
       const interpretedResponse = qcSpec.interpretResponse();
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should return an empty array if the parsed response does NOT include `bids`', () => {
+    it('should return an empty array if the parsed response does NOT include `bids`', function () {
       const interpretedResponse = qcSpec.interpretResponse({});
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should return an empty array if the parsed response has an empty `bids`', () => {
+    it('should return an empty array if the parsed response has an empty `bids`', function () {
       const interpretedResponse = qcSpec.interpretResponse({ bids: [] });
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const expectedResponse = {
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
         cpm: 4.5,
@@ -195,7 +195,7 @@ describe('Quantcast adapter', function () {
       expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
 
-    it('handles no bid response', () => {
+    it('handles no bid response', function () {
       const body = {
         bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames

@@ -5,7 +5,7 @@ import {spec} from 'modules/madvertiseBidAdapter';
 
 describe('madvertise adapater', function () {
   describe('Test validate req', function () {
-    it('should accept minimum valid bid', () => {
+    it('should accept minimum valid bid', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
@@ -17,7 +17,7 @@ describe('madvertise adapater', function () {
 
       expect(isValid).to.equal(true);
     });
-    it('should reject no sizes', () => {
+    it('should reject no sizes', function () {
       let bid = {
         bidder: 'madvertise',
         params: {
@@ -28,7 +28,7 @@ describe('madvertise adapater', function () {
 
       expect(isValid).to.equal(false);
     });
-    it('should reject empty sizes', () => {
+    it('should reject empty sizes', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [],
@@ -40,7 +40,7 @@ describe('madvertise adapater', function () {
 
       expect(isValid).to.equal(false);
     });
-    it('should reject wrong format sizes', () => {
+    it('should reject wrong format sizes', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [['728x90']],
@@ -51,7 +51,7 @@ describe('madvertise adapater', function () {
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     });
-    it('should reject no params', () => {
+    it('should reject no params', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]]
@@ -60,7 +60,7 @@ describe('madvertise adapater', function () {
 
       expect(isValid).to.equal(false);
     });
-    it('should reject missing s', () => {
+    it('should reject missing s', function () {
       let bid = {
         bidder: 'madvertise',
         params: {}
@@ -100,7 +100,7 @@ describe('madvertise adapater', function () {
         s: 'test',
       }
     }];
-    it('minimum request with gdpr consent', () => {
+    it('minimum request with gdpr consent', function () {
       let bidderRequest = {
         gdprConsent: {
           consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -122,7 +122,7 @@ describe('madvertise adapater', function () {
       expect(req[0].url).to.contain(`&consent[0][value]=BOJ/P2HOJ/P2HABABMAAAAAZ+A==`)
     });
 
-    it('minimum request without gdpr consent', () => {
+    it('minimum request without gdpr consent', function () {
       let bidderRequest = {};
       const req = spec.buildRequests(bid, bidderRequest);
 
@@ -140,7 +140,7 @@ describe('madvertise adapater', function () {
   });
 
   describe('Test interpret response', function () {
-    it('General banner response', () => {
+    it('General banner response', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
@@ -180,7 +180,7 @@ describe('madvertise adapater', function () {
       expect(resp[0]).to.have.property('currency', 'EUR');
       expect(resp[0]).to.have.property('dealId', 'DEAL_ID');
     });
-    it('No response', () => {
+    it('No response', function () {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],

@@ -175,7 +175,7 @@ describe('adxcg analytics adapter', function () {
       adxcgAnalyticsAdapter.disableAnalytics();
     });
 
-    it('builds and sends auction data', () => {
+    it('builds and sends auction data', function () {
       // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
         timestamp: auctionTimestamp

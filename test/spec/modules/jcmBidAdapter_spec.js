@@ -8,7 +8,7 @@ describe('jcmAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -26,11 +26,11 @@ describe('jcmAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -55,11 +55,11 @@ describe('jcmAdapter', function () {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       expect(request.method).to.equal('GET');
     });
 
-    it('sends correct bid parameters', () => {
+    it('sends correct bid parameters', function () {
       const payloadArr = request.data.split('&');
       expect(request.method).to.equal('GET');
       expect(payloadArr.length).to.equal(4);
@@ -76,7 +76,7 @@ describe('jcmAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let serverResponse = {'bids': [{'width': 300, 'height': 250, 'creativeId': '29681110', 'ad': '<!-- Creative -->', 'cpm': 0.5, 'callbackId': '30b31c1838de1e'}]};
 
       let expectedResponse = [
@@ -109,7 +109,7 @@ describe('jcmAdapter', function () {
       expect(Object.keys(result[0]).ad).to.equal(Object.keys(expectedResponse[0]).ad);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let serverResponse = {'bids': []};
 
       let result = spec.interpretResponse({ body: serverResponse });
@@ -117,7 +117,7 @@ describe('jcmAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    it('Verifies sync iframe option', () => {
+    it('Verifies sync iframe option', function () {
       expect(spec.getUserSyncs({})).to.be.undefined;
       expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
       const options = spec.getUserSyncs({ iframeEnabled: true });
@@ -127,7 +127,7 @@ describe('jcmAdapter', function () {
       expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.html');
     });
 
-    it('Verifies sync image option', () => {
+    it('Verifies sync image option', function () {
       expect(spec.getUserSyncs({ image: false })).to.be.undefined;
       const options = spec.getUserSyncs({ image: true });
       expect(options).to.not.be.undefined;

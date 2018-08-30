@@ -100,17 +100,17 @@ describe('adtelligentBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
   describe('isBidRequestValid', function () {
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(undefined);
@@ -126,19 +126,19 @@ describe('adtelligentBidAdapter', function () {
     const videoRequest = spec.buildRequests(videoBidRequests, {});
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       expect(videoRequest.method).to.equal('GET');
       expect(displayRequest.method).to.equal('GET');
       expect(videoAndDisplayRequests.method).to.equal('GET');
     });
 
-    it('sends bid request to correct ENDPOINT', () => {
+    it('sends bid request to correct ENDPOINT', function () {
       expect(videoRequest.url).to.equal(ENDPOINT);
       expect(displayRequest.url).to.equal(ENDPOINT);
       expect(videoAndDisplayRequests.url).to.equal(ENDPOINT);
     });
 
-    it('sends correct video bid parameters', () => {
+    it('sends correct video bid parameters', function () {
       const bid = Object.assign({}, videoRequest.data);
       delete bid.domain;
 
@@ -152,7 +152,7 @@ describe('adtelligentBidAdapter', function () {
       expect(bid).to.deep.equal(eq);
     });
 
-    it('sends correct display bid parameters', () => {
+    it('sends correct display bid parameters', function () {
       const bid = Object.assign({}, displayRequest.data);
       delete bid.domain;
 
@@ -166,7 +166,7 @@ describe('adtelligentBidAdapter', function () {
       expect(bid).to.deep.equal(eq);
     });
 
-    it('sends correct video and display bid parameters', () => {
+    it('sends correct video and display bid parameters', function () {
       const bid = Object.assign({}, videoAndDisplayRequests.data);
       delete bid.domain;
 
@@ -196,7 +196,7 @@ describe('adtelligentBidAdapter', function () {
       eqResponse = null;
     });
 
-    it('should get correct video bid response', () => {
+    it('should get correct video bid response', function () {
       serverResponse = SERVER_VIDEO_RESPONSE;
       bidderRequest = videoBidderRequest;
       eqResponse = videoEqResponse;
@@ -204,7 +204,7 @@ describe('adtelligentBidAdapter', function () {
       bidServerResponseCheck();
     });
 
-    it('should get correct display bid response', () => {
+    it('should get correct display bid response', function () {
       serverResponse = SERVER_DISPLAY_RESPONSE;
       bidderRequest = displayBidderRequest;
       eqResponse = displayEqResponse;
@@ -225,13 +225,13 @@ describe('adtelligentBidAdapter', function () {
       expect(noBidResult.length).to.equal(0);
     }
 
-    it('handles video nobid responses', () => {
+    it('handles video nobid responses', function () {
       bidderRequest = videoBidderRequest;
 
       nobidServerResponseCheck();
     });
 
-    it('handles display nobid responses', () => {
+    it('handles display nobid responses', function () {
       bidderRequest = displayBidderRequest;
 
       nobidServerResponseCheck();

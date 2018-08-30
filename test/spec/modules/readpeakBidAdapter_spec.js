@@ -114,41 +114,41 @@ describe('ReadPeakAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function () {
-    it('should return true when the required params are passed', () => {
+    it('should return true when the required params are passed', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the native params are missing', () => {
+    it('should return false when the native params are missing', function () {
       bidRequest.nativeParams = undefined;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when the "publisherId" param is missing', () => {
+    it('should return false when the "publisherId" param is missing', function () {
       bidRequest.params = {
         bidfloor: 5.00
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when no bid params are passed', () => {
+    it('should return false when no bid params are passed', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when a bid request is not passed', () => {
+    it('should return false when a bid request is not passed', function () {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
 
   describe('spec.buildRequests', function () {
-    it('should create a POST request for every bid', () => {
+    it('should create a POST request for every bid', function () {
       const request = spec.buildRequests([ bidRequest ]);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT);
     });
 
-    it('should attach request data', () => {
+    it('should attach request data', function () {
       const request = spec.buildRequests([ bidRequest ]);
 
       const data = JSON.parse(request.data);
@@ -172,12 +172,12 @@ describe('ReadPeakAdapter', function () {
   });
 
   describe('spec.interpretResponse', function () {
-    it('should return no bids if the response is not valid', () => {
+    it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, serverRequest);
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response', () => {
+    it('should return a valid bid response', function () {
       const bidResponse = spec.interpretResponse({ body: serverResponse }, serverRequest)[0];
       expect(bidResponse).to.contain({
         requestId: bidRequest.bidId,

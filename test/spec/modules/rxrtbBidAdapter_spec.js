@@ -3,7 +3,7 @@ import {spec} from 'modules/rxrtbBidAdapter';
 
 describe('rxrtb adapater', function () {
   describe('Test validate req', function () {
-    it('should accept minimum valid bid', () => {
+    it('should accept minimum valid bid', function () {
       let bid = {
         bidder: 'rxrtb',
         params: {
@@ -17,7 +17,7 @@ describe('rxrtb adapater', function () {
       expect(isValid).to.equal(true);
     });
 
-    it('should reject missing id', () => {
+    it('should reject missing id', function () {
       let bid = {
         bidder: 'rxrtb',
         params: {
@@ -30,7 +30,7 @@ describe('rxrtb adapater', function () {
       expect(isValid).to.equal(false);
     });
 
-    it('should reject id not Integer', () => {
+    it('should reject id not Integer', function () {
       let bid = {
         bidder: 'rxrtb',
         params: {
@@ -44,7 +44,7 @@ describe('rxrtb adapater', function () {
       expect(isValid).to.equal(false);
     });
 
-    it('should reject missing source', () => {
+    it('should reject missing source', function () {
       let bid = {
         bidder: 'rxrtb',
         params: {
@@ -59,7 +59,7 @@ describe('rxrtb adapater', function () {
   });
 
   describe('Test build request', function () {
-    it('minimum request', () => {
+    it('minimum request', function () {
       let bid = {
         bidder: 'rxrtb',
         sizes: [[728, 90]],
@@ -89,7 +89,7 @@ describe('rxrtb adapater', function () {
   });
 
   describe('Test interpret response', function () {
-    it('General banner response', () => {
+    it('General banner response', function () {
       let resp = spec.interpretResponse({
         body: {
           id: 'abcd',

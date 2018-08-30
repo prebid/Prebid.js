@@ -9,7 +9,7 @@ describe('AdgenerationAdapter', function () {
   const ENDPOINT = ['http://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -21,11 +21,11 @@ describe('AdgenerationAdapter', function () {
         id: '58278', // banner
       }
     };
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {};
@@ -91,25 +91,25 @@ describe('AdgenerationAdapter', function () {
       banner: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
       native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
     };
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT[1]);
       expect(request.method).to.equal('GET');
     });
 
-    it('sends bid request to debug ENDPOINT via GET', () => {
+    it('sends bid request to debug ENDPOINT via GET', function () {
       bidRequests[0].params.debug = true;
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT[0]);
       expect(request.method).to.equal('GET');
     });
 
-    it('should attache params to the banner request', () => {
+    it('should attache params to the banner request', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.equal(data.banner);
     });
 
-    it('should attache params to the native request', () => {
+    it('should attache params to the native request', function () {
       const request = spec.buildRequests(bidRequests)[1];
       expect(request.data).to.equal(data.native);
     });
@@ -336,12 +336,12 @@ describe('AdgenerationAdapter', function () {
       }
     };
 
-    it('no bid responses', () => {
+    it('no bid responses', function () {
       const result = spec.interpretResponse({body: serverResponse.noAd}, bidRequests.banner);
       expect(result.length).to.equal(0);
     });
 
-    it('handles banner responses', () => {
+    it('handles banner responses', function () {
       const result = spec.interpretResponse({body: serverResponse.banner}, bidRequests.banner)[0];
       expect(result.requestId).to.equal(bidResponses.banner.requestId);
       expect(result.width).to.equal(bidResponses.banner.width);
@@ -355,7 +355,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.ad).to.equal(bidResponses.banner.ad);
     });
 
-    it('handles native responses', () => {
+    it('handles native responses', function () {
       const result = spec.interpretResponse({body: serverResponse.native}, bidRequests.native)[0];
       expect(result.requestId).to.equal(bidResponses.native.requestId);
       expect(result.width).to.equal(bidResponses.native.width);

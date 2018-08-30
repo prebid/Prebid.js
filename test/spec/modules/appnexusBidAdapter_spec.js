@@ -9,7 +9,7 @@ describe('AppNexusAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -27,11 +27,11 @@ describe('AppNexusAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,7 +42,7 @@ describe('AppNexusAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -67,7 +67,7 @@ describe('AppNexusAdapter', function () {
       }
     ];
 
-    it('should parse out private sizes', () => {
+    it('should parse out private sizes', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -85,7 +85,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
-    it('should add source and verison to the tag', () => {
+    it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.sdk).to.exist;
@@ -95,7 +95,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate the ad_types array on all requests', () => {
+    it('should populate the ad_types array on all requests', function () {
       ['banner', 'video', 'native'].forEach(type => {
         const bidRequest = Object.assign({}, bidRequests[0]);
         bidRequest.mediaTypes = {};
@@ -108,7 +108,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate the ad_types array on outstream requests', () => {
+    it('should populate the ad_types array on outstream requests', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
@@ -119,13 +119,13 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
 
-    it('should attach valid video params to the tag', () => {
+    it('should attach valid video params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -148,7 +148,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should attach valid user params to the tag', () => {
+    it('should attach valid user params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -171,7 +171,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should attach native params to the request', () => {
+    it('should attach native params to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -198,7 +198,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('sets minimum native asset params when not provided on adunit', () => {
+    it('sets minimum native asset params when not provided on adunit', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -217,7 +217,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('does not overwrite native ad unit params with mimimum params', () => {
+    it('does not overwrite native ad unit params with mimimum params', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -249,7 +249,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should convert keyword params to proper form and attaches to request', () => {
+    it('should convert keyword params to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -288,7 +288,7 @@ describe('AppNexusAdapter', function () {
       }]);
     });
 
-    it('should add payment rules to the request', () => {
+    it('should add payment rules to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -305,7 +305,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
-    it('should add gdpr consent information to the request', () => {
+    it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'appnexus',
@@ -327,7 +327,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
 
-    it('supports sending hybrid mobile app parameters', () => {
+    it('supports sending hybrid mobile app parameters', function () {
       let appRequest = Object.assign({},
         bidRequests[0],
         {
@@ -417,7 +417,7 @@ describe('AppNexusAdapter', function () {
       ]
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           'requestId': '3db3773286ee59',
@@ -441,7 +441,7 @@ describe('AppNexusAdapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'version': '0.0.1',
         'tags': [{
@@ -457,7 +457,7 @@ describe('AppNexusAdapter', function () {
       expect(result.length).to.equal(0);
     });
 
-    it('handles non-banner media responses', () => {
+    it('handles non-banner media responses', function () {
       let response = {
         'tags': [{
           'uuid': '84ab500420319d',
@@ -481,7 +481,7 @@ describe('AppNexusAdapter', function () {
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
-    it('handles native responses', () => {
+    it('handles native responses', function () {
       let response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';
       response1.tags[0].ads[0].rtb.native = {
@@ -515,7 +515,7 @@ describe('AppNexusAdapter', function () {
       expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
     });
 
-    it('supports configuring outstream renderers', () => {
+    it('supports configuring outstream renderers', function () {
       const outstreamResponse = deepClone(response);
       outstreamResponse.tags[0].ads[0].rtb.video = {};
       outstreamResponse.tags[0].ads[0].renderer_url = 'renderer.js';

@@ -484,7 +484,7 @@ describe('auctionmanager.js', function () {
   });
 
   describe('adjustBids', function () {
-    it('should adjust bids if greater than zero and pass copy of bid object', () => {
+    it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
         bidfactory.createBid(2),
         fixtures.getBidResponses()[5]
@@ -605,7 +605,7 @@ describe('auctionmanager.js', function () {
       it('should return proper price bucket increments for dense mode when cpm is 20+',
         checkPbDg('73.07', '20.00', '20+ caps at 20.00'));
 
-      it('should place dealIds in adserver targeting', () => {
+      it('should place dealIds in adserver targeting', function () {
         bids[0].dealId = 'test deal';
         auction.callBids();
 
@@ -613,7 +613,7 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
       });
 
-      it('should pass through default adserverTargeting sent from adapter', () => {
+      it('should pass through default adserverTargeting sent from adapter', function () {
         bids[0].adserverTargeting = {};
         bids[0].adserverTargeting.extra = 'stuff';
         auction.callBids();
@@ -623,7 +623,7 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
 
-      it('installs publisher-defined renderers on bids', () => {
+      it('installs publisher-defined renderers on bids', function () {
         let renderer = {
           url: 'renderer.js',
           render: (bid) => bid
@@ -729,7 +729,7 @@ describe('auctionmanager.js', function () {
         events.emit.restore();
         getBidderRequestStub.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', () => {
+      it('should emit BID_TIMEOUT for timed out bids', function () {
         auction.callBids();
         assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
       });
@@ -792,7 +792,7 @@ describe('auctionmanager.js', function () {
       auctionModule.newAuction.restore();
     });
 
-    it('should not alter bid adID', () => {
+    it('should not alter bid adID', function () {
       auction.callBids();
 
       const addedBid2 = auction.getBidsReceived().pop();
@@ -801,7 +801,7 @@ describe('auctionmanager.js', function () {
       assert.equal(addedBid1.adId, bids[0].requestId);
     });
 
-    it('should not add banner bids that have no width or height', () => {
+    it('should not add banner bids that have no width or height', function () {
       bids1[0].width = undefined;
       bids1[0].height = undefined;
 
@@ -813,7 +813,7 @@ describe('auctionmanager.js', function () {
       assert.equal(length, 1);
     });
 
-    it('should run auction after video bids have been cached', () => {
+    it('should run auction after video bids have been cached', function () {
       sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 
@@ -832,7 +832,7 @@ describe('auctionmanager.js', function () {
       store.store.restore();
     });
 
-    it('runs auction after video responses with multiple bid objects have been cached', () => {
+    it('runs auction after video responses with multiple bid objects have been cached', function () {
       sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 

@@ -19,11 +19,11 @@ describe('AjaAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -48,7 +48,7 @@ describe('AjaAdapter', function () {
       }
     ];
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
@@ -77,7 +77,7 @@ describe('AjaAdapter', function () {
       ]
     };
 
-    it('should get correct banner bid response', () => {
+    it('should get correct banner bid response', function () {
       let expectedResponse = [
         {
           'requestId': '51ef8751f9aead',
@@ -99,7 +99,7 @@ describe('AjaAdapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles video responses', () => {
+    it('handles video responses', function () {
       let response = {
         'is_ad_return': true,
         'ad': {
@@ -130,7 +130,7 @@ describe('AjaAdapter', function () {
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'is_ad_return': false,
         'ad': {}

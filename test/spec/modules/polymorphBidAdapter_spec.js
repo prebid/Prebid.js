@@ -35,17 +35,17 @@ const bidRequests = [{
 
 describe('Polymorph adapter test', function () {
   describe('.code', function () {
-    it('should return a bidder code of polymorph', () => {
+    it('should return a bidder code of polymorph', function () {
       expect(spec.code).to.eql(BIDDER_CODE);
     });
   });
 
   describe('isBidRequestValid', function () {
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
 
-    it('should return false if req has no placementId', () => {
+    it('should return false if req has no placementId', function () {
       const invalidBidRequest = {
         bidder: BIDDER_CODE,
         params: {
@@ -55,7 +55,7 @@ describe('Polymorph adapter test', function () {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return false if req has wrong bidder code', () => {
+    it('should return false if req has wrong bidder code', function () {
       const invalidBidRequest = {
         bidder: 'something',
         params: {
@@ -67,7 +67,7 @@ describe('Polymorph adapter test', function () {
   });
 
   describe('buildRequests', function () {
-    it('payload test', () => {
+    it('payload test', function () {
       const requests = spec.buildRequests(bidRequests);
       var payload1 = {};
       requests[0].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -92,7 +92,7 @@ describe('Polymorph adapter test', function () {
       expect(payload2.sizes).to.equal('700,250,300,600');
     });
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].url).to.equal(ENDPOINT_URL);
       expect(requests[0].method).to.equal('GET');
@@ -133,7 +133,7 @@ describe('Polymorph adapter test', function () {
       }
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const body = response.body;
       const expectedResponse = [{
         requestId: bidRequests[0].bidId,
@@ -152,7 +152,7 @@ describe('Polymorph adapter test', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('widget use case', () => {
+    it('widget use case', function () {
       const body = response2.body;
       const expectedResponse = [
         {
@@ -173,7 +173,7 @@ describe('Polymorph adapter test', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = [];
 
       let result = spec.interpretResponse(response, { 'bidderRequest': bidRequests[0] });

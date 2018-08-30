@@ -3,7 +3,7 @@ import {spec} from 'modules/arteebeeBidAdapter';
 
 describe('Arteebee adapater', function () {
   describe('Test validate req', function () {
-    it('should accept minimum valid bid', () => {
+    it('should accept minimum valid bid', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -16,7 +16,7 @@ describe('Arteebee adapater', function () {
       expect(isValid).to.equal(true);
     });
 
-    it('should reject missing pub', () => {
+    it('should reject missing pub', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -28,7 +28,7 @@ describe('Arteebee adapater', function () {
       expect(isValid).to.equal(false);
     });
 
-    it('should reject missing source', () => {
+    it('should reject missing source', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -42,7 +42,7 @@ describe('Arteebee adapater', function () {
   });
 
   describe('Test build request', function () {
-    it('minimum request', () => {
+    it('minimum request', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -59,7 +59,7 @@ describe('Arteebee adapater', function () {
       expect(req.imp[0]).to.not.have.property('secure');
     });
 
-    it('make test request', () => {
+    it('make test request', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -77,7 +77,7 @@ describe('Arteebee adapater', function () {
       expect(req.imp[0]).to.not.have.property('secure');
     });
 
-    it('test coppa', () => {
+    it('test coppa', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -95,7 +95,7 @@ describe('Arteebee adapater', function () {
       expect(req.imp[0]).to.not.have.property('secure');
     });
 
-    it('test gdpr', () => {
+    it('test gdpr', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -125,7 +125,7 @@ describe('Arteebee adapater', function () {
   });
 
   describe('Test interpret response', function () {
-    it('General banner response', () => {
+    it('General banner response', function () {
       let resp = spec.interpretResponse({
         body: {
           id: 'abcd',

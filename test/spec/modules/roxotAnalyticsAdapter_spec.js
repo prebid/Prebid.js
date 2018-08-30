@@ -444,7 +444,7 @@ describe('Roxot Prebid Analytic', function () {
       localStorage.removeItem('roxot_analytics_utm_content');
       localStorage.removeItem('roxot_analytics_utm_ttl');
     });
-    it('should build utm data from local storage', () => {
+    it('should build utm data from local storage', function () {
       let utmTagData = roxotAnalytic.buildUtmTagData();
       expect(utmTagData.utm_source).to.equal('utm_source');
       expect(utmTagData.utm_medium).to.equal('utm_medium');

@@ -81,7 +81,7 @@ describe('adapterManager tests', function () {
       delete AdapterManager.bidderRegistry['appnexus'];
     });
 
-    it('should log an error if a bidder is used that does not exist', () => {
+    it('should log an error if a bidder is used that does not exist', function () {
       const adUnits = [{
         code: 'adUnit-code',
         sizes: [[728, 90]],
@@ -97,7 +97,7 @@ describe('adapterManager tests', function () {
       sinon.assert.called(utils.logError);
     });
 
-    it('should emit BID_REQUESTED event', () => {
+    it('should emit BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
       let cnt = 0;
       let count = () => cnt++;
@@ -147,7 +147,7 @@ describe('adapterManager tests', function () {
       prebidServerAdapterMock.callBids.reset();
     });
 
-    it('invokes callBids on the S2S adapter', () => {
+    it('invokes callBids on the S2S adapter', function () {
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'auctionId': '1863e370099523',
@@ -295,7 +295,7 @@ describe('adapterManager tests', function () {
     });
 
     // Enable this test when prebidServer adapter is made 1.0 compliant
-    it('invokes callBids with only s2s bids', () => {
+    it('invokes callBids with only s2s bids', function () {
       const adUnits = getAdUnits();
       // adUnit without appnexus bidder
       adUnits.push({
@@ -474,7 +474,7 @@ describe('adapterManager tests', function () {
         events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
       });
 
-      it('should fire for s2s requests', () => {
+      it('should fire for s2s requests', function () {
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus'], bid.bidder));
           return adUnit;
@@ -485,7 +485,7 @@ describe('adapterManager tests', function () {
         sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       });
 
-      it('should fire for simultaneous s2s and client requests', () => {
+      it('should fire for simultaneous s2s and client requests', function () {
         AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus'], bid.bidder));
@@ -563,7 +563,7 @@ describe('adapterManager tests', function () {
       s2sTesting.getSourceBidderMap.restore();
     });
 
-    it('calls server adapter if no sources defined', () => {
+    it('calls server adapter if no sources defined', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: [], [s2sTesting.SERVER]: []});
       callBids();
 
@@ -577,7 +577,7 @@ describe('adapterManager tests', function () {
       sinon.assert.notCalled(adequantAdapterMock.callBids);
     });
 
-    it('calls client adapter if one client source defined', () => {
+    it('calls client adapter if one client source defined', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus'], [s2sTesting.SERVER]: []});
       callBids();
 
@@ -591,7 +591,7 @@ describe('adapterManager tests', function () {
       sinon.assert.notCalled(adequantAdapterMock.callBids);
     });
 
-    it('calls client adapters if client sources defined', () => {
+    it('calls client adapters if client sources defined', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       callBids();
 
@@ -605,7 +605,7 @@ describe('adapterManager tests', function () {
       checkClientCalled(adequantAdapterMock, 2);
     });
 
-    it('calls client adapters if client sources defined', () => {
+    it('calls client adapters if client sources defined', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       callBids();
 
@@ -619,7 +619,7 @@ describe('adapterManager tests', function () {
       checkClientCalled(adequantAdapterMock, 2);
     });
 
-    it('does not call server adapter for bidders that go to client', () => {
+    it('does not call server adapter for bidders that go to client', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
@@ -638,7 +638,7 @@ describe('adapterManager tests', function () {
       checkClientCalled(adequantAdapterMock, 2);
     });
 
-    it('does not call client adapters for bidders that go to server', () => {
+    it('does not call client adapters for bidders that go to server', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.SERVER;
@@ -657,7 +657,7 @@ describe('adapterManager tests', function () {
       sinon.assert.notCalled(adequantAdapterMock.callBids);
     });
 
-    it('calls client and server adapters for bidders that go to both', () => {
+    it('calls client and server adapters for bidders that go to both', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
@@ -676,7 +676,7 @@ describe('adapterManager tests', function () {
       checkClientCalled(adequantAdapterMock, 2);
     });
 
-    it('makes mixed client/server adapter calls for mixed bidder sources', () => {
+    it('makes mixed client/server adapter calls for mixed bidder sources', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
@@ -732,7 +732,7 @@ describe('adapterManager tests', function () {
         utils.logError.restore();
       });
 
-      it('should allow an alias if alias is part of s2sConfig.bidders', () => {
+      it('should allow an alias if alias is part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
         config.setConfig({s2sConfig: testS2sConfig});
@@ -741,7 +741,7 @@ describe('adapterManager tests', function () {
         expect(AdapterManager.aliasRegistry).to.have.property('s2sAlias');
       });
 
-      it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', () => {
+      it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
         config.setConfig({s2sConfig: testS2sConfig});
@@ -772,7 +772,7 @@ describe('adapterManager tests', function () {
         utils.shuffle.restore();
       });
 
-      it('setting to `random` uses shuffled order of adUnits', () => {
+      it('setting to `random` uses shuffled order of adUnits', function () {
         config.setConfig({ bidderSequence: 'random' });
         let bidRequests = AdapterManager.makeBidRequests(
           adUnits,
@@ -796,7 +796,7 @@ describe('adapterManager tests', function () {
         setSizeConfig([]);
       });
 
-      it('should not filter bids w/ no labels', () => {
+      it('should not filter bids w/ no labels', function () {
         let bidRequests = AdapterManager.makeBidRequests(
           adUnits,
           Date.now(),
@@ -816,7 +816,7 @@ describe('adapterManager tests', function () {
         expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
       });
 
-      it('should filter sizes using size config', () => {
+      it('should filter sizes using size config', function () {
         let validSizes = [
           [728, 90],
           [300, 250]
@@ -868,7 +868,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests.length).to.equal(0);
       });
 
-      it('should filter adUnits/bidders based on applied labels', () => {
+      it('should filter adUnits/bidders based on applied labels', function () {
         adUnits[0].labelAll = ['visitor-uk', 'mobile'];
         adUnits[1].labelAny = ['visitor-uk', 'desktop'];
         adUnits[1].bids[0].labelAny = ['mobile'];
@@ -889,7 +889,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
       });
 
-      it('should filter adUnits/bidders based on applid labels for s2s requests', () => {
+      it('should filter adUnits/bidders based on applid labels for s2s requests', function () {
         adUnits[0].labelAll = ['visitor-uk', 'mobile'];
         adUnits[1].labelAny = ['visitor-uk', 'desktop'];
         adUnits[1].bids[0].labelAny = ['mobile'];
@@ -918,7 +918,7 @@ describe('adapterManager tests', function () {
     });
 
     describe('gdpr consent module', function () {
-      it('inserts gdprConsent object to bidRequest only when module was enabled', () => {
+      it('inserts gdprConsent object to bidRequest only when module was enabled', function () {
         AdapterManager.gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
@@ -958,7 +958,7 @@ describe('adapterManager tests', function () {
         utils.logInfo.restore();
       });
 
-      it('should maintain adUnit structure and adUnits.sizes is replaced', () => {
+      it('should maintain adUnit structure and adUnits.sizes is replaced', function () {
         let fullAdUnit = [{
           sizes: [[300, 250], [300, 600]],
           mediaTypes: {
@@ -1043,7 +1043,7 @@ describe('adapterManager tests', function () {
         sinon.assert.calledOnce(utils.logInfo);
       });
 
-      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', () => {
+      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', function () {
         let fullAdUnit = [{
           sizes: [300, 250],
           mediaTypes: {
@@ -1067,7 +1067,7 @@ describe('adapterManager tests', function () {
         utils.logError.restore();
       });
 
-      it('should throw error message and delete an object/property', () => {
+      it('should throw error message and delete an object/property', function () {
         let badBanner = [{
           sizes: [[300, 250], [300, 600]],
           mediaTypes: {

@@ -24,7 +24,7 @@ describe('eplanning analytics adapter', function () {
   });
 
   describe('track', function () {
-    it('builds and sends auction data', () => {
+    it('builds and sends auction data', function () {
       sinon.spy(eplAnalyticsAdapter, 'track');
 
       let auctionTimestamp = 1496510254313;

@@ -16,13 +16,13 @@ describe('adLoader', function () {
   });
 
   describe('loadExternalScript', function () {
-    it('requires moduleCode to be included on the request', () => {
+    it('requires moduleCode to be included on the request', function () {
       adLoader.loadExternalScript('someURL');
       expect(utilsLogErrorStub.called).to.be.true;
       expect(utilsinsertElementStub.called).to.be.false;
     });
 
-    it('only allows whitelisted vendors to load scripts', () => {
+    it('only allows whitelisted vendors to load scripts', function () {
       adLoader.loadExternalScript('someURL', 'criteo');
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;

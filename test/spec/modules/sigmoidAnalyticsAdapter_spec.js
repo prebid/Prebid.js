@@ -55,7 +55,7 @@ describe('sigmoid Prebid Analytic', function () {
       localStorage.setItem('sigmoid_analytics_utm_content', '');
       localStorage.setItem('sigmoid_analytics_utm_timeout', Date.now());
     });
-    it('should build utm data from local storage', () => {
+    it('should build utm data from local storage', function () {
       let utmTagData = sigmoidAnalytic.buildUtmTagData();
       expect(utmTagData.utm_source).to.equal('utm_source');
       expect(utmTagData.utm_medium).to.equal('utm_medium');

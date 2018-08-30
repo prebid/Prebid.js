@@ -55,7 +55,7 @@ describe('UnrulyAdapter', function () {
     delete parent.window.unruly
   });
 
-  it('should expose Unruly Bidder code', () => {
+  it('should expose Unruly Bidder code', function () {
     expect(adapter.code).to.equal('unruly')
   });
 
@@ -64,21 +64,21 @@ describe('UnrulyAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    it('should be a function', () => {
+    it('should be a function', function () {
       expect(typeof adapter.isBidRequestValid).to.equal('function')
     });
 
-    it('should return false if bid is falsey', () => {
+    it('should return false if bid is falsey', function () {
       expect(adapter.isBidRequestValid()).to.be.false;
     });
 
-    it('should return true if bid.mediaType is "video"', () => {
+    it('should return true if bid.mediaType is "video"', function () {
       const mockBid = { mediaType: 'video' };
 
       expect(adapter.isBidRequestValid(mockBid)).to.be.true;
     });
 
-    it('should return true if bid.mediaTypes.video.context is "outstream"', () => {
+    it('should return true if bid.mediaTypes.video.context is "outstream"', function () {
       const mockBid = {
         mediaTypes: {
           video: {
@@ -92,18 +92,18 @@ describe('UnrulyAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('should be a function', () => {
+    it('should be a function', function () {
       expect(typeof adapter.buildRequests).to.equal('function');
     });
-    it('should return an object', () => {
+    it('should return an object', function () {
       const mockBidRequests = ['mockBid'];
       expect(typeof adapter.buildRequests(mockBidRequests)).to.equal('object')
     });
-    it('should return a server request with a valid exchange url', () => {
+    it('should return a server request with a valid exchange url', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).url).to.equal('https://targeting.unrulymedia.com/prebid')
     });
-    it('should return a server request with method === POST', () => {
+    it('should return a server request with method === POST', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
     });
@@ -113,7 +113,7 @@ describe('UnrulyAdapter', function () {
         contentType: 'application/json'
       });
     });
-    it('should return a server request with valid payload', () => {
+    it('should return a server request with valid payload', function () {
       const mockBidRequests = ['mockBid'];
       const mockBidderRequest = {bidderCode: 'mockBidder'};
       expect(adapter.buildRequests(mockBidRequests, mockBidderRequest).data)
@@ -122,17 +122,17 @@ describe('UnrulyAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should be a function', () => {
+    it('should be a function', function () {
       expect(typeof adapter.interpretResponse).to.equal('function');
     });
-    it('should return empty array when serverResponse is undefined', () => {
+    it('should return empty array when serverResponse is undefined', function () {
       expect(adapter.interpretResponse()).to.deep.equal([]);
     });
-    it('should return empty array when  serverResponse has no bids', () => {
+    it('should return empty array when  serverResponse has no bids', function () {
       const mockServerResponse = { body: { bids: [] } };
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
-    it('should return array of bids when receive a successful response from server', () => {
+    it('should return array of bids when receive a successful response from server', function () {
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([
@@ -151,7 +151,7 @@ describe('UnrulyAdapter', function () {
       ])
     });
 
-    it('should initialize and set the renderer', () => {
+    it('should initialize and set the renderer', function () {
       expect(Renderer.install).not.to.have.been.called;
       expect(fakeRenderer.setRender).not.to.have.been.called;
 
@@ -172,7 +172,7 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledWithExactly(fakeRenderer.setRender, sinon.match.func)
     });
 
-    it('bid is placed on the bid queue when render is called', () => {
+    it('bid is placed on the bid queue when render is called', function () {
       const exchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video', vastUrl: 'value: vastUrl' });
       const exchangeResponse = createExchangeResponse(exchangeBid);
 
@@ -192,7 +192,7 @@ describe('UnrulyAdapter', function () {
       expect(sentRendererConfig.adUnitCode).to.equal('video')
     })
 
-    it('should ensure that renderer is placed in Prebid supply mode', () => {
+    it('should ensure that renderer is placed in Prebid supply mode', function () {
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 

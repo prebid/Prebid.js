@@ -16,18 +16,18 @@ describe('onetag', function () {
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true when required params are found', () => {
+    it('Should return true when required params are found', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false when pubId is not a string', () => {
+    it('Should return false when pubId is not a string', function () {
       bid.params.pubId = 30;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false when pubId is undefined', () => {
+    it('Should return false when pubId is undefined', function () {
       bid.params.pubId = undefined;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false when the sizes array is empty', () => {
+    it('Should return false when the sizes array is empty', function () {
       bid.sizes = [];
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -35,23 +35,23 @@ describe('onetag', function () {
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
-    it('Creates a ServerRequest object with method, URL and data', () => {
+    it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
       expect(serverRequest.url).to.exist;
       expect(serverRequest.data).to.exist;
     });
-    it('Returns POST method', () => {
+    it('Returns POST method', function () {
       expect(serverRequest.method).to.equal('POST');
     });
-    it('Returns valid URL', () => {
+    it('Returns valid URL', function () {
       expect(serverRequest.url).to.equal('https://onetag-sys.com/prebid-request');
     });
 
     const d = serverRequest.data;
     try {
       const data = JSON.parse(d);
-      it('Should contains all keys', () => {
+      it('Should contains all keys', function () {
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('location', 'masked', 'referrer', 'sHeight', 'sWidth', 'timeOffset', 'date', 'wHeight', 'wWidth', 'bids');
         expect(data.location).to.be.a('string');
@@ -76,7 +76,7 @@ describe('onetag', function () {
     } catch (e) {
       console.log('Error while parsing');
     }
-    it('Returns empty data if no valid requests are passed', () => {
+    it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let dataString = serverRequest.data;
       try {
@@ -86,7 +86,7 @@ describe('onetag', function () {
         console.log('Error while parsing');
       }
     });
-    it('should send GDPR consent data', () => {
+    it('should send GDPR consent data', function () {
       let consentString = 'consentString';
       let bidderRequest = {
         'bidderCode': 'onetag',
@@ -123,7 +123,7 @@ describe('onetag', function () {
         }]
       }
     };
-    it('Returns an array of valid server responses if response object is valid', () => {
+    it('Returns an array of valid server responses if response object is valid', function () {
       const serverResponses = spec.interpretResponse(resObject);
 
       expect(serverResponses).to.be.an('array').that.is.not.empty;
@@ -140,7 +140,7 @@ describe('onetag', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', () => {
+      it('Returns an empty array if invalid response is passed', function () {
         const serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });

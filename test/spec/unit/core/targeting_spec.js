@@ -120,7 +120,7 @@ describe('targeting tests', function () {
       targetingModule.isBidNotExpired.restore();
     });
 
-    it('selects the top bid when _sendAllBids true', () => {
+    it('selects the top bid when _sendAllBids true', function () {
       config.setConfig({ enableSendAllBids: true });
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
@@ -158,7 +158,7 @@ describe('targeting tests', function () {
       targetingModule.isBidNotExpired.restore();
     });
 
-    it('returns targetingSet correctly', () => {
+    it('returns targetingSet correctly', function () {
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
       // we should only get the targeting data for the one requested adunit to at least exist even though it has no keys to set
@@ -180,7 +180,7 @@ describe('targeting tests', function () {
         auctionManagerStub.restore();
       });
 
-      it('should use bids from pool to get Winning Bid', () => {
+      it('should use bids from pool to get Winning Bid', function () {
         let bidsReceived = [
           createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
           createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
@@ -196,7 +196,7 @@ describe('targeting tests', function () {
         expect(bids[1].adId).to.equal('adid-2');
       });
 
-      it('should not use rendered bid to get winning bid', () => {
+      it('should not use rendered bid to get winning bid', function () {
         let bidsReceived = [
           createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'rendered'}),
           createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
@@ -213,7 +213,7 @@ describe('targeting tests', function () {
         expect(bids[1].adId).to.equal('adid-3');
       });
 
-      it('should use highest cpm bid from bid pool to get winning bid', () => {
+      it('should use highest cpm bid from bid pool to get winning bid', function () {
         // Pool is having 4 bids from 2 auctions. There are 2 bids from rubicon, #2 which is highest cpm bid will be selected to take part in auction.
         let bidsReceived = [
           createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
@@ -243,7 +243,7 @@ describe('targeting tests', function () {
         auctionManagerStub.restore();
         timestampStub.restore();
       });
-      it('should not include expired bids in the auction', () => {
+      it('should not include expired bids in the auction', function () {
         timestampStub.returns(200000);
         // Pool is having 4 bids from 2 auctions. All the bids are expired and only bid #3 is passing the bidExpiry check.
         let bidsReceived = [

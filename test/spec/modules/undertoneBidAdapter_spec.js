@@ -89,22 +89,22 @@ const bidResArray = [
 
 describe('Undertone Adapter', function () {
   describe('request', function () {
-    it('should validate bid request', () => {
+    it('should validate bid request', function () {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', () => {
+    it('should not validate incorrect bid request', function () {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
   describe('build request', function () {
-    it('should send request to correct url via POST', () => {
+    it('should send request to correct url via POST', function () {
       const request = spec.buildRequests(bidReq);
       const domain = null;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const request = spec.buildRequests(bidReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
@@ -122,12 +122,12 @@ describe('Undertone Adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should build bid array', () => {
+    it('should build bid array', function () {
       let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const result = spec.interpretResponse({body: bidResponse});
       const bid = result[0];
 
@@ -141,12 +141,12 @@ describe('Undertone Adapter', function () {
       expect(bid.ttl).to.equal(360);
     });
 
-    it('should return empty array when response is incorrect', () => {
+    it('should return empty array when response is incorrect', function () {
       expect(spec.interpretResponse({body: {}}).length).to.equal(0);
       expect(spec.interpretResponse({body: []}).length).to.equal(0);
     });
 
-    it('should only use valid bid responses', () => {
+    it('should only use valid bid responses', function () {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
     });
   });

@@ -6,7 +6,7 @@ describe('OptimeraAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   })
@@ -24,7 +24,7 @@ describe('OptimeraAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   })
@@ -42,7 +42,7 @@ describe('OptimeraAdapter', function () {
         }
       }
     ];
-    it('buildRequests fires', () => {
+    it('buildRequests fires', function () {
       let request = spec.buildRequests(bid);
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
@@ -67,7 +67,7 @@ describe('OptimeraAdapter', function () {
         }
       ]
     }
-    it('interpresResponse fires', () => {
+    it('interpresResponse fires', function () {
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses[0].dealId[0]).to.equal('RB_K');
       expect(bidResponses[0].dealId[1]).to.equal('728x90K');

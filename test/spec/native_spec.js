@@ -29,21 +29,21 @@ describe('native.js', function () {
     utils.insertHtmlIntoIframe.restore();
   });
 
-  it('gets native targeting keys', () => {
+  it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
     expect(targeting.hb_native_title).to.equal(bid.native.title);
     expect(targeting.hb_native_body).to.equal(bid.native.body);
     expect(targeting.hb_native_linkurl).to.equal(bid.native.clickUrl);
   });
 
-  it('fires impression trackers', () => {
+  it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
     sinon.assert.calledWith(insertHtmlIntoIframeStub, bid.native.javascriptTrackers);
   });
 
-  it('fires click trackers', () => {
+  it('fires click trackers', function () {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
@@ -153,7 +153,7 @@ describe('validate native', function () {
 
   afterEach(() => {});
 
-  it('should reject bid if no image sizes are defined', () => {
+  it('should reject bid if no image sizes are defined', function () {
     let result = nativeBidIsValid(validBid, bidReq);
     expect(result).to.be.true;
     result = nativeBidIsValid(noIconDimBid, bidReq);

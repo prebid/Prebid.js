@@ -37,22 +37,22 @@ describe('AdxcgAdapter', function () {
       'auctionId': '1d1a030790a475',
     }
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.equal(true)
     })
 
-    it('should return true when required params not found', () => {
+    it('should return true when required params not found', function () {
       expect(spec.isBidRequestValid({})).to.be.false
     })
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bidBanner)
       delete bid.params
       bid.params = {}
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
 
-    it('should return true when required video params not found', () => {
+    it('should return true when required video params not found', function () {
       const simpleVideo = JSON.parse(JSON.stringify(bidVideo))
       simpleVideo.params.adzoneid = 123
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
@@ -76,7 +76,7 @@ describe('AdxcgAdapter', function () {
       'auctionId': '1d1a030790a475',
     }
 
-    it('creates a valid adxcg request url', () => {
+    it('creates a valid adxcg request url', function () {
       let request = spec.buildRequests([bid])
       expect(request).to.exist
       expect(request.method).to.equal('GET')
@@ -109,7 +109,7 @@ describe('AdxcgAdapter', function () {
       'auctionId': '1d1a030790a475',
     }
 
-    it('should send GDPR Consent data if gdprApplies', () => {
+    it('should send GDPR Consent data if gdprApplies', function () {
       let request = spec.buildRequests([bid], {gdprConsent: {gdprApplies: true, consentString: 'consentDataString'}})
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
@@ -118,7 +118,7 @@ describe('AdxcgAdapter', function () {
       expect(query.gdpr_consent).to.equal('consentDataString')
     })
 
-    it('should not send GDPR Consent data if gdprApplies is false or undefined', () => {
+    it('should not send GDPR Consent data if gdprApplies is false or undefined', function () {
       let request = spec.buildRequests([bid], {
         gdprConsent: {
           gdprApplies: false,
@@ -245,7 +245,7 @@ describe('AdxcgAdapter', function () {
         header: {'someheader': 'fakedata'}
       }
 
-    it('handles regular responses', () => {
+    it('handles regular responses', function () {
       let result = spec.interpretResponse(BANNER_RESPONSE, BIDDER_REQUEST)
 
       expect(result).to.have.lengthOf(1)
@@ -262,7 +262,7 @@ describe('AdxcgAdapter', function () {
       expect(result[0].dealId).to.not.exist
     })
 
-    it('handles regular responses with dealid', () => {
+    it('handles regular responses with dealid', function () {
       let result = spec.interpretResponse(BANNER_RESPONSE_WITHDEALID, BIDDER_REQUEST)
 
       expect(result).to.have.lengthOf(1)
@@ -277,7 +277,7 @@ describe('AdxcgAdapter', function () {
       expect(result[0].ttl).to.equal(300)
     })
 
-    it('handles video responses', () => {
+    it('handles video responses', function () {
       let result = spec.interpretResponse(VIDEO_RESPONSE, BIDDER_REQUEST)
       expect(result).to.have.lengthOf(1)
 
@@ -292,7 +292,7 @@ describe('AdxcgAdapter', function () {
       expect(result[0].ttl).to.equal(300)
     })
 
-    it('handles native responses', () => {
+    it('handles native responses', function () {
       let result = spec.interpretResponse(NATIVE_RESPONSE, BIDDER_REQUEST)
 
       expect(result[0].width).to.equal(0)
@@ -312,7 +312,7 @@ describe('AdxcgAdapter', function () {
       expect(result[0].native.sponsoredBy).to.equal('sponsoredByContent')
     })
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = []
       let bidderRequest = BIDDER_REQUEST
 
@@ -326,7 +326,7 @@ describe('AdxcgAdapter', function () {
       'iframeEnabled': 'true'
     }
 
-    it('should return iframe sync option', () => {
+    it('should return iframe sync option', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('//cdn.adxcg.net/pb-sync.html')
     })

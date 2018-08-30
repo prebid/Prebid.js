@@ -6,13 +6,13 @@ describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
 
   describe('.code', function () {
-    it('should return a bidder code of sonobi', () => {
+    it('should return a bidder code of sonobi', function () {
       expect(spec.code).to.equal('sonobi')
     })
   })
 
   describe('inherited functions', function () {
-    it('should exist and be a function', () => {
+    it('should exist and be a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
@@ -32,11 +32,11 @@ describe('SonobiBidAdapter', function () {
       'auctionId': '1d1a030790a475',
     }
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return true when bid.params.placement_id and bid.params.sizes are found', () => {
+    it('should return true when bid.params.placement_id and bid.params.sizes are found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       delete bid.sizes
@@ -48,7 +48,7 @@ describe('SonobiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return true when bid.params.placement_id and bid.sizes are found', () => {
+    it('should return true when bid.params.placement_id and bid.sizes are found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       bid.sizes = [[300, 250], [300, 600]]
@@ -59,7 +59,7 @@ describe('SonobiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return true when bid.params.ad_unit and bid.params.sizes are found', () => {
+    it('should return true when bid.params.ad_unit and bid.params.sizes are found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       delete bid.sizes
@@ -71,7 +71,7 @@ describe('SonobiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return true when bid.params.ad_unit and bid.sizes are found', () => {
+    it('should return true when bid.params.ad_unit and bid.sizes are found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       bid.sizes = [[300, 250], [300, 600]]
@@ -82,13 +82,13 @@ describe('SonobiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return false when no params are found', () => {
+    it('should return false when no params are found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
 
-    it('should return false when bid.params.placement_id and bid.params.ad_unit are not found', () => {
+    it('should return false when bid.params.placement_id and bid.params.ad_unit are not found', function () {
       let bid = Object.assign({}, bid)
       delete bid.params
       bid.params = {
@@ -138,7 +138,7 @@ describe('SonobiBidAdapter', function () {
       },
     };
 
-    it('should return a properly formatted request', () => {
+    it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest)
       const bidRequestsPageViewID = spec.buildRequests(bidRequest)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
@@ -153,7 +153,7 @@ describe('SonobiBidAdapter', function () {
       expect(['mobile', 'tablet', 'desktop']).to.contain(bidRequests.data.vp);
     })
 
-    it('should return a properly formatted request with GDPR applies set to true', () => {
+    it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
       expect(bidRequests.method).to.equal('GET')
@@ -161,7 +161,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
 
-    it('should return a properly formatted request with GDPR applies set to false', () => {
+    it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
@@ -169,7 +169,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.gdpr).to.equal('false')
       expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
-    it('should return a properly formatted request with GDPR applies set to false with no consent_string param', () => {
+    it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
       let bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
@@ -183,7 +183,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.gdpr).to.equal('false')
       expect(bidRequests.data).to.not.include.keys('consent_string')
     })
-    it('should return a properly formatted request with GDPR applies set to true with no consent_string param', () => {
+    it('should return a properly formatted request with GDPR applies set to true with no consent_string param', function () {
       let bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
@@ -197,7 +197,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.gdpr).to.equal('true')
       expect(bidRequests.data).to.not.include.keys('consent_string')
     })
-    it('should return a properly formatted request with hfa', () => {
+    it('should return a properly formatted request with hfa', function () {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'
       const bidRequests = spec.buildRequests(bidRequest)
@@ -208,7 +208,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
 
-    it('should return null if there is nothing to bid on', () => {
+    it('should return null if there is nothing to bid on', function () {
       const bidRequests = spec.buildRequests([{params: {}}])
       expect(bidRequests).to.equal(null);
     })
@@ -316,7 +316,7 @@ describe('SonobiBidAdapter', function () {
       }
     ];
 
-    it('should map bidResponse to prebidResponse', () => {
+    it('should map bidResponse to prebidResponse', function () {
       const response = spec.interpretResponse(bidResponse, bidRequests);
       response.forEach(resp => {
         let regx = /http:\/\/localhost:9876\/.*?(?="|$)/
@@ -338,35 +338,35 @@ describe('SonobiBidAdapter', function () {
       }
     }];
 
-    it('should return one sync pixel', () => {
+    it('should return one sync pixel', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.deep.equal([{
         type: 'image',
         url: 'https://pixel-test'
       }]);
     })
-    it('should return an empty array when sync is enabled but there are no bidResponses', () => {
+    it('should return an empty array when sync is enabled but there are no bidResponses', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
     })
 
-    it('should return an empty array when sync is enabled but no sync pixel returned', () => {
+    it('should return an empty array when sync is enabled but no sync pixel returned', function () {
       const pixel = Object.assign({}, bidResponse);
       delete pixel[0].body.sbi_px;
       expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.have.length(0);
     })
 
-    it('should return an empty array', () => {
+    it('should return an empty array', function () {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
     });
   })
   describe('_getPlatform', function () {
-    it('should return mobile', () => {
+    it('should return mobile', function () {
       expect(_getPlatform({innerWidth: 767})).to.equal('mobile')
     })
-    it('should return tablet', () => {
+    it('should return tablet', function () {
       expect(_getPlatform({innerWidth: 800})).to.equal('tablet')
     })
-    it('should return desktop', () => {
+    it('should return desktop', function () {
       expect(_getPlatform({innerWidth: 1000})).to.equal('desktop')
     })
   })

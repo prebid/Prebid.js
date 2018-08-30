@@ -208,7 +208,7 @@ describe('ServerBid S2S Adapter', function () {
 
     afterEach(() => xhr.restore());
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -228,7 +228,7 @@ describe('ServerBid S2S Adapter', function () {
       utils.getBidRequest.restore();
     });
 
-    it('registers bids', () => {
+    it('registers bids', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig(CONFIG_ARG);
@@ -242,7 +242,7 @@ describe('ServerBid S2S Adapter', function () {
       expect(response).to.have.property('adId', '123');
     });
 
-    it('registers no-bid response when ad unit not set', () => {
+    it('registers no-bid response when ad unit not set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig(CONFIG_ARG);
@@ -260,7 +260,7 @@ describe('ServerBid S2S Adapter', function () {
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('registers no-bid response when ad unit is set', () => {
+    it('registers no-bid response when ad unit is set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig(CONFIG_ARG);
@@ -275,7 +275,7 @@ describe('ServerBid S2S Adapter', function () {
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
 
-    it('registers no-bid response when there are less bids than requests', () => {
+    it('registers no-bid response when there are less bids than requests', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig(CONFIG_ARG);

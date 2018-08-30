@@ -137,7 +137,7 @@ describe('Adyoulike Adapter', function () {
   let getEndpoint = (dc = defaultDC) => `http://${dc}.omnitagjs.com/hb-api/prebid`;
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -154,18 +154,18 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.size;
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -190,7 +190,7 @@ describe('Adyoulike Adapter', function () {
       canonicalQuery.restore();
     });
 
-    it('should add gdpr consent information to the request', () => {
+    it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'adyoulike',
@@ -212,7 +212,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
 
-    it('sends bid request to endpoint with single placement', () => {
+    it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement);
       const payload = JSON.parse(request.data);
 
@@ -226,7 +226,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
-    it('sends bid request to endpoint with single placement without canonical', () => {
+    it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
       const request = spec.buildRequests(bidRequestWithSinglePlacement);
       const payload = JSON.parse(request.data);
@@ -241,7 +241,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
-    it('sends bid request to endpoint with multiple placements', () => {
+    it('sends bid request to endpoint with multiple placements', function () {
       const request = spec.buildRequests(bidRequestMultiPlacements);
       const payload = JSON.parse(request.data);
       expect(request.url).to.contain(getEndpoint());
@@ -261,7 +261,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.PageRefreshed).to.equal(false);
     });
 
-    it('sends bid request to endpoint setted by parameters', () => {
+    it('sends bid request to endpoint setted by parameters', function () {
       const request = spec.buildRequests(bidRequestWithDCPlacement);
       const payload = JSON.parse(request.data);
 
@@ -278,7 +278,7 @@ describe('Adyoulike Adapter', function () {
       }
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = [{
         BidID: '123dfsdf',
         Attempt: '32344fdse1',
@@ -289,7 +289,7 @@ describe('Adyoulike Adapter', function () {
       expect(result).deep.equal([]);
     });
 
-    it('receive reponse with single placement', () => {
+    it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
       let result = spec.interpretResponse(serverResponse, bidRequestWithSinglePlacement);
 
@@ -300,7 +300,7 @@ describe('Adyoulike Adapter', function () {
       expect(result[0].height).to.equal(300);
     });
 
-    it('receive reponse with multiple placement', () => {
+    it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
       let result = spec.interpretResponse(serverResponse, bidRequestMultiPlacements);
 

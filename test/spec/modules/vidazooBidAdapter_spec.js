@@ -56,29 +56,29 @@ const SYNC_OPTIONS = {
 
 describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.getUserSyncs).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a string', () => {
+    it('exists and is a string', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
     });
   });
 
   describe('validate bid requests', function () {
-    it('should require cId', () => {
+    it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           pId: 'pid'
@@ -87,7 +87,7 @@ describe('VidazooBidAdapter', function () {
       expect(isValid).to.be.false;
     });
 
-    it('should require pId', () => {
+    it('should require pId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           cId: 'cid'
@@ -96,7 +96,7 @@ describe('VidazooBidAdapter', function () {
       expect(isValid).to.be.false;
     });
 
-    it('should validate correctly', () => {
+    it('should validate correctly', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           cId: 'cid',
@@ -115,7 +115,7 @@ describe('VidazooBidAdapter', function () {
       sandbox.stub(Date, 'now').returns(1000);
     });
 
-    it('should build request for each size', () => {
+    it('should build request for each size', function () {
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
@@ -158,22 +158,22 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('interpret response', function () {
-    it('should return empty array when there is no response', () => {
+    it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
     });
 
-    it('should return empty array when there is no ad', () => {
+    it('should return empty array when there is no ad', function () {
       const responses = adapter.interpretResponse({price: 1, ad: ''});
       expect(responses).to.be.empty;
     });
 
-    it('should return empty array when there is no price', () => {
+    it('should return empty array when there is no price', function () {
       const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
       expect(responses).to.be.empty;
     });
 
-    it('should return an array of interpreted responses', () => {
+    it('should return an array of interpreted responses', function () {
       const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
@@ -189,7 +189,7 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
-    it('should take default TTL', () => {
+    it('should take default TTL', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       delete serverResponse.body.exp;
       const responses = adapter.interpretResponse(serverResponse, REQUEST);

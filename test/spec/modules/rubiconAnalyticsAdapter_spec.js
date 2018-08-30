@@ -442,7 +442,7 @@ describe('rubicon analytics adapter', function () {
     config.resetConfig();
   });
 
-  it('should require accountId', () => {
+  it('should require accountId', function () {
     sandbox.stub(utils, 'logError');
 
     rubiconAnalyticsAdapter.enableAnalytics({
@@ -454,7 +454,7 @@ describe('rubicon analytics adapter', function () {
     expect(utils.logError.called).to.equal(true);
   });
 
-  it('should require endpoint', () => {
+  it('should require endpoint', function () {
     sandbox.stub(utils, 'logError');
 
     rubiconAnalyticsAdapter.enableAnalytics({
@@ -477,7 +477,7 @@ describe('rubicon analytics adapter', function () {
     });
 
     describe('with options.samplingFactor', function () {
-      it('should sample', () => {
+      it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -491,7 +491,7 @@ describe('rubicon analytics adapter', function () {
         expect(requests.length).to.equal(1);
       });
 
-      it('should unsample', () => {
+      it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -505,7 +505,7 @@ describe('rubicon analytics adapter', function () {
         expect(requests.length).to.equal(0);
       });
 
-      it('should throw errors for invalid samplingFactor', () => {
+      it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -521,7 +521,7 @@ describe('rubicon analytics adapter', function () {
       });
     });
     describe('with options.sampling', function () {
-      it('should sample', () => {
+      it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -535,7 +535,7 @@ describe('rubicon analytics adapter', function () {
         expect(requests.length).to.equal(1);
       });
 
-      it('should unsample', () => {
+      it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -549,7 +549,7 @@ describe('rubicon analytics adapter', function () {
         expect(requests.length).to.equal(0);
       });
 
-      it('should throw errors for invalid samplingFactor', () => {
+      it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -580,7 +580,7 @@ describe('rubicon analytics adapter', function () {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 
-    it('should build a batched message from prebid events', () => {
+    it('should build a batched message from prebid events', function () {
       performStandardAuction();
 
       expect(requests.length).to.equal(1);
@@ -594,7 +594,7 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should send batched message without BID_WON if necessary and further BID_WON events individually', () => {
+    it('should send batched message without BID_WON if necessary and further BID_WON events individually', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -623,7 +623,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[1]);
     });
 
-    it('should properly mark bids as timed out', () => {
+    it('should properly mark bids as timed out', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);

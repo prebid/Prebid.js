@@ -33,19 +33,19 @@ describe('mobfox adapter tests', function () {
       transactionId: '31f42cba-5920-4e47-adad-69c79d0d4fb4'
     }];
 
-    it('test valid MF request success', () => {
+    it('test valid MF request success', function () {
       let isValid = adapter.spec.isBidRequestValid(bidRequest[0]);
       expect(isValid).to.equal(true);
     });
 
-    it('test valid MF request failed1', () => {
+    it('test valid MF request failed1', function () {
       let isValid = adapter.spec.isBidRequestValid(bidRequestInvalid1[0]);
       expect(isValid).to.equal(false);
     });
   })
 
   describe('buildRequests', function () {
-    it('test build MF request', () => {
+    it('test build MF request', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let payload = request.data.split('&');
       expect(payload[0]).to.equal('rt=api-fetchip');
@@ -57,7 +57,7 @@ describe('mobfox adapter tests', function () {
       expect(payload[7]).to.equal('imp_instl=1');
     });
 
-    it('test build MF request', () => {
+    it('test build MF request', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let payload = request.data.split('&');
       expect(payload[0]).to.equal('rt=api-fetchip');
@@ -93,7 +93,7 @@ describe('mobfox adapter tests', function () {
         }
       }
     };
-    it('test intercept response', () => {
+    it('test intercept response', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let bidResponses = adapter.spec.interpretResponse(mockServerResponse, request);
       expect(bidResponses.length).to.equal(1);
@@ -109,7 +109,7 @@ describe('mobfox adapter tests', function () {
       expect(bidResponses[0].width).to.equal('320');
     });
 
-    it('test intercept response with empty server response', () => {
+    it('test intercept response with empty server response', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let serverResponse = {
         request: {

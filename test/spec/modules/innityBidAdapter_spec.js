@@ -3,7 +3,7 @@ import { spec } from 'modules/innityBidAdapter';
 
 describe('innityAdapterTest', function () {
   describe('bidRequestValidity', function () {
-    it('bidRequest with pub ID and zone ID param', () => {
+    it('bidRequest with pub ID and zone ID param', function () {
       expect(spec.isBidRequestValid({
         bidder: 'innity',
         params: {
@@ -13,7 +13,7 @@ describe('innityAdapterTest', function () {
       })).to.equal(true);
     });
 
-    it('bidRequest with no required params', () => {
+    it('bidRequest with no required params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'innity',
         params: {
@@ -37,14 +37,14 @@ describe('innityAdapterTest', function () {
       'auctionId': '18fd8b8b0bd757'
     }];
 
-    it('bidRequest HTTP method', () => {
+    it('bidRequest HTTP method', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
-    it('bidRequest data', () => {
+    it('bidRequest data', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].data.pub).to.equal(267);
       expect(requests[0].data.zone).to.equal(62546);
@@ -85,7 +85,7 @@ describe('innityAdapterTest', function () {
       headers: {}
     };
 
-    it('result is correct', () => {
+    it('result is correct', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       expect(result[0].requestId).to.equal('51ef8751f9aead');
       expect(result[0].cpm).to.equal(1);

@@ -30,25 +30,25 @@ describe('sekindoUMAdapter', function () {
   };
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
   describe('isBidRequestValid', function () {
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
     });
 
-    it('should return false when required video params are missing', () => {
+    it('should return false when required video params are missing', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = bannerParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(false);
     });
 
-    it('should return true when required Video params found', () => {
+    it('should return true when required Video params found', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
@@ -56,7 +56,7 @@ describe('sekindoUMAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('banner data should be a query string and method = GET', () => {
+    it('banner data should be a query string and method = GET', function () {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
       const request = spec.buildRequests([bidRequests]);
@@ -64,7 +64,7 @@ describe('sekindoUMAdapter', function () {
       expect(request[0].method).to.equal('GET');
     });
 
-    it('with gdprConsent, banner data should be a query string and method = GET', () => {
+    it('with gdprConsent, banner data should be a query string and method = GET', function () {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
       const request = spec.buildRequests([bidRequests], {'gdprConsent': {'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', 'vendorData': {}, 'gdprApplies': true}});
@@ -72,7 +72,7 @@ describe('sekindoUMAdapter', function () {
       expect(request[0].method).to.equal('GET');
     });
 
-    it('video data should be a query string and method = GET', () => {
+    it('video data should be a query string and method = GET', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;
       const request = spec.buildRequests([bidRequests]);
@@ -82,7 +82,7 @@ describe('sekindoUMAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('banner should get correct bid response', () => {
+    it('banner should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';
@@ -110,7 +110,7 @@ describe('sekindoUMAdapter', function () {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('vastXml video should get correct bid response', () => {
+    it('vastXml video should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';
@@ -138,7 +138,7 @@ describe('sekindoUMAdapter', function () {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('vastUrl video should get correct bid response', () => {
+    it('vastUrl video should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';

@@ -14,7 +14,7 @@ describe('papyrus Adapter', function () {
       }
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
 
@@ -25,7 +25,7 @@ describe('papyrus Adapter', function () {
       }
     };
 
-    it('should not validate incorrect bid request', () => {
+    it('should not validate incorrect bid request', function () {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(false);
     });
   });
@@ -46,23 +46,23 @@ describe('papyrus Adapter', function () {
       }
     ];
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
 
-    it('sends valid bids count', () => {
+    it('sends valid bids count', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data.length).to.equal(1);
     });
 
-    it('sends all bid parameters', () => {
+    it('sends all bid parameters', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data[0]).to.have.all.keys(['address', 'placementId', 'sizes', 'bidId', 'transactionId']);
     });
 
-    it('sedns valid sizes parameter', () => {
+    it('sedns valid sizes parameter', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data[0].sizes[0]).to.equal('300x250');
     });
@@ -96,13 +96,13 @@ describe('papyrus Adapter', function () {
       ]
     };
 
-    it('should build bid array', () => {
+    it('should build bid array', function () {
       const request = spec.buildRequests(bidRequests);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const request = spec.buildRequests(bidRequests);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       const bid = result[0];

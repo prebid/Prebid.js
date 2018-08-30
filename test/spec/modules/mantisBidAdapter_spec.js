@@ -19,11 +19,11 @@ describe('MantisAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {};
@@ -47,7 +47,7 @@ describe('MantisAdapter', function () {
       }
     ];
 
-    it('domain override', () => {
+    it('domain override', function () {
       window.mantis_domain = 'http://foo';
       const request = spec.buildRequests(bidRequests);
 
@@ -56,7 +56,7 @@ describe('MantisAdapter', function () {
       delete window.mantis_domain;
     });
 
-    it('standard request', () => {
+    it('standard request', function () {
       const request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.include('property=10433394');
@@ -68,7 +68,7 @@ describe('MantisAdapter', function () {
       expect(request.url).to.include('bids[0][sizes][1][height]=600');
     });
 
-    it('use window uuid', () => {
+    it('use window uuid', function () {
       window.mantis_uuid = 'foo';
 
       const request = spec.buildRequests(bidRequests);
@@ -78,7 +78,7 @@ describe('MantisAdapter', function () {
       delete window.mantis_uuid;
     });
 
-    it('use storage uuid', () => {
+    it('use storage uuid', function () {
       window.localStorage.setItem('mantis:uuid', 'bar');
 
       const request = spec.buildRequests(bidRequests);
@@ -88,7 +88,7 @@ describe('MantisAdapter', function () {
       window.localStorage.removeItem('mantis:uuid');
     });
 
-    it('detect amp', () => {
+    it('detect amp', function () {
       var oldContext = window.context;
 
       window.context = {};
@@ -108,7 +108,7 @@ describe('MantisAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    it('iframe', () => {
+    it('iframe', function () {
       let result = spec.getUserSyncs({
         iframeEnabled: true
       });
@@ -117,7 +117,7 @@ describe('MantisAdapter', function () {
       expect(result[0].url).to.include('https://mantodea.mantisadnetwork.com/prebid/iframe');
     });
 
-    it('pixel', () => {
+    it('pixel', function () {
       let result = spec.getUserSyncs({
         pixelEnabled: true
       });
@@ -128,7 +128,7 @@ describe('MantisAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('display ads returned', () => {
+    it('display ads returned', function () {
       let response = {
         body: {
           uuid: 'uuid',
@@ -166,7 +166,7 @@ describe('MantisAdapter', function () {
       expect(window.localStorage.getItem('mantis:uuid')).to.equal(response.body.uuid);
     });
 
-    it('no ads returned', () => {
+    it('no ads returned', function () {
       let response = {
         body: {
           ads: []

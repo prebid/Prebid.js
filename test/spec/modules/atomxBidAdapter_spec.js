@@ -3,7 +3,7 @@ import { spec } from 'modules/atomxBidAdapter';
 
 describe('atomxAdapterTest', function () {
   describe('bidRequestValidity', function () {
-    it('bidRequest with id param', () => {
+    it('bidRequest with id param', function () {
       expect(spec.isBidRequestValid({
         bidder: 'atomx',
         params: {
@@ -12,7 +12,7 @@ describe('atomxAdapterTest', function () {
       })).to.equal(true);
     });
 
-    it('bidRequest with no id param', () => {
+    it('bidRequest with no id param', function () {
       expect(spec.isBidRequestValid({
         bidder: 'atomx',
         params: {
@@ -47,21 +47,21 @@ describe('atomxAdapterTest', function () {
       'auctionId': 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
-    it('bidRequest HTTP method', () => {
+    it('bidRequest HTTP method', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
-    it('bidRequest url', () => {
+    it('bidRequest url', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.url).to.match(new RegExp('p\\.ato\\.mx/placement'));
       });
     });
 
-    it('bidRequest data', () => {
+    it('bidRequest data', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].data.id).to.equal('123');
       expect(requests[0].data.size).to.equal('300x250');
@@ -103,7 +103,7 @@ describe('atomxAdapterTest', function () {
       headers: {}
     };
 
-    it('result is correct', () => {
+    it('result is correct', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
       expect(result[0].requestId).to.equal('22aidtbx5eabd9');

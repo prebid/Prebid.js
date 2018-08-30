@@ -8,7 +8,7 @@ describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -26,11 +26,11 @@ describe('gumgumAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -40,7 +40,7 @@ describe('gumgumAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -63,20 +63,20 @@ describe('gumgumAdapter', function () {
       }
     ];
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET');
       expect(request.id).to.equal('30b31c1838de1e');
     });
-    it('should add consent parameters if gdprConsent is present', () => {
+    it('should add consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gdprApplies).to.eq(true);
       expect(bidRequest.data.gdprConsent).to.eq('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
-    it('should handle gdprConsent is present but values are undefined case', () => {
+    it('should handle gdprConsent is present but values are undefined case', function () {
       const gdprConsent = { consent_string: undefined, gdprApplies: undefined };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
@@ -115,7 +115,7 @@ describe('gumgumAdapter', function () {
       pi: 3
     }
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = {
         'ad': '<html><h3>I am an ad</h3></html>',
         'cpm': 0,
@@ -132,7 +132,7 @@ describe('gumgumAdapter', function () {
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'ad': {},
         'pag': {
@@ -147,7 +147,7 @@ describe('gumgumAdapter', function () {
       expect(result.length).to.equal(0);
     });
 
-    it('returns 1x1 when eligible product and size available', () => {
+    it('returns 1x1 when eligible product and size available', function () {
       let inscreenBidRequest = {
         id: 12346,
         sizes: [[300, 250], [1, 1]],

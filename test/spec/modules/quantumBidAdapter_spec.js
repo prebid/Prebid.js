@@ -207,17 +207,17 @@ describe('quantumBidAdapter', function () {
   const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
 
   describe('isBidRequestValid', function () {
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
     })
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, REQUEST)
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
@@ -229,7 +229,7 @@ describe('quantumBidAdapter', function () {
 
     const request = spec.buildRequests(bidRequests, {})
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       expect(request[0].method).to.equal('GET')
     })
   })
@@ -256,7 +256,7 @@ describe('quantumBidAdapter', function () {
       }
     };
 
-    it('should transmit correct data', () => {
+    it('should transmit correct data', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.quantx_gdpr).to.equal(1);
@@ -283,7 +283,7 @@ describe('quantumBidAdapter', function () {
       gdprConsent: undefined
     };
 
-    it('should transmit correct data', () => {
+    it('should transmit correct data', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.quantx_gdpr).to.be.undefined;
@@ -297,7 +297,7 @@ describe('quantumBidAdapter', function () {
       bids: []
     }
 
-    it('handles native request : should get correct bid response', () => {
+    it('handles native request : should get correct bid response', function () {
       const result = spec.interpretResponse({body: nativeServerResponse}, NATIVE_REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').to.be.below(2)
@@ -306,7 +306,7 @@ describe('quantumBidAdapter', function () {
       expect(result[0]).to.have.property('native')
     })
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const result = spec.interpretResponse({body: serverResponse}, REQUEST)
       expect(result[0]).to.have.property('cpm').equal(0.3)
       expect(result[0]).to.have.property('width').equal(300)
@@ -315,7 +315,7 @@ describe('quantumBidAdapter', function () {
       expect(result[0]).to.have.property('ad')
     })
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       const nobidServerResponse = {bids: []}
       const nobidResult = spec.interpretResponse({body: nobidServerResponse}, bidderRequest)
       // console.log(nobidResult)

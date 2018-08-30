@@ -81,7 +81,7 @@ describe('iqmBidAdapter', function () {
   };
 
   describe('Request verification', function () {
-    it('basic property verification', () => {
+    it('basic property verification', function () {
       expect(spec.code).to.equal('iqm');
       expect(spec.aliases).to.be.an('array');
       // expect(spec.aliases).to.be.ofSize(1);
@@ -103,17 +103,17 @@ describe('iqmBidAdapter', function () {
         'auctionId': '1d1a030790a475'
       };
 
-      it('should return false for empty object', () => {
+      it('should return false for empty object', function () {
         expect(spec.isBidRequestValid({})).to.equal(false);
       });
 
-      it('should return false for request without param', () => {
+      it('should return false for request without param', function () {
         let bid = Object.assign({}, bid);
         delete bid.params;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should return false for invalid params', () => {
+      it('should return false for invalid params', function () {
         let bid = Object.assign({}, bid);
         delete bid.params;
         bid.params = {
@@ -122,13 +122,13 @@ describe('iqmBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should return true for proper request', () => {
+      it('should return true for proper request', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
     });
 
     describe('buildRequests', function () {
-      it('sends every bid request to ENDPOINT_URL via POST method', () => {
+      it('sends every bid request to ENDPOINT_URL via POST method', function () {
         const requests = spec.buildRequests(bidRequests);
         expect(requests[0].method).to.equal('POST');
         expect(requests[0].url).to.equal(ENDPOINT_URL);
@@ -136,7 +136,7 @@ describe('iqmBidAdapter', function () {
         // expect(requests[1].url).to.equal(ENDPOINT_URL);
       });
 
-      it('should send request data with every request', () => {
+      it('should send request data with every request', function () {
         const requests = spec.buildRequests(bidRequests);
         const data = requests[0].data;
         expect(data.id).to.equal(bidRequests[0].requestId);
@@ -176,30 +176,30 @@ describe('iqmBidAdapter', function () {
     });
 
     describe('interpretResponse', function () {
-      it('should handle no bid response', () => {
+      it('should handle no bid response', function () {
         const response = spec.interpretResponse({ body: null }, { bidRequests });
         expect(response.length).to.equal(0);
       });
 
-      it('should have at least one Seat Object', () => {
+      it('should have at least one Seat Object', function () {
         const request = spec.buildRequests(bidRequests);
         const response = spec.interpretResponse(bidResponseEmptySeat, request);
         expect(response.length).to.equal(0);
       });
 
-      it('should have at least one Bid Object', () => {
+      it('should have at least one Bid Object', function () {
         const request = spec.buildRequests(bidRequests);
         const response = spec.interpretResponse(bidResponseEmptyBid, request);
         expect(response.length).to.equal(0);
       });
 
-      it('should have impId in Bid Object', () => {
+      it('should have impId in Bid Object', function () {
         const request = spec.buildRequests(bidRequests);
         const response = spec.interpretResponse(bidResponseNoImpId, request);
         expect(response.length).to.equal(0);
       });
 
-      it('should handle valid response', () => {
+      it('should handle valid response', function () {
         const request = spec.buildRequests(bidRequests);
         const response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').to.have.lengthOf(1);

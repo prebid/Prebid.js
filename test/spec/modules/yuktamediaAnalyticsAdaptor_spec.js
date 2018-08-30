@@ -42,7 +42,7 @@ describe('YuktaMedia analytics adapter', function () {
       yuktamediaAnalyticsAdapter.disableAnalytics();
     });
 
-    it('builds and sends auction data', () => {
+    it('builds and sends auction data', function () {
       let auctionTimestamp = 1496510254313;
       let bidRequest = {
         'bidderCode': 'appnexus',

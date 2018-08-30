@@ -25,7 +25,7 @@ describe('bid overrides', function () {
       disableOverrides();
     });
 
-    it('should happen when enabled with setConfig', () => {
+    it('should happen when enabled with setConfig', function () {
       getConfig({
         enabled: true
       });
@@ -33,14 +33,14 @@ describe('bid overrides', function () {
       expect(addBidResponse.hasHook(boundHook)).to.equal(true);
     });
 
-    it('should happen when configuration found in sessionStorage', () => {
+    it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
       expect(addBidResponse.hasHook(boundHook)).to.equal(true);
     });
 
-    it('should not throw if sessionStorage is inaccessible', () => {
+    it('should not throw if sessionStorage is inaccessible', function () {
       expect(() => {
         sessionLoader({
           getItem() {
@@ -86,7 +86,7 @@ describe('bid overrides', function () {
       });
     }
 
-    it('should allow us to exclude bidders', () => {
+    it('should allow us to exclude bidders', function () {
       run({
         enabled: true,
         bidders: ['appnexus']
@@ -96,7 +96,7 @@ describe('bid overrides', function () {
       expect(bids[0].bidderCode).to.equal('appnexus');
     });
 
-    it('should allow us to override all bids', () => {
+    it('should allow us to override all bids', function () {
       run({
         enabled: true,
         bids: [{
@@ -109,7 +109,7 @@ describe('bid overrides', function () {
       expect(bids[1].cpm).to.equal(2);
     });
 
-    it('should allow us to override bids by bidder', () => {
+    it('should allow us to override bids by bidder', function () {
       run({
         enabled: true,
         bids: [{
@@ -123,7 +123,7 @@ describe('bid overrides', function () {
       expect(bids[1].cpm).to.equal(0.5);
     });
 
-    it('should allow us to override bids by adUnitCode', () => {
+    it('should allow us to override bids by adUnitCode', function () {
       mockBids[1].adUnitCode = 'test';
 
       run({

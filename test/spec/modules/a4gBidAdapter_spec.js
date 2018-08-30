@@ -3,7 +3,7 @@ import { spec } from 'modules/a4gBidAdapter';
 
 describe('a4gAdapterTests', function () {
   describe('bidRequestValidity', function () {
-    it('bidRequest with zoneId and deliveryUrl params', () => {
+    it('bidRequest with zoneId and deliveryUrl params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
@@ -13,7 +13,7 @@ describe('a4gAdapterTests', function () {
       })).to.equal(true);
     });
 
-    it('bidRequest with only zoneId', () => {
+    it('bidRequest with only zoneId', function () {
       expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
@@ -22,7 +22,7 @@ describe('a4gAdapterTests', function () {
       })).to.equal(true);
     });
 
-    it('bidRequest with only deliveryUrl', () => {
+    it('bidRequest with only deliveryUrl', function () {
       expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
@@ -58,27 +58,27 @@ describe('a4gAdapterTests', function () {
       'auctionId': '18fd8b8b0bd757'
     }];
 
-    it('bidRequest method', () => {
+    it('bidRequest method', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('GET');
     });
 
-    it('bidRequest url', () => {
+    it('bidRequest url', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.match(new RegExp(`${bidRequests[1].params.deliveryUrl}`));
     });
 
-    it('bidRequest data', () => {
+    it('bidRequest data', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data).to.exists;
     });
 
-    it('bidRequest zoneIds', () => {
+    it('bidRequest zoneIds', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data.zoneId).to.equal('59304;59354');
     });
 
-    it('bidRequest gdpr consent', () => {
+    it('bidRequest gdpr consent', function () {
       const consentString = 'consentString';
       const bidderRequest = {
         bidderCode: 'a4g',
@@ -124,7 +124,7 @@ describe('a4gAdapterTests', function () {
       headers: {}
     };
 
-    it('required keys', () => {
+    it('required keys', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
       let requiredKeys = [

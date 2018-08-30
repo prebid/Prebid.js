@@ -22,11 +22,11 @@ describe('justpremium adapter', function () {
   ]
 
   describe('isBidRequestValid', function () {
-    it('Verifies bidder code', () => {
+    it('Verifies bidder code', function () {
       expect(spec.code).to.equal('justpremium')
     })
 
-    it('Verify build request', () => {
+    it('Verify build request', function () {
       expect(spec.isBidRequestValid({bidder: 'justpremium', params: {}})).to.equal(false)
       expect(spec.isBidRequestValid({})).to.equal(false)
       expect(spec.isBidRequestValid(adUnits[0])).to.equal(true)
@@ -35,7 +35,7 @@ describe('justpremium adapter', function () {
   })
 
   describe('buildRequests', function () {
-    it('Verify build request and parameters', () => {
+    it('Verify build request and parameters', function () {
       const request = spec.buildRequests(adUnits)
       expect(request.method).to.equal('POST')
       expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/)
@@ -59,7 +59,7 @@ describe('justpremium adapter', function () {
 
   describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits)
-    it('Verify server response', () => {
+    it('Verify server response', function () {
       let response = {
         'bid': {
           '28313': [{
@@ -107,7 +107,7 @@ describe('justpremium adapter', function () {
       expect(result[0].format).to.equal('lb')
     })
 
-    it('Verify wrong server response', () => {
+    it('Verify wrong server response', function () {
       let response = {
         'bid': {
           '28313': []
@@ -123,7 +123,7 @@ describe('justpremium adapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    it('Verifies sync options', () => {
+    it('Verifies sync options', function () {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')

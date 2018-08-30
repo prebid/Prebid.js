@@ -13,7 +13,7 @@ describe('the hook module', function () {
     sandbox.restore();
   });
 
-  it('should call all sync hooks attached to a function', () => {
+  it('should call all sync hooks attached to a function', function () {
     let called = [];
     let calledWith;
 
@@ -63,7 +63,7 @@ describe('the hook module', function () {
     ]);
   });
 
-  it('should allow context to be passed to hooks, but keep bound contexts', () => {
+  it('should allow context to be passed to hooks, but keep bound contexts', function () {
     let context;
     let fn = function() {
       context = this;
@@ -86,7 +86,7 @@ describe('the hook module', function () {
   });
 
   describe('asyncSeries', function () {
-    it('should call function as normal if no hooks attached', () => {
+    it('should call function as normal if no hooks attached', function () {
       let fn = sandbox.spy();
       let hookFn = createHook('asyncSeries', fn);
 
@@ -96,7 +96,7 @@ describe('the hook module', function () {
       expect(fn.firstCall.args[0]).to.equal(1);
     });
 
-    it('should call hooks correctly applied in asyncSeries', () => {
+    it('should call hooks correctly applied in asyncSeries', function () {
       let called = [];
 
       let testFn = (called) => {
@@ -124,7 +124,7 @@ describe('the hook module', function () {
       ]);
     });
 
-    it('should allow context to be passed to hooks, but keep bound contexts', () => {
+    it('should allow context to be passed to hooks, but keep bound contexts', function () {
       let context;
       let fn = function() {
         context = this;

@@ -111,7 +111,7 @@ describe('+widespaceAdatperTest', function () {
   }
 
   describe('+bidRequestValidity', function () {
-    it('bidRequest with sid and currency params', () => {
+    it('bidRequest with sid and currency params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -121,7 +121,7 @@ describe('+widespaceAdatperTest', function () {
       })).to.equal(true);
     });
 
-    it('-bidRequest with missing sid', () => {
+    it('-bidRequest with missing sid', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -130,7 +130,7 @@ describe('+widespaceAdatperTest', function () {
       })).to.equal(false);
     });
 
-    it('-bidRequest with missing currency', () => {
+    it('-bidRequest with missing currency', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -144,33 +144,33 @@ describe('+widespaceAdatperTest', function () {
     const request = spec.buildRequests(bidRequest, bidderRequest);
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
 
-    it('-bidRequest method is POST', () => {
+    it('-bidRequest method is POST', function () {
       expect(request[0].method).to.equal('POST');
     });
 
-    it('-bidRequest url is valid', () => {
+    it('-bidRequest url is valid', function () {
       expect(UrlRegExp.test(request[0].url)).to.equal(true);
     });
 
-    it('-bidRequest data exist', () => {
+    it('-bidRequest data exist', function () {
       expect(request[0].data).to.exists;
     });
 
-    it('-bidRequest data is form data', () => {
+    it('-bidRequest data is form data', function () {
       expect(typeof request[0].data).to.equal('string');
     });
 
-    it('-bidRequest options have header type', () => {
+    it('-bidRequest options have header type', function () {
       expect(request[0].options.contentType).to.exists;
     });
 
-    it('-cookie test for wsCustomData ', () => {
+    it('-cookie test for wsCustomData ', function () {
       expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
     });
   });
 
   describe('+interpretResponse', function () {
-    it('-required params available in response', () => {
+    it('-required params available in response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       let requiredKeys = [
         'requestId',
@@ -201,19 +201,19 @@ describe('+widespaceAdatperTest', function () {
       });
     });
 
-    it('-empty result if noad responded', () => {
+    it('-empty result if noad responded', function () {
       const noAdResult = spec.interpretResponse(bidResponseNoAd, bidRequest);
       expect(noAdResult.length).to.equal(0);
     });
 
-    it('-empty response should not breake anything in adapter', () => {
+    it('-empty response should not breake anything in adapter', function () {
       const noResponse = spec.interpretResponse({}, bidRequest);
       expect(noResponse.length).to.equal(0);
     });
   });
 
   describe('+getUserSyncs', function () {
-    it('-always return an array', () => {
+    it('-always return an array', function () {
       const userSync_test1 = spec.getUserSyncs({}, [bidResponse]);
       expect(Array.isArray(userSync_test1)).to.equal(true);
 

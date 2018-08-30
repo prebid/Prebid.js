@@ -17,10 +17,10 @@ describe('OnePlanetOnlyAdapter', function () {
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are params.siteId and params.adUnitId parameters present', () => {
+    it('Should return true if there are params.siteId and params.adUnitId parameters present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false if at least one of parameters is not present', () => {
+    it('Should return false if at least one of parameters is not present', function () {
       delete bid.params.adUnitId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -28,19 +28,19 @@ describe('OnePlanetOnlyAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
-    it('Creates a ServerRequest object with method, URL and data', () => {
+    it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
       expect(serverRequest.url).to.exist;
       expect(serverRequest.data).to.exist;
     });
-    it('Returns POST method', () => {
+    it('Returns POST method', function () {
       expect(serverRequest.method).to.equal('POST');
     });
-    it('Returns valid URL', () => {
+    it('Returns valid URL', function () {
       expect(serverRequest.url).to.equal('//show.oneplanetonly.com/prebid?siteId=5');
     });
-    it('Returns valid data if array of bids is valid', () => {
+    it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('id', 'ver', 'prebidVer', 'transactionId', 'currency', 'timeout', 'siteId',
@@ -52,14 +52,14 @@ describe('OnePlanetOnlyAdapter', function () {
       expect(adUnit.bidId).to.equal('51ef8751f9aead');
       expect(adUnit.sizes).to.have.members(['300x250', '300x600']);
     });
-    it('Returns empty data if no valid requests are passed', () => {
+    it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;
       expect(data.adUnits).to.be.an('array').that.is.empty;
     });
   });
   describe('interpretResponse', function () {
-    it('Should interpret banner response', () => {
+    it('Should interpret banner response', function () {
       const serverResponse = {
         body: {
           bids: [{
@@ -89,7 +89,7 @@ describe('OnePlanetOnlyAdapter', function () {
       expect(bidObject.netRevenue).to.be.true;
       expect(bidObject.currency).to.equal('USD');
     });
-    it('Should return an empty array if invalid response is passed', () => {
+    it('Should return an empty array if invalid response is passed', function () {
       const invalid = {
         body: {}
       };

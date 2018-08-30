@@ -18,7 +18,7 @@ describe('consentManagement', function () {
         config.resetConfig();
       });
 
-      it('should use system default values', () => {
+      it('should use system default values', function () {
         setConfig({});
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
@@ -32,7 +32,7 @@ describe('consentManagement', function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
       });
-      it('results in all user settings overriding system defaults', () => {
+      it('results in all user settings overriding system defaults', function () {
         let allConfig = {
           cmpApi: 'iab',
           timeout: 7500,
@@ -82,7 +82,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should throw a warning and return to hooked function when an unknown CMP framework ID is used', () => {
+      it('should throw a warning and return to hooked function when an unknown CMP framework ID is used', function () {
         let badCMPConfig = {
           cmpApi: 'bad'
         };
@@ -98,7 +98,7 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('should throw proper errors when CMP is not found', () => {
+      it('should throw proper errors when CMP is not found', function () {
         setConfig(goodConfigWithCancelAuction);
 
         requestBidsHook({}, () => {
@@ -128,7 +128,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', () => {
+      it('should bypass CMP and simply use previously stored consentData', function () {
         let testConsentData = {
           gdprApplies: true,
           consentData: 'xyz'
@@ -183,7 +183,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should return the consent data from a safeframe callback', () => {
+      it('should return the consent data from a safeframe callback', function () {
         var testConsentData = {
           data: {
             msgName: 'cmpReturn',
@@ -308,7 +308,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('performs lookup check and stores consentData for a valid existing user', () => {
+      it('performs lookup check and stores consentData for a valid existing user', function () {
         let testConsentData = {
           gdprApplies: true,
           consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
@@ -331,7 +331,7 @@ describe('consentManagement', function () {
         expect(consent.gdprApplies).to.be.true;
       });
 
-      it('throws an error when processCmpData check failed while config had allowAuction set to false', () => {
+      it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {
         let testConsentData = {};
         let bidsBackHandlerReturn = false;
 
@@ -352,7 +352,7 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', () => {
+      it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', function () {
         let testConsentData = {};
 
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
