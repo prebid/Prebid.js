@@ -120,11 +120,11 @@ describe('AudienceNetwork adapter', function () {
 
   describe('buildRequests', function () {
     let isSafariBrowserStub;
-    before(() => {
+    before(function () {
       isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
     });
 
-    after(() => {
+    after(function () {
       isSafariBrowserStub.restore();
     });
 

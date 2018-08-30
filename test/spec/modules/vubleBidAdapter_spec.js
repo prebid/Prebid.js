@@ -86,7 +86,7 @@ describe('VubleAdapter', function () {
 
   describe('Check buildRequests method', function () {
     let sandbox;
-    before(() => {
+    before(function () {
       sandbox = sinon.sandbox.create();
       sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.vuble.tv/');
     });
@@ -166,7 +166,7 @@ describe('VubleAdapter', function () {
       expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
     });
 
-    after(() => {
+    after(function () {
       sandbox.restore();
     });
   });

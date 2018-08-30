@@ -129,7 +129,7 @@ describe('rtbdemandadk adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest;
-    before(() => {
+    before(function () {
       let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
         protocol: 'https:',
         hostname: 'example.com',
@@ -181,7 +181,7 @@ describe('rtbdemandadk adapter', function () {
   describe('video request building', function () {
     let bidRequest;
 
-    before(() => {
+    before(function () {
       let request = spec.buildRequests([bid_video])[0];
       bidRequest = JSON.parse(request.data.r);
     });

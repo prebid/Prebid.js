@@ -100,7 +100,7 @@ describe('AolAdapter', function () {
     let formatPixelsStub;
     let isOneMobileBidderStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
       bidRequest = {
         bidderCode: 'test-bidder-code',
@@ -115,7 +115,7 @@ describe('AolAdapter', function () {
       isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
       logWarnSpy.restore();
       formatPixelsStub.restore();
@@ -495,7 +495,7 @@ describe('AolAdapter', function () {
     let bidResponse;
     let bidRequest;
 
-    beforeEach(() => {
+    beforeEach(function () {
       $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = false;
       config.setConfig({
         aol: {
@@ -608,12 +608,12 @@ describe('AolAdapter', function () {
     let formatConsentDataStub;
     let formatKeyValuesStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       formatConsentDataStub = sinon.stub(spec, 'formatConsentData');
       formatKeyValuesStub = sinon.stub(spec, 'formatKeyValues');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       formatConsentDataStub.restore();
       formatKeyValuesStub.restore();
     });
@@ -651,12 +651,12 @@ describe('AolAdapter', function () {
     let consentRequiredStub;
     let secureProtocolStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
       secureProtocolStub = sinon.stub(spec, 'isSecureProtocol');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       consentRequiredStub.restore();
       secureProtocolStub.restore();
     });

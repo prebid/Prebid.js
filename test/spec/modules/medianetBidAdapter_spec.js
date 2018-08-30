@@ -490,11 +490,11 @@ let VALID_BID_REQUEST = [{
 
 describe('Media.net bid adapter', function () {
   let sandbox;
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -521,7 +521,7 @@ describe('Media.net bid adapter', function () {
   });
 
   describe('buildRequests', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 50,
@@ -582,7 +582,7 @@ describe('Media.net bid adapter', function () {
 
   describe('slot visibility', function () {
     let documentStub;
-    beforeEach(() => {
+    beforeEach(function () {
       let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,

@@ -9,14 +9,14 @@ describe('adxcg analytics adapter', function () {
   let xhr;
   let requests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
   });
@@ -164,14 +164,14 @@ describe('adxcg analytics adapter', function () {
       adapter: adxcgAnalyticsAdapter
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       adaptermanager.enableAnalytics({
         provider: 'adxcg',
         options: initOptions
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       adxcgAnalyticsAdapter.disableAnalytics();
     });
 

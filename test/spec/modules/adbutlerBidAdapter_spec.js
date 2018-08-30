@@ -4,7 +4,7 @@ import {spec} from 'modules/adbutlerBidAdapter';
 describe('AdButler adapter', function () {
   let bidRequests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'adbutler',

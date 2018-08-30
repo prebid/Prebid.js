@@ -149,7 +149,7 @@ describe('Adkernel adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest, bidRequests, _;
-    before(() => {
+    before(function () {
       [_, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
     });
@@ -219,7 +219,7 @@ describe('Adkernel adapter', function () {
 
   describe('video request building', function () {
     let _, bidRequests;
-    before(() => {
+    before(function () {
       [_, bidRequests] = buildRequest([bid_video]);
     });
 

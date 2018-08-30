@@ -103,7 +103,7 @@ describe('brainy Adapter', function () {
 
   describe('spec.getUserSyncs', function () {
     let syncOptions
-    beforeEach(() => {
+    beforeEach(function () {
       syncOptions = {
         enabledBidders: ['brainy'],
         pixelEnabled: true

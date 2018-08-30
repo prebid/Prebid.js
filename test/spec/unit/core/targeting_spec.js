@@ -103,7 +103,7 @@ describe('targeting tests', function () {
     let amGetAdUnitsStub;
     let bidExpiryStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       $$PREBID_GLOBAL$$._sendAllBids = false;
       amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [bid1, bid2, bid3];
@@ -114,7 +114,7 @@ describe('targeting tests', function () {
       bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
       targetingModule.isBidNotExpired.restore();
@@ -141,7 +141,7 @@ describe('targeting tests', function () {
     let amGetAdUnitsStub;
     let bidExpiryStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       $$PREBID_GLOBAL$$._sendAllBids = false;
       amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [];
@@ -152,7 +152,7 @@ describe('targeting tests', function () {
       bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionManager.getBidsReceived.restore();
       auctionManager.getAdUnitCodes.restore();
       targetingModule.isBidNotExpired.restore();
@@ -170,12 +170,12 @@ describe('targeting tests', function () {
     describe('check getOldestBid', function () {
       let bidExpiryStub;
       let auctionManagerStub;
-      beforeEach(() => {
+      beforeEach(function () {
         bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
         auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         bidExpiryStub.restore();
         auctionManagerStub.restore();
       });
@@ -234,12 +234,12 @@ describe('targeting tests', function () {
     describe('check bidExpiry', function () {
       let auctionManagerStub;
       let timestampStub;
-      beforeEach(() => {
+      beforeEach(function () {
         auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
         timestampStub = sinon.stub(utils, 'timestamp');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         auctionManagerStub.restore();
         timestampStub.restore();
       });

@@ -39,7 +39,7 @@ describe('UnrulyAdapter', function () {
   let sandbox;
   let fakeRenderer;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'logError');
     sandbox.stub(Renderer, 'install');
@@ -50,7 +50,7 @@ describe('UnrulyAdapter', function () {
     Renderer.install.returns(fakeRenderer)
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     delete parent.window.unruly
   });

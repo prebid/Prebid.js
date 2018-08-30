@@ -9,7 +9,7 @@ describe('PubMatic adapter', function () {
   let multipleMediaRequests;
   let bidResponses;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'pubmatic',

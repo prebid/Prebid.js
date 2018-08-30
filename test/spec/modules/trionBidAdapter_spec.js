@@ -38,12 +38,14 @@ const TRION_BID_RESPONSE = {
 describe('Trion adapter tests', function () {
   let adapter;
 
-  beforeEach(() => {
+  beforeEach(function () {
     // adapter = trionAdapter.createNew();
     sinon.stub(document.body, 'appendChild');
   });
 
-  afterEach(() => document.body.appendChild.restore());
+  afterEach(function () {
+    document.body.appendChild.restore();
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true with correct params', function () {
@@ -173,7 +175,7 @@ describe('Trion adapter tests', function () {
     const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
     const BASE_KEY = '_trion_';
 
-    beforeEach(() => {
+    beforeEach(function () {
       delete window.TR_INT_T;
     });
 

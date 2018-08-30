@@ -104,7 +104,7 @@ describe('Serverbid BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'serverbid',

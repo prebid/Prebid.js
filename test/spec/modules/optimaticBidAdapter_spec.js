@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 describe('OptimaticBidAdapter', function () {
   let bidRequest;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'optimatic',
       params: {

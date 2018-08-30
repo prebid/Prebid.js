@@ -7,21 +7,21 @@ import { config } from 'src/config';
 describe('bid overrides', function () {
   let sandbox;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     window.sessionStorage.clear();
     sandbox.restore();
   });
 
   describe('initialization', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(config, 'setConfig');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       disableOverrides();
     });
 
@@ -55,7 +55,7 @@ describe('bid overrides', function () {
     let mockBids;
     let bids;
 
-    beforeEach(() => {
+    beforeEach(function () {
       let baseBid = {
         'bidderCode': 'rubicon',
         'width': 970,

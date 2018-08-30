@@ -8,7 +8,7 @@ describe('OneVideoBidAdapter', function () {
   let bidderRequest;
   let mockConfig;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'oneVideo',
       sizes: [640, 480],

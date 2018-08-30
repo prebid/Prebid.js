@@ -257,7 +257,7 @@ describe('the rubicon adapter', function () {
     };
   }
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
     bidderRequest = {
@@ -327,7 +327,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -636,13 +636,13 @@ describe('the rubicon adapter', function () {
 
         describe('digiTrustId config', function () {
           var origGetConfig;
-          beforeEach(() => {
+          beforeEach(function () {
             window.DigiTrust = {
               getUser: sandbox.spy()
             };
           });
 
-          afterEach(() => {
+          afterEach(function () {
             delete window.DigiTrust;
           });
 
@@ -1796,7 +1796,7 @@ describe('the rubicon adapter', function () {
       });
 
       describe('for video', function () {
-        beforeEach(() => {
+        beforeEach(function () {
           createVideoBidderRequest();
         });
 
@@ -1852,7 +1852,7 @@ describe('the rubicon adapter', function () {
   describe('user sync', function () {
     const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
-    beforeEach(() => {
+    beforeEach(function () {
       resetUserSync();
     });
 

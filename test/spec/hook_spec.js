@@ -5,11 +5,11 @@ import { createHook, hooks } from 'src/hook';
 describe('the hook module', function () {
   let sandbox;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
   });
 

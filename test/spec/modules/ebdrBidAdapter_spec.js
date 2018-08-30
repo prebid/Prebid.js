@@ -6,7 +6,7 @@ import * as utils from 'src/utils';
 describe('ebdrBidAdapter', function () {
   let bidRequests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         code: 'div-gpt-ad-1460505748561-0',
@@ -208,7 +208,7 @@ describe('ebdrBidAdapter', function () {
   });
   describe('spec.getUserSyncs', function () {
     let syncOptions
-    beforeEach(() => {
+    beforeEach(function () {
       syncOptions = {
         enabledBidders: ['ebdr'], // only these bidders are allowed to sync
         pixelEnabled: true

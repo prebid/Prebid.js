@@ -23,11 +23,11 @@ function addDiv(id) {
 }
 
 describe('RealVu Analytics Adapter.', function () {
-  before(() => {
+  before(function () {
     addDiv('ad1');
     addDiv('ad2');
   });
-  after(() => {
+  after(function () {
     let a1 = document.getElementById('ad1');
     document.body.removeChild(a1);
     let a2 = document.getElementById('ad2');
@@ -113,11 +113,11 @@ describe('RealVu Analytics Adapter.', function () {
 });
 
 describe('RealVu Boost.', function () {
-  before(() => {
+  before(function () {
     addDiv('ad1');
     addDiv('ad2');
   });
-  after(() => {
+  after(function () {
     let a1 = document.getElementById('ad1');
     document.body.removeChild(a1);
     let a2 = document.getElementById('ad2');

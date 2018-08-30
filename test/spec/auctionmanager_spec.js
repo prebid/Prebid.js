@@ -109,11 +109,11 @@ function mockAjaxBuilder() {
 describe('auctionmanager.js', function () {
   let xhr;
 
-  before(() => {
+  before(function () {
     xhr = sinon.useFakeXMLHttpRequest();
   });
 
-  after(() => {
+  after(function () {
     xhr.restore();
   });
 
@@ -542,23 +542,23 @@ describe('auctionmanager.js', function () {
     let bids = TEST_BIDS;
     let makeRequestsStub;
 
-    before(() => {
+    before(function () {
       makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
-    after(() => {
+    after(function () {
       ajaxStub.restore();
       adaptermanager.makeBidRequests.restore();
     });
 
     describe('when auction timeout is 3000', function () {
       let loadScriptStub;
-      before(() => {
+      before(function () {
         makeRequestsStub.returns(TEST_BID_REQS);
       });
-      beforeEach(() => {
+      beforeEach(function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -578,7 +578,7 @@ describe('auctionmanager.js', function () {
         registerBidder(spec);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         auctionModule.newAuction.restore();
         loadScriptStub.restore();
       });
@@ -680,14 +680,14 @@ describe('auctionmanager.js', function () {
       let eventsEmitSpy;
       let getBidderRequestStub;
 
-      before(() => {
+      before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
         let bidRequests = bids.map(bid => mockBidRequest(bid));
 
         makeRequestsStub.returns(bidRequests);
       });
 
-      beforeEach(() => {
+      beforeEach(function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -723,7 +723,7 @@ describe('auctionmanager.js', function () {
           return req;
         });
       });
-      afterEach(() => {
+      afterEach(function () {
         auctionModule.newAuction.restore();
         loadScriptStub.restore();
         events.emit.restore();
@@ -748,7 +748,7 @@ describe('auctionmanager.js', function () {
     let bids = TEST_BIDS;
     let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
-    before(() => {
+    before(function () {
       let bidRequests = [
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
@@ -759,12 +759,12 @@ describe('auctionmanager.js', function () {
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
-    after(() => {
+    after(function () {
       ajaxStub.restore();
       adaptermanager.makeBidRequests.restore();
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       adUnits = [{
         code: ADUNIT_CODE,
         bids: [
@@ -788,7 +788,7 @@ describe('auctionmanager.js', function () {
       registerBidder(spec1);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionModule.newAuction.restore();
     });
 

@@ -102,7 +102,7 @@ describe('andbeyond adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest;
-    before(() => {
+    before(function () {
       let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
         protocol: 'https:',
         hostname: 'example.com',

@@ -130,7 +130,7 @@ describe('sovrnBidAdapter', function() {
 
   describe('interpretResponse', function () {
     let response;
-    beforeEach(() => {
+    beforeEach(function () {
       response = {
         body: {
           'id': '37386aade21a71',

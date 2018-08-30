@@ -11,7 +11,7 @@ let setDefaults;
 describe('config API', function () {
   let logErrorSpy;
   let logWarnSpy;
-  beforeEach(() => {
+  beforeEach(function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
@@ -20,7 +20,7 @@ describe('config API', function () {
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utils.logError.restore();
     utils.logWarn.restore();
   });

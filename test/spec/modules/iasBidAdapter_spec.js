@@ -43,7 +43,7 @@ describe('iasBidAdapter is an adapter that', function () {
     });
     describe('given bid requests, returns a `ServerRequest` instance that', function () {
       let bidRequests, IAS_HOST;
-      beforeEach(() => {
+      beforeEach(function () {
         IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
         bidRequests = [
           {
@@ -100,7 +100,9 @@ describe('iasBidAdapter is an adapter that', function () {
         const SLOT_SIZE_PARAM = 'ss';
         const SLOT_AD_UNIT_PATH_PARAM = 'p';
 
-        beforeEach(() => val = decodeURI(spec.buildRequests(bidRequests).data));
+        beforeEach(function () {
+          val = decodeURI(spec.buildRequests(bidRequests).data);
+        });
         it('publisher id', function () {
           expect(val).to.have.string(`${ANID_PARAM}=1234`);
         });
@@ -128,7 +130,7 @@ describe('iasBidAdapter is an adapter that', function () {
     });
     describe('returns a list of bid response that', function () {
       let bidRequests, bidResponse, slots, serverResponse;
-      beforeEach(() => {
+      beforeEach(function () {
         bidRequests = [
           {
             adUnitCode: 'one-div-id',

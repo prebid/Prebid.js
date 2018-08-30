@@ -130,7 +130,7 @@ describe('OpenxAdapter', function () {
   describe('isBidRequestValid', function () {
     describe('when request is for a banner ad', function () {
       let bannerBid;
-      beforeEach(() => {
+      beforeEach(function () {
         bannerBid = {
           bidder: 'openx',
           params: {},
@@ -465,7 +465,7 @@ describe('OpenxAdapter', function () {
       let bidderRequest;
       const IAB_CONSENT_FRAMEWORK_CODE = 1;
 
-      beforeEach(() => {
+      beforeEach(function () {
         bidRequests = [{
           bidder: 'openx',
           params: {
@@ -934,7 +934,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('interpretResponse for banner ads', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.spy(userSync, 'registerSync');
     });
 
@@ -1216,7 +1216,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('interpretResponse for video ads', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.spy(userSync, 'registerSync');
     });
 

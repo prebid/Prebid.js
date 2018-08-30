@@ -133,7 +133,7 @@ describe('The DFP video support module', function () {
     };
     let targetingStub;
 
-    before(() => {
+    before(function () {
       targetingStub = sinon.stub(targeting, 'getAllTargeting');
       targetingStub.returns({'video1': allTargetingData});
 
@@ -142,7 +142,7 @@ describe('The DFP video support module', function () {
       });
     });
 
-    after(() => {
+    after(function () {
       config.resetConfig();
       targetingStub.restore();
     });

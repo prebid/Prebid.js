@@ -12,11 +12,11 @@ describe('s2sTesting', function () {
   let mathRandomStub;
   let randomNumber = 0;
 
-  beforeEach(() => {
+  beforeEach(function () {
     mathRandomStub = sinon.stub(Math, 'random').callsFake(() => { return randomNumber; });
   });
 
-  afterEach(() => {
+  afterEach(function () {
     mathRandomStub.restore();
   });
 
@@ -91,7 +91,7 @@ describe('s2sTesting', function () {
 
   describe('getSourceBidderMap', function () {
     describe('setting source through s2sConfig', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         // set random number for testing
         randomNumber = 0.7;
       });
@@ -158,7 +158,7 @@ describe('s2sTesting', function () {
     });
 
     describe('setting source through adUnits', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
@@ -276,7 +276,7 @@ describe('s2sTesting', function () {
     });
 
     describe('setting source through s2sconfig and adUnits', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing

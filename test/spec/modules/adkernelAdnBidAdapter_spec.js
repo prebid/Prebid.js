@@ -248,7 +248,7 @@ describe('AdkernelAdn adapter', function () {
 
   describe('responses processing', function () {
     let responses;
-    before(() => {
+    before(function () {
       responses = spec.interpretResponse({body: response});
     });
     it('should parse all responses', function () {

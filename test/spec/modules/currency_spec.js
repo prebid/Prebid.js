@@ -21,11 +21,11 @@ describe('currency', function () {
   let fn = sinon.spy();
   let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
 
-  beforeEach(() => {
+  beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     fakeCurrencyFileServer.restore();
   });
 

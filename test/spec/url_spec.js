@@ -5,7 +5,7 @@ describe('helpers.url', function () {
   describe('parse()', function () {
     let parsed;
 
-    beforeEach(() => {
+    beforeEach(function () {
       parsed = parse('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash');
     });
 
@@ -46,7 +46,7 @@ describe('helpers.url', function () {
   describe('parse(url, {noDecodeWholeURL: true})', function () {
     let parsed;
 
-    beforeEach(() => {
+    beforeEach(function () {
       parsed = parse('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
     });
 
@@ -82,7 +82,7 @@ describe('helpers.url', function () {
   describe('parse(url, {decodeSearchAsString: true})', function () {
     let parsed;
 
-    beforeEach(() => {
+    beforeEach(function () {
       parsed = parse('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
     });
 

@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 describe('BeachfrontAdapter', function () {
   let bidRequests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'beachfront',
@@ -559,7 +559,7 @@ describe('BeachfrontAdapter', function () {
     describe('for video bids', function () {
       let bidResponse;
 
-      beforeEach(() => {
+      beforeEach(function () {
         bidResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
@@ -609,7 +609,7 @@ describe('BeachfrontAdapter', function () {
     describe('for banner bids', function () {
       let bidResponse;
 
-      beforeEach(() => {
+      beforeEach(function () {
         bidResponse = {
           slot: bidRequests[0].adUnitCode,
           adm: '<div id="44851937"></div>',

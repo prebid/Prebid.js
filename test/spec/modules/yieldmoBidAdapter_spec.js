@@ -96,7 +96,7 @@ describe('YieldmoAdapter', function () {
   describe('interpretResponse', function () {
     let serverResponse;
 
-    beforeEach(() => {
+    beforeEach(function () {
       serverResponse = {
         body: [{
           callback_id: '21989fdbef550a',

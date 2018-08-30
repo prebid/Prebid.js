@@ -334,7 +334,7 @@ describe('S2S Adapter', function () {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
-  beforeEach(() => {
+  beforeEach(function () {
     adapter = new Adapter();
     BID_REQUESTS = [
       {
@@ -370,7 +370,7 @@ describe('S2S Adapter', function () {
     ];
   });
 
-  afterEach(() => {
+  afterEach(function () {
     addBidResponse.resetHistory();
     done.resetHistory();
   });
@@ -379,7 +379,7 @@ describe('S2S Adapter', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
@@ -387,7 +387,9 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
 
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -403,7 +405,7 @@ describe('S2S Adapter', function () {
     });
 
     describe('gdpr tests', function () {
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
       });
@@ -714,7 +716,7 @@ describe('S2S Adapter', function () {
     let server;
     let logWarnSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       server = sinon.fakeServer.create();
       sinon.stub(utils, 'triggerPixel');
       sinon.stub(utils, 'insertUserSyncIframe');
@@ -724,7 +726,7 @@ describe('S2S Adapter', function () {
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       server.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
@@ -993,11 +995,11 @@ describe('S2S Adapter', function () {
   describe('s2sConfig', function () {
     let logErrorSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       utils.logError.restore();
     });
 

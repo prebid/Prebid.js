@@ -20,13 +20,15 @@ describe('The video cache', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = (request) => requests.push(request);
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
 
     it('should execute the callback with an error when store() is called', function () {
       const callback = sinon.spy();
@@ -45,7 +47,7 @@ describe('The video cache', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = (request) => requests.push(request);
@@ -56,7 +58,7 @@ describe('The video cache', function () {
       })
     });
 
-    afterEach(() => {
+    afterEach(function () {
       xhr.restore();
       config.resetConfig();
     });
@@ -151,7 +153,7 @@ describe('The video cache', function () {
 });
 
 describe('The getCache function', function () {
-  beforeEach(() => {
+  beforeEach(function () {
     config.setConfig({
       cache: {
         url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -159,7 +161,7 @@ describe('The getCache function', function () {
     })
   });
 
-  afterEach(() => {
+  afterEach(function () {
     config.resetConfig();
   });
 

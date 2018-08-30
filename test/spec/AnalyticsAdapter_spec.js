@@ -22,14 +22,14 @@ FEATURE: Analytics Adapters API
   let requests;
   let adapter;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = (request) => requests.push(request);
     adapter = new AnalyticsAdapter(config);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     adapter.disableAnalytics();
   });
@@ -56,11 +56,11 @@ FEATURE: Analytics Adapters API
   });
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
     });
 
-    afterEach(() => {
+    afterEach(function () {
       events.getEvents.restore();
     });
 
@@ -134,11 +134,11 @@ FEATURE: Analytics Adapters API
       const eventType = BID_WON;
       const args = { more: 'info' };
 
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(Math, 'random').returns(0.5);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         Math.random.restore();
       });
 

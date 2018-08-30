@@ -35,7 +35,7 @@ describe('bidders created by newBidder', function () {
   let addBidResponseStub;
   let doneStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     spec = {
       code: CODE,
       isBidRequestValid: sinon.stub(),
@@ -51,13 +51,13 @@ describe('bidders created by newBidder', function () {
   describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax');
       addBidResponseStub.reset();
       doneStub.reset();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       ajaxStub.restore();
     });
 
@@ -264,7 +264,7 @@ describe('bidders created by newBidder', function () {
     let userSyncStub;
     let logErrorSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
@@ -276,7 +276,7 @@ describe('bidders created by newBidder', function () {
       logErrorSpy = sinon.spy(utils, 'logError');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       ajaxStub.restore();
       userSyncStub.restore();
       utils.logError.restore();
@@ -462,7 +462,7 @@ describe('bidders created by newBidder', function () {
   describe('when the ajax call fails', function () {
     let ajaxStub;
 
-    beforeEach(() => {
+    beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         callbacks.error('ajax call failed.');
       });
@@ -470,7 +470,7 @@ describe('bidders created by newBidder', function () {
       doneStub.reset();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       ajaxStub.restore();
     });
 
@@ -533,12 +533,12 @@ describe('registerBidder', function () {
   let registerBidAdapterStub;
   let aliasBidAdapterStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     registerBidAdapterStub = sinon.stub(adaptermanager, 'registerBidAdapter');
     aliasBidAdapterStub = sinon.stub(adaptermanager, 'aliasBidAdapter');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     registerBidAdapterStub.restore();
     aliasBidAdapterStub.restore();
   });
@@ -606,7 +606,7 @@ describe('validate bid response: ', function () {
     'ttl': 360
   }];
 
-  beforeEach(() => {
+  beforeEach(function () {
     spec = {
       code: CODE,
       isBidRequestValid: sinon.stub(),
@@ -631,7 +631,7 @@ describe('validate bid response: ', function () {
     logErrorSpy = sinon.spy(utils, 'logError');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     ajaxStub.restore();
     logErrorSpy.restore();
   });

@@ -9,11 +9,11 @@ let expect = require('chai').expect;
 describe('consentManagement', function () {
   describe('setConfig tests:', function () {
     describe('empty setConfig value', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(utils, 'logInfo');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         utils.logInfo.restore();
         config.resetConfig();
       });
@@ -28,7 +28,7 @@ describe('consentManagement', function () {
     });
 
     describe('valid setConfig value', function () {
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
       });
@@ -62,19 +62,19 @@ describe('consentManagement', function () {
 
     let didHookReturn;
 
-    afterEach(() => {
+    afterEach(function () {
       gdprDataHandler.consentData = null;
       resetConsentData();
     });
 
     describe('error checks:', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         didHookReturn = false;
         sinon.stub(utils, 'logWarn');
         sinon.stub(utils, 'logError');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         utils.logWarn.restore();
         utils.logError.restore();
         config.resetConfig();
@@ -115,12 +115,12 @@ describe('consentManagement', function () {
     describe('already known consentData:', function () {
       let cmpStub = sinon.stub();
 
-      beforeEach(() => {
+      beforeEach(function () {
         didHookReturn = false;
         window.__cmp = function() {};
       });
 
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
         cmpStub.restore();
@@ -161,7 +161,7 @@ describe('consentManagement', function () {
     describe('CMP workflow for safeframe page', function () {
       let registerStub = sinon.stub();
 
-      beforeEach(() => {
+      beforeEach(function () {
         didHookReturn = false;
         window.$sf = {
           ext: {
@@ -173,7 +173,7 @@ describe('consentManagement', function () {
         sinon.stub(utils, 'logWarn');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         delete window.$sf;
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
@@ -219,14 +219,14 @@ describe('consentManagement', function () {
       let ifr = null;
       let stringifyResponse = false;
 
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         ifr = createIFrameMarker();
         window.addEventListener('message', cmpMessageHandler, false);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
         delete window.__cmp;
@@ -291,14 +291,14 @@ describe('consentManagement', function () {
     describe('CMP workflow for normal pages:', function () {
       let cmpStub = sinon.stub();
 
-      beforeEach(() => {
+      beforeEach(function () {
         didHookReturn = false;
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         window.__cmp = function() {};
       });
 
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
         cmpStub.restore();

@@ -161,20 +161,20 @@ describe('Roxot Prebid Analytic', function () {
   let bidderDone = bidRequested;
   let bidWon = bidAdjustmentWithBid;
 
-  before(() => {
+  before(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     xhr.onCreate = request => requests.push(request);
   });
-  after(() => {
+  after(function () {
     xhr.restore();
   });
 
   describe('correct build and send events', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
-    afterEach(() => {
+    afterEach(function () {
       roxotAnalytic.disableAnalytics();
       events.getEvents.restore();
     });
@@ -249,11 +249,11 @@ describe('Roxot Prebid Analytic', function () {
   });
 
   describe('support ad unit filter', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
-    afterEach(() => {
+    afterEach(function () {
       roxotAnalytic.disableAnalytics();
       events.getEvents.restore();
     });
@@ -297,12 +297,12 @@ describe('Roxot Prebid Analytic', function () {
   });
 
   describe('should correct parse config', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       roxotAnalytic.disableAnalytics();
       events.getEvents.restore();
     });
@@ -428,7 +428,7 @@ describe('Roxot Prebid Analytic', function () {
   });
 
   describe('build utm tag data', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       localStorage.setItem('roxot_analytics_utm_source', 'utm_source');
       localStorage.setItem('roxot_analytics_utm_medium', 'utm_medium');
       localStorage.setItem('roxot_analytics_utm_campaign', '');
@@ -436,7 +436,7 @@ describe('Roxot Prebid Analytic', function () {
       localStorage.setItem('roxot_analytics_utm_content', '');
       localStorage.setItem('roxot_analytics_utm_ttl', Date.now());
     });
-    afterEach(() => {
+    afterEach(function () {
       localStorage.removeItem('roxot_analytics_utm_source');
       localStorage.removeItem('roxot_analytics_utm_medium');
       localStorage.removeItem('roxot_analytics_utm_campaign');

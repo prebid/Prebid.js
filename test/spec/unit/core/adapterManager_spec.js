@@ -46,7 +46,7 @@ describe('adapterManager tests', function () {
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
-  before(() => {
+  before(function () {
     orgAppnexusAdapter = AdapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
@@ -56,7 +56,7 @@ describe('adapterManager tests', function () {
     });
   });
 
-  after(() => {
+  after(function () {
     AdapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
     AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
@@ -66,17 +66,17 @@ describe('adapterManager tests', function () {
   });
 
   describe('callBids', function () {
-    before(() => {
+    before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.stub(utils, 'logError');
       appnexusAdapterMock.callBids.reset();
       AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
     });
 
-    afterEach(() => {
+    afterEach(function () {
       utils.logError.restore();
       delete AdapterManager.bidderRegistry['appnexus'];
     });
@@ -141,7 +141,7 @@ describe('adapterManager tests', function () {
   });
 
   describe('S2S tests', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       prebidServerAdapterMock.callBids.reset();
@@ -464,13 +464,13 @@ describe('adapterManager tests', function () {
       // function to count BID_REQUESTED events
       let cnt, count = () => cnt++;
 
-      beforeEach(() => {
+      beforeEach(function () {
         prebidServerAdapterMock.callBids.reset();
         cnt = 0;
         events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
       });
 
@@ -543,7 +543,7 @@ describe('adapterManager tests', function () {
     });
     let stubGetSourceBidderMap;
 
-    beforeEach(() => {
+    beforeEach(function () {
       config.setConfig({s2sConfig: TESTING_CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
@@ -558,7 +558,7 @@ describe('adapterManager tests', function () {
       rubiconAdapterMock.callBids.reset();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       config.setConfig({s2sConfig: {}});
       s2sTesting.getSourceBidderMap.restore();
     });
@@ -702,7 +702,7 @@ describe('adapterManager tests', function () {
     describe('using bidderFactory', function() {
       let spec;
 
-      beforeEach(() => {
+      beforeEach(function () {
         spec = {
           code: CODE,
           isBidRequestValid: () => {},
@@ -723,11 +723,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('special case for s2s-only bidders', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(utils, 'logError');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         utils.logError.restore();
       });
@@ -755,7 +755,7 @@ describe('adapterManager tests', function () {
 
   describe('makeBidRequests', function () {
     let adUnits;
-    beforeEach(() => {
+    beforeEach(function () {
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
@@ -763,11 +763,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('setBidderSequence', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.spy(utils, 'shuffle');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         config.resetConfig();
         utils.shuffle.restore();
       });
@@ -786,11 +786,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('sizeMapping', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
       });
 
-      afterEach(() => {
+      afterEach(function () {
         matchMedia.restore();
         config.resetConfig();
         setSizeConfig([]);
@@ -950,11 +950,11 @@ describe('adapterManager tests', function () {
 
   describe('isValidBidRequest', function () {
     describe('positive tests for validating bid request', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(utils, 'logInfo');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         utils.logInfo.restore();
       });
 
@@ -1059,11 +1059,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('negative tests for validating bid requests', function () {
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(utils, 'logError');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         utils.logError.restore();
       });
 

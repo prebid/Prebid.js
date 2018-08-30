@@ -3,7 +3,7 @@ import spec from 'modules/my6senseBidAdapter';
 
 describe('My6sense Bid adapter test', function () {
   let bidRequests, serverResponses;
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         // valid 1

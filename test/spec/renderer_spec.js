@@ -10,7 +10,7 @@ describe('Renderer: A renderer installed on a bid response', function () {
 
   let loadScriptStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
       args[1]();
     });
@@ -30,7 +30,7 @@ describe('Renderer: A renderer installed on a bid response', function () {
     spyEventHandler = sinon.spy();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     loadScriptStub.restore();
   });
 

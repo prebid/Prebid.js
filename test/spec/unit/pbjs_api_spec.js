@@ -149,7 +149,7 @@ window.apntag = {
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
-  before(() => {
+  before(function () {
     bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').callsFake(() => true);
   });
 
@@ -159,7 +159,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       resetAuction();
     });
 
@@ -192,11 +192,11 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getAdServerTargeting', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       resetAuction();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       resetAuction();
     });
 
@@ -411,7 +411,7 @@ describe('Unit: Prebid Module', function () {
       }]
     };
 
-    before(() => {
+    before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
@@ -447,12 +447,12 @@ describe('Unit: Prebid Module', function () {
       ));
     });
 
-    after(() => {
+    after(function () {
       configObj.setConfig({ priceGranularity: currentPriceBucket });
       adaptermanager.makeBidRequests.restore();
     })
 
-    beforeEach(() => {
+    beforeEach(function () {
       let auctionManagerInstance = newAuctionManager();
       targeting = newTargeting(auctionManagerInstance);
       let adUnits = [{
@@ -476,7 +476,7 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       ajaxStub.restore();
     });
 
@@ -678,7 +678,7 @@ describe('Unit: Prebid Module', function () {
       });
     };
 
-    before(() => {
+    before(function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
       sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
         'bidderCode': 'appnexus',
@@ -711,12 +711,12 @@ describe('Unit: Prebid Module', function () {
       }]));
     });
 
-    after(() => {
+    after(function () {
       configObj.setConfig({ priceGranularity: currentPriceBucket });
       adaptermanager.makeBidRequests.restore();
     })
 
-    afterEach(() => {
+    afterEach(function () {
       ajaxStub.restore();
     });
 
@@ -789,12 +789,12 @@ describe('Unit: Prebid Module', function () {
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
       resetAuction();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       utils.logError.restore();
       resetAuction();
     });
@@ -1128,7 +1128,7 @@ describe('Unit: Prebid Module', function () {
       'start': 1000
     }];
 
-    beforeEach(() => {
+    beforeEach(function () {
       logMessageSpy = sinon.spy(utils, 'logMessage');
       makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
@@ -1151,7 +1151,7 @@ describe('Unit: Prebid Module', function () {
       createAuctionStub.returns(auction);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       clock.restore();
       adaptermanager.makeBidRequests.restore();
       auctionModule.newAuction.restore();
@@ -1197,13 +1197,15 @@ describe('Unit: Prebid Module', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
     var adUnitsBackup;
     var auctionManagerStub;
     let logMessageSpy
@@ -1220,7 +1222,7 @@ describe('Unit: Prebid Module', function () {
     describe('part 1', function () {
       let auctionArgs;
 
-      beforeEach(() => {
+      beforeEach(function () {
         adUnitsBackup = auction.getAdUnits
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
           auctionArgs = arguments[0];
@@ -1229,7 +1231,7 @@ describe('Unit: Prebid Module', function () {
         logMessageSpy = sinon.spy(utils, 'logMessage');
       });
 
-      afterEach(() => {
+      afterEach(function () {
         auction.getAdUnits = adUnitsBackup;
         auctionManager.createAuction.restore();
         utils.logMessage.restore();
@@ -1300,7 +1302,7 @@ describe('Unit: Prebid Module', function () {
       let createAuctionStub;
       let adUnits;
 
-      beforeEach(() => {
+      beforeEach(function () {
         adUnits = [{
           code: 'adUnit-code',
           mediaTypes: {
@@ -1321,7 +1323,7 @@ describe('Unit: Prebid Module', function () {
         createAuctionStub.returns(auction);
       })
 
-      afterEach(() => {
+      afterEach(function () {
         auctionModule.newAuction.restore();
         adaptermanager.callBids.restore();
       });
@@ -1356,7 +1358,7 @@ describe('Unit: Prebid Module', function () {
       let createAuctionStub;
       let adUnits;
 
-      before(() => {
+      before(function () {
         adUnits = [{
           code: 'adUnit-code',
           sizes: [[300, 250], [300, 600]],
@@ -1387,15 +1389,15 @@ describe('Unit: Prebid Module', function () {
         createAuctionStub.returns(auction);
       });
 
-      after(() => {
+      after(function () {
         auctionModule.newAuction.restore();
       });
 
-      beforeEach(() => {
+      beforeEach(function () {
         spyCallBids = sinon.spy(adaptermanager, 'callBids');
       })
 
-      afterEach(() => {
+      afterEach(function () {
         adaptermanager.callBids.restore();
       })
 
@@ -1717,13 +1719,13 @@ describe('Unit: Prebid Module', function () {
 
   describe('emit event', function () {
     let auctionManagerStub;
-    beforeEach(() => {
+    beforeEach(function () {
       auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
         return auction;
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionManager.createAuction.restore();
     });
   });
@@ -1758,11 +1760,11 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getDealTargeting', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       resetAuction();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       resetAuction();
     });
 
@@ -1809,7 +1811,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getHighestCpm', function () {
-    after(() => {
+    after(function () {
       resetAuction();
     });
 
@@ -1923,7 +1925,7 @@ describe('Unit: Prebid Module', function () {
     let targeting;
     let auctionManagerInstance;
 
-    beforeEach(() => {
+    beforeEach(function () {
       resetAuction();
       auctionManagerInstance = newAuctionManager();
       sinon.stub(auctionManagerInstance, 'getBidsReceived').callsFake(function() {
@@ -1938,7 +1940,7 @@ describe('Unit: Prebid Module', function () {
       targeting = newTargeting(auctionManagerInstance);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionManagerInstance.getBidsReceived.restore();
       auctionManagerInstance.getAdUnitCodes.restore();
       resetAuction();
@@ -2008,11 +2010,11 @@ describe('Unit: Prebid Module', function () {
 
   describe('getAllPrebidWinningBids', function () {
     let auctionManagerStub;
-    beforeEach(() => {
+    beforeEach(function () {
       auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionManagerStub.restore();
     });
 

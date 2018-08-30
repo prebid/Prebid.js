@@ -103,7 +103,7 @@ describe('InSkin BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'inskin',

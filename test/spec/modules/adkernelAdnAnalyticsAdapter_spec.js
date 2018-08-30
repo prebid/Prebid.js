@@ -36,11 +36,11 @@ const CAMPAIGN = {
 describe('', function () {
   let sandbox;
 
-  before(() => {
+  before(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  after(() => {
+  after(function () {
     sandbox.restore();
     analyticsAdapter.disableAnalytics();
   });
@@ -49,12 +49,12 @@ describe('', function () {
     let stubSetItem;
     let stubGetItem;
 
-    before(() => {
+    before(function () {
       stubSetItem = sandbox.stub(storage, 'setItem');
       stubGetItem = sandbox.stub(storage, 'getItem');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       sandbox.reset();
     });
 
@@ -117,10 +117,10 @@ describe('', function () {
 
   describe('ExpiringQueue', function () {
     let timer;
-    before(() => {
+    before(function () {
       timer = sandbox.useFakeTimers(0);
     });
-    after(() => {
+    after(function () {
       timer.restore();
     });
 
@@ -188,18 +188,18 @@ describe('', function () {
     let ajaxStub;
     let timer;
 
-    before(() => {
+    before(function () {
       ajaxStub = sandbox.stub(ajax, 'ajax');
       timer = sandbox.useFakeTimers(0);
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(events, 'getEvents').callsFake(() => {
         return []
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       events.getEvents.restore();
     });
 

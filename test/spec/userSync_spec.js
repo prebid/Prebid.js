@@ -25,15 +25,15 @@ describe('user sync', function () {
     })
   }
   let clock;
-  before(() => {
+  before(function () {
     clock = sinon.useFakeTimers();
   });
 
-  after(() => {
+  after(function () {
     clock.restore();
   });
 
-  beforeEach(() => {
+  beforeEach(function () {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
@@ -41,7 +41,7 @@ describe('user sync', function () {
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     triggerPixelStub.restore();
     logWarnStub.restore();
     shuffleStub.restore();

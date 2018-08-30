@@ -416,7 +416,7 @@ describe('rubicon analytics adapter', function () {
   let oldScreen;
   let clock;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
     xhr = sandbox.useFakeXMLHttpRequest();
@@ -437,7 +437,7 @@ describe('rubicon analytics adapter', function () {
     })
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     config.resetConfig();
   });
@@ -467,12 +467,12 @@ describe('rubicon analytics adapter', function () {
   });
 
   describe('sampling', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(Math, 'random').returns(0.08);
       sandbox.stub(utils, 'logError');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 
@@ -567,7 +567,7 @@ describe('rubicon analytics adapter', function () {
   });
 
   describe('when handling events', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
@@ -576,7 +576,7 @@ describe('rubicon analytics adapter', function () {
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 

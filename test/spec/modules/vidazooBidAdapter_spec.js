@@ -109,7 +109,7 @@ describe('VidazooBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
-    before(() => {
+    before(function () {
       sandbox = sinon.sandbox.create();
       sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.greatsite.com');
       sandbox.stub(Date, 'now').returns(1000);
@@ -152,7 +152,7 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
-    after(() => {
+    after(function () {
       sandbox.restore();
     });
   });

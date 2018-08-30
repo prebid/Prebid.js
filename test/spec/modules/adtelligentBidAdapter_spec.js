@@ -190,7 +190,7 @@ describe('adtelligentBidAdapter', function () {
     let bidderRequest;
     let eqResponse;
 
-    afterEach(() => {
+    afterEach(function () {
       serverResponse = null;
       bidderRequest = null;
       eqResponse = null;

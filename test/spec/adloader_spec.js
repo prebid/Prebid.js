@@ -5,12 +5,12 @@ describe('adLoader', function () {
   let utilsinsertElementStub;
   let utilsLogErrorStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     utilsinsertElementStub = sinon.stub(utils, 'insertElement');
     utilsLogErrorStub = sinon.stub(utils, 'logError');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utilsinsertElementStub.restore();
     utilsLogErrorStub.restore();
   });

@@ -7,7 +7,7 @@ describe('ReadPeakAdapter', function () {
   let serverResponse
   let serverRequest
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'readpeak',
       nativeParams: {

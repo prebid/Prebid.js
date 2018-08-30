@@ -178,7 +178,7 @@ describe('Adyoulike Adapter', function () {
   describe('buildRequests', function () {
     let canonicalQuery;
 
-    beforeEach(() => {
+    beforeEach(function () {
       let canonical = document.createElement('link');
       canonical.rel = 'canonical';
       canonical.href = canonicalUrl;
@@ -186,7 +186,7 @@ describe('Adyoulike Adapter', function () {
       canonicalQuery.withArgs('link[rel="canonical"][href]').returns(canonical);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       canonicalQuery.restore();
     });
 
@@ -272,7 +272,7 @@ describe('Adyoulike Adapter', function () {
   describe('interpretResponse', function () {
     let serverResponse;
 
-    beforeEach(() => {
+    beforeEach(function () {
       serverResponse = {
         body: {}
       }

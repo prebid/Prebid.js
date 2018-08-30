@@ -189,9 +189,11 @@ describe('ServerBid S2S Adapter', function () {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
-  beforeEach(() => adapter = new Adapter());
+  beforeEach(function () {
+    adapter = new Adapter()
+  });
 
-  afterEach(() => {
+  afterEach(function () {
     addBidResponse.resetHistory();
     done.resetHistory();
   });
@@ -200,13 +202,15 @@ describe('ServerBid S2S Adapter', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
 
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -216,14 +220,14 @@ describe('ServerBid S2S Adapter', function () {
   describe('response handler', function () {
     let server;
 
-    beforeEach(() => {
+    beforeEach(function () {
       server = sinon.fakeServer.create();
       sinon.stub(utils, 'getBidRequest').returns({
         bidId: '123'
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       server.restore();
       utils.getBidRequest.restore();
     });

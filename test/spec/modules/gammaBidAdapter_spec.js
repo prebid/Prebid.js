@@ -53,7 +53,7 @@ describe('gammaBidAdapter', function() {
   describe('interpretResponse', function () {
     let serverResponse;
 
-    beforeEach(() => {
+    beforeEach(function () {
       serverResponse = {
         body: {
           'id': '23beaa6af6cdde',

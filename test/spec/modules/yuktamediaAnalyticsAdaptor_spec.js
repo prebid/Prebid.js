@@ -8,14 +8,14 @@ describe('YuktaMedia analytics adapter', function () {
   let xhr;
   let requests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
   });
@@ -31,14 +31,14 @@ describe('YuktaMedia analytics adapter', function () {
       adapter: yuktamediaAnalyticsAdapter
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       adaptermanager.enableAnalytics({
         provider: 'yuktamedia',
         options: initOptions
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       yuktamediaAnalyticsAdapter.disableAnalytics();
     });
 

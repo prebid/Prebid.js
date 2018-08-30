@@ -4,7 +4,7 @@ import {spec} from 'modules/adspiritBidAdapter';
 describe('Adspirit adapter tests', function () {
   let bidRequests, serverResponses;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       // valid for adspirit
       {

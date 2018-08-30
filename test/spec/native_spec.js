@@ -19,12 +19,12 @@ describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utils.triggerPixel.restore();
     utils.insertHtmlIntoIframe.restore();
   });
@@ -149,9 +149,9 @@ describe('validate native', function () {
     }
   };
 
-  beforeEach(() => {});
+  beforeEach(function () {});
 
-  afterEach(() => {});
+  afterEach(function () {});
 
   it('should reject bid if no image sizes are defined', function () {
     let result = nativeBidIsValid(validBid, bidReq);

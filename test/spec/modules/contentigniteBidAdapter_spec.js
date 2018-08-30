@@ -4,7 +4,7 @@ import { spec } from '../../../modules/contentigniteBidAdapter';
 describe('Content Ignite adapter', function () {
   let bidRequests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'contentignite',

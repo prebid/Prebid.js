@@ -5,7 +5,7 @@ describe('UnderdogMedia adapter', function () {
   let bidRequests;
   let bidderRequest;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'underdogmedia',

@@ -17,7 +17,7 @@ describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
   let bidRequest;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
