@@ -132,7 +132,9 @@ const GOOD_BID_RESPONSE_KEYS = COMMON_BID_RESPONSE_KEYS.concat(['cpm', 'ttl', 'c
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
 export function registerBidder(spec) {
-  const mediaTypes = Array.isArray(spec.supportedMediaTypes) ? {supportedMediaTypes: spec.supportedMediaTypes} : undefined;
+  const mediaTypes = Array.isArray(spec.supportedMediaTypes)
+    ? {supportedMediaTypes: spec.supportedMediaTypes}
+    : undefined;
 
   function putBidder(spec) {
     const bidder = newBidder(spec);
