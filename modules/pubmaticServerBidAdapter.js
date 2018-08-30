@@ -325,7 +325,13 @@ export const spec = {
                     ttl: 300,
                     referrer: referrer,
                     ad: firstSummary ? bid.adm : '',
-                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 500
+                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0
+                    /* setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
+                       probable causes for this happening will be, pubmaticServerErrorCode is one of the following:
+                       1 = GADS_UNMAPPED_SLOT_ERROR
+                       2 = GADS_MISSING_CONF_ERROR
+                       6 = INVALID_CONFIGURATION_ERROR
+                    */
                   };
                   bidResponses.push(newBid);
                 }
