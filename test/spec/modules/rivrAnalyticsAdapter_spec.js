@@ -160,7 +160,7 @@ describe('', () => {
         }
       });
 
-      expect(analyticsAdapter.context).to.have.property('host', 'integrations.rivr.simplaex.net');
+      expect(analyticsAdapter.context).to.have.property('host', 'tracker.rivr.simplaex.com');
       expect(analyticsAdapter.context).to.have.property('pubId', 777);
     });
 
