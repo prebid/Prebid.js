@@ -3,13 +3,13 @@ import {spec} from 'modules/pubmaticBidAdapter';
 import * as utils from 'src/utils';
 const constants = require('src/constants.json');
 
-describe('PubMatic adapter', () => {
+describe('PubMatic adapter', function () {
   let bidRequests;
   let videoBidRequests;
   let multipleMediaRequests;
   let bidResponses;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'pubmatic',
@@ -155,9 +155,9 @@ describe('PubMatic adapter', () => {
     };
   });
 
-  describe('implementation', () => {
-  	describe('Bid validations', () => {
-  		it('valid bid case', () => {
+  describe('implementation', function () {
+  	describe('Bid validations', function () {
+  		it('valid bid case', function () {
 		  let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -169,7 +169,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(true);
   		});
 
-      it('invalid bid case: publisherId not passed', () => {
+      it('invalid bid case: publisherId not passed', function () {
 		    let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -180,7 +180,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(false);
   		});
 
-      it('invalid bid case: publisherId is not string', () => {
+      it('invalid bid case: publisherId is not string', function () {
         let validBid = {
             bidder: 'pubmatic',
             params: {
@@ -192,7 +192,7 @@ describe('PubMatic adapter', () => {
         expect(isValid).to.equal(false);
       });
 
-  		it('invalid bid case: adSlot not passed', () => {
+  		it('invalid bid case: adSlot not passed', function () {
   		  let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -203,7 +203,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(false);
     	});
 
-      it('invalid bid case: adSlot is not string', () => {
+      it('invalid bid case: adSlot is not string', function () {
         let validBid = {
             bidder: 'pubmatic',
             params: {
@@ -216,14 +216,14 @@ describe('PubMatic adapter', () => {
       });
     });
 
-  	describe('Request formation', () => {
-  		it('Endpoint checking', () => {
+  	describe('Request formation', function () {
+  		it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
   		});
 
-  		it('Request params check', () => {
+  		it('Request params check', function () {
   		  let request = spec.buildRequests(bidRequests);
   		  let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
@@ -254,7 +254,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
   		});
 
-      it('Request params multi size format object check', () => {
+      it('Request params multi size format object check', function () {
         let bidRequests = [
           {
             bidder: 'pubmatic',
@@ -309,7 +309,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0].banner.format[0].h).to.equal(600); // height
       });
 
-      it('Request params currency check', () => {
+      it('Request params currency check', function () {
         let multipleBidRequests = [
           {
             bidder: 'pubmatic',
@@ -406,7 +406,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[1].bidfloorcur).to.equal('USD');
       });
 
-      it('Request params check with GDPR Consent', () => {
+      it('Request params check with GDPR Consent', function () {
         let bidRequest = {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
@@ -442,7 +442,7 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
-      it('Request params check for video ad', () => {
+      it('Request params check for video ad', function () {
         let request = spec.buildRequests(videoBidRequests);
         let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
@@ -480,7 +480,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
       });
 
-      it('Request params check for 1 banner and 1 video ad', () => {
+      it('Request params check for 1 banner and 1 video ad', function () {
         let request = spec.buildRequests(multipleMediaRequests);
         let data = JSON.parse(request.data);
 
@@ -549,7 +549,7 @@ describe('PubMatic adapter', () => {
       });
   	});
 
-    it('Request params dctr check', () => {
+    it('Request params dctr check', function () {
       let multipleBidRequests = [
         {
           bidder: 'pubmatic',
@@ -632,8 +632,8 @@ describe('PubMatic adapter', () => {
       expect(data.site.ext).to.not.exist;
     });
 
-    describe('Response checking', () => {
-      it('should check for valid response values', () => {
+    describe('Response checking', function () {
+      it('should check for valid response values', function () {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
@@ -670,7 +670,7 @@ describe('PubMatic adapter', () => {
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
       });
 
-      it('should check for dealChannel value selection', () => {
+      it('should check for dealChannel value selection', function () {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
@@ -678,7 +678,7 @@ describe('PubMatic adapter', () => {
         expect(response[1].dealChannel).to.equal('PREF');
       });
 
-      it('should check for unexpected dealChannel value selection', () => {
+      it('should check for unexpected dealChannel value selection', function () {
         let request = spec.buildRequests(bidRequests);
         let updateBiResponse = bidResponses;
         updateBiResponse.body.seatbid[0].bid[0].ext.deal_channel = 11;

@@ -109,11 +109,11 @@ function mockAjaxBuilder() {
 describe('auctionmanager.js', function () {
   let xhr;
 
-  before(() => {
+  before(function () {
     xhr = sinon.useFakeXMLHttpRequest();
   });
 
-  after(() => {
+  after(function () {
     xhr.restore();
   });
 
@@ -483,8 +483,8 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe('adjustBids', () => {
-    it('should adjust bids if greater than zero and pass copy of bid object', () => {
+  describe('adjustBids', function () {
+    it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
         bidfactory.createBid(2),
         fixtures.getBidResponses()[5]
@@ -532,7 +532,7 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe('addBidResponse', () => {
+  describe('addBidResponse', function () {
     let createAuctionStub;
     let adUnits;
     let adUnitCodes;
@@ -542,23 +542,23 @@ describe('auctionmanager.js', function () {
     let bids = TEST_BIDS;
     let makeRequestsStub;
 
-    before(() => {
+    before(function () {
       makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
-    after(() => {
+    after(function () {
       ajaxStub.restore();
       adaptermanager.makeBidRequests.restore();
     });
 
-    describe('when auction timeout is 3000', () => {
+    describe('when auction timeout is 3000', function () {
       let loadScriptStub;
-      before(() => {
+      before(function () {
         makeRequestsStub.returns(TEST_BID_REQS);
       });
-      beforeEach(() => {
+      beforeEach(function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -578,7 +578,7 @@ describe('auctionmanager.js', function () {
         registerBidder(spec);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         auctionModule.newAuction.restore();
         loadScriptStub.restore();
       });
@@ -605,7 +605,7 @@ describe('auctionmanager.js', function () {
       it('should return proper price bucket increments for dense mode when cpm is 20+',
         checkPbDg('73.07', '20.00', '20+ caps at 20.00'));
 
-      it('should place dealIds in adserver targeting', () => {
+      it('should place dealIds in adserver targeting', function () {
         bids[0].dealId = 'test deal';
         auction.callBids();
 
@@ -613,7 +613,7 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
       });
 
-      it('should pass through default adserverTargeting sent from adapter', () => {
+      it('should pass through default adserverTargeting sent from adapter', function () {
         bids[0].adserverTargeting = {};
         bids[0].adserverTargeting.extra = 'stuff';
         auction.callBids();
@@ -623,7 +623,7 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
 
-      it('installs publisher-defined renderers on bids', () => {
+      it('installs publisher-defined renderers on bids', function () {
         let renderer = {
           url: 'renderer.js',
           render: (bid) => bid
@@ -675,19 +675,19 @@ describe('auctionmanager.js', function () {
       });
     });
 
-    describe('when auction timeout is 20', () => {
+    describe('when auction timeout is 20', function () {
       let loadScriptStub;
       let eventsEmitSpy;
       let getBidderRequestStub;
 
-      before(() => {
+      before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
         let bidRequests = bids.map(bid => mockBidRequest(bid));
 
         makeRequestsStub.returns(bidRequests);
       });
 
-      beforeEach(() => {
+      beforeEach(function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -723,20 +723,20 @@ describe('auctionmanager.js', function () {
           return req;
         });
       });
-      afterEach(() => {
+      afterEach(function () {
         auctionModule.newAuction.restore();
         loadScriptStub.restore();
         events.emit.restore();
         getBidderRequestStub.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', () => {
+      it('should emit BID_TIMEOUT for timed out bids', function () {
         auction.callBids();
         assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
       });
     });
   });
 
-  describe('addBidResponse', () => {
+  describe('addBidResponse', function () {
     let createAuctionStub;
     let adUnits;
     let adUnitCodes;
@@ -748,7 +748,7 @@ describe('auctionmanager.js', function () {
     let bids = TEST_BIDS;
     let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
-    before(() => {
+    before(function () {
       let bidRequests = [
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
@@ -759,12 +759,12 @@ describe('auctionmanager.js', function () {
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
-    after(() => {
+    after(function () {
       ajaxStub.restore();
       adaptermanager.makeBidRequests.restore();
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       adUnits = [{
         code: ADUNIT_CODE,
         bids: [
@@ -788,11 +788,11 @@ describe('auctionmanager.js', function () {
       registerBidder(spec1);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionModule.newAuction.restore();
     });
 
-    it('should not alter bid adID', () => {
+    it('should not alter bid adID', function () {
       auction.callBids();
 
       const addedBid2 = auction.getBidsReceived().pop();
@@ -801,7 +801,7 @@ describe('auctionmanager.js', function () {
       assert.equal(addedBid1.adId, bids[0].requestId);
     });
 
-    it('should not add banner bids that have no width or height', () => {
+    it('should not add banner bids that have no width or height', function () {
       bids1[0].width = undefined;
       bids1[0].height = undefined;
 
@@ -813,7 +813,7 @@ describe('auctionmanager.js', function () {
       assert.equal(length, 1);
     });
 
-    it('should run auction after video bids have been cached', () => {
+    it('should run auction after video bids have been cached', function () {
       sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 
@@ -832,7 +832,7 @@ describe('auctionmanager.js', function () {
       store.store.restore();
     });
 
-    it('runs auction after video responses with multiple bid objects have been cached', () => {
+    it('runs auction after video responses with multiple bid objects have been cached', function () {
       sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 

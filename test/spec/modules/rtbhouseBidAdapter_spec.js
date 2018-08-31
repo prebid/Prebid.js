@@ -17,16 +17,16 @@ function buildEndpointUrl(region) {
 	* endof Helpers
 	*/
 
-describe('RTBHouseAdapter', () => {
+describe('RTBHouseAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'rtbhouse',
       'params': {
@@ -40,11 +40,11 @@ describe('RTBHouseAdapter', () => {
       'auctionId': '1d1a030790a475'
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -54,7 +54,7 @@ describe('RTBHouseAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
 	      'bidder': 'rtbhouse',
@@ -71,12 +71,12 @@ describe('RTBHouseAdapter', () => {
       }
     ];
 
-    it('should build test param into the request', () => {
+    it('should build test param into the request', function () {
     	let builtTestRequest = spec.buildRequests(bidRequests).data;
     	expect(JSON.parse(builtTestRequest).test).to.equal(1);
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest);
@@ -84,7 +84,7 @@ describe('RTBHouseAdapter', () => {
       expect(request.method).to.equal('POST');
     });
 
-    it('should not populate GDPR if for non-EEA users', () => {
+    it('should not populate GDPR if for non-EEA users', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest);
@@ -93,7 +93,7 @@ describe('RTBHouseAdapter', () => {
       expect(data).to.not.have.property('user');
     });
 
-    it('should populate GDPR and consent string if available for EEA users', () => {
+    it('should populate GDPR and consent string if available for EEA users', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: consentStr}});
@@ -102,7 +102,7 @@ describe('RTBHouseAdapter', () => {
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
     });
 
-    it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', () => {
+    it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true}});
@@ -112,7 +112,7 @@ describe('RTBHouseAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = [{
   	  'id': 'bidder_imp_identifier',
 	    'impid': '552b8922e28f27',
@@ -125,7 +125,7 @@ describe('RTBHouseAdapter', () => {
 	    'h': 250
     }];
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           'requestId': '552b8922e28f27',
@@ -145,7 +145,7 @@ describe('RTBHouseAdapter', () => {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = '';
       let bidderRequest;
       let result = spec.interpretResponse({ body: response }, {bidderRequest});

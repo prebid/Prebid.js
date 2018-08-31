@@ -6,16 +6,16 @@ import { deepClone } from 'src/utils';
 const URL = 'https://ads.playground.xyz/host-config/prebid';
 const GDPR_CONSENT = 'XYZ-CONSENT';
 
-describe('playgroundxyzBidAdapter', () => {
+describe('playgroundxyzBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'playgroundxyz',
       'params': {
@@ -28,11 +28,11 @@ describe('playgroundxyzBidAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,7 +42,7 @@ describe('playgroundxyzBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'playgroundxyz',
@@ -57,7 +57,7 @@ describe('playgroundxyzBidAdapter', () => {
       }
     ];
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       let bidRequest = Object.assign([], bidRequests);
 
       const request = spec.buildRequests(bidRequest);
@@ -72,7 +72,7 @@ describe('playgroundxyzBidAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'id': 'bidd_id',
       'seatbid': [ {
@@ -109,7 +109,7 @@ describe('playgroundxyzBidAdapter', () => {
       'bidderCode': 'playgroundxyz'
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           'requestId': '221f2bdc1fbc31',
@@ -128,14 +128,14 @@ describe('playgroundxyzBidAdapter', () => {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = '';
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'playgroundxyz',
@@ -150,7 +150,7 @@ describe('playgroundxyzBidAdapter', () => {
       }
     ];
 
-    it('should not populate GDPR', () => {
+    it('should not populate GDPR', function () {
       let bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest);
       let data = JSON.parse(request.data);
@@ -158,7 +158,7 @@ describe('playgroundxyzBidAdapter', () => {
       expect(data).to.not.have.property('regs');
     });
 
-    it('should populate GDPR and consent string when consetString is presented but not gdpApplies', () => {
+    it('should populate GDPR and consent string when consetString is presented but not gdpApplies', function () {
       let bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, {gdprConsent: {consentString: GDPR_CONSENT}});
       let data = JSON.parse(request.data);
@@ -166,7 +166,7 @@ describe('playgroundxyzBidAdapter', () => {
       expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
     });
 
-    it('should populate GDPR and consent string when gdpr is set to true', () => {
+    it('should populate GDPR and consent string when gdpr is set to true', function () {
       let bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: GDPR_CONSENT}});
       let data = JSON.parse(request.data);
@@ -174,7 +174,7 @@ describe('playgroundxyzBidAdapter', () => {
       expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
     });
 
-    it('should populate GDPR and consent string when gdpr is set to false', () => {
+    it('should populate GDPR and consent string when gdpr is set to false', function () {
       let bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: false, consentString: GDPR_CONSENT}});
       let data = JSON.parse(request.data);

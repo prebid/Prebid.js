@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/zedoBidAdapter';
 
-describe('The ZEDO bidding adapter', () => {
-  describe('isBidRequestValid', () => {
-    it('should return false when given an invalid bid', () => {
+describe('The ZEDO bidding adapter', function () {
+  describe('isBidRequestValid', function () {
+    it('should return false when given an invalid bid', function () {
       const bid = {
         bidder: 'zedo',
       };
@@ -11,7 +11,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(isValid).to.equal(false);
     });
 
-    it('should return true when given a channelcode bid', () => {
+    it('should return true when given a channelcode bid', function () {
       const bid = {
         bidder: 'zedo',
         params: {
@@ -24,12 +24,12 @@ describe('The ZEDO bidding adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidderRequest = {
       timeout: 3000,
     };
 
-    it('should properly build a channelCode request for dim Id with type not defined', () => {
+    it('should properly build a channelCode request for dim Id with type not defined', function () {
       const bidRequests = [
         {
           bidder: 'zedo',
@@ -49,7 +49,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
-    it('should properly build a channelCode request for video with type defined', () => {
+    it('should properly build a channelCode request for video with type defined', function () {
       const bidRequests = [
         {
           bidder: 'zedo',
@@ -74,7 +74,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
     });
 
-    describe('buildGDPRRequests', () => {
+    describe('buildGDPRRequests', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       const bidderRequest = {
         timeout: 3000,
@@ -84,7 +84,7 @@ describe('The ZEDO bidding adapter', () => {
         }
       };
 
-      it('should properly build request with gdpr consent', () => {
+      it('should properly build request with gdpr consent', function () {
         const bidRequests = [
           {
             bidder: 'zedo',
@@ -104,15 +104,15 @@ describe('The ZEDO bidding adapter', () => {
       });
     });
   });
-  describe('interpretResponse', () => {
-    it('should return an empty array when there is bid response', () => {
+  describe('interpretResponse', function () {
+    it('should return an empty array when there is bid response', function () {
       const response = {};
       const request = { bidRequests: [] };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response with no valid creative', () => {
+    it('should properly parse a bid response with no valid creative', function () {
       const response = {
         body: {
           ad: [
@@ -156,7 +156,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should properly parse a bid response with valid display creative', () => {
+    it('should properly parse a bid response with valid display creative', function () {
       const response = {
         body: {
           ad: [
@@ -199,7 +199,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(bids[0].height).to.equal('600');
     });
 
-    it('should properly parse a bid response with valid video creative', () => {
+    it('should properly parse a bid response with valid video creative', function () {
       const response = {
         body: {
           ad: [
@@ -245,8 +245,8 @@ describe('The ZEDO bidding adapter', () => {
     });
   });
 
-  describe('user sync', () => {
-    it('should register the iframe sync url', () => {
+  describe('user sync', function () {
+    it('should register the iframe sync url', function () {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
@@ -255,7 +255,7 @@ describe('The ZEDO bidding adapter', () => {
       expect(syncs[0].type).to.equal('iframe');
     });
 
-    it('should pass gdpr params', () => {
+    it('should pass gdpr params', function () {
       let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
         gdprApplies: false, consentString: 'test'
       });

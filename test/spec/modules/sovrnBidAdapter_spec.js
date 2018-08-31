@@ -8,7 +8,7 @@ const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'sovrn',
       'params': {
@@ -23,23 +23,23 @@ describe('sovrnBidAdapter', function() {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when tagid not passed correctly', () => {
+    it('should return false when tagid not passed correctly', function () {
       bid.params.tagid = 'ABCD';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when require params are not passed', () => {
+    it('should return false when require params are not passed', function () {
       let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [{
       'bidder': 'sovrn',
       'params': {
@@ -56,15 +56,15 @@ describe('sovrnBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('sends bid request to our endpoint via POST', () => {
+    it('sends bid request to our endpoint via POST', function () {
       expect(request.method).to.equal('POST');
     });
 
-    it('attaches source and version to endpoint URL as query params', () => {
+    it('attaches source and version to endpoint URL as query params', function () {
       expect(request.url).to.equal(ENDPOINT)
     });
 
-    it('sends \'iv\' as query param if present', () => {
+    it('sends \'iv\' as query param if present', function () {
       const ivBidRequests = [{
         'bidder': 'sovrn',
         'params': {
@@ -84,7 +84,7 @@ describe('sovrnBidAdapter', function() {
       expect(request.url).to.contain('iv=vet')
     });
 
-    it('sends gdpr info if exists', () => {
+    it('sends gdpr info if exists', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'sovrn',
@@ -107,7 +107,7 @@ describe('sovrnBidAdapter', function() {
       expect(payload.user.ext.consent).to.equal(consentString);
     });
 
-    it('converts tagid to string', () => {
+    it('converts tagid to string', function () {
       const ivBidRequests = [{
         'bidder': 'sovrn',
         'params': {
@@ -128,9 +128,9 @@ describe('sovrnBidAdapter', function() {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response;
-    beforeEach(() => {
+    beforeEach(function () {
       response = {
         body: {
           'id': '37386aade21a71',
@@ -150,7 +150,7 @@ describe('sovrnBidAdapter', function() {
       };
     });
 
-    it('should get the correct bid response', () => {
+    it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
         'cpm': 0.45882675,
@@ -169,7 +169,7 @@ describe('sovrnBidAdapter', function() {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('crid should default to the bid id if not on the response', () => {
+    it('crid should default to the bid id if not on the response', function () {
       delete response.body.seatbid[0].bid[0].crid;
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
@@ -189,7 +189,7 @@ describe('sovrnBidAdapter', function() {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('should get correct bid response when dealId is passed', () => {
+    it('should get correct bid response when dealId is passed', function () {
       response.body.dealid = 'baking';
 
       let expectedResponse = [{
@@ -210,7 +210,7 @@ describe('sovrnBidAdapter', function() {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('handles empty bid response', () => {
+    it('handles empty bid response', function () {
       let response = {
         body: {
           'id': '37386aade21a71',
