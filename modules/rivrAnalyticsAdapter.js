@@ -5,7 +5,7 @@ import adaptermanager from 'src/adaptermanager';
 import { logInfo, generateUUID } from 'src/utils';
 
 const analyticsType = 'endpoint';
-const DEFAULT_HOST = 'integrations.rivr.simplaex.net';
+const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
