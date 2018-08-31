@@ -59,9 +59,9 @@ function sendAuction() {
     () => {},
     JSON.stringify(req),
     {
+      contentType: 'application/json',
       customHeaders: {
-        'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI=',
-        'Content-type': 'application/json'
+        'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI='
       }
     }
   );
@@ -77,9 +77,9 @@ function sendImpressions() {
       () => {},
       JSON.stringify(impressionsReq),
       {
+        contentType: 'application/json',
         customHeaders: {
-          'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI=',
-          'Content-type': 'application/json'
+          'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI='
         }
       }
     );
