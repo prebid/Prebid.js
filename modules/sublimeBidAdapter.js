@@ -44,6 +44,7 @@ export const spec = {
         '&ad=' + encodeURIComponent(response.ad || '') +
         '&cpm=' + encodeURIComponent(response.cpm || 0)
       );
+      return xhr;
     };
     let script = document.createElement('script');
     script.type = 'application/javascript';
