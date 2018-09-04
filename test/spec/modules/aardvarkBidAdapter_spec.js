@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/aardvarkBidAdapter';
 
-describe('aardvarkAdapterTest', () => {
-  describe('forming valid bidRequests', () => {
-    it('should accept valid bidRequests', () => {
+describe('aardvarkAdapterTest', function () {
+  describe('forming valid bidRequests', function () {
+    it('should accept valid bidRequests', function () {
       expect(spec.isBidRequestValid({
         bidder: 'aardvark',
         params: {
@@ -14,7 +14,7 @@ describe('aardvarkAdapterTest', () => {
       })).to.equal(true);
     });
 
-    it('should reject invalid bidRequests', () => {
+    it('should reject invalid bidRequests', function () {
       expect(spec.isBidRequestValid({
         bidder: 'aardvark',
         params: {
@@ -25,7 +25,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('executing network requests', () => {
+  describe('executing network requests', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -54,20 +54,20 @@ describe('aardvarkAdapterTest', () => {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
-    it('should use HTTP GET method', () => {
+    it('should use HTTP GET method', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
-    it('should call the correct bidRequest url', () => {
+    it('should call the correct bidRequest url', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
     });
 
-    it('should have correct data', () => {
+    it('should have correct data', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.version).to.equal(1);
@@ -78,7 +78,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('splitting multi-auction ad units into own requests', () => {
+  describe('splitting multi-auction ad units into own requests', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -108,21 +108,21 @@ describe('aardvarkAdapterTest', () => {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
-    it('should use HTTP GET method', () => {
+    it('should use HTTP GET method', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
-    it('should call the correct bidRequest urls for each auction', () => {
+    it('should call the correct bidRequest urls for each auction', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].url).to.match(new RegExp('^\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
       expect(requests[0].data.categories.length).to.equal(2);
       expect(requests[1].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
     });
 
-    it('should have correct data', () => {
+    it('should have correct data', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       expect(requests[0].data.version).to.equal(1);
@@ -138,7 +138,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('GDPR conformity', () => {
+  describe('GDPR conformity', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -160,7 +160,7 @@ describe('aardvarkAdapterTest', () => {
       }
     };
 
-    it('should transmit correct data', () => {
+    it('should transmit correct data', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.gdpr).to.equal(true);
@@ -168,7 +168,7 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('GDPR absence conformity', () => {
+  describe('GDPR absence conformity', function () {
     const bidRequests = [{
       bidder: 'aardvark',
       params: {
@@ -187,7 +187,7 @@ describe('aardvarkAdapterTest', () => {
       gdprConsent: undefined
     };
 
-    it('should transmit correct data', () => {
+    it('should transmit correct data', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.gdpr).to.be.undefined;
@@ -195,8 +195,8 @@ describe('aardvarkAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should handle bid responses', () => {
+  describe('interpretResponse', function () {
+    it('should handle bid responses', function () {
       const serverResponse = {
         body: [
           {
@@ -245,7 +245,7 @@ describe('aardvarkAdapterTest', () => {
       expect(result[1].ad).to.not.be.undefined;
     });
 
-    it('should handle nobid responses', () => {
+    it('should handle nobid responses', function () {
       var emptyResponse = [{
         nurl: '',
         cid: '9e5a09319e18f1',
