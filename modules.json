@@ -9,5 +9,6 @@
   "ixBidAdapter",
   "prebidServerBidAdapter",
   "sonobiBidAdapter",
-  "trustxBidAdapter"
+  "trustxBidAdapter",
+  "openxBidAdapter"
 ]
