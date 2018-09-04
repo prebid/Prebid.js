@@ -4,17 +4,17 @@ import {spec} from 'modules/dgadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import { BANNER, NATIVE } from 'src/mediaTypes';
 
-describe('dgadsBidAdapter', () => {
+describe('dgadsBidAdapter', function () {
   const adapter = newBidder(spec);
   const VALID_ENDPOINT = 'https://ads-tr.bigmining.com/ad/p/bid';
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'dgads',
       params: {
@@ -22,11 +22,11 @@ describe('dgadsBidAdapter', () => {
         location_id: '1'
       }
     };
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params(location_id) are not passed', () => {
+    it('should return false when required params(location_id) are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -35,7 +35,7 @@ describe('dgadsBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required params(site_id) are not passed', () => {
+    it('should return false when required params(site_id) are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -45,7 +45,7 @@ describe('dgadsBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       { // banner
         bidder: 'dgads',
@@ -97,7 +97,7 @@ describe('dgadsBidAdapter', () => {
         transactionId: 'c1f1eff6-23c6-4844-a321-575212939e37'
       }
     ];
-    it('no bidRequests', () => {
+    it('no bidRequests', function () {
       const noBidRequests = [];
       expect(Object.keys(spec.buildRequests(noBidRequests)).length).to.equal(0);
     });
@@ -107,12 +107,12 @@ describe('dgadsBidAdapter', () => {
       transaction_id: 'c1f1eff6-23c6-4844-a321-575212939e37',
       bid_id: '2db3101abaec66'
     };
-    it('sends bid request to VALID_ENDPOINT via POST', () => {
+    it('sends bid request to VALID_ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(VALID_ENDPOINT);
       expect(request.method).to.equal('POST');
     });
-    it('should attache params to the request', () => {
+    it('should attache params to the request', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data['location_id']).to.equal(data['location_id']);
       expect(request.data['site_id']).to.equal(data['site_id']);
@@ -121,7 +121,7 @@ describe('dgadsBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
         bidRequest: {
@@ -252,11 +252,11 @@ describe('dgadsBidAdapter', () => {
       }
     };
 
-    it('no bid responses', () => {
+    it('no bid responses', function () {
       const result = spec.interpretResponse({body: serverResponse.noAd}, bidRequests.banner);
       expect(result.length).to.equal(0);
     });
-    it('handles banner responses', () => {
+    it('handles banner responses', function () {
       const result = spec.interpretResponse({body: serverResponse.banner}, bidRequests.banner)[0];
       expect(result.requestId).to.equal(bidResponses.banner.requestId);
       expect(result.width).to.equal(bidResponses.banner.width);
@@ -269,7 +269,7 @@ describe('dgadsBidAdapter', () => {
       expect(result.ad).to.equal(bidResponses.banner.ad);
     });
 
-    it('handles native responses', () => {
+    it('handles native responses', function () {
       const result = spec.interpretResponse({body: serverResponse.native}, bidRequests.native)[0];
       expect(result.requestId).to.equal(bidResponses.native.requestId);
       expect(result.creativeId).to.equal(bidResponses.native.creativeId);

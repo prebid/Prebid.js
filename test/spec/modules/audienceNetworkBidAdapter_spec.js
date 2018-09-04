@@ -22,34 +22,34 @@ const requestId = 'test-request-id';
 const debug = 'adapterver=1.0.1&platform=241394079772386&platver=$prebid.version$';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
-describe('AudienceNetwork adapter', () => {
-  describe('Public API', () => {
-    it('code', () => {
+describe('AudienceNetwork adapter', function () {
+  describe('Public API', function () {
+    it('code', function () {
       expect(code).to.equal(bidder);
     });
-    it('supportedMediaTypes', () => {
+    it('supportedMediaTypes', function () {
       expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
-    it('isBidRequestValid', () => {
+    it('isBidRequestValid', function () {
       expect(isBidRequestValid).to.be.a('function');
     });
-    it('buildRequests', () => {
+    it('buildRequests', function () {
       expect(buildRequests).to.be.a('function');
     });
-    it('interpretResponse', () => {
+    it('interpretResponse', function () {
       expect(interpretResponse).to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('missing placementId parameter', () => {
+  describe('isBidRequestValid', function () {
+    it('missing placementId parameter', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250]]
       })).to.equal(false);
     });
 
-    it('invalid sizes parameter', () => {
+    it('invalid sizes parameter', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: ['', undefined, null, '300x100', [300, 100], [300], {}],
@@ -57,7 +57,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(false);
     });
 
-    it('valid when at least one valid size', () => {
+    it('valid when at least one valid size', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[1, 1], [300, 250]],
@@ -65,7 +65,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('valid parameters', () => {
+    it('valid parameters', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250], [320, 50]],
@@ -73,7 +73,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('fullwidth', () => {
+    it('fullwidth', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250], [336, 280]],
@@ -84,7 +84,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('native', () => {
+    it('native', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250]],
@@ -95,7 +95,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('native with non-IAB size', () => {
+    it('native with non-IAB size', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[728, 90]],
@@ -106,7 +106,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('video', () => {
+    it('video', function () {
       expect(isBidRequestValid({
         bidder,
         sizes: [[playerwidth, playerheight]],
@@ -118,17 +118,17 @@ describe('AudienceNetwork adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let isSafariBrowserStub;
-    before(() => {
+    before(function () {
       isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
     });
 
-    after(() => {
+    after(function () {
       isSafariBrowserStub.restore();
     });
 
-    it('can build URL for IAB unit', () => {
+    it('can build URL for IAB unit', function () {
       expect(buildRequests([{
         bidder,
         bidId: requestId,
@@ -144,7 +144,7 @@ describe('AudienceNetwork adapter', () => {
       }]);
     });
 
-    it('can build URL for video unit', () => {
+    it('can build URL for video unit', function () {
       expect(buildRequests([{
         bidder,
         bidId: requestId,
@@ -163,7 +163,7 @@ describe('AudienceNetwork adapter', () => {
       }]);
     });
 
-    it('can build URL for native unit in non-IAB size', () => {
+    it('can build URL for native unit in non-IAB size', function () {
       expect(buildRequests([{
         bidder,
         bidId: requestId,
@@ -182,7 +182,7 @@ describe('AudienceNetwork adapter', () => {
       }]);
     });
 
-    it('can build URL for fullwidth 300x250 unit, overriding platform', () => {
+    it('can build URL for fullwidth 300x250 unit, overriding platform', function () {
       const platform = 'test-platform';
       const debugPlatform = debug.replace('241394079772386', platform);
 
@@ -205,7 +205,7 @@ describe('AudienceNetwork adapter', () => {
       }]);
     });
 
-    it('can build URL on Safari that includes a cachebuster param', () => {
+    it('can build URL on Safari that includes a cachebuster param', function () {
       isSafariBrowserStub.returns(true);
       expect(buildRequests([{
         bidder,
@@ -216,8 +216,8 @@ describe('AudienceNetwork adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('error in response', () => {
+  describe('interpretResponse', function () {
+    it('error in response', function () {
       expect(interpretResponse({
         body: {
           errors: ['test-error-message']
@@ -225,7 +225,7 @@ describe('AudienceNetwork adapter', () => {
       }, {})).to.deep.equal([]);
     });
 
-    it('valid native bid in response', () => {
+    it('valid native bid in response', function () {
       const [bidResponse] = interpretResponse({
         body: {
           errors: [],
@@ -264,7 +264,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.fb_placementid).to.equal(placementId);
     });
 
-    it('valid IAB bid in response', () => {
+    it('valid IAB bid in response', function () {
       const [bidResponse] = interpretResponse({
         body: {
           errors: [],
@@ -302,7 +302,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.fb_placementid).to.equal(placementId);
     });
 
-    it('filters invalid slot sizes', () => {
+    it('filters invalid slot sizes', function () {
       const [bidResponse] = interpretResponse({
         body: {
           errors: [],
@@ -336,7 +336,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.fb_placementid).to.equal(placementId);
     });
 
-    it('valid multiple bids in response', () => {
+    it('valid multiple bids in response', function () {
       const placementIdNative = 'test-placement-id-native';
       const placementIdIab = 'test-placement-id-iab';
 
@@ -395,7 +395,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseIab.fb_placementid).to.equal(placementIdIab);
     });
 
-    it('valid video bid in response', () => {
+    it('valid video bid in response', function () {
       const bidId = 'test-bid-id-video';
 
       const [bidResponse] = interpretResponse({
@@ -426,7 +426,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.height).to.equal(playerheight);
     });
 
-    it('mixed video and native bids', () => {
+    it('mixed video and native bids', function () {
       const videoPlacementId = 'test-video-placement-id';
       const videoBidId = 'test-video-bid-id';
       const nativePlacementId = 'test-native-placement-id';
@@ -474,7 +474,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseNative.ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
     });
 
-    it('mixture of valid native bid and error in response', () => {
+    it('mixture of valid native bid and error in response', function () {
       const [bidResponse] = interpretResponse({
         body: {
           errors: ['test-error-message'],

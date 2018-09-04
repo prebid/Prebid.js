@@ -9,21 +9,21 @@ describe('Adomik Prebid Analytic', function () {
   let sendWonEventStub;
 
   describe('enableAnalytics', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.spy(adomikAnalytics, 'track');
       sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
       sendWonEventStub = sinon.stub(adomikAnalytics, 'sendWonEvent');
       sinon.stub(events, 'getEvents').returns([]);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       adomikAnalytics.track.restore();
       sendEventStub.restore();
       sendWonEventStub.restore();
       events.getEvents.restore();
     });
 
-    after(() => {
+    after(function () {
       adomikAnalytics.disableAnalytics();
     });
 
