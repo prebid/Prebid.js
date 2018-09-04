@@ -18,6 +18,7 @@ export function resetBoPixel() {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['oxd'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
     if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
