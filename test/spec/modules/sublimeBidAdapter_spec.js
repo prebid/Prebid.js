@@ -79,14 +79,6 @@ describe('Sublime Adapter', () => {
 
     let request = spec.buildRequests(bidRequests);
 
-    it('should have a get method', () => {
-      expect(request.method).to.equal('GET');
-    });
-
-    it('should contains a request id equals to the bid id', () => {
-      expect(request.data.request_id).to.equal(bidRequests[0].bidId);
-    });
-
     it('should have an url that match the default endpoint', () => {
       expect(request.url).to.equal('https://pbjs.ayads.co/bid');
     });
