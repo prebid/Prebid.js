@@ -87,12 +87,12 @@ function setNativeResponse(ad) {
   nativeResponce.impressionTrackers = ad.impressionTrackers || [];
   return nativeResponce;
 }
-export function getCookieUid(uid_name) {
+export function getCookieUid(uidName) {
   if (utils.cookiesAreEnabled()) {
     let cookies = document.cookie.split(';');
     for (let i = 0; i < cookies.length; i++) {
       let value = cookies[i].split('=');
-      if (value[0].indexOf(uid_name) > -1) {
+      if (value[0].indexOf(uidName) > -1) {
         return value[1];
       }
     }
