@@ -5,13 +5,13 @@ import { newBidder } from 'src/adapters/bidderFactory';
 describe('TrustXAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'trustx',
       'params': {
@@ -24,11 +24,11 @@ describe('TrustXAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -38,7 +38,15 @@ describe('TrustXAdapter', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
+    function parseRequest(url) {
+      const res = {};
+      url.split('&').forEach((it) => {
+        const couple = it.split('=');
+        res[couple[0]] = decodeURIComponent(couple[1]);
+      });
+      return res;
+    }
     let bidRequests = [
       {
         'bidder': 'trustx',
@@ -75,31 +83,31 @@ describe('TrustXAdapter', function () {
       }
     ];
 
-    it('should attach valid params to the tag', () => {
+    it('should attach valid params to the tag', function () {
       const request = spec.buildRequests([bidRequests[0]]);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
-    it('auids must not be duplicated', () => {
+    it('auids must not be duplicated', function () {
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
-    it('pt parameter must be "gross" if params.priceType === "gross"', () => {
+    it('pt parameter must be "gross" if params.priceType === "gross"', function () {
       bidRequests[1].params.priceType = 'gross';
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,45');
@@ -107,11 +115,11 @@ describe('TrustXAdapter', function () {
       delete bidRequests[1].params.priceType;
     });
 
-    it('pt parameter must be "net" or "gross"', () => {
+    it('pt parameter must be "net" or "gross"', function () {
       bidRequests[1].params.priceType = 'some';
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
@@ -119,32 +127,32 @@ describe('TrustXAdapter', function () {
       delete bidRequests[1].params.priceType;
     });
 
-    it('if gdprConsent is present payload must have gdpr params', () => {
+    it('if gdprConsent is present payload must have gdpr params', function () {
       const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 1);
+      expect(payload).to.have.property('gdpr_applies', '1');
     });
 
-    it('if gdprApplies is false gdpr_applies must be 0', () => {
+    it('if gdprApplies is false gdpr_applies must be 0', function () {
       const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 0);
+      expect(payload).to.have.property('gdpr_applies', '0');
     });
 
-    it('if gdprApplies is undefined gdpr_applies must be 1', () => {
+    it('if gdprApplies is undefined gdpr_applies must be 1', function () {
       const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 1);
+      expect(payload).to.have.property('gdpr_applies', '1');
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 90, 'w': 728}], 'seat': '1'},
@@ -155,7 +163,7 @@ describe('TrustXAdapter', function () {
       {'seat': '1'},
     ];
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const bidRequests = [
         {
           'bidder': 'trustx',
@@ -190,7 +198,7 @@ describe('TrustXAdapter', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('should get correct multi bid response', () => {
+    it('should get correct multi bid response', function () {
       const bidRequests = [
         {
           'bidder': 'trustx',
@@ -273,7 +281,7 @@ describe('TrustXAdapter', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('handles wrong and nobid responses', () => {
+    it('handles wrong and nobid responses', function () {
       const bidRequests = [
         {
           'bidder': 'trustx',

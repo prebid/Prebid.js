@@ -243,7 +243,6 @@ function newKarmaCallback(done) {
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
-
 function test(done) {
   if (argv.notest) {
     done();
@@ -270,6 +269,26 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
+
+// Watch Task with Live Reload
+gulp.task('watch', function () {
+  gulp.watch([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'test/spec/**/*.js',
+    '!test/spec/loaders/**/*.js'
+  ], ['build-bundle-dev', 'test']);
+  gulp.watch([
+    'loaders/**/*.js',
+    'test/spec/loaders/**/*.js'
+  ], ['lint']);
+  connect.server({
+    https: argv.https,
+    port: port,
+    root: './',
+    livereload: true
+  });
+});
 
 function e2eTest() {
   var cmdQueue = [];
