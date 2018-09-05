@@ -133,9 +133,8 @@ const GOOD_BID_RESPONSE_KEYS = COMMON_BID_RESPONSE_KEYS.concat(['cpm', 'ttl', 'c
  */
 export function registerBidder(spec) {
   const mediaTypes = Array.isArray(spec.supportedMediaTypes)
-    ? {supportedMediaTypes: spec.supportedMediaTypes}
+    ? { supportedMediaTypes: spec.supportedMediaTypes }
     : undefined;
-
   function putBidder(spec) {
     const bidder = newBidder(spec);
     adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
