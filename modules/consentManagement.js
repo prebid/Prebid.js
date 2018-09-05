@@ -360,13 +360,15 @@ export function setConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
+
   utils.logInfo('consentManagement module has been activated...');
+
   if (userCMP === 'static') {
     if (utils.isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;
       consentTimeout = 0;
     } else {
-      utils.logInfo(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
