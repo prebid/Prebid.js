@@ -9,7 +9,7 @@ import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, timestamp } from 'src/utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -179,8 +179,8 @@ export function newBidder(spec) {
       // register any required usersync pixels.
       const responses = [];
       let bidAcc = [];
-      function afterAllResponses(bids) {
-        // bidderRequest.end = timestamp();
+      function afterAllResponses() {
+        bidderRequest.end = timestamp();
         let bidIds = bidAcc.map(bid => {
           if (bid.requestId) {
             return bid.requestId.toString();
