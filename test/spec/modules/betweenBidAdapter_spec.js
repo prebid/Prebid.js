@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/betweenBidAdapter';
 
-describe('betweenBidAdapterTests', () => {
-  it('validate_pub_params', () => {
+describe('betweenBidAdapterTests', function () {
+  it('validate_pub_params', function () {
     expect(spec.isBidRequestValid({
       bidder: 'between',
       params: {
@@ -13,7 +13,7 @@ describe('betweenBidAdapterTests', () => {
       }
     })).to.equal(true);
   });
-  it('validate_generated_params', () => {
+  it('validate_generated_params', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -24,7 +24,7 @@ describe('betweenBidAdapterTests', () => {
     let req_data = request[0].data;
     expect(req_data.bidid).to.equal('bid1234');
   });
-  it('validate_response_params', () => {
+  it('validate_response_params', function () {
     let serverResponse = {
       body: [{
         bidid: 'bid1234',
