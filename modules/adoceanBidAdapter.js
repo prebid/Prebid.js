@@ -15,11 +15,15 @@ function buildEndpointUrl(emiter, payload) {
   return 'https://' + emiter + '/ad.json?' + payloadString;
 }
 
-function buildRequest(masterBidRequests, masterId) {
+function buildRequest(masterBidRequests, masterId, gdprConsent) {
   const firstBid = masterBidRequests[0];
   const payload = {
     id: masterId,
   };
+  if (gdprConsent) {
+    payload.gdpr_consent = gdprConsent.consentString || undefined;
+    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+  }
 
   const bidIdMap = {};
 
@@ -72,15 +76,15 @@ export const spec = {
     return !!(bid.params.slaveId && bid.params.masterId && bid.params.emiter);
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    utils._each(validBidRequests, function(v) {
-      assignToMaster(v, bidRequestsByMaster);
+    utils._each(validBidRequests, function(bidRequest) {
+      assignToMaster(bidRequest, bidRequestsByMaster);
     });
-    requests = utils._map(bidRequestsByMaster, function(v, k) {
-      return buildRequest(v, k);
+    requests = utils._map(bidRequestsByMaster, function(requests, masterId) {
+      return buildRequest(requests, masterId, bidderRequest.gdprConsent);
     });
 
     return requests;

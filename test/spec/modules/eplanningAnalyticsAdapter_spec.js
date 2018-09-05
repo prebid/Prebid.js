@@ -6,25 +6,25 @@ let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('eplanning analytics adapter', () => {
+describe('eplanning analytics adapter', function () {
   let xhr;
   let requests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => { requests.push(request) };
     sinon.stub(events, 'getEvents').returns([]);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
     eplAnalyticsAdapter.disableAnalytics();
   });
 
-  describe('track', () => {
-    it('builds and sends auction data', () => {
+  describe('track', function () {
+    it('builds and sends auction data', function () {
       sinon.spy(eplAnalyticsAdapter, 'track');
 
       let auctionTimestamp = 1496510254313;

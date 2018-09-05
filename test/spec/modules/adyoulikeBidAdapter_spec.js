@@ -4,7 +4,7 @@ import { parse } from '../../../src/url';
 import { spec } from 'modules/adyoulikeBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('Adyoulike Adapter', () => {
+describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'http://canonical.url/?t=%26';
   const defaultDC = 'hb-api';
   const bidderCode = 'adyoulike';
@@ -136,13 +136,13 @@ describe('Adyoulike Adapter', () => {
 
   let getEndpoint = (dc = defaultDC) => `http://${dc}.omnitagjs.com/hb-api/prebid`;
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
@@ -154,18 +154,18 @@ describe('Adyoulike Adapter', () => {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.size;
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -175,10 +175,10 @@ describe('Adyoulike Adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let canonicalQuery;
 
-    beforeEach(() => {
+    beforeEach(function () {
       let canonical = document.createElement('link');
       canonical.rel = 'canonical';
       canonical.href = canonicalUrl;
@@ -186,11 +186,33 @@ describe('Adyoulike Adapter', () => {
       canonicalQuery.withArgs('link[rel="canonical"][href]').returns(canonical);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       canonicalQuery.restore();
     });
 
-    it('sends bid request to endpoint with single placement', () => {
+    it('should add gdpr consent information to the request', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'adyoulike',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdprConsent).to.exist;
+      expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
+    });
+
+    it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement);
       const payload = JSON.parse(request.data);
 
@@ -204,7 +226,7 @@ describe('Adyoulike Adapter', () => {
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
-    it('sends bid request to endpoint with single placement without canonical', () => {
+    it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
       const request = spec.buildRequests(bidRequestWithSinglePlacement);
       const payload = JSON.parse(request.data);
@@ -219,7 +241,7 @@ describe('Adyoulike Adapter', () => {
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
-    it('sends bid request to endpoint with multiple placements', () => {
+    it('sends bid request to endpoint with multiple placements', function () {
       const request = spec.buildRequests(bidRequestMultiPlacements);
       const payload = JSON.parse(request.data);
       expect(request.url).to.contain(getEndpoint());
@@ -239,7 +261,7 @@ describe('Adyoulike Adapter', () => {
       expect(payload.PageRefreshed).to.equal(false);
     });
 
-    it('sends bid request to endpoint setted by parameters', () => {
+    it('sends bid request to endpoint setted by parameters', function () {
       const request = spec.buildRequests(bidRequestWithDCPlacement);
       const payload = JSON.parse(request.data);
 
@@ -247,16 +269,16 @@ describe('Adyoulike Adapter', () => {
     });
   });
   //
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
 
-    beforeEach(() => {
+    beforeEach(function () {
       serverResponse = {
         body: {}
       }
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = [{
         BidID: '123dfsdf',
         Attempt: '32344fdse1',
@@ -267,7 +289,7 @@ describe('Adyoulike Adapter', () => {
       expect(result).deep.equal([]);
     });
 
-    it('receive reponse with single placement', () => {
+    it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
       let result = spec.interpretResponse(serverResponse, bidRequestWithSinglePlacement);
 
@@ -278,7 +300,7 @@ describe('Adyoulike Adapter', () => {
       expect(result[0].height).to.equal(300);
     });
 
-    it('receive reponse with multiple placement', () => {
+    it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
       let result = spec.interpretResponse(serverResponse, bidRequestMultiPlacements);
 

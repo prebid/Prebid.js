@@ -11,41 +11,46 @@ const bid = {
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
   }
 };
 
-describe('native.js', () => {
+describe('native.js', function () {
   let triggerPixelStub;
+  let insertHtmlIntoIframeStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utils.triggerPixel.restore();
+    utils.insertHtmlIntoIframe.restore();
   });
 
-  it('gets native targeting keys', () => {
+  it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
     expect(targeting.hb_native_title).to.equal(bid.native.title);
     expect(targeting.hb_native_body).to.equal(bid.native.body);
     expect(targeting.hb_native_linkurl).to.equal(bid.native.clickUrl);
   });
 
-  it('fires impression trackers', () => {
+  it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
+    sinon.assert.calledWith(insertHtmlIntoIframeStub, bid.native.javascriptTrackers);
   });
 
-  it('fires click trackers', () => {
+  it('fires click trackers', function () {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
   });
 });
 
-describe('validate native', () => {
+describe('validate native', function () {
   let bidReq = [{
     bids: [{
       bidderCode: 'test_bidder',
@@ -91,6 +96,7 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };
@@ -114,6 +120,7 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };
@@ -137,15 +144,16 @@ describe('validate native', () => {
       },
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
+      javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
       title: 'This is an example Prebid Native creative'
     }
   };
 
-  beforeEach(() => {});
+  beforeEach(function () {});
 
-  afterEach(() => {});
+  afterEach(function () {});
 
-  it('should reject bid if no image sizes are defined', () => {
+  it('should reject bid if no image sizes are defined', function () {
     let result = nativeBidIsValid(validBid, bidReq);
     expect(result).to.be.true;
     result = nativeBidIsValid(noIconDimBid, bidReq);
