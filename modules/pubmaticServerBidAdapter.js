@@ -1,9 +1,13 @@
 import * as utils from 'src/utils';
+import * as ajax from 'src/ajax';
+import {userSync} from 'src/userSync';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
-const ENDPOINT = '//ow.pubmatic.com/openrtb/2.4/';
+const ENDPOINT = '//ow.pubmatic.com/openrtb/2.5/';
+const COOKIE_SYNC = '//ow.pubmatic.com/cookie_sync/';
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
@@ -136,8 +140,14 @@ function _createImpressionObject(bid, conf) {
       })()
     },
     ext: {
-      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid),
-      div: bid.params.divId
+      wrapper: {
+        div: bid.params.divId
+      },
+      bidder: {
+        pubmatic: {
+          pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
+        }
+      }
     }
   };
 }
@@ -148,6 +158,44 @@ function mandatoryParamCheck(paramName, paramValue) {
     return false;
   }
   return true;
+}
+
+function cookieSyncCallBack(response, XMLReqObj) {
+  response = JSON.parse(response);
+  let serverResponse;
+  let syncOptions = {
+    iframeEnabled: config.getConfig('userSync.iframeEnabled'),
+    pixelEnabled: config.getConfig('userSync.pixelEnabled')
+  };
+  // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
+  if (response.hasOwnProperty('bidder_status')) {
+    serverResponse = response.bidder_status;
+  }
+  serverResponse.forEach(bidder => {
+    if (bidder.usersync && bidder.usersync.url) {
+      if (bidder.usersync.type === IFRAME) {
+        if (syncOptions.iframeEnabled) {
+          userSync.registerSync(IFRAME, bidder.bidder, bidder.usersync.url);
+        } else {
+          utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
+        }
+      } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
+        if (syncOptions.pixelEnabled) {
+          userSync.registerSync(IMAGE, bidder.bidder, bidder.usersync.url);
+        } else {
+          utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
+        }
+      } else {
+        utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
+      }
+    }
+  });
+}
+
+function logAllErrors(errors) {
+  utils._each(errors, function (item, key) {
+    utils.logWarn(key + ':' + item.join(','));
+  });
 }
 
 export const spec = {
@@ -192,15 +240,19 @@ export const spec = {
     });
 
     payload.site.publisher.id = conf.pubId.trim();
-    payload.ext.dm = {
-      rs: 1,
-      pubId: conf.pubId,
+
+    payload.ext.wrapper = {
+      profileid: parseInt(conf.profId) || UNDEFINED,
+      versionid: parseInt(conf.verId) || parseInt(DEFAULT_VERSION_ID),
+      sumry_disable: 0,
+      ssauction: 0,
       wp: 'pbjs',
       wv: constants.REPO_AND_VERSION,
-      transactionId: conf.transactionId,
-      profileid: conf.profId || UNDEFINED,
-      versionid: conf.verId || DEFAULT_VERSION_ID,
+      // transactionId: conf.transactionId,
       wiid: conf.wiid || UNDEFINED
+    };
+    payload.source = {
+      tid: conf.transactionId
     };
     payload.user = {
       gender: _parseSlotParam('gender', conf.gender),
@@ -229,7 +281,7 @@ export const spec = {
     payload.site.domain = utils.getTopWindowHostName();
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: utils.getParameterByName('pwtvc') ? ENDPOINT + '?debug=1' : ENDPOINT,
       data: JSON.stringify(payload)
     };
   },
@@ -244,8 +296,13 @@ export const spec = {
     const bidResponses = [];
     try {
       if (response.body && response.body.seatbid) {
+        // Log errors if any present
+        const errors = (response.body.ext && response.body.ext.errors) || {};
+        logAllErrors(errors);
+
         // Supporting multiple bid responses for same adSize
         const referrer = utils.getTopWindowUrl();
+        const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
           seatbidder.bid.forEach(bid => {
@@ -267,7 +324,14 @@ export const spec = {
                     netRevenue: true,
                     ttl: 300,
                     referrer: referrer,
-                    ad: firstSummary ? bid.adm : ''
+                    ad: firstSummary ? bid.adm : '',
+                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0
+                    /* setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
+                       probable causes for this happening will be, pubmaticServerErrorCode is one of the following:
+                       1 = GADS_UNMAPPED_SLOT_ERROR
+                       2 = GADS_MISSING_CONF_ERROR
+                       6 = INVALID_CONFIGURATION_ERROR
+                    */
                   };
                   bidResponses.push(newBid);
                 }
@@ -286,45 +350,22 @@ export const spec = {
   * Register User Sync.
   */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
-    let serverResponse;
     let urls = [];
-    // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
-    if (serverResponses.length > 0 && serverResponses[0] && serverResponses[0].body) {
-      serverResponse = serverResponses[0].body;
-    }
-    if (serverResponse && serverResponse.ext && serverResponse.ext.bidderstatus && utils.isArray(serverResponse.ext.bidderstatus)) {
-      serverResponse.ext.bidderstatus.forEach(bidder => {
-        if (bidder.usersync && bidder.usersync.url) {
-          // Attaching GDPR Consent Params in UserSync urls
-          if (gdprConsent) {
-            bidder.usersync.url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-            bidder.usersync.url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-          }
+    var bidders = config.getConfig('userSync.enabledBidders');
+    var UUID = utils.getUniqueIdentifierStr();
+    var data = {
+      uuid: UUID,
+      bidders: bidders
+    };
 
-          if (bidder.usersync.type === IFRAME) {
-            if (syncOptions.iframeEnabled) {
-              urls.push({
-                type: IFRAME,
-                url: bidder.usersync.url
-              });
-            } else {
-              utils.logWarn(bidder.bidder + ': Please enable iframe based user sync.');
-            }
-          } else if (bidder.usersync.type === IMAGE || bidder.usersync.type === REDIRECT) {
-            if (syncOptions.pixelEnabled) {
-              urls.push({
-                type: IMAGE,
-                url: bidder.usersync.url
-              });
-            } else {
-              utils.logWarn(bidder.bidder + ': Please enable pixel based user sync.');
-            }
-          } else {
-            utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
-          }
-        }
-      });
+    if (gdprConsent) {
+      data['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
+      data['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString || '');
     }
+
+    ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {
+      withCredentials: true
+    });
     return urls;
   }
 };
