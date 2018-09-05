@@ -69,13 +69,13 @@ export const spec = {
     for (var i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
-        cpm: serverResponse.body[i].cpm || 123,
-        width: serverResponse.body[i].w || 200,
-        height: serverResponse.body[i].h || 400,
-        ttl: serverResponse.body[i].ttl || 120,
-        creativeId: serverResponse.body[i].creativeid || 123,
+        cpm: serverResponse.body[i].cpm || 0,
+        width: serverResponse.body[i].w,
+        height: serverResponse.body[i].h,
+        ttl: serverResponse.body[i].ttl,
+        creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
-        netRevenue: serverResponse.body[i].netRevenue || false,
+        netRevenue: serverResponse.body[i].netRevenue || true,
         ad: serverResponse.body[i].ad
       };
       bidResponses.push(bidResponse);
@@ -106,10 +106,14 @@ export const spec = {
       });
     } */
 
+    // syncs.push({
+    //   type: 'iframe',
+    //   url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+    // });
     syncs.push({
       type: 'iframe',
-      url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-    })
+      url: 'http://ads.betweendigital.com/sspmatch-iframe'
+    });
     return syncs;
   }
 }
