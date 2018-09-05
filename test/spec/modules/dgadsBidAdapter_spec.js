@@ -102,7 +102,7 @@ describe('dgadsBidAdapter', () => {
       const noBidRequests = [];
       expect(Object.keys(spec.buildRequests(noBidRequests)).length).to.equal(0);
     });
-    it('getCookieUid return empty if cookie not found',() => {
+    it('getCookieUid return empty if cookie not found', () => {
       expect(getCookieUid(UID_NAME)).to.equal('');
     });
     const data = {
