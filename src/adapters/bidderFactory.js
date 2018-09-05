@@ -178,11 +178,10 @@ export function newBidder(spec) {
       // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
-
+      let bidAcc = [];
       function afterAllResponses(bids) {
-        const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
         // bidderRequest.end = timestamp();
-        let bidIds = bidsArray.map(bid => {
+        let bidIds = bidAcc.map(bid => {
           if (bid.requestId) {
             return bid.requestId.toString();
           }
@@ -203,7 +202,7 @@ export function newBidder(spec) {
           addBidWithCode(bid.adUnitCode, prebidNoBid);
         });
 
-        const videoBid = bidsArray.some(bid => bid.mediaType === 'video');
+        const videoBid = bidAcc.some(bid => bid.mediaType === 'video');
         const cacheEnabled = config.getConfig('cache.url');
 
         // video bids with cache enabled need to be cached first before they are considered done
@@ -327,6 +326,7 @@ export function newBidder(spec) {
             } else {
               addBidUsingRequestMap(bids);
             }
+            bidAcc = bidAcc.concat(bids)
           }
           onResponse(bids);
 
