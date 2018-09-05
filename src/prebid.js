@@ -1,13 +1,13 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting, RENDERED, BID_TARGETING_SET } from './targeting';
+import { targeting, getHighestCpmBidsFromBidPool, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
 import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
@@ -597,7 +597,8 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode)
+  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
 };
 
