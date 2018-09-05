@@ -35,9 +35,6 @@ sessionLoader();
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
-
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
 
