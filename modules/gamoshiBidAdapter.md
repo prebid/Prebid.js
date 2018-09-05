@@ -1,9 +1,9 @@
 # Overview
 
 ```
-Module Name:  Gamoshi's Gambid Bid Adapter
+Module Name:  Gamoshi Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   arik@gamoshi.com
+Maintainer:   arik@gamoshi.com, eric@kfirs.com
 ```
 
 # Description
@@ -21,10 +21,10 @@ var adUnits = [
      code: 'banner-div',
      sizes: [[300, 250]],
      bids: [{
-       bidder: 'gambid',
+       bidder: 'gamoshi',
        params: {
 
-         // ID of the supply partner you created in the Gambid dashboard
+         // ID of the supply partner you created in the Gamoshi dashboard
          supplyPartnerId: '1253',
 
          // OPTIONAL: if you have a whitelabel account on Gamoshi, specify it here
@@ -55,10 +55,10 @@ var adUnits = [
        }
      },
      bids: [ {
-       bidder: 'gambid',
+       bidder: 'gamoshi',
        params: {
 
-         // ID of the supply partner you created in the Gambid dashboard
+         // ID of the supply partner you created in the dashboard
          supplyPartnerId: '1254',
 
          // OPTIONAL: if you have a whitelabel account on Gamoshi, specify it here
