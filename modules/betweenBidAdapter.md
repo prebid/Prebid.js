@@ -52,8 +52,7 @@ Where:
             params: {
               w: 240,
               h: 400,
-              s: 8,
-              placementId: 'example',
+              s: 8
             }
           }]
 
