@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import { Renderer } from 'src/Renderer';
 
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmh.json';
@@ -167,6 +168,15 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       cpm: (parseInt(creativeBid.cpm) * 0.65) / 1000000,
       ttl: 3600
     });
+    const rendererOptions = utils.deepAccess(
+      bidderRequest,
+      'renderer.options'
+    );
+
+    Object.assign(bid, {
+      adResponse: serverBid,
+      renderer: getRenderer(bid.adUnitCode, serverBid.slotId, 'http://demos.zedo.com/demos/prebid/fmpbgt.min.js', rendererOptions)
+    });
   } else {
     Object.assign(bid, {
       width: creativeBid.width,
@@ -195,6 +205,44 @@ function getSizes(requestSizes) {
     }
   }
   return [width, height];
+}
+
+function getRenderer(adUnitCode, rendererId, rendererUrl, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: rendererId,
+    url: rendererUrl,
+    config: rendererOptions,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(videoRenderer);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  renderer.setEventHandlers({
+    impression: () => utils.logMessage('ZEDO video impression'),
+    loaded: () => utils.logMessage('ZEDO video loaded'),
+    ended: () => {
+      utils.logMessage('ZEDO renderer video ended');
+      document.querySelector(`#${adUnitCode}`).style.display = 'none';
+    }
+  });
+  return renderer;
+}
+
+function videoRenderer(bid) {
+  // push to render queue
+  bid.renderer.push(() => {
+    var rndr = new ZdPBTag(bid.adUnitCode, '3456', '640', '480', bid.vastXml);
+    rndr.renderAd();
+    handleOutstreamRendererEvents.bind(null, bid)
+  });
+}
+
+function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 function parseMediaType(creativeBid) {
