@@ -75,8 +75,8 @@ export const spec = {
       })
 
       if (matchedBid) {
-        const primarysize = bidRequest.sizes[0]
-        const customsize = typeof bidRequest.params.adSize !== 'undefined' ? parseSize(bidRequest.params.adSize) : primarysize
+        const primarysize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
+        const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
