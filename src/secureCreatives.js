@@ -25,7 +25,7 @@ function receiveMessage(ev) {
     return;
   }
 
-  if (data.adId) {
+  if (data && data.adId) {
     const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });

@@ -89,34 +89,34 @@ const validNativeBidRes = {
   width: 1
 };
 
-describe('ucfunnel Adapter', () => {
-  describe('request', () => {
-    it('should validate bid request', () => {
+describe('ucfunnel Adapter', function () {
+  describe('request', function () {
+    it('should validate bid request', function () {
       expect(spec.isBidRequestValid(validBannerBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', () => {
+    it('should not validate incorrect bid request', function () {
       expect(spec.isBidRequestValid(invalidBannerBidReq)).to.equal(false);
     });
   });
-  describe('build request', () => {
+  describe('build request', function () {
     const request = spec.buildRequests([validBannerBidReq]);
-    it('should create a POST request for every bid', () => {
+    it('should create a POST request for every bid', function () {
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(location.protocol + spec.ENDPOINT);
     });
 
-    it('should attach the bid request object', () => {
+    it('should attach the bid request object', function () {
       expect(request[0].bidRequest).to.equal(validBannerBidReq);
     });
 
-    it('should attach request data', () => {
+    it('should attach request data', function () {
       const data = request[0].data;
       const [ width, height ] = validBannerBidReq.sizes[0];
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
     });
 
-    it('must parse bid size from a nested array', () => {
+    it('must parse bid size from a nested array', function () {
       const width = 640;
       const height = 480;
       validBannerBidReq.sizes = [[ width, height ]];
@@ -127,15 +127,15 @@ describe('ucfunnel Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    describe('should support banner', () => {
+  describe('interpretResponse', function () {
+    describe('should support banner', function () {
       const request = spec.buildRequests([ validBannerBidReq ]);
       const result = spec.interpretResponse({body: validBannerBidRes}, request[0]);
-      it('should build bid array for banner', () => {
+      it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
 
-      it('should have all relevant fields', () => {
+      it('should have all relevant fields', function () {
         const bid = result[0];
 
         expect(bid.mediaType).to.equal(BANNER);
@@ -147,14 +147,14 @@ describe('ucfunnel Adapter', () => {
       });
     });
 
-    describe('should support video', () => {
+    describe('should support video', function () {
       const request = spec.buildRequests([ validVideoBidReq ]);
       const result = spec.interpretResponse({body: validVideoBidRes}, request[0]);
-      it('should build bid array', () => {
+      it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
 
-      it('should have all relevant fields', () => {
+      it('should have all relevant fields', function () {
         const bid = result[0];
 
         expect(bid.mediaType).to.equal(VIDEO);
@@ -167,14 +167,14 @@ describe('ucfunnel Adapter', () => {
       });
     });
 
-    describe('should support native', () => {
+    describe('should support native', function () {
       const request = spec.buildRequests([ validNativeBidReq ]);
       const result = spec.interpretResponse({body: validNativeBidRes}, request[0]);
-      it('should build bid array', () => {
+      it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
 
-      it('should have all relevant fields', () => {
+      it('should have all relevant fields', function () {
         const bid = result[0];
 
         expect(bid.mediaType).to.equal(NATIVE);
