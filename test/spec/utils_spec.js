@@ -784,14 +784,10 @@ describe('Utils', function () {
     });
 
     it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
-        { self: 'is not same as top' }
-      );
-      sandbox.stub(utils, 'getWindowTop').returns(
-        { top: 'is not same as self' }
+      sandbox.stub(utils, 'getTopFrame').returns(
+        { location: { origin: 'https://www.example.com/' } }
       );
       sandbox.stub(utils, 'getAncestorOrigins').returns(null);
-      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
