@@ -231,7 +231,7 @@ function isBidRequestValid(bid) {
 // - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
 //    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
-  const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent);
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
