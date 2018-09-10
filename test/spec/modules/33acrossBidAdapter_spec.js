@@ -97,6 +97,30 @@ describe('33acrossBidAdapter:', function () {
     this.build = () => ttxRequest;
   }
 
+  function ServerRequestBuilder() {
+    const serverRequest = {
+      'method': 'POST',
+      'url': END_POINT,
+      'data': null,
+      'options': {
+        'contentType': 'text/plain',
+        'withCredentials': true
+      }
+    };
+
+    this.withData = data => {
+      serverRequest['data'] = JSON.stringify(data);
+      return this;
+    };
+
+    this.withUrl = url => {
+      serverRequest['url'] = url;
+      return this;
+    };
+
+    this.build = () => serverRequest;
+  }
+
   beforeEach(function() {
     bidRequests = [
       {
@@ -220,15 +244,9 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withViewabiliuty({amount: 100})
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
 
         Object.assign(element, { width: 600, height: 400 });
 
@@ -241,15 +259,9 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withViewabiliuty({amount: 0})
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
@@ -262,15 +274,9 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withViewabiliuty({amount: 40})
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
 
         Object.assign(element, { width: 100, height: 1500 });
 
@@ -284,15 +290,9 @@ describe('33acrossBidAdapter:', function () {
           .withSizes([{ w: 800, h: 1200, ext: {} }])
           .withViewabiliuty({amount: 50})
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
 
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].sizes = [[800, 1200]];
@@ -317,15 +317,9 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withGdprConsent('foobarMyPreference', 1)
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
         const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
@@ -341,15 +335,10 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withGdprConsent('foobarMyPreference', 1)
           .build();
-        const serverRequest = {
-          method: 'POST',
-          url: 'https://foo.com/hb/',
-          data: JSON.stringify(ttxRequest),
-          options: {
-            contentType: 'text/plain',
-            withCredentials: true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
         const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
@@ -366,15 +355,9 @@ describe('33acrossBidAdapter:', function () {
       it('returns corresponding server requests with default gdpr consent data', function() {
         const ttxRequest = new TtxRequestBuilder()
           .build();
-        const serverRequest = {
-          'method': 'POST',
-          'url': END_POINT,
-          'data': JSON.stringify(ttxRequest),
-          'options': {
-            'contentType': 'text/plain',
-            'withCredentials': true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
         const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
@@ -389,15 +372,10 @@ describe('33acrossBidAdapter:', function () {
 
         const ttxRequest = new TtxRequestBuilder()
           .build();
-        const serverRequest = {
-          method: 'POST',
-          url: 'https://foo.com/hb/',
-          data: JSON.stringify(ttxRequest),
-          options: {
-            contentType: 'text/plain',
-            withCredentials: true
-          }
-        };
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
         const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
