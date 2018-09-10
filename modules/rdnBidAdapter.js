@@ -3,8 +3,7 @@ import * as utils from 'src/utils'
 import { BANNER } from 'src/mediaTypes'
 
 const BIDDER_CODE = 'rdn'
-// TODO
-const ENDPOINT = 'http://localhost:5000/h'
+const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h'
 
 export const spec = {
   code: BIDDER_CODE,
