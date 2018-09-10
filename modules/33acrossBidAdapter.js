@@ -1,10 +1,11 @@
-import { userSync } from 'src/userSync'
+import { uniques } from 'src/utils';
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const { config } = require('../src/config');
-
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
+
+const adapterState = {};
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
@@ -22,8 +23,9 @@ function _createBidResponse(response) {
   }
 }
 
-// infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest(bidRequest) {
+// Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
+// NOTE: At this point, TTX only accepts request for a single impression
+function _createServerRequest(bidRequest, gdprConsent) {
   const ttxRequest = {};
   const params = bidRequest.params;
 
@@ -42,19 +44,33 @@ function _createServerRequest(bidRequest) {
     }
   }
   ttxRequest.site = { id: params.siteId };
+
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
+
+  // Set GDPR related fields
+  ttxRequest.user = {
+    ext: {
+      consent: gdprConsent.consentString
+    }
+  }
+  ttxRequest.regs = {
+    ext: {
+      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0
+    }
+  }
+
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
   }
 
   /*
-   * Now construt the full server request
+   * Now construct the full server request
    */
   const options = {
-    contentType: 'application/json',
+    contentType: 'text/plain',
     withCredentials: true
   };
   // Allow the ability to configure the HB endpoint for testing purposes.
@@ -70,30 +86,23 @@ function _createServerRequest(bidRequest) {
   }
 }
 
+// Sync object will always be of type iframe for TTX
+function _createSync(siteId) {
+  const ttxSettings = config.getConfig('ttxSettings');
+  const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
+
+  return {
+    type: 'iframe',
+    url: `${syncUrl}&id=${siteId}`
+  }
+}
+
 function _getFormatSize(sizeArr) {
   return {
     w: sizeArr[0],
     h: sizeArr[1],
     ext: {}
   }
-}
-
-// Register one sync per bid since each ad unit may potenitally be linked to a uniqe guid
-// Sync type will always be 'iframe' for 33Across
-function _registerUserSyncs(requestData) {
-  let ttxRequest;
-  try {
-    ttxRequest = JSON.parse(requestData);
-  } catch (err) {
-    // No point in trying to register sync since the requisite data cannot be parsed.
-    return;
-  }
-  const ttxSettings = config.getConfig('ttxSettings');
-
-  let syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
-
-  syncUrl = `${syncUrl}&id=${ttxRequest.site.id}`;
-  userSync.registerSync('iframe', BIDDER_CODE, syncUrl);
 }
 
 function isBidRequestValid(bid) {
@@ -108,18 +117,22 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-// NOTE: At this point, 33exchange only accepts request for a single impression
-function buildRequests(bidRequests) {
-  return bidRequests.map(_createServerRequest);
+// NOTE: With regards to gdrp consent data,
+// - the server independently infers gdpr applicability therefore, setting the default value to false
+// - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
+//    value whether set or not, for the sake of future dev.
+function buildRequests(bidRequests, bidderRequest) {
+  const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent)
+
+  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
+
+  return bidRequests.map((req) => {
+    return _createServerRequest(req, gdprConsent);
+  });
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
 function interpretResponse(serverResponse, bidRequest) {
-  // Register user sync first
-  if (bidRequest && bidRequest.data) {
-    _registerUserSyncs(bidRequest.data);
-  }
-
   const bidResponses = [];
 
   // If there are bids, look at the first bid of the first seatbid (see NOTE above for assumption about ttx)
@@ -130,11 +143,22 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
+// Register one sync per unique guid
+// NOTE: If gdpr applies do not sync
+function getUserSyncs(syncOptions, responses, gdprConsent) {
+  if (gdprConsent && gdprConsent.gdprApplies === true) {
+    return []
+  } else {
+    return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
+  }
+}
+
 const spec = {
   code: BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  getUserSyncs
 }
 
 registerBidder(spec);

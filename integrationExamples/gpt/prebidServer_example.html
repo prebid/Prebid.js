@@ -4,7 +4,6 @@
     var PREBID_TIMEOUT = 3000;
 
     var googletag = googletag || {};
-    var sizes = [[728, 90],[300, 250], [300,600]];
     googletag.cmd = googletag.cmd || [];
 
     function initAdserver() {
@@ -37,12 +36,12 @@
     pbjs.que.push(function() {
         var adUnits = [{
             code: 'div-gpt-ad-1460505748561-0',
-            sizes: [[300, 250], [300,600]],
+            sizes: [[300, 250]],
             bids: [
               {
                 bidder: 'appnexus',
                 params: {
-                   placementId: '10433394'
+                   placementId: '13144370'
                 }
               }
             ]
@@ -56,7 +55,7 @@
             bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-            endpoint : 'https://prebid.adnxs.com/pbs/v1/auction?url_override=http%3A%2F%2Fwww.nytimes.com'
+            endpoint : 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
           }
         });
 
@@ -72,7 +71,7 @@
 
 <script>
     googletag.cmd.push(function() {
-        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
         pbjs.que.push(function() {
             pbjs.setTargetingForGPTAsync();

@@ -27,6 +27,9 @@ const CONFIG = {
   },
   'buysellads': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
+  },
+  'answermedia': {
+    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
@@ -35,7 +38,7 @@ let bidder = 'serverbid';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon', 'buysellads'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon', 'buysellads', 'answermedia'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -73,7 +76,7 @@ export const spec = {
 
     // These variables are used in creating the user sync URL.
     siteId = validBidRequests[0].params.siteId;
-    bidder = validBidRequests[0].params.bidder;
+    bidder = validBidRequests[0].bidder;
 
     const data = Object.assign({
       placements: [],
