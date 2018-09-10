@@ -16,6 +16,87 @@ describe('33acrossBidAdapter:', function () {
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
   const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
+  let element, topWin;
+
+  function TtxRequestBuilder() {
+    this.ttxRequest = {
+      imp: [{
+        banner: {
+          format: [
+            {
+              w: 300,
+              h: 250,
+              ext: {}
+            },
+            {
+              w: 728,
+              h: 90,
+              ext: {}
+            }
+          ],
+          ext: {
+            ttx: {
+              viewability: {
+                amount: 100
+              }
+            }
+          }
+        },
+        ext: {
+          ttx: {
+            prod: PRODUCT_ID
+          }
+        }
+      }],
+      site: {
+        id: SITE_ID
+      },
+      id: 'b1',
+      user: {
+        ext: {
+          consent: undefined
+        }
+      },
+      regs: {
+        ext: {
+          gdpr: 0
+        }
+      }
+    };
+
+    this.withSizes = function(sizes) {
+      Object.assign(this.ttxRequest.imp[0].banner, { format: sizes });
+      return this;
+    };
+
+    this.withViewabiliuty = function(viewability) {
+      Object.assign(this.ttxRequest.imp[0].banner, {
+        ext: {
+          ttx: { viewability }
+        }
+      });
+      return this;
+    };
+
+    this.withGdprConsent = function(consent, gdpr) {
+      Object.assign(this.ttxRequest, {
+        user: {
+          ext: { consent }
+        }
+      });
+      Object.assign(this.ttxRequest, {
+        regs: {
+          ext: { gdpr }
+        }
+      });
+      return this;
+    };
+
+    this.build = function() {
+      return this.ttxRequest;
+    }
+  }
+
   beforeEach(function() {
     this.bidRequests = [
       {
@@ -29,21 +110,60 @@ describe('33acrossBidAdapter:', function () {
         adUnitCode: 'div-id',
         auctionId: 'r1',
         sizes: [
-          [ 300, 250 ],
-          [ 728, 90 ]
+          [300, 250],
+          [728, 90]
         ],
         transactionId: 't1'
       }
     ];
+
+    // this.sandbox && this.sandbox.restore();
     this.sandbox = sinon.sandbox.create();
+    this.sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
+    this.sandbox.stub(window, 'top').returns(topWin);
+
+    // NB: set width and height for Element and Window in test case
+    topWin = {
+      innerWidth: 0,
+      innerHeight: 0,
+
+      pageXOffset: 0,
+      pageYOffset: 0,
+
+      scrollTo: (x, y) => {
+        topWin.pageXOffset = x;
+        topWin.pageYOffset = y;
+      }
+    };
+
+    element = {
+      x: 0,
+      y: 0,
+
+      width: 0,
+      height: 0,
+
+      getBoundingClientRect: () => {
+        return {
+          width: element.width,
+          height: element.height,
+
+          left: element.x - topWin.pageXOffset,
+          top: element.y - topWin.pageYOffset,
+          right: element.width - topWin.pageXOffset,
+          bottom: element.height - topWin.pageYOffset
+        };
+      }
+    };
   });
 
   afterEach(function() {
     this.sandbox.restore();
+
     delete this.bidRequests;
   });
 
-  describe('isBidRequestValid:', function () {
+  describe('isBidRequestValid:', function() {
     it('returns true when valid bid request is sent', function() {
       const validBid = {
         bidder: BIDDER_CODE,
@@ -69,7 +189,7 @@ describe('33acrossBidAdapter:', function () {
       expect(isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('returns false when bidder not set to "33across"', function () {
+    it('returns false when bidder not set to "33across"', function() {
       const invalidBid = {
         bidder: 'foo',
         params: {
@@ -113,6 +233,136 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('buildRequests:', function() {
+    // context('Viewability', function() {
+    context('when element is fully in view', function() {
+      it('returns 100', function() {
+        Object.assign(element, { width: 600, height: 400 });
+        Object.assign(topWin, { innerWidth: 800, innerHeight: 600 });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: 100})
+          .build();
+        const serverRequest = {
+          'method': 'POST',
+          'url': END_POINT,
+          'data': JSON.stringify(ttxRequest),
+          'options': {
+            'contentType': 'text/plain',
+            'withCredentials': true
+          }
+        };
+        const builtServerRequests = buildRequests(this.bidRequests);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when element is out of view', function() {
+      it('returns 0', function() {
+        Object.assign(element, { width: 207, height: 320 });
+        Object.assign(topWin, { innerWidth: 324, innerHeight: 212 });
+
+        topWin.scrollTo(0, 437);
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: 0})
+          .build();
+        const serverRequest = {
+          'method': 'POST',
+          'url': END_POINT,
+          'data': JSON.stringify(ttxRequest),
+          'options': {
+            'contentType': 'text/plain',
+            'withCredentials': true
+          }
+        };
+        const builtServerRequests = buildRequests(this.bidRequests);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when element is partially in view', function() {
+      it('returns percentage', function() {
+        Object.assign(element, { width: 600, height: 400 });
+        Object.assign(topWin, { innerWidth: 800, innerHeight: 600 });
+
+        topWin.scrollTo(0, 75);
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: 81})
+          .build();
+        const serverRequest = {
+          'method': 'POST',
+          'url': END_POINT,
+          'data': JSON.stringify(ttxRequest),
+          'options': {
+            'contentType': 'text/plain',
+            'withCredentials': true
+          }
+        };
+        const builtServerRequests = buildRequests(this.bidRequests);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when width or height of the element is zero', function() {
+      it('try to use alternative values', function() {
+        Object.assign(element, { width: 0, height: 0 });
+        Object.assign(topWin, { innerWidth: 400, innerHeight: 300 });
+
+        this.bidRequests[0].sizes = [[800, 600]];
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withSizes([{ w: 800, h: 600, ext: {} }])
+          .withViewabiliuty({amount: 50})
+          .build();
+        const serverRequest = {
+          'method': 'POST',
+          'url': END_POINT,
+          'data': JSON.stringify(ttxRequest),
+          'options': {
+            'contentType': 'text/plain',
+            'withCredentials': true
+          }
+        };
+        const builtServerRequests = buildRequests(this.bidRequests);
+
+        console.warn('\n\n.():', { width: element.width, height: element.height },
+          {win_width: topWin.innerWidth, win_height: topWin.innerHeight},
+          {'biRequests': JSON.stringify(this.bidRequests)});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('or return zero', function() {
+        Object.assign(element, { width: 0, height: 1000 });
+        Object.assign(topWin, { innerWidth: 800, innerHeight: 600 });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: 0})
+          .build();
+        const serverRequest = {
+          'method': 'POST',
+          'url': END_POINT,
+          'data': JSON.stringify(ttxRequest),
+          'options': {
+            'contentType': 'text/plain',
+            'withCredentials': true
+          }
+        };
+        const builtServerRequests = buildRequests(this.bidRequests);
+
+        console.warn('\n\n.():', { width: element.width, height: element.height },
+          {win_width: topWin.innerWidth, win_height: topWin.innerHeight},
+          {'biRequests': JSON.stringify(this.bidRequests)});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+    // });
+
     context('when gdpr consent data exists', function() {
       beforeEach(function() {
         this.bidderRequest = {
@@ -124,44 +374,9 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding server requests with gdpr consent data', function() {
-        const ttxRequest = {
-          imp: [ {
-            banner: {
-              format: [
-                {
-                  w: 300,
-                  h: 250,
-                  ext: {}
-                },
-                {
-                  w: 728,
-                  h: 90,
-                  ext: {}
-                }
-              ]
-            },
-            ext: {
-              ttx: {
-                prod: PRODUCT_ID
-              }
-            }
-          } ],
-          site: {
-            id: SITE_ID
-          },
-          id: 'b1',
-          user: {
-            ext: {
-              consent: 'foobarMyPreference'
-            }
-          },
-          regs: {
-            ext: {
-              gdpr: 1
-            }
-          }
-        };
-
+        const ttxRequest = new TtxRequestBuilder()
+          .withGdprConsent('foobarMyPreference', 1)
+          .build();
         const serverRequest = {
           'method': 'POST',
           'url': END_POINT,
@@ -170,10 +385,10 @@ describe('33acrossBidAdapter:', function () {
             'contentType': 'text/plain',
             'withCredentials': true
           }
-        }
+        };
         const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
-        expect(builtServerRequests).to.deep.equal([ serverRequest ]);
-        expect(builtServerRequests.length).to.equal(1);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       it('returns corresponding test server requests with gdpr consent data', function() {
@@ -183,43 +398,9 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const ttxRequest = {
-          imp: [ {
-            banner: {
-              format: [
-                {
-                  w: 300,
-                  h: 250,
-                  ext: { }
-                },
-                {
-                  w: 728,
-                  h: 90,
-                  ext: { }
-                }
-              ]
-            },
-            ext: {
-              ttx: {
-                prod: PRODUCT_ID
-              }
-            }
-          } ],
-          site: {
-            id: SITE_ID
-          },
-          id: 'b1',
-          user: {
-            ext: {
-              consent: 'foobarMyPreference'
-            }
-          },
-          regs: {
-            ext: {
-              gdpr: 1
-            }
-          }
-        };
+        const ttxRequest = new TtxRequestBuilder()
+          .withGdprConsent('foobarMyPreference', 1)
+          .build();
         const serverRequest = {
           method: 'POST',
           url: 'https://foo.com/hb/',
@@ -229,10 +410,9 @@ describe('33acrossBidAdapter:', function () {
             withCredentials: true
           }
         };
-
         const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
-        expect(builtServerRequests).to.deep.equal([ serverRequest ]);
-        expect(builtServerRequests.length).to.equal(1);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       afterEach(function() {
@@ -242,48 +422,12 @@ describe('33acrossBidAdapter:', function () {
 
     context('when gdpr consent data does not exist', function() {
       beforeEach(function() {
-        this.bidderRequest = { }
+        this.bidderRequest = {}
       });
 
       it('returns corresponding server requests with default gdpr consent data', function() {
-        const ttxRequest = {
-          imp: [ {
-            banner: {
-              format: [
-                {
-                  w: 300,
-                  h: 250,
-                  ext: {}
-                },
-                {
-                  w: 728,
-                  h: 90,
-                  ext: {}
-                }
-              ]
-            },
-            ext: {
-              ttx: {
-                prod: PRODUCT_ID
-              }
-            }
-          } ],
-          site: {
-            id: SITE_ID
-          },
-          id: 'b1',
-          user: {
-            ext: {
-              consent: undefined
-            }
-          },
-          regs: {
-            ext: {
-              gdpr: 0
-            }
-          }
-        };
-
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
         const serverRequest = {
           'method': 'POST',
           'url': END_POINT,
@@ -292,10 +436,10 @@ describe('33acrossBidAdapter:', function () {
             'contentType': 'text/plain',
             'withCredentials': true
           }
-        }
+        };
         const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
-        expect(builtServerRequests).to.deep.equal([ serverRequest ]);
-        expect(builtServerRequests.length).to.equal(1);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       it('returns corresponding test server requests with default gdpr consent data', function() {
@@ -305,43 +449,8 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const ttxRequest = {
-          imp: [ {
-            banner: {
-              format: [
-                {
-                  w: 300,
-                  h: 250,
-                  ext: { }
-                },
-                {
-                  w: 728,
-                  h: 90,
-                  ext: { }
-                }
-              ]
-            },
-            ext: {
-              ttx: {
-                prod: PRODUCT_ID
-              }
-            }
-          } ],
-          site: {
-            id: SITE_ID
-          },
-          id: 'b1',
-          user: {
-            ext: {
-              consent: undefined
-            }
-          },
-          regs: {
-            ext: {
-              gdpr: 0
-            }
-          }
-        };
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
         const serverRequest = {
           method: 'POST',
           url: 'https://foo.com/hb/',
@@ -351,10 +460,9 @@ describe('33acrossBidAdapter:', function () {
             withCredentials: true
           }
         };
-
         const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
-        expect(builtServerRequests).to.deep.equal([ serverRequest ]);
-        expect(builtServerRequests.length).to.equal(1);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       afterEach(function() {
@@ -366,7 +474,7 @@ describe('33acrossBidAdapter:', function () {
   describe('interpretResponse', function() {
     beforeEach(function() {
       this.ttxRequest = {
-        imp: [ {
+        imp: [{
           banner: {
             format: [
               {
@@ -386,7 +494,7 @@ describe('33acrossBidAdapter:', function () {
               prod: PRODUCT_ID
             }
           }
-        } ],
+        }],
         site: {
           id: SITE_ID,
           page: 'http://test-url.com'
@@ -412,14 +520,14 @@ describe('33acrossBidAdapter:', function () {
           id: 'b1',
           seatbid: [
             {
-              bid: [ {
+              bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 1,
                 h: 250,
                 w: 300,
                 price: 0.0938
-              } ]
+              }]
             }
           ]
         };
@@ -437,7 +545,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         }
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
+        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([bidResponse]);
       });
     });
 
@@ -462,7 +570,7 @@ describe('33acrossBidAdapter:', function () {
           id: 'b1',
           seatbid: [
             {
-              bid: [ {
+              bid: [{
                 id: '1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 1,
@@ -481,14 +589,14 @@ describe('33acrossBidAdapter:', function () {
               ]
             },
             {
-              bid: [ {
+              bid: [{
                 id: '3',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 3,
                 h: 250,
                 w: 300,
                 price: 0.0938
-              } ]
+              }]
             }
           ]
         };
@@ -506,7 +614,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         };
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([ bidResponse ]);
+        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([bidResponse]);
       });
     });
   });
@@ -535,7 +643,7 @@ describe('33acrossBidAdapter:', function () {
           adUnitCode: 'div-id',
           auctionId: 'r1',
           sizes: [
-            [ 300, 250 ]
+            [300, 250]
           ],
           transactionId: 't1'
         },
@@ -550,7 +658,7 @@ describe('33acrossBidAdapter:', function () {
           adUnitCode: 'div-id',
           auctionId: 'r1',
           sizes: [
-            [ 300, 250 ]
+            [300, 250]
           ],
           transactionId: 't2'
         }
