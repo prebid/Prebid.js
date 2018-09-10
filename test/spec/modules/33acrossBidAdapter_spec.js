@@ -1,4 +1,3 @@
-const { userSync } = require('../../../src/userSync');
 const { config } = require('../../../src/config');
 
 const { expect } = require('chai');
@@ -354,7 +353,7 @@ describe('33acrossBidAdapter:', function () {
       let bidderRequest;
 
       beforeEach(function() {
-        bidderRequest = {}
+        bidderRequest = {};
       });
 
       it('returns corresponding server requests with default gdpr consent data', function() {
@@ -589,7 +588,7 @@ describe('33acrossBidAdapter:', function () {
       beforeEach(function() {
         gdprConsent = {
           gdprApplies: false
-        }
+        };
       });
 
       context('when iframe is not enabled', function() {
