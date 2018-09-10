@@ -17,9 +17,11 @@ describe('33acrossBidAdapter:', function () {
   const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
   let element;
+  let sandbox;
+  let bidRequests;
 
   function TtxRequestBuilder() {
-    this.ttxRequest = {
+    const ttxRequest = {
       imp: [{
         banner: {
           format: [
@@ -64,13 +66,13 @@ describe('33acrossBidAdapter:', function () {
       }
     };
 
-    this.withSizes = function(sizes) {
-      Object.assign(this.ttxRequest.imp[0].banner, { format: sizes });
+    this.withSizes = sizes => {
+      Object.assign(ttxRequest.imp[0].banner, { format: sizes });
       return this;
     };
 
-    this.withViewabiliuty = function(viewability) {
-      Object.assign(this.ttxRequest.imp[0].banner, {
+    this.withViewabiliuty = viewability => {
+      Object.assign(ttxRequest.imp[0].banner, {
         ext: {
           ttx: { viewability }
         }
@@ -78,13 +80,13 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withGdprConsent = function(consent, gdpr) {
-      Object.assign(this.ttxRequest, {
+    this.withGdprConsent = (consent, gdpr) => {
+      Object.assign(ttxRequest, {
         user: {
           ext: { consent }
         }
       });
-      Object.assign(this.ttxRequest, {
+      Object.assign(ttxRequest, {
         regs: {
           ext: { gdpr }
         }
@@ -92,13 +94,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.build = function() {
-      return this.ttxRequest;
-    }
+    this.build = () => ttxRequest;
   }
 
   beforeEach(function() {
-    this.bidRequests = [
+    bidRequests = [
       {
         bidId: 'b1',
         bidder: '33across',
@@ -117,8 +117,8 @@ describe('33acrossBidAdapter:', function () {
       }
     ];
 
-    this.sandbox = sinon.sandbox.create();
-    this.sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
 
     element = {
       x: 0,
@@ -142,9 +142,7 @@ describe('33acrossBidAdapter:', function () {
   });
 
   afterEach(function() {
-    this.sandbox.restore();
-
-    delete this.bidRequests;
+    sandbox.restore();
   });
 
   describe('isBidRequestValid:', function() {
@@ -155,7 +153,7 @@ describe('33acrossBidAdapter:', function () {
           siteId: SITE_ID,
           productId: PRODUCT_ID
         }
-      }
+      };
 
       expect(isBidRequestValid(validBid)).to.be.true;
     });
@@ -168,7 +166,7 @@ describe('33acrossBidAdapter:', function () {
           productId: PRODUCT_ID,
           test: 1
         }
-      }
+      };
 
       expect(isBidRequestValid(validBid)).to.be.true;
     });
@@ -180,7 +178,7 @@ describe('33acrossBidAdapter:', function () {
           siteId: SITE_ID,
           productId: PRODUCT_ID
         }
-      }
+      };
 
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
@@ -188,7 +186,7 @@ describe('33acrossBidAdapter:', function () {
     it('returns false when params not set', function() {
       const invalidBid = {
         bidder: 'foo'
-      }
+      };
 
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
@@ -199,7 +197,7 @@ describe('33acrossBidAdapter:', function () {
         params: {
           productId: PRODUCT_ID
         }
-      }
+      };
 
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
@@ -210,7 +208,7 @@ describe('33acrossBidAdapter:', function () {
         params: {
           siteId: SITE_ID
         }
-      }
+      };
 
       expect(isBidRequestValid(invalidBid)).to.be.false;
     });
@@ -234,7 +232,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
-        expect(buildRequests(this.bidRequests)).to.deep.equal([serverRequest]);
+        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
 
@@ -255,7 +253,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
-        expect(buildRequests(this.bidRequests)).to.deep.equal([serverRequest]);
+        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
 
@@ -276,7 +274,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 100, height: 1500 });
 
-        expect(buildRequests(this.bidRequests)).to.deep.equal([serverRequest]);
+        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
 
@@ -297,15 +295,17 @@ describe('33acrossBidAdapter:', function () {
         };
 
         Object.assign(element, { width: 0, height: 0 });
-        this.bidRequests[0].sizes = [[800, 1200]];
+        bidRequests[0].sizes = [[800, 1200]];
 
-        expect(buildRequests(this.bidRequests)).to.deep.equal([serverRequest]);
+        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
 
     context('when gdpr consent data exists', function() {
+      let bidderRequest;
+
       beforeEach(function() {
-        this.bidderRequest = {
+        bidderRequest = {
           gdprConsent: {
             consentString: 'foobarMyPreference',
             gdprApplies: true
@@ -326,13 +326,13 @@ describe('33acrossBidAdapter:', function () {
             'withCredentials': true
           }
         };
-        const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
+        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       it('returns corresponding test server requests with gdpr consent data', function() {
-        this.sandbox.stub(config, 'getConfig').callsFake(() => {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
           return {
             'url': 'https://foo.com/hb/'
           }
@@ -350,19 +350,17 @@ describe('33acrossBidAdapter:', function () {
             withCredentials: true
           }
         };
-        const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
+        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
-
-      afterEach(function() {
-        delete this.bidderRequest;
-      })
     });
 
     context('when gdpr consent data does not exist', function() {
+      let bidderRequest;
+
       beforeEach(function() {
-        this.bidderRequest = {}
+        bidderRequest = {}
       });
 
       it('returns corresponding server requests with default gdpr consent data', function() {
@@ -377,13 +375,13 @@ describe('33acrossBidAdapter:', function () {
             'withCredentials': true
           }
         };
-        const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
+        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
 
       it('returns corresponding test server requests with default gdpr consent data', function() {
-        this.sandbox.stub(config, 'getConfig').callsFake(() => {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
           return {
             'url': 'https://foo.com/hb/'
           }
@@ -400,14 +398,10 @@ describe('33acrossBidAdapter:', function () {
             withCredentials: true
           }
         };
-        const builtServerRequests = buildRequests(this.bidRequests, this.bidderRequest);
+        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
-
-      afterEach(function() {
-        delete this.bidderRequest;
-      })
     });
   });
 
@@ -483,7 +477,7 @@ describe('33acrossBidAdapter:', function () {
           creativeId: 1,
           currency: 'USD',
           netRevenue: true
-        }
+        };
 
         expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([bidResponse]);
       });
@@ -540,7 +534,6 @@ describe('33acrossBidAdapter:', function () {
             }
           ]
         };
-
         const bidResponse = {
           requestId: 'b1',
           bidderCode: BIDDER_CODE,
@@ -560,8 +553,10 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('getUserSyncs', function() {
+    let syncs;
+
     beforeEach(function() {
-      this.syncs = [
+      syncs = [
         {
           type: 'iframe',
           url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
@@ -571,7 +566,7 @@ describe('33acrossBidAdapter:', function () {
           url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
         },
       ];
-      this.bidRequests = [
+      bidRequests = [
         {
           bidId: 'b1',
           bidder: '33across',
@@ -606,8 +601,10 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when gdpr does not apply', function() {
+      let gdprConsent;
+
       beforeEach(function() {
-        this.gdprConsent = {
+        gdprConsent = {
           gdprApplies: false
         }
       });
@@ -615,8 +612,10 @@ describe('33acrossBidAdapter:', function () {
       context('when iframe is not enabled', function() {
         it('returns empty sync array', function() {
           const syncOptions = {};
-          buildRequests(this.bidRequests);
-          expect(getUserSyncs(syncOptions, {}, this.gdprConsent)).to.deep.equal([]);
+
+          buildRequests(bidRequests);
+
+          expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
         });
       });
 
@@ -625,9 +624,10 @@ describe('33acrossBidAdapter:', function () {
           const syncOptions = {
             iframeEnabled: true
           };
-          buildRequests(this.bidRequests);
-          const syncs = getUserSyncs(syncOptions, {}, this.gdprConsent);
-          expect(syncs).to.deep.equal(this.syncs);
+
+          buildRequests(bidRequests);
+
+          expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal(syncs);
         });
       });
     });
@@ -636,7 +636,9 @@ describe('33acrossBidAdapter:', function () {
       context('when iframe is not enabled', function() {
         it('returns empty sync array', function() {
           const syncOptions = {};
-          buildRequests(this.bidRequests);
+
+          buildRequests(bidRequests);
+
           expect(getUserSyncs(syncOptions)).to.deep.equal([]);
         });
       });
@@ -646,9 +648,10 @@ describe('33acrossBidAdapter:', function () {
           const syncOptions = {
             iframeEnabled: true
           };
-          buildRequests(this.bidRequests);
-          const syncs = getUserSyncs(syncOptions);
-          expect(syncs).to.deep.equal(this.syncs);
+
+          buildRequests(bidRequests);
+
+          expect(getUserSyncs(syncOptions)).to.deep.equal(syncs);
         });
       });
     });
@@ -658,8 +661,10 @@ describe('33acrossBidAdapter:', function () {
         const syncOptions = {};
         const gdprConsent = {
           gdprApplies: true
-        }
-        buildRequests(this.bidRequests);
+        };
+
+        buildRequests(bidRequests);
+
         expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
       });
     })

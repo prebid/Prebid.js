@@ -85,7 +85,6 @@ function _createServerRequest(bidRequest, gdprConsent) {
   // Allow the ability to configure the HB endpoint for testing purposes.
   const ttxSettings = config.getConfig('ttxSettings');
   const url = (ttxSettings && ttxSettings.url) || END_POINT;
-  console.warn('_createServerRequest._createServerRequest():', contributeViewability(ttxRequest));
 
   // Return the server request
   return {
