@@ -389,7 +389,7 @@ export const spec = {
       height: bidData.h,
       creativeId: bidData.crid || 0,
       pubapiId: response.id,
-      currency: response.cur || "USD",
+      currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
       ttl: bidRequest.ttl
