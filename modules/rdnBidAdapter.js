@@ -24,8 +24,7 @@ export const spec = {
           ua: navigator.userAgent,
           l:
             navigator.browserLanguage ||
-            navigator.language ||
-            navigator.userLanguage,
+            navigator.language,
           d: document.domain,
           tp: encodeURIComponent(utils.getTopWindowUrl()),
           pp: encodeURIComponent(utils.getTopWindowReferrer())
@@ -53,6 +52,27 @@ export const spec = {
     })
 
     return bidResponses
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+    if (syncOptions.pixelEnabled && serverResponses[0].body !== undefined) {
+      const bidResponseObj = serverResponses[0].body;
+      if (!bidResponseObj) {
+        return [];
+      }
+      if (bidResponseObj.sync_urls && bidResponseObj.sync_urls != 'null' && bidResponseObj.sync_urls.length > 0) {
+        bidResponseObj.sync_urls.forEach(syncUrl => {
+          if (syncUrl && syncUrl != 'null' && syncUrl.length > 0) {
+            syncs.push({
+              type: 'image',
+              url: syncUrl
+            });
+          }
+        });
+      }
+    }
+    return syncs;
   }
 }
 
