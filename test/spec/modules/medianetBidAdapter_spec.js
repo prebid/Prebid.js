@@ -564,7 +564,7 @@ describe('Media.net bid adapter', function () {
 
     describe('build requests: when page meta-data is available', () => {
       beforeEach(() => {
-        sandbox.stub($$PREBID_GLOBAL$$.medianetGlobals, 'pageMeta').value(undefined);
+        spec.clearMnData();
       });
       it('should pass canonical, twitter and fb paramters if available', () => {
         let documentStub = sandbox.stub(window.top.document, 'querySelector');

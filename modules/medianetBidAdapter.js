@@ -16,6 +16,8 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 
+let mnData = {};
+
 $$PREBID_GLOBAL$$.medianetGlobals = {};
 
 function siteDetails(site) {
@@ -30,20 +32,20 @@ function siteDetails(site) {
 }
 
 function getPageMeta() {
-  if ($$PREBID_GLOBAL$$.medianetGlobals.pageMeta) {
-    return $$PREBID_GLOBAL$$.medianetGlobals.pageMeta;
+  if (mnData.pageMeta) {
+    return mnData.pageMeta;
   }
   let canonicalUrl = getUrlFromSelector('link[rel="canonical"]', 'href');
   let ogUrl = getUrlFromSelector('meta[property="og:url"]', 'content');
   let twitterUrl = getUrlFromSelector('meta[name="twitter:url"]', 'content');
 
-  $$PREBID_GLOBAL$$.medianetGlobals.pageMeta = Object.assign({},
+  mnData.pageMeta = Object.assign({},
     canonicalUrl && { 'canonical_url': canonicalUrl },
     ogUrl && { 'og_url': ogUrl },
     twitterUrl && { 'twitter_url': twitterUrl }
   );
 
-  return $$PREBID_GLOBAL$$.medianetGlobals.pageMeta;
+  return mnData.pageMeta;
 }
 
 function getUrlFromSelector(selector, attribute) {
@@ -258,6 +260,10 @@ function logEvent (event, data) {
   utils.triggerPixel(url.format(getParams));
 }
 
+function clearMnData() {
+  mnData = {};
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -362,6 +368,8 @@ export const spec = {
       logEvent(eventData, [bid]);
     } catch (e) {}
   },
+
+  clearMnData,
 
   getWindowSize,
 };
