@@ -118,6 +118,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withOptions = options => {
+      serverRequest['options'] = options;
+      return this;
+    };
+
     this.build = () => serverRequest;
   }
 
@@ -384,8 +389,10 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('interpretResponse', function() {
+    let ttxRequest, serverRequest;
+
     beforeEach(function() {
-      this.ttxRequest = {
+      ttxRequest = {
         imp: [{
           banner: {
             format: [
@@ -413,15 +420,14 @@ describe('33acrossBidAdapter:', function () {
         },
         id: 'b1'
       };
-      this.serverRequest = {
-        method: 'POST',
-        url: '//staging-ssc.33across.com/api/v1/hb',
-        data: JSON.stringify(this.ttxRequest),
-        options: {
+      serverRequest = new ServerRequestBuilder()
+        .withUrl('//staging-ssc.33across.com/api/v1/hb')
+        .withData(ttxRequest)
+        .withOptions({
           contentType: 'text/plain',
           withCredentials: false
-        }
-      };
+        })
+        .build();
     });
 
     context('when exactly one bid is returned', function() {
@@ -443,7 +449,6 @@ describe('33acrossBidAdapter:', function () {
             }
           ]
         };
-
         const bidResponse = {
           requestId: 'b1',
           bidderCode: BIDDER_CODE,
@@ -457,7 +462,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         };
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([bidResponse]);
+        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
     });
 
@@ -470,7 +475,7 @@ describe('33acrossBidAdapter:', function () {
           seatbid: []
         };
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([]);
+        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([]);
       });
     });
 
@@ -525,7 +530,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         };
 
-        expect(interpretResponse({ body: serverResponse }, this.serverRequest)).to.deep.equal([bidResponse]);
+        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
     });
   });
