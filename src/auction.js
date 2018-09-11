@@ -155,7 +155,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
-  function done(bidderCount) {
+  function auctionDone(bidderCount) {
     let doneCalled = 0;
     return function() {
       doneCalled++;
@@ -198,9 +198,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         };
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-        let callbacks = newCallbacks(done(bidRequests.length), this);
+        let callbacks = auctionCallbacks(auctionDone(bidRequests.length), this);
         let boundObj = {
-          localAddBidResponse: callbacks.addBidResponse
+          auctionAddBidResponse: callbacks.addBidResponse
         }
         adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
           request(source, origin) {
@@ -297,17 +297,17 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 }
 
 export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
-  this.localAddBidResponse(adUnitCode, bid);
+  this.auctionAddBidResponse(adUnitCode, bid);
 }, 'addBidResponse');
 
-function newCallbacks(done, auctionInstance) {
+function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
   let doneCalled = false;
 
   function afterBidAdded() {
     outstandingBidsAdded--;
     if (doneCalled && outstandingBidsAdded === 0) {
-      done()
+      auctionDone()
     }
   }
 
@@ -331,7 +331,7 @@ function newCallbacks(done, auctionInstance) {
     // events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
     doneCalled = true;
     if ((outstandingBidsAdded === 0)) {
-      done();
+      auctionDone();
     }
   }
 
