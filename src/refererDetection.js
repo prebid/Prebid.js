@@ -100,7 +100,7 @@ export function detectReferer(win) {
             location: null,
             isTop: (currentWindow == win.top)
           });
-          logWarn('Error while walking cross domain iframe. Continuing without referrer and location');
+          logWarn('Trying to access cross domain iframe. Continuing without referrer and location');
         }
       } catch (e) {
         acc.push({
