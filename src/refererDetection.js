@@ -114,6 +114,19 @@ export function detectReferer(win) {
     return acc;
   }
 
+  /**
+   * Referer info
+   * @typedef {Object} refererInfo
+   * @property {string} referer detected top url
+   * @property {boolean} reachedTop whether prebid was able to walk upto top window or not
+   * @property {number} numIframes number of iframes
+   * @property {string} stack comma separated urls of all origins
+   */
+
+  /**
+   * Get referer info
+   * @returns {refererInfo}
+   */
   function refererInfo() {
     try {
       let levels = getLevels();
