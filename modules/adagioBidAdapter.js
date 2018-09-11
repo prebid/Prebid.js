@@ -95,7 +95,7 @@ export const spec = {
     const requests = {
       id: utils.generateUUID(),
       secure: (location.protocol === 'https:') ? 1 : 0,
-      device: _getDevice(validBidRequests),
+      device: _getDevice(),
       site: _getSite(),
       pageviewId: _getPageviewId(),
       ad_units: utils._map(validBidRequests, (bidRequest, k) => {
