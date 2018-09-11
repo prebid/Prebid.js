@@ -102,7 +102,7 @@ export const spec = {
     }
     if (syncOptions.pixelEnabled) {
       return [{
-        type: 'pixel',
+        type: 'image',
         url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
       }];
     }
