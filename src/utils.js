@@ -193,29 +193,36 @@ exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
     let loc;
     try {
-      loc = exports.getAncestorOrigins() || exports.getTopFrameReferrer();
+      loc = exports.getAncestorOrigins() || exports.getTopFrameOrigin();
     } catch (e) {
-      logInfo('could not obtain top window location', e);
+      exports.logInfo('could not obtain top window location', e);
     }
     if (loc) return parse(loc, {'decodeSearchAsString': true});
   }
   return exports.getWindowLocation();
 }
 
+exports.getTopFrame = function () {
+  let frame;
+  do {
+    frame = frame ? frame.parent : window;
+  }
+  while (frame !== window.top);
+
+  return frame;
+};
+
+exports.getTopFrameOrigin = function () {
+  const topFrame = exports.getTopFrame();
+  return topFrame.location.origin || '';
+};
+
 exports.getTopFrameReferrer = function () {
   try {
     // force an exception in x-domain environments. #1509
     window.top.location.toString();
-    let referrerLoc = '';
-    let currentWindow;
-    do {
-      currentWindow = currentWindow ? currentWindow.parent : window;
-      if (currentWindow.document && currentWindow.document.referrer) {
-        referrerLoc = currentWindow.document.referrer;
-      }
-    }
-    while (currentWindow !== window.top);
-    return referrerLoc;
+    const topFrame = exports.getTopFrame();
+    return topFrame.document.referrer || '';
   } catch (e) {
     return window.document.referrer;
   }
