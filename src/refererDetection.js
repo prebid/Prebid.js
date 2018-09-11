@@ -1,4 +1,4 @@
-import { logError } from './utils';
+import { logWarn } from './utils';
 
 export function detectReferer(win) {
   function getLevels() {
@@ -20,7 +20,7 @@ export function detectReferer(win) {
       }
       return win.location.ancestorOrigins;
     } catch (e) {
-      logError('Error while walking ancestorOrigins', e);
+      // Ignore error
     }
   }
 
@@ -39,7 +39,7 @@ export function detectReferer(win) {
       try {
         frameLocation = levels[i].location;
       } catch (e) {
-        logError('Error while accessing cross domain iframe location', e);
+        // Ignore error
       }
 
       if (frameLocation) {
@@ -54,7 +54,7 @@ export function detectReferer(win) {
           prevRef = prevFrame.referrer;
           ancestor = prevFrame.ancestor;
         } catch (e) {
-          logError('Error while accessing cross domain iframe referrer', e);
+          // Ignore error
         }
 
         if (prevRef) {
@@ -100,10 +100,9 @@ export function detectReferer(win) {
             location: null,
             isTop: (currentWindow == win.top)
           });
-          logError('Error while accessing cross domain iframe.', e);
+          logWarn('Error while walking cross domain iframe. Continuing without referrer and location');
         }
       } catch (e) {
-        logError(e);
         acc.push({
           referrer: null,
           location: null,
@@ -130,7 +129,7 @@ export function detectReferer(win) {
         stack: stackInfo.stack,
       };
     } catch (e) {
-      logError('Error while getting referer info', e);
+      // Ignore error
     }
   }
 
