@@ -281,7 +281,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
   function addWinningBid(winningBid) {
     _winningBids = _winningBids.concat(winningBid);
-    adaptermanager.callBidWonBidder(winningBid.bidder, winningBid);
+    adaptermanager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
   }
 
   return {

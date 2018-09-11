@@ -521,6 +521,8 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid) {
+exports.callBidWonBidder = function(bidder, bid, adUnits) {
+  // Adding user configured params to bidWon event data
+  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
