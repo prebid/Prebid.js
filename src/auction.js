@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -58,6 +58,7 @@ import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { OUTSTREAM } from './video';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -300,7 +301,7 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   this.auctionAddBidResponse(adUnitCode, bid);
 }, 'addBidResponse');
 
-function auctionCallbacks(auctionDone, auctionInstance) {
+export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
   let doneCalled = false;
 
@@ -320,7 +321,7 @@ function auctionCallbacks(auctionDone, auctionInstance) {
     let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
 
     if (bidResponse.mediaType === 'video') {
-      tryAddVideoBid(auctionInstance, bidResponse, bidRequest, afterBidAdded);
+      tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded);
     } else {
       addBidToAuction(auctionInstance, bidResponse);
       afterBidAdded();
@@ -328,7 +329,6 @@ function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   function adapterDone() {
-    // events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
     doneCalled = true;
     if ((outstandingBidsAdded === 0)) {
       auctionDone();
@@ -356,9 +356,11 @@ function addBidToAuction(auctionInstance, bidResponse) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, bidRequest, afterBidAdded) {
+function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded) {
   let addBid = true;
-  if (config.getConfig('cache.url')) {
+  const context = deepAccess(bidResponse, 'context');
+
+  if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey) {
       addBid = false;
       store([bidResponse], function (error, cacheIds) {

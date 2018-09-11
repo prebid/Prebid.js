@@ -6,6 +6,7 @@ import { userSync } from 'src/userSync';
 import { nativeBidIsValid } from 'src/native';
 import { isValidVideoBid } from 'src/video';
 import CONSTANTS from 'src/constants.json';
+import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
@@ -177,6 +178,7 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses(bids) {
         done();
+        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
         registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
