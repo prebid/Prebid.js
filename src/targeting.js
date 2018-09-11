@@ -259,9 +259,16 @@ export function newTargeting(auctionManager) {
             typeof winner.sendStandardTargeting === 'undefined' ||
             winner.sendStandardTargeting ||
             standardKeys.indexOf(key) === -1)
-          .map(key => ({
-            [(key === 'hb_deal') ? `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH) : key.substring(0, MAX_DFP_KEYLENGTH)]: [winner.adserverTargeting[key]]
-          }))
+          .reduce((acc, key) => {
+            const targetingValue = [winner.adserverTargeting[key]];
+            const targeting = { [key.substring(0, MAX_DFP_KEYLENGTH)]: targetingValue };
+            if (key === 'hb_deal') {
+              const bidderCodeTargetingKey = `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH);
+              const bidderCodeTargeting = { [bidderCodeTargetingKey]: targetingValue };
+              return [...acc, targeting, bidderCodeTargeting];
+            }
+            return [...acc, targeting];
+          }, [])
       };
     });
 
