@@ -12,7 +12,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bidRequest) {
-    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
+    return 'params' in bidRequest && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
   },
   buildRequests: function (validBidRequests) {
     var requests = [];
@@ -124,9 +124,10 @@ function makeBanner(req) {
 }
 
 function makeSite(req) {
+  let domain = getDomain(config.getConfig('publisherDomain'));
   return {
-    'id': req.params.source,
-    'domain': getDomain(config.getConfig('publisherDomain')),
+    'id': req.params.source || domain,
+    'domain': domain,
     'page': utils.getTopWindowUrl(),
     'ref': utils.getTopWindowReferrer()
   };
