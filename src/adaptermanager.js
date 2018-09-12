@@ -335,8 +335,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
           bidRequest.start = timestamp();
-          bidRequest.doneCbCallCount = 0;
-          return doneCb(bidRequest.bidderRequestId)
+          return doneCb;
         });
 
         // only log adapters that actually have adUnit bids
@@ -372,12 +371,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
     bidRequest.doneCbCallCount = 0;
-    let done = doneCb(bidRequest.bidderRequestId);
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse, done, ajax);
+    adapter.callBids(bidRequest, addBidResponse, doneCb, ajax);
   });
 }
 
@@ -521,6 +519,8 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid) {
+exports.callBidWonBidder = function(bidder, bid, adUnits) {
+  // Adding user configured params to bidWon event data
+  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };

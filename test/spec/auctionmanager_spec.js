@@ -1,5 +1,5 @@
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { getKeyValueTargetingPairs } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
@@ -44,7 +44,8 @@ function mockBid(opts) {
     'creativeId': 'id',
     'currency': 'USD',
     'netRevenue': true,
-    'ttl': 360
+    'ttl': 360,
+    getSize: () => '300x250'
   };
 }
 
@@ -54,6 +55,12 @@ function mockBidRequest(bid, opts) {
   }
   let bidderCode = opts && opts.bidderCode;
   let adUnitCode = opts && opts.adUnitCode;
+  let defaultMediaType = {
+    banner: {
+      sizes: [[300, 250], [300, 600]]
+    }
+  }
+  let mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
 
   let requestId = utils.getUniqueIdentifierStr();
 
@@ -71,7 +78,8 @@ function mockBidRequest(bid, opts) {
         'sizes': [[300, 250], [300, 600]],
         'bidId': bid.requestId,
         'bidderRequestId': requestId,
-        'auctionId': '20882439e3238c'
+        'auctionId': '20882439e3238c',
+        'mediaTypes': mediaType
       }
     ],
     'auctionStart': 1505250713622,
@@ -107,16 +115,6 @@ function mockAjaxBuilder() {
 }
 
 describe('auctionmanager.js', function () {
-  let xhr;
-
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-  });
-
-  after(function () {
-    xhr.restore();
-  });
-
   describe('getKeyValueTargetingPairs', function () {
     const DEFAULT_BID = {
       cpm: 5.578,
@@ -856,5 +854,71 @@ describe('auctionmanager.js', function () {
       config.getConfig.restore();
       store.store.restore();
     });
+  });
+
+  describe('auctionCallbacks', function() {
+    let bids = TEST_BIDS;
+    let bidRequests;
+    let xhr;
+    let requests;
+    let doneSpy;
+    let auction = {
+      getBidRequests: () => bidRequests,
+      getAuctionId: () => '1',
+      addBidReceived: () => true,
+      getTimeout: () => 1000
+    }
+
+    beforeEach(() => {
+      doneSpy = sinon.spy();
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = (request) => requests.push(request);
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      })
+    });
+
+    afterEach(() => {
+      doneSpy.reset();
+      xhr.restore();
+      config.resetConfig();
+    });
+
+    it('should call auction done after bid is added to auction for mediaType banner', function () {
+      bidRequests = [
+        mockBidRequest(bids[0]),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      cbs.addBidResponse(ADUNIT_CODE, bids[0]);
+      cbs.adapterDone();
+      assert.equal(doneSpy.callCount, 1);
+    });
+
+    it('should call auction done after prebid cache is complete for mediaType video', function() {
+      bids[0].mediaType = 'video';
+      let opts = {
+        mediaType: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480],
+          },
+        }
+      }
+      bidRequests = [
+        mockBidRequest(bids[0], opts)
+      ]
+
+      let cbs = auctionCallbacks(doneSpy, auction);
+      cbs.addBidResponse(ADUNIT_CODE, bids[0]);
+      assert.equal(doneSpy.callCount, 0);
+      const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
+      const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
+      requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
+      cbs.adapterDone();
+      assert.equal(doneSpy.callCount, 1);
+    })
   });
 });

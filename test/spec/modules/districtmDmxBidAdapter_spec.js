@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDmxBidAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDMXBidAdapter';
 
 const bidRequest = [{
   'bidder': 'districtmDMX',
