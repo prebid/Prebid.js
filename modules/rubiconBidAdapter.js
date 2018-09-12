@@ -396,7 +396,7 @@ export const spec = {
         let bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
-          creativeId: ad.creative_id,
+          creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
