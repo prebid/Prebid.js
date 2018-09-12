@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/colossussspBidAdapter';
 
-describe('ColossussspAdapter', () => {
+describe('ColossussspAdapter', function () {
   let bid = {
     bidId: '2dd581a2b6281d',
     bidder: 'colossusssp',
@@ -15,31 +15,31 @@ describe('ColossussspAdapter', () => {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
 
-  describe('isBidRequestValid', () => {
-    it('Should return true when placement_id can be cast to a number', () => {
+  describe('isBidRequestValid', function () {
+    it('Should return true when placement_id can be cast to a number', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false when placement_id is not a number', () => {
+    it('Should return false when placement_id is not a number', function () {
       bid.params.placement_id = 'aaa';
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
-    it('Creates a ServerRequest object with method, URL and data', () => {
+    it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
       expect(serverRequest.url).to.exist;
       expect(serverRequest.data).to.exist;
     });
-    it('Returns POST method', () => {
+    it('Returns POST method', function () {
       expect(serverRequest.method).to.equal('POST');
     });
-    it('Returns valid URL', () => {
+    it('Returns valid URL', function () {
       expect(serverRequest.url).to.equal('//colossusssp.com/?c=o&m=multi');
     });
-    it('Returns valid data if array of bids is valid', () => {
+    it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
@@ -59,13 +59,13 @@ describe('ColossussspAdapter', () => {
         expect(placement.sizes).to.be.an('array');
       }
     });
-    it('Returns empty data if no valid requests are passed', () => {
+    it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let resObject = {
       body: [ {
         requestId: '123',
@@ -81,7 +81,7 @@ describe('ColossussspAdapter', () => {
       } ]
     };
     let serverResponses = spec.interpretResponse(resObject);
-    it('Returns an array of valid server responses if response object is valid', () => {
+    it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
         let dataItem = serverResponses[i];
@@ -98,16 +98,16 @@ describe('ColossussspAdapter', () => {
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', () => {
+      it('Returns an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
-    it('Returns valid URL and type', () => {
+    it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;

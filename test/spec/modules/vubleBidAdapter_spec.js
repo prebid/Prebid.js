@@ -4,23 +4,23 @@ import {expect} from 'chai';
 import {spec as adapter} from 'modules/vubleBidAdapter';
 import * as utils from 'src/utils';
 
-describe('VubleAdapter', () => {
-  describe('Check methods existance', () => {
-    it('exists and is a function', () => {
+describe('VubleAdapter', function () {
+  describe('Check methods existance', function () {
+    it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.buildRequests).to.exist.and.to.be.a('function');
     });
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
     });
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.getUserSyncs).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('Check method isBidRequestValid return', () => {
+  describe('Check method isBidRequestValid return', function () {
     let bid = {
       bidder: 'vuble',
       params: {
@@ -37,11 +37,11 @@ describe('VubleAdapter', () => {
       },
     };
 
-    it('should be true', () => {
+    it('should be true', function () {
       expect(adapter.isBidRequestValid(bid)).to.be.true;
     });
 
-    it('should be false because the sizes are missing or in the wrong format', () => {
+    it('should be false because the sizes are missing or in the wrong format', function () {
       let wrongBid = utils.deepClone(bid);
       wrongBid.sizes = '640360';
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
@@ -51,7 +51,7 @@ describe('VubleAdapter', () => {
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
 
-    it('should be false because the mediaType is missing or wrong', () => {
+    it('should be false because the mediaType is missing or wrong', function () {
       let wrongBid = utils.deepClone(bid);
       wrongBid.mediaTypes = {};
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
@@ -61,7 +61,7 @@ describe('VubleAdapter', () => {
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
 
-    it('should be false because the env is missing or wrong', () => {
+    it('should be false because the env is missing or wrong', function () {
       let wrongBid = utils.deepClone(bid);
       wrongBid.params.env = 'us';
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
@@ -71,22 +71,22 @@ describe('VubleAdapter', () => {
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
 
-    it('should be false because params.pubId is missing', () => {
+    it('should be false because params.pubId is missing', function () {
       let wrongBid = utils.deepClone(bid);
       delete wrongBid.params.pubId;
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
 
-    it('should be false because params.zoneId is missing', () => {
+    it('should be false because params.zoneId is missing', function () {
       let wrongBid = utils.deepClone(bid);
       delete wrongBid.params.zoneId;
       expect(adapter.isBidRequestValid(wrongBid)).to.be.false;
     });
   });
 
-  describe('Check buildRequests method', () => {
+  describe('Check buildRequests method', function () {
     let sandbox;
-    before(() => {
+    before(function () {
       sandbox = sinon.sandbox.create();
       sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.vuble.tv/');
     });
@@ -161,17 +161,17 @@ describe('VubleAdapter', () => {
       }
     };
 
-    it('must return the right formatted requests', () => {
+    it('must return the right formatted requests', function () {
       let rs = adapter.buildRequests([bid1, bid2]);
       expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
     });
 
-    after(() => {
+    after(function () {
       sandbox.restore();
     });
   });
 
-  describe('Check interpretResponse method return', () => {
+  describe('Check interpretResponse method return', function () {
     // Server's response
     let response = {
       body: {
@@ -213,11 +213,11 @@ describe('VubleAdapter', () => {
       mediaType: 'video'
     };
 
-    it('should equal to the expected formatted result', () => {
+    it('should equal to the expected formatted result', function () {
       expect(adapter.interpretResponse(response, bid)).to.deep.equal([result]);
     });
 
-    it('should be empty because the status is missing or wrong', () => {
+    it('should be empty because the status is missing or wrong', function () {
       let wrongResponse = utils.deepClone(response);
       wrongResponse.body.status = 'ko';
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
@@ -227,7 +227,7 @@ describe('VubleAdapter', () => {
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
     });
 
-    it('should be empty because the body is missing or wrong', () => {
+    it('should be empty because the body is missing or wrong', function () {
       let wrongResponse = utils.deepClone(response);
       wrongResponse.body = [1, 2, 3];
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
@@ -237,7 +237,7 @@ describe('VubleAdapter', () => {
       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
     });
 
-    it('should equal to the expected formatted result', () => {
+    it('should equal to the expected formatted result', function () {
       response.body.renderer_url = 'vuble_renderer.js';
       result.adUnitCode = 'code';
       let formattedResponses = adapter.interpretResponse(response, bid);
@@ -245,7 +245,7 @@ describe('VubleAdapter', () => {
     });
   });
 
-  describe('Check getUserSyncs method return', () => {
+  describe('Check getUserSyncs method return', function () {
     // Sync options
     let syncOptions = {
       iframeEnabled: false
@@ -265,7 +265,7 @@ describe('VubleAdapter', () => {
       url: 'http://player.mediabong.net/csifr?1234'
     };
 
-    it('should return an empty array', () => {
+    it('should return an empty array', function () {
       expect(adapter.getUserSyncs({}, [])).to.be.empty;
       expect(adapter.getUserSyncs({}, [])).to.be.empty;
       expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
@@ -275,7 +275,7 @@ describe('VubleAdapter', () => {
       expect(adapter.getUserSyncs(syncOptions, [response])).to.be.empty;
     });
 
-    it('should be equal to the expected result', () => {
+    it('should be equal to the expected result', function () {
       response.body.iframeSync = 'http://player.mediabong.net/csifr?1234';
       expect(adapter.getUserSyncs(syncOptions, [response])).to.deep.equal([result]);
     })

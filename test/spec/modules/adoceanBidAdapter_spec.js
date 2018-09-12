@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('AdoceanAdapter', () => {
+describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'adocean',
       'params': {
@@ -26,11 +26,11 @@ describe('AdoceanAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       const bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -40,7 +40,7 @@ describe('AdoceanAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       {
         'bidder': 'adocean',
@@ -57,26 +57,39 @@ describe('AdoceanAdapter', () => {
       }
     ];
 
-    it('should add bidIdMap with slaveId => bidId mapping', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+    const bidderRequest = {
+      gdprConsent: {
+        consentString: 'BOQHk-4OSlWKFBoABBPLBd-AAAAgWAHAACAAsAPQBSACmgFTAOkA',
+        gdprApplies: true
+      }
+    };
+
+    it('should add bidIdMap with slaveId => bidId mapping', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.bidIdMap).to.exists;
       const bidIdMap = request.bidIdMap;
       expect(bidIdMap[bidRequests[0].params.slaveId]).to.equal(bidRequests[0].bidId);
     });
 
-    it('sends bid request to url via GET', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+    it('sends bid request to url via GET', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
     });
 
-    it('should attach id to url', () => {
-      const request = spec.buildRequests(bidRequests)[0];
+    it('should attach id to url', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('id=' + bidRequests[0].params.masterId);
+    });
+
+    it('should attach consent information to url', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.include('gdpr=1');
+      expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       'body': [
         {
@@ -115,7 +128,7 @@ describe('AdoceanAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
@@ -143,7 +156,7 @@ describe('AdoceanAdapter', () => {
       });
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       response.body = [
         {
           'id': 'adoceanmyaolafpjwftbz',
