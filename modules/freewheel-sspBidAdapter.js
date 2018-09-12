@@ -161,13 +161,11 @@ var getInBannerScript = function(bid, size) {
 };
 
 var getOutstreamScript = function(bid) {
-  var placementCode = bid.adUnitCode;
-
   var config = bid.params;
 
   // default placement if no placement is set
   if (!config.hasOwnProperty('domId') && !config.hasOwnProperty('auto') && !config.hasOwnProperty('p') && !config.hasOwnProperty('article')) {
-    config.domId = placementCode;
+    config.domId = 'freewheelssp_prebid_target';
   }
 
   var script = 'var config = {' +
