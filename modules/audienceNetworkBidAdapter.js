@@ -17,7 +17,7 @@ const hbBidder = 'fan';
 const ttl = 600;
 const videoTtl = 3600;
 const platver = '$prebid.version$';
-const platform = '241394079772386';
+const platform = '2078522619030089';
 const adapterver = '1.0.1';
 
 /**
