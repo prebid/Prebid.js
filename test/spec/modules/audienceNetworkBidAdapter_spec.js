@@ -19,7 +19,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
-const debug = 'adapterver=1.0.1&platform=241394079772386&platver=$prebid.version$';
+const debug = 'adapterver=1.0.1&platform=2078522619030089&platver=$prebid.version$';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
 describe('AudienceNetwork adapter', () => {
@@ -184,7 +184,7 @@ describe('AudienceNetwork adapter', () => {
 
     it('can build URL for fullwidth 300x250 unit, overriding platform', () => {
       const platform = 'test-platform';
-      const debugPlatform = debug.replace('241394079772386', platform);
+      const debugPlatform = debug.replace('2078522619030089', platform);
 
       expect(buildRequests([{
         bidder,
