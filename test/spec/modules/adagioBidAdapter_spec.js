@@ -97,17 +97,17 @@ describe('adagioAdapter', () => {
 
     it('GDPR consent is applied', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.gdpr_consent).to.exist;
-      expect(request.data.gdpr_consent.consentString).to.exist.and.to.equal(consentString);
-      expect(request.data.gdpr_consent.consentRequired).to.exist.and.to.equal(1);
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(1);
     });
 
     it('GDPR consent is not applied', () => {
       bidderRequest.gdprConsent.gdprApplies = false;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.gdpr_consent).to.exist;
-      expect(request.data.gdpr_consent.consentString).to.exist.and.to.equal(consentString);
-      expect(request.data.gdpr_consent.consentRequired).to.exist.and.to.equal(0);
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(0);
     });
 
     it('GDPR consent is undefined', () => {
@@ -115,17 +115,17 @@ describe('adagioAdapter', () => {
       delete bidderRequest.gdprConsent.gdprApplies;
       delete bidderRequest.gdprConsent.allowAuctionWithoutConsent;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.gdpr_consent).to.exist;
-      expect(request.data.gdpr_consent).to.not.have.property('consentString');
-      expect(request.data.gdpr_consent).to.not.have.property('gdprApplies');
-      expect(request.data.gdpr_consent).to.not.have.property('allowAuctionWithoutConsent');
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr).to.not.have.property('consentString');
+      expect(request.data.gdpr).to.not.have.property('gdprApplies');
+      expect(request.data.gdpr).to.not.have.property('allowAuctionWithoutConsent');
     });
 
     it('GDPR consent bidderRequest does not have gdprConsent', () => {
       delete bidderRequest.gdprConsent;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.gdpr_consent).to.exist;
-      expect(request.data.gdpr_consent).to.be.empty;
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr).to.be.empty;
     });
   });
 

@@ -75,7 +75,7 @@ function _getGdprConsent(bidderRequest) {
     if (bidderRequest.gdprConsent.consentString !== undefined) {
       consentConfig.consentString = bidderRequest.gdprConsent.consentString;
     }
-    if (bidderRequest.gdprConsent.consentString !== undefined) {
+    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
       consentConfig.consentRequired = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     }
   }
@@ -106,7 +106,7 @@ export const spec = {
         bidRequest.params.features = _getFeatures(bidRequest);
         return bidRequest;
       }),
-      gdpr_consent: _getGdprConsent(bidderRequest),
+      gdpr: _getGdprConsent(bidderRequest),
       adapter_version: VERSION
     };
 
