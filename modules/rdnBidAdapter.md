@@ -3,7 +3,7 @@
 ```
 Module Name: RDN Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: info@rdn.co.jp
+Maintainer: engineer@lob-inc.com
 ```
 
 # Description

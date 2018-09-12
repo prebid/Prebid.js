@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory'
 
 describe('rdnBidAdapter', function() {
   const adapter = newBidder(spec)
-  const ENDPOINT = 'http://localhost:5000/h'
+  const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h'
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
