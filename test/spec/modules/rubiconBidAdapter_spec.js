@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType} from 'modules/rubiconBidAdapter';
+import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
@@ -1286,7 +1286,26 @@ describe('the rubicon adapter', function () {
           expect(request.data.slots[0].size_id).to.equal(203);
         });
 
-        it('should get size from bid.sizes too', function () {
+        it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
+          createVideoBidderRequestNoVideo();
+
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {
+            sizes: [[300, 250]]
+          };
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+        });
+
+        it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
