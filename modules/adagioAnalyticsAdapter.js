@@ -5,6 +5,7 @@ import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
 import * as url from 'src/url';
+import find from 'core-js/library/fn/array/find';
 
 const analyticsType = 'endpoint';
 const emptyUrl = '';
@@ -27,7 +28,7 @@ let adagioAnalytics = Object.assign(adapter({ emptyUrl, analyticsType }), {
         });
       } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
         let { adUnitCode, bidderCode, cpm, netRevenue, currency, timeToRespond, statusMessage, width, height } = args;
-        let adUnit = adUnits.find((adUnit) => adUnit.adu_id === adUnitCode);
+        let adUnit = find(adUnits, (adUnit) => adUnit.adu_id === adUnitCode);
         adUnit.bids = adUnit.bids.concat([{
           bidder: bidderCode,
           cpm,
@@ -40,7 +41,7 @@ let adagioAnalytics = Object.assign(adapter({ emptyUrl, analyticsType }), {
         }]);
       } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
         let { adUnitCode } = args;
-        let adUnit = adUnits.find((adUnit) => adUnit.adu_id === adUnitCode);
+        let adUnit = find(adUnits, (adUnit) => adUnit.adu_id === adUnitCode);
         Object.assign(adUnit, { won: 1 });
       }
     }
