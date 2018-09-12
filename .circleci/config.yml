@@ -33,7 +33,7 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      - run: sudo npm install -g gulp
+      - run: sudo npm install -g gulp-cli
       # Download and run BrowserStack local
       - run:
           name : Download BrowserStack Local binary and start it.

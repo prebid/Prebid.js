@@ -4,8 +4,8 @@ import { BANNER, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'zedo';
-const URL = '//z2.zedo.com/asw/fmb.json';
-const SECURE_URL = '//z2.zedo.com/asw/fmb.json';
+const URL = '//z2.zedo.com/asw/fmh.json';
+const SECURE_URL = '//z2.zedo.com/asw/fmh.json';
 const DIM_TYPE = {
   '7': 'display',
   '9': 'display',
@@ -15,6 +15,10 @@ const DIM_TYPE = {
   '85': 'Inarticle',
   '86': 'pswipeup',
   '88': 'Inview',
+  '100': 'display',
+  '101': 'display',
+  '102': 'display',
+  '103': 'display'
   // '85': 'pre-mid-post-roll',
 };
 

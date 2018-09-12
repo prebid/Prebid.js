@@ -196,6 +196,20 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'site_id': 'string',
+      'secure': 'number',
+      'mobile': 'number'
+    }, params);
   }
 };
 
