@@ -68,6 +68,18 @@ function getPricing(xmlNode) {
   return princingData;
 }
 
+function hashcode(inputString) {
+  var hash = 0;
+  var char;
+  if (inputString.length == 0) return hash;
+  for (var i = 0; i < inputString.length; i++) {
+    char = inputString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
+}
+
 function getCreativeId(xmlNode) {
   var creaId = '';
   var adNodes = xmlNode.querySelectorAll('Ad');
@@ -214,11 +226,17 @@ export const spec = {
       utils.logMessage('Prebid.JS - freewheel bid adapter: only one ad unit is required.');
     }
 
+    var zone = currentBidRequest.params.zoneId;
+    var timeInMillis = new Date().getTime();
+    var keyCode = hashcode(zone + '' + timeInMillis);
+
     var requestParams = {
       reqType: 'AdsSetup',
       protocolVersion: '2.0',
-      zoneId: currentBidRequest.params.zoneId,
-      componentId: getComponentId(currentBidRequest.params.format)
+      zoneId: zone,
+      componentId: getComponentId(currentBidRequest.params.format),
+      timestamp: timeInMillis,
+      pKey: keyCode
     };
 
     // Add GDPR flag and consent string
@@ -328,6 +346,7 @@ export const spec = {
         url: USER_SYNC_URL
       }];
     }
-  }
+  },
+
 }
 registerBidder(spec);
