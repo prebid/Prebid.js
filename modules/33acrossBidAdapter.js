@@ -35,7 +35,7 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const minSize = _getMinSize(sizes);
 
   const contributeViewability = ViewabilityContributor(
-    _getPercentInView(element, window.top, minSize)
+    _getPercentInView(element, spec.getTopWindowSize(), minSize)
   );
 
   /*
@@ -168,15 +168,15 @@ function _getIntersectionOfRects(rects) {
   return bbox;
 }
 
-function _getPercentInView(element, topWin, { w, h } = {}) {
+function _getPercentInView(element, topWinSize, { w, h } = {}) {
   const elementBoundingBox = _getBoundingBox(element, { w, h });
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = _getIntersectionOfRects([ {
     left: 0,
     top: 0,
-    right: topWin.innerWidth,
-    bottom: topWin.innerHeight
+    right: topWinSize.width,
+    bottom: topWinSize.height
   }, elementBoundingBox ]);
 
   let elementInViewArea, elementTotalArea;
@@ -211,6 +211,15 @@ function ViewabilityContributor(viewabilityAmount) {
   }
 
   return contributeViewability;
+}
+
+function getTopWindowSize() {
+  const topWin = utils.getWindowTop();
+
+  return {
+    width: topWin.innerWidth,
+    height: topWin.innerHeight,
+  }
 }
 
 function isBidRequestValid(bid) {
@@ -261,14 +270,13 @@ function getUserSyncs(syncOptions, responses, gdprConsent) {
   }
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
+  getTopWindowSize,
   getUserSyncs
 };
 
 registerBidder(spec);
-
-module.exports = spec;

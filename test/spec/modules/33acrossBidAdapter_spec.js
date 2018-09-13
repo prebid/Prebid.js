@@ -1,23 +1,17 @@
 const { config } = require('../../../src/config');
 
 const { expect } = require('chai');
-const {
-  isBidRequestValid,
-  buildRequests,
-  interpretResponse,
-  getUserSyncs
-} = require('../../../modules/33acrossBidAdapter');
+const { spec } = require('../../../modules/33acrossBidAdapter');
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
   const SITE_ID = 'pub1234';
   const PRODUCT_ID = 'product1';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-  const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
   let element;
-  let sandbox;
   let bidRequests;
+  let sandbox;
 
   function TtxRequestBuilder() {
     const ttxRequest = {
@@ -93,6 +87,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withSite = site => {
+      Object.assign(ttxRequest, { site });
+      return this;
+    };
+
     this.build = () => ttxRequest;
   }
 
@@ -126,6 +125,26 @@ describe('33acrossBidAdapter:', function () {
   }
 
   beforeEach(function() {
+    element = {
+      x: 0,
+      y: 0,
+
+      width: 0,
+      height: 0,
+
+      getBoundingClientRect: () => {
+        return {
+          width: element.width,
+          height: element.height,
+
+          left: element.x,
+          top: element.y,
+          right: element.x + element.width,
+          bottom: element.y + element.height
+        };
+      }
+    };
+
     bidRequests = [
       {
         bidId: 'b1',
@@ -147,26 +166,6 @@ describe('33acrossBidAdapter:', function () {
 
     sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
-
-    element = {
-      x: 0,
-      y: 0,
-
-      width: 0,
-      height: 0,
-
-      getBoundingClientRect: () => {
-        return {
-          width: element.width,
-          height: element.height,
-
-          left: element.x,
-          top: element.y,
-          right: element.x + element.width,
-          bottom: element.y + element.height
-        };
-      }
-    };
   });
 
   afterEach(function() {
@@ -183,7 +182,7 @@ describe('33acrossBidAdapter:', function () {
         }
       };
 
-      expect(isBidRequestValid(validBid)).to.be.true;
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
     it('returns true when valid test bid request is sent', function() {
@@ -196,7 +195,7 @@ describe('33acrossBidAdapter:', function () {
         }
       };
 
-      expect(isBidRequestValid(validBid)).to.be.true;
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
     it('returns false when bidder not set to "33across"', function() {
@@ -208,7 +207,7 @@ describe('33acrossBidAdapter:', function () {
         }
       };
 
-      expect(isBidRequestValid(invalidBid)).to.be.false;
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('returns false when params not set', function() {
@@ -216,7 +215,7 @@ describe('33acrossBidAdapter:', function () {
         bidder: 'foo'
       };
 
-      expect(isBidRequestValid(invalidBid)).to.be.false;
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('returns false when site ID is not set in params', function() {
@@ -227,7 +226,7 @@ describe('33acrossBidAdapter:', function () {
         }
       };
 
-      expect(isBidRequestValid(invalidBid)).to.be.false;
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('returns false when product ID not set in params', function() {
@@ -238,7 +237,7 @@ describe('33acrossBidAdapter:', function () {
         }
       };
 
-      expect(isBidRequestValid(invalidBid)).to.be.false;
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 
@@ -254,7 +253,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
-        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 600 });
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -269,22 +270,26 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
-        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 324, height: 212 });
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 40})
+          .withViewabiliuty({amount: 50})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
 
-        Object.assign(element, { width: 100, height: 1500 });
+        Object.assign(element, { width: 800, height: 800 });
 
-        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 400 });
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -292,7 +297,7 @@ describe('33acrossBidAdapter:', function () {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withSizes([{ w: 800, h: 1200, ext: {} }])
-          .withViewabiliuty({amount: 50})
+          .withViewabiliuty({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -301,7 +306,9 @@ describe('33acrossBidAdapter:', function () {
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].sizes = [[800, 1200]];
 
-        expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 300 });
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -324,7 +331,7 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
@@ -343,7 +350,7 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
@@ -362,7 +369,7 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
@@ -380,7 +387,7 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const builtServerRequests = buildRequests(bidRequests, bidderRequest);
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
@@ -391,34 +398,12 @@ describe('33acrossBidAdapter:', function () {
     let ttxRequest, serverRequest;
 
     beforeEach(function() {
-      ttxRequest = {
-        imp: [{
-          banner: {
-            format: [
-              {
-                w: 300,
-                h: 250,
-                ext: {}
-              },
-              {
-                w: 728,
-                h: 90,
-                ext: {}
-              }
-            ]
-          },
-          ext: {
-            ttx: {
-              prod: PRODUCT_ID
-            }
-          }
-        }],
-        site: {
+      ttxRequest = new TtxRequestBuilder()
+        .withSite({
           id: SITE_ID,
           page: 'http://test-url.com'
-        },
-        id: 'b1'
-      };
+        })
+        .build();
       serverRequest = new ServerRequestBuilder()
         .withUrl('//staging-ssc.33across.com/api/v1/hb')
         .withData(ttxRequest)
@@ -461,7 +446,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         };
 
-        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
+        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
     });
 
@@ -474,7 +459,7 @@ describe('33acrossBidAdapter:', function () {
           seatbid: []
         };
 
-        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([]);
+        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([]);
       });
     });
 
@@ -529,7 +514,7 @@ describe('33acrossBidAdapter:', function () {
           netRevenue: true
         };
 
-        expect(interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
+        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
     });
   });
@@ -595,9 +580,9 @@ describe('33acrossBidAdapter:', function () {
         it('returns empty sync array', function() {
           const syncOptions = {};
 
-          buildRequests(bidRequests);
+          spec.buildRequests(bidRequests);
 
-          expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
+          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
         });
       });
 
@@ -607,9 +592,9 @@ describe('33acrossBidAdapter:', function () {
             iframeEnabled: true
           };
 
-          buildRequests(bidRequests);
+          spec.buildRequests(bidRequests);
 
-          expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal(syncs);
+          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal(syncs);
         });
       });
     });
@@ -619,9 +604,9 @@ describe('33acrossBidAdapter:', function () {
         it('returns empty sync array', function() {
           const syncOptions = {};
 
-          buildRequests(bidRequests);
+          spec.buildRequests(bidRequests);
 
-          expect(getUserSyncs(syncOptions)).to.deep.equal([]);
+          expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
         });
       });
 
@@ -631,9 +616,9 @@ describe('33acrossBidAdapter:', function () {
             iframeEnabled: true
           };
 
-          buildRequests(bidRequests);
+          spec.buildRequests(bidRequests);
 
-          expect(getUserSyncs(syncOptions)).to.deep.equal(syncs);
+          expect(spec.getUserSyncs(syncOptions)).to.deep.equal(syncs);
         });
       });
     });
@@ -645,9 +630,9 @@ describe('33acrossBidAdapter:', function () {
           gdprApplies: true
         };
 
-        buildRequests(bidRequests);
+        spec.buildRequests(bidRequests);
 
-        expect(getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
+        expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
       });
     })
   });
