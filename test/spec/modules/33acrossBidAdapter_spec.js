@@ -87,6 +87,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withSite = site => {
+      Object.assign(ttxRequest, { site });
+      return this;
+    };
+
     this.build = () => ttxRequest;
   }
 
@@ -393,34 +398,12 @@ describe('33acrossBidAdapter:', function () {
     let ttxRequest, serverRequest;
 
     beforeEach(function() {
-      ttxRequest = {
-        imp: [{
-          banner: {
-            format: [
-              {
-                w: 300,
-                h: 250,
-                ext: {}
-              },
-              {
-                w: 728,
-                h: 90,
-                ext: {}
-              }
-            ]
-          },
-          ext: {
-            ttx: {
-              prod: PRODUCT_ID
-            }
-          }
-        }],
-        site: {
+      ttxRequest = new TtxRequestBuilder()
+        .withSite({
           id: SITE_ID,
           page: 'http://test-url.com'
-        },
-        id: 'b1'
-      };
+        })
+        .build();
       serverRequest = new ServerRequestBuilder()
         .withUrl('//staging-ssc.33across.com/api/v1/hb')
         .withData(ttxRequest)
