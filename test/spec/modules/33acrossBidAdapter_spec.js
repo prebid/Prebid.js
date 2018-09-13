@@ -13,11 +13,10 @@ describe('33acrossBidAdapter:', function () {
   const SITE_ID = 'pub1234';
   const PRODUCT_ID = 'product1';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-  const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
   let element;
-  let sandbox;
   let bidRequests;
+  let sandbox;
 
   function TtxRequestBuilder() {
     const ttxRequest = {
@@ -126,6 +125,26 @@ describe('33acrossBidAdapter:', function () {
   }
 
   beforeEach(function() {
+    element = {
+      x: 0,
+      y: 0,
+
+      width: 0,
+      height: 0,
+
+      getBoundingClientRect: () => {
+        return {
+          width: element.width,
+          height: element.height,
+
+          left: element.x,
+          top: element.y,
+          right: element.x + element.width,
+          bottom: element.y + element.height
+        };
+      }
+    };
+
     bidRequests = [
       {
         bidId: 'b1',
@@ -147,26 +166,6 @@ describe('33acrossBidAdapter:', function () {
 
     sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
-
-    element = {
-      x: 0,
-      y: 0,
-
-      width: 0,
-      height: 0,
-
-      getBoundingClientRect: () => {
-        return {
-          width: element.width,
-          height: element.height,
-
-          left: element.x,
-          top: element.y,
-          right: element.x + element.width,
-          bottom: element.y + element.height
-        };
-      }
-    };
   });
 
   afterEach(function() {
@@ -254,6 +253,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
+        sandbox.stub(window.top, 'innerWidth').value(800);
+        sandbox.stub(window.top, 'innerHeight').value(600);
+
         expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
@@ -269,6 +271,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
+        sandbox.stub(window.top, 'innerWidth').value(324);
+        sandbox.stub(window.top, 'innerHeight').value(212);
+
         expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
     });
@@ -276,13 +281,16 @@ describe('33acrossBidAdapter:', function () {
     context('when element is partially in view', function() {
       it('returns percentage', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 40})
+          .withViewabiliuty({amount: 50})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
 
-        Object.assign(element, { width: 100, height: 1500 });
+        Object.assign(element, { width: 800, height: 800 });
+
+        sandbox.stub(window.top, 'innerWidth').value(800);
+        sandbox.stub(window.top, 'innerHeight').value(400);
 
         expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
@@ -292,7 +300,7 @@ describe('33acrossBidAdapter:', function () {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withSizes([{ w: 800, h: 1200, ext: {} }])
-          .withViewabiliuty({amount: 50})
+          .withViewabiliuty({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -300,6 +308,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].sizes = [[800, 1200]];
+
+        sandbox.stub(window.top, 'innerWidth').value(800);
+        sandbox.stub(window.top, 'innerHeight').value(300);
 
         expect(buildRequests(bidRequests)).to.deep.equal([serverRequest]);
       });
