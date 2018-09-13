@@ -27,7 +27,7 @@ export function detectReferer(win) {
   function getPubUrlStack(levels) {
     let stack = [];
     let defUrl = null;
-    let encodedUrl = null;
+    let decodedUrl = null;
     let frameLocation = null;
     let prevFrame = null;
     let prevRef = null;
@@ -43,10 +43,10 @@ export function detectReferer(win) {
       }
 
       if (frameLocation) {
-        encodedUrl = encodeURIComponent(frameLocation);
-        stack.push(encodedUrl);
+        decodedUrl = decodeURIComponent(frameLocation);
+        stack.push(decodedUrl);
         if (!detectedRefererUrl) {
-          detectedRefererUrl = encodedUrl;
+          detectedRefererUrl = decodedUrl;
         }
       } else if (i !== 0) {
         prevFrame = levels[i - 1];
@@ -58,16 +58,16 @@ export function detectReferer(win) {
         }
 
         if (prevRef) {
-          encodedUrl = encodeURIComponent(prevRef);
-          stack.push(encodedUrl);
+          decodedUrl = decodeURIComponent(prevRef);
+          stack.push(decodedUrl);
           if (!detectedRefererUrl) {
-            detectedRefererUrl = encodedUrl;
+            detectedRefererUrl = decodedUrl;
           }
         } else if (ancestor) {
-          encodedUrl = encodeURIComponent(ancestor);
-          stack.push(encodedUrl);
+          decodedUrl = encodeURIComponent(ancestor);
+          stack.push(decodedUrl);
           if (!detectedRefererUrl) {
-            detectedRefererUrl = encodedUrl;
+            detectedRefererUrl = decodedUrl;
           }
         } else {
           stack.push(defUrl);
@@ -146,7 +146,7 @@ export function detectReferer(win) {
     }
   }
 
-  return refererInfo;
+  return refererInfo();
 }
 
 export const getRefererInfo = detectReferer(window);
