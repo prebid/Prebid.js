@@ -248,9 +248,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({width: 800, height: 600});
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 600 });
 
-        expect(spec.buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -265,9 +265,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({width: 324, height: 212});
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 324, height: 212 });
 
-        expect(spec.buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -282,9 +282,9 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 800, height: 800 });
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({width: 800, height: 400});
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 400 });
 
-        expect(spec.buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
@@ -301,9 +301,9 @@ describe('33acrossBidAdapter:', function () {
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].sizes = [[800, 1200]];
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({width: 800, height: 300});
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 300 });
 
-        expect(spec.buildRequests(bidRequests)).to.deep.equal([serverRequest]);
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
 
