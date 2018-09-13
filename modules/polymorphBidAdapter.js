@@ -27,7 +27,7 @@ export const polymorphAdapterSpec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId) || ( !!(bid.params.network_key) && !!(bid.params.widget_id) && !!(bid.params.cat) );
+    return !!(bid.params.placementId) || (!!(bid.params.network_key) && !!(bid.params.widget_id) && !!(bid.params.cat));
   },
 
   /**
