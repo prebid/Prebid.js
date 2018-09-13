@@ -1,4 +1,4 @@
-import analyticsAdapter, {ExpiringQueue} from 'modules/rivrAnalyticsAdapter';
+import analyticsAdapter, {ExpiringQueue, sendAuction} from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
@@ -264,6 +264,7 @@ describe('', () => {
       events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
       const responses = analyticsAdapter.context.auctionObject.bidResponses;
       expect(responses.length).to.be.eql(3);
+      expect(responses[2].total_duration).to.be.eql(null);
     })
 
     it('should handle winning bid', () => {
@@ -334,6 +335,24 @@ describe('', () => {
       expect(impressionsAfterSend.length).to.be.eql(0);
       expect(responsesAfterSend.length).to.be.eql(0);
       expect(requestsAfterSend.length).to.be.eql(0);
+    });
+
+    describe('sendAuction', () => {
+      it('clears empty payload properties', () => {
+        analyticsAdapter.context.auctionObject.nullProperty = null;
+        analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
+
+        sendAuction();
+
+        // sendAuction is called automatically. This is the reason why we are testing the second call here.
+        // Understand how to avoid it and isolate the test.
+        expect(ajaxStub.getCall(1).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/(\w+)\/auctions/);
+
+        const payload = JSON.parse(ajaxStub.getCall(1).args[2]);
+
+        expect(payload.Auction.notNullProperty).to.be.equal('aValue');
+        expect(payload.nullProperty).to.be.equal(undefined);
+      });
     });
   });
 });
