@@ -6,6 +6,7 @@ import * as urlUtils from '../src/url.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'undertone';
+<<<<<<< HEAD
 const URL = 'https://hb.undertone.com/hb';
 const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
@@ -14,6 +15,16 @@ const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2
 function getCanonicalUrl() {
   try {
     let doc = window.top.document;
+=======
+const URL = '//hb.undertone.com/hb';
+const FRAME_USER_SYNC = '//cdn.undertone.com/js/usersync.html';
+const PIXEL_USER_SYNC1 = '//usr.undertone.com/userPixel/syncOne?id=1&of=2';
+const PIXEL_USER_SYNC2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
+
+function getCanonicalUrl() {
+  try {
+    let doc = utils.getWindowTop().document;
+>>>>>>> added user sync function to undertone adapter
     let element = doc.querySelector("link[rel='canonical']");
     if (element !== null) {
       return element.href;
@@ -22,6 +33,7 @@ function getCanonicalUrl() {
   }
   return null;
 }
+<<<<<<< HEAD
 
 function extractDomainFromHost(pageHost) {
   let domain = null;
@@ -51,6 +63,7 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -67,6 +80,7 @@ export const spec = {
         'uids': validBidRequests[0].userId
       }
     };
+<<<<<<< HEAD
     const referer = bidderRequest.refererInfo.referer;
     const hostname = urlUtils.parse(referer).hostname;
     let domain = extractDomainFromHost(hostname);
@@ -83,6 +97,23 @@ export const spec = {
     if (bidderRequest.uspConsent) {
       reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
     }
+=======
+    const location = utils.getTopWindowLocation();
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(location.host);
+    let domain = null;
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+
+    const pubid = validBidRequests[0].params.publisherId;
+    const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
+    const pageUrl = getCanonicalUrl() || location.href;
+>>>>>>> added user sync function to undertone adapter
 
     validBidRequests.map(bidReq => {
       const bid = {
@@ -128,6 +159,7 @@ export const spec = {
     }
     return bids;
   },
+<<<<<<< HEAD
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
@@ -148,21 +180,39 @@ export const spec = {
       }
       iframePrivacyParams += `ccpa=${usPrivacy}`;
       pixelPrivacyParams += `&ccpa=${usPrivacy}`;
+=======
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    if (gdprConsent && gdprConsent.gdprApplies === true) {
+      return syncs;
+>>>>>>> added user sync function to undertone adapter
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
+<<<<<<< HEAD
         url: FRAME_USER_SYNC + iframePrivacyParams
+=======
+        url: FRAME_USER_SYNC
+>>>>>>> added user sync function to undertone adapter
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
+<<<<<<< HEAD
         url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
       },
       {
         type: 'image',
         url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+=======
+        url: PIXEL_USER_SYNC1
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC2
+>>>>>>> added user sync function to undertone adapter
       });
     }
     return syncs;
