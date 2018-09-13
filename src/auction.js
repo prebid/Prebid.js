@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -58,6 +58,7 @@ import { userSync } from 'src/userSync';
 import { createHook } from 'src/hook';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { OUTSTREAM } from './video';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -73,6 +74,11 @@ export const AUCTION_COMPLETED = 'completed';
 events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
+
+const MAX_REQUESTS_PER_ORIGIN = 4;
+const outstandingRequests = {};
+const sourceInfo = {};
+const queuedCalls = [];
 
 /**
   * Creates new auction instance
@@ -128,10 +134,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       try {
         _auctionStatus = AUCTION_COMPLETED;
         const adUnitCodes = _adUnitCodes;
-        const bids = [_bidsReceived
+        const bids = _bidsReceived
           .filter(adUnitsFilter.bind(this, adUnitCodes))
-          .reduce(groupByPlacement, {})];
-        _callback.apply($$PREBID_GLOBAL$$, bids);
+          .reduce(groupByPlacement, {});
+        _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
@@ -150,42 +156,26 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
-  function done(bidRequestId) {
-    const innerBidRequestId = bidRequestId;
-    return delayExecution(function() {
-      const request = find(_bidderRequests, (bidRequest) => {
-        return innerBidRequestId === bidRequest.bidderRequestId;
-      });
-
-      // this is done for cache-enabled video bids in tryAddVideoBid, after the cache is stored
-      request.doneCbCallCount += 1;
-      bidsBackAll();
-    }, 1);
-  }
-
-  /**
-   * Execute bidBackHandler if all bidders have called done.
-   */
-  function bidsBackAll() {
-    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
-      // when all bidders have called done callback atleast once it means auction is complete
-      utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
-      _auctionStatus = AUCTION_COMPLETED;
-      executeCallback(false, true);
+  function auctionDone(bidderCount) {
+    let doneCalled = 0;
+    return function() {
+      doneCalled++;
+      if (doneCalled === bidderCount) {
+        closeAuction();
+      }
     }
   }
 
+  function closeAuction() {
+    // when all bidders have called done callback atleast once it means auction is complete
+    utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
+    _auctionStatus = AUCTION_COMPLETED;
+    executeCallback(false, true);
+  }
+
   function callBids() {
-    startAuctionTimer();
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
-
-    const auctionInit = {
-      timestamp: _auctionStart,
-      auctionId: _auctionId,
-      timeout: _timeout
-    };
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
     let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
@@ -193,16 +183,109 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       addBidRequests(bidRequest);
     });
 
-    _auctionStatus = AUCTION_IN_PROGRESS;
-    adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
-  };
+    let requests = {};
+
+    let call = {
+      bidRequests,
+      run: () => {
+        startAuctionTimer();
+
+        _auctionStatus = AUCTION_IN_PROGRESS;
+
+        const auctionInit = {
+          timestamp: _auctionStart,
+          auctionId: _auctionId,
+          timeout: _timeout
+        };
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
+
+        let callbacks = auctionCallbacks(auctionDone(bidRequests.length), this);
+        let boundObj = {
+          auctionAddBidResponse: callbacks.addBidResponse
+        }
+        adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
+          request(source, origin) {
+            increment(outstandingRequests, origin);
+            increment(requests, source);
+
+            if (!sourceInfo[source]) {
+              sourceInfo[source] = {
+                SRA: true,
+                origin
+              };
+            }
+            if (requests[source] > 1) {
+              sourceInfo[source].SRA = false;
+            }
+          },
+          done(origin) {
+            outstandingRequests[origin]--;
+            if (queuedCalls[0]) {
+              if (runIfOriginHasCapacity(queuedCalls[0])) {
+                queuedCalls.shift();
+              }
+            }
+          }
+        }, _timeout);
+      }
+    };
+
+    if (!runIfOriginHasCapacity(call)) {
+      utils.logWarn('queueing auction due to limited endpoint capacity');
+      queuedCalls.push(call);
+    }
+
+    function runIfOriginHasCapacity(call) {
+      let hasCapacity = true;
+
+      let maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
+
+      call.bidRequests.some(bidRequest => {
+        let requests = 1;
+        let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC) ? 's2s'
+          : bidRequest.bidderCode;
+        // if we have no previous info on this source just let them through
+        if (sourceInfo[source]) {
+          if (sourceInfo[source].SRA === false) {
+            // some bidders might use more than the MAX_REQUESTS_PER_ORIGIN in a single auction.  In those cases
+            // set their request count to MAX_REQUESTS_PER_ORIGIN so the auction isn't permanently queued waiting
+            // for capacity for that bidder
+            requests = Math.min(bidRequest.bids.length, maxRequests);
+          }
+          if (outstandingRequests[sourceInfo[source].origin] + requests > maxRequests) {
+            hasCapacity = false;
+          }
+        }
+        // return only used for terminating this .some() iteration early if it is determined we don't have capacity
+        return !hasCapacity;
+      });
+
+      if (hasCapacity) {
+        call.run();
+      }
+
+      return hasCapacity;
+    }
+
+    function increment(obj, prop) {
+      if (typeof obj[prop] === 'undefined') {
+        obj[prop] = 1
+      } else {
+        obj[prop]++;
+      }
+    }
+  }
+
+  function addWinningBid(winningBid) {
+    _winningBids = _winningBids.concat(winningBid);
+    adaptermanager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
+  }
 
   return {
     addBidReceived,
     executeCallback,
     callBids,
-    bidsBackAll,
-    addWinningBid: (winningBid) => { _winningBids = _winningBids.concat(winningBid) },
+    addWinningBid,
     getWinningBids: () => _winningBids,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
@@ -211,6 +294,50 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
+  }
+}
+
+export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
+  this.auctionAddBidResponse(adUnitCode, bid);
+}, 'addBidResponse');
+
+export function auctionCallbacks(auctionDone, auctionInstance) {
+  let outstandingBidsAdded = 0;
+  let doneCalled = false;
+
+  function afterBidAdded() {
+    outstandingBidsAdded--;
+    if (doneCalled && outstandingBidsAdded === 0) {
+      auctionDone()
+    }
+  }
+
+  function addBidResponse(adUnitCode, bid) {
+    outstandingBidsAdded++;
+    let bidRequests = auctionInstance.getBidRequests();
+    let auctionId = auctionInstance.getAuctionId();
+
+    let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+    let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
+
+    if (bidResponse.mediaType === 'video') {
+      tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded);
+    } else {
+      addBidToAuction(auctionInstance, bidResponse);
+      afterBidAdded();
+    }
+  }
+
+  function adapterDone() {
+    doneCalled = true;
+    if ((outstandingBidsAdded === 0)) {
+      auctionDone();
+    }
+  }
+
+  return {
+    addBidResponse,
+    adapterDone
   }
 }
 
@@ -229,9 +356,11 @@ function addBidToAuction(auctionInstance, bidResponse) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
+function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded) {
   let addBid = true;
-  if (config.getConfig('cache.url')) {
+  const context = deepAccess(bidResponse, 'context');
+
+  if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey) {
       addBid = false;
       store([bidResponse], function (error, cacheIds) {
@@ -244,10 +373,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
           if (!bidResponse.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
-          // only set this prop after the bid has been cached to avoid early ending auction early in bidsBackAll
-          bidRequest.doneCbCallCount += 1;
           addBidToAuction(auctionInstance, bidResponse);
-          auctionInstance.bidsBackAll();
+          afterBidAdded();
         }
       });
     } else if (!bidResponse.vastUrl) {
@@ -257,23 +384,9 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequest) {
   }
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
+    afterBidAdded();
   }
 }
-
-export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
-  let auctionInstance = this;
-  let bidRequests = auctionInstance.getBidRequests();
-  let auctionId = auctionInstance.getAuctionId();
-
-  let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
-  let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
-
-  if (bidResponse.mediaType === 'video') {
-    tryAddVideoBid(auctionInstance, bidResponse, bidRequest);
-  } else {
-    addBidToAuction(auctionInstance, bidResponse);
-  }
-}, 'addBidResponse');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
@@ -298,17 +411,20 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
 
   // a publisher-defined renderer can be used to render bids
-  const adUnitRenderer =
-    bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+  const bidReq = bidRequest.bids && find(bidRequest.bids, bid => bid.adUnitCode == adUnitCode);
+  const adUnitRenderer = bidReq && bidReq.renderer;
 
   if (adUnitRenderer && adUnitRenderer.url) {
     bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
 
+  // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
+
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
-    config.getConfig('customPriceBucket'),
+    (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : config.getConfig('customPriceBucket'),
     config.getConfig('currency.granularityMultiplier')
   );
   bidObject.pbLg = priceStringsObj.low;
@@ -330,14 +446,17 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   return bidObject;
 }
 
-export function getStandardBidderSettings() {
-  let granularity = config.getConfig('priceGranularity');
-  let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
-  if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
+export function getStandardBidderSettings(mediaType) {
+  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+
+  let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
+  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
+    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
   }
-  if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
+  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       {
         key: 'hb_bidder',
         val: function (bidResponse) {
@@ -390,7 +509,7 @@ export function getStandardBidderSettings() {
       },
     ]
   }
-  return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
+  return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
@@ -399,18 +518,18 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   var keyValues = {};
-  var bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
+  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
 
   // 1) set the keys from "standard" setting or from prebid defaults
-  if (bidder_settings) {
+  if (bidderSettings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings();
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist
-    if (bidderCode && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-      setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-      custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
+    if (bidderCode && bidderSettings[bidderCode] && bidderSettings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+      setKeys(keyValues, bidderSettings[bidderCode], custBidObj);
+      custBidObj.sendStandardTargeting = bidderSettings[bidderCode].sendStandardTargeting;
     }
   }
 

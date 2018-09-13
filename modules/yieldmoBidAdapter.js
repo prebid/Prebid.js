@@ -111,7 +111,7 @@ function createNewBid(response) {
     cpm: response.cpm,
     width: response.width,
     height: response.height,
-    creativeId: response.creativeId,
+    creativeId: response.creative_id,
     currency: CURRENCY,
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,

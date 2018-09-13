@@ -2,6 +2,7 @@ import * as utils from 'src/utils'
 
 import { config } from 'src/config'
 import { registerBidder } from 'src/adapters/bidderFactory'
+import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -98,8 +99,9 @@ function isBidRequestValid (bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests (validBidRequests) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
+  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -122,6 +124,10 @@ function buildRequests (validBidRequests) {
     if (params.ICV) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
+    }
+    data.gdprApplies = gdprConsent.gdprApplies;
+    if (gdprConsent.gdprApplies) {
+      data.gdprConsent = gdprConsent.consentString;
     }
 
     bids.push({
@@ -169,8 +175,17 @@ function interpretResponse (serverResponse, bidRequest) {
       pvid
     }
   } = Object.assign(defaultResponse, serverResponseBody)
-  let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
-  let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+  let data = bidRequest.data || {}
+  let product = data.pi
+  let isTestUnit = (product === 3 && data.si === 9)
+  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  let [width, height] = sizes[0].split('x')
+
+  // return 1x1 when breakout expected
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+    width = '1'
+    height = '1'
+  }
 
   // update Page View ID from server response
   pageViewId = pvid

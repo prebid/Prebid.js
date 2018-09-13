@@ -18,6 +18,9 @@ const COOKIE_NAME = '_pubcid';
 const TIMEOUT = 2000;
 
 describe('Publisher Common ID', function () {
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
+  });
   describe('Decorate adUnits', function () {
     before(function() {
       window.document.cookie = COOKIE_NAME + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
@@ -156,7 +159,7 @@ describe('Publisher Common ID', function () {
       getUserSyncs: () => {}
     };
 
-    beforeEach(() => {
+    beforeEach(function () {
       adUnits = [{
         code: 'adUnit-code',
         mediaTypes: {
@@ -176,7 +179,7 @@ describe('Publisher Common ID', function () {
       registerBidder(sampleSpec);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionModule.newAuction.restore();
     });
 
