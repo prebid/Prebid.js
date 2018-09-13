@@ -116,7 +116,7 @@ function getAPIName(componentId) {
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
-  var divHtml = '<div id="freewheelssp_prebid_target"></div>';
+  var divHtml = '<div id="freewheelssp_prebid_target" style="width:' + size[0] + 'px;height:' + size[1] + 'px;"></div>';
 
   var script = '';
   var libUrl = '';
