@@ -20,7 +20,7 @@ For video integration, ZEDO returns content as vastXML and requires the publishe
                 {
                     bidder: 'zedo',
                     params: {
-                        code: 2264004118
+                        channelCode: 2264004118
                         dimId: 9
                     }
                 }

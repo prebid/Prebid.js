@@ -25,3 +25,15 @@ THE YIELDONE adapter requires setup and approval from the YIELDONE team. Please 
     }]
   }];
 ```
+
+### Configuration
+
+YIELDONE recommends the UserSync configuration below.  Without it, the YIELDONE adapter will not able to perform user syncs, which lowers match rate and reduces monetization.
+
+```javascript
+pbjs.setConfig({
+   userSync: {
+    iframeEnabled: true,
+    enabledBidders: ['yieldone']
+ }});
+```

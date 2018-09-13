@@ -25,7 +25,7 @@ function receiveMessage(ev) {
     return;
   }
 
-  if (data.adId) {
+  if (data && data.adId) {
     const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });
@@ -72,8 +72,8 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     let elementStyle = getElementByAdUnit(elmType).style;
-    elementStyle.width = width;
-    elementStyle.height = height;
+    elementStyle.width = width + 'px';
+    elementStyle.height = height + 'px';
   });
   function getElementByAdUnit(elmType) {
     return document.getElementById(find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
