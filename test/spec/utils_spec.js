@@ -639,8 +639,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('getDefinedParams', () => {
-    it('builds an object consisting of defined params', () => {
+  describe('getDefinedParams', function () {
+    it('builds an object consisting of defined params', function () {
       const adUnit = {
         mediaType: 'video',
         comeWithMe: 'ifuwant2live',
@@ -658,8 +658,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepClone', () => {
-    it('deep copies objects', () => {
+  describe('deepClone', function () {
+    it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
         mediaTypes: {video: {context: 'outstream'}},
@@ -679,7 +679,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('getUserConfiguredParams', () => {
+  describe('getUserConfiguredParams', function () {
     const adUnits = [{
       code: 'adUnit1',
       bids: [{
@@ -692,7 +692,7 @@ describe('Utils', function () {
       }]
     }];
 
-    it('should return params configured', () => {
+    it('should return params configured', function () {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
       const expected = [{
         key1: 'value1'
@@ -700,37 +700,37 @@ describe('Utils', function () {
       assert.deepEqual(output, expected);
     });
 
-    it('should return array containting empty object, if bidder present and no params are configured', () => {
+    it('should return array containting empty object, if bidder present and no params are configured', function () {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
       const expected = [{}];
       assert.deepEqual(output, expected);
     });
 
-    it('should return empty array, if bidder is not present', () => {
+    it('should return empty array, if bidder is not present', function () {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
       const expected = [];
       assert.deepEqual(output, expected);
     });
 
-    it('should return empty array, if adUnit is not present', () => {
+    it('should return empty array, if adUnit is not present', function () {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
       const expected = [];
       assert.deepEqual(output, expected);
     });
   });
 
-  describe('getTopWindowLocation', () => {
+  describe('getTopWindowLocation', function () {
     let sandbox;
 
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
     });
 
-    afterEach(() => {
+    afterEach(function () {
       sandbox.restore();
     });
 
-    it('returns window.location if not in iFrame', () => {
+    it('returns window.location if not in iFrame', function () {
       sandbox.stub(utils, 'getWindowLocation').returns({
         href: 'https://www.google.com/',
         ancestorOrigins: {},
@@ -762,7 +762,7 @@ describe('Utils', function () {
       expect(topWindowLocation.host).to.equal('www.google.com');
     });
 
-    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', () => {
+    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', function () {
       sandbox.stub(utils, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
@@ -783,7 +783,7 @@ describe('Utils', function () {
       expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
     });
 
-    it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
+    it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
       sandbox.stub(utils, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
@@ -806,8 +806,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('convertCamelToUnderscore', () => {
-    it('returns converted string value using underscore syntax instead of camelCase', () => {
+  describe('convertCamelToUnderscore', function () {
+    it('returns converted string value using underscore syntax instead of camelCase', function () {
       let var1 = 'placementIdTest';
       let test1 = utils.convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
@@ -818,18 +818,18 @@ describe('Utils', function () {
     });
   });
 
-  describe('getAdUnitSizes', () => {
-    it('returns an empty response when adUnits is undefined', () => {
+  describe('getAdUnitSizes', function () {
+    it('returns an empty response when adUnits is undefined', function () {
       let sizes = utils.getAdUnitSizes();
       expect(sizes).to.be.undefined;
     });
 
-    it('returns an empty array when invalid data is present in adUnit object', () => {
+    it('returns an empty array when invalid data is present in adUnit object', function () {
       let sizes = utils.getAdUnitSizes({ sizes: 300 });
       expect(sizes).to.deep.equal([]);
     });
 
-    it('retuns an array of arrays when reading from adUnit.sizes', () => {
+    it('retuns an array of arrays when reading from adUnit.sizes', function () {
       let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
       expect(sizes).to.deep.equal([[300, 250]]);
 
@@ -837,7 +837,7 @@ describe('Utils', function () {
       expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
 
-    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', () => {
+    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
       let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
       expect(sizes).to.deep.equal([[300, 250]]);
 
