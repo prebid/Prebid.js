@@ -150,4 +150,27 @@ describe('Undertone Adapter', () => {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('verifies gdpr consent checked', () => {
+      const options = ({ iframeEnabled: true, pixelEnabled: true });
+      expect(spec.getUserSyncs(options, {}, { gdprApplies: true }).length).to.equal(0);
+    });
+
+    it('Verifies sync iframe option', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal('//cdn.undertone.com/js/usersync.html');
+    });
+
+    it('Verifies sync image option', function () {
+      const result = spec.getUserSyncs({ pixelEnabled: true });
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=1&of=2');
+      expect(result[1].type).to.equal('image');
+      expect(result[1].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=2&of=2');
+    });
+  });
 });
