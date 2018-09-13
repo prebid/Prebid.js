@@ -7,6 +7,21 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
 const URL = '//hb.undertone.com/hb';
+const FRAME_USER_SYNC = '//cdn.undertone.com/js/usersync.html';
+const PIXEL_USER_SYNC1 = '//usr.undertone.com/userPixel/syncOne?id=1&of=2';
+const PIXEL_USER_SYNC2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
+
+function getCanonicalUrl() {
+  try {
+    let doc = utils.getWindowTop().document;
+    let element = doc.querySelector("link[rel='canonical']");
+    if (element !== null) {
+      return element.href;
+    }
+  } catch (e) {
+  }
+  return null;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,12 +49,13 @@ export const spec = {
 
     const pubid = validBidRequests[0].params.publisherId;
     const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
+    const pageUrl = getCanonicalUrl() || location.href;
 
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
         hbadaptor: 'prebid',
-        url: location.href,
+        url: pageUrl,
         domain: domain,
         placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
@@ -78,6 +94,29 @@ export const spec = {
       });
     }
     return bids;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    if (gdprConsent && gdprConsent.gdprApplies === true) {
+      return syncs;
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: FRAME_USER_SYNC
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: PIXEL_USER_SYNC1
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC2
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
