@@ -507,7 +507,8 @@ function _getPageUrl(bidRequest) {
   } else if (!pageUrl) {
     pageUrl = utils.getTopWindowUrl();
   }
-  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
+  let _pageUrl = bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
+  return decodeURIComponent(_pageUrl.replace(/\+/g, ' '))
 }
 
 function _renderCreative(script, impId) {
