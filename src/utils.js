@@ -196,7 +196,7 @@ exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
     let loc;
     try {
-      loc = exports.getAncestorOrigins() || exports.getTopFrameReferrer();
+      loc = exports.getTopFrameReferrer() || exports.getAncestorOrigins();
     } catch (e) {
       logInfo('could not obtain top window location', e);
     }
