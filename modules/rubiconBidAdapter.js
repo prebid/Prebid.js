@@ -500,12 +500,12 @@ function _getDigiTrustQueryParams() {
  * @param {BidRequest} bidRequest
  * @returns {string}
  */
-function _getPageUrl(bidRequest) {
+function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else if (!pageUrl) {
-    pageUrl = utils.getTopWindowUrl();
+    pageUrl = bidderRequest.refererInfo.referer;
   }
   let _pageUrl = bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
   return decodeURIComponent(_pageUrl.replace(/\+/g, ' '))
