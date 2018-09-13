@@ -49,7 +49,9 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   }
 });
 
-function sendAuction() {
+export function sendAuction() {
+  console.log('Function called: ============= sendAuction');
+  removeEmptyProperties(rivrAnalytics.context.auctionObject)
   let auctionObject = rivrAnalytics.context.auctionObject;
   let req = Object.assign({}, {Auction: auctionObject});
   rivrAnalytics.context.auctionObject = fulfillAuctionObject();
@@ -68,6 +70,7 @@ function sendAuction() {
 };
 
 function sendImpressions() {
+  console.log('Function called: ============= sendImpressions');
   let impressions = rivrAnalytics.context.queue.popAll();
   if (impressions.length !== 0) {
     let impressionsReq = Object.assign({}, {impressions});
@@ -111,7 +114,7 @@ function trackBidWon(args) {
 
 function trackAuctionEnd(args) {
   rivrAnalytics.context.auctionTimeEnd = Date.now();
-  createEmptyBidResponses();
+  fillBidResponsesOfUnrespondedBidRequests();
 };
 
 function trackBidTimeout(args) {
@@ -189,7 +192,7 @@ function createBidResponse(bidResponseEvent) {
 function createSingleEmptyBidResponse(bidResponse) {
   return {
     timestamp: bidResponse.start,
-    total_duration: 'noResponseDuration',
+    total_duration: null,
     bidderId: null,
     bidder_name: bidResponse.bidder,
     cur: null,
@@ -443,10 +446,12 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
   this.init = reset;
 
   function reset() {
+    console.log('Function called: ============= reset');
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(() => {
+      console.log('Function called: ============= reset -> timeout expired');
       sendAuction();
       if (queue.length) {
         sendImpressions();
@@ -467,15 +472,15 @@ function assignBidWonStatusToResponse(wonBid) {
   });
 };
 
-function createEmptyBidResponses() {
-  let unRespondedBidRequests = findAllUnrespondedBidRequests();
+function fillBidResponsesOfUnrespondedBidRequests() {
+  let unRespondedBidRequests = getAllUnrespondedBidRequests();
   unRespondedBidRequests.forEach((bid) => {
     let emptyBidResponse = createSingleEmptyBidResponse(bid);
     rivrAnalytics.context.auctionObject.bidResponses.push(emptyBidResponse);
   });
 };
 
-function findAllUnrespondedBidRequests() {
+function getAllUnrespondedBidRequests() {
   let respondedBidIds = getAllRespondedBidIds();
   let bidRequests = rivrAnalytics.context.auctionObject.bidRequests;
   let allNotRespondedBidRequests = bidRequests.reduce((cache, requestBidder) => {
@@ -488,6 +493,13 @@ function findAllUnrespondedBidRequests() {
 
 function getAllRespondedBidIds() {
   return rivrAnalytics.context.auctionObject.bidResponses.map((response) => response.seatbid[0].bid[0].adid);
+};
+
+function removeEmptyProperties(obj) {
+  Object.keys(obj).forEach(function(key) {
+    if (obj[key] && typeof obj[key] === 'object') removeEmptyProperties(obj[key])
+    else if (obj[key] == null) delete obj[key]
+  });
 };
 
 // save the base class function
