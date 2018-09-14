@@ -28,7 +28,7 @@ function _createBidResponse(response) {
 }
 
 function _isViewabilityMeasurable() {
-  return !spec.isIframe();
+  return !isIframe() && utils.getWindowTop().document.visibilityState === 'visible';
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
@@ -41,7 +41,7 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const minSize = _getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable()
-    ? _getPercentInView(element, spec.getTopWindowSize(), minSize)
+    ? _getPercentInView(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
@@ -176,15 +176,15 @@ function _getIntersectionOfRects(rects) {
   return bbox;
 }
 
-function _getPercentInView(element, topWinSize, { w, h } = {}) {
+function _getPercentInView(element, topWin, { w, h } = {}) {
   const elementBoundingBox = _getBoundingBox(element, { w, h });
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = _getIntersectionOfRects([ {
     left: 0,
     top: 0,
-    right: topWinSize.width,
-    bottom: topWinSize.height
+    right: topWin.innerWidth,
+    bottom: topWin.innerHeight
   }, elementBoundingBox ]);
 
   let elementInViewArea, elementTotalArea;
@@ -219,15 +219,6 @@ function ViewabilityContributor(viewabilityAmount) {
   }
 
   return contributeViewability;
-}
-
-function getTopWindowSize() {
-  const topWin = utils.getWindowTop();
-
-  return {
-    width: topWin.innerWidth,
-    height: topWin.innerHeight,
-  }
 }
 
 function isIframe() {
@@ -293,9 +284,7 @@ export const spec = {
 
   isBidRequestValid,
   buildRequests,
-  getTopWindowSize,
   interpretResponse,
-  isIframe,
   getUserSyncs,
 };
 
