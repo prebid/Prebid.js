@@ -323,13 +323,9 @@ export const spec = {
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
-      'tg_fl.eid': bidRequest.code
+      'tg_fl.eid': bidRequest.code,
+      'rf': _getPageUrl(bidRequest, bidderRequest)
     };
-
-    if (bidderRequest || bidRequest) {
-      // add 'gdpr' only if 'gdprApplies' is defined
-      data['rf'] = _getPageUrl(bidRequest, bidderRequest);
-    }
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
