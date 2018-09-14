@@ -467,21 +467,19 @@ describe('the rubicon adapter', function () {
         });
 
         it('should add referer info to request data', function () {
-          const _bidderRequest = {
-            refererInfo: {
-              referer: 'http%3A%2F%2Fexample.com%2Fpage.html',
-              reachedTop: true,
-              numIframes: 2,
-              stack: [
-                'http%3A%2F%2Fexample.com%2Fpage.html',
-                'http%3A%2F%2Fexample.com%2Fiframe1.html',
-                'http%3A%2F%2Fexample.com%2Fiframe2.html'
-              ]
-            }
-          }
+          let refererInfo = {
+            referer: 'http%3A%2F%2Fwww.prebid.org',
+            reachedTop: true,
+            numIframes: 1,
+            stack: [
+              'http%3A%2F%2Fwww.prebid.org%2Fpage.html',
+              'http%3A%2F%2Fwww.prebid.org%2Fiframe1.html',
+            ]
+          };
 
+          bidderRequest = Object.assign({refererInfo}, bidderRequest);
           delete bidderRequest.bids[0].params.referrer;
-          let [request] = spec.buildRequests(bidderRequest.bids, _bidderRequest);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
           expect(parseQuery(request.data).rf).to.exist;
@@ -493,9 +491,8 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          bidderRequest.refererInfo = {
-            'referer': 'http%3A%2F%2Fwww.prebid.org'
-          };
+          let refererInfo = { referer: 'http%3A%2F%2Fwww.prebid.org' };
+          bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
 
