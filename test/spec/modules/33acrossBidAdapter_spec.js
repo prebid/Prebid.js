@@ -1,7 +1,7 @@
-const { config } = require('../../../src/config');
+import { expect } from 'chai';
 
-const { expect } = require('chai');
-const { spec } = require('../../../modules/33acrossBidAdapter');
+import { config } from 'src/config';
+import { spec } from 'modules/33acrossBidAdapter';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
@@ -166,6 +166,7 @@ describe('33acrossBidAdapter:', function () {
 
     sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
+    sandbox.stub(spec, 'isIframe').returns(false);
   });
 
   afterEach(function() {
@@ -307,6 +308,25 @@ describe('33acrossBidAdapter:', function () {
         bidRequests[0].sizes = [[800, 1200]];
 
         sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 300 });
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
+      });
+    });
+
+    context('when nested iframes', function() {
+      it('returns \'nm\'', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        Object.assign(element, { width: 600, height: 400 });
+
+        sandbox.restore();
+        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 600 });
+        sandbox.stub(spec, 'isIframe').returns(true);
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });

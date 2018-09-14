@@ -28,7 +28,7 @@ function _createBidResponse(response) {
 }
 
 function _isViewabilityMeasurable() {
-  return !isIframe();
+  return !spec.isIframe();
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
@@ -39,7 +39,11 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const element = document.getElementById(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
-  const viewabilityAmount = _isViewabilityMeasurable() ? _getPercentInView(element, spec.getTopWindowSize(), minSize) : NON_MEASURABLE;
+
+  const viewabilityAmount = _isViewabilityMeasurable()
+    ? _getPercentInView(element, spec.getTopWindowSize(), minSize)
+    : NON_MEASURABLE;
+
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
 
   /*
@@ -209,7 +213,7 @@ function ViewabilityContributor(viewabilityAmount) {
     const ext = banner.ext = Object.assign({}, banner.ext);
     const ttx = ext.ttx = Object.assign({}, ext.ttx);
 
-    ttx.viewability = { amount: Math.round(viewabilityAmount) };
+    ttx.viewability = { amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount) };
 
     return req;
   }
@@ -228,7 +232,7 @@ function getTopWindowSize() {
 
 function isIframe() {
   try {
-    return window.self !== window.top;
+    return utils.getWindowSelf() !== utils.getWindowTop();
   } catch (e) {
     return true;
   }
@@ -283,12 +287,16 @@ function getUserSyncs(syncOptions, responses, gdprConsent) {
 }
 
 export const spec = {
+  NON_MEASURABLE,
+
   code: BIDDER_CODE,
+
   isBidRequestValid,
   buildRequests,
-  interpretResponse,
   getTopWindowSize,
-  getUserSyncs
+  interpretResponse,
+  isIframe,
+  getUserSyncs,
 };
 
 registerBidder(spec);
