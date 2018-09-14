@@ -170,7 +170,7 @@ Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidder
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
-Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/PR_REVIEW.md).
 
 ### Add a Bidder Adapter
 
