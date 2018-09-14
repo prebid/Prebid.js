@@ -9,6 +9,8 @@ const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
 const adapterState = {};
 
+const NON_MEASURABLE = 'nm';
+
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
   return {
@@ -25,6 +27,10 @@ function _createBidResponse(response) {
   }
 }
 
+function _isViewabilityMeasurable() {
+  return !isIframe() && utils.getWindowTop().document.visibilityState === 'visible';
+}
+
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
 function _createServerRequest(bidRequest, gdprConsent) {
@@ -34,9 +40,11 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
 
-  const contributeViewability = ViewabilityContributor(
-    _getPercentInView(element, spec.getTopWindowSize(), minSize)
-  );
+  const viewabilityAmount = _isViewabilityMeasurable()
+    ? _getPercentInView(element, utils.getWindowTop(), minSize)
+    : NON_MEASURABLE;
+
+  const contributeViewability = ViewabilityContributor(viewabilityAmount);
 
   /*
    * Infer data for the request payload
@@ -168,15 +176,15 @@ function _getIntersectionOfRects(rects) {
   return bbox;
 }
 
-function _getPercentInView(element, topWinSize, { w, h } = {}) {
+function _getPercentInView(element, topWin, { w, h } = {}) {
   const elementBoundingBox = _getBoundingBox(element, { w, h });
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = _getIntersectionOfRects([ {
     left: 0,
     top: 0,
-    right: topWinSize.width,
-    bottom: topWinSize.height
+    right: topWin.innerWidth,
+    bottom: topWin.innerHeight
   }, elementBoundingBox ]);
 
   let elementInViewArea, elementTotalArea;
@@ -205,7 +213,7 @@ function ViewabilityContributor(viewabilityAmount) {
     const ext = banner.ext = Object.assign({}, banner.ext);
     const ttx = ext.ttx = Object.assign({}, ext.ttx);
 
-    ttx.viewability = { amount: Math.round(viewabilityAmount) };
+    ttx.viewability = { amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount) };
 
     return req;
   }
@@ -213,12 +221,11 @@ function ViewabilityContributor(viewabilityAmount) {
   return contributeViewability;
 }
 
-function getTopWindowSize() {
-  const topWin = utils.getWindowTop();
-
-  return {
-    width: topWin.innerWidth,
-    height: topWin.innerHeight,
+function isIframe() {
+  try {
+    return utils.getWindowSelf() !== utils.getWindowTop();
+  } catch (e) {
+    return true;
   }
 }
 
@@ -271,12 +278,14 @@ function getUserSyncs(syncOptions, responses, gdprConsent) {
 }
 
 export const spec = {
+  NON_MEASURABLE,
+
   code: BIDDER_CODE,
+
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getTopWindowSize,
-  getUserSyncs
+  getUserSyncs,
 };
 
 registerBidder(spec);

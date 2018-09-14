@@ -1,7 +1,9 @@
-const { config } = require('../../../src/config');
+import { expect } from 'chai';
 
-const { expect } = require('chai');
-const { spec } = require('../../../modules/33acrossBidAdapter');
+import * as utils from 'src/utils';
+import { config } from 'src/config';
+
+import { spec } from 'modules/33acrossBidAdapter';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
@@ -9,7 +11,7 @@ describe('33acrossBidAdapter:', function () {
   const PRODUCT_ID = 'product1';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
-  let element;
+  let element, win;
   let bidRequests;
   let sandbox;
 
@@ -144,6 +146,14 @@ describe('33acrossBidAdapter:', function () {
         };
       }
     };
+    win = {
+      document: {
+        visibilityState: 'visible'
+      },
+
+      innerWidth: 800,
+      innerHeight: 600
+    };
 
     bidRequests = [
       {
@@ -166,6 +176,8 @@ describe('33acrossBidAdapter:', function () {
 
     sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
+    sandbox.stub(utils, 'getWindowTop').returns(win);
+    sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
 
   afterEach(function() {
@@ -253,8 +265,6 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 600 });
-
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
@@ -270,8 +280,6 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 324, height: 212 });
-
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
     });
@@ -279,15 +287,13 @@ describe('33acrossBidAdapter:', function () {
     context('when element is partially in view', function() {
       it('returns percentage', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 50})
+          .withViewabiliuty({amount: 75})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
 
         Object.assign(element, { width: 800, height: 800 });
-
-        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 400 });
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
@@ -296,7 +302,7 @@ describe('33acrossBidAdapter:', function () {
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withSizes([{ w: 800, h: 1200, ext: {} }])
+          .withSizes([{ w: 800, h: 2400, ext: {} }])
           .withViewabiliuty({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
@@ -304,9 +310,46 @@ describe('33acrossBidAdapter:', function () {
           .build();
 
         Object.assign(element, { width: 0, height: 0 });
-        bidRequests[0].sizes = [[800, 1200]];
+        bidRequests[0].sizes = [[800, 2400]];
 
-        sandbox.stub(spec, 'getTopWindowSize').returns({ width: 800, height: 300 });
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
+      });
+    });
+
+    context('when nested iframes', function() {
+      it('returns \'nm\'', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        Object.assign(element, { width: 600, height: 400 });
+
+        utils.getWindowTop.restore();
+        utils.getWindowSelf.restore();
+        sandbox.stub(utils, 'getWindowTop').returns(win);
+        sandbox.stub(utils, 'getWindowSelf').returns({});
+
+        expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
+      });
+    });
+
+    context('when tab is inactive', function() {
+      it('returns \'nm\'', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        Object.assign(element, { width: 600, height: 400 });
+
+        utils.getWindowTop.restore();
+        win.document.visibilityState = 'hidden';
+        sandbox.stub(utils, 'getWindowTop').returns(win);
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
