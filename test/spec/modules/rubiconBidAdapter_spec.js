@@ -466,13 +466,33 @@ describe('the rubicon adapter', function () {
           });
         });
 
-        it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', function () {
-          sandbox.stub(utils, 'getTopWindowUrl').callsFake(() => 'http://www.prebid.org');
+        it('should add referer info to payload', function () {
+          var refererBidderRequest = clone(bidderRequest);
 
+          delete refererBidderRequest.bids[0].params.referrer;
+          refererBidderRequest.refererInfo = {
+            referer: 'http%3A%2F%2Fwww.prebid.org',
+            reachedTop: true,
+            numIframes: 1,
+            stack: [
+              'http%3A%2F%2Fwww.prebid.org',
+              'http%3A%2F%2Fwww.prebid.org%2Fiframe1.html',
+            ]
+          };
+
+          let [request] = spec.buildRequests(refererBidderRequest.bids, refererBidderRequest);
+          let data = parseQuery(request.data);
+
+          expect(parseQuery(request.data).rf).to.exist;
+          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+        });
+
+        it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
+          bidderRequest.refererInfo = { referer: 'http%3A%2F%2Fwww.prebid.org' };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
 
