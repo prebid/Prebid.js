@@ -41,11 +41,17 @@ export const polymorphAdapterSpec = {
       var payload = {
         url: utils.getTopWindowUrl(),
         ref: utils.getTopFrameReferrer(),
-        zid: bid.params.placementId,
         sizes: bid.sizes,
         hb: 1,
         hb_source: 'prebid'
       };
+      if (!!(bid.params.placementId)) {
+        payload.zid = bid.params.placementId;
+      } else if (!!(bid.params.network_key) && !!(bid.params.widget_id) && !!(bid.params.cat)) {
+        payload.network_key = bid.params.network_key;
+        payload.widget_id = bid.params.widget_id;
+        payload.cat = bid.params.cat;
+      }
       Object.keys(bid.params).forEach(function(key) {
         if (key != 'defaultWidth' && key != 'defaultHeight') {
           payload[key] = bid.params[key];
