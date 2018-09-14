@@ -9,6 +9,8 @@ const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
 
 const adapterState = {};
 
+const NON_MEASURABLE = 'nm';
+
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
   return {
@@ -25,6 +27,10 @@ function _createBidResponse(response) {
   }
 }
 
+function _isViewabilityMeasurable() {
+  return !isIframe();
+}
+
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
 function _createServerRequest(bidRequest, gdprConsent) {
@@ -33,10 +39,8 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const element = document.getElementById(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
-
-  const contributeViewability = ViewabilityContributor(
-    _getPercentInView(element, spec.getTopWindowSize(), minSize)
-  );
+  const viewabilityAmount = _isViewabilityMeasurable() ? _getPercentInView(element, spec.getTopWindowSize(), minSize) : NON_MEASURABLE;
+  const contributeViewability = ViewabilityContributor(viewabilityAmount);
 
   /*
    * Infer data for the request payload
@@ -219,6 +223,14 @@ function getTopWindowSize() {
   return {
     width: topWin.innerWidth,
     height: topWin.innerHeight,
+  }
+}
+
+function isIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
   }
 }
 
