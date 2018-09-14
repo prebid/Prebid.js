@@ -487,7 +487,7 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
         });
 
-        it('page_url should use params.referrer, config.getConfig("pageUrl"), refererInfo.referer in that order', function () {
+        it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
