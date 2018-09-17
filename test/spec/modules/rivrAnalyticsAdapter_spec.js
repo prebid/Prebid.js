@@ -133,11 +133,11 @@ describe('', () => {
     let timer;
 
     before(() => {
-      ajaxStub = sandbox.stub(ajax, 'ajax');
       timer = sandbox.useFakeTimers(0);
     });
 
     beforeEach(() => {
+      ajaxStub = sandbox.stub(ajax, 'ajax');
       sandbox.stub(events, 'getEvents').callsFake(() => {
         return []
       });
@@ -145,6 +145,7 @@ describe('', () => {
 
     afterEach(() => {
       events.getEvents.restore();
+      ajaxStub.restore();
     });
 
     it('should be configurable', () => {
@@ -315,43 +316,65 @@ describe('', () => {
       });
     });
 
-    it('sends request after timeout', () => {
-      let impressions = analyticsAdapter.context.auctionObject.imp;
-      let responses = analyticsAdapter.context.auctionObject.bidResponses;
-      let requests = analyticsAdapter.context.auctionObject.bidRequests;
+    describe('when authToken is defined', () => {
+      it('sends request after timeout', () => {
+        analyticsAdapter.context.authToken = 'anAuthToken';
+        let impressions = analyticsAdapter.context.auctionObject.imp;
+        let responses = analyticsAdapter.context.auctionObject.bidResponses;
+        let requests = analyticsAdapter.context.auctionObject.bidRequests;
 
-      expect(impressions.length).to.be.eql(1);
-      expect(responses.length).to.be.eql(3);
-      expect(requests.length).to.be.eql(3);
-      expect(ajaxStub.calledOnce).to.be.equal(false);
+        expect(impressions.length).to.be.eql(1);
+        expect(responses.length).to.be.eql(3);
+        expect(requests.length).to.be.eql(3);
+        expect(ajaxStub.notCalled).to.be.equal(true);
 
-      timer.tick(4500);
+        timer.tick(4500);
 
-      let impressionsAfterSend = analyticsAdapter.context.auctionObject.imp;
-      let responsesAfterSend = analyticsAdapter.context.auctionObject.bidResponses;
-      let requestsAfterSend = analyticsAdapter.context.auctionObject.bidRequests;
+        let impressionsAfterSend = analyticsAdapter.context.auctionObject.imp;
+        let responsesAfterSend = analyticsAdapter.context.auctionObject.bidResponses;
+        let requestsAfterSend = analyticsAdapter.context.auctionObject.bidRequests;
 
-      expect(ajaxStub.calledOnce).to.be.equal(true);
-      expect(impressionsAfterSend.length).to.be.eql(0);
-      expect(responsesAfterSend.length).to.be.eql(0);
-      expect(requestsAfterSend.length).to.be.eql(0);
+        expect(ajaxStub.calledOnce).to.be.equal(true);
+        expect(impressionsAfterSend.length).to.be.eql(0);
+        expect(responsesAfterSend.length).to.be.eql(0);
+        expect(requestsAfterSend.length).to.be.eql(0);
+
+        analyticsAdapter.context.authToken = undefined;
+      });
     });
 
     describe('sendAuction', () => {
-      it('clears empty payload properties', () => {
-        analyticsAdapter.context.auctionObject.nullProperty = null;
-        analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
+      describe('when authToken is defined', () => {
+        it('fires call clearing empty payload properties', () => {
+          analyticsAdapter.context.authToken = 'anAuthToken';
+          analyticsAdapter.context.auctionObject.nullProperty = null;
+          analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
 
-        sendAuction();
+          sendAuction();
 
-        // sendAuction is called automatically. This is the reason why we are testing the second call here.
-        // Understand how to avoid it and isolate the test.
-        expect(ajaxStub.getCall(1).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/(\w+)\/auctions/);
+          expect(ajaxStub.getCall(0).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/(\w+)\/auctions/);
 
-        const payload = JSON.parse(ajaxStub.getCall(1).args[2]);
+          const payload = JSON.parse(ajaxStub.getCall(0).args[2]);
 
-        expect(payload.Auction.notNullProperty).to.be.equal('aValue');
-        expect(payload.nullProperty).to.be.equal(undefined);
+          expect(payload.Auction.notNullProperty).to.be.equal('aValue');
+          expect(payload.nullProperty).to.be.equal(undefined);
+
+          analyticsAdapter.context.authToken = undefined;
+        });
+      });
+
+      describe('when authToken is not defined', () => {
+        it('does not fire call', () => {
+          analyticsAdapter.context.authToken = undefined;
+          analyticsAdapter.context.auctionObject.nullProperty = null;
+          analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
+
+          expect(ajaxStub.callCount).to.be.equal(0);
+
+          sendAuction();
+
+          expect(ajaxStub.callCount).to.be.equal(0);
+        });
       });
     });
   });

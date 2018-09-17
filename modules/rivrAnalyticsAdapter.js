@@ -51,41 +51,46 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
 
 export function sendAuction() {
   console.log('Function called: ============= sendAuction');
-  removeEmptyProperties(rivrAnalytics.context.auctionObject)
-  let auctionObject = rivrAnalytics.context.auctionObject;
-  let req = Object.assign({}, {Auction: auctionObject});
-  rivrAnalytics.context.auctionObject = fulfillAuctionObject();
-  logInfo('sending request to analytics => ', req);
-  ajax(
-    `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
-    () => {},
-    JSON.stringify(req),
-    {
-      contentType: 'application/json',
-      customHeaders: {
-        'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI='
+  console.log('Function called: ============= sendAuction rivrAnalytics.context.authToken', rivrAnalytics.context.authToken);
+  if (rivrAnalytics.context.authToken) {
+    removeEmptyProperties(rivrAnalytics.context.auctionObject)
+    let auctionObject = rivrAnalytics.context.auctionObject;
+    let req = Object.assign({}, {Auction: auctionObject});
+    rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+    logInfo('sending request to analytics => ', req);
+    ajax(
+      `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
+      () => {},
+      JSON.stringify(req),
+      {
+        contentType: 'application/json',
+        customHeaders: {
+          'Authorization': 'Basic ' + rivrAnalytics.context.authToken
+        }
       }
-    }
-  );
+    );
+  }
 };
 
 function sendImpressions() {
   console.log('Function called: ============= sendImpressions');
-  let impressions = rivrAnalytics.context.queue.popAll();
-  if (impressions.length !== 0) {
-    let impressionsReq = Object.assign({}, {impressions});
-    logInfo('sending impressions request to analytics => ', impressionsReq);
-    ajax(
-      `http://${rivrAnalytics.context.host}/impressions`,
-      () => {},
-      JSON.stringify(impressionsReq),
-      {
-        contentType: 'application/json',
-        customHeaders: {
-          'Authorization': 'Basic b3V0ZXJwYXNzaXZlOkQ3OVZ5YXI1eVZXUEVBaHI='
+  if (rivrAnalytics.context.authToken) {
+    let impressions = rivrAnalytics.context.queue.popAll();
+    if (impressions.length !== 0) {
+      let impressionsReq = Object.assign({}, {impressions});
+      logInfo('sending impressions request to analytics => ', impressionsReq);
+      ajax(
+        `http://${rivrAnalytics.context.host}/impressions`,
+        () => {},
+        JSON.stringify(impressionsReq),
+        {
+          contentType: 'application/json',
+          customHeaders: {
+            'Authorization': 'Basic ' + rivrAnalytics.context.authToken
+          }
         }
-      }
-    );
+      );
+    }
   }
 };
 
@@ -518,6 +523,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     auctionObject: {},
     adUnits: copiedUnits,
     clientID: config.options.clientID,
+    authToken: config.options.authToken,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
   let bannersIds = config.options.bannersIds
