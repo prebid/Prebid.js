@@ -909,7 +909,6 @@ describe('auctionmanager.js', function () {
     });
 
     it('should call auction done after prebid cache is complete for mediaType video', function() {
-      debugger; // eslint-disable-line
       bids[0].mediaType = 'video';
       let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 

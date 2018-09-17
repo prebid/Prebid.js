@@ -295,7 +295,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
 
-  let areAllAdapterDone = delayExecution(() => {
+  let onAllAdapterDone = delayExecution(() => {
     allAdapterCalledDone = true;
   }, auctionInstance.getBidRequests().length);
 
@@ -323,8 +323,8 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   function adapterDone() {
-    areAllAdapterDone();
-    if (allAdapterCalledDone && (outstandingBidsAdded === 0)) {
+    onAllAdapterDone();
+    if (allAdapterCalledDone && outstandingBidsAdded === 0) {
       auctionDone();
     }
   }
