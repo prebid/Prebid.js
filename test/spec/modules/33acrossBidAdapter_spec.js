@@ -337,9 +337,9 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when tab is inactive', function() {
-      it('returns \'nm\'', function() {
+      it('returns 0', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .withViewabiliuty({amount: 0})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)

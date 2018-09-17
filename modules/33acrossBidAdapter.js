@@ -28,7 +28,13 @@ function _createBidResponse(response) {
 }
 
 function _isViewabilityMeasurable() {
-  return !isIframe() && utils.getWindowTop().document.visibilityState === 'visible';
+  return !_isIframe();
+}
+
+function _getViewability(element, topWin, { w, h } = {}) {
+  return utils.getWindowTop().document.visibilityState === 'visible'
+    ? _getPercentInView(element, topWin, { w, h })
+    : 0;
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
@@ -41,7 +47,7 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const minSize = _getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable()
-    ? _getPercentInView(element, utils.getWindowTop(), minSize)
+    ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
@@ -221,7 +227,7 @@ function ViewabilityContributor(viewabilityAmount) {
   return contributeViewability;
 }
 
-function isIframe() {
+function _isIframe() {
   try {
     return utils.getWindowSelf() !== utils.getWindowTop();
   } catch (e) {
