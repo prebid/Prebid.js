@@ -20,7 +20,7 @@ THE COLOMBIA adapter requires setup and approval from the COLOMBIA team. Please 
     bids: [{
     bidder: 'colombia',
       params: { 
-        placementId: '44082'
+        placementId: '307466'
       }
     }]
   }];
