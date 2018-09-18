@@ -4,6 +4,7 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/audienceNetworkBidAdapter';
+import * as utils from 'src/utils';
 
 const {
   code,
@@ -18,7 +19,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
-const debug = 'adapterver=0.1.1&platform=241394079772386&platver=$prebid.version$';
+const debug = 'adapterver=0.2.1&platform=241394079772386&platver=$prebid.version$&cb=test-uuid';
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
@@ -71,7 +72,7 @@ describe('AudienceNetwork adapter', () => {
       })).to.equal(true);
     });
 
-    it('fullwidth', () => {
+    it('fullwidth (deprecated)', () => {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250], [336, 280]],
@@ -117,6 +118,16 @@ describe('AudienceNetwork adapter', () => {
   });
 
   describe('buildRequests', () => {
+    before(function () {
+      sinon
+        .stub(utils, 'generateUUID')
+        .returns('test-uuid');
+    });
+
+    after(function () {
+      utils.generateUUID.restore();
+    });
+
     it('can build URL for IAB unit, overriding platform', () => {
       const platform = 'test-platform';
       const debugPlatform = debug.replace('241394079772386', platform);
@@ -124,7 +135,7 @@ describe('AudienceNetwork adapter', () => {
       expect(buildRequests([{
         bidder,
         bidId: requestId,
-        sizes: [[300, 250], [320, 50]],
+        sizes: [[300, 50], [300, 250], [320, 50]],
         params: { placementId, platform }
       }])).to.deep.equal([{
         adformats: ['300x250'],
