@@ -7,7 +7,6 @@ const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h'
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['rdn'],
   isBidRequestValid: bid => !!bid.params.adSpotId,
   buildRequests: validBidRequests => {
     const bidRequests = []
@@ -60,7 +59,7 @@ export const spec = {
       if (!bidResponseObj) {
         return [];
       }
-      if (bidResponseObj.sync_urls && bidResponseObj.sync_urls != 'null' && bidResponseObj.sync_urls.length > 0) {
+      if (bidResponseObj.sync_urls && bidResponseObj.sync_urls.length > 0) {
         bidResponseObj.sync_urls.forEach(syncUrl => {
           if (syncUrl && syncUrl != 'null' && syncUrl.length > 0) {
             syncs.push({
