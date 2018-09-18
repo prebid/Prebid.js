@@ -2,7 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const SUPPORTED_AD_TYPES = [BANNER];
-const BIDDER_API_URL = 'http://pmp-stg-server.tw.appier.biz/v1/prebid/bid';
+const BIDDER_API_URL = '//pmp-stg-server.tw.appier.biz/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
