@@ -8,7 +8,7 @@ const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 describe('colombiaBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'colombia',
       'params': {
@@ -23,23 +23,23 @@ describe('colombiaBidAdapter', function() {
       'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when placementId not passed correctly', () => {
+    it('should return false when placementId not passed correctly', function () {
       bid.params.placementId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when require params are not passed', () => {
+    it('should return false when require params are not passed', function () {
       let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'colombia',
@@ -71,18 +71,18 @@ describe('colombiaBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('sends bid request to our endpoint via POST', () => {
+    it('sends bid request to our endpoint via POST', function () {
       expect(request[0].method).to.equal('POST');
       expect(request[1].method).to.equal('POST');
     });
 
-    it('attaches source and version to endpoint URL as query params', () => {
+    it('attaches source and version to endpoint URL as query params', function () {
       expect(request[0].url).to.equal(ENDPOINT);
       expect(request[1].url).to.equal(ENDPOINT);
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequest = [
       {
         'method': 'POST',
@@ -116,7 +116,7 @@ describe('colombiaBidAdapter', function() {
       }
     };
 
-    it('should get the correct bid response', () => {
+    it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 3.14,
@@ -134,7 +134,7 @@ describe('colombiaBidAdapter', function() {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
-    it('handles empty bid response', () => {
+    it('handles empty bid response', function () {
       let response = {
         body: {
           'uid': '2c0b634db95a01',

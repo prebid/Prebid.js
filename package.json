@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "1.24.0-pre",
+  "version": "1.25.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -104,7 +104,6 @@
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
     "gulp-sourcemaps": "^2.6.0",
-    "just-clone": "^1.0.2",
-    "natives": "^1.1.4"
+    "just-clone": "^1.0.2"
   }
 }
