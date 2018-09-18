@@ -181,7 +181,7 @@ function bundle(dev, moduleArr) {
   var allModules = helpers.getModuleNames(modules);
 
   if (modules.length === 0) {
-    modules = allModules.filter(module => !explicitModules.includes(module));
+    modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {
