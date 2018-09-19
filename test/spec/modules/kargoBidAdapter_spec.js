@@ -35,12 +35,20 @@ describe('kargo adapter tests', function () {
   });
 
   describe('build request', function() {
-    var bids, cookies = [], localStorageItems = [];
+    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [];
 
     beforeEach(function () {
+      undefinedCurrency = false;
+      noAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
         if (key === 'currency') {
-          return 'USD';
+          if (undefinedCurrency) {
+            return undefined;
+          }
+          if (noAdServerCurrency) {
+            return {};
+          }
+          return {adServerCurrency: 'USD'};
         }
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
@@ -107,6 +115,16 @@ describe('kargo adapter tests', function () {
 
     function simulateNoLocalStorage() {
       return sandbox.stub(localStorage, 'getItem').throws();
+    }
+
+    function simulateNoCurrencyObject() {
+      undefinedCurrency = true;
+      noAdServerCurrency = false;
+    }
+
+    function simulateNoAdServerCurrency() {
+      undefinedCurrency = false;
+      noAdServerCurrency = true;
     }
 
     function initializeKruxUser() {
@@ -307,6 +325,24 @@ describe('kargo adapter tests', function () {
       initializeKrgUid();
       initializeInvalidKrgCrbType3();
       testBuildRequests(getExpectedKrakenParams({crb: true}, undefined, getInvalidKrgCrbType3()));
+    });
+
+    it('handles a non-existant currency object on the config', function() {
+      simulateNoCurrencyObject();
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeKrgUid();
+      initializeKrgCrb();
+      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb()));
+    });
+
+    it('handles no ad server currency being set on the currency object in the config', function() {
+      simulateNoAdServerCurrency();
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeKrgUid();
+      initializeKrgCrb();
+      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb()));
     });
   });
 
