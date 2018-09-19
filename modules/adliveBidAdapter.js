@@ -1,11 +1,11 @@
 import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'adlive';
-const ENDPOINT_URL = 'https://api.publishers.adlive.io/get'
-const CURRENCY = 'USD'
-const TIME_TO_LIVE = 360
+const ENDPOINT_URL = 'https://api.publishers.adlive.io/get';
+const CURRENCY = 'USD';
+const TIME_TO_LIVE = 360;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,7 +16,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests) {
-    let requests = []
+    let requests = [];
     utils._each(validBidRequests, function(bid) {
       requests.push({
         method: 'POST',
@@ -31,7 +31,7 @@ export const spec = {
         }),
         bid
       });
-    })
+    });
 
     return requests;
   },
@@ -44,7 +44,7 @@ export const spec = {
       utils._each(response, function(bidResponse) {
         if (!bidResponse.is_passback) {
           bidResponses.push({
-            requestId: bidRequest.bid.bidId,
+            requestId: bidRequest.bidId,
             cpm: bidResponse.price,
             width: bidResponse.size[0],
             height: bidResponse.size[1],
@@ -55,13 +55,13 @@ export const spec = {
             ad: bidResponse.content
           });
         }
-      })
+      });
 
       return bidResponses;
     } catch (err) {
-      utils.logError(err)
-      return []
+      utils.logError(err);
+      return [];
     }
-  },
-}
+  }
+};
 registerBidder(spec);
