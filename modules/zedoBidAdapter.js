@@ -6,7 +6,7 @@ import { Renderer } from 'src/Renderer';
 
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmh.json';
-const SECURE_URL = '//z2.zedo.com/asw/fmh.json';
+const SECURE_URL = '//saxp.zedo.com/asw/fmh.json';
 const DIM_TYPE = {
   '7': 'display',
   '9': 'display',
@@ -154,6 +154,8 @@ function newBid(serverBid, creativeBid, bidderRequest) {
   const bid = {
     requestId: serverBid.slotId,
     creativeId: creativeBid.adId,
+    network: serverBid.network,
+    adType: creativeBid.creativeDetails.type,
     dealId: 99999999,
     currency: 'USD',
     netRevenue: true,
@@ -172,17 +174,17 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       bidderRequest,
       'renderer.options'
     );
-
+    let rendererUrl = utils.getTopWindowLocation().protocol === 'http:' ? 'http://c14.zedo.com/gecko/beta/fmpbgt.min.js' : 'https://ss3.zedo.com/gecko/beta/fmpbgt.min.js';
     Object.assign(bid, {
       adResponse: serverBid,
-      renderer: getRenderer(bid.adUnitCode, serverBid.slotId, 'http://demos.zedo.com/demos/prebid/fmpbgt.min.js', rendererOptions)
+      renderer: getRenderer(bid.adUnitCode, serverBid.slotId, rendererUrl, rendererOptions)
     });
   } else {
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
       cpm: (parseInt(creativeBid.cpm) * 0.6) / 1000000,
-      ad: creativeBid.creativeDetails.adContent
+      ad: creativeBid.creativeDetails.adContent,
     });
   }
 
@@ -235,7 +237,7 @@ function getRenderer(adUnitCode, rendererId, rendererUrl, rendererOptions = {}) 
 function videoRenderer(bid) {
   // push to render queue
   bid.renderer.push(() => {
-    var rndr = new ZdPBTag(bid.adUnitCode, '3456', '640', '480', bid.vastXml);
+    var rndr = new ZdPBTag(bid.adUnitCode, bid.network, bid.width, bid.height, bid.adType, bid.vastXml);
     rndr.renderAd();
     handleOutstreamRendererEvents.bind(null, bid)
   });
