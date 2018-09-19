@@ -22,19 +22,19 @@ function addDiv(id) {
   return dv;
 }
 
-describe('RealVu Analytics Adapter.', () => {
-  before(() => {
+describe('RealVu Analytics Adapter.', function () {
+  before(function () {
     addDiv('ad1');
     addDiv('ad2');
   });
-  after(() => {
+  after(function () {
     let a1 = document.getElementById('ad1');
     document.body.removeChild(a1);
     let a2 = document.getElementById('ad2');
     document.body.removeChild(a2);
   });
 
-  it('enableAnalytics', () => {
+  it('enableAnalytics', function () {
     const config = {
       options: {
         partnerId: '1Y',
@@ -46,7 +46,7 @@ describe('RealVu Analytics Adapter.', () => {
     expect(p).to.equal('1Y');
   });
 
-  it('checkIn', () => {
+  it('checkIn', function () {
     const bid = {
       adUnitCode: 'ad1',
       sizes: [
@@ -71,13 +71,13 @@ describe('RealVu Analytics Adapter.', () => {
     expect(inview).to.equal('yes');
   });
 
-  it('isInView return "NA"', () => {
+  it('isInView return "NA"', function () {
     const adUnitCode = '1234';
     let result = realvuAnalyticsAdapter.isInView(adUnitCode);
     expect(result).to.equal('NA');
   });
 
-  it('bid response event', () => {
+  it('bid response event', function () {
     const config = {
       options: {
         partnerId: '1Y',
@@ -112,12 +112,12 @@ describe('RealVu Analytics Adapter.', () => {
   });
 });
 
-describe('RealVu Boost.', () => {
-  before(() => {
+describe('RealVu Boost.', function () {
+  before(function () {
     addDiv('ad1');
     addDiv('ad2');
   });
-  after(() => {
+  after(function () {
     let a1 = document.getElementById('ad1');
     document.body.removeChild(a1);
     let a2 = document.getElementById('ad2');
@@ -126,25 +126,25 @@ describe('RealVu Boost.', () => {
 
   const boost = window.top1.realvu_aa;
 
-  it('brd', () => {
+  it('brd', function () {
     let a1 = document.getElementById('ad1');
     let p = boost.brd(a1, 'Left');
     expect(typeof p).to.not.equal('undefined');
   });
 
-  it('addUnitById', () => {
+  it('addUnitById', function () {
     let a1 = document.getElementById('ad1');
     let p = boost.addUnitById('1Y', 'ad1');
     expect(typeof p).to.not.equal('undefined');
   });
 
-  it('questA', () => {
+  it('questA', function () {
     const dv = document.getElementById('ad1');
     let q = boost.questA(dv);
     expect(q).to.not.equal(null);
   });
 
-  it('render', () => {
+  it('render', function () {
     let dv = document.getElementById('ad1');
     // dv.style.width = '728px';
     // dv.style.height = '90px';
@@ -155,7 +155,7 @@ describe('RealVu Boost.', () => {
     expect(q).to.not.equal(null);
   });
 
-  it('readPos', () => {
+  it('readPos', function () {
     const a = boost.ads[boost.len - 1];
     let r = boost.readPos(a);
     expect(r).to.equal(true);

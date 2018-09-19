@@ -9,6 +9,7 @@ import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
+import { getRefererInfo } from './refererDetection';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -97,7 +98,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code)
+              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
             }));
           }
           return bids;
@@ -165,6 +166,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   if (config.getConfig('bidderSequence') === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
+  const refererInfo = getRefererInfo();
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
@@ -195,7 +197,8 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC
+        src: CONSTANTS.S2S.SRC,
+        refererInfo
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -228,7 +231,8 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidderRequestId,
       bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
       auctionStart: auctionStart,
-      timeout: cbTimeout
+      timeout: cbTimeout,
+      refererInfo
     };
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
@@ -335,8 +339,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
           bidRequest.start = timestamp();
-          bidRequest.doneCbCallCount = 0;
-          return doneCb(bidRequest.bidderRequestId)
+          return doneCb;
         });
 
         // only log adapters that actually have adUnit bids
@@ -372,12 +375,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
     bidRequest.doneCbCallCount = 0;
-    let done = doneCb(bidRequest.bidderRequestId);
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse, done, ajax);
+    adapter.callBids(bidRequest, addBidResponse, doneCb, ajax);
   });
 }
 
@@ -521,6 +523,8 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid) {
+exports.callBidWonBidder = function(bidder, bid, adUnits) {
+  // Adding user configured params to bidWon event data
+  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };

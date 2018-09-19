@@ -8,10 +8,10 @@ let getConfig;
 let setConfig;
 let setDefaults;
 
-describe('config API', () => {
+describe('config API', function () {
   let logErrorSpy;
   let logWarnSpy;
-  beforeEach(() => {
+  beforeEach(function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
@@ -20,30 +20,30 @@ describe('config API', () => {
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utils.logError.restore();
     utils.logWarn.restore();
   });
 
-  it('setConfig is a function', () => {
+  it('setConfig is a function', function () {
     expect(setConfig).to.be.a('function');
   });
 
-  it('getConfig returns an object', () => {
+  it('getConfig returns an object', function () {
     expect(getConfig()).to.be.a('object');
   });
 
-  it('sets and gets arbitrary configuarion properties', () => {
+  it('sets and gets arbitrary configuarion properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
   });
 
-  it('only accepts objects', () => {
+  it('only accepts objects', function () {
     setConfig('invalid');
     expect(getConfig('0')).to.not.equal('i');
   });
 
-  it('sets multiple config properties', () => {
+  it('sets multiple config properties', function () {
     setConfig({ foo: 'bar' });
     setConfig({ biz: 'buz' });
     var config = getConfig();
@@ -51,28 +51,28 @@ describe('config API', () => {
     expect(config.biz).to.equal('buz');
   });
 
-  it('overwrites existing config properties', () => {
+  it('overwrites existing config properties', function () {
     setConfig({ foo: {biz: 'buz'} });
     setConfig({ foo: {baz: 'qux'} });
     expect(getConfig('foo')).to.eql({baz: 'qux'});
   });
 
-  it('sets debugging', () => {
+  it('sets debugging', function () {
     setConfig({ debug: true });
     expect(getConfig('debug')).to.be.true;
   });
 
-  it('sets bidderTimeout', () => {
+  it('sets bidderTimeout', function () {
     setConfig({ bidderTimeout: 1000 });
     expect(getConfig('bidderTimeout')).to.be.equal(1000);
   });
 
-  it('gets user-defined publisherDomain', () => {
+  it('gets user-defined publisherDomain', function () {
     setConfig({ publisherDomain: 'fc.kahuna' });
     expect(getConfig('publisherDomain')).to.equal('fc.kahuna');
   });
 
-  it('gets default userSync config', () => {
+  it('gets default userSync config', function () {
     const DEFAULT_USERSYNC = {
       syncEnabled: true,
       pixelEnabled: true,
@@ -83,7 +83,7 @@ describe('config API', () => {
     expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
-  it('has subscribe functionality for adding listeners to config updates', () => {
+  it('has subscribe functionality for adding listeners to config updates', function () {
     const listener = sinon.spy();
 
     getConfig(listener);
@@ -94,7 +94,7 @@ describe('config API', () => {
     sinon.assert.calledWith(listener, { foo: 'bar' });
   });
 
-  it('subscribers can unsubscribe', () => {
+  it('subscribers can unsubscribe', function () {
     const listener = sinon.spy();
 
     const unsubscribe = getConfig(listener);
@@ -106,7 +106,7 @@ describe('config API', () => {
     sinon.assert.notCalled(listener);
   });
 
-  it('subscribers can subscribe to topics', () => {
+  it('subscribers can subscribe to topics', function () {
     const listener = sinon.spy();
 
     getConfig('logging', listener);
@@ -117,7 +117,7 @@ describe('config API', () => {
     sinon.assert.calledWithExactly(listener, { logging: true });
   });
 
-  it('topic subscribers are only called when that topic is changed', () => {
+  it('topic subscribers are only called when that topic is changed', function () {
     const listener = sinon.spy();
     const wildcard = sinon.spy();
 
@@ -130,12 +130,12 @@ describe('config API', () => {
     sinon.assert.calledOnce(wildcard);
   });
 
-  it('sets priceGranularity', () => {
+  it('sets priceGranularity', function () {
     setConfig({ priceGranularity: 'low' });
     expect(getConfig('priceGranularity')).to.be.equal('low');
   });
 
-  it('set mediaTypePriceGranularity', () => {
+  it('set mediaTypePriceGranularity', function () {
     const customPriceGranularity = {
       'buckets': [{
         'min': 0,
@@ -158,7 +158,7 @@ describe('config API', () => {
     expect(configResult.native).to.be.equal('medium');
   });
 
-  it('sets priceGranularity and customPriceBucket', () => {
+  it('sets priceGranularity and customPriceBucket', function () {
     const goodConfig = {
       'buckets': [{
         'min': 0,
@@ -172,18 +172,18 @@ describe('config API', () => {
     expect(getConfig('customPriceBucket')).to.equal(goodConfig);
   });
 
-  it('should log error for invalid priceGranularity', () => {
+  it('should log error for invalid priceGranularity', function () {
     setConfig({ priceGranularity: '' });
     const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
     assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
 
-  it('should log a warning on invalid values', () => {
+  it('should log a warning on invalid values', function () {
     setConfig({ bidderSequence: 'unrecognized sequence' });
     expect(logWarnSpy.calledOnce).to.equal(true);
   });
 
-  it('should not log warnings when given recognized values', () => {
+  it('should not log warnings when given recognized values', function () {
     setConfig({ bidderSequence: 'fixed' });
     setConfig({ bidderSequence: 'random' });
     expect(logWarnSpy.called).to.equal(false);

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/ccxBidAdapter';
 import * as utils from 'src/utils';
 
-describe('ccxAdapter', () => {
+describe('ccxAdapter', function () {
   let bids = [
     {
       adUnitCode: 'banner',
@@ -39,17 +39,17 @@ describe('ccxAdapter', () => {
       transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     }
   ];
-  describe('isBidRequestValid', () => {
-    it('Valid bid requests', () => {
+  describe('isBidRequestValid', function () {
+    it('Valid bid requests', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
       expect(spec.isBidRequestValid(bids[1])).to.be.true;
     });
-    it('Invalid bid reqeusts - no placementId', () => {
+    it('Invalid bid reqeusts - no placementId', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[0].params = undefined;
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
     });
-    it('Invalid bid reqeusts - invalid banner sizes', () => {
+    it('Invalid bid reqeusts - invalid banner sizes', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[0].mediaTypes.banner.sizes = [300, 250];
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
@@ -58,14 +58,14 @@ describe('ccxAdapter', () => {
       bidsClone[0].mediaTypes.banner.sizes = [];
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
     });
-    it('Invalid bid reqeusts - invalid video sizes', () => {
+    it('Invalid bid reqeusts - invalid video sizes', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[1].mediaTypes.video.playerSize = [];
       expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
       bidsClone[1].mediaTypes.video.sizes = [640, 480];
       expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
     });
-    it('Valid bid reqeust - old style sizes', () => {
+    it('Valid bid reqeust - old style sizes', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
       delete (bidsClone[1].mediaTypes);

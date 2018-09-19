@@ -29,17 +29,17 @@ const RESPONSE = {
   pid: 2222
 }
 
-describe('yieldlabBidAdapter', () => {
+describe('yieldlabBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
     })
   })
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       const request = {
         'params': {
           'adslotId': '1111',
@@ -50,24 +50,24 @@ describe('yieldlabBidAdapter', () => {
       expect(spec.isBidRequestValid(request)).to.equal(true)
     })
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       expect(spec.isBidRequestValid({})).to.equal(false)
     })
   })
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [REQUEST]
     const request = spec.buildRequests(bidRequests)
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       expect(request.method).to.equal('GET')
     })
 
-    it('returns a list of valid requests', () => {
+    it('returns a list of valid requests', function () {
       expect(request.validBidRequests).to.eql([REQUEST])
     })
 
-    it('passes targeting to bid request', () => {
+    it('passes targeting to bid request', function () {
       expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2')
     })
 
@@ -78,23 +78,23 @@ describe('yieldlabBidAdapter', () => {
       }
     })
 
-    it('passes gdpr flag and consent if present', () => {
+    it('passes gdpr flag and consent if present', function () {
       expect(gdprRequest.url).to.include('consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
       expect(gdprRequest.url).to.include('gdpr=true')
     })
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const validRequests = {
       validBidRequests: [REQUEST]
     }
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
       expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
     })
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const result = spec.interpretResponse({body: [RESPONSE]}, validRequests)
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
@@ -110,7 +110,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
     })
 
-    it('should add vastUrl when type is video', () => {
+    it('should add vastUrl when type is video', function () {
       const VIDEO_REQUEST = Object.assign({}, REQUEST, {
         'mediaTypes': {
           'video': {

@@ -10,9 +10,9 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
-const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
-const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
+export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const TIMEOUT_BUFFER = 500;
 
@@ -71,6 +71,7 @@ var sizeMap = {
   199: '640x200',
   213: '1030x590',
   214: '980x360',
+  229: '320x180',
   232: '580x400',
   257: '400x600'
 };
@@ -93,26 +94,7 @@ export const spec = {
       return false;
     }
 
-    if (hasVideoMediaType(bid)) {
-      // Log warning if mediaTypes contains both 'banner' and 'video'
-      if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
-        if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
-          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
-          return false;
-        }
-      } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
-        if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
-          utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
-        }
-      } else {
-        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
-        return false;
-      }
-      if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
-        utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same ad unit, continuing with video request, multi-format request is not supported by rubicon yet.');
-      }
-    }
-    return parseSizes(bid).length > 0;
+    return !!bidType(bid, true);
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -122,7 +104,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    const videoRequests = bidRequests.filter(hasVideoMediaType).map(bidRequest => {
+    const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
       let params = bidRequest.params;
@@ -189,7 +171,7 @@ export const spec = {
 
     if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
-      requests = videoRequests.concat(bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest)).map(bidRequest => {
+      requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
@@ -204,7 +186,7 @@ export const spec = {
     } else {
       // single request requires bids to be grouped by site id into a single request
       // note: utils.groupBy wasn't used because deep property access was needed
-      const nonVideoRequests = bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest));
+      const nonVideoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner');
       const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
         return groupedBids;
@@ -393,7 +375,7 @@ export const spec = {
     let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && hasVideoMediaType(bidRequest) && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -414,7 +396,7 @@ export const spec = {
         let bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
-          creativeId: ad.creative_id,
+          creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
@@ -592,6 +574,55 @@ function mapSizes(sizes) {
  */
 export function hasVideoMediaType(bidRequest) {
   return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+}
+
+/**
+ * Determine bidRequest mediaType
+ * @param bid the bid to test
+ * @param log whether we should log errors/warnings for invalid bids
+ * @returns {string|undefined} Returns 'video' or 'banner' if resolves to a type, or undefined otherwise (invalid).
+ */
+function bidType(bid, log = false) {
+  let validVideo;
+  if (hasVideoMediaType(bid)) {
+    validVideo = true;
+
+    if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
+      if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+        if (log) {
+          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
+        }
+        validVideo = false;
+      }
+    } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
+      if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
+        if (log) {
+          utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
+        }
+      }
+    } else {
+      if (log) {
+        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
+      }
+      validVideo = false;
+    }
+    if (validVideo) {
+      if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+        if (log) {
+          utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same adUnit, continuing with video request, multi-format request is not supported by rubicon yet.');
+        }
+      }
+      return 'video';
+    } else if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) === 'undefined') {
+      return undefined;
+    }
+  }
+  if (parseSizes(bid).length > 0) {
+    if (log && validVideo === false) {
+      utils.logWarn('Rubicon bid adapter Warning: invalid video requested for adUnit, continuing with banner request.');
+    }
+    return 'banner';
+  }
 }
 
 export function masSizeOrdering(sizes) {
