@@ -239,12 +239,7 @@ function videoRenderer(bid) {
   bid.renderer.push(() => {
     var rndr = new ZdPBTag(bid.adUnitCode, bid.network, bid.width, bid.height, bid.adType, bid.vastXml);
     rndr.renderAd();
-    handleOutstreamRendererEvents.bind(null, bid)
   });
-}
-
-function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 function parseMediaType(creativeBid) {
