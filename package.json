@@ -3,10 +3,6 @@
   "version": "1.25.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
-  "scripts": {
-    "test": "gulp lint && gulp test-coverage",
-    "lint": "gulp lint"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
