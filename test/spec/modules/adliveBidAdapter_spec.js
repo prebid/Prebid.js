@@ -1,6 +1,14 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adliveBidAdapter';
 
+let bidRequestData = [{
+  bidId: 'transaction_1234',
+  bidder: 'adlive',
+  params: {
+    hashes: ['1e100887dd614b0909bf6c49ba7f69fdd1360437']},
+  sizes: [[300, 250]]
+}]
+
 describe('adliveBidAdapterTests', function () {
   it('validate_pub_params', function () {
     expect(spec.isBidRequestValid({
@@ -11,56 +19,46 @@ describe('adliveBidAdapterTests', function () {
     })).to.equal(true);
   });
   it('validate_generated_params', function () {
-    let bidRequestData = [{
-      bidId: 'bid1234',
-      bidder: 'adlive',
-      params: {hashes: ['1e100887dd614b0909bf6c49ba7f69fdd1360437']},
-      sizes: [[300, 250]]
-    }]
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
-    expect(req_data.bidid).to.equal('bid1234');
+    let req_data = request[0];
+    req_data.data = JSON.parse(req_data.data)
+    expect(req_data.data.transaction_id).to.equal('transaction_1234');
   });
   it('validate_response_params', function () {
     let serverResponse = {
       body: [{
-        bidid: 'bid1234',
+        hash: '1e100887dd614b0909bf6c49ba7f69fdd1360437',
+        content: 'Ad html',
         price: 1.12,
         size: [300, 250],
-        content: 'Ad html',
-        hash: '1e100887dd614b0909bf6c49ba7f69fdd1360437'
+        is_passback: 0
       }]
     };
-    let bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
+    console.log(bids)
     expect(bids).to.have.lengthOf(1);
     let bid = bids[0];
-    expect(bid.cpm).to.equal(1.12);
-    expect(bid.currency).to.equal('USD');
-    expect(bid.width).to.equal(240);
-    expect(bid.height).to.equal(400);
-    expect(bid.netRevenue).to.equal(true);
-    expect(bid.requestId).to.equal('bid1234');
-    expect(bid.ad).to.equal('Ad html');
+    expect(bid.hash).to.equal('1e100887dd614b0909bf6c49ba7f69fdd1360437');
+    expect(bid.content).to.equal('Ad html');
+    expect(bid.price).to.equal(1.12);
+    expect(bid.size).to.equal([300, 250]);
+    expect(bid.is_passback).to.equal(0);
   });
-  it('validate_response_params', function () {
+  it('validate_response_params_with passback', function () {
     let serverResponse = {
       body: [{
-        bidid: 'bid1234',
-        w: 240,
-        h: 400,
-        currency: 'USD',
-        ad: 'Ad html'
+        hash: '1e100887dd614b0909bf6c49ba7f69fdd1360437',
+        content: 'Ad html passback',
+        size: [300, 250],
+        is_passback: 1
       }]
     };
     let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
     let bid = bids[0];
-    expect(bid.cpm).to.equal(0);
-    expect(bid.currency).to.equal('USD');
-    expect(bid.width).to.equal(240);
-    expect(bid.height).to.equal(400);
-    expect(bid.netRevenue).to.equal(true);
-    expect(bid.requestId).to.equal('bid1234');
-    expect(bid.ad).to.equal('Ad html');
+    expect(bid.hash).to.equal('1e100887dd614b0909bf6c49ba7f69fdd1360437');
+    expect(bid.content).to.equal('Ad html');
+    expect(bid.size).to.equal([300, 250]);
+    expect(bid.is_passback).to.equal(0);
   });
 });

@@ -26,7 +26,7 @@ export const spec = {
           withCredentials: true
         },
         data: JSON.stringify({
-          transaction_id: bid.bidderRequestId,
+          transaction_id: bid.bidId,
           hashes: utils.getBidIdParameter('hashes', bid.params)
         }),
         bid
