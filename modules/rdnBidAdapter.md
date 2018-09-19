@@ -24,7 +24,7 @@ RDN bid adapter supports Banner currently.
         {
           bidder: 'rdn',
           params: {
-            adSpotId: '445999'
+            adSpotId: '10000'
           }
         }
       ]
