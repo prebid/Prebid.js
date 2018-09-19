@@ -16,6 +16,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
+    if (typeof window.sublime !== 'undefined' && window.sublime.env('mode') === 'pb') {
+      return false;
+    }
+
     return !!bid.params.zoneId;
   },
 

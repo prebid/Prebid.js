@@ -30,6 +30,15 @@ describe('Sublime Adapter', () => {
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false if sublime already exists and is in prebid mode', () => {
+      window.sublime = {env: function() { }};
+      sinon.stub(window.sublime, 'env').returns('pb');
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      delete window.sublime;
+    });
   });
 
   describe('buildRequests', () => {
