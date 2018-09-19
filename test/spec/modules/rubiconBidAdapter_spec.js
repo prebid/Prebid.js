@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType} from 'modules/rubiconBidAdapter';
+import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
@@ -1286,7 +1286,26 @@ describe('the rubicon adapter', function () {
           expect(request.data.slots[0].size_id).to.equal(203);
         });
 
-        it('should get size from bid.sizes too', function () {
+        it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
+          createVideoBidderRequestNoVideo();
+
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {
+            sizes: [[300, 250]]
+          };
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+        });
+
+        it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
@@ -1532,6 +1551,129 @@ describe('the rubicon adapter', function () {
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
           expect(bids[1].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
           expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
+        });
+
+        it('should use "network-advertiser" if no creative_id', function () {
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43, 10, 2
+            ],
+            'tracking': '',
+            'inventory': {}
+          };
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+              'size_id': '15',
+              'ad_id': '6',
+              'advertiser': 7,
+              'network': 8,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.811,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '15_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('8-7');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '43',
+              'ad_id': '7',
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '43_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('-');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '10',
+              'ad_id': '7',
+              'network': 8,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '10_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('8-');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '2',
+              'ad_id': '7',
+              'advertiser': 7,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '2_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('-7');
         });
 
         it('should be fine with a CPM of 0', function () {

@@ -1,17 +1,18 @@
 import { expect } from 'chai';
-import { spec } from 'modules/yieldoneBidAdapter';
+import { spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
+const HOST_NAME = document.location.protocol + '//' + window.location.host;
+const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
-describe('yieldoneBidAdapter', function() {
+describe('colombiaBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'yieldone',
+      'bidder': 'colombia',
       'params': {
-        placementId: '44082'
+        placementId: '307466'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
@@ -41,9 +42,9 @@ describe('yieldoneBidAdapter', function() {
   describe('buildRequests', function () {
     let bidRequests = [
       {
-        'bidder': 'yieldone',
+        'bidder': 'colombia',
         'params': {
-          placementId: '44082'
+          placementId: '307466'
         },
         'adUnitCode': 'adunit-code1',
         'sizes': [
@@ -54,9 +55,9 @@ describe('yieldoneBidAdapter', function() {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       },
       {
-        'bidder': 'yieldone',
+        'bidder': 'colombia',
         'params': {
-          placementId: '44337'
+          placementId: '307466'
         },
         'adUnitCode': 'adunit-code2',
         'sizes': [
@@ -70,9 +71,9 @@ describe('yieldoneBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('sends bid request to our endpoint via GET', function () {
-      expect(request[0].method).to.equal('GET');
-      expect(request[1].method).to.equal('GET');
+    it('sends bid request to our endpoint via POST', function () {
+      expect(request[0].method).to.equal('POST');
+      expect(request[1].method).to.equal('POST');
     });
 
     it('attaches source and version to endpoint URL as query params', function () {
@@ -84,46 +85,50 @@ describe('yieldoneBidAdapter', function() {
   describe('interpretResponse', function () {
     let bidRequest = [
       {
-        'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'method': 'POST',
+        'url': ENDPOINT,
         'data': {
           'v': 'hb1',
-          'p': '44082',
+          'p': '307466',
           'w': '300',
           'h': '250',
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
-          't': 'i'
+          't': 'i',
+		  'd': HOST_NAME
         }
       }
     ];
 
     let serverResponse = {
       body: {
-        'adTag': '<!-- adtag -->',
-        'cpm': 0.0536616,
-        'crid': '2494768',
+        'ad': '<div>This is test case</div> ',
+        'cpm': 3.14,
+        'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
+        'currency': 'USD',
         'statusMessage': 'Bid available',
         'uid': '23beaa6af6cdde',
         'width': 300,
-        'height': 250
+        'height': 250,
+        'netRevenue': true,
+        'ttl': 600
       }
     };
 
     it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
-        'cpm': 53.6616,
+        'cpm': 3.14,
         'width': 300,
         'height': 250,
-        'creativeId': '2494768',
+        'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
         'dealId': '',
-        'currency': 'JPY',
+        'currency': 'USD',
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
-        'ad': '<!-- adtag -->'
+        'ad': '<div>This is test case</div>'
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
@@ -142,22 +147,6 @@ describe('yieldoneBidAdapter', function() {
       };
       let result = spec.interpretResponse(response, bidRequest[0]);
       expect(result.length).to.equal(0);
-    });
-  });
-
-  describe('getUserSyncs', function () {
-    const userSyncUrl = '//y.one.impact-ad.jp/push_sync';
-
-    it('handles empty sync options', function () {
-      expect(spec.getUserSyncs({})).to.be.empty;
-    });
-
-    it('should return a sync url if iframe syncs are enabled', function () {
-      expect(spec.getUserSyncs({
-        'iframeEnabled': true
-      })).to.deep.equal([{
-        type: 'iframe', url: userSyncUrl
-      }]);
     });
   });
 });

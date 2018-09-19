@@ -1,14 +1,13 @@
 import * as utils from 'src/utils';
 import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
-
-const BIDDER_CODE = 'yieldone';
-const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
+const BIDDER_CODE = 'colombia';
+const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
+const HOST_NAME = document.location.protocol + '//' + window.location.host;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['y1'],
+  aliases: ['clmb'],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
@@ -30,10 +29,11 @@ export const spec = {
         cb: cb,
         r: referrer,
         uid: bidId,
-        t: 'i'
+        t: 'i',
+        d: HOST_NAME,
       };
       return {
-        method: 'GET',
+        method: 'POST',
         url: ENDPOINT_URL,
         data: payload,
       }
@@ -42,13 +42,13 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
-    const crid = response.crid || 0;
+    const crid = response.creativeId || 0;
     const width = response.width || 0;
     const height = response.height || 0;
-    const cpm = response.cpm * 1000 || 0;
+    const cpm = response.cpm || 0;
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
       const dealId = response.dealid || '';
-      const currency = response.currency || 'JPY';
+      const currency = response.currency || 'USD';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = utils.getTopWindowUrl();
       const bidResponse = {
@@ -62,19 +62,11 @@ export const spec = {
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
         referrer: referrer,
-        ad: response.adTag
+        ad: response.ad
       };
       bidResponses.push(bidResponse);
     }
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: USER_SYNC_URL
-      }];
-    }
   }
 }
 registerBidder(spec);
