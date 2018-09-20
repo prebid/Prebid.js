@@ -136,16 +136,6 @@ describe('AolAdapter', function () {
         ttl: bidRequest.ttl
       });
     });
-
-    it('should show warning in the console', function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        aol: {
-          bidCpmAdjustment: function() {}
-        }
-      };
-      spec.interpretResponse(bidResponse, bidRequest);
-      expect(utils.logWarn.calledOnce).to.be.true;
-    });
   });
 
   describe('buildRequests()', function () {

@@ -46,22 +46,6 @@ const NUMERIC_VALUES = {
   FALSE: 0
 };
 
-let showCpmAdjustmentWarning = (function() {
-  let showCpmWarning = true;
-
-  return function() {
-    let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-    if (showCpmWarning && bidderSettings && bidderSettings.aol &&
-      typeof bidderSettings.aol.bidCpmAdjustment === 'function') {
-      utils.logWarn(
-        'bidCpmAdjustment is active for the AOL adapter. ' +
-        'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-      );
-      showCpmWarning = false; // warning is shown at most once
-    }
-  };
-})();
-
 function template(strings, ...keys) {
   return function(...values) {
     let dict = values[values.length - 1] || {};
@@ -132,8 +116,6 @@ export const spec = {
     });
   },
   interpretResponse({body}, bidRequest) {
-    showCpmAdjustmentWarning();
-
     if (!body) {
       utils.logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
