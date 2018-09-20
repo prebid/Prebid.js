@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 
-describe('freewheel-ssp BidAdapter Test', () => {
+describe('freewheel-ssp BidAdapter Test', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
