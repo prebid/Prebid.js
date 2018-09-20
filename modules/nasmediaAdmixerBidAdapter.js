@@ -61,10 +61,10 @@ export const spec = {
 function getOsType() {
   let ua = navigator.userAgent.toLowerCase();
   let os = ['android', 'ios', 'mac', 'linux', 'window'];
-  let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i];
+  let regexpOs = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i];
 
   return find(os, (tos, idx) => {
-    if (ua.match(regexp_os[idx])) {
+    if (ua.match(regexpOs[idx])) {
       return os[idx];
     }
   }) || 'etc';

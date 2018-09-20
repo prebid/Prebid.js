@@ -5,13 +5,13 @@ import { newBidder } from 'src/adapters/bidderFactory';
 describe('FairTradeAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'fairtrade',
       'params': {
@@ -24,11 +24,11 @@ describe('FairTradeAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -38,7 +38,7 @@ describe('FairTradeAdapter', function () {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'fairtrade',
@@ -75,7 +75,7 @@ describe('FairTradeAdapter', function () {
       }
     ];
 
-    it('should attach valid params to the tag', () => {
+    it('should attach valid params to the tag', function () {
       const request = spec.buildRequests([bidRequests[0]]);
       const payload = request.data;
       expect(payload).to.be.an('object');
@@ -85,7 +85,7 @@ describe('FairTradeAdapter', function () {
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
-    it('auids must not be duplicated', () => {
+    it('auids must not be duplicated', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
       expect(payload).to.be.an('object');
@@ -95,7 +95,7 @@ describe('FairTradeAdapter', function () {
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
-    it('pt parameter must be "gross" if params.priceType === "gross"', () => {
+    it('pt parameter must be "gross" if params.priceType === "gross"', function () {
       bidRequests[1].params.priceType = 'gross';
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
@@ -107,7 +107,7 @@ describe('FairTradeAdapter', function () {
       delete bidRequests[1].params.priceType;
     });
 
-    it('pt parameter must be "net" or "gross"', () => {
+    it('pt parameter must be "net" or "gross"', function () {
       bidRequests[1].params.priceType = 'some';
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
@@ -120,7 +120,7 @@ describe('FairTradeAdapter', function () {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 165, 'h': 250, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 166, 'h': 90, 'w': 728}], 'seat': '1'},
@@ -131,7 +131,7 @@ describe('FairTradeAdapter', function () {
       {'seat': '1'},
     ];
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const bidRequests = [
         {
           'bidder': 'fairtrade',
@@ -165,7 +165,7 @@ describe('FairTradeAdapter', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('should get correct multi bid response', () => {
+    it('should get correct multi bid response', function () {
       const bidRequests = [
         {
           'bidder': 'fairtrade',
@@ -245,7 +245,7 @@ describe('FairTradeAdapter', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('handles wrong and nobid responses', () => {
+    it('handles wrong and nobid responses', function () {
       const bidRequests = [
         {
           'bidder': 'fairtrade',

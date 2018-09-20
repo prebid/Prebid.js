@@ -494,6 +494,19 @@ export const spec = {
     } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
     }
+  },
+
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'publisherId': 'string',
+      'adSlot': 'string'
+    }, params);
   }
 };
 

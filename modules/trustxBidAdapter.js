@@ -60,19 +60,24 @@ export const spec = {
       r: reqId
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        payload.wtimeout = bidderRequest.timeout;
       }
-      payload.gdpr_applies =
-        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
     }
 
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },
@@ -84,7 +89,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    serverResponse = serverResponse && serverResponse.body
+    serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;
