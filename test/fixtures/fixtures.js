@@ -13,7 +13,7 @@ export function getBidRequests() {
             'placementId': '4799418',
             'test': 'me'
           },
-          'placementCode': '/19968336/header-bid-tag1',
+          'adUnitCode': '/19968336/header-bid-tag1',
           'sizes': [
             [
               728,
@@ -36,7 +36,7 @@ export function getBidRequests() {
           'params': {
             'placementId': '4799418'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -68,7 +68,7 @@ export function getBidRequests() {
             'publisherId': 39741,
             'adSlot': '39620189@300x250'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -117,7 +117,7 @@ export function getBidRequests() {
               10
             ],
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -146,7 +146,7 @@ export function getBidRequests() {
           'params': {
             'inventoryCode': 'sortable_all_right_sports'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -176,7 +176,7 @@ export function getBidRequests() {
           'params': {
             'tagId': 16577
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -206,7 +206,7 @@ export function getBidRequests() {
           'params': {
             'placementId': '4799418'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -237,7 +237,7 @@ export function getBidRequests() {
           'params': {
             'placementId': '4799418'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -268,7 +268,7 @@ export function getBidRequests() {
           'params': {
             'aId': 3080
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -596,7 +596,7 @@ export function getAdUnits() {
             'publisher_id': '1234567',
             'bidfloor': 0.01
           },
-          'placementCode': '/19968336/header-bid-tag1',
+          'adUnitCode': '/19968336/header-bid-tag1',
           'sizes': [
             [
               728,
@@ -617,7 +617,7 @@ export function getAdUnits() {
             'placementId': '543221',
             'test': 'me'
           },
-          'placementCode': '/19968336/header-bid-tag1',
+          'adUnitCode': '/19968336/header-bid-tag1',
           'sizes': [
             [
               728,
@@ -654,7 +654,7 @@ export function getAdUnits() {
           'params': {
             'placementId': '5324321'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -676,7 +676,7 @@ export function getAdUnits() {
             'publisher_id': '12353433',
             'bidfloor': 0.01
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -696,7 +696,7 @@ export function getAdUnits() {
           'params': {
             'inventoryCode': 'inv_code_here'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -719,7 +719,7 @@ export function getAdUnits() {
             'supplyPartnerId': 1,
             'test': true
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -759,7 +759,7 @@ export function getAdUnits() {
               10
             ]
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -780,7 +780,7 @@ export function getAdUnits() {
             'jstag_url': 'http://servedbyopenx.com/w/1.0/jstag?nc=account_key',
             'unit': 2345677
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -801,7 +801,7 @@ export function getAdUnits() {
             'publisherId': 1234567,
             'adSlot': '1234567@300x250'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -821,7 +821,7 @@ export function getAdUnits() {
           'params': {
             'placementId': '1234567'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -842,7 +842,7 @@ export function getAdUnits() {
           'params': {
             'placementId': '1234567'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -865,7 +865,7 @@ export function getAdUnits() {
             'siteID': 123456,
             'timeout': 10000
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -887,7 +887,7 @@ export function getAdUnits() {
             'mid': 123456,
             'test': 1
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -907,7 +907,7 @@ export function getAdUnits() {
           'params': {
             'aId': 3080
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -928,7 +928,7 @@ export function getAdUnits() {
             'network': '112345.45',
             'placement': 12345
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -948,7 +948,7 @@ export function getAdUnits() {
           'params': {
             'tagid': '123556'
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -970,7 +970,7 @@ export function getAdUnits() {
             'cp': 1233456,
             'ct': 12357
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -990,7 +990,7 @@ export function getAdUnits() {
           'params': {
             'tagId': 75423
           },
-          'placementCode': '/19968336/header-bid-tag-0',
+          'adUnitCode': '/19968336/header-bid-tag-0',
           'sizes': [
             [
               300,
@@ -1367,7 +1367,7 @@ export function getBidRequestedPayload() {
           'publisher_id': '5000563',
           'bidfloor': 0.01
         },
-        'placementCode': '/19968336/header-bid-tag-1',
+        'adUnitCode': '/19968336/header-bid-tag-1',
         'sizes': [
           [
             300,

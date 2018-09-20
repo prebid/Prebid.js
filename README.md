@@ -30,6 +30,8 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ npm install
 
 *Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* Because we have transitioned to using gulp 4.0 - you need to have `gulp-cli` installed globally prior to running the general `npm install`.  Run the following command to perform the install: `npm install gulp-cli -g`
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  This removal can be done with the command: `npm rm gulp -g`
 
 <a name="Build"></a>
 
@@ -168,7 +170,7 @@ Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidder
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
-Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/PR_REVIEW.md).
 
 ### Add a Bidder Adapter
 

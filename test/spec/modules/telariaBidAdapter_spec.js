@@ -34,26 +34,26 @@ const RESPONSE = {
   }]
 };
 
-describe('TelariaAdapter', () => {
+describe('TelariaAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = REQUEST.bids[0];
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let tempBid = bid;
       tempBid.params.adCode = 'ssp-!demo!-lufip';
       tempBid.params.supplyCode = 'ssp-demo-rm6rh';
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let tempBid = bid;
       delete tempBid.params;
       tempBid.params = {
@@ -64,14 +64,14 @@ describe('TelariaAdapter', () => {
       expect(spec.isBidRequestValid(tempBid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let tempBid = bid;
       tempBid.params = {};
       expect(spec.isBidRequestValid(tempBid)).to.equal(false);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const stub = [{
       bidder: 'tremor',
       sizes: [[300, 250], [300, 600]],
@@ -82,16 +82,16 @@ describe('TelariaAdapter', () => {
       }
     }];
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('requires supply code, ad code and sizes to make a request', () => {
+    it('requires supply code, ad code and sizes to make a request', function () {
       const tempRequest = spec.buildRequests(stub);
       expect(tempRequest.length).to.equal(1);
     });
 
-    it('generates an array of requests with 4 params, method, url, bidId and vastUrl', () => {
+    it('generates an array of requests with 4 params, method, url, bidId and vastUrl', function () {
       const tempRequest = spec.buildRequests(stub);
 
       expect(tempRequest.length).to.equal(1);
@@ -101,7 +101,7 @@ describe('TelariaAdapter', () => {
       expect(tempRequest[0].vastUrl).to.exist;
     });
 
-    it('requires sizes to make a request', () => {
+    it('requires sizes to make a request', function () {
       let tempBid = stub;
       tempBid[0].sizes = null;
       const tempRequest = spec.buildRequests(tempBid);
@@ -109,13 +109,13 @@ describe('TelariaAdapter', () => {
       expect(tempRequest.length).to.equal(0);
     });
 
-    it('generates a valid request with sizes as an array of two elements', () => {
+    it('generates a valid request with sizes as an array of two elements', function () {
       let tempBid = stub;
       tempBid[0].sizes = [640, 480];
       expect(spec.buildRequests(tempBid).length).to.equal(1);
     });
 
-    it('requires ad code and supply code to make a request', () => {
+    it('requires ad code and supply code to make a request', function () {
       let tempBid = stub;
       tempBid[0].params.adCode = null;
       tempBid[0].params.supplyCode = null;
@@ -126,7 +126,7 @@ describe('TelariaAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const responseStub = RESPONSE;
     const stub = [{
       bidder: 'tremor',
@@ -138,7 +138,7 @@ describe('TelariaAdapter', () => {
       }
     }];
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponseKeys = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
         'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
         'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
@@ -149,7 +149,7 @@ describe('TelariaAdapter', () => {
       expect(Object.keys(result[0])).to.have.members(expectedResponseKeys);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let tempResponse = responseStub;
       tempResponse.seatbid = [];
 
@@ -160,18 +160,18 @@ describe('TelariaAdapter', () => {
       expect(result.length).to.equal(0);
     });
 
-    it('handles invalid responses', () => {
+    it('handles invalid responses', function () {
       let result = spec.interpretResponse(null, {bbidderCode: 'telaria'});
       expect(result.length).to.equal(0);
     });
 
-    it('handles error responses', () => {
+    it('handles error responses', function () {
       let result = spec.interpretResponse({body: {error: 'Invalid request'}}, {bbidderCode: 'telaria'});
       expect(result.length).to.equal(0);
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const responses = [{body: RESPONSE}];
     responses[0].body.ext = {
       telaria: {
@@ -182,7 +182,7 @@ describe('TelariaAdapter', () => {
       }
     };
 
-    it('should get the correct number of sync urls', () => {
+    it('should get the correct number of sync urls', function () {
       let urls = spec.getUserSyncs({pixelEnabled: true}, responses);
       expect(urls.length).to.equal(2);
     });

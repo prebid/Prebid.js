@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/contentigniteBidAdapter';
 
-describe('Content Ignite adapter', () => {
+describe('Content Ignite adapter', function () {
   let bidRequests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'contentignite',
@@ -25,9 +25,9 @@ describe('Content Ignite adapter', () => {
     ];
   });
 
-  describe('implementation', () => {
-    describe('for requests', () => {
-      it('should accept valid bid', () => {
+  describe('implementation', function () {
+    describe('for requests', function () {
+      it('should accept valid bid', function () {
         const validBid = {
             bidder: 'contentignite',
             params: {
@@ -40,7 +40,7 @@ describe('Content Ignite adapter', () => {
         expect(isValid).to.equal(true);
       });
 
-      it('should reject invalid bid', () => {
+      it('should reject invalid bid', function () {
         const invalidBid = {
             bidder: 'contentignite',
             params: {
@@ -52,14 +52,14 @@ describe('Content Ignite adapter', () => {
         expect(isValid).to.equal(false);
       });
 
-      it('should set the keyword parameter', () => {
+      it('should set the keyword parameter', function () {
         const requests = spec.buildRequests(bidRequests),
           requestURL = requests[0].url;
 
         expect(requestURL).to.have.string(';kw=business;');
       });
 
-      it('should increment the count for the same zone', () => {
+      it('should increment the count for the same zone', function () {
         const bidRequests = [
             {
               sizes: [[728, 90]],
@@ -87,8 +87,8 @@ describe('Content Ignite adapter', () => {
       });
     });
 
-    describe('bid responses', () => {
-      it('should return complete bid response', () => {
+    describe('bid responses', function () {
+      it('should return complete bid response', function () {
         const serverResponse = {
             body: {
               status: 'SUCCESS',
@@ -116,7 +116,7 @@ describe('Content Ignite adapter', () => {
         expect(bids[0].ad).to.have.length.above(1);
       });
 
-      it('should return empty bid response', () => {
+      it('should return empty bid response', function () {
         const serverResponse = {
             status: 'NO_ELIGIBLE_ADS',
             zone_id: 299680,
@@ -131,7 +131,7 @@ describe('Content Ignite adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response on incorrect size', () => {
+      it('should return empty bid response on incorrect size', function () {
         const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
@@ -148,7 +148,7 @@ describe('Content Ignite adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response with CPM too low', () => {
+      it('should return empty bid response with CPM too low', function () {
         const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
@@ -165,7 +165,7 @@ describe('Content Ignite adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response with CPM too high', () => {
+      it('should return empty bid response with CPM too high', function () {
         const serverResponse = {
             status: 'SUCCESS',
             account_id: 168237,
