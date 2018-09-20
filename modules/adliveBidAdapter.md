@@ -2,7 +2,7 @@
 ```
 Module Name: Adlive Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@example.com
+Maintainer: traffic@adlive.io
 ```
 
 # Description
