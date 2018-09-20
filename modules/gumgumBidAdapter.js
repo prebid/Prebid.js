@@ -49,7 +49,11 @@ function getAMPContext (windowRef) {
   if (utils.isPlainObject(w.context)) {
     context = w.context
   } else {
-    nameJSON = JSON.parse(w.name || null)
+    try {
+      nameJSON = JSON.parse(w.name || null)
+    } catch (error) {
+      utils.logError('Error getting w.name', error)
+    }
     if (utils.isPlainObject(nameJSON)) {
       context = nameJSON._context || (nameJSON.attributes ? nameJSON.attributes._context : null)
     }
