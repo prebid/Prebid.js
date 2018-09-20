@@ -4,6 +4,7 @@ const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.ayads.co';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
+const DEFAULT_PROTOCOL = 'https';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,12 +35,13 @@ export const spec = {
     let requestId = validBidRequests[0].bidId || '';
     let sacHost = params.sacHost || DEFAULT_SAC_HOST;
     let bidHost = params.bidHost || DEFAULT_BID_HOST;
+    let protocol = params.protocol || DEFAULT_PROTOCOL;
     let zoneId = params.zoneId;
     let callbackName = params.callbackName || DEFAULT_CALLBACK_NAME;
 
     window[callbackName] = (response) => {
       var xhr = new XMLHttpRequest();
-      var url = 'https://' + bidHost + '/notify';
+      var url = protocol + '://' + bidHost + '/notify';
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.send(
@@ -57,7 +59,7 @@ export const spec = {
 
     return {
       method: 'GET',
-      url: 'https://' + bidHost + '/bid',
+      url: protocol + '://' + bidHost + '/bid',
       data: {
         prebid: 1,
         request_id: requestId,
