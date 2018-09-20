@@ -295,18 +295,18 @@ describe('The Criteo bidding adapter', function () {
     });
   });
 
-  describe('cryptoVerify', () => {
+  describe('cryptoVerify', function () {
     const TEST_HASH = 'vBeD8Q7GU6lypFbzB07W8hLGj7NL+p7dI9ro2tCxkrmyv0F6stNuoNd75Us33iNKfEoW+cFWypelr6OJPXxki2MXWatRhJuUJZMcK4VBFnxi3Ro+3a0xEfxE4jJm4eGe98iC898M+/YFHfp+fEPEnS6pEyw124ONIFZFrcejpHU=';
 
-    it('should verify right signature', () => {
+    it('should verify right signature', function () {
       expect(cryptoVerify(FAST_BID_PUBKEY, TEST_HASH, 'test')).to.equal(true);
     });
 
-    it('should verify wrong signature', () => {
+    it('should verify wrong signature', function () {
       expect(cryptoVerify(FAST_BID_PUBKEY, TEST_HASH, 'test wrong')).to.equal(false);
     });
 
-    it('should return undefined with incompatible browsers', () => {
+    it('should return undefined with incompatible browsers', function () {
       // Here use a null hash to make the call to crypto library fail and simulate a browser failure
       expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.equal.undefined;
     });
