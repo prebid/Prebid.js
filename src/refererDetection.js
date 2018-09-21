@@ -27,7 +27,6 @@ export function detectReferer(win) {
   function getPubUrlStack(levels) {
     let stack = [];
     let defUrl = null;
-    let encodedUrl = null;
     let frameLocation = null;
     let prevFrame = null;
     let prevRef = null;
@@ -43,10 +42,9 @@ export function detectReferer(win) {
       }
 
       if (frameLocation) {
-        encodedUrl = encodeURIComponent(frameLocation);
-        stack.push(encodedUrl);
+        stack.push(frameLocation);
         if (!detectedRefererUrl) {
-          detectedRefererUrl = encodedUrl;
+          detectedRefererUrl = frameLocation;
         }
       } else if (i !== 0) {
         prevFrame = levels[i - 1];
@@ -58,16 +56,14 @@ export function detectReferer(win) {
         }
 
         if (prevRef) {
-          encodedUrl = encodeURIComponent(prevRef);
-          stack.push(encodedUrl);
+          stack.push(prevRef);
           if (!detectedRefererUrl) {
-            detectedRefererUrl = encodedUrl;
+            detectedRefererUrl = prevRef;
           }
         } else if (ancestor) {
-          encodedUrl = encodeURIComponent(ancestor);
-          stack.push(encodedUrl);
+          stack.push(ancestor);
           if (!detectedRefererUrl) {
-            detectedRefererUrl = encodedUrl;
+            detectedRefererUrl = ancestor;
           }
         } else {
           stack.push(defUrl);
