@@ -2,8 +2,8 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.2'
+const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.3'
 const pixels = []
 const TRACK_START_TIME = Date.now()
 let LAST_PAYLOAD = {}
@@ -142,7 +142,7 @@ function track (data, payload, type) {
 
   let duration = Date.now() - TRACK_START_TIME
 
-  const pixelUrl = `${getTopWindowLocation().protocol}//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
+  const pixelUrl = `//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
 ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=${payload.wh}&ww=${payload.ww}&an=&vn=&
 sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
 cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`

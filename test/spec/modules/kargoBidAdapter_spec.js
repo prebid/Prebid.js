@@ -6,12 +6,12 @@ import {config} from 'src/config';
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     clock = sinon.useFakeTimers(frozenNow.getTime());
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     clock.restore();
   });
@@ -37,7 +37,7 @@ describe('kargo adapter tests', function () {
   describe('build request', function() {
     var bids, cookies = [], localStorageItems = [];
 
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
         if (key === 'currency') {
           return 'USD';
@@ -67,7 +67,7 @@ describe('kargo adapter tests', function () {
       ];
     });
 
-    afterEach(() => {
+    afterEach(function () {
       for (let key in cookies) {
         let cookie = cookies[key];
         removeCookie(cookie);

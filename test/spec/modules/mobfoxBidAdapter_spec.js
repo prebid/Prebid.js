@@ -1,4 +1,4 @@
-describe('mobfox adapter tests', () => {
+describe('mobfox adapter tests', function () {
   const expect = require('chai').expect;
   const utils = require('src/utils');
   const adapter = require('modules/mobfoxBidAdapter');
@@ -18,7 +18,7 @@ describe('mobfox adapter tests', () => {
     transactionId: '31f42cba-5920-4e47-adad-69c79d0d4fb4'
   }];
 
-  describe('validRequests', () => {
+  describe('validRequests', function () {
     let bidRequestInvalid1 = [{
       code: 'div-gpt-ad-1460505748561-0',
       sizes: [[320, 480], [300, 250], [300, 600]],
@@ -33,19 +33,19 @@ describe('mobfox adapter tests', () => {
       transactionId: '31f42cba-5920-4e47-adad-69c79d0d4fb4'
     }];
 
-    it('test valid MF request success', () => {
+    it('test valid MF request success', function () {
       let isValid = adapter.spec.isBidRequestValid(bidRequest[0]);
       expect(isValid).to.equal(true);
     });
 
-    it('test valid MF request failed1', () => {
+    it('test valid MF request failed1', function () {
       let isValid = adapter.spec.isBidRequestValid(bidRequestInvalid1[0]);
       expect(isValid).to.equal(false);
     });
   })
 
-  describe('buildRequests', () => {
-    it('test build MF request', () => {
+  describe('buildRequests', function () {
+    it('test build MF request', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let payload = request.data.split('&');
       expect(payload[0]).to.equal('rt=api-fetchip');
@@ -57,7 +57,7 @@ describe('mobfox adapter tests', () => {
       expect(payload[7]).to.equal('imp_instl=1');
     });
 
-    it('test build MF request', () => {
+    it('test build MF request', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let payload = request.data.split('&');
       expect(payload[0]).to.equal('rt=api-fetchip');
@@ -70,7 +70,7 @@ describe('mobfox adapter tests', () => {
     });
   })
 
-  describe('interceptResponse', () => {
+  describe('interceptResponse', function () {
     let mockServerResponse = {
       body: {
         request: {
@@ -93,7 +93,7 @@ describe('mobfox adapter tests', () => {
         }
       }
     };
-    it('test intercept response', () => {
+    it('test intercept response', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let bidResponses = adapter.spec.interpretResponse(mockServerResponse, request);
       expect(bidResponses.length).to.equal(1);
@@ -109,7 +109,7 @@ describe('mobfox adapter tests', () => {
       expect(bidResponses[0].width).to.equal('320');
     });
 
-    it('test intercept response with empty server response', () => {
+    it('test intercept response with empty server response', function () {
       let request = adapter.spec.buildRequests(bidRequest);
       let serverResponse = {
         request: {

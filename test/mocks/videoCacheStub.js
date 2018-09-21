@@ -12,7 +12,7 @@ import * as videoCache from 'src/videoCache';
 export default function useVideoCacheStub(responses) {
   let storeStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     storeStub = sinon.stub(videoCache, 'store');
 
     if (responses.store instanceof Error) {
@@ -22,7 +22,7 @@ export default function useVideoCacheStub(responses) {
     }
   });
 
-  afterEach(() => {
+  afterEach(function () {
     videoCache.store.restore();
   });
 

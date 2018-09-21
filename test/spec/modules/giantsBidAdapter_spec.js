@@ -6,16 +6,16 @@ import * as utils from 'src/utils';
 
 const ENDPOINT = '//d.admp.io/hb/multi?url=';
 
-describe('GiantsAdapter', () => {
+describe('GiantsAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'giants',
       'params': {
@@ -28,11 +28,11 @@ describe('GiantsAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,7 +42,7 @@ describe('GiantsAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'giants',
@@ -57,7 +57,7 @@ describe('GiantsAdapter', () => {
       }
     ];
 
-    it('should parse out private sizes', () => {
+    it('should parse out private sizes', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -75,7 +75,7 @@ describe('GiantsAdapter', () => {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
-    it('should add source and verison to the tag', () => {
+    it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.sdk).to.exist;
@@ -85,7 +85,7 @@ describe('GiantsAdapter', () => {
       });
     });
 
-    it('should populate the ad_types array on all requests', () => {
+    it('should populate the ad_types array on all requests', function () {
       ['banner', 'video', 'native'].forEach(type => {
         const bidRequest = Object.assign({}, bidRequests[0]);
         bidRequest.mediaTypes = {};
@@ -98,7 +98,7 @@ describe('GiantsAdapter', () => {
       });
     });
 
-    it('should populate the ad_types array on outstream requests', () => {
+    it('should populate the ad_types array on outstream requests', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
@@ -109,13 +109,13 @@ describe('GiantsAdapter', () => {
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT + utils.getTopWindowUrl());
       expect(request.method).to.equal('POST');
     });
 
-    it('should attach valid video params to the tag', () => {
+    it('should attach valid video params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -138,7 +138,7 @@ describe('GiantsAdapter', () => {
       });
     });
 
-    it('sets minimum native asset params when not provided on adunit', () => {
+    it('sets minimum native asset params when not provided on adunit', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -157,7 +157,7 @@ describe('GiantsAdapter', () => {
       });
     });
 
-    it('does not overwrite native ad unit params with mimimum params', () => {
+    it('does not overwrite native ad unit params with mimimum params', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -189,7 +189,7 @@ describe('GiantsAdapter', () => {
       });
     });
 
-    it('should convert keyword params to proper form and attaches to request', () => {
+    it('should convert keyword params to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -228,7 +228,7 @@ describe('GiantsAdapter', () => {
       }]);
     });
 
-    it('should add payment rules to the request', () => {
+    it('should add payment rules to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -246,7 +246,7 @@ describe('GiantsAdapter', () => {
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -262,7 +262,7 @@ describe('GiantsAdapter', () => {
       ]
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           'requestId': '3db3773286ee59',
@@ -282,7 +282,7 @@ describe('GiantsAdapter', () => {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'version': '0.0.1',
         'tags': [{

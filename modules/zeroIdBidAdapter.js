@@ -13,7 +13,7 @@ const STORE_UID_TIMEOUT_MS = 500;
 var domainIsOnWhiteListVar = false;
 var domainIsOnLabListVar = false;
 var countryOnWhiteListVar = false;
-var isEU = false;
+var isPersona = false;
 
 let consent_string = '';
 let gdpr_applies = false;
@@ -24,9 +24,10 @@ var urlParams;
 
 var personaGroup = "";
 var mgVal;
+var cogs = .5;
 
 var samplingVal = Math.floor(Math.random() * 1000) + 1;
-var labVal = Math.floor(Math.random() * 50) + 1;
+var labVal = Math.floor(Math.random() * 90) + 1;
 var mgValRnd = Math.floor(Math.random() * 4) + 1;
 
 if(mgValRnd == 1){
@@ -73,7 +74,7 @@ if(navigator.language == "en-GB" ||
   navigator.language == "hu-AT" ||
   navigator.language == "de-AT" ||
   navigator.language == "ga-IE"){
-  isEU = true;
+  isPersona = true;
 }
 
 
@@ -185,6 +186,12 @@ var isABot = function () {
 
 };
 
+var setCogs = function(cogsVal){
+  cogs = cogsVal;
+  createCookie("__cogs", 1, 1);
+
+}
+
 var setDomainIsOnWhiteListVar = function(whtList){
 
   var domainIsOnWhiteList = false;
@@ -210,10 +217,10 @@ var setDomainIsOnWhiteListVar = function(whtList){
 
 
   if (domainIsOnWhiteList) {
-    createCookie("__wl", 1, 3);
+    createCookie("__wl", 1, 1);
   }
   else {
-    createCookie("__wl", 0, 3);
+    createCookie("__wl", 0, 1);
   }
 
   domainIsOnWhiteListVar = domainIsOnWhiteList;
@@ -244,10 +251,10 @@ var setDomainIsOnLabListVar = function(labList){
 
 
   if (domainIsOnLabList) {
-    createCookie("__lb", 1, 3);
+    createCookie("__lb", 1, 1);
   }
   else {
-    createCookie("__lb", 0, 3);
+    createCookie("__lb", 0, 1);
   }
 
   domainIsOnLabListVar = domainIsOnLabList;
@@ -285,10 +292,10 @@ var setCountryOnWhiteListVar = function(countryWhiteList){
   }
 
   if (countryIsOnWhiteList) {
-    createCookie("__cwl", 1, 3);
+    createCookie("__cwl", 1, 1);
   }
   else {
-    createCookie("__cwl", 0, 3);
+    createCookie("__cwl", 0, 1);
   }
 
   countryOnWhiteListVar = countryIsOnWhiteList;
@@ -304,6 +311,8 @@ var getDataProtectionModuleData = function () {
     var isOnWhiteListCookie = getCookie("__wl");
     var isOnLabListCookie = getCookie("__lb");
     var isOnCountryWhiteListCookie = getCookie("__cwl");
+    var cOGSCookieVal = getCookie("__cogs");
+
 
     if (typeof isOnWhiteListCookie != "undefined" && isOnWhiteListCookie == "1") {
       domainIsOnWhiteListVar = true;
@@ -313,6 +322,10 @@ var getDataProtectionModuleData = function () {
     }
     if (typeof isOnCountryWhiteListCookie != "undefined" && isOnCountryWhiteListCookie == "1") {
       countryOnWhiteListVar = true;
+    }
+    if (typeof cOGSCookieVal != "undefined") {
+      cogs = "." + cOGSCookieVal;
+      cogs = parseFloat(cogs);
     }
   }
   else if (typeof moduleHasData == "undefined") {
@@ -326,11 +339,14 @@ var getDataProtectionModuleData = function () {
 
 
     jaxReq.onload = function () {
-      //if (xhr.status === 200 && xhr.responseText !== newName) {
       if (jaxReq.status === 200) {
-        createCookie("__ds", 1, 3);
+        createCookie("__ds", 1, 1);
 
         var response = JSON.parse(jaxReq.responseText);
+
+        if(response.cogs){
+          setCogs(response.cogs);
+        }
 
         if (response.wl) {
           setDomainIsOnWhiteListVar(response.wl);
@@ -641,7 +657,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
-  if(isEU && personaGroup != "" && labVal == 1){
+  if(isPersona && personaGroup != "" && labVal == 1){
     var personaVal = getPersonaVal();
     request.switch_user_id = personaVal;
     request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
@@ -683,20 +699,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if (swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) {
-
-    return {
-      method: 'POST',
-      url: "//" + domain + "/prebid",
-      data: JSON.stringify(request),
-      bidderRequest,
-      options: {
-        contentType: 'text/plain',
-        withCredentials: true
-      }
-    };
-  }
-  else if (isEU && 1==2) {
+  if ((swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) || isPersona) {
 
     var isBot = isABot();
 
@@ -716,7 +719,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
-  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1 && 1==2) {
+  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -842,7 +845,7 @@ const interpretResponse = function (serverResponse, originalBidRequest) {
       responses.push({
         bidderCode: BIDDER_CODE,
         requestId: bid.bidID,
-        cpm: (bid.cpm * .40),
+        cpm: (bid.cpm * cogs),
         width: bid.size.width,
         height: bid.size.height,
         creativeId: bid.creativeID,
@@ -924,12 +927,7 @@ const triggerSync = function () {
 
         window.swSyncDone = true;
 
-        let syncUri = "//delivery.h.switchadhub.com/sync";
         let zidSyncUri = "//delivery.zidtech.com/sync";
-
-
-        syncUri += `?consent_string=${consent_string}`;
-        syncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
 
         zidSyncUri += `?consent_string=${consent_string}`;
         zidSyncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
@@ -940,23 +938,11 @@ const triggerSync = function () {
           swid = '';
         }
 
-        syncUri += `&swid=${swid}`;
         zidSyncUri += `&swid=${swid}`;
 
         // do sync
         const iframe = document.createElement('iframe');
         const syncIframe = document.createElement('iframe');
-
-        /*                document.body.appendChild(iframe);
-
-                        iframe.setAttribute('seamless', 'seamless');
-                        iframe.setAttribute('frameBorder', '0');
-                        iframe.setAttribute('frameSpacing', '0');
-                        iframe.setAttribute('scrolling', 'no');
-                        iframe.setAttribute('style', 'border:none; padding: 0px; margin: 0px; position: absolute;');
-                        iframe.setAttribute('width', '0');
-                        iframe.setAttribute('height', '0');
-                        iframe.src = syncUri;*/
 
         document.body.appendChild(syncIframe);
 
