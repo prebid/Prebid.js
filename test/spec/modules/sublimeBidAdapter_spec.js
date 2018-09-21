@@ -30,47 +30,60 @@ describe('Sublime Adapter', () => {
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
-    it('should return false if sublime already exists and is in prebid mode', () => {
-      window.sublime = {env: function() { }};
-      sinon.stub(window.sublime, 'env').returns('pb');
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-
-      delete window.sublime;
-    });
   });
 
   describe('buildRequests', () => {
-    let bidRequests = [{
-      bidder: 'sublime',
-      adUnitCode: 'sublime_code',
-      bidId: 'abc1234',
-      sizes: [[1800, 1000], [640, 300]],
-      requestId: 'xyz654',
-      params: {
-        zoneId: 14312,
-        bidHost: 'pbjs.ayads.co.local',
-        callbackName: 'myCallback'
+    let bidRequests = [
+      {
+        bidder: 'sublime',
+        adUnitCode: 'sublime_code',
+        bidId: 'abc1234',
+        sizes: [[1800, 1000], [640, 300]],
+        requestId: 'xyz654',
+        params: {
+          zoneId: 14312,
+          bidHost: 'pbjs.ayads.co.local',
+          callbackName: 'myCallback'
+        }
+      }, {
+        bidder: 'sublime',
+        adUnitCode: 'sublime_code_2',
+        bidId: 'abc1234_2',
+        sizes: [[1800, 1000], [640, 300]],
+        requestId: 'xyz654_2',
+        params: {
+          zoneId: 14313,
+          bidHost: 'pbjs.ayads.co.local',
+          callbackName: 'myCallback'
+        }
       }
-    }];
+    ];
 
-    let request = spec.buildRequests(bidRequests);
+    let requests = spec.buildRequests(bidRequests);
 
     it('should have a get method', () => {
-      expect(request.method).to.equal('GET');
+      requests.map(request => {
+        expect(request.method).to.equal('GET');
+      });
     });
 
     it('should contains a request id equals to the bid id', () => {
-      expect(request.data.request_id).to.equal(bidRequests[0].bidId);
+      requests.map((request, index) => {
+        expect(request.data.request_id).to.equal(bidRequests[index].bidId);
+      });
     });
 
     it('should have an url that contains bid keyword', () => {
-      expect(request.url).to.match(/bid/);
+      requests.map(request => {
+        expect(request.url).to.match(/bid/);
+      });
     });
 
     it('should create a callback function', () => {
-      expect(window[bidRequests[0].params.callbackName]).to.be.an('function');
+      requests.map((request, index) => {
+        const params = bidRequests[index].params;
+        expect(window[params.callbackName + '_' + params.zoneId]).to.be.an('function');
+      });
     });
   });
 
@@ -86,14 +99,16 @@ describe('Sublime Adapter', () => {
       }
     }];
 
-    let request = spec.buildRequests(bidRequests);
+    let requests = spec.buildRequests(bidRequests);
 
     it('should have an url that match the default endpoint', () => {
-      expect(request.url).to.equal('https://pbjs.ayads.co/bid');
+      requests.map(request => {
+        expect(request.url).to.equal('https://pbjs.ayads.co/bid');
+      });
     });
 
     it('should create a default callback function', () => {
-      expect(window['sublime_prebid_callback']).to.be.an('function');
+      expect(window['sublime_prebid_callback_1']).to.be.an('function');
     });
   });
 
@@ -118,7 +133,7 @@ describe('Sublime Adapter', () => {
         ad: '<h1>oh</h1>',
         cpm: 2
       };
-      let actual = window['sublime_prebid_callback'](response);
+      let actual = window['sublime_prebid_callback_1'](response);
 
       it('should query the notify url', () => {
         expect(actual.url).to.equal('https://pbjs.ayads.co/notify');

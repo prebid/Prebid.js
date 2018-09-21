@@ -17,10 +17,6 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    if (typeof window.sublime !== 'undefined' && window.sublime.env('mode') === 'pb') {
-      return false;
-    }
-
     return !!bid.params.zoneId;
   },
 
@@ -31,40 +27,42 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests) => {
-    let params = validBidRequests[0].params;
-    let requestId = validBidRequests[0].bidId || '';
-    let sacHost = params.sacHost || DEFAULT_SAC_HOST;
-    let bidHost = params.bidHost || DEFAULT_BID_HOST;
-    let protocol = params.protocol || DEFAULT_PROTOCOL;
-    let zoneId = params.zoneId;
-    let callbackName = params.callbackName || DEFAULT_CALLBACK_NAME;
+    return validBidRequests.map(bid => {
+      let params = bid.params;
+      let requestId = bid.bidId || '';
+      let sacHost = params.sacHost || DEFAULT_SAC_HOST;
+      let bidHost = params.bidHost || DEFAULT_BID_HOST;
+      let protocol = params.protocol || DEFAULT_PROTOCOL;
+      let zoneId = params.zoneId;
+      let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
 
-    window[callbackName] = (response) => {
-      var xhr = new XMLHttpRequest();
-      var url = protocol + '://' + bidHost + '/notify';
-      xhr.open('POST', url, true);
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      xhr.send(
-        'notify=1' +
-        '&request_id=' + encodeURIComponent(requestId) +
-        '&ad=' + encodeURIComponent(response.ad || '') +
-        '&cpm=' + encodeURIComponent(response.cpm || 0)
-      );
-      return xhr;
-    };
-    let script = document.createElement('script');
-    script.type = 'application/javascript';
-    script.src = 'https://' + sacHost + '/sublime/' + zoneId + '/prebid?callback=' + callbackName;
-    document.body.appendChild(script);
+      window[callbackName] = (response) => {
+        var xhr = new XMLHttpRequest();
+        var url = protocol + '://' + bidHost + '/notify';
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(
+          'notify=1' +
+          '&request_id=' + encodeURIComponent(requestId) +
+          '&ad=' + encodeURIComponent(response.ad || '') +
+          '&cpm=' + encodeURIComponent(response.cpm || 0)
+        );
+        return xhr;
+      };
+      let script = document.createElement('script');
+      script.type = 'application/javascript';
+      script.src = 'https://' + sacHost + '/sublime/' + zoneId + '/prebid?callback=' + callbackName;
+      document.body.appendChild(script);
 
-    return {
-      method: 'GET',
-      url: protocol + '://' + bidHost + '/bid',
-      data: {
-        prebid: 1,
-        request_id: requestId,
-      }
-    };
+      return {
+        method: 'GET',
+        url: protocol + '://' + bidHost + '/bid',
+        data: {
+          prebid: 1,
+          request_id: requestId,
+        }
+      };
+    });
   },
 
   /**
@@ -75,21 +73,25 @@ export const spec = {
    */
   interpretResponse: (serverResponse) => {
     const bidResponses = [];
-    const bidResponse = {
-      requestId: serverResponse.body.request_id || '',
-      cpm: serverResponse.body.cpm || 0,
-      width: 1800,
-      height: 1000,
-      creativeId: 1,
-      dealId: 1,
-      currency: serverResponse.body.currency || 'USD',
-      netRevenue: true,
-      ttl: 600,
-      referrer: '',
-      ad: serverResponse.body.ad || '',
-    };
-    if (bidResponse.cpm) {
-      bidResponses.push(bidResponse);
+    const request = serverResponse.body;
+
+    if (request) {
+      const bidResponse = {
+        requestId: serverResponse.body.request_id || '',
+        cpm: serverResponse.body.cpm || 0,
+        width: 1800,
+        height: 1000,
+        creativeId: 1,
+        dealId: 1,
+        currency: serverResponse.body.currency || 'USD',
+        netRevenue: true,
+        ttl: 600,
+        referrer: '',
+        ad: serverResponse.body.ad || '',
+      };
+      if (bidResponse.cpm) {
+        bidResponses.push(bidResponse);
+      }
     }
     return bidResponses;
   },
