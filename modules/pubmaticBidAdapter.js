@@ -332,6 +332,7 @@ export const spec = {
       try{
         bid = JSON.parse(JSON.stringify(original_bid));  
       }catch(e){
+        utils.logWarn(BIDDER_CODE + ': Fix for issue 3111 failed here.');
         bid = {params:{}};
       }
       
