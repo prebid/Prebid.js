@@ -1,9 +1,10 @@
 import { expect } from 'chai'
 import { spec } from 'modules/justpremiumBidAdapter'
 
-describe('justpremium adapter', () => {
+describe('justpremium adapter', function () {
   let adUnits = [
     {
+      adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
       params: {
         zone: 28313,
@@ -11,6 +12,7 @@ describe('justpremium adapter', () => {
       }
     },
     {
+      adUnitCode: 'div-gpt-ad-1471513102552-2',
       bidder: 'justpremium',
       params: {
         zone: 32831,
@@ -19,12 +21,12 @@ describe('justpremium adapter', () => {
     },
   ]
 
-  describe('isBidRequestValid', () => {
-    it('Verifies bidder code', () => {
+  describe('isBidRequestValid', function () {
+    it('Verifies bidder code', function () {
       expect(spec.code).to.equal('justpremium')
     })
 
-    it('Verify build request', () => {
+    it('Verify build request', function () {
       expect(spec.isBidRequestValid({bidder: 'justpremium', params: {}})).to.equal(false)
       expect(spec.isBidRequestValid({})).to.equal(false)
       expect(spec.isBidRequestValid(adUnits[0])).to.equal(true)
@@ -32,8 +34,8 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('buildRequests', () => {
-    it('Verify build request and parameters', () => {
+  describe('buildRequests', function () {
+    it('Verify build request and parameters', function () {
       const request = spec.buildRequests(adUnits)
       expect(request.method).to.equal('POST')
       expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/)
@@ -50,12 +52,14 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.c).to.not.equal('undefined')
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
+      expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.3')
     })
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits)
-    it('Verify server response', () => {
+    it('Verify server response', function () {
       let response = {
         'bid': {
           '28313': [{
@@ -83,7 +87,8 @@ describe('justpremium adapter', () => {
           cpm: 0.52,
           netRevenue: true,
           currency: 'USD',
-          ttl: 60000
+          ttl: 60000,
+          format: 'lb'
         }
       ]
 
@@ -99,9 +104,10 @@ describe('justpremium adapter', () => {
       expect(result[0].ttl).to.equal(60000)
       expect(result[0].creativeId).to.equal(3213123)
       expect(result[0].netRevenue).to.equal(true)
+      expect(result[0].format).to.equal('lb')
     })
 
-    it('Verify wrong server response', () => {
+    it('Verify wrong server response', function () {
       let response = {
         'bid': {
           '28313': []
@@ -116,12 +122,40 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('getUserSyncs', () => {
-    it('Verifies sync options', () => {
+  describe('getUserSyncs', function () {
+    it('Verifies sync options', function () {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
-      expect(options[0].src).to.match(/\/\/us-u.openx.net\/w\/1.0/)
+      expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
+    })
+  })
+
+  describe('onTimeout', function () {
+    it('onTimeout', (done) => {
+      spec.onTimeout([{
+        'bidId': '25cd3ec3fd6ed7',
+        'bidder': 'justpremium',
+        'adUnitCode': 'div-gpt-ad-1471513102552-1',
+        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
+        'params': [{
+          'adType': 'iab',
+          'zone': 21521
+        }],
+        'timeout': 1
+      }, {
+        'bidId': '3b51df1f254e32',
+        'bidder': 'justpremium',
+        'adUnitCode': 'div-gpt-ad-1471513102552-3',
+        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
+        'params': [{
+          'adType': 'iab',
+          'zone': 21521
+        }],
+        'timeout': 1
+      }])
+
+      done()
     })
   })
 })

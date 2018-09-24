@@ -2,18 +2,23 @@ import * as utils from 'src/utils'
 
 import { config } from 'src/config'
 import { registerBidder } from 'src/adapters/bidderFactory'
+import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
 const TIME_TO_LIVE = 60
+
 let browserParams = {};
+let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams() {
   let topWindow
   let topScreen
+  let topUrl
+  let ggad
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -22,6 +27,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
+    topUrl = utils.getTopWindowUrl()
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -32,9 +38,13 @@ function _getBrowserParams() {
     vh: topWindow.innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
-    pu: utils.getTopWindowUrl(),
+    pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1
+  }
+  ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
+  if (ggad) {
+    browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
   }
   return browserParams
 }
@@ -56,7 +66,7 @@ function _getDigiTrustQueryParams() {
     return {};
   }
   return {
-    'dt': digiTrustId.id
+    dt: digiTrustId.id
   };
 }
 
@@ -75,6 +85,7 @@ function isBidRequestValid (bid) {
   switch (true) {
     case !!(params.inScreen): break;
     case !!(params.inSlot): break;
+    case !!(params.ICV): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -88,8 +99,9 @@ function isBidRequestValid (bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests (validBidRequests) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
+  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -98,7 +110,9 @@ function buildRequests (validBidRequests) {
       transactionId
     } = bidRequest;
     const data = {}
-
+    if (pageViewId) {
+      data.pv = pageViewId
+    }
     if (params.inScreen) {
       data.t = params.inScreen;
       data.pi = 2;
@@ -107,12 +121,21 @@ function buildRequests (validBidRequests) {
       data.si = parseInt(params.inSlot, 10);
       data.pi = 3;
     }
+    if (params.ICV) {
+      data.ni = parseInt(params.ICV, 10);
+      data.pi = 5;
+    }
+    data.gdprApplies = gdprConsent.gdprApplies;
+    if (gdprConsent.gdprApplies) {
+      data.gdprConsent = gdprConsent.consentString;
+    }
 
     bids.push({
       id: bidId,
       tmax: timeout,
       tId: transactionId,
       pi: data.pi,
+      selector: params.selector,
       sizes: bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
@@ -131,16 +154,41 @@ function buildRequests (validBidRequests) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+  const defaultResponse = {
+    ad: {
+      price: 0,
+      id: 0,
+      markup: ''
+    },
+    pag: {
+      pvid: 0
+    }
+  }
   const {
     ad: {
       price: cpm,
       id: creativeId,
       markup
     },
-    cw: wrapper
-  } = serverResponseBody
-  let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
-  let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+    cw: wrapper,
+    pag: {
+      pvid
+    }
+  } = Object.assign(defaultResponse, serverResponseBody)
+  let data = bidRequest.data || {}
+  let product = data.pi
+  let isTestUnit = (product === 3 && data.si === 9)
+  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  let [width, height] = sizes[0].split('x')
+
+  // return 1x1 when breakout expected
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+    width = '1'
+    height = '1'
+  }
+
+  // update Page View ID from server response
+  pageViewId = pvid
 
   if (creativeId) {
     bidResponses.push({
@@ -160,11 +208,35 @@ function interpretResponse (serverResponse, bidRequest) {
   return bidResponses
 }
 
+/**
+ * Register the user sync pixels which should be dropped after the auction.
+ *
+ * @param {SyncOptions} syncOptions Which user syncs are allowed?
+ * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @return {UserSync[]} The user syncs which should be dropped.
+ */
+function getUserSyncs (syncOptions, serverResponses) {
+  const responses = serverResponses.map((response) => {
+    return (response.body && response.body.pxs && response.body.pxs.scr) || []
+  })
+  const userSyncs = responses.reduce(function (usersyncs, response) {
+    return usersyncs.concat(response)
+  }, [])
+  const syncs = userSyncs.map((sync) => {
+    return {
+      type: sync.t === 'f' ? 'iframe' : 'image',
+      url: sync.u
+    }
+  })
+  return syncs;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
-  interpretResponse
+  interpretResponse,
+  getUserSyncs
 }
 registerBidder(spec)

@@ -33,6 +33,15 @@ const bidReq = [{
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
+},
+{
+  bidder: BIDDER_CODE,
+  params: {
+    publisherId: 12345
+  },
+  sizes: [[1, 1]],
+  bidId: '453cf42d72bb3c',
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
 const validBidRes = {
@@ -78,41 +87,47 @@ const bidResArray = [
   }
 ];
 
-describe('Undertone Adapter', () => {
-  describe('request', () => {
-    it('should validate bid request', () => {
+describe('Undertone Adapter', function () {
+  describe('request', function () {
+    it('should validate bid request', function () {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', () => {
+    it('should not validate incorrect bid request', function () {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
-  describe('build request', () => {
-    it('should send request to correct url via POST', () => {
+  describe('build request', function () {
+    it('should send request to correct url via POST', function () {
       const request = spec.buildRequests(bidReq);
       const domain = null;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const request = spec.buildRequests(bidReq);
-      const bid = JSON.parse(request.data)['x-ut-hb-params'][0];
-      expect(bid.bidRequestId).to.equal('263be71e91dd9d');
-      expect(bid.sizes.length > 0).to.equal(true);
-      expect(bid.placementId).to.equal('10433394');
-      expect(bid.publisherId).to.equal(12345);
-      expect(bid.params).to.be.an('object');
+      const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+      expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
+      expect(bid1.sizes.length).to.equal(2);
+      expect(bid1.placementId).to.equal('10433394');
+      expect(bid1.publisherId).to.equal(12345);
+      expect(bid1.params).to.be.an('object');
+      const bid2 = JSON.parse(request.data)['x-ut-hb-params'][1];
+      expect(bid2.bidRequestId).to.equal('453cf42d72bb3c');
+      expect(bid2.sizes.length).to.equal(1);
+      expect(bid2.placementId === null).to.equal(true);
+      expect(bid2.publisherId).to.equal(12345);
+      expect(bid2.params).to.be.an('object');
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should build bid array', () => {
+  describe('interpretResponse', function () {
+    it('should build bid array', function () {
       let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const result = spec.interpretResponse({body: bidResponse});
       const bid = result[0];
 
@@ -126,12 +141,12 @@ describe('Undertone Adapter', () => {
       expect(bid.ttl).to.equal(360);
     });
 
-    it('should return empty array when response is incorrect', () => {
+    it('should return empty array when response is incorrect', function () {
       expect(spec.interpretResponse({body: {}}).length).to.equal(0);
       expect(spec.interpretResponse({body: []}).length).to.equal(0);
     });
 
-    it('should only use valid bid responses', () => {
+    it('should only use valid bid responses', function () {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
     });
   });

@@ -1,9 +1,10 @@
-[![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
+[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 [![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
 # Prebid.js
 
@@ -29,6 +30,8 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ npm install
 
 *Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* Because we have transitioned to using gulp 4.0 - you need to have `gulp-cli` installed globally prior to running the general `npm install`.  Run the following command to perform the install: `npm install gulp-cli -g`
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  This removal can be done with the command: `npm rm gulp -g`
 
 <a name="Build"></a>
 
@@ -106,11 +109,6 @@ To run the unit tests:
 ```bash
 gulp test
 ```
-To run tests for a single file:
-
-```bash
-gulp test --file "path/to/spec/file.js"
-```
 
 To generate and view the code coverage reports:
 
@@ -172,7 +170,7 @@ Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidder
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
-Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/PR_REVIEW.md).
 
 ### Add a Bidder Adapter
 

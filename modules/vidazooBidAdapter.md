@@ -22,7 +22,11 @@ var adUnits = [
         params: {
           cId: '5a1c419d95fce900044c334e',
           pId: '59ac17c192832d0011283fe3',
-          bidFloor: 0.0001
+          bidFloor: 0.0001,
+          ext: {
+            param1: 'loremipsum',
+            param2: 'dolorsitamet'
+          }
         }
       }
     ]
