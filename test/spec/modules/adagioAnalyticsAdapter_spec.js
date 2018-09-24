@@ -46,23 +46,23 @@ describe('adagio analytics adapter', () => {
         bids: [{
           adUnitCode: 'div-1',
           params: {
-            features: {
-              siteId: '2',
-              placement: 'pave_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
+            siteId: '123',
+            placementId: '4',
+            pagetypeId: '232',
+            categories: ['IAB12', 'IAB12-2'],
+            device: {
+              deviceType: 2
             }
           }
         }, {
           adUnitCode: 'div-2',
           params: {
-            features: {
-              siteId: '2',
-              placement: 'ban_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
+            siteId: '123',
+            placementId: '5',
+            pagetypeId: '232',
+            categories: ['IAB12', 'IAB12-2'],
+            device: {
+              deviceType: 2
             }
           },
         }],
@@ -91,31 +91,33 @@ describe('adagio analytics adapter', () => {
       expect(requests.length).to.equal(1);
 
       let expectedPayload = {
-        pv_id: '_',
-        siteId: '2',
-        cat: 'IAB12,IAB12-2',
-        pgtyp: 'article',
+        pv_id: '',
+        site_id: '123',
+        cats: 'IAB12,IAB12-2',
+        pgtyp: '232',
         dvc: '2',
         evt: 'auction_end'
       };
-      let expectedParams = [{
-        adu_id: 'div-1',
-        plcmt: 'pave_top',
-        bids: [{
-          bidder: 'adagio',
-          cpm: 6.2189757658226075,
-          net_rev: 0,
-          cur: '',
-          ttr: 132,
-          sts: 'Bid available',
-          w: 300,
-          h: 250
-        }]}, {
-        adu_id: 'div-2',
-        plcmt: 'ban_top',
-        bids: [
-        ]
-      }];
+      let expectedParams = [
+        {
+          adu_id: 'div-1',
+          plcmt: '4',
+          bids: [{
+            bidder: 'adagio',
+            cpm: 6.2189757658226075,
+            net_rev: 0,
+            cur: '',
+            ttr: 132,
+            sts: 'Bid available',
+            w: 300,
+            h: 250
+          }]
+        }, {
+          adu_id: 'div-2',
+          plcmt: '5',
+          bids: []
+        }
+      ];
 
       let urlParams = parseURL(requests[0].url);
       let urlGlobalsParam = Object.assign({}, urlParams.search);

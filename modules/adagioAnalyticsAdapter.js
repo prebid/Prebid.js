@@ -9,11 +9,20 @@ import find from 'core-js/library/fn/array/find';
 
 const analyticsType = 'endpoint';
 const emptyUrl = '';
-const pageViewId = (!window.top.ADAGIO || !window.top.ADAGIO.pageviewId) ? '_' : window.top.ADAGIO.pageviewId;
+const pageViewId = (!window.top.ADAGIO || !window.top.ADAGIO.pageviewId) ? '' : window.top.ADAGIO.pageviewId;
 
 let requestSent = false;
 let payload = { pv_id: pageViewId };
 let adUnits = [];
+
+function _getOrAddAdunit(adUnitCode) {
+  let adUnit = find(adUnits, (adUnit) => adUnit.adu_id === adUnitCode);
+  if (typeof adUnit === 'undefined') {
+    adUnit = { adu_id: adUnitCode }
+    adUnits.push(adUnit)
+  }
+  return adUnit;
+}
 
 let adagioAnalytics = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track({ eventType, args }) {
@@ -22,13 +31,18 @@ let adagioAnalytics = Object.assign(adapter({ emptyUrl, analyticsType }), {
         let { bids = [] } = args;
         bids.forEach(function (bid) {
           let { adUnitCode, params = {} } = bid;
-          let { category, pagetype, device, placement, siteId } = params.features || {};
-          adUnits.push({ adu_id: adUnitCode, plcmt: placement, bids: [] });
-          Object.assign(payload, { siteId, cat: category, pgtyp: pagetype, dvc: device });
+          let { categories, pagetypeId, device, placementId, siteId } = params || {};
+          let { deviceType } = device || {};
+          const adUnits = _getOrAddAdunit(adUnitCode);
+          if (typeof categories !== 'undefined' && !Array.isArray(categories)) {
+            categories = [categories];
+          }
+          Object.assign(adUnits, { plcmt: placementId, bids: [] });
+          Object.assign(payload, { site_id: siteId, cats: categories.join(','), pgtyp: pagetypeId, dvc: deviceType });
         });
       } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
-        let { adUnitCode, bidderCode, cpm, netRevenue, currency, timeToRespond, statusMessage, width, height } = args;
-        let adUnit = find(adUnits, (adUnit) => adUnit.adu_id === adUnitCode);
+        let { adUnitCode, bidderCode, cpm, netRevenue, currency, timeToRespond, statusMessage, width, height, dealId } = args;
+        const adUnit = _getOrAddAdunit(adUnitCode);
         adUnit.bids = adUnit.bids.concat([{
           bidder: bidderCode,
           cpm,
@@ -37,11 +51,16 @@ let adagioAnalytics = Object.assign(adapter({ emptyUrl, analyticsType }), {
           ttr: timeToRespond,
           sts: statusMessage,
           w: width,
-          h: height
+          h: height,
+          deal: dealId
         }]);
+      } else if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
+        let { adUnitCode } = args;
+        const adUnit = _getOrAddAdunit(adUnitCode);
+        Object.assign(adUnit, { timeout: 1 });
       } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
         let { adUnitCode } = args;
-        let adUnit = find(adUnits, (adUnit) => adUnit.adu_id === adUnitCode);
+        const adUnit = _getOrAddAdunit(adUnitCode);
         Object.assign(adUnit, { won: 1 });
       }
     }
