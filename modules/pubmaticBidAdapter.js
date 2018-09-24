@@ -320,8 +320,8 @@ export const spec = {
     var dctrLen;
     var dctrArr = [];
     var bid;
-    validBidRequests.forEach(original_bid => {
-      bid = utils.deepClone(original_bid);      
+    validBidRequests.forEach(originalBid => {
+      bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
