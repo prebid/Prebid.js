@@ -888,17 +888,30 @@ describe('auctionmanager.js', function () {
     });
 
     it('should call auction done after bid is added to auction for mediaType banner', function () {
+      let ADUNIT_CODE2 = 'adUnitCode2';
+      let BIDDER_CODE2 = 'sampleBidder2';
+
+      let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+      let bids2 = [mockBid({ bidderCode: BIDDER_CODE2 })];
       bidRequests = [
         mockBidRequest(bids[0]),
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
       ];
       let cbs = auctionCallbacks(doneSpy, auction);
       cbs.addBidResponse(ADUNIT_CODE, bids[0]);
+      cbs.adapterDone();
+      cbs.addBidResponse(ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone();
+      cbs.addBidResponse(ADUNIT_CODE2, bids2[0]);
       cbs.adapterDone();
       assert.equal(doneSpy.callCount, 1);
     });
 
     it('should call auction done after prebid cache is complete for mediaType video', function() {
       bids[0].mediaType = 'video';
+      let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+
       let opts = {
         mediaType: {
           video: {
@@ -908,16 +921,19 @@ describe('auctionmanager.js', function () {
         }
       }
       bidRequests = [
-        mockBidRequest(bids[0], opts)
+        mockBidRequest(bids[0], opts),
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
       ]
 
       let cbs = auctionCallbacks(doneSpy, auction);
       cbs.addBidResponse(ADUNIT_CODE, bids[0]);
+      cbs.adapterDone();
+      cbs.addBidResponse(ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone();
       assert.equal(doneSpy.callCount, 0);
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
       requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
-      cbs.adapterDone();
       assert.equal(doneSpy.callCount, 1);
     })
   });

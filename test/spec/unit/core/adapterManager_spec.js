@@ -175,7 +175,7 @@ describe('adapterManager tests', function () {
                   'placementId': '543221',
                   'test': 'me'
                 },
-                'placementCode': '/19968336/header-bid-tag1',
+                'adUnitCode': '/19968336/header-bid-tag1',
                 'sizes': [
                   [
                     728,
@@ -213,7 +213,7 @@ describe('adapterManager tests', function () {
                 'params': {
                   'placementId': '5324321'
                 },
-                'placementCode': '/19968336/header-bid-tag-0',
+                'adUnitCode': '/19968336/header-bid-tag-0',
                 'sizes': [
                   [
                     300,
@@ -339,7 +339,7 @@ describe('adapterManager tests', function () {
                   'placementId': '543221',
                   'test': 'me'
                 },
-                'placementCode': '/19968336/header-bid-tag1',
+                'adUnitCode': '/19968336/header-bid-tag1',
                 'sizes': [
                   [
                     728,
@@ -377,7 +377,7 @@ describe('adapterManager tests', function () {
                 'params': {
                   'placementId': '5324321'
                 },
-                'placementCode': '/19968336/header-bid-tag-0',
+                'adUnitCode': '/19968336/header-bid-tag-0',
                 'sizes': [
                   [
                     300,
@@ -911,7 +911,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].adUnitsS2SCopy.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bidder).to.equal('rubicon');
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].placementCode).to.equal(adUnits[1].code);
+        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bid_id).to.equal(bidRequests[0].bids[0].bid_id);
         expect(bidRequests[0].adUnitsS2SCopy[0].labelAny).to.deep.equal(['visitor-uk', 'desktop']);
       });
