@@ -263,7 +263,7 @@ function _createImpressionObject(bid, conf) {
       topframe: utils.inIframe() ? 0 : 1,
     }
     if (utils.isArray(sizes) && sizes.length > 1) {
-      sizes = sizes.splice(1, sizes.length - 1);
+      sizes = sizes.slice(1);
       var format = [];
       sizes.forEach(size => {
         format.push({w: size[0], h: size[1]});
