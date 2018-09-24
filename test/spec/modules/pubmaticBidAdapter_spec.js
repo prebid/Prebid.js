@@ -217,7 +217,13 @@ describe('PubMatic adapter', function () {
     });
 
   	describe('Request formation', function () {
-  		it('Endpoint checking', function () {
+  		it('buildRequests function should not modify original bidRequests object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let request = spec.buildRequests(bidRequests);
+        expect(bidRequests).to.deep.equal(originalBidRequests);
+      });
+
+      it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
