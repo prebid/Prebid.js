@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.2';
+const ADAPTER_VERSION = '1.3';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
