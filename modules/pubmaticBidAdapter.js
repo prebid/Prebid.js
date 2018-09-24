@@ -321,21 +321,7 @@ export const spec = {
     var dctrArr = [];
     var bid;
     validBidRequests.forEach(original_bid => {
-      /*
-        Making changes to fix https://github.com/prebid/Prebid.js/issues/3111
-        Fix: 
-        - Not using original_bid for further processing as it is a common object shared across adapters and we are deleting size property of the object
-        - This is a simplest and smallest change that resolves the issue
-        - Can't use Object.assign as this API copies member objects with reference thus not solving the problem
-        - Can't use Object.create as this API creates a new object with a provided object as a prototype, this creates an issue when we use hasOwnProperty check.
-      */      
-      try{
-        bid = JSON.parse(JSON.stringify(original_bid));  
-      }catch(e){
-        utils.logWarn(BIDDER_CODE + ': Creating local copy of common object failed');
-        bid = {params:{}};
-      }
-      
+      bid = utils.deepClone(original_bid);      
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
