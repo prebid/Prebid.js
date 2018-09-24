@@ -11,7 +11,7 @@ const BANNER_INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER];
 const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
-const TIME_TO_LIVE = 35;
+const TIME_TO_LIVE = 10;
 const NET_REVENUE = true;
 
 // Always start by assuming the protocol is HTTPS. This way, it will work
