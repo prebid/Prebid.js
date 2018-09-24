@@ -1,11 +1,11 @@
 import {expect} from 'chai';
-import {spec} from 'modules/rexrtbBidAdapter';
+import {spec} from 'modules/rxrtbBidAdapter';
 
-describe('rexrtb adapater', () => {
+describe('rxrtb adapater', () => {
   describe('Test validate req', () => {
     it('should accept minimum valid bid', () => {
       let bid = {
-        bidder: 'rexrtb',
+        bidder: 'rxrtb',
         params: {
           id: 89,
           token: '658f11a5efbbce2f9be3f1f146fcbc22',
@@ -19,7 +19,7 @@ describe('rexrtb adapater', () => {
 
     it('should reject missing id', () => {
       let bid = {
-        bidder: 'rexrtb',
+        bidder: 'rxrtb',
         params: {
           token: '658f11a5efbbce2f9be3f1f146fcbc22',
           source: 'prebidtest'
@@ -32,11 +32,24 @@ describe('rexrtb adapater', () => {
 
     it('should reject id not Integer', () => {
       let bid = {
-        bidder: 'rexrtb',
+        bidder: 'rxrtb',
         params: {
           id: '123',
           token: '658f11a5efbbce2f9be3f1f146fcbc22',
           source: 'prebidtest'
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
+
+      expect(isValid).to.equal(false);
+    });
+
+    it('should reject missing source', () => {
+      let bid = {
+        bidder: 'rxrtb',
+        params: {
+          id: 89,
+          token: '658f11a5efbbce2f9be3f1f146fcbc22'
         }
       };
       const isValid = spec.isBidRequestValid(bid);
@@ -48,7 +61,7 @@ describe('rexrtb adapater', () => {
   describe('Test build request', () => {
     it('minimum request', () => {
       let bid = {
-        bidder: 'rexrtb',
+        bidder: 'rxrtb',
         sizes: [[728, 90]],
         bidId: '4d0a6829338a07',
         adUnitCode: 'div-gpt-ad-1460505748561-0',
