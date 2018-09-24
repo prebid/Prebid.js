@@ -10,5 +10,6 @@
   "prebidServerBidAdapter",
   "sonobiBidAdapter",
   "trustxBidAdapter",
-  "openxBidAdapter"
+  "openxBidAdapter",
+  "pubmaticBidAdapter"
 ]
