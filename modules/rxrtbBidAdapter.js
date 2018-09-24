@@ -3,7 +3,7 @@ import {BANNER} from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 
-const BIDDER_CODE = 'rexrtb';
+const BIDDER_CODE = 'rxrtb';
 const DEFAULT_HOST = 'bid.rxrtb.bid';
 const AUCTION_TYPE = 2;
 const RESPONSE_TTL = 900;
