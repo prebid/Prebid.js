@@ -219,11 +219,12 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         const mimes = ['video/webm'];
         const playbackmethod = 2;
+        const maxduration = 30;
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.params.video = { mimes, playbackmethod };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration });
       });
 
       it('must add GDPR consent data to the request', function () {
