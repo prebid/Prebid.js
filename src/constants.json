@@ -55,15 +55,15 @@
     "DENSE": "dense",
     "CUSTOM": "custom"
   },
-  "TARGETING_KEYS": [
-    "hb_bidder",
-    "hb_adid",
-    "hb_pb",
-    "hb_size",
-    "hb_deal",
-    "hb_source",
-    "hb_format"
-  ],
+  "TARGETING_KEYS": {
+    "bidder": "hb_bidder",
+    "adId": "hb_adid",
+    "priceBucket": "hb_pb",
+    "size": "hb_size",
+    "deal": "hb_deal",
+    "source": "hb_source",
+    "format": "hb_format"
+  },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
     "body": "hb_native_body",
