@@ -99,7 +99,7 @@ function queueSync(bidderCodes, gdprConsent) {
   const payload = {
     uuid: utils.generateUUID(),
     bidders: bidderCodes,
-    account_id: _s2sConfig.accountId
+    account: _s2sConfig.accountId
   };
 
   if (gdprConsent) {
