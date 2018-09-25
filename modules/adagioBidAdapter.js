@@ -62,7 +62,7 @@ function _getFeatures(bidRequest) {
         site_id: bidRequest.params.siteId,
         placement: bidRequest.params.placementId,
         pagetype: bidRequest.params.pagetypeId,
-        categories: (bidRequest.params.categories && bidRequest.params.categories.length) ? bidRequest.params.categories.join(',') : ''
+        categories: bidRequest.params.categories
       };
     }
   );
