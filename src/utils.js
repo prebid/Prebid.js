@@ -189,6 +189,9 @@ export function parseGPTSingleSizeArray(singleSize) {
   }
 };
 
+/**
+ * @deprecated This function will be removed soon
+ */
 exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
     let loc;
@@ -202,6 +205,9 @@ exports.getTopWindowLocation = function() {
   return exports.getWindowLocation();
 }
 
+/**
+ * @deprecated This function will be removed soon
+ */
 exports.getTopFrameReferrer = function () {
   try {
     // force an exception in x-domain environments. #1509
@@ -221,6 +227,9 @@ exports.getTopFrameReferrer = function () {
   }
 };
 
+/**
+ * @deprecated This function will be removed soon
+ */
 exports.getAncestorOrigins = function () {
   if (window.document.location && window.document.location.ancestorOrigins &&
     window.document.location.ancestorOrigins.length >= 1) {
