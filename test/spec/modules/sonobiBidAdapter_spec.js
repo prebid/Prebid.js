@@ -319,9 +319,17 @@ describe('SonobiBidAdapter', function () {
     it('should map bidResponse to prebidResponse', function () {
       const response = spec.interpretResponse(bidResponse, bidRequests);
       response.forEach((resp, i) => {
-        resp.ad = resp.ad.replace('%3A9876', '');
+        expect(resp.requestId).to.equal(prebidResponse[i].requestId)
+        expect(resp.cpm).to.equal(prebidResponse[i].cpm)
+        expect(resp.width).to.equal(prebidResponse[i].width)
+        expect(resp.height).to.equal(prebidResponse[i].height)
+        expect(resp.ttl).to.equal(prebidResponse[i].ttl)
+        expect(resp.creativeId).to.equal(prebidResponse[i].creativeId)
+        expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue)
+        expect(resp.currency).to.equal(prebidResponse[i].currency)
+        expect(resp.aid).to.equal(prebidResponse[i].aid)
+        expect(resp.ad.indexOf('localhost')).to.be.greaterThan(0)
       });
-      expect(response).to.deep.equal(prebidResponse);
     })
   })
 
