@@ -97,7 +97,6 @@ describe('AolAdapter', function () {
     let bidResponse;
     let bidRequest;
     let logWarnSpy;
-    let formatPixelsStub;
     let isOneMobileBidderStub;
 
     beforeEach(function () {
@@ -111,14 +110,12 @@ describe('AolAdapter', function () {
         body: getDefaultBidResponse()
       };
       logWarnSpy = sinon.spy(utils, 'logWarn');
-      formatPixelsStub = sinon.stub(spec, 'formatPixels');
       isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
     });
 
     afterEach(function () {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
       logWarnSpy.restore();
-      formatPixelsStub.restore();
       isOneMobileBidderStub.restore();
     });
 
@@ -138,27 +135,6 @@ describe('AolAdapter', function () {
         netRevenue: true,
         ttl: bidRequest.ttl
       });
-    });
-
-    it('should add pixels to ad content when pixels are present in the response', function () {
-      bidResponse.body.ext = {
-        pixels: 'pixels-content'
-      };
-
-      formatPixelsStub.returns('pixels-content');
-      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
-
-      expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + 'pixels-content');
-    });
-
-    it('should show warning in the console', function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        aol: {
-          bidCpmAdjustment: function() {}
-        }
-      };
-      spec.interpretResponse(bidResponse, bidRequest);
-      expect(utils.logWarn.calledOnce).to.be.true;
     });
   });
 
@@ -492,69 +468,39 @@ describe('AolAdapter', function () {
   });
 
   describe('getUserSyncs()', function () {
+    let serverResponses;
     let bidResponse;
-    let bidRequest;
 
     beforeEach(function () {
-      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = false;
-      config.setConfig({
-        aol: {
-          userSyncOn: 'bidResponse'
-        },
-      });
       bidResponse = getDefaultBidResponse();
       bidResponse.ext = {
         pixels: getPixels()
       };
+
+      serverResponses = [
+        {body: bidResponse}
+      ];
     });
 
-    it('should return user syncs only if userSyncOn equals to "bidResponse"', function () {
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
+    it('should return user syncs if pixels are present in the response', function () {
+      let userSyncs = spec.getUserSyncs({}, serverResponses);
 
-      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
       expect(userSyncs).to.deep.equal([
         {type: 'image', url: 'img.org'},
         {type: 'iframe', url: 'pixels1.org'}
       ]);
     });
 
-    it('should not return user syncs if it has already been returned', function () {
-      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
-
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
-
-      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
-      expect(userSyncs).to.deep.equal([]);
-    });
-
     it('should not return user syncs if pixels are not present', function () {
       bidResponse.ext.pixels = null;
+      let userSyncs = spec.getUserSyncs({}, serverResponses);
 
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
-
-      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.false;
       expect(userSyncs).to.deep.equal([]);
-    });
-  });
-
-  describe('formatPixels()', function () {
-    it('should return pixels wrapped for dropping them once and within nested frames ', function () {
-      let pixels = '<script>document.write(\'<pixels-dom-elements/>\');</script>';
-      let formattedPixels = spec.formatPixels(pixels);
-
-      expect(formattedPixels).to.equal(
-        '<script>var w=window,prebid;' +
-        'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
-        'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
-        'try{prebid.aolGlobals.pixelsDropped=true;' +
-        'document.write(\'<pixels-dom-elements/>\');break;}' +
-        'catch(e){continue;}' +
-        '}}</script>');
     });
   });
 
   describe('isOneMobileBidder()', function () {
-    it('should return false when when bidderCode is not present', function () {
+    it('should return false when when bidderCode is not present', () => {
       expect(spec.isOneMobileBidder(null)).to.be.false;
     });
 
