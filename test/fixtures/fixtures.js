@@ -1,4 +1,22 @@
 // jscs:disable
+import CONSTANTS from 'src/constants.json';
+const utils = require('src/utils.js');
+
+function convertTargetingsFromOldToNew(targetings){
+  var mapOfOldToNew = {
+    'hb_bidder': CONSTANTS.TARGETING_KEYS.bidder,
+    'hb_adid': CONSTANTS.TARGETING_KEYS.adId,
+    'hb_pb': CONSTANTS.TARGETING_KEYS.priceBucket,
+    'hb_size': CONSTANTS.TARGETING_KEYS.size
+  };
+  utils._each(targetings, function(value, key){
+    if(mapOfOldToNew.hasOwnProperty(key)){
+      targetings[ mapOfOldToNew[key] ] = targetings[key];
+      delete targetings[key];
+    }
+  })
+  return targetings;
+}
 
 export function getBidRequests() {
   return [
@@ -311,13 +329,13 @@ export function getBidResponses() {
       'pbAg': '0.10',
       'size': '0x0',
       'auctionId': 123456,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'triplelift',
         'hb_adid': '222bb26f9e8bd',
         'hb_pb': '10.00',
         'hb_size': '0x0',
         'foobar': '0x0'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -343,13 +361,13 @@ export function getBidResponses() {
       'size': '300x250',
       'alwaysUseBid': true,
       'auctionId': 123456,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'appnexus',
         'hb_adid': '233bcbee889d46d',
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -375,13 +393,13 @@ export function getBidResponses() {
       'size': '728x90',
       'alwaysUseBid': true,
       'auctionId': 123456,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'appnexus',
         'hb_adid': '24bd938435ec3fc',
         'hb_pb': '10.00',
         'hb_size': '728x90',
         'foobar': '728x90'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -406,13 +424,13 @@ export function getBidResponses() {
       'pbAg': '0.50',
       'size': '300x250',
       'auctionId': 123456,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'pagescience',
         'hb_adid': '25bedd4813632d7',
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -436,13 +454,13 @@ export function getBidResponses() {
       'pbAg': '0.15',
       'size': '300x250',
       'auctionId': 654321,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'brightcom',
         'hb_adid': '26e0795ab963896',
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -467,13 +485,13 @@ export function getBidResponses() {
       'pbAg': '0.50',
       'size': '300x250',
       'auctionId': 654321,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'brealtime',
         'hb_adid': '275bd666f5a5a5d',
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -499,13 +517,13 @@ export function getBidResponses() {
       'pbAg': '5.90',
       'size': '300x250',
       'auctionId': 654321,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'pubmatic',
         'hb_adid': '28f4039c636b6a7',
         'hb_pb': '10.00',
         'hb_size': '300x250',
         'foobar': '300x250'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -529,13 +547,13 @@ export function getBidResponses() {
       'pbAg': '2.70',
       'size': '300x600',
       'auctionId': 654321,
-      'adserverTargeting': {
+      'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'rubicon',
         'hb_adid': '29019e2ab586a5a',
         'hb_pb': '10.00',
         'hb_size': '300x600',
         'foobar': '300x600'
-      },
+      }),
       'netRevenue': true,
       'currency': 'USD',
       'ttl': 300
@@ -546,26 +564,26 @@ export function getBidResponses() {
 export function getSlotTargeting() {
   return {
     '/19968336/header-bid-tag-0': [
-      {
+      convertTargetingsFromOldToNew({
         'hb_bidder': [
           'appnexus'
         ]
-      },
-      {
+      }),
+      convertTargetingsFromOldToNew({
         'hb_adid': [
           '233bcbee889d46d'
         ]
-      },
-      {
+      }),
+      convertTargetingsFromOldToNew({
         'hb_pb': [
           '10.00'
         ]
-      },
-      {
+      }),
+      convertTargetingsFromOldToNew({
         'hb_size': [
           '300x250'
         ]
-      },
+      }),
       {
         'foobar': [
           '300x250'
@@ -1033,13 +1051,13 @@ export function getBidResponsesFromAPI() {
           'pbAg': '0.15',
           'size': '300x250',
           'auctionId': 654321,
-          'adserverTargeting': {
+          'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'brightcom',
             'hb_adid': '26e0795ab963896',
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          },
+          }),
           'netRevenue': true,
           'currency': 'USD',
           'ttl': 300
@@ -1064,13 +1082,13 @@ export function getBidResponsesFromAPI() {
           'pbAg': '0.50',
           'size': '300x250',
           'auctionId': 654321,
-          'adserverTargeting': {
+          'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'brealtime',
             'hb_adid': '275bd666f5a5a5d',
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          },
+          }),
           'netRevenue': true,
           'currency': 'USD',
           'ttl': 300
@@ -1096,13 +1114,13 @@ export function getBidResponsesFromAPI() {
           'pbAg': '5.90',
           'size': '300x250',
           'auctionId': 654321,
-          'adserverTargeting': {
+          'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'pubmatic',
             'hb_adid': '28f4039c636b6a7',
             'hb_pb': '10.00',
             'hb_size': '300x250',
             'foobar': '300x250'
-          },
+          }),
           'netRevenue': true,
           'currency': 'USD',
           'ttl': 300
@@ -1126,13 +1144,13 @@ export function getBidResponsesFromAPI() {
           'pbAg': '2.70',
           'size': '300x600',
           'auctionId': 654321,
-          'adserverTargeting': {
+          'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'rubicon',
             'hb_adid': '29019e2ab586a5a',
             'hb_pb': '10.00',
             'hb_size': '300x600',
             'foobar': '300x600'
-          },
+          }),
           'netRevenue': true,
           'currency': 'USD',
           'ttl': 300
@@ -1180,7 +1198,7 @@ export function getAdServerTargeting() {
       'hb_adid_rubicon': '29019e2ab586a5a',
       'hb_bidder_rubicon': 'rubicon'
     },
-    '/19968336/header-bid-tag1': {
+    '/19968336/header-bid-tag1': convertTargetingsFromOldToNew({
       'foobar': '728x90',
       'hb_size': '728x90',
       'hb_pb': '10.00',
@@ -1190,7 +1208,7 @@ export function getAdServerTargeting() {
       'hb_pb_appnexus': '10.00',
       'hb_adid_appnexus': '24bd938435ec3fc',
       'hb_bidder_appnexus': 'appnexus'
-    }
+    })
   };
 }
 
@@ -1198,19 +1216,19 @@ export function getAdServerTargeting() {
 export function getTargetingKeys() {
   return [
     [
-      'hb_bidder',
+      CONSTANTS.TARGETING_KEYS.bidder,
       'appnexus'
     ],
     [
-      'hb_adid',
+      CONSTANTS.TARGETING_KEYS.adId,
       '233bcbee889d46d'
     ],
     [
-      'hb_pb',
+      CONSTANTS.TARGETING_KEYS.priceBucket,
       '10.00'
     ],
     [
-      'hb_size',
+      CONSTANTS.TARGETING_KEYS.size,
       '300x250'
     ],
     [
@@ -1225,19 +1243,19 @@ export function getTargetingKeys() {
 export function getTargetingKeysBidLandscape() {
   return [
     [
-      'hb_bidder',
+      CONSTANTS.TARGETING_KEYS.bidder,
       'appnexus'
     ],
     [
-      'hb_adid_appnexus',
+      CONSTANTS.TARGETING_KEYS.adId+'_appnexus',
       '233bcbee889d46d'
     ],
     [
-      'hb_pb',
+      CONSTANTS.TARGETING_KEYS.priceBucket,
       '10.00'
     ],
     [
-      'hb_size',
+      CONSTANTS.TARGETING_KEYS.size,
       '300x250'
     ],
     [
@@ -1245,111 +1263,111 @@ export function getTargetingKeysBidLandscape() {
       ['0x0', '300x250', '300x600']
     ],
     [
-      'hb_bidder_triplelift',
+      CONSTANTS.TARGETING_KEYS.bidder+'_triplelift',
       'triplelift'
     ],
     [
-      'hb_adid_triplelift',
+      CONSTANTS.TARGETING_KEYS.adId+'_triplelift',
       '222bb26f9e8bd'
     ],
     [
-      'hb_pb_triplelift',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_triplelift',
       '10.00'
     ],
     [
-      'hb_size_triplelift',
+      CONSTANTS.TARGETING_KEYS.size+'_triplelift',
       '0x0'
     ],
     [
-      'hb_bidder_appnexus',
+      CONSTANTS.TARGETING_KEYS.bidder+'_appnexus',
       'appnexus'
     ],
     [
-      'hb_pb_appnexus',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_appnexus',
       '10.00'
     ],
     [
-      'hb_size_appnexus',
+      CONSTANTS.TARGETING_KEYS.size+'_appnexus',
       '300x250'
     ],
     [
-      'hb_bidder_pagescienc',
+      CONSTANTS.TARGETING_KEYS.bidder+'_pagescienc',
       'pagescience'
     ],
     [
-      'hb_adid_pagescience',
+      CONSTANTS.TARGETING_KEYS.adId+'_pagescience',
       '25bedd4813632d7'
     ],
     [
-      'hb_pb_pagescience',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_pagescience',
       '10.00'
     ],
     [
-      'hb_size_pagescience',
+      CONSTANTS.TARGETING_KEYS.size+'_pagescience',
       '300x250'
     ],
     [
-      'hb_bidder_brightcom',
+      CONSTANTS.TARGETING_KEYS.bidder+'_brightcom',
       'brightcom'
     ],
     [
-      'hb_adid_brightcom',
+      CONSTANTS.TARGETING_KEYS.adId+'_brightcom',
       '26e0795ab963896'
     ],
     [
-      'hb_pb_brightcom',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_brightcom',
       '10.00'
     ],
     [
-      'hb_size_brightcom',
+      CONSTANTS.TARGETING_KEYS.size+'_brightcom',
       '300x250'
     ],
     [
-      'hb_bidder_brealtime',
+      CONSTANTS.TARGETING_KEYS.bidder+'_brealtime',
       'brealtime'
     ],
     [
-      'hb_adid_brealtime',
+      CONSTANTS.TARGETING_KEYS.adId+'_brealtime',
       '275bd666f5a5a5d'
     ],
     [
-      'hb_pb_brealtime',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_brealtime',
       '10.00'
     ],
     [
-      'hb_size_brealtime',
+      CONSTANTS.TARGETING_KEYS.size+'_brealtime',
       '300x250'
     ],
     [
-      'hb_bidder_pubmatic',
+      CONSTANTS.TARGETING_KEYS.bidder+'_pubmatic',
       'pubmatic'
     ],
     [
-      'hb_adid_pubmatic',
+      CONSTANTS.TARGETING_KEYS.adId+'_pubmatic',
       '28f4039c636b6a7'
     ],
     [
-      'hb_pb_pubmatic',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_pubmatic',
       '10.00'
     ],
     [
-      'hb_size_pubmatic',
+      CONSTANTS.TARGETING_KEYS.size+'_pubmatic',
       '300x250'
     ],
     [
-      'hb_bidder_rubicon',
+      CONSTANTS.TARGETING_KEYS.bidder+'_rubicon',
       'rubicon'
     ],
     [
-      'hb_adid_rubicon',
+      CONSTANTS.TARGETING_KEYS.adId+'_rubicon',
       '29019e2ab586a5a'
     ],
     [
-      'hb_pb_rubicon',
+      CONSTANTS.TARGETING_KEYS.priceBucket+'_rubicon',
       '10.00'
     ],
     [
-      'hb_size_rubicon',
+      CONSTANTS.TARGETING_KEYS.size+'_rubicon',
       '300x600'
     ]
   ];
@@ -1426,12 +1444,12 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
     'adUnitCode': adUnitCode,
     'bidder': bidder,
     'size': '300x250',
-    'adserverTargeting': {
+    'adserverTargeting': convertTargetingsFromOldToNew({
       'hb_bidder': bidder,
       'hb_adid': adId,
       'hb_pb': cpm,
       'foobar': '300x250'
-    },
+    }),
     'netRevenue': true,
     'currency': 'USD',
     'ttl': (!ttl) ? 300 : ttl
