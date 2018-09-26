@@ -224,14 +224,24 @@ describe('PubMaticServer adapter', () => {
   		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
   		  expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
   		  expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // tagid
+        expect(data.imp[0].banner.w).to.equal(300); // width from 1st element of sizes array
+        expect(data.imp[0].banner.h).to.equal(250); // height from 1st element of sizes array
   		  expect(data.imp[0].banner.format[0].w).to.equal(300); // width
-  		  expect(data.imp[0].banner.format[0].h).to.equal(250); // height
-        expect(data.imp[0].banner.format[1].w).to.equal(300); // width
-        expect(data.imp[0].banner.format[1].h).to.equal(600); // height
+        expect(data.imp[0].banner.format[0].h).to.equal(600); // height
   		  expect(data.imp[0].ext.bidder.pubmatic.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         // TODO: Need to figure why this failing
         // expect(data.imp[0].ext.adunit).to.equal(bidRequests[0].params.adUnitId); // adUnitId
         expect(data.imp[0].ext.wrapper.div).to.equal(bidRequests[0].params.divId); // div
+
+        // when sizes array has only 1 element
+        bidRequests[0].sizes = [[300, 250]];
+        request = spec.buildRequests(bidRequests);
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].banner.w).to.equal(300); // width from 1st element of sizes array
+        expect(data.imp[0].banner.h).to.equal(250); // height from 1st element of sizes array
+
+        expect(data.imp[0].banner.format).to.equal(undefined);
   		});
 
       it('Request params check with GDPR consent', () => {
@@ -266,14 +276,24 @@ describe('PubMaticServer adapter', () => {
   		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // tagid
+        expect(data.imp[0].banner.w).to.equal(300); // width from 1st element of sizes array
+        expect(data.imp[0].banner.h).to.equal(250); // height from 1st element of sizes array
         expect(data.imp[0].banner.format[0].w).to.equal(300); // width
-        expect(data.imp[0].banner.format[0].h).to.equal(250); // height
-        expect(data.imp[0].banner.format[1].w).to.equal(300); // width
-        expect(data.imp[0].banner.format[1].h).to.equal(600); // height
+        expect(data.imp[0].banner.format[0].h).to.equal(600); // height
         expect(data.imp[0].ext.bidder.pubmatic.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         // TODO: Need to figure why this failing
         // expect(data.imp[0].ext.adunit).to.equal(bidRequests[0].params.adUnitId); // adUnitId
         expect(data.imp[0].ext.wrapper.div).to.equal(bidRequests[0].params.divId); // div
+
+        // when sizes array has only 1 element
+        bidRequests[0].sizes = [[300, 250]];
+        request = spec.buildRequests(bidRequests, bidRequest);
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].banner.w).to.equal(300); // width from 1st element of sizes array
+        expect(data.imp[0].banner.h).to.equal(250); // height from 1st element of sizes array
+
+        expect(data.imp[0].banner.format).to.equal(undefined);
       });
   	});
 
