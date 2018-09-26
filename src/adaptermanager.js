@@ -49,13 +49,11 @@ function getLabels(bidOrAdUnit, activeLabels) {
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
-    let bannerSizes = utils.deepAccess(adUnit, 'mediaTypes.banner.sizes');
-
-    let {active, sizes: filteredAdUnitSizes} = resolveStatus(
+    let {active, mediaTypes: filteredMediaTypes} = resolveStatus(
       getLabels(adUnit, labels),
-      bannerSizes || adUnit.sizes
+      adUnit.mediaTypes,
+      adUnit.sizes
     );
-
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
@@ -72,29 +70,23 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
-          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+          let {active, mediaTypes} = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
 
-          if (adUnit.mediaTypes) {
-            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-              if (bannerSizes) {
-                adUnit.mediaTypes.banner.sizes = sizes;
-              }
-
-              bid = Object.assign({}, bid, {
-                mediaTypes: adUnit.mediaTypes
-              });
-            } else {
-              utils.logError(
-                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-              );
-            }
+          if (utils.isValidMediaTypes(mediaTypes)) {
+            bid = Object.assign({}, bid, {
+              mediaTypes
+            });
+          } else {
+            utils.logError(
+              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+            );
           }
 
           if (active) {
             bids.push(Object.assign({}, bid, {
               adUnitCode: adUnit.code,
               transactionId: adUnit.transactionId,
-              sizes: sizes,
+              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || [],
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
