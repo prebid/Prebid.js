@@ -11,6 +11,7 @@ const STORE_UID_TIMEOUT_MS = 500;
 
 
 var domainIsOnWhiteListVar = false;
+var domainIsOnBlackListVar = false;
 var domainIsOnLabListVar = false;
 var countryOnWhiteListVar = false;
 var isPersona = false;
@@ -24,9 +25,10 @@ var urlParams;
 
 var personaGroup = "";
 var mgVal;
-var cogs = .5;
+var cogs = 0.5;
 
 var samplingVal = Math.floor(Math.random() * 1000) + 1;
+var blackListSamplingVal = Math.floor(Math.random() * 100000) + 1;
 var labVal = Math.floor(Math.random() * 90) + 1;
 var mgValRnd = Math.floor(Math.random() * 4) + 1;
 
@@ -227,6 +229,39 @@ var setDomainIsOnWhiteListVar = function(whtList){
 
 };
 
+var setDomainIsOnBlackListVar = function(blkList){
+  var domainIsOnBlackList = false;
+
+
+  var locatshun = window.location.hostname;
+
+  var hasWWW = locatshun.indexOf("www.");
+
+  if (hasWWW != -1) {
+    var indexPOS = hasWWW + 4;
+    locatshun = locatshun.slice(indexPOS);
+  }
+
+  var domainCheck = blkList.indexOf(locatshun);
+
+  if (domainCheck == -1) {
+    domainIsOnBlackList = false;
+  }
+  else {
+    domainIsOnBlackList = true;
+  }
+
+
+  if (domainIsOnBlackList) {
+    createCookie("__bl", 1, 1);
+  }
+  else {
+    createCookie("__bl", 0, 1);
+  }
+
+  domainIsOnBlackListVar = domainIsOnBlackList;
+};
+
 var setDomainIsOnLabListVar = function(labList){
 
   var domainIsOnLabList = false;
@@ -324,8 +359,7 @@ var getDataProtectionModuleData = function () {
       countryOnWhiteListVar = true;
     }
     if (typeof cOGSCookieVal != "undefined") {
-      cogs = "." + cOGSCookieVal;
-      cogs = parseFloat(cogs);
+      cogs = cOGSCookieVal;
     }
   }
   else if (typeof moduleHasData == "undefined") {
@@ -351,6 +385,11 @@ var getDataProtectionModuleData = function () {
         if (response.wl) {
           setDomainIsOnWhiteListVar(response.wl);
         }
+
+        if (response.bl) {
+          setDomainIsOnBlackListVar(response.bl);
+        }
+
         if (response.lbl) {
           setDomainIsOnLabListVar(response.lbl);
         }
@@ -716,6 +755,19 @@ const buildRequests = function (validBidRequests, bidderRequest) {
       };
     }
 
+  }
+
+  else if (domainIsOnBlackListVar && !domainIsOnWhiteListVar && blackListSamplingVal == 1) {
+    return {
+      method: 'POST',
+      url: "//" + domain + "/prebid",
+      data: JSON.stringify(request),
+      bidderRequest,
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true
+      }
+    };
   }
 
 
