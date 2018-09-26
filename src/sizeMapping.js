@@ -61,7 +61,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
   let allMediaTypes = Object.keys(mediaTypes);
 
   return {
-    active: allMediaTypes.length > 1 || (
+    active: (
+      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+    ) || (
       allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
