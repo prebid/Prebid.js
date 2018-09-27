@@ -3,7 +3,7 @@ import { spec } from 'modules/playgroundxyzBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
-const URL = 'https://ads.playground.xyz/host-config/prebid';
+const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const GDPR_CONSENT = 'XYZ-CONSENT';
 
 describe('playgroundxyzBidAdapter', function () {
@@ -64,7 +64,7 @@ describe('playgroundxyzBidAdapter', function () {
       const data = JSON.parse(request.data);
       const banner = data.imp[0].banner;
 
-      expect(Object.keys(data.imp[0].ext)).to.have.members(['appnexus']);
+      expect(Object.keys(data.imp[0].ext)).to.have.members(['appnexus', 'pxyz']);
       expect([banner.w, banner.h]).to.deep.equal([300, 250]);
       expect(banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
       expect(request.url).to.equal(URL);
