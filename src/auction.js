@@ -175,54 +175,58 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     let requests = {};
 
-    let call = {
-      bidRequests,
-      run: () => {
-        startAuctionTimer();
+    if (bidRequests.length < 1) {
+      utils.logWarn('No valid bid requests returned for auction');
+    } else {
+      let call = {
+        bidRequests,
+        run: () => {
+          startAuctionTimer();
 
-        _auctionStatus = AUCTION_IN_PROGRESS;
+          _auctionStatus = AUCTION_IN_PROGRESS;
 
-        const auctionInit = {
-          timestamp: _auctionStart,
-          auctionId: _auctionId,
-          timeout: _timeout
-        };
-        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
+          const auctionInit = {
+            timestamp: _auctionStart,
+            auctionId: _auctionId,
+            timeout: _timeout
+          };
+          events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-        let callbacks = auctionCallbacks(auctionDone, this);
-        let boundObj = {
-          auctionAddBidResponse: callbacks.addBidResponse
-        }
-        adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
-          request(source, origin) {
-            increment(outstandingRequests, origin);
-            increment(requests, source);
+          let callbacks = auctionCallbacks(auctionDone, this);
+          let boundObj = {
+            auctionAddBidResponse: callbacks.addBidResponse
+          };
+          adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
+            request(source, origin) {
+              increment(outstandingRequests, origin);
+              increment(requests, source);
 
-            if (!sourceInfo[source]) {
-              sourceInfo[source] = {
-                SRA: true,
-                origin
-              };
-            }
-            if (requests[source] > 1) {
-              sourceInfo[source].SRA = false;
-            }
-          },
-          done(origin) {
-            outstandingRequests[origin]--;
-            if (queuedCalls[0]) {
-              if (runIfOriginHasCapacity(queuedCalls[0])) {
-                queuedCalls.shift();
+              if (!sourceInfo[source]) {
+                sourceInfo[source] = {
+                  SRA: true,
+                  origin
+                };
+              }
+              if (requests[source] > 1) {
+                sourceInfo[source].SRA = false;
+              }
+            },
+            done(origin) {
+              outstandingRequests[origin]--;
+              if (queuedCalls[0]) {
+                if (runIfOriginHasCapacity(queuedCalls[0])) {
+                  queuedCalls.shift();
+                }
               }
             }
-          }
-        }, _timeout);
-      }
-    };
+          }, _timeout);
+        }
+      };
 
-    if (!runIfOriginHasCapacity(call)) {
-      utils.logWarn('queueing auction due to limited endpoint capacity');
-      queuedCalls.push(call);
+      if (!runIfOriginHasCapacity(call)) {
+        utils.logWarn('queueing auction due to limited endpoint capacity');
+        queuedCalls.push(call);
+      }
     }
 
     function runIfOriginHasCapacity(call) {

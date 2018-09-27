@@ -54,13 +54,14 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     }
   }
 
-  if (maps.shouldFilter && mediaTypes.banner && mediaTypes.banner.sizes) {
-    mediaTypes.banner.sizes = mediaTypes.banner.sizes.filter(size => maps.sizesSupported[size]);
+  let oldSizes = deepAccess(mediaTypes, 'banner.sizes');
+  if (maps.shouldFilter && oldSizes) {
+    mediaTypes.banner.sizes = oldSizes.filter(size => maps.sizesSupported[size]);
   }
 
   let allMediaTypes = Object.keys(mediaTypes);
 
-  return {
+  let results = {
     active: (
       allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
     ) || (
@@ -80,6 +81,15 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     ),
     mediaTypes
   };
+
+  if (oldSizes && oldSizes.length !== mediaTypes.banner.sizes.length) {
+    results.filterResults = {
+      before: oldSizes,
+      after: mediaTypes.banner.sizes
+    }
+  }
+
+  return results;
 }
 
 function evaluateSizeConfig(configs) {

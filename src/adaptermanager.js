@@ -49,11 +49,22 @@ function getLabels(bidOrAdUnit, activeLabels) {
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
   return adUnits.reduce((result, adUnit) => {
-    let {active, mediaTypes: filteredMediaTypes} = resolveStatus(
+    let {
+      active,
+      mediaTypes: filteredMediaTypes,
+      filterResults
+    } = resolveStatus(
       getLabels(adUnit, labels),
       adUnit.mediaTypes,
       adUnit.sizes
     );
+
+    if (!active) {
+      utils.logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
+    } else if (filterResults) {
+      utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+    }
+
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
@@ -70,7 +81,17 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
-          let {active, mediaTypes} = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
+          let {
+            active,
+            mediaTypes,
+            filterResults
+          } = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
+
+          if (!active) {
+            utils.logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
+          } else if (filterResults) {
+            utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+          }
 
           if (utils.isValidMediaTypes(mediaTypes)) {
             bid = Object.assign({}, bid, {
