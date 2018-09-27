@@ -91,12 +91,10 @@ describe('sizeMapping', function () {
 
       let status = resolveStatus(undefined, undefined, testSizes.banner.sizes, sizeConfig);
 
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: {
-          banner: {
-            sizes: [[970, 90], [728, 90], [300, 250]]
-          }
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[970, 90], [728, 90], [300, 250]]
         }
       });
     });
@@ -106,12 +104,10 @@ describe('sizeMapping', function () {
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfig);
 
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: {
-          banner: {
-            sizes: [[970, 90], [728, 90], [300, 250]]
-          }
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[970, 90], [728, 90], [300, 250]]
         }
       });
     });
@@ -123,38 +119,32 @@ describe('sizeMapping', function () {
       ], str) ? {matches: true} : {matches: false};
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfig);
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: {
-          banner: {
-            sizes: [[970, 90], [728, 90], [300, 250], [300, 100]]
-          }
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[970, 90], [728, 90], [300, 250], [300, 100]]
         }
-      })
+      });
     });
 
     it('if no mediaQueries match, it should allow all sizes specified', function () {
       matchMediaOverride = () => ({matches: false});
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfig);
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: testSizes
-      })
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
     });
 
     it('if a mediaQuery matches and has sizesSupported: [], it should filter all sizes', function () {
       matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? {matches: true} : {matches: false};
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfig);
-      expect(status).to.deep.equal({
-        active: false,
-        mediaTypes: {
-          banner: {
-            sizes: []
-          }
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: []
         }
-      })
+      });
     });
 
     it('should filter all banner sizes but not disable adUnit if multiple mediaTypes are present', function () {
@@ -165,27 +155,23 @@ describe('sizeMapping', function () {
           type: 'image'
         }
       }), undefined, sizeConfig);
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: {
-          banner: {
-            sizes: []
-          },
-          native: {
-            type: 'image'
-          }
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: []
+        },
+        native: {
+          type: 'image'
         }
-      })
+      });
     });
 
     it('if a mediaQuery matches and no sizesSupported specified, it should not affect adUnit.sizes', function () {
       matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfigWithLabels);
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: testSizes
-      })
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
     });
   });
 
@@ -206,10 +192,8 @@ describe('sizeMapping', function () {
         labels: ['tablet']
       }, testSizes, undefined, sizeConfigWithLabels);
 
-      expect(status).to.deep.equal({
-        active: false,
-        mediaTypes: testSizes
-      });
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
     });
 
     it('should active/deactivate adUnits/bidders based on requestBids labels', function () {
@@ -220,20 +204,16 @@ describe('sizeMapping', function () {
         activeLabels
       }, testSizes, undefined, sizeConfigWithLabels);
 
-      expect(status).to.deep.equal({
-        active: false,
-        mediaTypes: testSizes
-      });
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
 
       status = resolveStatus({
         labels: ['us-visitor'],
         activeLabels
       }, testSizes, undefined, sizeConfigWithLabels);
 
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: testSizes
-      });
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
 
       status = resolveStatus({
         labels: ['us-visitor', 'tablet'],
@@ -241,10 +221,8 @@ describe('sizeMapping', function () {
         activeLabels
       }, testSizes, undefined, sizeConfigWithLabels);
 
-      expect(status).to.deep.equal({
-        active: false,
-        mediaTypes: testSizes
-      });
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
 
       status = resolveStatus({
         labels: ['us-visitor', 'desktop'],
@@ -252,10 +230,8 @@ describe('sizeMapping', function () {
         activeLabels
       }, testSizes, undefined, sizeConfigWithLabels);
 
-      expect(status).to.deep.equal({
-        active: true,
-        mediaTypes: testSizes
-      });
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal(testSizes);
     });
   });
 });
