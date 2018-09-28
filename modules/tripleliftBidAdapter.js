@@ -17,7 +17,7 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let referrer = utils.getTopWindowUrl();
+    let referrer = bidderRequest.refererInfo.referer;
     let data = _buildPostBody(bidRequests);
 
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
