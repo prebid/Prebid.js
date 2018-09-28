@@ -114,7 +114,7 @@ export const spec = {
       let size = parseSizes(bidRequest);
 
       let data = {
-        page_url: _getPageUrl(bidRequest),
+        page_url: _getPageUrl(bidRequest, bidderRequest),
         resolution: _getScreenResolution(),
         account_id: params.accountId,
         integration: INTEGRATION,
@@ -327,7 +327,7 @@ export const spec = {
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
       'tg_fl.eid': bidRequest.code,
-      'rf': _getPageUrl(bidRequest)
+      'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
     if (bidderRequest.gdprConsent) {
@@ -503,12 +503,12 @@ function _getDigiTrustQueryParams() {
  * @param {BidRequest} bidRequest
  * @returns {string}
  */
-function _getPageUrl(bidRequest) {
+function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else if (!pageUrl) {
-    pageUrl = utils.getTopWindowUrl();
+    pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
