@@ -225,7 +225,6 @@ describe('Unit: Prebid Module', function () {
       expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
       expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
       expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
-      console.log(targeting);
       assert.deepEqual(targeting, expected);
     });
 
