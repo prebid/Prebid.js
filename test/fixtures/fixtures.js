@@ -12,16 +12,21 @@ function convertTargetingsFromOldToNew(targetings){
     'hb_source': CONSTANTS.TARGETING_KEYS.source,
     'hb_format': CONSTANTS.TARGETING_KEYS.format
   };
+  var newTargetings={};
   utils._each(targetings, function(value, currentKey){
-    utils._each(mapOfOldToNew, function(newKey, oldKey){
+    var replaced = false;
+    utils._each(mapOfOldToNew, function(newKey, oldKey){      
       if(currentKey.indexOf(oldKey) === 0 && oldKey !== newKey){
         var updatedKey = currentKey.replace(oldKey, newKey);
-        targetings[updatedKey] = targetings[currentKey];
-        delete targetings[currentKey];
+        newTargetings[updatedKey] = targetings[currentKey];
+        replaced = true;
       }
     });
+    if(!replaced){
+      newTargetings[currentKey] = targetings[currentKey];
+    }
   })
-  return targetings;
+  return newTargetings;
 }
 
 export function getBidRequests() {
