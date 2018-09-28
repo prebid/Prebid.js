@@ -1,8 +1,8 @@
 import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {gdprDataHandler} from 'src/adaptermanager';
-import {BANNER} from 'src/mediaTypes';
-import {config} from 'src/config';
+import { registerBidder } from 'src/adapters/bidderFactory';
+import { gdprDataHandler } from 'src/adaptermanager';
+import { BANNER } from 'src/mediaTypes';
+import { config } from 'src/config';
 
 const BIDDER_CODE = 'zid';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
@@ -27,20 +27,22 @@ var personaGroup = "";
 var mgVal;
 var cogs = 0.5;
 
-var samplingVal = Math.floor(Math.random() * 1000) + 1;
+var samplingVal = Math.floor(Math.random() * 10000) + 1;
 var blackListSamplingVal = Math.floor(Math.random() * 100000) + 1;
 var labVal = Math.floor(Math.random() * 90) + 1;
 var mgValRnd = Math.floor(Math.random() * 4) + 1;
+var psampleRate = 100000;
+var pSampleAmount = 2.00;
+var beaconMeter = 1.0;
 
-if(mgValRnd == 1){
+if (mgValRnd == 1) {
   mgVal = true;
 }
-else{
+else {
   mgVal = false;
 }
 
-if(navigator.language == "en-GB" ||
-  navigator.language == "sv-SE" ||
+if (navigator.language == "sv-SE" ||
   navigator.language == "es-ES" ||
   navigator.language == "sl-SI" ||
   navigator.language == "sk-SK" ||
@@ -75,17 +77,17 @@ if(navigator.language == "en-GB" ||
   navigator.language == "at-AT" ||
   navigator.language == "hu-AT" ||
   navigator.language == "de-AT" ||
-  navigator.language == "ga-IE"){
+  navigator.language == "ga-IE") {
   isPersona = true;
 }
 
 
 (window.onpopstate = function () {
   var match,
-    pl     = /\+/g,  // Regex for replacing addition symbol with a space
+    pl = /\+/g,  // Regex for replacing addition symbol with a space
     search = /([^&=]+)=?([^&]*)/g,
     decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-    query  = window.location.search.substring(1);
+    query = window.location.search.substring(1);
 
   urlParams = {};
   while (match = search.exec(query))
@@ -188,13 +190,13 @@ var isABot = function () {
 
 };
 
-var setCogs = function(cogsVal){
+var setCogs = function (cogsVal) {
   cogs = cogsVal;
   createCookie("__cogs", 1, 1);
 
 }
 
-var setDomainIsOnWhiteListVar = function(whtList){
+var setDomainIsOnWhiteListVar = function (whtList) {
 
   var domainIsOnWhiteList = false;
 
@@ -229,7 +231,7 @@ var setDomainIsOnWhiteListVar = function(whtList){
 
 };
 
-var setDomainIsOnBlackListVar = function(blkList){
+var setDomainIsOnBlackListVar = function (blkList) {
   var domainIsOnBlackList = false;
 
 
@@ -262,7 +264,7 @@ var setDomainIsOnBlackListVar = function(blkList){
   domainIsOnBlackListVar = domainIsOnBlackList;
 };
 
-var setDomainIsOnLabListVar = function(labList){
+var setDomainIsOnLabListVar = function (labList) {
 
   var domainIsOnLabList = false;
 
@@ -298,12 +300,12 @@ var setDomainIsOnLabListVar = function(labList){
 
 
 
-var setCountryOnWhiteListVar = function(countryWhiteList){
+var setCountryOnWhiteListVar = function (countryWhiteList) {
 
 
   var locale = window.navigator.userLanguage || window.navigator.language;
 
-  if(urlParams.zid_testLocale){
+  if (urlParams.zid_testLocale) {
     locale = urlParams.zid_testLocale;
   }
 
@@ -347,6 +349,10 @@ var getDataProtectionModuleData = function () {
     var isOnLabListCookie = getCookie("__lb");
     var isOnCountryWhiteListCookie = getCookie("__cwl");
     var cOGSCookieVal = getCookie("__cogs");
+    var cPSampleRateVal = getCookie("__zpcr");
+    var cPSampleAmountVal = getCookie("__zcpa");
+    var isOnBlackListCookie = getCookie("__bl");
+    var beaconMeterCookie = getCookie("__bma");
 
 
     if (typeof isOnWhiteListCookie != "undefined" && isOnWhiteListCookie == "1") {
@@ -359,8 +365,21 @@ var getDataProtectionModuleData = function () {
       countryOnWhiteListVar = true;
     }
     if (typeof cOGSCookieVal != "undefined") {
-      cogs = cOGSCookieVal;
+      cogs =  parseFloat(cOGSCookieVal);
     }
+    if (typeof cPSampleRateVal != "undefined") {
+      psampleRate = parseInt(cPSampleRateVal);
+    }
+    if (typeof cPSampleAmountVal != "undefined") {
+      pSampleAmount =  parseFloat(cPSampleAmountVal);
+    }
+    if(typeof isOnBlackListCookie != "undefined" && isOnBlackListCookie == "1"){
+      domainIsOnBlackListVar = true;
+    }
+    if(typeof beaconMeterCookie != "undefined"){
+      beaconMeter = parseFloat(beaconMeterCookie);
+    }
+
   }
   else if (typeof moduleHasData == "undefined") {
 
@@ -378,7 +397,7 @@ var getDataProtectionModuleData = function () {
 
         var response = JSON.parse(jaxReq.responseText);
 
-        if(response.cogs){
+        if (response.cogs) {
           setCogs(response.cogs);
         }
 
@@ -395,6 +414,18 @@ var getDataProtectionModuleData = function () {
         }
         if (response.cwl) {
           setCountryOnWhiteListVar(response.cwl);
+        }
+        if(response.pcr){
+          createCookie("__zpcr", response.pcr, 1);
+          psampleRate = response.pcr;
+        }
+        if(response.pca){
+          createCookie("__zcpa", response.pca, 1);
+          pSampleAmount = response.pca;
+        }
+        if(response.bma){
+          createCookie("__bma", response.bma, 1);
+          beaconMeter = response.bma;
         }
       }
       else if (jaxReq.status !== 200) {
@@ -557,6 +588,35 @@ const findCMPFrame = function () {
   return cmpFrame;
 };
 
+const recordPersona = function (cpm) {
+
+  //load from config
+  var pSamplingVal = Math.floor(Math.random() * psampleRate) + 1;
+
+  if (cpm > pSampleAmount && pSamplingVal === 1) {
+    let swid = readCookie('__SW');
+
+    if (swid === null) return true;
+
+
+    var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+
+    jaxReq.open('POST', "https://delivery.zeroidtech.com/zi");
+    jaxReq.onload = function () {};
+
+    var jaxObj = {
+      "i": swid,
+      "c": cpm.toString()
+    }
+
+    jaxObj = JSON.stringify(jaxObj);
+
+    jaxReq.setRequestHeader('Content-Type', 'application/json');
+    jaxReq.setRequestHeader('Accept', 'application/json');
+    jaxReq.send(jaxObj); //fire and forget
+  }
+}
+
 /**
  * Fetch GDPR consent from CMP and invoke callback
  * @param {function(string)} cb     Success callback to be invoked on fetch completion
@@ -642,7 +702,7 @@ const generateID = function () {
   });
 }
 
-const isFacebookApp  = function() {
+const isFacebookApp = function () {
   var ua = navigator.userAgent || navigator.vendor || window.opera;
   return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1);
 }
@@ -691,26 +751,32 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   var isFB = false;
   var dat = null;
 
-  if(typeof __cmp != "undefined"){
-    dat = __cmp('getConsentData',1);
+  if (typeof __cmp != "undefined") {
+    dat = __cmp('getConsentData', 1);
   }
 
+  var beaconCookie = readCookie("_bm");
 
-  if(isPersona && personaGroup != "" && labVal == 1){
-    var personaVal = getPersonaVal();
+  var canBeacon = false;
+  if(typeof beaconCookie != "undefined" && beaconCookie === "1"){
+    canBeacon = true;
+  }
+
+  if (isPersona && personaGroup != "" && mgVal && canBeacon && domainIsOnLabListVar) {
+    var personaVal = personaGroup;
     request.switch_user_id = personaVal;
     request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
   }
 
-  if(isFacebookApp()){
+  if (isFacebookApp()) {
     isFB = true;
   }
 
   var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 
-  if(isFB){
-    var personaVal = getPersonaVal();
+  if (isFB) {
+    var personaVal = personaGroup;
     request.switch_user_id = personaVal;
   }
 
@@ -738,11 +804,14 @@ const buildRequests = function (validBidRequests, bidderRequest) {
     }
   });
 
-  if ((swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) || isPersona) {
+  var canRunPersona = personaGroup && personaGroup != "" && isPersona &&
+    !domainIsOnBlackListVar && domainIsOnLabListVar && countryOnWhiteListVar;
+
+  if ((swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) || canRunPersona) {
 
     var isBot = isABot();
 
-    if(!isBot){
+    if (!isBot) {
       return {
         method: 'POST',
         url: "//" + domain + "/prebid",
@@ -771,7 +840,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   }
 
 
-  else if (!domainIsOnLabListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
+  else if (!domainIsOnLabListVar && !domainIsOnBlackListVar && !domainIsOnWhiteListVar && samplingVal == 1) {
     return {
       method: 'POST',
       url: "//" + domain + "/prebid",
@@ -787,41 +856,6 @@ const buildRequests = function (validBidRequests, bidderRequest) {
 
 }
 
-var getPersonaVal = function () {
-  if(!getCookie('personaGroup')) { // check group id cookie
-
-    var personpersonaFile = Math.floor(Math.random() * 40) + 1;
-
-    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-    xhr.open('GET', 'https://cdn.zidedge.com/zi/' + personpersonaFile + '.z', false);
-    xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.setRequestHeader('Accept', '*');
-    xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-    xhr.send();
-    if (xhr.status === 200) {
-
-      var response = xhr.responseText;
-      var responseArray = response.split(",");
-      var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
-      var groupid = responseArray[randomIndex];
-
-      //sC(cN,'anonymousPersonaID', groupid);
-      createCookie('personaGroup', groupid,30);
-
-      personaGroup = groupid;
-
-    }
-    else if (xhr.status !== 200) {
-      //createCookie('personaGroup', '');
-    }
-  }
-  else{
-    personaGroup = getCookie('personaGroup');
-  }
-
-  return personaGroup;
-};
-
 //load persona cookie on prebid load hook
 const loadPersonaGroupHook = function (config, nextFn) {
   const context = this;
@@ -835,10 +869,11 @@ const loadPersonaGroupHook = function (config, nextFn) {
 
   var dat = null;
 
-  if(typeof __cmp != "undefined"){
-    dat =  __cmp('getConsentData',1);
+  if (typeof __cmp != "undefined") {
+    dat = __cmp('getConsentData', 1);
   }
-  if((isFacebookApp() && !getCookie('personaGroup')) || (dat && dat.gdprApplies && !getCookie('personaGroup'))) { // check group id cookie
+
+  if (((isFacebookApp() || isPersona) && !getCookie('personaGroup')) || (dat && dat.gdprApplies && !getCookie('personaGroup'))) { // check group id cookie
 
     var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
@@ -856,7 +891,7 @@ const loadPersonaGroupHook = function (config, nextFn) {
       var groupid = responseArray[randomIndex];
 
       //sC(cN,'anonymousPersonaID', groupid);
-      createCookie('personaGroup', groupid,30);
+      createCookie('personaGroup', groupid, 30);
 
       personaGroup = groupid;
       //notify hook to continue
@@ -867,7 +902,7 @@ const loadPersonaGroupHook = function (config, nextFn) {
       return nextFn.apply(context, args);
     }
   }
-  else if(isFacebookApp()){
+  else if ((isFacebookApp() || isPersona) || (dat && dat.gdprApplies)) {
     personaGroup = getCookie('personaGroup');
     return nextFn.apply(context, args);
   }
@@ -893,7 +928,12 @@ const interpretResponse = function (serverResponse, originalBidRequest) {
 
     setChainIDTargeting(bid.adUnitCode, bid.chainID);
 
+    createCookie("_bm", bid.cpm > beaconMeter ? 1 : 0, 1);
+
     if (bid.cpm > 0) {
+
+      recordPersona(bid.cpm);
+
       responses.push({
         bidderCode: BIDDER_CODE,
         requestId: bid.bidID,
