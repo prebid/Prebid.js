@@ -7,13 +7,21 @@ function convertTargetingsFromOldToNew(targetings){
     'hb_bidder': CONSTANTS.TARGETING_KEYS.bidder,
     'hb_adid': CONSTANTS.TARGETING_KEYS.adId,
     'hb_pb': CONSTANTS.TARGETING_KEYS.priceBucket,
-    'hb_size': CONSTANTS.TARGETING_KEYS.size
+    'hb_size': CONSTANTS.TARGETING_KEYS.size,
+    'hb_deal': CONSTANTS.TARGETING_KEYS.deal
   };
-  utils._each(targetings, function(value, key){
-    if(mapOfOldToNew.hasOwnProperty(key)){
-      targetings[ mapOfOldToNew[key] ] = targetings[key];
-      delete targetings[key];
-    }
+  utils._each(targetings, function(value, currentKey){
+    // if(mapOfOldToNew.hasOwnProperty(key)){
+    //   targetings[ mapOfOldToNew[key] ] = targetings[key];
+    //   delete targetings[key];
+    // }
+    utils._each(mapOfOldToNew, function(newKey, oldKey){
+      if(currentKey.indexOf(oldKey) === 0){
+        var updatedKey = currentKey.replace(oldKey, newKey);
+        targetings[updatedKey] = targetings[currentKey];
+        delete targetings[currentKey];
+      }
+    });
   })
   return targetings;
 }
@@ -1163,7 +1171,7 @@ export function getBidResponsesFromAPI() {
 // Ad server targeting when `setConfig({ enableSendAllBids: true })` is set.
 export function getAdServerTargeting() {
   return {
-    '/19968336/header-bid-tag-0': {
+    '/19968336/header-bid-tag-0': convertTargetingsFromOldToNew({
       'foobar': '0x0,300x250,300x600',
       'hb_size': '300x250',
       'hb_pb': '10.00',
@@ -1197,7 +1205,7 @@ export function getAdServerTargeting() {
       'hb_pb_rubicon': '10.00',
       'hb_adid_rubicon': '29019e2ab586a5a',
       'hb_bidder_rubicon': 'rubicon'
-    },
+    }),
     '/19968336/header-bid-tag1': convertTargetingsFromOldToNew({
       'foobar': '728x90',
       'hb_size': '728x90',
