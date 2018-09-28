@@ -8,15 +8,13 @@ function convertTargetingsFromOldToNew(targetings){
     'hb_adid': CONSTANTS.TARGETING_KEYS.adId,
     'hb_pb': CONSTANTS.TARGETING_KEYS.priceBucket,
     'hb_size': CONSTANTS.TARGETING_KEYS.size,
-    'hb_deal': CONSTANTS.TARGETING_KEYS.deal
+    'hb_deal': CONSTANTS.TARGETING_KEYS.deal,
+    'hb_source': CONSTANTS.TARGETING_KEYS.source,
+    'hb_format': CONSTANTS.TARGETING_KEYS.format
   };
   utils._each(targetings, function(value, currentKey){
-    // if(mapOfOldToNew.hasOwnProperty(key)){
-    //   targetings[ mapOfOldToNew[key] ] = targetings[key];
-    //   delete targetings[key];
-    // }
     utils._each(mapOfOldToNew, function(newKey, oldKey){
-      if(currentKey.indexOf(oldKey) === 0){
+      if(currentKey.indexOf(oldKey) === 0 && oldKey !== newKey){
         var updatedKey = currentKey.replace(oldKey, newKey);
         targetings[updatedKey] = targetings[currentKey];
         delete targetings[currentKey];
