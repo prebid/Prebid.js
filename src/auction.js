@@ -432,17 +432,17 @@ export function getStandardBidderSettings(mediaType) {
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       {
-        key: CONSTANTS.TARGETING_KEYS.bidder,
+        key: CONSTANTS.TARGETING_KEYS.BIDDER,
         val: function (bidResponse) {
           return bidResponse.bidderCode;
         }
       }, {
-        key: CONSTANTS.TARGETING_KEYS.adId,
+        key: CONSTANTS.TARGETING_KEYS.AD_ID,
         val: function (bidResponse) {
           return bidResponse.adId;
         }
       }, {
-        key: CONSTANTS.TARGETING_KEYS.priceBucket,
+        key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
         val: function (bidResponse) {
           if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
             return bidResponse.pbAg;
@@ -459,24 +459,24 @@ export function getStandardBidderSettings(mediaType) {
           }
         }
       }, {
-        key: CONSTANTS.TARGETING_KEYS.size,
+        key: CONSTANTS.TARGETING_KEYS.SIZE,
         val: function (bidResponse) {
           return bidResponse.size;
         }
       }, {
-        key: CONSTANTS.TARGETING_KEYS.deal,
+        key: CONSTANTS.TARGETING_KEYS.DEAL,
         val: function (bidResponse) {
           return bidResponse.dealId;
         }
       },
       {
-        key: CONSTANTS.TARGETING_KEYS.source,
+        key: CONSTANTS.TARGETING_KEYS.SOURCE,
         val: function (bidResponse) {
           return bidResponse.source;
         }
       },
       {
-        key: CONSTANTS.TARGETING_KEYS.format,
+        key: CONSTANTS.TARGETING_KEYS.FORMAT,
         val: function (bidResponse) {
           return bidResponse.mediaType;
         }
@@ -537,7 +537,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === CONSTANTS.TARGETING_KEYS.deal ) && // hb_deal is suppressed automatically if not set
+      key === CONSTANTS.TARGETING_KEYS.DEAL ) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
