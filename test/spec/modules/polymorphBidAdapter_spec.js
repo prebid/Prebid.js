@@ -31,6 +31,19 @@ const bidRequests = [{
   'bidId': '30b31c1838de1d',
   'bidderRequestId': '22edbae2733bf7',
   'auctionId': '1d1a030790a476',
+},
+{
+  'bidder': BIDDER_CODE,
+  'params': {
+    'network_key': 'abcd1234',
+    'widget_id': 'xyz',
+    'cat': 'IAB1,IAB2'
+  },
+  'adUnitCode': 'adunit-code',
+  'sizes': [[700, 250], [300, 600]],
+  'bidId': '30b31c1838de1d',
+  'bidderRequestId': '22edbae2733bf7',
+  'auctionId': '1d1a030790a476',
 }];
 
 describe('Polymorph adapter test', function () {
@@ -43,6 +56,10 @@ describe('Polymorph adapter test', function () {
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(true);
     });
 
     it('should return false if req has no placementId', function () {
