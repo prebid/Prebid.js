@@ -221,10 +221,11 @@ describe('Unit: Prebid Module', function () {
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.adId] = '233bcbee889d46d';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
+      console.log(targeting);
       assert.deepEqual(targeting, expected);
     });
 
@@ -269,10 +270,10 @@ describe('Unit: Prebid Module', function () {
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.adId] = '233bcbee889d46d';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
       assert.deepEqual(targeting, expected);
     });
 
@@ -328,10 +329,10 @@ describe('Unit: Prebid Module', function () {
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.adId] = '233bcbee889d46d';
       expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
-      expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
+      expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
       assert.deepEqual(targeting, expected);
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
@@ -1531,11 +1532,11 @@ describe('Unit: Prebid Module', function () {
         expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.adId] = '233bcbee889d46d';
         expected['/19968336/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
         
-        expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
-        expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
-        expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
-        expected['/19968336/header-bid-tag-1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
-        expected['/19968336/header-bid-tag-1']['foobar'] = '728x90';
+        expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.bidder] = 'appnexus';
+        expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.adId] = '24bd938435ec3fc';
+        expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.priceBucket] = '10.00';
+        expected['/19968336/header-bid-tag1'][CONSTANTS.TARGETING_KEYS.size] = '728x90';
+        expected['/19968336/header-bid-tag1']['foobar'] = '728x90';
         assert.deepEqual(result, expected, 'targeting info returned for current placements');
       });
     });
