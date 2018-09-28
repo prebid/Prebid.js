@@ -491,7 +491,7 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = { referer: 'http%3A%2F%2Fwww.prebid.org' };
+          let refererInfo = { referer: 'http://www.prebid.org' };
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
