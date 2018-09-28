@@ -468,12 +468,12 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'http%3A%2F%2Fwww.prebid.org',
+            referer: 'http://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
-              'http%3A%2F%2Fwww.prebid.org%2Fpage.html',
-              'http%3A%2F%2Fwww.prebid.org%2Fiframe1.html',
+              'http://www.prebid.org/page.html',
+              'http://www.prebid.org/iframe1.html',
             ]
           };
 
