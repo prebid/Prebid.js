@@ -16,7 +16,6 @@ const utils = require('./utils');
 const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
-const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 
@@ -82,15 +81,6 @@ export function newConfig() {
       },
       set publisherDomain(val) {
         this._publisherDomain = val;
-      },
-
-      // delay to request cookie sync to stay out of critical path
-      _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-      get cookieSyncDelay() {
-        return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
-      },
-      set cookieSyncDelay(val) {
-        this._cookieSyncDelay = val;
       },
 
       // calls existing function which may be moved after deprecation
