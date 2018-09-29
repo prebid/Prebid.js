@@ -27,15 +27,15 @@ const bid1 = {
   'bidder': 'rubicon',
   'size': '300x250',
   'adserverTargeting': {
-    'foobar': '300x250'
+    'foobar': '300x250',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '148018fe5e',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.53'
   },
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
 };
-bid1['adserverTargeting'][CONSTANTS.TARGETING_KEYS.BIDDER] = 'rubicon';
-bid1['adserverTargeting'][CONSTANTS.TARGETING_KEYS.AD_ID] = '148018fe5e';
-bid1['adserverTargeting'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = '0.53';
 
 const bid2 = {
   'bidderCode': 'rubicon',
@@ -57,15 +57,15 @@ const bid2 = {
   'bidder': 'rubicon',
   'size': '300x250',
   'adserverTargeting': {    
-    'foobar': '300x250'
+    'foobar': '300x250',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '5454545',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.25'
   },
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
 };
-bid2['adserverTargeting'][CONSTANTS.TARGETING_KEYS.BIDDER] = 'rubicon';
-bid2['adserverTargeting'][CONSTANTS.TARGETING_KEYS.AD_ID] = '5454545';
-bid2['adserverTargeting'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = '0.25';
 
 const bid3 = {
   'bidderCode': 'rubicon',
@@ -87,15 +87,15 @@ const bid3 = {
   'bidder': 'rubicon',
   'size': '300x600',
   'adserverTargeting': {
-    'foobar': '300x600'
+    'foobar': '300x600',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '48747745',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.75'
   },
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
 };
-bid3['adserverTargeting'][CONSTANTS.TARGETING_KEYS.BIDDER] = 'rubicon';
-bid3['adserverTargeting'][CONSTANTS.TARGETING_KEYS.AD_ID] = '48747745';
-bid3['adserverTargeting'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = '0.75';
 
 describe('targeting tests', () => {
   describe('getAllTargeting', () => {
