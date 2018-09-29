@@ -18,7 +18,7 @@ const TRID_PARAM_NAME = 'trid';
 const ARRAY_PARAM_SEPARATOR = ';';
 const ARRAY_SIZE_SEPARATOR = ',';
 const SIZE_SEPARATOR = 'x';
-const IS_MOBILE = window.navigator.userAgent.toLowerCase().includes('mobi');
+const IS_MOBILE = window.navigator.userAgent.toLowerCase().indexOf('mobi');
 
 let keywords = () => {
   let clean = input => {
