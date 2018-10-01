@@ -76,9 +76,9 @@ export const spec = {
       dmxRequest.regs = {};
       dmxRequest.regs.ext = {};
       dmxRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
-      if (dmxRequest.regs.ext.gdpr) {
-        dmxRequest.regs.ext.consent = bidderRequest.gdprConsent.consentString;
-      }
+      dmxRequest.user = {};
+      dmxRequest.user.ext = {};
+      dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
     }
     let tosendtags = bidRequest.map(dmx => {
       var obj = {};
@@ -91,7 +91,7 @@ export const spec = {
         h: dmx.sizes[0][1] || 0,
         format: dmx.sizes.map(s => {
           return {w: s[0], h: s[1]};
-        })
+        }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
       };
       return obj;
     });
