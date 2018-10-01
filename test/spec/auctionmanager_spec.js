@@ -137,7 +137,7 @@ describe('auctionmanager.js', function () {
     };
 
     /* return the expected response for a given bid, filter by keys if given */
-    function getDefaultExpected(bid, keys) {      
+    function getDefaultExpected(bid, keys) {
       var expected = {};
       expected[ CONSTANTS.TARGETING_KEYS.BIDDER ] = bid.bidderCode;
       expected[ CONSTANTS.TARGETING_KEYS.AD_ID ] = bid.adId;

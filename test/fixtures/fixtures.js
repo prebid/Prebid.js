@@ -2,7 +2,7 @@
 import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils.js');
 
-function convertTargetingsFromOldToNew(targetings){
+function convertTargetingsFromOldToNew(targetings) {
   var mapOfOldToNew = {
     'hb_bidder': CONSTANTS.TARGETING_KEYS.BIDDER,
     'hb_adid': CONSTANTS.TARGETING_KEYS.AD_ID,
@@ -12,17 +12,17 @@ function convertTargetingsFromOldToNew(targetings){
     'hb_source': CONSTANTS.TARGETING_KEYS.SOURCE,
     'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT
   };
-  var newTargetings={};
-  utils._each(targetings, function(value, currentKey){
+  var newTargetings = {};
+  utils._each(targetings, function(value, currentKey) {
     var replaced = false;
-    utils._each(mapOfOldToNew, function(newKey, oldKey){      
-      if(currentKey.indexOf(oldKey) === 0 && oldKey !== newKey){
+    utils._each(mapOfOldToNew, function(newKey, oldKey) {
+      if (currentKey.indexOf(oldKey) === 0 && oldKey !== newKey) {
         var updatedKey = currentKey.replace(oldKey, newKey);
         newTargetings[updatedKey] = targetings[currentKey];
         replaced = true;
       }
     });
-    if(!replaced){
+    if (!replaced) {
       newTargetings[currentKey] = targetings[currentKey];
     }
   })
@@ -1258,7 +1258,7 @@ export function getTargetingKeysBidLandscape() {
       'appnexus'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_appnexus',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_appnexus',
       '233bcbee889d46d'
     ],
     [
@@ -1274,111 +1274,111 @@ export function getTargetingKeysBidLandscape() {
       ['0x0', '300x250', '300x600']
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_triplelift',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_triplelift',
       'triplelift'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_triplelift',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_triplelift',
       '222bb26f9e8bd'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_triplelift',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_triplelift',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_triplelift',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_triplelift',
       '0x0'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_appnexus',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_appnexus',
       'appnexus'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_appnexus',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_appnexus',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_appnexus',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_appnexus',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_pagescienc',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc',
       'pagescience'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_pagescience',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_pagescience',
       '25bedd4813632d7'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_pagescience',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pagescience',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_pagescience',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_pagescience',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_brightcom',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_brightcom',
       'brightcom'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_brightcom',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_brightcom',
       '26e0795ab963896'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_brightcom',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brightcom',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_brightcom',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_brightcom',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_brealtime',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_brealtime',
       'brealtime'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_brealtime',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_brealtime',
       '275bd666f5a5a5d'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_brealtime',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brealtime',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_brealtime',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_brealtime',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_pubmatic',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_pubmatic',
       'pubmatic'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_pubmatic',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_pubmatic',
       '28f4039c636b6a7'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_pubmatic',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pubmatic',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_pubmatic',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_pubmatic',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER+'_rubicon',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_rubicon',
       'rubicon'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID+'_rubicon',
+      CONSTANTS.TARGETING_KEYS.AD_ID + '_rubicon',
       '29019e2ab586a5a'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_rubicon',
+      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE+'_rubicon',
+      CONSTANTS.TARGETING_KEYS.SIZE + '_rubicon',
       '300x600'
     ]
   ];

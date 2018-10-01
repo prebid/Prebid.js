@@ -57,7 +57,7 @@ const bid2 = {
   'adUnitCode': '/123456/header-bid-tag-0',
   'bidder': 'rubicon',
   'size': '300x250',
-  'adserverTargeting': {    
+  'adserverTargeting': {
     'foobar': '300x250',
     [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
     [CONSTANTS.TARGETING_KEYS.AD_ID]: '5454545',
@@ -140,12 +140,12 @@ describe('targeting tests', function () {
       // we should only get the targeting data for the one requested adunit
       expect(Object.keys(targeting).length).to.equal(1);
 
-      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_') != -1)
+      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
 
       // expect the winning CPM to be equal to the sendAllBidCPM
-      expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET+'_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
+      expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
   }); // end getAllTargeting tests
 
