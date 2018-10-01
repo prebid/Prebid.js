@@ -17,6 +17,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
     let handler = null;
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
+        logInfo(`CONSTANTS.EVENTS.AUCTION_INIT rivrAnalytics.context.auctionObject`, rivrAnalytics.context.auctionObject);
         if (rivrAnalytics.context.queue) {
           rivrAnalytics.context.queue.init();
         }
@@ -50,10 +51,8 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
 });
 
 export function sendAuction() {
-  console.log('Function called: ============= sendAuction');
-  console.log('Function called: ============= sendAuction rivrAnalytics.context.authToken', rivrAnalytics.context.authToken);
   if (rivrAnalytics.context.authToken) {
-    removeEmptyProperties(rivrAnalytics.context.auctionObject)
+    removeEmptyProperties(rivrAnalytics.context.auctionObject);
     let auctionObject = rivrAnalytics.context.auctionObject;
     let req = Object.assign({}, {Auction: auctionObject});
     rivrAnalytics.context.auctionObject = fulfillAuctionObject();
@@ -62,6 +61,7 @@ export function sendAuction() {
       `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
       () => {},
       JSON.stringify(req),
+      // TODO extract this object to variable
       {
         contentType: 'application/json',
         customHeaders: {
@@ -72,8 +72,7 @@ export function sendAuction() {
   }
 };
 
-function sendImpressions() {
-  console.log('Function called: ============= sendImpressions');
+export function sendImpressions() {
   if (rivrAnalytics.context.authToken) {
     let impressions = rivrAnalytics.context.queue.popAll();
     if (impressions.length !== 0) {
@@ -141,18 +140,21 @@ function setCurrentPublisherId(bidRequested) {
   }
 };
 
-function fetchLocalization() {
+export function fetchLocalization() {
   if (navigator.permissions) {
     navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
       if (permission.status === 'granted') {
         navigator.geolocation.getCurrentPosition((position) => {
-          let deviceLocation = rivrAnalytics.context.auctionObject.device.geo;
-          deviceLocation.lat = position.coords.latitude;
-          deviceLocation.long = position.coords.longitude;
+          setAuctionAbjectPosition(position);
         });
       }
     });
   }
+}
+
+export function setAuctionAbjectPosition(position) {
+  rivrAnalytics.context.auctionObject.device.geo.lat = position.coords.latitude;
+  rivrAnalytics.context.auctionObject.device.geo.long = position.coords.longitude;
 }
 
 function getPlatformType() {
@@ -223,7 +225,7 @@ function createAuctionImpression(bidWonEvent) {
   }
 };
 
-function reportClickEvent(event) {
+export function reportClickEvent(event) {
   let link = event.currentTarget.getElementsByTagName('a')[0];
   let clickUrl;
   if (link) {
@@ -237,6 +239,8 @@ function reportClickEvent(event) {
     'click_url': clickUrl
   };
   logInfo('Sending click events with parameters: ', req);
+
+  // TODO add Authentication header
   ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`, () => {
   }, JSON.stringify(req));
 };
@@ -249,7 +253,7 @@ function addDisplayedImpHandler(bannerId) {
   pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, impHandler);
 };
 
-function pinHandlerToHTMLElement(elementId, dataLoaderForHandler, specializedHandler) {
+export function pinHandlerToHTMLElement(elementId, dataLoaderForHandler, specializedHandler) {
   function waitForElement() {
     let element = document.getElementById(elementId);
     if (!element) {
@@ -261,7 +265,7 @@ function pinHandlerToHTMLElement(elementId, dataLoaderForHandler, specializedHan
   waitForElement();
 }
 
-function dataLoaderForHandler(element, specializedHandler) {
+export function dataLoaderForHandler(element, specializedHandler) {
   function waitForElement() {
     let iframe = element.getElementsByTagName('iframe')[0];
     if (!iframe) {
@@ -363,7 +367,7 @@ function fulfillAuctionObject() {
     'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
     modelVersion: localStorage.getItem('rivr_model_version') || null,
     'ext.rivr.originalvalues': []
-  }
+  };
   return newAuction;
 };
 
@@ -374,9 +378,9 @@ function saveUnoptimisedParams() {
       let allUnits = connectAllUnits(units);
       allUnits.forEach((adUnit) => {
         adUnit.bids.forEach((bid) => {
-          let configForAd = fetchConfigForBidder(bid.bidder);
-          if (configForAd) {
-            let unOptimisedParamsField = createUnOptimisedParamsField(bid, configForAd)
+          let configForBidder = fetchConfigForBidder(bid.bidder);
+          if (configForBidder) {
+            let unOptimisedParamsField = createUnOptimisedParamsField(bid, configForBidder);
             rivrAnalytics.context.auctionObject['ext.rivr.originalvalues'].push(unOptimisedParamsField);
           }
         })
@@ -392,15 +396,15 @@ function connectAllUnits(units) {
   }, []);
 }
 
-function createUnOptimisedParamsField(unit, config) {
+export function createUnOptimisedParamsField(bid, config) {
   let floorPriceLabel = config['floorPriceLabel'];
   let currencyLabel = config['currencyLabel'];
   let pmpLabel = config['pmpLabel'];
   return {
-    'ext.rivr.demand_source_original': unit.bidder,
-    'ext.rivr.bidfloor_original': unit.params[floorPriceLabel],
-    'ext.rivr.currency_original': unit.params[currencyLabel],
-    'ext.rivr.pmp_original': unit.params[pmpLabel],
+    'ext.rivr.demand_source_original': bid.bidder,
+    'ext.rivr.bidfloor_original': bid.params[floorPriceLabel],
+    'ext.rivr.currency_original': bid.params[currencyLabel],
+    'ext.rivr.pmp_original': bid.params[pmpLabel],
   }
 }
 
@@ -451,12 +455,10 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
   this.init = reset;
 
   function reset() {
-    console.log('Function called: ============= reset');
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(() => {
-      console.log('Function called: ============= reset -> timeout expired');
       sendAuction();
       if (queue.length) {
         sendImpressions();
@@ -526,7 +528,8 @@ rivrAnalytics.enableAnalytics = (config) => {
     authToken: config.options.authToken,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
-  let bannersIds = config.options.bannersIds
+
+  let bannersIds = config.options.bannersIds;
   if (bannersIds) {
     if (bannersIds.length > 0) {
       addHandlers(config.options.bannersIds);
