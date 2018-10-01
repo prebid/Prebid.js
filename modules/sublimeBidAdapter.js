@@ -26,7 +26,20 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests An array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      const gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString,
+        gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+
+      window.sublime = (typeof window.sublime !== 'undefined') ? window.sublime : {};
+      window.sublime.gdpr = (typeof window.sublime.gdpr !== 'undefined') ? window.sublime.gdpr : {};
+      window.sublime.gdpr.injected = {
+        consentString: gdpr.consentString,
+        gdprApplies: gdpr.gdprApplies
+      };
+    }
     return validBidRequests.map(bid => {
       let params = bid.params;
       let requestId = bid.bidId || '';
