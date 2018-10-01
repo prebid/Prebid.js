@@ -76,7 +76,6 @@ export const spec = {
     if (serverResponse.responses) {
       serverResponse.responses.forEach(function (bid) {
         const bidResponse = {
-          bidderCode: spec.code,
           cpm: bid.cpm,
           width: bid.width,
           height: bid.height,

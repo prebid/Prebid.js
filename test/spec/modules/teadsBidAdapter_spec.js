@@ -5,16 +5,16 @@ import {newBidder} from 'src/adapters/bidderFactory';
 const ENDPOINT = '//a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/bid-request/hb/getAdSettings"></script>"';
 
-describe('teadsBidAdapter', () => {
+describe('teadsBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function() {
+    it('exists and is a function', function() {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function() {
     let bid = {
       'bidder': 'teads',
       'params': {
@@ -29,11 +29,11 @@ describe('teadsBidAdapter', () => {
       'creativeId': 'er2ee'
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when pageId is not valid (letters)', () => {
+    it('should return false when pageId is not valid (letters)', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -44,7 +44,7 @@ describe('teadsBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when placementId is not valid (letters)', () => {
+    it('should return false when placementId is not valid (letters)', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -55,7 +55,7 @@ describe('teadsBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when placementId < 0 or pageId < 0', () => {
+    it('should return false when placementId < 0 or pageId < 0', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -66,7 +66,7 @@ describe('teadsBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
 
@@ -78,7 +78,7 @@ describe('teadsBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function() {
     let bidRequests = [
       {
         'bidder': 'teads',
@@ -96,9 +96,8 @@ describe('teadsBidAdapter', () => {
       }
     ];
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function() {
       let bidderRequest = {
-        'bidderCode': 'teads',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000
@@ -109,10 +108,9 @@ describe('teadsBidAdapter', () => {
       expect(request.method).to.equal('POST');
     });
 
-    it('should send GDPR to endpoint', () => {
+    it('should send GDPR to endpoint', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'teads',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -133,10 +131,9 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab.status).to.equal(12);
     })
 
-    it('should send GDPR to endpoint with 11 status', () => {
+    it('should send GDPR to endpoint with 11 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'teads',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -157,10 +154,9 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab.status).to.equal(11);
     })
 
-    it('should send GDPR to endpoint with 22 status', () => {
+    it('should send GDPR to endpoint with 22 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'teads',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -179,10 +175,9 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab.status).to.equal(22);
     })
 
-    it('should send GDPR to endpoint with 0 status', () => {
+    it('should send GDPR to endpoint with 0 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'teads',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -204,12 +199,11 @@ describe('teadsBidAdapter', () => {
     })
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function() {
     let bids = {
       'body': {
         'responses': [{
           'ad': AD_SCRIPT,
-          'bidderCode': 'teads',
           'cpm': 0.5,
           'currency': 'USD',
           'height': 250,
@@ -222,9 +216,8 @@ describe('teadsBidAdapter', () => {
       }
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function() {
       let expectedResponse = [{
-        'bidderCode': 'teads',
         'cpm': 0.5,
         'width': 300,
         'height': 250,
@@ -240,7 +233,7 @@ describe('teadsBidAdapter', () => {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function() {
       let bids = {
         'body': {
           'responses': []
