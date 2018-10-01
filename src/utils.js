@@ -1168,6 +1168,19 @@ export function convertCamelToUnderscore(value) {
 }
 
 /**
+ * Returns a new object with undefined properties removed from given object
+ * @param obj the object to clean
+ */
+export function cleanObj(obj) {
+  return Object.keys(obj).reduce((newObj, key) => {
+    if (typeof obj[key] !== 'undefined') {
+      newObj[key] = obj[key];
+    }
+    return newObj;
+  }, {})
+}
+
+/**
  * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
  * normally read from bidder params
  * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }

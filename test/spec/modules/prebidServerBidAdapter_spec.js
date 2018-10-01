@@ -33,6 +33,9 @@ const REQUEST = {
       'mediaTypes': {
         'banner': {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
+        },
+        'native': {
+          'type': 'image'
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
@@ -382,6 +385,29 @@ const RESPONSE_OPENRTB_VIDEO = {
   },
 };
 
+const RESPONSE_OPENRTB_NATIVE = {
+  'id': 'c7dcf14f',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': '123',
+          'impid': 'div-gpt-ad-1460505748561-0',
+          'price': 0.13,
+          'adm': '{\"assets\":[{\"title\":{\"text\":\"Prebid.js\"}},{\"img\":{\"url\":\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzMCI+PHRleHQgeD0iMTAiIHk9IjIwIj5QcmViaWQuanM8L3RleHQ+PC9zdmc+\",\"w\":80,\"h\":30}},{\"data\":{\"type\":6,\"value\":\"free\"}}],\"link\":{\"url\":\"https://github.com/prebid/Prebid.js\"}}',
+          'crid': '123',
+          'ext': {
+            'prebid': {
+              'type': 'native'
+            }
+          }
+        }
+      ],
+      'seat': 'appnexus'
+    }
+  ]
+};
+
 const RESPONSE_UNSUPPORTED_BIDDER = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
   'status': 'OK',
@@ -641,7 +667,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device and app objects to request for ORTB', function () {
+    it('adds device and app objects to request for OpenRTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -686,6 +712,60 @@ describe('S2S Adapter', function () {
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
         publisher: {'id': '1'}
+      });
+    });
+
+    it('adds native request for OpenRTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.imp[0].native).to.deep.equal({
+        request: JSON.stringify({
+          'assets': [
+            {
+              'id': 200,
+              'required': 1,
+              'img': {
+                'type': 3
+              }
+            },
+            {
+              'id': 201,
+              'required': 1,
+              'title': {}
+            },
+            {
+              'id': 202,
+              'required': 1,
+              'data': {
+                'type': 1
+              }
+            },
+            {
+              'id': 203,
+              'required': 0,
+              'data': {
+                'type': 2
+              }
+            },
+            {
+              'id': 204,
+              'required': 0,
+              'img': {
+                'type': 1
+              }
+            }
+          ]
+        }),
+        ver: '1.2'
       });
     });
 
@@ -1361,6 +1441,26 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('videoCacheKey', 'a5ad3993');
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
     });
+
+    // it('handles OpenRTB native responses', function () {
+    //   const s2sConfig = Object.assign({}, CONFIG, {
+    //     endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+    //   });
+    //   config.setConfig({s2sConfig});
+    //
+    //   server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
+    //   adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+    //   server.respond();
+    //
+    //   sinon.assert.calledOnce(addBidResponse);
+    //   const response = addBidResponse.firstCall.args[1];
+    //   expect(response).to.have.property('statusMessage', 'Bid available');
+    //   expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
+    //   expect(response).to.have.property('mediaType', 'native');
+    //   expect(response).to.have.property('bidderCode', 'appnexus');
+    //   expect(response).to.have.property('adId', '123');
+    //   expect(response).to.have.property('cpm', 10);
+    // });
 
     it('should log warning for unsupported bidder', function () {
       server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));

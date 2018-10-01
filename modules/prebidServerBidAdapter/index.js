@@ -5,10 +5,12 @@ import { ajax } from '../../src/ajax';
 import { STATUS, S2S, EVENTS } from '../../src/constants';
 import adapterManager from '../../src/adapterManager';
 import { config } from '../../src/config';
-import { VIDEO } from '../../src/mediaTypes';
+import { VIDEO, NATIVE } from '../../src/mediaTypes';
+import { processNativeAdUnitParams } from 'src/native';
 import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 import { S2S_VENDORS } from './config.js';
 
 const getConfig = config.getConfig;
@@ -454,11 +456,12 @@ const OPEN_RTB_PROTOCOL = {
         }
       });
 
-      let banner;
+      let mediaTypes = {};
+
       // default to banner if mediaTypes isn't defined
       if (utils.isEmpty(adUnit.mediaTypes)) {
         const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
-        banner = {format: sizeObjects};
+        mediaTypes['banner'] = {format: sizeObjects};
       }
 
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
@@ -473,13 +476,97 @@ const OPEN_RTB_PROTOCOL = {
           return { w, h };
         });
 
-        banner = {format};
+        mediaTypes['banner'] = {format};
       }
 
-      let video;
       const videoParams = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (!utils.isEmpty(videoParams)) {
-        video = videoParams;
+        mediaTypes['video'] = videoParams;
+      }
+
+      const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
+      if (nativeParams) {
+        let assetCounter = 200;
+        try {
+          mediaTypes['native'] = {
+            request: JSON.stringify({
+              // TODO: determine if following OpenRTB recommended properties can be defined or are needed
+              // context: int,
+              // plcmttype: int,
+              // privacy: int
+              assets: Object.keys(nativeParams).reduce((assets, type, index) => {
+                let params = nativeParams[type];
+
+                function newAsset(obj) {
+                  return Object.assign({
+                    id: assetCounter++,
+                    required: params.required ? 1 : 0
+                  }, obj ? utils.cleanObj(obj) : {});
+                }
+
+                if (
+                  (type === 'image' || type === 'icon')
+                ) {
+                  let imgTypeId = ({
+                    'icon': 1,
+                    'image': 3
+                  })[type];
+
+                  if (Array.isArray(params.sizes)) {
+                    let sizes = params.sizes;
+                    if (!Array.isArray(sizes[0])) { // support single size or an array of sizes
+                      sizes = [sizes]
+                    }
+                    // TODO: Currently creating multiple image assets for each size.  Figure out if this is correct!
+                    sizes.forEach(size => {
+                      assets.push(newAsset({
+                        img: {
+                          type: imgTypeId,
+                          w: size[0],
+                          h: size[1]
+                        }
+                      }));
+                    });
+                  // TODO: Figure out what to do about aspect_ratios, ext perhaps?
+                  // } else if (Array.isArray(params.aspect_ratios)) {
+                  } else {
+                    assets.push(newAsset({
+                      img: {
+                        type: imgTypeId
+                      }
+                    }));
+                  }
+                } else if (type === 'title') {
+                  assets.push(newAsset({
+                    title: {
+                      len: params.len
+                    }
+                  }));
+                } else {
+                  let dataAssetTypeId = ({
+                    sponsoredBy: 1,
+                    body: 2,
+                    cta: 12,
+                    // TODO: clickUrl in request object?
+                  })[type];
+                  if (dataAssetTypeId) {
+                    assets.push(newAsset({
+                      data: {
+                        type: dataAssetTypeId,
+                        len: params.len
+                      }
+                    }))
+                  }
+                }
+
+                return assets;
+              }, [])
+            }),
+            ver: '1.2'
+          }
+        } catch (e) {
+          throw e;
+        }
       }
 
       // get bidder params in form { <bidder code>: {...params} }
@@ -653,6 +740,8 @@ const OPEN_RTB_PROTOCOL = {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
+          } else if (utils.deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+            bidObject.mediaType = NATIVE;
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
