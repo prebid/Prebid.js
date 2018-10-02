@@ -8,6 +8,7 @@ const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
+const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -275,6 +276,46 @@ function _createImpressionObject(bid, conf) {
   return impObj;
 }
 
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+   let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+   return digiTrustId;
+}
+
+function _handleDigitrustId(eids) {
+  let digiTrustId = _getDigiTrustObject(PUBMATIC_DIGITRUST_KEY);
+  if (digiTrustId !== null) {
+    eids.push({
+      'source': 'digitru.st',
+      'uids': [
+        {
+          'id': digiTrustId.id || '',
+          'atype': 1,
+          'ext': {
+            'keyv': parseInt(digiTrustId.keyv) || 0
+          }
+        }
+      ]
+    });
+  }
+}
+
+function _handleEids(payload) {
+  let eids = [];
+  _handleDigitrustId(eids);
+  if (eids.length > 0) {
+    // todo: are we sure we have to send this data at user.eids or user.ext.each_eid_solution_object?
+    payload.user.eids = eids;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -411,6 +452,8 @@ export const spec = {
     } else {
       utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
+
+    _handleEids(payload);
 
     return {
       method: 'POST',
