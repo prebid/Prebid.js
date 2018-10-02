@@ -460,17 +460,17 @@ export function getStandardBidderSettings(mediaType) {
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       {
-        key: 'hb_bidder',
+        key: CONSTANTS.TARGETING_KEYS.BIDDER,
         val: function (bidResponse) {
           return bidResponse.bidderCode;
         }
       }, {
-        key: 'hb_adid',
+        key: CONSTANTS.TARGETING_KEYS.AD_ID,
         val: function (bidResponse) {
           return bidResponse.adId;
         }
       }, {
-        key: 'hb_pb',
+        key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
         val: function (bidResponse) {
           if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
             return bidResponse.pbAg;
@@ -487,24 +487,24 @@ export function getStandardBidderSettings(mediaType) {
           }
         }
       }, {
-        key: 'hb_size',
+        key: CONSTANTS.TARGETING_KEYS.SIZE,
         val: function (bidResponse) {
           return bidResponse.size;
         }
       }, {
-        key: 'hb_deal',
+        key: CONSTANTS.TARGETING_KEYS.DEAL,
         val: function (bidResponse) {
           return bidResponse.dealId;
         }
       },
       {
-        key: 'hb_source',
+        key: CONSTANTS.TARGETING_KEYS.SOURCE,
         val: function (bidResponse) {
           return bidResponse.source;
         }
       },
       {
-        key: 'hb_format',
+        key: CONSTANTS.TARGETING_KEYS.FORMAT,
         val: function (bidResponse) {
           return bidResponse.mediaType;
         }
@@ -565,7 +565,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === 'hb_deal') && // hb_deal is suppressed automatically if not set
+      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
