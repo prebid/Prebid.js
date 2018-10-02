@@ -134,10 +134,9 @@ function buildOXBannerRequest(bids, bidderRequest) {
 }
 
 function handleVastResponse(response, serverResponse) {
-  let bidResponses = [];
   const body = response.body
-
-  if (response !== undefined && body.vastUrl !== '' && body.pub_rev !== '') {
+  let bidResponses = [];
+  if (response !== undefined && body.vastUrl !== '' && body.pub_rev && body.pub_rev > 0) {
     let vastQueryParams = parse(body.vastUrl).search || {};
     const openHtmltag = '<html><head></head><body>';
     const closeHtmlTag = '</body></html>';
