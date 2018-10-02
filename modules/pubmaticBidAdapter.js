@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
+import {config} from 'src/config';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
