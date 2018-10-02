@@ -116,7 +116,7 @@ describe('AppierAdapter', function () {
         body: [fakeBidResult]
       };
 
-      let bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
+      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
       expect(bidResponses).deep.equal([fakeBidResult]);
     });
   });
@@ -149,8 +149,8 @@ describe('AppierAdapter', function () {
     it('should generate beacon URL for show callback', function() {
       spec.onBidWon(fakeBid);
 
-      let beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
-      let imgTag = '<img src="' + beaconUrl + '">';
+      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
+      const imgTag = `<img src="${beaconUrl}">`;
 
       expect(fakeBid.ad).contains(imgTag);
     });
@@ -158,7 +158,7 @@ describe('AppierAdapter', function () {
 
   describe('generateShowCallbackUrl', function() {
     it('should generate a show callback url passing cpm and currency', function() {
-      let beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
+      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
 
       expect(beaconUrl).matches(/hzid=test_hzid/);
       expect(beaconUrl).matches(/cpm=0.20/);
@@ -172,7 +172,7 @@ describe('AppierAdapter', function () {
         'appier': {'server': 'fake_server'}
       });
 
-      let server = spec.getApiServer();
+      const server = spec.getApiServer();
 
       expect(server).equals('fake_server');
     });
@@ -182,7 +182,7 @@ describe('AppierAdapter', function () {
         'appier': {'farm': 'tw'}
       });
 
-      let server = spec.getApiServer();
+      const server = spec.getApiServer();
 
       expect(server).equals(API_SERVERS_MAP['tw']);
     });
@@ -192,7 +192,7 @@ describe('AppierAdapter', function () {
         'appier': {'farm': 'no_this_farm'}
       });
 
-      let server = spec.getApiServer();
+      const server = spec.getApiServer();
 
       expect(server).equals(API_SERVERS_MAP['default']);
     });
@@ -202,7 +202,7 @@ describe('AppierAdapter', function () {
         'appier': {}
       });
 
-      let server = spec.getApiServer();
+      const server = spec.getApiServer();
 
       expect(server).equals(API_SERVERS_MAP['default']);
     });

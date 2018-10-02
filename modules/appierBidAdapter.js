@@ -38,8 +38,8 @@ export const spec = {
     if (bidRequests.length === 0) {
       return [];
     }
-    let server = this.getApiServer();
-    let bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
+    const server = this.getApiServer();
+    const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
     return [{
       method: 'POST',
       url: bidderApiUrl,
@@ -60,7 +60,7 @@ export const spec = {
       return [];
     }
     // server response body is an array of bid results
-    let bidResults = serverResponse.body;
+    const bidResults = serverResponse.body;
     // our server directly returns the format needed by prebid.js so no more
     // transformation is needed here.
     return bidResults;
@@ -71,19 +71,19 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
-    let hzid = bid.appierParams.hzid;
-    let cpm = bid.adserverTargeting.hb_pb;
-    let currency = bid.currency;
-    let showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency);
+    const hzid = bid.appierParams.hzid;
+    const cpm = bid.adserverTargeting.hb_pb;
+    const currency = bid.currency;
+    const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency);
     // add the image beacon to creative html
-    bid.ad += '<img src="' + showCallbackUrl + '">';
+    bid.ad += `<img src="${showCallbackUrl}">`;
   },
 
   /**
    * Generate a show callback beacon image URL
    */
   generateShowCallbackUrl(hzid, cpm, currency) {
-    let server = this.getApiServer();
+    const server = this.getApiServer();
     return `//${server}${SHOW_CALLBACK_ENDPOINT}?hzid=${hzid}&cpm=${cpm}&currency=${currency}`;
   },
 
@@ -95,7 +95,7 @@ export const spec = {
     // if a server is specified explicitly, use it. otherwise, use farm specific server.
     let server = config.getConfig('appier.server');
     if (!server) {
-      let farm = config.getConfig('appier.farm');
+      const farm = config.getConfig('appier.farm');
       server = API_SERVERS_MAP[farm] || API_SERVERS_MAP['default'];
     }
     return server;
