@@ -6,6 +6,8 @@ import { parse } from 'src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'openxoutstream';
+const BIDDER_CONFIG = 'hb_pb_ym';
+const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const NET_REVENUE = true;
 const TIME_TO_LIVE = 300;
@@ -85,7 +87,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     tz: new Date().getTimezoneOffset(),
     tws: getViewportDimensions(isInIframe),
     be: 1,
-    // bc: bids[0].params.bc,
+    bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
+    auid: '540141567',
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
     nocache: new Date().getTime()
   };
@@ -111,15 +114,15 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 
 function buildOXBannerRequest(bids, bidderRequest) {
   let customParamsForAllBids = [];
-  let hasCustomParam = false;
+  // let hasCustomParam = false;
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
-  let auids = utils._map(bids, bid => bid.params.unit);
+  // let auids = utils._map(bids, bid => bid.params.unit);
   queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
-  queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
+  // queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
 
-  if (auids.some(auid => auid)) {
-    queryParams.auid = auids.join(',');
-  }
+  // if (auids.some(auid => auid)) {
+  //   queryParams.auid = auids.join(',');
+  // }
 
   if (bids.some(bid => bid.params.doNotTrack)) {
     queryParams.ns = 1;
@@ -133,36 +136,36 @@ function buildOXBannerRequest(bids, bidderRequest) {
     if (bid.params.customParams) {
       let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
       let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
-      hasCustomParam = true;
+      // hasCustomParam = true;
       customParamsForAllBids.push(formattedCustomParams);
     } else {
       customParamsForAllBids.push('');
     }
   });
-  if (hasCustomParam) {
-    queryParams.tps = customParamsForAllBids.join(',');
-  }
+  // if (hasCustomParam) {
+  //   queryParams.tps = customParamsForAllBids.join(',');
+  // }
 
-  let customFloorsForAllBids = [];
-  let hasCustomFloor = false;
-  bids.forEach(function(bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push(bid.params.customFloor * 1000);
-      hasCustomFloor = true;
-    } else {
-      customFloorsForAllBids.push(0);
-    }
-  });
-  if (hasCustomFloor) {
-    queryParams.aumfs = customFloorsForAllBids.join(',');
-  }
+  // let customFloorsForAllBids = [];
+  // let hasCustomFloor = false;
+  // bids.forEach(function(bid) {
+  //   if (bid.params.customFloor) {
+  //     customFloorsForAllBids.push(bid.params.customFloor * 1000);
+  //     hasCustomFloor = true;
+  //   } else {
+  //     customFloorsForAllBids.push(0);
+  //   }
+  // });
+  // if (hasCustomFloor) {
+  //   queryParams.aumfs = customFloorsForAllBids.join(',');
+  // }
 
-  let url = `https://‌${bids[0].params.delDomain}/v/1.0/avjp?auid=540141567&ju=${bids[0].params.publisher_page_url}&vwd=${bids[0].params.width}&vwd=${bids[0].params.height}&openrtb=%7B%22mimes%22%3A%5B%22video%2Fmp4%22%5D%7D`
+  let url = `https://${bids[0].params.delDomain}/v/1.0/avjp`
   return {
     method: 'GET',
     url: url,
     data: queryParams,
-    payload: { 'bids': bids, 'startTime': new Date() }
+    // payload: { 'bids': bids, 'startTime': new Date() }
   };
 }
 
@@ -178,7 +181,7 @@ function handleVastResponse(response, serverResponse) {
     const placementDiv = createPlacementDiv();
     placementDiv.dataset.pID = PUBLISHER_ID;
     const placementDivString = placementDiv.outerHTML;
-    const adResponse = getFakeAdResponse(body.vastUrl, PLACEMENT_ID);
+    const adResponse = getTemplateAdResponse(body.vastUrl, PLACEMENT_ID);
     const adResponseString = JSON.stringify(adResponse);
     const ymAdsScript = '<script type="text/javascript"> window.__ymAds =' + adResponseString + '</script>';
 
@@ -224,7 +227,7 @@ function createPlacementDiv() {
  * @param vastUrl
  * @param placementId
  */
-const getFakeAdResponse = (vastUrl, placementId) => {
+const getTemplateAdResponse = (vastUrl, placementId) => {
   return {
     availability_zone: 'us-east-1a',
     data: [
