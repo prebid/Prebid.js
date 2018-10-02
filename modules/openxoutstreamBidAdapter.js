@@ -129,6 +129,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     method: 'GET',
     url: url,
     data: queryParams,
+    payload: {'bids': bids}
   };
 }
 
