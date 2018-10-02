@@ -394,7 +394,38 @@ const RESPONSE_OPENRTB_NATIVE = {
           'id': '123',
           'impid': 'div-gpt-ad-1460505748561-0',
           'price': 0.13,
-          'adm': '{\"assets\":[{\"title\":{\"text\":\"Prebid.js\"}},{\"img\":{\"url\":\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzMCI+PHRleHQgeD0iMTAiIHk9IjIwIj5QcmViaWQuanM8L3RleHQ+PC9zdmc+\",\"w\":80,\"h\":30}},{\"data\":{\"type\":6,\"value\":\"free\"}}],\"link\":{\"url\":\"https://github.com/prebid/Prebid.js\"}}',
+          'adm': {
+            'assets': [
+              {
+                'title': {
+                  'text': 'Prebid.js'
+                }
+              },
+              {
+                'img': {
+                  'type': 3,
+                  'url': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzMCI+PHRleHQgeD0iMTAiIHk9IjIwIj5QcmViaWQuanM8L3RleHQ+PC9zdmc+',
+                  'w': 80,
+                  'h': 30
+                }
+              },
+              {
+                'data': {
+                  'type': 1,
+                  'value': 'Prebid.org'
+                }
+              },
+              {
+                'data': {
+                  'type': 6,
+                  'value': 'free'
+                }
+              }
+            ],
+            'link': {
+              'url': 'https://github.com/prebid/Prebid.js'
+            }
+          },
           'crid': '123',
           'ext': {
             'prebid': {
@@ -1442,25 +1473,25 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
     });
 
-    // it('handles OpenRTB native responses', function () {
-    //   const s2sConfig = Object.assign({}, CONFIG, {
-    //     endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
-    //   });
-    //   config.setConfig({s2sConfig});
-    //
-    //   server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
-    //   adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-    //   server.respond();
-    //
-    //   sinon.assert.calledOnce(addBidResponse);
-    //   const response = addBidResponse.firstCall.args[1];
-    //   expect(response).to.have.property('statusMessage', 'Bid available');
-    //   expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
-    //   expect(response).to.have.property('mediaType', 'native');
-    //   expect(response).to.have.property('bidderCode', 'appnexus');
-    //   expect(response).to.have.property('adId', '123');
-    //   expect(response).to.have.property('cpm', 10);
-    // });
+    it('handles OpenRTB native responses', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
+      expect(response).to.have.property('mediaType', 'native');
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('cpm', 0.13);
+    });
 
     it('should log warning for unsupported bidder', function () {
       server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));

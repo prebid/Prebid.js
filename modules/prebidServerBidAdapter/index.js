@@ -749,38 +749,39 @@ const OPEN_RTB_PROTOCOL = {
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else if (utils.deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
+            let adm;
             if (typeof bid.adm === 'string') {
-              bidObject.adm = JSON.parse(bid.adm);
+              adm = bidObject.adm = JSON.parse(bid.adm);
             } else {
-              bidObject.adm = bid.adm;
+              adm = bidObject.adm = bid.adm;
             }
 
-            if (utils.isPlainObject(bid.adm) && Array.isArray(bid.adm.assets)) {
+            if (utils.isPlainObject(adm) && Array.isArray(adm.assets)) {
               bidObject.native = utils.cleanObj({
                 image: utils.pick(
-                  utils.deepAccess(find(bid.adm.assets, asset => asset.img && asset.img.type === getNativeImgId('image')), 'img'),
+                  utils.deepAccess(find(adm.assets, asset => asset.img && asset.img.type === getNativeImgId('image')), 'img'),
                   ['url', 'w as width', 'h as height']
                 ),
                 icon: utils.pick(
-                  utils.deepAccess(find(bid.adm.assets, asset => asset.img && asset.img.type === getNativeImgId('icon')), 'img'),
+                  utils.deepAccess(find(adm.assets, asset => asset.img && asset.img.type === getNativeImgId('icon')), 'img'),
                   ['url', 'w as width', 'h as height']
                 ),
                 title: utils.deepAccess(
-                  find(bid.adm.assets, asset => asset.title),
+                  find(adm.assets, asset => asset.title),
                   'title.text'
                 ),
                 body: utils.deepAccess(
-                  find(bid.adm.assets, asset => asset.data && asset.data.type === getNativeDataId('body')),
+                  find(adm.assets, asset => asset.data && asset.data.type === getNativeDataId('body')),
                   'data.value'
                 ),
                 sponsoredBy: utils.deepAccess(
-                  find(bid.adm.assets, asset => asset.data && asset.data.type === getNativeDataId('sponsoredBy')),
+                  find(adm.assets, asset => asset.data && asset.data.type === getNativeDataId('sponsoredBy')),
                   'data.value'
                 ),
-                clickUrl: bid.adm.link,
-                clickTrackers: bid.adm.clickTrackers,
-                impressionTrackers: bid.adm.impressionTrackers,
-                javascriptTrackers: bid.adm.javascriptTrackers
+                clickUrl: adm.link,
+                clickTrackers: adm.clickTrackers,
+                impressionTrackers: adm.impressionTrackers,
+                javascriptTrackers: adm.javascriptTrackers
               });
             } else {
               utils.logError('prebid server native response contained no assets');
