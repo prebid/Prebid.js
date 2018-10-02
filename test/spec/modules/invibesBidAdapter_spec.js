@@ -152,6 +152,7 @@ describe('invibesBidAdapter:', function () {
       };
       window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(2);
       expect(request.data.lId).to.exist;
     });
 
@@ -169,6 +170,7 @@ describe('invibesBidAdapter:', function () {
       };
       window.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi"}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(2);
       expect(request.data.lId).to.exist;
     });
 
@@ -186,6 +188,7 @@ describe('invibesBidAdapter:', function () {
       };
       window.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi.8537626"}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(2);
       expect(request.data.lId).to.exist;
     });
 
