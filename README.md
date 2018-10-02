@@ -28,6 +28,8 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
     $ npm install
+    $ npm i -g gulp-cli
+
 
 *Note:* You need to have `NodeJS` 4.x or greater installed.
 *Note:* Because we have transitioned to using gulp 4.0 - you need to have `gulp-cli` installed globally prior to running the general `npm install`.  Run the following command to perform the install: `npm install gulp-cli -g`
