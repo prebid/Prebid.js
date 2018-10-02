@@ -1,0 +1,381 @@
+import {expect} from 'chai';
+import {spec, resetBoPixel} from 'modules/openxoutstreamBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {userSync} from 'src/userSync';
+import {config} from 'src/config';
+import * as utils from 'src/utils';
+import { ServerRequest } from 'http';
+
+describe('OpenXOutstreamAdapter', function () {
+  const adapter = newBidder(spec);
+  const URLBASE = '/v/1.0/avjp';
+  const BIDDER = 'openxoutstream';
+  const div = document.createElement('div');
+  const PLACEMENT_ID = '1986307928000988495';
+  const LICENSED_FORMAT_ID = '1991358644725162817';
+  const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.random()/3)+'';t._ym='';var m=e.createElement('script');m.type='text/javascript',m.async=!0,m.src='//static.yieldmo.com/ym.'+a+'.js',(e.getElementsByTagName('head')[0]||e.getElementsByTagName('body')[0]).appendChild(m)}else t._ym instanceof String||void 0===t._ym.chkPls||t._ym.chkPls()}(document,window);`;
+  const PUBLISHER_ID = '1986307525700126029';
+
+  /**
+   *  Type Definitions
+   */
+
+  /**
+   * @typedef {{
+   *  impression: string,
+   *  inview: string,
+   *  click: string
+   * }}
+   */
+  let OxArjTracking;
+  /**
+   * @typedef {{
+   *   ads: {
+   *     version: number,
+   *     count: number,
+   *     pixels: string,
+   *     ad: Array<OxArjAdUnit>
+   *   }
+   * }}
+   */
+  let OxArjResponse;
+  /**
+   * @typedef {{
+   *   adunitid: number,
+   *   adid:number,
+   *   type: string,
+   *   htmlz: string,
+   *   framed: number,
+   *   is_fallback: number,
+   *   ts: string,
+   *   cpipc: number,
+   *   pub_rev: string,
+   *   tbd: ?string,
+   *   adv_id: string,
+   *   deal_id: string,
+   *   auct_win_is_deal: number,
+   *   brand_id: string,
+   *   currency: string,
+   *   idx: string,
+   *   creative: Array<OxArjCreative>
+   * }}
+   */
+  let OxArjAdUnit;
+  /**
+   * @typedef {{
+   *  id: string,
+   *  width: string,
+   *  height: string,
+   *  target: string,
+   *  mime: string,
+   *  media: string,
+   *  tracking: OxArjTracking
+   * }}
+   */
+  let OxArjCreative;
+
+  // HELPER METHODS
+  /**
+   * @type {OxArjCreative}
+   */
+  const DEFAULT_TEST_ARJ_CREATIVE = {
+    id: '0',
+    width: 'test-width',
+    height: 'test-height',
+    target: 'test-target',
+    mime: 'test-mime',
+    media: 'test-media',
+    tracking: {
+      impression: 'test-impression',
+      inview: 'test-inview',
+      click: 'test-click'
+    }
+  };
+
+  /**
+   * @type {OxArjAdUnit}
+   */
+  const DEFAULT_TEST_ARJ_AD_UNIT = {
+    adunitid: 0,
+    type: 'test-type',
+    html: 'test-html',
+    framed: 0,
+    is_fallback: 0,
+    ts: 'test-ts',
+    tbd: 'NaN',
+    deal_id: undefined,
+    auct_win_is_deal: undefined,
+    cpipc: 0,
+    pub_rev: 'test-pub_rev',
+    adv_id: 'test-adv_id',
+    brand_id: 'test-brand_id',
+    currency: 'test-currency',
+    idx: '0',
+    creative: [DEFAULT_TEST_ARJ_CREATIVE]
+  };
+
+  /**
+   * @type {OxArjResponse}
+   */
+  const DEFAULT_ARJ_RESPONSE = {
+    ads: {
+      version: 0,
+      count: 1,
+      pixels: 'http://testpixels.net',
+      ad: [DEFAULT_TEST_ARJ_AD_UNIT]
+    }
+  };
+
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    describe('when request is for a banner ad', function () {
+      let bannerBid;
+      beforeEach(function () {
+        bannerBid = {
+          bidder: BIDDER,
+          params: {},
+          adUnitCode: 'adunit-code',
+          mediaTypes: {banner: {}},
+          sizes: [[300, 250], [300, 600]],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475'
+        };
+      });
+      it('should return false when there is no delivery domain', function () {
+        bannerBid.params = {'unit': '12345678'};
+        expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
+      });
+
+      describe('when there is a delivery domain', function () {
+        beforeEach(function () {
+          bannerBid.params = {delDomain: 'test-delivery-domain'}
+        });
+
+        it('should return false when there is no ad unit id and size', function () {
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
+        });
+
+        it('should return true if there is an adunit id ', function () {
+          bannerBid.params.unit = '12345678';
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+        });
+
+        it('should return true if there is no adunit id and sizes are defined', function () {
+          bannerBid.mediaTypes.banner.sizes = [720, 90];
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+        });
+
+        it('should return false if no sizes are defined ', function () {
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
+        });
+
+        it('should return false if sizes empty ', function () {
+          bannerBid.mediaTypes.banner.sizes = [];
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
+        });
+      });
+    });
+  });
+
+  describe('buildRequests for banner ads', function () {
+    const bidRequestsWithMediaType = [{
+      'bidder': BIDDER,
+      'params': {
+        'unit': '12345678',
+        'delDomain': 'test-del-domain'
+      },
+      'adUnitCode': 'adunit-code',
+      'mediaType': 'banner',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475'
+    }];
+
+    it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaType);
+      const params = bidRequestsWithMediaType[0].params;
+      expect(request[0].url).to.equal(`https://` + params.delDomain + URLBASE);
+      expect(request[0].method).to.equal('GET');
+    });
+
+    it('should send ad unit ids when any are defined', function () {
+      const bidRequestsWithUnitIds = [{
+        'bidder': BIDDER,
+        'params': {
+          'delDomain': 'test-del-domain'
+        },
+        'adUnitCode': 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 'test-bid-id-1',
+        'bidderRequestId': 'test-bid-request-1',
+        'auctionId': 'test-auction-1'
+      }, {
+        'bidder': BIDDER,
+        'params': {
+          'unit': '540141567',
+          'delDomain': 'test-del-domain'
+        },
+        'adUnitCode': 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        'bidId': 'test-bid-id-2',
+        'bidderRequestId': 'test-bid-request-2',
+        'auctionId': 'test-auction-2'
+      }];
+      const request = spec.buildRequests(bidRequestsWithUnitIds);
+      expect(request[0].data.auid).to.equal(`${bidRequestsWithUnitIds[1].params.unit}`);
+    });
+
+    describe('interpretResponse', function () {
+      let serverResponse;
+      let serverRequest;
+
+      beforeEach(function () {
+        serverResponse = {
+          body: {
+            width: 300,
+            height: 250,
+            pub_rev: 3000,
+            bidderCode: 'openxoutstream',
+            vastUrl: 'test.vast.url',
+            mediaType: 'banner',
+            ad: '<html><head></head><body><script>//GEX ad object</script><div id=\"ym_123\" class=\"ym\"></div><script>//js code</script></body></html>',
+            adid: '9874652394875'
+          },
+          header: 'header?',
+        };
+        serverRequest = {
+          payload: {
+            bids: [{
+              bidId: '2d36ac90d654af',
+            }],
+          }
+        };
+      });
+
+      it('should correctly reorder the server response', function () {
+        const newResponse = spec.interpretResponse(serverResponse, serverRequest);
+        const openHtmltag = '<html><head></head><body>';
+        const closeHtmlTag = '</body></html>';
+        const sdkScript = createSdkScript().outerHTML;
+        const placementDiv = createPlacementDiv();
+        placementDiv.dataset.pID = PUBLISHER_ID;
+        const placementDivString = placementDiv.outerHTML;
+        const adResponse = getTemplateAdResponse(serverResponse.body.vastUrl, PLACEMENT_ID);
+        const adResponseString = JSON.stringify(adResponse);
+        const ymAdsScript = '<script type="text/javascript"> window.__ymAds =' + adResponseString + '</script>';
+        expect(newResponse.length).to.be.equal(1);
+        expect(newResponse[0]).to.deep.equal({
+          requestId: '2d36ac90d654af',
+          bidderCode: 'openxoutstream',
+          vastUrl: 'test.vast.url',
+          mediaType: 'banner',
+          cpm: 3,
+          width: 300,
+          height: 250,
+          creativeId: '9874652394875',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 300,
+          ad: openHtmltag + placementDivString + ymAdsScript + sdkScript + closeHtmlTag
+        });
+      });
+
+      it('should not add responses if the cpm is 0 or null', function () {
+        serverResponse.body.pub_rev = 0;
+        let response = spec.interpretResponse(serverResponse, serverRequest);
+        expect(response).to.deep.equal([]);
+
+        serverResponse.body.pub_rev = null;
+        response = spec.interpretResponse(serverResponse, serverRequest);
+        expect(response).to.deep.equal([])
+      });
+    });
+  })
+
+  /**
+   * Creates a mock ArjResponse
+   * @param {OxArjResponse=} response
+   * @param {Array<OxArjAdUnit>=} adUnits
+   * @throws {AssertionError}
+   * @return {OxArjResponse}
+   */
+  function mockArjResponse(response, adUnits = []) {
+    let mockedArjResponse = utils.deepClone(DEFAULT_ARJ_RESPONSE);
+
+    if (response) {
+      overrideKeyCheck(response, DEFAULT_ARJ_RESPONSE, 'OxArjResponse');
+      overrideKeyCheck(response.ads, DEFAULT_ARJ_RESPONSE.ads, 'OxArjResponse');
+      Object.assign(mockedArjResponse, response);
+    }
+
+    if (adUnits.length) {
+      mockedArjResponse.ads.count = adUnits.length;
+      mockedArjResponse.ads.ad = adUnits.map((adUnit, index) => {
+        overrideKeyCheck(adUnit, DEFAULT_TEST_ARJ_AD_UNIT, 'OxArjAdUnit');
+        return Object.assign(utils.deepClone(DEFAULT_TEST_ARJ_AD_UNIT), adUnit);
+      });
+    }
+
+    return mockedArjResponse;
+  }
+
+  function createSdkScript() {
+    const script = document.createElement('script');
+    script.innerHTML = YM_SCRIPT;
+    return script;
+  }
+  function createPlacementDiv() {
+    div.id = `ym_${PLACEMENT_ID}`;
+    div.classList.add('ym');
+    div.dataset.lfid = `${LICENSED_FORMAT_ID}`;
+    return div
+  }
+  const getTemplateAdResponse = (vastUrl, placementId) => {
+    return {
+      availability_zone: 'us-east-1a',
+      data: [
+        {
+          ads: [
+            {
+              actions: {},
+              ad_id: 1991358644725162800,
+              adv_id: '1991358644725162800',
+              configurables: {
+                cta_button_copy: 'Learn More',
+                vast_click_tracking: 'true',
+                vast_url: vastUrl,
+              },
+              cr_id: '1991358644725162817',
+              rti: '1',
+            }
+          ],
+          column_count: 1,
+          configs: {
+            allowable_height: '248',
+            header_copy: 'You May Like',
+            ping: 'true',
+          },
+          creative_format_id: 40,
+          css: '',
+          placement_id: placementId,
+        }
+      ],
+      nc: 0,
+    };
+  };
+});
