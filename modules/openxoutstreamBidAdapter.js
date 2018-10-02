@@ -113,7 +113,6 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 }
 
 function buildOXBannerRequest(bids, bidderRequest) {
-  let customParamsForAllBids = [];
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
   queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
 
@@ -124,16 +123,6 @@ function buildOXBannerRequest(bids, bidderRequest) {
   if (bids.some(bid => bid.params.coppa)) {
     queryParams.tfcd = 1;
   }
-
-  bids.forEach(function(bid) {
-    if (bid.params.customParams) {
-      let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
-      let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
-      customParamsForAllBids.push(formattedCustomParams);
-    } else {
-      customParamsForAllBids.push('');
-    }
-  });
 
   let url = `https://${bids[0].params.delDomain}/v/1.0/avjp`
   return {
