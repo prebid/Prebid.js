@@ -114,15 +114,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 
 function buildOXBannerRequest(bids, bidderRequest) {
   let customParamsForAllBids = [];
-  // let hasCustomParam = false;
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
-  // let auids = utils._map(bids, bid => bid.params.unit);
   queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
-  // queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
-
-  // if (auids.some(auid => auid)) {
-  //   queryParams.auid = auids.join(',');
-  // }
 
   if (bids.some(bid => bid.params.doNotTrack)) {
     queryParams.ns = 1;
@@ -136,36 +129,17 @@ function buildOXBannerRequest(bids, bidderRequest) {
     if (bid.params.customParams) {
       let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
       let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
-      // hasCustomParam = true;
       customParamsForAllBids.push(formattedCustomParams);
     } else {
       customParamsForAllBids.push('');
     }
   });
-  // if (hasCustomParam) {
-  //   queryParams.tps = customParamsForAllBids.join(',');
-  // }
-
-  // let customFloorsForAllBids = [];
-  // let hasCustomFloor = false;
-  // bids.forEach(function(bid) {
-  //   if (bid.params.customFloor) {
-  //     customFloorsForAllBids.push(bid.params.customFloor * 1000);
-  //     hasCustomFloor = true;
-  //   } else {
-  //     customFloorsForAllBids.push(0);
-  //   }
-  // });
-  // if (hasCustomFloor) {
-  //   queryParams.aumfs = customFloorsForAllBids.join(',');
-  // }
 
   let url = `https://${bids[0].params.delDomain}/v/1.0/avjp`
   return {
     method: 'GET',
     url: url,
     data: queryParams,
-    // payload: { 'bids': bids, 'startTime': new Date() }
   };
 }
 
@@ -223,7 +197,7 @@ function createPlacementDiv() {
 }
 
 /**
- * Create a fake nativeplay with the placement id and vastXML.
+ * Create a nativeplay template with the placement id and vastURL.
  * @param vastUrl
  * @param placementId
  */
