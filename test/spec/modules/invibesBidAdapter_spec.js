@@ -83,6 +83,18 @@ describe('invibesBidAdapter:', function () {
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
+
+      it('returns false when bid response was previously received', function() {
+        const validBid = {
+          bidder: BIDDER_CODE,
+          params: {
+            placementId: PLACEMENT_ID
+          }
+        }
+
+        top.window.invibes.bidResponse = { prop: 'prop' };
+        expect(spec.isBidRequestValid(validBid)).to.be.false;
+      });
     });
   });
 
@@ -159,6 +171,56 @@ describe('invibesBidAdapter:', function () {
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.not.exist;
+    });
+
+    it('send the gdpr consent when accepted', function () {
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+	  var bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              1: true,
+              2: false,
+              436: true
+            }
+          }
+        }
+      };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(2);
+    });
+
+    it('send the gdpr consent when not accepted', function () {
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+	  var bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              1: true,
+              2: false
+            }
+          }
+        }
+	  };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(-2);
+    });
+
+    it('send the gdpr consent when declined', function () {
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+	  var bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              1: true,
+              2: false,
+              436: false
+            }
+          }
+        }
+	  };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(-2);
     });
   });
 
