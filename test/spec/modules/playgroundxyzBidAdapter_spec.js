@@ -128,8 +128,8 @@ describe('playgroundxyzBidAdapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', function () {
-      let response = '';
+    it('handles nobid response', function () {
+      const response = undefined;
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });

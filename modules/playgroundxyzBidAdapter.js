@@ -69,7 +69,7 @@ export const spec = {
 
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse.error) {
+      if (serverResponse && serverResponse.error) {
         errorMessage += `: ${serverResponse.error}`;
         utils.logError(errorMessage);
       }
