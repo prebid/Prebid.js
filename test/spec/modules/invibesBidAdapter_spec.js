@@ -127,13 +127,13 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('uses cookies', function () {
-      global.document.cookie = 'ivNoCookie=1';
+      window.document.cookie = 'ivNoCookie=1';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.be.undefined;
     });
 
     it('doesnt send the domain id if not graduated', function () {
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1522929537626,"hc":1}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1522929537626,"hc":1}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.not.exist;
     });
@@ -150,7 +150,7 @@ describe('invibesBidAdapter:', function () {
           }
         }
       };
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
@@ -167,7 +167,7 @@ describe('invibesBidAdapter:', function () {
           }
         }
       };
-      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi"}';
+      window.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi"}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
@@ -184,27 +184,27 @@ describe('invibesBidAdapter:', function () {
           }
         }
       };
-      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi.8537626"}';
+      window.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi.8537626"}';
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
 
     it('try to graduate but not enough count - doesnt send the domain id', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":5}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":5}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.not.exist;
     });
 
     it('try to graduate but not old enough - doesnt send the domain id', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.not.exist;
     });
 
     it('send the gdpr consent when accepted', function () {
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
 	  var bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -221,7 +221,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('send the gdpr consent when not accepted', function () {
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
 	  var bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -237,7 +237,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('send the gdpr consent when declined', function () {
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+      window.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
 	  var bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -352,7 +352,7 @@ describe('invibesBidAdapter:', function () {
 
     it('returns an iframe with params if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2';
+      window.document.cookie = 'ivvbks=17639.0,1,2';
       let response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
