@@ -58,7 +58,8 @@ export const spec = {
           'notify=1' +
           '&request_id=' + encodeURIComponent(requestId) +
           '&ad=' + encodeURIComponent(response.ad || '') +
-          '&cpm=' + encodeURIComponent(response.cpm || 0)
+          '&cpm=' + encodeURIComponent(response.cpm || 0) +
+          '&currency=' + encodeURIComponent(response.currency ||'USD')
         );
         return xhr;
       };
