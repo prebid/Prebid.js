@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec, BIDDER_API_URL } from 'modules/appierBidAdapter';
+import { spec, API_SERVERS_MAP } from 'modules/appierBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
 describe('AppierAdapter', function () {
   const adapter = newBidder(spec);
@@ -162,6 +163,48 @@ describe('AppierAdapter', function () {
       expect(beaconUrl).matches(/hzid=test_hzid/);
       expect(beaconUrl).matches(/cpm=0.20/);
       expect(beaconUrl).matches(/currency=TWD/);
+    });
+  });
+
+  describe('getApiServer', function() {
+    it('should use the server specified by setConfig(appier.server)', function() {
+      config.setConfig({
+        'appier': {'server': 'fake_server'}
+      });
+
+      let server = spec.getApiServer();
+
+      expect(server).equals('fake_server');
+    });
+
+    it('should retrieve a farm specific hostname if server is not specpfied', function() {
+      config.setConfig({
+        'appier': {'farm': 'tw'}
+      });
+
+      let server = spec.getApiServer();
+
+      expect(server).equals(API_SERVERS_MAP['tw']);
+    });
+
+    it('if farm is not recognized, use the default farm', function() {
+      config.setConfig({
+        'appier': {'farm': 'no_this_farm'}
+      });
+
+      let server = spec.getApiServer();
+
+      expect(server).equals(API_SERVERS_MAP['default']);
+    });
+
+    it('if farm is not specified, use the default farm', function() {
+      config.setConfig({
+        'appier': {}
+      });
+
+      let server = spec.getApiServer();
+
+      expect(server).equals(API_SERVERS_MAP['default']);
     });
   });
 });
