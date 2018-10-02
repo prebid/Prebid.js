@@ -14,9 +14,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    // @TODO: add some validation
+    if(typeof bid.sizzes == 'undefined' || bid.sizes.length == 0) {
+      return false;
+    }
     return true;
-    // return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
 
 
