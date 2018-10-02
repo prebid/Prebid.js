@@ -1,10 +1,7 @@
 import {expect} from 'chai';
 import {spec, resetBoPixel} from 'modules/openxoutstreamBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
 import * as utils from 'src/utils';
-import { ServerRequest } from 'http';
 
 describe('OpenXOutstreamAdapter', function () {
   const adapter = newBidder(spec);
