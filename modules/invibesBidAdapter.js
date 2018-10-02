@@ -100,6 +100,7 @@ function buildRequest(bidRequests, bidderRequest) {
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: invibes.getCookie('IvbsCampIdsLocal'),
+    lId: invibes.dom.id,
 
     bidParamsJson: JSON.stringify({
       placementIds: _placementIds,
@@ -116,10 +117,6 @@ function buildRequest(bidRequests, bidderRequest) {
     noc: !cookieDomain,
     oi: invibes.optIn
   };
-
-  if (invibes.dom.id) {
-    data.lId = invibes.dom.id;
-  }
 
   const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
   for (let key in currentQueryStringParams) {
