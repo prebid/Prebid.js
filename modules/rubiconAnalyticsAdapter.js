@@ -36,33 +36,6 @@ const cache = {
   timeouts: {},
 };
 
-// basically lodash#pick that also allows transformation functions and property renaming
-function _pick(obj, properties) {
-  return properties.reduce((newObj, prop, i) => {
-    if (typeof prop === 'function') {
-      return newObj;
-    }
-
-    let newProp = prop;
-    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
-
-    if (match) {
-      prop = match[1];
-      newProp = match[2];
-    }
-
-    let value = obj[prop];
-    if (typeof properties[i + 1] === 'function') {
-      value = properties[i + 1](value, newObj);
-    }
-    if (typeof value !== 'undefined') {
-      newObj[newProp] = value;
-    }
-
-    return newObj;
-  }, {});
-}
-
 function stringProperties(obj) {
   return Object.keys(obj).reduce((newObj, prop) => {
     let value = obj[prop];
@@ -98,7 +71,7 @@ function formatSource(src) {
 
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
-    return _pick(bid, [
+    return utils.pick(bid, [
       'bidder',
       'bidId',
       'status',
@@ -113,7 +86,7 @@ function sendMessage(auctionId, bidWonId) {
       'clientLatencyMillis',
       'serverLatencyMillis',
       'params',
-      'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
+      'bidResponse', bidResponse => bidResponse ? utils.pick(bidResponse, [
         'bidPriceUSD',
         'dealId',
         'dimensions',
@@ -122,7 +95,7 @@ function sendMessage(auctionId, bidWonId) {
     ]);
   }
   function formatBidWon(bid) {
-    return Object.assign(formatBid(bid), _pick(bid.adUnit, [
+    return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
       'videoAdFormat', () => bid.videoAdFormat,
@@ -149,7 +122,7 @@ function sendMessage(auctionId, bidWonId) {
       let bid = auctionCache.bids[bidId];
       let adUnit = adUnits[bid.adUnit.adUnitCode];
       if (!adUnit) {
-        adUnit = adUnits[bid.adUnit.adUnitCode] = _pick(bid.adUnit, [
+        adUnit = adUnits[bid.adUnit.adUnitCode] = utils.pick(bid.adUnit, [
           'adUnitCode',
           'transactionId',
           'mediaTypes',
@@ -233,7 +206,7 @@ function sendMessage(auctionId, bidWonId) {
 }
 
 function parseBidResponse(bid) {
-  return _pick(bid, [
+  return utils.pick(bid, [
     'getCpmInNewCurrency as bidPriceUSD', (fn) => {
       if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
@@ -247,7 +220,7 @@ function parseBidResponse(bid) {
     'dealId',
     'status',
     'mediaType',
-    'dimensions', () => _pick(bid, [
+    'dimensions', () => utils.pick(bid, [
       'width',
       'height'
     ])
@@ -323,7 +296,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       case AUCTION_INIT:
         // set the rubicon aliases
         setRubiconAliases(adapterManager.aliasRegistry);
-        let cacheEntry = _pick(args, [
+        let cacheEntry = utils.pick(args, [
           'timestamp',
           'timeout'
         ]);
@@ -336,7 +309,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;
 
-          memo[bid.bidId] = _pick(bid, [
+          memo[bid.bidId] = utils.pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
@@ -345,7 +318,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               switch (bid.bidder) {
                 // specify bidder params we want here
                 case 'rubicon':
-                  return _pick(params, [
+                  return utils.pick(params, [
                     'accountId',
                     'siteId',
                     'zoneId'
@@ -376,7 +349,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 }
               }
             },
-            'adUnit', () => _pick(bid, [
+            'adUnit', () => utils.pick(bid, [
               'adUnitCode',
               'transactionId',
               'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
