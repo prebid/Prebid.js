@@ -41,7 +41,6 @@ export const spec = {
   transformBidParams: function(params, isOpenRtb) {
     return utils.convertTypes({
       'unit': 'string',
-      'customFloor': 'number'
     }, params);
   }
 };
@@ -90,6 +89,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
     auid: '540141567',
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
+    openrtb: '%7B%22mimes%22%3A%5B%22video%2Fmp4%22%5D%7D',
     nocache: new Date().getTime()
   };
 
