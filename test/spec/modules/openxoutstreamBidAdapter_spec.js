@@ -155,11 +155,11 @@ describe('OpenXOutstreamAdapter', function () {
 
       it('should correctly reorder the server response', function () {
         const newResponse = spec.interpretResponse(serverResponse, serverRequest);
-        const openHtmltag = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>';
+        const openHtmlTag = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>';
         const closeHtmlTag = '</body></html>';
         const sdkScript = createSdkScript().outerHTML;
         const placementDiv = createPlacementDiv();
-        placementDiv.dataset.pID = PUBLISHER_ID;
+        placementDiv.dataset.pId = PUBLISHER_ID;
         const placementDivString = placementDiv.outerHTML;
         const adResponse = getTemplateAdResponse(serverResponse.body.vastUrl, PLACEMENT_ID);
         const adResponseString = JSON.stringify(adResponse);
@@ -177,7 +177,7 @@ describe('OpenXOutstreamAdapter', function () {
           currency: 'USD',
           netRevenue: true,
           ttl: 300,
-          ad: openHtmltag + placementDivString + ymAdsScript + sdkScript + closeHtmlTag
+          ad: openHtmlTag + placementDivString + ymAdsScript + sdkScript + closeHtmlTag
         });
       });
 
@@ -201,7 +201,7 @@ describe('OpenXOutstreamAdapter', function () {
   function createPlacementDiv() {
     div.id = `ym_${PLACEMENT_ID}`;
     div.classList.add('ym');
-    div.dataset.lfid = CR_ID;
+    div.dataset.lfId = CR_ID;
     return div
   }
   const getTemplateAdResponse = (vastUrl) => {
