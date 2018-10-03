@@ -81,24 +81,26 @@ export const spec = {
     let debugObj = {};
     let debugObjParams = {};
     const debugCookieName = 'apn_prebid_debug';
-    const debugCookie = getCookie(debugCookieName) || false;
+    const debugCookie = getCookie(debugCookieName) || null;
 
     if (debugCookie) {
       try {
-        debugObjParams['debug'] = JSON.parse(debugCookie);
+        debugObj = JSON.parse(debugCookie);
       } catch (e) {
         utils.logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
-      debugObjParams = find(bidRequests, hasDebug);
+      const debugBidRequest = find(bidRequests, hasDebug);
+      if (debugBidRequest && debugBidRequest['debug']) {
+        debugObj = debugBidRequest['debug'];
+      }
     }
 
-    if (debugObjParams && debugObjParams.debug) {
-      Object.keys(debugObjParams.debug)
+    if (debugObj && debugObj['enabled']) {
+      Object.keys(debugObj)
         .filter(param => includes(DEBUG_PARAMS, param))
         .forEach(param => {
-          debugObj['debug'] = debugObj['debug'] || {};
-          debugObj.debug[param] = debugObjParams.debug[param]
+          debugObjParams[param] = debugObj[param];
         });
     }
 
@@ -124,9 +126,9 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    if (debugObj && debugObj.debug) {
-      payload.debug = debugObj.debug;
-      utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObj.debug, null, 4));
+    if (debugObjParams && debugObjParams['enabled']) {
+      payload.debug = debugObjParams;
+      utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
