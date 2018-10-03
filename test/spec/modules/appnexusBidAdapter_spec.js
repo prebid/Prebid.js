@@ -396,7 +396,33 @@ describe('AppNexusAdapter', function () {
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       });
     });
-  })
+
+    it('adds debug auction settings to payload', () => {
+      let debugRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394'
+          },
+          debug: {
+            enabled: true,
+            dongle: 'QWERTY',
+            member_id: 958,
+            debug_timeout: 1000
+          }
+        }
+      );
+      const request = spec.buildRequests([debugRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.debug).to.exist;
+      expect(payload.debug).to.deep.equal({
+        enabled: true,
+        dongle: 'QWERTY',
+        member_id: 958,
+        debug_timeout: 1000
+      });
+    });
+  });
 
   describe('interpretResponse', function () {
     let response = {
