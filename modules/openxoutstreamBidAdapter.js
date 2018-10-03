@@ -13,7 +13,6 @@ const NET_REVENUE = true;
 const TIME_TO_LIVE = 300;
 const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.random()/3)+'';t._ym='';var m=e.createElement('script');m.type='text/javascript',m.async=!0,m.src='//static.yieldmo.com/ym.'+a+'.js',(e.getElementsByTagName('head')[0]||e.getElementsByTagName('body')[0]).appendChild(m)}else t._ym instanceof String||void 0===t._ym.chkPls||t._ym.chkPls()}(document,window);`;
 const PLACEMENT_ID = '1986307928000988495';
-const LICENSED_FORMAT_ID = '1991358644725162817';
 const PUBLISHER_ID = '1986307525700126029';
 const CR_ID = '2052941939925262540';
 const AD_ID = 1991358644725162800;
@@ -179,16 +178,15 @@ function createPlacementDiv() {
   const div = document.createElement('div');
   div.id = `ym_${PLACEMENT_ID}`;
   div.classList.add('ym');
-  div.dataset.lfid = `${LICENSED_FORMAT_ID}`;
+  div.dataset.lfid = `${CR_ID}`;
   return div
 }
 
 /**
  * Create a nativeplay template with the placement id and vastURL.
  * @param vastUrl
- * @param placementId
  */
-const getTemplateAdResponse = (vastUrl, placementId) => {
+const getTemplateAdResponse = (vastUrl) => {
   return {
     availability_zone: 'us-east-1a',
     data: [
@@ -215,7 +213,7 @@ const getTemplateAdResponse = (vastUrl, placementId) => {
         },
         creative_format_id: 40,
         css: '',
-        placement_id: placementId,
+        placement_id: PLACEMENT_ID,
       }
     ],
     nc: 0,
