@@ -1,9 +1,9 @@
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import {config} from 'src/config';
+import {registerBidder} from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
-import { userSync } from 'src/userSync';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { parse } from 'src/url';
+import {userSync} from 'src/userSync';
+import {BANNER, VIDEO} from 'src/mediaTypes';
+import {parse} from 'src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
@@ -19,14 +19,14 @@ export function resetBoPixel() {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
 
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
   },
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
       return [];
     }
@@ -47,17 +47,17 @@ export const spec = {
 
     return requests;
   },
-  interpretResponse: function({ body: oxResponseObj }, serverRequest) {
+  interpretResponse: function ({body: oxResponseObj}, serverRequest) {
     let mediaType = getMediaTypeFromRequest(serverRequest);
 
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function(syncOptions, responses) {
+  getUserSyncs: function (syncOptions, responses) {
     if (syncOptions.iframeEnabled) {
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
-                utils.deepAccess(responses, '0.body.pixels') ||
-                '//u.openx.net/w/1.0/pd';
+        utils.deepAccess(responses, '0.body.pixels') ||
+        '//u.openx.net/w/1.0/pd';
       return [{
         type: 'iframe',
         url: url
@@ -76,7 +76,7 @@ function isVideoRequest(bidRequest) {
   return utils.deepAccess(bidRequest, 'mediaTypes.video') || bidRequest.mediaType === VIDEO;
 }
 
-function createBannerBidResponses(oxResponseObj, { bids, startTime }) {
+function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
   let adUnits = oxResponseObj.ads.ad;
   let bidResponses = [];
   for (let i = 0; i < adUnits.length; i++) {
@@ -173,7 +173,7 @@ function formatCustomParms(customKey, customParams) {
 }
 
 function partitionByVideoBids(bidRequests) {
-  return bidRequests.reduce(function(acc, bid) {
+  return bidRequests.reduce(function (acc, bid) {
     // Fallback to banner ads if nothing specified
     if (isVideoRequest(bid)) {
       acc[0].push(bid);
@@ -181,10 +181,7 @@ function partitionByVideoBids(bidRequests) {
       acc[1].push(bid);
     }
     return acc;
-  }, [
-    [],
-    []
-  ]);
+  }, [[], []]);
 }
 
 function getMediaTypeFromRequest(serverRequest) {
@@ -281,7 +278,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     method: 'GET',
     url: url,
     data: queryParams,
-    payload: { 'bids': bids, 'startTime': new Date() }
+    payload: {'bids': bids, 'startTime': new Date()}
   };
 }
 
@@ -292,7 +289,7 @@ function buildOXVideoRequest(bid, bidderRequest) {
     method: 'GET',
     url: url,
     data: oxVideoParams,
-    payload: { 'bid': bid, 'startTime': new Date() }
+    payload: {'bid': bid, 'startTime': new Date()}
   };
 }
 
@@ -316,7 +313,7 @@ function generateVideoParameters(bid, bidderRequest) {
     height = parseInt(playerSize[1], 10);
   }
 
-  Object.keys(oxVideoConfig).forEach(function(key) {
+  Object.keys(oxVideoConfig).forEach(function (key) {
     if (key === 'openrtb') {
       oxVideoConfig[key].w = width || oxVideoConfig[key].w;
       oxVideoConfig[key].v = height || oxVideoConfig[key].v;
@@ -343,7 +340,7 @@ function generateVideoParameters(bid, bidderRequest) {
   return queryParams;
 }
 
-function createVideoBidResponses(response, { bid, startTime }) {
+function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
