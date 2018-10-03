@@ -21,7 +21,6 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
     if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
-      console.log('valid bid request');
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
     return !!(bidRequest.params.unit && bidRequest.params.delDomain);
