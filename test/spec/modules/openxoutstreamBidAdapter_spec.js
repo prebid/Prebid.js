@@ -304,33 +304,6 @@ describe('OpenXOutstreamAdapter', function () {
     });
   })
 
-  /**
-   * Creates a mock ArjResponse
-   * @param {OxArjResponse=} response
-   * @param {Array<OxArjAdUnit>=} adUnits
-   * @throws {AssertionError}
-   * @return {OxArjResponse}
-   */
-  function mockArjResponse(response, adUnits = []) {
-    let mockedArjResponse = utils.deepClone(DEFAULT_ARJ_RESPONSE);
-
-    if (response) {
-      overrideKeyCheck(response, DEFAULT_ARJ_RESPONSE, 'OxArjResponse');
-      overrideKeyCheck(response.ads, DEFAULT_ARJ_RESPONSE.ads, 'OxArjResponse');
-      Object.assign(mockedArjResponse, response);
-    }
-
-    if (adUnits.length) {
-      mockedArjResponse.ads.count = adUnits.length;
-      mockedArjResponse.ads.ad = adUnits.map((adUnit, index) => {
-        overrideKeyCheck(adUnit, DEFAULT_TEST_ARJ_AD_UNIT, 'OxArjAdUnit');
-        return Object.assign(utils.deepClone(DEFAULT_TEST_ARJ_AD_UNIT), adUnit);
-      });
-    }
-
-    return mockedArjResponse;
-  }
-
   function createSdkScript() {
     const script = document.createElement('script');
     script.innerHTML = YM_SCRIPT;
