@@ -245,7 +245,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.tfcd = 1;
   }
 
-  bids.forEach(function(bid) {
+  bids.forEach(function (bid) {
     if (bid.params.customParams) {
       let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
       let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
@@ -261,7 +261,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
 
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
-  bids.forEach(function(bid) {
+  bids.forEach(function (bid) {
     if (bid.params.customFloor) {
       customFloorsForAllBids.push(bid.params.customFloor * 1000);
       hasCustomFloor = true;
