@@ -14,13 +14,13 @@ const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.ran
 const PLACEMENT_ID = '1986307928000988495';
 const PUBLISHER_ID = '1986307525700126029';
 const CR_ID = '2052941939925262540';
-const AD_ID = 1991358644725162800;
+const AD_ID = '1991358644725162800';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
+    if (bidRequest.params.delDomain) {
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
     return false;
@@ -189,8 +189,7 @@ const getTemplateAdResponse = (vastUrl) => {
         ads: [
           {
             actions: {},
-            ad_id: AD_ID,
-            adv_id: `${AD_ID}`,
+            adv_id: AD_ID,
             configurables: {
               cta_button_copy: 'Learn More',
               vast_click_tracking: 'true',
