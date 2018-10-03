@@ -133,11 +133,11 @@ function handleVastResponse(response, serverResponse) {
   const body = response.body
   let bidResponses = [];
   if (response !== undefined && body.vastUrl !== '' && body.pub_rev && body.pub_rev > 0) {
-    const openHtmltag = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>';
+    const openHtmlTag = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>';
     const closeHtmlTag = '</body></html>';
     const sdkScript = createSdkScript().outerHTML;
     const placementDiv = createPlacementDiv();
-    placementDiv.dataset.pID = PUBLISHER_ID;
+    placementDiv.dataset.pId = PUBLISHER_ID;
     const placementDivString = placementDiv.outerHTML;
     const adResponse = getTemplateAdResponse(body.vastUrl);
     const adResponseString = JSON.stringify(adResponse);
@@ -155,7 +155,7 @@ function handleVastResponse(response, serverResponse) {
     bidResponse.vastUrl = body.vastUrl;
     bidResponse.ttl = TIME_TO_LIVE;
     bidResponse.mediaType = BANNER;
-    bidResponse.ad = openHtmltag + placementDivString + ymAdsScript + sdkScript + closeHtmlTag;
+    bidResponse.ad = openHtmlTag + placementDivString + ymAdsScript + sdkScript + closeHtmlTag;
 
     bidResponses.push(bidResponse);
   }
@@ -173,7 +173,7 @@ function createPlacementDiv() {
   const div = document.createElement('div');
   div.id = `ym_${PLACEMENT_ID}`;
   div.classList.add('ym');
-  div.dataset.lfid = CR_ID;
+  div.dataset.lfId = CR_ID;
   return div
 }
 
