@@ -140,7 +140,6 @@ describe('OpenXOutstreamAdapter', function () {
             bidderCode: 'openxoutstream',
             vastUrl: 'test.vast.url',
             mediaType: 'banner',
-            ad: '<html><head></head><body><script>//GEX ad object</script><div id=\"ym_123\" class=\"ym\"></div><script>//js code</script></body></html>',
             adid: '9874652394875'
           },
           header: 'header?',
@@ -156,7 +155,7 @@ describe('OpenXOutstreamAdapter', function () {
 
       it('should correctly reorder the server response', function () {
         const newResponse = spec.interpretResponse(serverResponse, serverRequest);
-        const openHtmltag = '<html><head></head><body>';
+        const openHtmltag = '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>';
         const closeHtmlTag = '</body></html>';
         const sdkScript = createSdkScript().outerHTML;
         const placementDiv = createPlacementDiv();
@@ -202,7 +201,7 @@ describe('OpenXOutstreamAdapter', function () {
   function createPlacementDiv() {
     div.id = `ym_${PLACEMENT_ID}`;
     div.classList.add('ym');
-    div.dataset.lfid = `${CR_ID}`;
+    div.dataset.lfid = CR_ID;
     return div
   }
   const getTemplateAdResponse = (vastUrl) => {
