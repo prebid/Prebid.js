@@ -3,24 +3,15 @@
 ```
 Module Name: OpenX Outstream Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: formats@yieldmo.com
+Maintainer: opensource@yieldmo.com
+Note: Ads will only render in mobile
 ```
 
 # Description
 
-Module that connects to OpenX's demand sources for video outstream
+Module that connects to OpenX's demand sources for outstream
 
-# Bid Parameters
-## Banner
-
-| Name | Scope | Type | Description | Example
-| ---- | ----- | ---- | ----------- | -------
-| `delDomain` | required | String | OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
-| `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
-| `doNotTrack` | optional | Boolean | Prevents advertiser from using data for this user. <br/><br/> **WARNING:**<br/> Request-level setting.  May impact revenue. | true
-| `coppa` | optional | Boolean | Enables Child's Online Privacy Protection Act (COPPA) regulations. | true
-
-
+This bid adapter supports Banner.
 
 # Example
 ```javascript
