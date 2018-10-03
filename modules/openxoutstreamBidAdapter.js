@@ -49,7 +49,6 @@ function getViewportDimensions(isIfr) {
   let height;
   let tWin = window;
   let tDoc = document;
-  let docEl = tDoc.documentElement;
   let body;
 
   if (isIfr) {
@@ -64,7 +63,6 @@ function getViewportDimensions(isIfr) {
     width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
   } else {
-    docEl = tDoc.documentElement;
     width = tWin.innerWidth || docEl.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight;
   }
