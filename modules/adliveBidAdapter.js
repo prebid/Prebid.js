@@ -62,6 +62,10 @@ export const spec = {
       utils.logError(err);
       return [];
     }
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    return [];
   }
 };
 registerBidder(spec);
