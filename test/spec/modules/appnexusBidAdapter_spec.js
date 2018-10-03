@@ -370,6 +370,32 @@ describe('AppNexusAdapter', function () {
         lng: -75.3009142
       });
     });
+
+    it('should add referer info to payload', function () {
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+          reachedTop: true,
+          numIframes: 2,
+          stack: [
+            'http://example.com/page.html',
+            'http://example.com/iframe1.html',
+            'http://example.com/iframe2.html'
+          ]
+        }
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.referrer_detection).to.exist;
+      expect(payload.referrer_detection).to.deep.equal({
+        rd_ref: 'http%3A%2F%2Fexample.com%2Fpage.html',
+        rd_top: true,
+        rd_ifs: 2,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+      });
+    });
   })
 
   describe('interpretResponse', function () {

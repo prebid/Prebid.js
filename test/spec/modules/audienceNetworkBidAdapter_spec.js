@@ -19,7 +19,7 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
-const debug = 'adapterver=1.0.1&platform=241394079772386&platver=$prebid.version$';
+const debug = 'adapterver=1.1.0&platform=241394079772386&platver=$prebid.version$&cb=test-uuid';
 const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
 describe('AudienceNetwork adapter', function () {
@@ -119,20 +119,21 @@ describe('AudienceNetwork adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let isSafariBrowserStub;
     before(function () {
-      isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
+      sinon
+        .stub(utils, 'generateUUID')
+        .returns('test-uuid');
     });
 
     after(function () {
-      isSafariBrowserStub.restore();
+      utils.generateUUID.restore();
     });
 
     it('can build URL for IAB unit', function () {
       expect(buildRequests([{
         bidder,
         bidId: requestId,
-        sizes: [[300, 250], [320, 50]],
+        sizes: [[300, 50], [300, 250], [320, 50]],
         params: { placementId }
       }])).to.deep.equal([{
         adformats: ['300x250'],
@@ -182,7 +183,7 @@ describe('AudienceNetwork adapter', function () {
       }]);
     });
 
-    it('can build URL for fullwidth 300x250 unit, overriding platform', function () {
+    it('can build URL for deprecated fullwidth unit, overriding platform', function () {
       const platform = 'test-platform';
       const debugPlatform = debug.replace('241394079772386', platform);
 
@@ -196,23 +197,13 @@ describe('AudienceNetwork adapter', function () {
           format: 'fullwidth'
         }
       }])).to.deep.equal([{
-        adformats: ['fullwidth'],
+        adformats: ['300x250'],
         method: 'GET',
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debugPlatform}`
+        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debugPlatform}`
       }]);
-    });
-
-    it('can build URL on Safari that includes a cachebuster param', function () {
-      isSafariBrowserStub.returns(true);
-      expect(buildRequests([{
-        bidder,
-        bidId: requestId,
-        sizes: [[300, 250]],
-        params: { placementId }
-      }])[0].data).to.contain('&cb=');
     });
   });
 

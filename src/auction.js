@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess, delayExecution, getBidRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -157,16 +157,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 
   function auctionDone(bidderCount) {
-    let doneCalled = 0;
-    return function() {
-      doneCalled++;
-      if (doneCalled === bidderCount) {
-        closeAuction();
-      }
-    }
-  }
-
-  function closeAuction() {
     // when all bidders have called done callback atleast once it means auction is complete
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
@@ -185,54 +175,58 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     let requests = {};
 
-    let call = {
-      bidRequests,
-      run: () => {
-        startAuctionTimer();
+    if (bidRequests.length < 1) {
+      utils.logWarn('No valid bid requests returned for auction');
+    } else {
+      let call = {
+        bidRequests,
+        run: () => {
+          startAuctionTimer();
 
-        _auctionStatus = AUCTION_IN_PROGRESS;
+          _auctionStatus = AUCTION_IN_PROGRESS;
 
-        const auctionInit = {
-          timestamp: _auctionStart,
-          auctionId: _auctionId,
-          timeout: _timeout
-        };
-        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
+          const auctionInit = {
+            timestamp: _auctionStart,
+            auctionId: _auctionId,
+            timeout: _timeout
+          };
+          events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-        let callbacks = auctionCallbacks(auctionDone(bidRequests.length), this);
-        let boundObj = {
-          auctionAddBidResponse: callbacks.addBidResponse
-        }
-        adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
-          request(source, origin) {
-            increment(outstandingRequests, origin);
-            increment(requests, source);
+          let callbacks = auctionCallbacks(auctionDone, this);
+          let boundObj = {
+            auctionAddBidResponse: callbacks.addBidResponse
+          };
+          adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
+            request(source, origin) {
+              increment(outstandingRequests, origin);
+              increment(requests, source);
 
-            if (!sourceInfo[source]) {
-              sourceInfo[source] = {
-                SRA: true,
-                origin
-              };
-            }
-            if (requests[source] > 1) {
-              sourceInfo[source].SRA = false;
-            }
-          },
-          done(origin) {
-            outstandingRequests[origin]--;
-            if (queuedCalls[0]) {
-              if (runIfOriginHasCapacity(queuedCalls[0])) {
-                queuedCalls.shift();
+              if (!sourceInfo[source]) {
+                sourceInfo[source] = {
+                  SRA: true,
+                  origin
+                };
+              }
+              if (requests[source] > 1) {
+                sourceInfo[source].SRA = false;
+              }
+            },
+            done(origin) {
+              outstandingRequests[origin]--;
+              if (queuedCalls[0]) {
+                if (runIfOriginHasCapacity(queuedCalls[0])) {
+                  queuedCalls.shift();
+                }
               }
             }
-          }
-        }, _timeout);
-      }
-    };
+          }, _timeout);
+        }
+      };
 
-    if (!runIfOriginHasCapacity(call)) {
-      utils.logWarn('queueing auction due to limited endpoint capacity');
-      queuedCalls.push(call);
+      if (!runIfOriginHasCapacity(call)) {
+        utils.logWarn('queueing auction due to limited endpoint capacity');
+        queuedCalls.push(call);
+      }
     }
 
     function runIfOriginHasCapacity(call) {
@@ -303,11 +297,15 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
 
 export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
-  let doneCalled = false;
+  let allAdapterCalledDone = false;
+
+  let onAllAdapterDone = delayExecution(() => {
+    allAdapterCalledDone = true;
+  }, auctionInstance.getBidRequests().length);
 
   function afterBidAdded() {
     outstandingBidsAdded--;
-    if (doneCalled && outstandingBidsAdded === 0) {
+    if (allAdapterCalledDone && outstandingBidsAdded === 0) {
       auctionDone()
     }
   }
@@ -321,7 +319,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
     let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
 
     if (bidResponse.mediaType === 'video') {
-      tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded);
+      tryAddVideoBid(auctionInstance, bidResponse, bidRequest, afterBidAdded);
     } else {
       addBidToAuction(auctionInstance, bidResponse);
       afterBidAdded();
@@ -329,8 +327,8 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   function adapterDone() {
-    doneCalled = true;
-    if ((outstandingBidsAdded === 0)) {
+    onAllAdapterDone();
+    if (allAdapterCalledDone && outstandingBidsAdded === 0) {
       auctionDone();
     }
   }
@@ -356,9 +354,13 @@ function addBidToAuction(auctionInstance, bidResponse) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded) {
+function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
   let addBid = true;
-  const context = deepAccess(bidResponse, 'context');
+
+  const bidRequest = getBidRequest(bidResponse.adId, [bidRequests]);
+  const videoMediaType =
+    bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
+  const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey) {
@@ -458,17 +460,17 @@ export function getStandardBidderSettings(mediaType) {
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       {
-        key: 'hb_bidder',
+        key: CONSTANTS.TARGETING_KEYS.BIDDER,
         val: function (bidResponse) {
           return bidResponse.bidderCode;
         }
       }, {
-        key: 'hb_adid',
+        key: CONSTANTS.TARGETING_KEYS.AD_ID,
         val: function (bidResponse) {
           return bidResponse.adId;
         }
       }, {
-        key: 'hb_pb',
+        key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
         val: function (bidResponse) {
           if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
             return bidResponse.pbAg;
@@ -485,24 +487,24 @@ export function getStandardBidderSettings(mediaType) {
           }
         }
       }, {
-        key: 'hb_size',
+        key: CONSTANTS.TARGETING_KEYS.SIZE,
         val: function (bidResponse) {
           return bidResponse.size;
         }
       }, {
-        key: 'hb_deal',
+        key: CONSTANTS.TARGETING_KEYS.DEAL,
         val: function (bidResponse) {
           return bidResponse.dealId;
         }
       },
       {
-        key: 'hb_source',
+        key: CONSTANTS.TARGETING_KEYS.SOURCE,
         val: function (bidResponse) {
           return bidResponse.source;
         }
       },
       {
-        key: 'hb_format',
+        key: CONSTANTS.TARGETING_KEYS.FORMAT,
         val: function (bidResponse) {
           return bidResponse.mediaType;
         }
@@ -563,7 +565,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === 'hb_deal') && // hb_deal is suppressed automatically if not set
+      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
