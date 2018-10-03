@@ -141,7 +141,7 @@ function handleVastResponse(response, serverResponse) {
     const placementDiv = createPlacementDiv();
     placementDiv.dataset.pID = PUBLISHER_ID;
     const placementDivString = placementDiv.outerHTML;
-    const adResponse = getTemplateAdResponse(body.vastUrl, PLACEMENT_ID);
+    const adResponse = getTemplateAdResponse(body.vastUrl);
     const adResponseString = JSON.stringify(adResponse);
     const ymAdsScript = '<script type="text/javascript"> window.__ymAds =' + adResponseString + '</script>';
 
