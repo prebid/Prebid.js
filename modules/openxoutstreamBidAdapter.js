@@ -15,7 +15,7 @@ const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.ran
 const PLACEMENT_ID = '1986307928000988495';
 const LICENSED_FORMAT_ID = '1991358644725162817';
 const PUBLISHER_ID = '1986307525700126029';
-const CR_ID = '1991358644725162817';
+const CR_ID = '2052941939925262540';
 const AD_ID = 1991358644725162800;
 
 export const spec = {
@@ -50,10 +50,10 @@ function getViewportDimensions(isIfr) {
   let width;
   let height;
   let tWin = window;
-  let tDoc;
   let body;
 
   if (isIfr) {
+    let tDoc;
     try {
       tWin = window.top;
       tDoc = window.top.document;
