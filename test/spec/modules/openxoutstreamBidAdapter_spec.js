@@ -11,7 +11,7 @@ describe('OpenXOutstreamAdapter', function () {
   const LICENSED_FORMAT_ID = '1991358644725162817';
   const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.random()/3)+'';t._ym='';var m=e.createElement('script');m.type='text/javascript',m.async=!0,m.src='//static.yieldmo.com/ym.'+a+'.js',(e.getElementsByTagName('head')[0]||e.getElementsByTagName('body')[0]).appendChild(m)}else t._ym instanceof String||void 0===t._ym.chkPls||t._ym.chkPls()}(document,window);`;
   const PUBLISHER_ID = '1986307525700126029';
-  const CR_ID = '1991358644725162817';
+  const CR_ID = '2052941939925262540';
   const AD_ID = 1991358644725162800;
 
   describe('inherited functions', function () {
