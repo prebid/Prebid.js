@@ -1,7 +1,6 @@
 import {expect} from 'chai';
-import {spec, resetBoPixel} from 'modules/openxoutstreamBidAdapter';
+import {spec} from 'modules/openxoutstreamBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
 
 describe('OpenXOutstreamAdapter', function () {
   const adapter = newBidder(spec);
@@ -12,116 +11,6 @@ describe('OpenXOutstreamAdapter', function () {
   const LICENSED_FORMAT_ID = '1991358644725162817';
   const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.random()/3)+'';t._ym='';var m=e.createElement('script');m.type='text/javascript',m.async=!0,m.src='//static.yieldmo.com/ym.'+a+'.js',(e.getElementsByTagName('head')[0]||e.getElementsByTagName('body')[0]).appendChild(m)}else t._ym instanceof String||void 0===t._ym.chkPls||t._ym.chkPls()}(document,window);`;
   const PUBLISHER_ID = '1986307525700126029';
-
-  /**
-   *  Type Definitions
-   */
-
-  /**
-   * @typedef {{
-   *  impression: string,
-   *  inview: string,
-   *  click: string
-   * }}
-   */
-  let OxArjTracking;
-  /**
-   * @typedef {{
-   *   ads: {
-   *     version: number,
-   *     count: number,
-   *     pixels: string,
-   *     ad: Array<OxArjAdUnit>
-   *   }
-   * }}
-   */
-  let OxArjResponse;
-  /**
-   * @typedef {{
-   *   adunitid: number,
-   *   adid:number,
-   *   type: string,
-   *   htmlz: string,
-   *   framed: number,
-   *   is_fallback: number,
-   *   ts: string,
-   *   cpipc: number,
-   *   pub_rev: string,
-   *   tbd: ?string,
-   *   adv_id: string,
-   *   deal_id: string,
-   *   auct_win_is_deal: number,
-   *   brand_id: string,
-   *   currency: string,
-   *   idx: string,
-   *   creative: Array<OxArjCreative>
-   * }}
-   */
-  let OxArjAdUnit;
-  /**
-   * @typedef {{
-   *  id: string,
-   *  width: string,
-   *  height: string,
-   *  target: string,
-   *  mime: string,
-   *  media: string,
-   *  tracking: OxArjTracking
-   * }}
-   */
-  let OxArjCreative;
-
-  // HELPER METHODS
-  /**
-   * @type {OxArjCreative}
-   */
-  const DEFAULT_TEST_ARJ_CREATIVE = {
-    id: '0',
-    width: 'test-width',
-    height: 'test-height',
-    target: 'test-target',
-    mime: 'test-mime',
-    media: 'test-media',
-    tracking: {
-      impression: 'test-impression',
-      inview: 'test-inview',
-      click: 'test-click'
-    }
-  };
-
-  /**
-   * @type {OxArjAdUnit}
-   */
-  const DEFAULT_TEST_ARJ_AD_UNIT = {
-    adunitid: 0,
-    type: 'test-type',
-    html: 'test-html',
-    framed: 0,
-    is_fallback: 0,
-    ts: 'test-ts',
-    tbd: 'NaN',
-    deal_id: undefined,
-    auct_win_is_deal: undefined,
-    cpipc: 0,
-    pub_rev: 'test-pub_rev',
-    adv_id: 'test-adv_id',
-    brand_id: 'test-brand_id',
-    currency: 'test-currency',
-    idx: '0',
-    creative: [DEFAULT_TEST_ARJ_CREATIVE]
-  };
-
-  /**
-   * @type {OxArjResponse}
-   */
-  const DEFAULT_ARJ_RESPONSE = {
-    ads: {
-      version: 0,
-      count: 1,
-      pixels: 'http://testpixels.net',
-      ad: [DEFAULT_TEST_ARJ_AD_UNIT]
-    }
-  };
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
