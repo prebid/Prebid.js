@@ -23,7 +23,7 @@ export const spec = {
     if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
-    return !!(bidRequest.params.unit && bidRequest.params.delDomain);
+    return false;
   },
   buildRequests: function(bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
