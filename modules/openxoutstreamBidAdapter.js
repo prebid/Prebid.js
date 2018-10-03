@@ -15,6 +15,8 @@ const YM_SCRIPT = `!function(e,t){if(void 0===t._ym){var a=Math.round(5*Math.ran
 const PLACEMENT_ID = '1986307928000988495';
 const LICENSED_FORMAT_ID = '1991358644725162817';
 const PUBLISHER_ID = '1986307525700126029';
+const CR_ID = '1991358644725162817';
+const AD_ID = 1991358644725162800;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -194,14 +196,14 @@ const getTemplateAdResponse = (vastUrl, placementId) => {
         ads: [
           {
             actions: {},
-            ad_id: 1991358644725162800,
-            adv_id: '1991358644725162800',
+            ad_id: AD_ID,
+            adv_id: `${AD_ID}`,
             configurables: {
               cta_button_copy: 'Learn More',
               vast_click_tracking: 'true',
               vast_url: vastUrl,
             },
-            cr_id: '1991358644725162817',
+            cr_id: CR_ID,
             rti: '1',
           }
         ],
