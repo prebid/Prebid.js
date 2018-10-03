@@ -50,7 +50,7 @@ function getViewportDimensions(isIfr) {
   let width;
   let height;
   let tWin = window;
-  let tDoc = document;
+  let tDoc;
   let body;
 
   if (isIfr) {
