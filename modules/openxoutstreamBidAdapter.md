@@ -9,7 +9,7 @@ Note: Ads will only render in mobile
 
 # Description
 
-Module that connects to OpenX's demand sources for outstream
+Module that connects to OpenX's demand sources for outstream to Yieldmo.
 
 This bid adapter supports Banner.
 

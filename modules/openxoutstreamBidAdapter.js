@@ -59,7 +59,6 @@ function getViewportDimensions(isIfr) {
     } catch (e) {
       return;
     }
-    docEl = tDoc.documentElement;
     body = tDoc.body;
 
     width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
