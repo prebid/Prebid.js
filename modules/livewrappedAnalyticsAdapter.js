@@ -121,8 +121,10 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
 function getSentRequests() {
   var sentRequests = [];
 
-  Object.values(cache.auctions).forEach(auction => {
-    Object.values(auction.bids).forEach(bid => {
+  Object.keys(cache.auctions).forEach(auctionId => {
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
       if (!(bid.sendStatus & REQUESTSENT)) {
         bid.sendStatus |= REQUESTSENT;
 
@@ -141,8 +143,10 @@ function getSentRequests() {
 function getResponses() {
   var responses = [];
 
-  Object.values(cache.auctions).forEach(auction => {
-    Object.values(auction.bids).forEach(bid => {
+  Object.keys(cache.auctions).forEach(auctionId => {
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
       if (!(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
 
@@ -166,8 +170,10 @@ function getResponses() {
 function getWins() {
   var wins = [];
 
-  Object.values(cache.auctions).forEach(auction => {
-    Object.values(auction.bids).forEach(bid => {
+  Object.keys(cache.auctions).forEach(auctionId => {
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
       if (!(bid.sendStatus & WINSENT) && bid.won) {
         bid.sendStatus |= WINSENT;
 
@@ -189,8 +195,10 @@ function getWins() {
 function getTimeouts() {
   var timeouts = [];
 
-  Object.values(cache.auctions).forEach(auction => {
-    Object.values(auction.bids).forEach(bid => {
+  Object.keys(cache.auctions).forEach(auctionId => {
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
       if (!(bid.sendStatus & TIMEOUTSENT) && bid.timeout) {
         bid.sendStatus |= TIMEOUTSENT;
 

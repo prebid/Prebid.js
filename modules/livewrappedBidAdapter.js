@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'livewrapped';
 export const URL = 'https://lwadm.com/ad';
@@ -38,16 +39,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const userId = bidRequests.find(hasUserId);
-    const publisherId = bidRequests.find(hasPublisherId);
-    const auctionId = bidRequests.find(hasAuctionId);
-    let bidUrl = bidRequests.find(hasBidUrl);
-    let url = bidRequests.find(hasUrl);
-    let test = bidRequests.find(hasTestParam);
-    let seats = bidRequests.find(hasSeatsParam);
-    let deviceId = bidRequests.find(hasDeviceIdParam);
-    let ifa = bidRequests.find(hasIfaParam);
-    let tid = bidRequests.find(hasTidParam);
+    const userId = find(bidRequests, hasUserId);
+    const publisherId = find(bidRequests, hasPublisherId);
+    const auctionId = find(bidRequests, hasAuctionId);
+    let bidUrl = find(bidRequests, hasBidUrl);
+    let url = find(bidRequests, hasUrl);
+    let test = find(bidRequests, hasTestParam);
+    let seats = find(bidRequests, hasSeatsParam);
+    let deviceId = find(bidRequests, hasDeviceIdParam);
+    let ifa = find(bidRequests, hasIfaParam);
+    let tid = find(bidRequests, hasTidParam);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (config.getConfig('pageUrl') || utils.getTopWindowUrl());
     test = test ? test.params.test : undefined;
