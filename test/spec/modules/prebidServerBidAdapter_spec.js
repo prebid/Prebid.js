@@ -458,6 +458,8 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.gdpr).is.equal(1);
         expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
       });
 
       it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', function () {

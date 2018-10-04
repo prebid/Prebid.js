@@ -1,20 +1,12 @@
 import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
+const CONSTANTS = require('./constants.json');
+
 export const nativeAdapters = [];
 
-export const NATIVE_KEYS = {
-  title: 'hb_native_title',
-  body: 'hb_native_body',
-  sponsoredBy: 'hb_native_brand',
-  image: 'hb_native_image',
-  icon: 'hb_native_icon',
-  clickUrl: 'hb_native_linkurl',
-  cta: 'hb_native_cta',
-};
-
-export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
-  key => NATIVE_KEYS[key]
+export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
+  key => CONSTANTS.NATIVE_KEYS[key]
 );
 
 const IMAGE = {
@@ -163,7 +155,7 @@ export function getNativeTargeting(bid) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
-    const key = NATIVE_KEYS[asset];
+    const key = CONSTANTS.NATIVE_KEYS[asset];
     let value = bid['native'][asset];
 
     // native image-type assets can be a string or an object with a url prop
