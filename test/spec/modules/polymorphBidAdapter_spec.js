@@ -5,6 +5,9 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'polymorph';
 const ENDPOINT_URL = '//api.adsnative.com/v1/ad-template.json';
 const PLACEMENT_ID = 'ping';
+const NETWORK_KEY = 'abcd1234';
+const WIDGET_ID = 'xyz';
+const CATEGORIES = 'IAB1,IAB2';
 
 const spec = newBidder(polymorphAdapterSpec).getSpec();
 
@@ -35,9 +38,9 @@ const bidRequests = [{
 {
   'bidder': BIDDER_CODE,
   'params': {
-    'network_key': 'abcd1234',
-    'widget_id': 'xyz',
-    'cat': 'IAB1,IAB2'
+    'network_key': NETWORK_KEY,
+    'widget_id': WIDGET_ID,
+    'cat': CATEGORIES
   },
   'adUnitCode': 'adunit-code',
   'sizes': [[700, 250], [300, 600]],
@@ -96,6 +99,7 @@ describe('Polymorph adapter test', function () {
       expect(payload1.hb_source).to.equal('prebid');
       expect(payload1.zid).to.equal(PLACEMENT_ID);
       expect(payload1.sizes).to.equal('300,250,300,600');
+      expect(payload1.bid_id).to.equal(requests[0].bidId);
 
       var payload2 = {};
       requests[1].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -107,6 +111,21 @@ describe('Polymorph adapter test', function () {
       expect(payload2.hb_source).to.equal('prebid');
       expect(payload2.zid).to.equal(PLACEMENT_ID);
       expect(payload2.sizes).to.equal('700,250,300,600');
+      expect(payload2.bid_id).to.equal(requests[1].bidId);
+
+      var payload3 = {};
+      requests[2].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+        payload3[decodeURIComponent(key)] = decodeURIComponent(value);
+      });
+      expect(payload3.ref).to.not.be.undefined;
+      expect(payload3.url).to.not.be.undefined;
+      expect(payload3.hb).to.equal('1');
+      expect(payload3.hb_source).to.equal('prebid');
+      expect(payload3.network_key).to.equal(NETWORK_KEY);
+      expect(payload3.widget_id).to.equal(WIDGET_ID);
+      expect(payload3.cat).to.equal(CATEGORIES);
+      expect(payload3.sizes).to.equal('700,250,300,600');
+      expect(payload3.bid_id).to.equal(requests[1].bidId);
     });
 
     it('sends bid request to ENDPOINT via GET', function () {

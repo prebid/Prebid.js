@@ -43,7 +43,8 @@ export const polymorphAdapterSpec = {
         ref: utils.getTopFrameReferrer(),
         sizes: bid.sizes,
         hb: 1,
-        hb_source: 'prebid'
+        hb_source: 'prebid',
+        bid_id: bid.bidId,
       };
       if (bid.params.placementId) {
         payload.zid = bid.params.placementId;
