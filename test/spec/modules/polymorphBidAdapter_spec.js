@@ -44,7 +44,7 @@ const bidRequests = [{
   },
   'adUnitCode': 'adunit-code',
   'sizes': [[700, 250], [300, 600]],
-  'bidId': '30b31c1838de1d',
+  'bidId': '30b31c1838de1f',
   'bidderRequestId': '22edbae2733bf7',
   'auctionId': '1d1a030790a476',
 }];
@@ -99,7 +99,7 @@ describe('Polymorph adapter test', function () {
       expect(payload1.hb_source).to.equal('prebid');
       expect(payload1.zid).to.equal(PLACEMENT_ID);
       expect(payload1.sizes).to.equal('300,250,300,600');
-      expect(payload1.bid_id).to.equal(requests[0].bidId);
+      expect(payload1.bid_id).to.equal('30b31c1838de1e');
 
       var payload2 = {};
       requests[1].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -111,7 +111,7 @@ describe('Polymorph adapter test', function () {
       expect(payload2.hb_source).to.equal('prebid');
       expect(payload2.zid).to.equal(PLACEMENT_ID);
       expect(payload2.sizes).to.equal('700,250,300,600');
-      expect(payload2.bid_id).to.equal(requests[1].bidId);
+      expect(payload2.bid_id).to.equal('30b31c1838de1d');
 
       var payload3 = {};
       requests[2].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -125,7 +125,7 @@ describe('Polymorph adapter test', function () {
       expect(payload3.widget_id).to.equal(WIDGET_ID);
       expect(payload3.cat).to.equal(CATEGORIES);
       expect(payload3.sizes).to.equal('700,250,300,600');
-      expect(payload3.bid_id).to.equal(requests[1].bidId);
+      expect(payload3.bid_id).to.equal('30b31c1838de1f');
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
