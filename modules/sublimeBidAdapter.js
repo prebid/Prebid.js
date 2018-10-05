@@ -59,7 +59,7 @@ export const spec = {
           '&request_id=' + encodeURIComponent(requestId) +
           '&ad=' + encodeURIComponent(response.ad || '') +
           '&cpm=' + encodeURIComponent(response.cpm || 0) +
-          '&currency=' + encodeURIComponent(response.currency ||'USD')
+          '&currency=' + encodeURIComponent(response.currency || 'USD')
         );
         return xhr;
       };

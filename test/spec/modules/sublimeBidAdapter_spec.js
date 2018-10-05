@@ -59,11 +59,27 @@ describe('Sublime Adapter', () => {
       }
     ];
 
-    let requests = spec.buildRequests(bidRequests);
+    let bidderRequest = {
+      gdprConsent: {
+        consentString: 'EOHEIRCOUCOUIEHZIOEIU-TEST',
+        gdprApplies: true
+      }
+    };
+
+    let requests = spec.buildRequests(bidRequests, bidderRequest);
 
     it('should have a get method', () => {
       requests.map(request => {
         expect(request.method).to.equal('GET');
+      });
+    });
+
+    it('should contains window.sublime.gdpr.injected', () => {
+      expect(window.sublime).to.not.be.undefined;
+      expect(window.sublime.gdpr).to.not.be.undefined;
+      expect(window.sublime.gdpr.injected).to.eql({
+        consentString: bidderRequest.gdprConsent.consentString,
+        gdprApplies: bidderRequest.gdprConsent.gdprApplies
       });
     });
 
