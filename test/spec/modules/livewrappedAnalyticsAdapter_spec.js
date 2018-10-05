@@ -188,13 +188,13 @@ describe('Livewrapped analytics adapter', function () {
 
   describe('when handling events', function () {
     adaptermanager.registerAnalyticsAdapter({
-      code: 'livewrappedAnalytics',
+      code: 'livewrapped',
       adapter: livewrappedAnalyticsAdapter
     });
 
     beforeEach(function () {
       adaptermanager.enableAnalytics({
-        provider: 'livewrappedAnalytics',
+        provider: 'livewrapped',
         options: {
           publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7'
         }

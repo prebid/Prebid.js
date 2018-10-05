@@ -216,7 +216,7 @@ function getTimeouts() {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
-  code: 'livewrappedAnalytics'
+  code: 'livewrapped'
 });
 
 export default livewrappedAnalyticsAdapter;
