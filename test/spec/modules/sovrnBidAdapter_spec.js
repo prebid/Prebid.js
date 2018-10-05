@@ -16,7 +16,8 @@ describe('sovrnBidAdapter', function() {
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
-        [300, 250]
+        [300, 250],
+        [300, 600]
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -47,7 +48,8 @@ describe('sovrnBidAdapter', function() {
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
-        [300, 250]
+        [300, 250],
+        [300, 600]
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -64,6 +66,33 @@ describe('sovrnBidAdapter', function() {
       expect(request.url).to.equal(ENDPOINT)
     });
 
+    it('sets the proper banner object', function() {
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
+    it('accepts a single array as a size', function() {
+      const singleSize = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': '403370',
+          'iv': 'vet'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [300, 250],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(singleSize)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
     it('sends \'iv\' as query param if present', function () {
       const ivBidRequests = [{
         'bidder': 'sovrn',
@@ -73,7 +102,8 @@ describe('sovrnBidAdapter', function() {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [
-          [300, 250]
+          [300, 250],
+          [300, 600]
         ],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
@@ -116,7 +146,8 @@ describe('sovrnBidAdapter', function() {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [
-          [300, 250]
+          [300, 250],
+          [300, 600]
         ],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
