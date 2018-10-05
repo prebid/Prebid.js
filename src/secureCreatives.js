@@ -53,9 +53,12 @@ function receiveMessage(ev) {
 }
 
 function sendAdToCreative(adObject, remoteDomain, source) {
-  const { adId, ad, adUrl, width, height } = adObject;
-
-  if (adId) {
+  const { adId, ad, adUrl, width, height, renderer } = adObject;
+  // rendering for outstream safeframe
+  if (renderer && renderer.url) {
+    const bid = auctionManager.findBidByAdId(adId);
+    renderer.render(bid);
+  } else if (adId) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
