@@ -24,6 +24,7 @@ var adUnits = [
                    bidder: 'adg',
                    params: {
                      id: '58278', // banner
+                     currency: 'JPY',
                    }
                  },
                ]

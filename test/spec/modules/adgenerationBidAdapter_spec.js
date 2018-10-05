@@ -15,10 +15,11 @@ describe('AdgenerationAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'adg',
       'params': {
         id: '58278', // banner
+        currency: 'JPY',
       }
     };
     it('should return true when required params found', function () {
@@ -39,11 +40,10 @@ describe('AdgenerationAdapter', function () {
         bidder: 'adg',
         params: {
           id: '58278',
-          width: '300',
-          height: '250'
+          currency: 'JPY',
         },
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
+        sizes: [[300, 250], [320, 100]],
         bidId: '2f6ac468a9c15e',
         bidderRequestId: '14a9f773e30243',
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
@@ -53,8 +53,7 @@ describe('AdgenerationAdapter', function () {
         bidder: 'adg',
         params: {
           id: '58278',
-          width: '300',
-          height: '250'
+          currency: 'JPY',
         },
         mediaTypes: {
           native: {
@@ -88,8 +87,8 @@ describe('AdgenerationAdapter', function () {
       }
     ];
     const data = {
-      banner: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Flocalhost%3A9876%2F&imark=1`,
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Flocalhost%3A9876%2F'
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];

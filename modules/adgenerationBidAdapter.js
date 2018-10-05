@@ -1,5 +1,4 @@
 import * as utils from 'src/utils';
-// import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE} from 'src/mediaTypes';
 const ADG_BIDDER_CODE = 'adgeneration';
@@ -15,7 +14,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.id);
+    return !!(bid.params.id) && (isValidCurrency(bid.params.currency));
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -24,6 +23,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests) {
+    const ADGENE_PREBID_VERSION = '1.0.1';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -38,6 +38,12 @@ export const spec = {
       data = utils.tryAppendQueryString(data, 'hb', 'true');
       data = utils.tryAppendQueryString(data, 't', 'json3');
       data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = utils.tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = utils.tryAppendQueryString(data, 'currency', validReq.params.currency.toUpperCase());
+      data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = utils.tryAppendQueryString(data, 'tp', utils.getTopWindowUrl());
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
@@ -196,6 +202,36 @@ function removeWrapper(ad) {
   const lastBodyIndex = ad.lastIndexOf('</body>');
   if (bodyIndex === -1 || lastBodyIndex === -1) return false;
   return ad.substr(bodyIndex, lastBodyIndex).replace('<body>', '').replace('</body>', '');
+}
+
+/**
+ * request
+ * @param validReq request
+ * @returns {?string} 300x250,320x50...
+ */
+function getSizes(validReq) {
+  const sizes = validReq.sizes;
+  if (!sizes || sizes.length < 1) return null;
+  let sizesStr = null;
+  for (const i in sizes) {
+    const size = sizes[i];
+    if (sizesStr == null) {
+      sizesStr = size[0] + 'x' + size[1];
+    } else {
+      sizesStr += ',' + size[0] + 'x' + size[1];
+    }
+  }
+  return sizesStr;
+}
+
+/**
+ * @param {?string} currency
+ * @return {!boolean}
+ */
+function isValidCurrency(currency) {
+  if (!currency) return false;
+  const upperCurrency = currency.toUpperCase();
+  return (upperCurrency === 'JPY' || upperCurrency === 'USD')
 }
 
 registerBidder(spec);
