@@ -282,12 +282,12 @@ function _getDigiTrustObject(key) {
     let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
-   let digiTrustId = getDigiTrustId();
+  let digiTrustId = getDigiTrustId();
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return null;
   }
-   return digiTrustId;
+  return digiTrustId;
 }
 
 function _handleDigitrustId(eids) {

@@ -470,18 +470,18 @@ describe('PubMatic adapter', function () {
         let request = spec.buildRequests(bidRequests, bidRequest);
         let data = JSON.parse(request.data);
         expect(data.user.eids).to.deep.equal([{
-            "source": "digitru.st",
-            "uids": [{
-                "id": "testId",
-                "atype": 1,
-                "ext": {
-                    "keyv": 4
-                }
-            }]
+          'source': 'digitru.st',
+          'uids': [{
+            'id': 'testId',
+            'atype': 1,
+            'ext': {
+              'keyv': 4
+            }
+          }]
         }]);
-        sandbox.restore(); 
+        sandbox.restore();
         delete window.DigiTrust;
-      });      
+      });
 
       it('Request should not have digitrust params when DigiTrust not loaded', () => {
         let request = spec.buildRequests(bidRequests, {});
@@ -570,14 +570,14 @@ describe('PubMatic adapter', function () {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal([{
-              "source": "digitru.st",
-              "uids": [{
-                  "id": "testId",
-                  "atype": 1,
-                  "ext": {
-                      "keyv": 4
-                  }
-              }]
+            'source': 'digitru.st',
+            'uids': [{
+              'id': 'testId',
+              'atype': 1,
+              'ext': {
+                'keyv': 4
+              }
+            }]
           }]);
           // should not have called DigiTrust.getUser()
           expect(window.DigiTrust.getUser.notCalled).to.equal(true);
