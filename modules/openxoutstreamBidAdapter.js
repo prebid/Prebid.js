@@ -196,7 +196,6 @@ const getTemplateAdResponse = (vastUrl) => {
               vast_url: vastUrl,
             },
             cr_id: CR_ID,
-            rti: '1',
           }
         ],
         column_count: 1,
