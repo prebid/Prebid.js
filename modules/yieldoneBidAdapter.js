@@ -4,6 +4,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -66,6 +67,14 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USER_SYNC_URL
+      }];
+    }
   }
 }
 registerBidder(spec);

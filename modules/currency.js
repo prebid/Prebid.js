@@ -154,6 +154,14 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
     bid.currency = 'USD';
   }
 
+  let fromCurrency = bid.currency;
+  let cpm = bid.cpm;
+
+  // used for analytics
+  bid.getCpmInNewCurrency = function(toCurrency) {
+    return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+  };
+
   // execute immediately if the bid is already in the desired currency
   if (bid.currency === adServerCurrency) {
     return fn.apply(this, arguments);
@@ -178,16 +186,12 @@ function wrapFunction(fn, context, params) {
       let fromCurrency = bid.currency;
       try {
         let conversion = getCurrencyConversion(fromCurrency);
-        let cpm = bid.originalCpm = bid.cpm;
+        bid.originalCpm = bid.cpm;
         bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
         }
-        // used for analytics
-        bid.getCpmInNewCurrency = function(toCurrency) {
-          return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
-        };
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = bidfactory.createBid(STATUS.NO_BID, {
