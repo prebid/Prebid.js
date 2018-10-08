@@ -74,7 +74,8 @@ export const spec = {
     const hzid = bid.appierParams.hzid;
     const cpm = bid.adserverTargeting.hb_pb;
     const currency = bid.currency;
-    const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency);
+    const requestId = bid.requestId;
+    const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency, requestId);
     // add the image beacon to creative html
     bid.ad += `<img src="${showCallbackUrl}">`;
   },
@@ -82,9 +83,9 @@ export const spec = {
   /**
    * Generate a show callback beacon image URL
    */
-  generateShowCallbackUrl(hzid, cpm, currency) {
+  generateShowCallbackUrl(hzid, cpm, currency, requestId) {
     const server = this.getApiServer();
-    return `//${server}${SHOW_CALLBACK_ENDPOINT}?hzid=${hzid}&cpm=${cpm}&currency=${currency}`;
+    return `//${server}${SHOW_CALLBACK_ENDPOINT}?hzid=${hzid}&cpm=${cpm}&currency=${currency}&rid=${requestId}`;
   },
 
   /**

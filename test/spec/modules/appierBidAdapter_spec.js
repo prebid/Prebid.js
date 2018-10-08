@@ -149,7 +149,7 @@ describe('AppierAdapter', function () {
     it('should generate beacon URL for show callback', function() {
       spec.onBidWon(fakeBid);
 
-      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
+      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD', '418b37f85e772c');
       const imgTag = `<img src="${beaconUrl}">`;
 
       expect(fakeBid.ad).contains(imgTag);
@@ -158,11 +158,12 @@ describe('AppierAdapter', function () {
 
   describe('generateShowCallbackUrl', function() {
     it('should generate a show callback url passing cpm and currency', function() {
-      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD');
+      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD', '418b37f85e772c');
 
       expect(beaconUrl).matches(/hzid=test_hzid/);
       expect(beaconUrl).matches(/cpm=0.20/);
       expect(beaconUrl).matches(/currency=TWD/);
+      expect(beaconUrl).matches(/rid=418b37f85e772c/);
     });
   });
 
