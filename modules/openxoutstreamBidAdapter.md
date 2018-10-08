@@ -3,7 +3,7 @@
 ```
 Module Name: OpenX Outstream Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: opensource@yieldmo.com
+Maintainer: opensource@yieldmo.com, jimmy.tu@openx.com
 Note: Ads will only render in mobile
 ```
 
