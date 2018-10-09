@@ -831,7 +831,6 @@ describe('the rubicon adapter', function () {
                 likes: undefined
               },
             };
-            let undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes', 'tg_v.lastsearch', 'tg_i.prodtype']
 
             // Overwrite the bidder request params with the above ones
             Object.assign(bidderRequest.bids[0].params, params);
