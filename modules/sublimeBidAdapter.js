@@ -1,4 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.ayads.co';
@@ -40,43 +41,47 @@ export const spec = {
         gdprApplies: gdpr.gdprApplies
       };
     }
-    return validBidRequests.map(bid => {
-      let params = bid.params;
-      let requestId = bid.bidId || '';
-      let sacHost = params.sacHost || DEFAULT_SAC_HOST;
-      let bidHost = params.bidHost || DEFAULT_BID_HOST;
-      let protocol = params.protocol || DEFAULT_PROTOCOL;
-      let zoneId = params.zoneId;
-      let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
+    // Grab only the first `validBidRequest`
+    let bid = validBidRequests[0];
 
-      window[callbackName] = (response) => {
-        var xhr = new XMLHttpRequest();
-        var url = protocol + '://' + bidHost + '/notify';
-        xhr.open('POST', url, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.send(
-          'notify=1' +
-          '&request_id=' + encodeURIComponent(requestId) +
-          '&ad=' + encodeURIComponent(response.ad || '') +
-          '&cpm=' + encodeURIComponent(response.cpm || 0) +
-          '&currency=' + encodeURIComponent(response.currency || 'USD')
-        );
-        return xhr;
-      };
-      let script = document.createElement('script');
-      script.type = 'application/javascript';
-      script.src = 'https://' + sacHost + '/sublime/' + zoneId + '/prebid?callback=' + callbackName;
-      document.body.appendChild(script);
+    let leftoverZonesIds = validBidRequests.slice(1).map(bid => { return bid.params.zoneId }).join(',');
+    utils.logWarn(`Sublime Adapter: ZoneIds ${leftoverZonesIds} are ignored. Only one ZoneId per page can be instanciated.`);
 
-      return {
-        method: 'GET',
-        url: protocol + '://' + bidHost + '/bid',
-        data: {
-          prebid: 1,
-          request_id: requestId,
-        }
-      };
-    });
+    let params = bid.params;
+    let requestId = bid.bidId || '';
+    let sacHost = params.sacHost || DEFAULT_SAC_HOST;
+    let bidHost = params.bidHost || DEFAULT_BID_HOST;
+    let protocol = params.protocol || DEFAULT_PROTOCOL;
+    let zoneId = params.zoneId;
+    let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
+
+    window[callbackName] = (response) => {
+      var xhr = new XMLHttpRequest();
+      var url = protocol + '://' + bidHost + '/notify';
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.send(
+        'notify=1' +
+        '&request_id=' + encodeURIComponent(requestId) +
+        '&ad=' + encodeURIComponent(response.ad || '') +
+        '&cpm=' + encodeURIComponent(response.cpm || 0) +
+        '&currency=' + encodeURIComponent(response.currency || 'USD')
+      );
+      return xhr;
+    };
+    let script = document.createElement('script');
+    script.type = 'application/javascript';
+    script.src = 'https://' + sacHost + '/sublime/' + zoneId + '/prebid?callback=' + callbackName;
+    document.body.appendChild(script);
+
+    return {
+      method: 'GET',
+      url: protocol + '://' + bidHost + '/bid',
+      data: {
+        prebid: 1,
+        request_id: requestId,
+      }
+    };
   },
 
   /**
