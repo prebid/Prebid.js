@@ -21,7 +21,7 @@ const cache = {
 
 let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
   track({eventType, args}) {
-    utils.logInfo('"LIVEWRAPPED_EVENT:', [eventType, args]);
+    utils.logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
