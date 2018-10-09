@@ -414,7 +414,7 @@ describe('IndexexchangeAdapter', function () {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 10,
           netRevenue: true,
           dealId: undefined
         }
@@ -435,7 +435,7 @@ describe('IndexexchangeAdapter', function () {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 10,
           netRevenue: true,
           dealId: undefined
         }
@@ -456,7 +456,7 @@ describe('IndexexchangeAdapter', function () {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 35,
+          ttl: 10,
           netRevenue: true,
           dealId: undefined
         }
@@ -477,7 +477,7 @@ describe('IndexexchangeAdapter', function () {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 10,
           netRevenue: true,
           dealId: 'deal'
         }
