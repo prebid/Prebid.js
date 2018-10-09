@@ -365,10 +365,8 @@ describe('Unit: Prebid Module', function () {
   describe('getAdserverTargeting', function() {
     const customConfigObject = {
       'buckets': [
-        { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
-        { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
-        { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
-        { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+        { 'min': 0, 'max': 100, 'increment': 0.01 },
+        { 'min': 100, 'max': 500, 'increment': 1 }
       ]
     };
     let currentPriceBucket;
@@ -491,21 +489,21 @@ describe('Unit: Prebid Module', function () {
       RESPONSE.tags[0].ads[0].cpm = 6.78;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('6.75');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('6.78');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 8 to 20', function () {
       RESPONSE.tags[0].ads[0].cpm = 19.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('19.50');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('19.52');
     });
 
     it('should get correct hb_pb when using bid.cpm is between 20 to 25', function () {
       RESPONSE.tags[0].ads[0].cpm = 21.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('21.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0']['hb_pb']).to.equal('21.52');
     });
   });
 
