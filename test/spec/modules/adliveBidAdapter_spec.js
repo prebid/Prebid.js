@@ -2,16 +2,18 @@ import { expect } from 'chai';
 import { spec } from 'modules/adliveBidAdapter';
 
 describe('adliveBidAdapterTests', function() {
-  let bidRequestData = [
-    {
-      bidId: 'transaction_1234',
-      bidder: 'adlive',
-      params: {
-        hashes: ['1e100887dd614b0909bf6c49ba7f69fdd1360437']
-      },
-      sizes: [[300, 250]]
-    }
-  ];
+  let bidRequestData = {
+    bids: [
+      {
+        bidId: 'transaction_1234',
+        bidder: 'adlive',
+        params: {
+          hashes: ['1e100887dd614b0909bf6c49ba7f69fdd1360437']
+        },
+        sizes: [[300, 250]]
+      }
+    ]
+  };
   let request = [];
 
   it('validate_pub_params', function() {
@@ -26,11 +28,10 @@ describe('adliveBidAdapterTests', function() {
   });
 
   it('validate_generated_params', function() {
-    request = spec.buildRequests(bidRequestData);
-    let req_data = request[0];
-    req_data.data = JSON.parse(req_data.data);
+    request = spec.buildRequests(bidRequestData.bids);
+    let req_data = JSON.parse(request[0].data);
 
-    expect(req_data.data.transaction_id).to.equal('transaction_1234');
+    expect(req_data.transaction_id).to.equal('transaction_1234');
   });
 
   it('validate_response_params', function() {
@@ -46,7 +47,7 @@ describe('adliveBidAdapterTests', function() {
       ]
     };
 
-    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
+    let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
     expect(bids).to.have.lengthOf(1);
 
     let bid = bids[0];

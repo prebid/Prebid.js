@@ -17,6 +17,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let requests = [];
+
     utils._each(validBidRequests, function(bid) {
       requests.push({
         method: 'POST',
@@ -29,7 +30,7 @@ export const spec = {
           transaction_id: bid.bidId,
           hashes: utils.getBidIdParameter('hashes', bid.params)
         }),
-        bid
+        bidId: bid.bidId
       });
     });
 

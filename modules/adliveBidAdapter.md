@@ -21,7 +21,7 @@ Currently module supports only banner mediaType.
         bids: [{
             bidder: 'adlive',
             params: {
-                hashes: ['623c02093e249228cb459c4118d25cdbee3bd17b']
+                hashes: ['1e100887dd614b0909bf6c49ba7f69fdd1360437']
             }
         }]
     }];
