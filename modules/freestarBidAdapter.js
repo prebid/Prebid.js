@@ -14,7 +14,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    if(typeof bid.sizzes == 'undefined' || bid.sizes.length == 0) {
+    if(typeof bid.sizes == 'undefined' || bid.sizes.length == 0) {
       return false;
     }
     return true;
