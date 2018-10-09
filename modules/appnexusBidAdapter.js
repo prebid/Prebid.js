@@ -91,12 +91,12 @@ export const spec = {
       }
     } else {
       const debugBidRequest = find(bidRequests, hasDebug);
-      if (debugBidRequest && debugBidRequest['debug']) {
-        debugObj = debugBidRequest['debug'];
+      if (debugBidRequest && debugBidRequest.debug) {
+        debugObj = debugBidRequest.debug;
       }
     }
 
-    if (debugObj && debugObj['enabled']) {
+    if (debugObj && debugObj.enabled) {
       Object.keys(debugObj)
         .filter(param => includes(DEBUG_PARAMS, param))
         .forEach(param => {
@@ -126,7 +126,7 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    if (debugObjParams && debugObjParams['enabled']) {
+    if (debugObjParams.enabled) {
       payload.debug = debugObjParams;
       utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
     }
@@ -188,8 +188,8 @@ export const spec = {
     }
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
-      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
-      let debugText = debugHeader + serverResponse.debug.debug_info
+      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n';
+      let debugText = debugHeader + serverResponse.debug.debug_info;
       debugText = debugText
         .replace(/(<td>|<th>)/gm, '\t') // Tables
         .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
@@ -198,6 +198,7 @@ export const spec = {
         .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
         .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
         .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
+      utils.logMessage("AppNexus Debug Auction Glossary: https://wiki.appnexus.com/x/qwmHAg");
       utils.logMessage(debugText);
     }
 
