@@ -3,6 +3,8 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
+const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
+const SYNC_COUNT = 5;
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -53,6 +55,20 @@ export const spec = {
       });
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    const syncs = [];
+    const seed = spec._generateRandomUuid();
+    const clientId = spec._getClientId();
+    if (syncOptions.iframeEnabled && seed && clientId) {
+      for (let i = 0; i < SYNC_COUNT; i++) {
+        syncs.push({
+          type: 'iframe',
+          url: SYNC.replace('{UUID}', clientId).replace('{SEED}', seed).replace('{INDEX}', i)
+        });
+      }
+    }
+    return syncs;
   },
 
   // PRIVATE
@@ -150,6 +166,11 @@ export const spec = {
     };
   },
 
+  _getClientId() {
+    const uid = spec._getUid();
+    return uid.clientId;
+  },
+
   _getAllMetadata() {
     return {
       userIDs: spec._getUserIds(),
@@ -157,6 +178,22 @@ export const spec = {
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb')
     };
+  },
+
+  _generateRandomUuid() {
+    try {
+      // crypto.getRandomValues is supported everywhere but Opera Mini for years
+      var buffer = new Uint8Array(16);
+      crypto.getRandomValues(buffer);
+      buffer[6] = (buffer[6] & ~176) | 64;
+      buffer[8] = (buffer[8] & ~64) | 128;
+      var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
+        return ('00' + x.toString(16)).slice(-2);
+      }).join('');
+      return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    } catch (e) {
+      return '';
+    }
   }
 };
 registerBidder(spec);
