@@ -9,6 +9,7 @@ import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
+import { executeRenderer } from './Renderer';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -56,8 +57,7 @@ function sendAdToCreative(adObject, remoteDomain, source) {
   const { adId, ad, adUrl, width, height, renderer } = adObject;
   // rendering for outstream safeframe
   if (renderer && renderer.url) {
-    const bid = auctionManager.findBidByAdId(adId);
-    renderer.render(bid);
+    executeRenderer(renderer, adObject);
   } else if (adId) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({

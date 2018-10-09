@@ -76,3 +76,12 @@ Renderer.prototype.process = function() {
     }
   }
 };
+
+/**
+ * Render the bid returned by the adapter
+ * @param {Object} renderer Renderer object installed by adapter
+ * @param {Object} bid Bid response
+ */
+export function executeRenderer(renderer, bid) {
+  renderer.render(bid);
+}
