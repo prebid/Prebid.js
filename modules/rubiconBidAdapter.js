@@ -341,7 +341,7 @@ export const spec = {
     // visitor properties
     if (params.visitor !== null && typeof params.visitor === 'object') {
       Object.keys(params.visitor).forEach((key) => {
-        if (typeof params.visitor[key] !== 'undefined') {
+        if (params.visitor[key] != null) {
           data[`tg_v.${key}`] = params.visitor[key].toString(); // initialize array;
         }
       });
@@ -350,7 +350,7 @@ export const spec = {
     // inventory properties
     if (params.inventory !== null && typeof params.inventory === 'object') {
       Object.keys(params.inventory).forEach((key) => {
-        if (typeof params.inventory[key] !== 'undefined') {
+        if (params.inventory[key] != null) {
           data[`tg_i.${key}`] = params.inventory[key].toString();
         }
       });

@@ -822,12 +822,12 @@ describe('the rubicon adapter', function () {
           it('should not have any tg_v or tg_i params if all are undefined', function () {
             let params = {
               inventory: {
-                rating: undefined,
+                rating: null,
                 prodtype: undefined
               },
               visitor: {
                 ucat: undefined,
-                lastsearch: undefined,
+                lastsearch: null,
                 likes: undefined
               },
             };
@@ -853,7 +853,7 @@ describe('the rubicon adapter', function () {
                 prodtype: ['tech', 'mobile']
               },
               visitor: {
-                ucat: undefined,
+                ucat: null,
                 lastsearch: 'iphone',
                 likes: undefined
               },
