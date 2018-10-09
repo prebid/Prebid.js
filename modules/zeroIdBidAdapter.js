@@ -312,8 +312,9 @@ var setCountryOnWhiteListVar = function (countryWhiteList) {
   if (locale) {
     //en-gb ----> en-GB
     locale = locale.split("-");
-
-    locale = locale[1].toUpperCase();
+    if (locale[1]) {
+      locale = locale[1].toUpperCase();
+    }
 
   }
 
