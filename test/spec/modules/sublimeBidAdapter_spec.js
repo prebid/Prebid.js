@@ -66,12 +66,10 @@ describe('Sublime Adapter', () => {
       }
     };
 
-    let requests = spec.buildRequests(bidRequests, bidderRequest);
+    let request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('should have a get method', () => {
-      requests.map(request => {
-        expect(request.method).to.equal('GET');
-      });
+      expect(request.method).to.equal('GET');
     });
 
     it('should contains window.sublime.gdpr.injected', () => {
@@ -84,22 +82,16 @@ describe('Sublime Adapter', () => {
     });
 
     it('should contains a request id equals to the bid id', () => {
-      requests.map((request, index) => {
-        expect(request.data.request_id).to.equal(bidRequests[index].bidId);
-      });
+      expect(request.data.request_id).to.equal(bidRequests[0].bidId);
     });
 
     it('should have an url that contains bid keyword', () => {
-      requests.map(request => {
-        expect(request.url).to.match(/bid/);
-      });
+      expect(request.url).to.match(/bid/);
     });
 
     it('should create a callback function', () => {
-      requests.map((request, index) => {
-        const params = bidRequests[index].params;
-        expect(window[params.callbackName + '_' + params.zoneId]).to.be.an('function');
-      });
+      const params = bidRequests[0].params;
+      expect(window[params.callbackName + '_' + params.zoneId]).to.be.an('function');
     });
   });
 
@@ -115,12 +107,10 @@ describe('Sublime Adapter', () => {
       }
     }];
 
-    let requests = spec.buildRequests(bidRequests);
+    let request = spec.buildRequests(bidRequests);
 
     it('should have an url that match the default endpoint', () => {
-      requests.map(request => {
-        expect(request.url).to.equal('https://pbjs.ayads.co/bid');
-      });
+      expect(request.url).to.equal('https://pbjs.ayads.co/bid');
     });
 
     it('should create a default callback function', () => {
