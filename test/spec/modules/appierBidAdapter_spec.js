@@ -46,13 +46,13 @@ describe('AppierAdapter', function () {
 
   describe('buildRequests', function() {
     it('should return an empty list when there are no bid requests', function() {
-      let fakeBidRequests = [];
-      let fakeBidderRequest = {};
+      const fakeBidRequests = [];
+      const fakeBidderRequest = {};
       expect(spec.buildRequests(fakeBidRequests, fakeBidderRequest)).to.be.an('array').that.is.empty;
     });
 
     it('should generate a POST bid request with method, url, and data fields', function() {
-      let bid = {
+      const bid = {
         'bidder': 'appier',
         'params': {
           'hzid': 'abcd'
@@ -63,19 +63,27 @@ describe('AppierAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
       };
-      let fakeBidRequests = [bid];
-      let fakeBidderRequest = {};
+      const fakeBidRequests = [bid];
+      const fakeBidderRequest = {refererInfo: {
+        'referer': 'fakeReferer',
+        'reachedTop': true,
+        'numIframes': 1,
+        'stack': []
+      }};
 
-      let builtRequests = spec.buildRequests(fakeBidRequests, fakeBidderRequest);
+      const builtRequests = spec.buildRequests(fakeBidRequests, fakeBidderRequest);
       expect(builtRequests.length).to.equal(1);
       expect(builtRequests[0].method).to.equal('POST');
       expect(builtRequests[0].url).match(/v1\/prebid\/bid/);
-      expect(builtRequests[0].data).deep.equal(fakeBidRequests);
+      expect(builtRequests[0].data).deep.equal({
+        'bids': fakeBidRequests,
+        'refererInfo': fakeBidderRequest.refererInfo
+      });
     });
   });
 
   describe('interpretResponse', function() {
-    let bid = {
+    const bid = {
       'bidder': 'appier',
       'params': {
         'hzid': 'abcd'
@@ -86,18 +94,18 @@ describe('AppierAdapter', function () {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
     };
-    let fakeBidRequests = [bid];
+    const fakeBidRequests = [bid];
 
     it('should return an empty aray to indicate no valid bids', function() {
-      let fakeServerResponse = {};
+      const fakeServerResponse = {};
 
-      let bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
+      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
 
       expect(bidResponses).is.an('array').that.is.empty;
     });
 
     it('should generate correct response array for bidder', function() {
-      let fakeBidResult = {
+      const fakeBidResult = {
         'requestId': '30b31c1838de1e',
         'cpm': 0.0029346001,
         'creativeId': 'Idl0P0d5S3Ca5kVWcia-wQ',
@@ -111,7 +119,7 @@ describe('AppierAdapter', function () {
           'hzid': 'test_hzid'
         }
       };
-      let fakeServerResponse = {
+      const fakeServerResponse = {
         headers: [],
         body: [fakeBidResult]
       };

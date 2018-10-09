@@ -40,10 +40,14 @@ export const spec = {
     }
     const server = this.getApiServer();
     const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
+    const payload = {
+      'bids': bidRequests,
+      'refererInfo': bidderRequest.refererInfo
+    };
     return [{
       method: 'POST',
       url: bidderApiUrl,
-      data: bidRequests,
+      data: payload,
       // keep the bidder request object for later use
       bidderRequest: bidderRequest
     }];
