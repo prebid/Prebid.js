@@ -12,7 +12,7 @@ import { createHook } from 'src/hook';
 import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
-import { executeRenderer } from './Renderer';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -249,7 +249,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
         utils.insertElement(creativeComment, doc, 'body');
 
-        if (renderer && renderer.url) {
+        if (isRendererRequired(renderer)) {
           executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
