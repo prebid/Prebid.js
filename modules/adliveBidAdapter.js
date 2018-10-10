@@ -51,7 +51,7 @@ export const spec = {
             height: bidResponse.size[1],
             creativeId: bidResponse.hash,
             currency: CURRENCY,
-            netRevenue: true,
+            netRevenue: false,
             ttl: TIME_TO_LIVE,
             ad: bidResponse.content
           });
