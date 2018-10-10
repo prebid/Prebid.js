@@ -111,7 +111,7 @@ export const spec = {
       bidRequest.startTime = new Date().getTime();
 
       let params = bidRequest.params;
-      let size = parseSizes(bidRequest);
+      let size = parseSizes(bidRequest, 'video');
 
       let data = {
         page_url: _getPageUrl(bidRequest, bidderRequest),
@@ -306,7 +306,7 @@ export const spec = {
     const params = bidRequest.params;
 
     // use rubicon sizes if provided, otherwise adUnit.sizes
-    const parsedSizes = parseSizes(bidRequest);
+    const parsedSizes = parseSizes(bidRequest, 'banner');
 
     const [latitude, longitude] = params.latLong || [];
 
@@ -529,9 +529,9 @@ function _renderCreative(script, impId) {
 </html>`;
 }
 
-function parseSizes(bid) {
+function parseSizes(bid, mediaType) {
   let params = bid.params;
-  if (hasVideoMediaType(bid)) {
+  if (mediaType === 'video') {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
@@ -624,7 +624,7 @@ function bidType(bid, log = false) {
       return undefined;
     }
   }
-  if (parseSizes(bid).length > 0) {
+  if (parseSizes(bid, 'banner').length > 0) {
     if (log && validVideo === false) {
       utils.logWarn('Rubicon bid adapter Warning: invalid video requested for adUnit, continuing with banner request.');
     }
