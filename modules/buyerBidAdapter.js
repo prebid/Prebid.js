@@ -25,7 +25,8 @@ export const spec = {
             const referrer = encodeURIComponent(utils.getTopWindowUrl()); // bidderRequest.refererInfo ??
             const bidId = bidRequest.bidId;
             const payload = {
-                _f: 'prebid_js',
+                _f: 'html',
+                alternative: 'prebid_js',
                 inventory_item_id: placementId,
                 srw: width,
                 srh: height,
@@ -34,13 +35,13 @@ export const spec = {
                 ref: referrer,
                 bid_id: bidId,
             };
-            if ( params.pfilter != undefined ) {
+            if (params.pfilter !== undefined ) {
                 payload.pfilter = params.pfilter;
             }
-            if ( params.bcats != undefined ) {
+            if (params.bcats !== undefined ) {
                 payload.bcats = params.bcats;
             }
-            if ( params.dvt != undefined ) {
+            if (params.dvt !== undefined ) {
                 payload.dvt = params.dvt;
             }
             return {
