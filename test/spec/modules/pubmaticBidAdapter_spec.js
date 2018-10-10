@@ -449,7 +449,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
-      it('Request should have digitrust params', () => {
+      it('Request should have digitrust params', function() {
         window.DigiTrust = {
           getUser: function () {
           }
@@ -483,13 +483,13 @@ describe('PubMatic adapter', function () {
         delete window.DigiTrust;
       });
 
-      it('Request should not have digitrust params when DigiTrust not loaded', () => {
+      it('Request should not have digitrust params when DigiTrust not loaded', function() {
         let request = spec.buildRequests(bidRequests, {});
         let data = JSON.parse(request.data);
         expect(data.user.eids).to.deep.equal(undefined);
       });
 
-      it('Request should not have digitrust params due to optout', () => {
+      it('Request should not have digitrust params due to optout', function() {
         window.DigiTrust = {
           getUser: function () {
           }
@@ -513,7 +513,7 @@ describe('PubMatic adapter', function () {
         delete window.DigiTrust;
       });
 
-      it('Request should not have digitrust params due to failure', () => {
+      it('Request should not have digitrust params due to failure', function() {
         window.DigiTrust = {
           getUser: function () {
           }
@@ -537,7 +537,7 @@ describe('PubMatic adapter', function () {
         delete window.DigiTrust;
       });
 
-      describe('DigiTrustId from config', () => {
+      describe('DigiTrustId from config', function() {
         var origGetConfig;
         let sandbox;
         beforeEach(() => {
@@ -552,7 +552,7 @@ describe('PubMatic adapter', function () {
           delete window.DigiTrust;
         });
 
-        it('Request should have digiTrustId config params', () => {
+        it('Request should have digiTrustId config params', function() {
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {
               digiTrustId: {
@@ -583,7 +583,7 @@ describe('PubMatic adapter', function () {
           expect(window.DigiTrust.getUser.notCalled).to.equal(true);
         });
 
-        it('Request should not have digiTrustId config params due to optout', () => {
+        it('Request should not have digiTrustId config params due to optout', function() {
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {
               digiTrustId: {
@@ -604,7 +604,7 @@ describe('PubMatic adapter', function () {
           expect(window.DigiTrust.getUser.notCalled).to.equal(true);
         });
 
-        it('Request should not have digiTrustId config params due to failure', () => {
+        it('Request should not have digiTrustId config params due to failure', function() {
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {
               digiTrustId: {
@@ -626,7 +626,7 @@ describe('PubMatic adapter', function () {
           expect(window.DigiTrust.getUser.notCalled).to.equal(true);
         });
 
-        it('Request should not have digiTrustId config params if they do not exist', () => {
+        it('Request should not have digiTrustId config params if they do not exist', function() {
           sandbox.stub(config, 'getConfig').callsFake((key) => {
             var config = {};
             return config[key];
