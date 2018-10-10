@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
@@ -9,6 +10,7 @@ const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
