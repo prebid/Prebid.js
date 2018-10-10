@@ -1591,8 +1591,8 @@ describe('Unit: Prebid Module', function () {
   describe('emit', function () {
     it('should be able to emit event without arguments', function () {
       var spyEventsEmit = sinon.spy(events, 'emit');
-      events.emit(CONSTANTS.EVENTS.AUCTION_END);
-      assert.ok(spyEventsEmit.calledWith('auctionEnd'));
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS);
+      assert.ok(spyEventsEmit.calledWith('requestBids'));
       events.emit.restore();
     });
   });
