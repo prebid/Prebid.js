@@ -510,7 +510,7 @@ export function getStandardBidderSettings(mediaType) {
         }
       },
       {
-        key: 'hb_ttr',
+        key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
         val: function (bidResponse) {
           return bidResponse.timeToRespond;
         }

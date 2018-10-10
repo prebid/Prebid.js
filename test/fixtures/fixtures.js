@@ -10,7 +10,8 @@ function convertTargetingsFromOldToNew(targetings) {
     'hb_size': CONSTANTS.TARGETING_KEYS.SIZE,
     'hb_deal': CONSTANTS.TARGETING_KEYS.DEAL,
     'hb_source': CONSTANTS.TARGETING_KEYS.SOURCE,
-    'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT
+    'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT,
+    'hb_ttr': CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND
   };
   var newTargetings = {};
   utils._each(targetings, function(value, currentKey) {
