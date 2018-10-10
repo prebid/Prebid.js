@@ -531,7 +531,7 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (hasVideoMediaType(bid)) {
+  if (hasVideoMediaTypeOrParams(bid)) {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
@@ -579,8 +579,12 @@ function mapSizes(sizes) {
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
-export function hasVideoMediaType(bidRequest) {
-  return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+export function hasVideoMediaTypeOrParams(bidRequest) {
+  if (typeof utils.deepAccess(bid, 'params.video') === 'undefined' && Array.isArray(bidRequest.params.sizes)) {
+    utils.logWarn('Rubicon bid adapter Warning: no video params found, convert to banner with the bidder size id ');
+    return false;
+  }
+  return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
 }
 
 /**
@@ -591,7 +595,7 @@ export function hasVideoMediaType(bidRequest) {
  */
 function bidType(bid, log = false) {
   let validVideo;
-  if (hasVideoMediaType(bid)) {
+  if (hasVideoMediaTypeOrParams(bid)) {
     validVideo = true;
 
     if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
