@@ -312,7 +312,6 @@ function _handleEids(payload) {
   let eids = [];
   _handleDigitrustId(eids);
   if (eids.length > 0) {
-    // todo: are we sure we have to send this data at user.eids or user.ext.each_eid_solution_object?
     payload.user.eids = eids;
   }
 }
