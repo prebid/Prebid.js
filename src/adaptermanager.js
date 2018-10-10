@@ -47,7 +47,7 @@ function getLabels(bidOrAdUnit, activeLabels) {
   return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
 }
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
   return adUnits.reduce((result, adUnit) => {
     let {
       active,
@@ -111,6 +111,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
+              src,
               bidRequestsCount: adunitCounter.getCounter(adUnit.code),
             }));
           }
@@ -207,7 +208,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels}),
+        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
@@ -242,7 +243,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels}),
+      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
