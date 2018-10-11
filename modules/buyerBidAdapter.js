@@ -19,7 +19,6 @@ export const spec = {
             const width = sizes.split('x')[0];
             const height = sizes.split('x')[1];
             const placementId = params.placement;
-            const pfilter = params.pfilter;
 
             const rnd = Math.floor(Math.random() * 99999999999);
             const referrer = encodeURIComponent(utils.getTopWindowUrl()); // bidderRequest.refererInfo ??
@@ -58,7 +57,7 @@ export const spec = {
         const width = response.width || 0;
         const height = response.height || 0;
         const cpm = response.cpm / 1000 || 0;
-        if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
+        if (/*width !== 0 && height !== 0 &&*/ cpm !== 0 && crid !== 0) {
             const dealId = response.dealid || '';
             const currency = response.currency || 'EUR';
             const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
