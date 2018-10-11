@@ -43,7 +43,7 @@ describe('The ZEDO bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
@@ -68,7 +68,7 @@ describe('The ZEDO bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
@@ -234,14 +234,18 @@ describe('The ZEDO bidding adapter', function () {
           },
         }]
       };
+
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('ad1d762');
       expect(bids[0].cpm).to.equal(0.78);
       expect(bids[0].width).to.equal('640');
       expect(bids[0].height).to.equal('480');
+      expect(bids[0].adType).to.equal('VAST');
       expect(bids[0].vastXml).to.not.equal('');
       expect(bids[0].ad).to.be.an('undefined');
+      expect(bids[0].renderer).not.to.be.an('undefined');
+      bids[0].renderer.render(bids[0]);
     });
   });
 

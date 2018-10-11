@@ -319,7 +319,9 @@ export const spec = {
     var dctr = '';
     var dctrLen;
     var dctrArr = [];
-    validBidRequests.forEach(bid => {
+    var bid;
+    validBidRequests.forEach(originalBid => {
+      bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {

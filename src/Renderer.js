@@ -76,3 +76,21 @@ Renderer.prototype.process = function() {
     }
   }
 };
+
+/**
+ * Checks whether creative rendering should be done by Renderer or not.
+ * @param {Object} renderer Renderer object installed by adapter
+ * @returns {Boolean}
+ */
+export function isRendererRequired(renderer) {
+  return !!(renderer && renderer.url);
+}
+
+/**
+ * Render the bid returned by the adapter
+ * @param {Object} renderer Renderer object installed by adapter
+ * @param {Object} bid Bid response
+ */
+export function executeRenderer(renderer, bid) {
+  renderer.render(bid);
+}
