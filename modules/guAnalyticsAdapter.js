@@ -100,7 +100,7 @@ function trackBidRequest(args) {
 
 function trackBidResponse(args) {
   if (args.statusMessage === 'Bid available') {
-    const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond, undefined, args.requestId, args.cpm, args.currency, args.netRevenue, args.adId, args.creativeId, args.size, args.dealId);
+    const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond, undefined, args.requestId, args.cpm, args.currency, args.netRevenue, args.adId, args.creativeId, args.size, args.dealId, args.pbCg);
     return [event];
   }
   return null;
@@ -112,7 +112,7 @@ function trackAuctionEnd(args) {
   return [event];
 }
 
-function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTime, bidId, cpm, currency, netRevenue, adId, creativeId, adSize, dealId) {
+function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTime, bidId, cpm, currency, netRevenue, adId, creativeId, adSize, dealId, priceBucket) {
   let ev = {ev: event};
   if (bidder) {
     ev.n = bidder
@@ -152,6 +152,9 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTim
   }
   if (timeToRespond) {
     ev.ttr = timeToRespond;
+  }
+  if (priceBucket) {
+    ev.pb = priceBucket;
   }
   return ev;
 }
