@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager from 'src/adaptermanager';
 import * as utils from 'src/utils';
-import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
