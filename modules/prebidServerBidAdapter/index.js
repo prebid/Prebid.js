@@ -618,7 +618,6 @@ export function PrebidServer() {
       });
 
       bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
-
     } catch (error) {
       utils.logError(error);
     }
