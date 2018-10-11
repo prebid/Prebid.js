@@ -87,24 +87,24 @@ const bidResArray = [
   }
 ];
 
-describe('Undertone Adapter', function () {
-  describe('request', function () {
-    it('should validate bid request', function () {
+describe('Undertone Adapter', () => {
+  describe('request', () => {
+    it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', function () {
+    it('should not validate incorrect bid request', () => {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
-  describe('build request', function () {
-    it('should send request to correct url via POST', function () {
+  describe('build request', () => {
+    it('should send request to correct url via POST', () => {
       const request = spec.buildRequests(bidReq);
       const domain = null;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
-    it('should have all relevant fields', function () {
+    it('should have all relevant fields', () => {
       const request = spec.buildRequests(bidReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
@@ -121,13 +121,13 @@ describe('Undertone Adapter', function () {
     });
   });
 
-  describe('interpretResponse', function () {
-    it('should build bid array', function () {
+  describe('interpretResponse', () => {
+    it('should build bid array', () => {
       let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', function () {
+    it('should have all relevant fields', () => {
       const result = spec.interpretResponse({body: bidResponse});
       const bid = result[0];
 
@@ -141,13 +141,36 @@ describe('Undertone Adapter', function () {
       expect(bid.ttl).to.equal(360);
     });
 
-    it('should return empty array when response is incorrect', function () {
+    it('should return empty array when response is incorrect', () => {
       expect(spec.interpretResponse({body: {}}).length).to.equal(0);
       expect(spec.interpretResponse({body: []}).length).to.equal(0);
     });
 
-    it('should only use valid bid responses', function () {
+    it('should only use valid bid responses', () => {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    it('verifies gdpr consent checked', () => {
+      const options = ({ iframeEnabled: true, pixelEnabled: true });
+      expect(spec.getUserSyncs(options, {}, { gdprApplies: true }).length).to.equal(0);
+    });
+
+    it('Verifies sync iframe option', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal('//cdn.undertone.com/js/usersync.html');
+    });
+
+    it('Verifies sync image option', function () {
+      const result = spec.getUserSyncs({ pixelEnabled: true });
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=1&of=2');
+      expect(result[1].type).to.equal('image');
+      expect(result[1].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=2&of=2');
     });
   });
 });
