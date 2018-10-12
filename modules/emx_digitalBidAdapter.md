@@ -23,44 +23,15 @@ var adUnits = [{
     code: 'banner-div',
     mediaTypes: {
         banner: {
-            sizes: [[300, 600], [300, 250], [320, 90]],
+            sizes: [ 
+                [300, 250], [300, 600]
         }
     },
     bids: [
     {
         bidder: 'emx_digital',
         params: {
-           tagid: 'test1',
-        }
-    }]
-}, {
-    code: 'banner-div-2',
-    mediaTypes: {
-        banner: {
-            sizes: [[300, 300]],
-        }
-    },
-    bids: [
-    {
-        bidder: 'emx_digital',
-        params: {
-           tagid: 'test2',
-           bidfloor: '0.25'
-        }
-    }]
-}, {
-    code: 'banner-div-3',
-    mediaTypes: {
-        banner: {
-            sizes: [[300, 600], [300, 250]],
-        }
-    },
-    bids: [
-    {
-        bidder: 'emx_digital',
-        params: {
-           tagid: 'test3',
-           bidfloor: '0.25'
+           tagid: '25251',
         }
     }]
 }];
