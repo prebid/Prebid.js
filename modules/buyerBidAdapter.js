@@ -80,18 +80,8 @@ export const spec = {
         return bidResponses;
     },
     getUserSyncs: function(syncOptions, serverResponses) {
-        if (syncOptions.iframeEnabled) {
-            return [{
-                type: 'iframe',
-                url: USER_SYNC_URL
-            }];
-        }
-        if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-            syncs.push({
-                type: 'image',
-                url: serverResponses[0].body.userSync.url
-            });
-        }
+        const syncs = [];
+        return syncs;
     }
 }
 registerBidder(spec);
