@@ -6,6 +6,7 @@ const DEFAULT_BID_HOST = 'pbjs.ayads.co';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
+const SUBLIME_VERSION = '0.1';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -58,13 +59,15 @@ export const spec = {
     let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
 
     window[callbackName] = (response) => {
+      var requestIdEncoded = encodeURIComponent(requestId);
+      var hasAd = response.ad ? '1' : '0';
       var xhr = new XMLHttpRequest();
-      var url = protocol + '://' + bidHost + '/notify';
+      var url = protocol + '://' + bidHost + '/notify?request_id=' + requestIdEncoded + '&a=' + hasAd;
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.send(
         'notify=1' +
-        '&request_id=' + encodeURIComponent(requestId) +
+        '&request_id=' + requestIdEncoded +
         '&ad=' + encodeURIComponent(response.ad || '') +
         '&cpm=' + encodeURIComponent(response.cpm || 0) +
         '&currency=' + encodeURIComponent(response.currency || 'USD')
