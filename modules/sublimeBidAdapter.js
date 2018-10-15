@@ -44,8 +44,10 @@ export const spec = {
     // Grab only the first `validBidRequest`
     let bid = validBidRequests[0];
 
-    let leftoverZonesIds = validBidRequests.slice(1).map(bid => { return bid.params.zoneId }).join(',');
-    utils.logWarn(`Sublime Adapter: ZoneIds ${leftoverZonesIds} are ignored. Only one ZoneId per page can be instanciated.`);
+    if (validBidRequests.length > 1) {
+      let leftoverZonesIds = validBidRequests.slice(1).map(bid => { return bid.params.zoneId }).join(',');
+      utils.logWarn(`Sublime Adapter: ZoneIds ${leftoverZonesIds} are ignored. Only one ZoneId per page can be instanciated.`);
+    }
 
     let params = bid.params;
     let requestId = bid.bidId || '';
