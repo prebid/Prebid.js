@@ -112,13 +112,13 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-          type: 'image',
-          url: PIXEL_USER_SYNC_1
-        },
-        {
-          type: 'image',
-          url: PIXEL_USER_SYNC_2
-        });
+        type: 'image',
+        url: PIXEL_USER_SYNC_1
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC_2
+      });
     }
     return syncs;
   }
