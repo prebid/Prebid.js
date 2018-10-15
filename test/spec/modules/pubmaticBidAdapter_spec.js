@@ -1,15 +1,16 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pubmaticBidAdapter';
 import * as utils from 'src/utils';
+import {config} from 'src/config';
 const constants = require('src/constants.json');
 
-describe('PubMatic adapter', () => {
+describe('PubMatic adapter', function () {
   let bidRequests;
   let videoBidRequests;
   let multipleMediaRequests;
   let bidResponses;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'pubmatic',
@@ -155,9 +156,9 @@ describe('PubMatic adapter', () => {
     };
   });
 
-  describe('implementation', () => {
-  	describe('Bid validations', () => {
-  		it('valid bid case', () => {
+  describe('implementation', function () {
+  	describe('Bid validations', function () {
+  		it('valid bid case', function () {
 		  let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -169,7 +170,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(true);
   		});
 
-      it('invalid bid case: publisherId not passed', () => {
+      it('invalid bid case: publisherId not passed', function () {
 		    let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -180,7 +181,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(false);
   		});
 
-      it('invalid bid case: publisherId is not string', () => {
+      it('invalid bid case: publisherId is not string', function () {
         let validBid = {
             bidder: 'pubmatic',
             params: {
@@ -192,7 +193,7 @@ describe('PubMatic adapter', () => {
         expect(isValid).to.equal(false);
       });
 
-  		it('invalid bid case: adSlot not passed', () => {
+  		it('invalid bid case: adSlot not passed', function () {
   		  let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
@@ -203,7 +204,7 @@ describe('PubMatic adapter', () => {
 	      expect(isValid).to.equal(false);
     	});
 
-      it('invalid bid case: adSlot is not string', () => {
+      it('invalid bid case: adSlot is not string', function () {
         let validBid = {
             bidder: 'pubmatic',
             params: {
@@ -216,14 +217,20 @@ describe('PubMatic adapter', () => {
       });
     });
 
-  	describe('Request formation', () => {
-  		it('Endpoint checking', () => {
+  	describe('Request formation', function () {
+  		it('buildRequests function should not modify original bidRequests object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let request = spec.buildRequests(bidRequests);
+        expect(bidRequests).to.deep.equal(originalBidRequests);
+      });
+
+      it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
   		});
 
-  		it('Request params check', () => {
+  		it('Request params check', function () {
   		  let request = spec.buildRequests(bidRequests);
   		  let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
@@ -254,7 +261,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
   		});
 
-      it('Request params multi size format object check', () => {
+      it('Request params multi size format object check', function () {
         let bidRequests = [
           {
             bidder: 'pubmatic',
@@ -309,7 +316,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0].banner.format[0].h).to.equal(600); // height
       });
 
-      it('Request params currency check', () => {
+      it('Request params currency check', function () {
         let multipleBidRequests = [
           {
             bidder: 'pubmatic',
@@ -406,7 +413,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[1].bidfloorcur).to.equal('USD');
       });
 
-      it('Request params check with GDPR Consent', () => {
+      it('Request params check with GDPR Consent', function () {
         let bidRequest = {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
@@ -442,7 +449,198 @@ describe('PubMatic adapter', () => {
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
-      it('Request params check for video ad', () => {
+      it('Request should have digitrust params', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        var bidRequest = {};
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: true,
+            identity: {
+              privacy: {optout: false},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, bidRequest);
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal([{
+          'source': 'digitru.st',
+          'uids': [{
+            'id': 'testId',
+            'atype': 1,
+            'ext': {
+              'keyv': 4
+            }
+          }]
+        }]);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      it('Request should not have digitrust params when DigiTrust not loaded', function() {
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+      });
+
+      it('Request should not have digitrust params due to optout', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: true,
+            identity: {
+              privacy: {optout: true},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      it('Request should not have digitrust params due to failure', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: false,
+            identity: {
+              privacy: {optout: false},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      describe('DigiTrustId from config', function() {
+        var origGetConfig;
+        let sandbox;
+        beforeEach(() => {
+          sandbox = sinon.sandbox.create();
+          window.DigiTrust = {
+            getUser: sandbox.spy()
+          };
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+          delete window.DigiTrust;
+        });
+
+        it('Request should have digiTrustId config params', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: true,
+                identity: {
+                  privacy: {optout: false},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            };
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'digitru.st',
+            'uids': [{
+              'id': 'testId',
+              'atype': 1,
+              'ext': {
+                'keyv': 4
+              }
+            }]
+          }]);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params due to optout', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: true,
+                identity: {
+                  privacy: {optout: true},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            }
+            return config[key];
+          });
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params due to failure', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: false,
+                identity: {
+                  privacy: {optout: false},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            }
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params if they do not exist', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {};
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should have called DigiTrust.getUser() once
+          expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+        });
+      });
+
+      it('Request params check for video ad', function () {
         let request = spec.buildRequests(videoBidRequests);
         let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
@@ -480,7 +678,7 @@ describe('PubMatic adapter', () => {
         expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
       });
 
-      it('Request params check for 1 banner and 1 video ad', () => {
+      it('Request params check for 1 banner and 1 video ad', function () {
         let request = spec.buildRequests(multipleMediaRequests);
         let data = JSON.parse(request.data);
 
@@ -549,7 +747,7 @@ describe('PubMatic adapter', () => {
       });
   	});
 
-    it('Request params dctr check', () => {
+    it('Request params dctr check', function () {
       let multipleBidRequests = [
         {
           bidder: 'pubmatic',
@@ -632,8 +830,8 @@ describe('PubMatic adapter', () => {
       expect(data.site.ext).to.not.exist;
     });
 
-    describe('Response checking', () => {
-      it('should check for valid response values', () => {
+    describe('Response checking', function () {
+      it('should check for valid response values', function () {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
@@ -670,7 +868,7 @@ describe('PubMatic adapter', () => {
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
       });
 
-      it('should check for dealChannel value selection', () => {
+      it('should check for dealChannel value selection', function () {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
@@ -678,7 +876,7 @@ describe('PubMatic adapter', () => {
         expect(response[1].dealChannel).to.equal('PREF');
       });
 
-      it('should check for unexpected dealChannel value selection', () => {
+      it('should check for unexpected dealChannel value selection', function () {
         let request = spec.buildRequests(bidRequests);
         let updateBiResponse = bidResponses;
         updateBiResponse.body.seatbid[0].bid[0].ext.deal_channel = 11;

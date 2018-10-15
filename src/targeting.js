@@ -15,6 +15,10 @@ export const RENDERED = 'rendered';
 const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
 
+export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
+  key => CONSTANTS.TARGETING_KEYS[key]
+);
+
 // return unexpired bids
 export const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
@@ -259,9 +263,16 @@ export function newTargeting(auctionManager) {
             typeof winner.sendStandardTargeting === 'undefined' ||
             winner.sendStandardTargeting ||
             standardKeys.indexOf(key) === -1)
-          .map(key => ({
-            [(key === 'hb_deal') ? `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH) : key.substring(0, MAX_DFP_KEYLENGTH)]: [winner.adserverTargeting[key]]
-          }))
+          .reduce((acc, key) => {
+            const targetingValue = [winner.adserverTargeting[key]];
+            const targeting = { [key.substring(0, MAX_DFP_KEYLENGTH)]: targetingValue };
+            if (key === CONSTANTS.TARGETING_KEYS.DEAL) {
+              const bidderCodeTargetingKey = `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH);
+              const bidderCodeTargeting = { [bidderCodeTargetingKey]: targetingValue };
+              return [...acc, targeting, bidderCodeTargeting];
+            }
+            return [...acc, targeting];
+          }, [])
       };
     });
 
@@ -271,7 +282,7 @@ export function newTargeting(auctionManager) {
   function getStandardKeys() {
     return auctionManager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
       .map(targeting => targeting.key)
-      .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
+      .concat(TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
   }
 
   /**
@@ -353,7 +364,7 @@ export function newTargeting(auctionManager) {
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
-    const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+    const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
 

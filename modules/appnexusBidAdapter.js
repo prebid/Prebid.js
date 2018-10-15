@@ -10,6 +10,7 @@ const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -59,6 +60,23 @@ export const spec = {
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
+    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    let appDeviceObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    }
+
+    const appIdObjBid = find(bidRequests, hasAppId);
+    let appIdObj;
+    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {
+        appid: appIdObjBid.params.app.id
+      };
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -74,12 +92,29 @@ export const spec = {
       payload.member_id = member;
     }
 
+    if (appDeviceObjBid) {
+      payload.device = appDeviceObj
+    }
+    if (appIdObjBid) {
+      payload.app = appIdObj;
+    }
+
     if (bidderRequest && bidderRequest.gdprConsent) {
       // note - objects for impbus use underscore instead of camelCase
       payload.gdpr_consent = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: bidderRequest.gdprConsent.gdprApplies
       };
+    }
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      let refererinfo = {
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        rd_top: bidderRequest.refererInfo.reachedTop,
+        rd_ifs: bidderRequest.refererInfo.numIframes,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+      }
+      payload.referrer_detection = refererinfo;
     }
 
     const payloadString = JSON.stringify(payload);
@@ -379,6 +414,19 @@ function hasUserInfo(bid) {
 
 function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
+}
+
+function hasAppDeviceInfo(bid) {
+  if (bid.params) {
+    return !!bid.params.app
+  }
+}
+
+function hasAppId(bid) {
+  if (bid.params && bid.params.app) {
+    return !!bid.params.app.id
+  }
+  return !!bid.params.app
 }
 
 function getRtbBid(tag) {

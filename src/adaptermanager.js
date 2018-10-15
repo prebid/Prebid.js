@@ -9,6 +9,7 @@ import { config, RANDOM } from 'src/config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
+import { getRefererInfo } from './refererDetection';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -46,14 +47,23 @@ function getLabels(bidOrAdUnit, activeLabels) {
   return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
 }
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
   return adUnits.reduce((result, adUnit) => {
-    let bannerSizes = utils.deepAccess(adUnit, 'mediaTypes.banner.sizes');
-
-    let {active, sizes: filteredAdUnitSizes} = resolveStatus(
+    let {
+      active,
+      mediaTypes: filteredMediaTypes,
+      filterResults
+    } = resolveStatus(
       getLabels(adUnit, labels),
-      bannerSizes || adUnit.sizes
+      adUnit.mediaTypes,
+      adUnit.sizes
     );
+
+    if (!active) {
+      utils.logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
+    } else if (filterResults) {
+      utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+    }
 
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
@@ -71,33 +81,38 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels}) {
             'renderer'
           ]));
 
-          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
+          let {
+            active,
+            mediaTypes,
+            filterResults
+          } = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
 
-          if (adUnit.mediaTypes) {
-            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-              if (bannerSizes) {
-                adUnit.mediaTypes.banner.sizes = sizes;
-              }
+          if (!active) {
+            utils.logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
+          } else if (filterResults) {
+            utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+          }
 
-              bid = Object.assign({}, bid, {
-                mediaTypes: adUnit.mediaTypes
-              });
-            } else {
-              utils.logError(
-                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-              );
-            }
+          if (utils.isValidMediaTypes(mediaTypes)) {
+            bid = Object.assign({}, bid, {
+              mediaTypes
+            });
+          } else {
+            utils.logError(
+              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+            );
           }
 
           if (active) {
             bids.push(Object.assign({}, bid, {
               adUnitCode: adUnit.code,
               transactionId: adUnit.transactionId,
-              sizes: sizes,
+              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || [],
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code)
+              src,
+              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
             }));
           }
           return bids;
@@ -165,6 +180,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   if (config.getConfig('bidderSequence') === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
+  const refererInfo = getRefererInfo();
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
@@ -192,10 +208,11 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy, labels}),
+        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC
+        src: CONSTANTS.S2S.SRC,
+        refererInfo
       };
       if (bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
@@ -226,9 +243,10 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsClientCopy, labels}),
+      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
-      timeout: cbTimeout
+      timeout: cbTimeout,
+      refererInfo
     };
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
@@ -335,8 +353,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
           bidRequest.start = timestamp();
-          bidRequest.doneCbCallCount = 0;
-          return doneCb(bidRequest.bidderRequestId)
+          return doneCb;
         });
 
         // only log adapters that actually have adUnit bids
@@ -372,12 +389,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
     bidRequest.doneCbCallCount = 0;
-    let done = doneCb(bidRequest.bidderRequestId);
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse, done, ajax);
+    adapter.callBids(bidRequest, addBidResponse, doneCb, ajax);
   });
 }
 
@@ -521,6 +537,8 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid) {
+exports.callBidWonBidder = function(bidder, bid, adUnits) {
+  // Adding user configured params to bidWon event data
+  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };

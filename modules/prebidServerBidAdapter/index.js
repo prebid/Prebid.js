@@ -98,7 +98,8 @@ function queueSync(bidderCodes, gdprConsent) {
 
   const payload = {
     uuid: utils.generateUUID(),
-    bidders: bidderCodes
+    bidders: bidderCodes,
+    account: _s2sConfig.accountId
   };
 
   if (gdprConsent) {
@@ -354,10 +355,8 @@ const LEGACY_PROTOCOL = {
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
  */
+let bidIdMap = {};
 const OPEN_RTB_PROTOCOL = {
-
-  bidMap: {},
-
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
     let aliases = {};
@@ -367,8 +366,7 @@ const OPEN_RTB_PROTOCOL = {
       adUnit.bids.forEach(bid => {
         // OpenRTB response contains the adunit code and bidder name. These are
         // combined to create a unique key for each bid since an id isn't returned
-        const key = `${adUnit.code}${bid.bidder}`;
-        this.bidMap[key] = bid;
+        bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
 
         // check for and store valid aliases to add to the request
         if (adaptermanager.aliasRegistry[bid.bidder]) {
@@ -480,17 +478,22 @@ const OPEN_RTB_PROTOCOL = {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
-          const bidRequest = utils.getBidRequest(
-            this.bidMap[`${bid.impid}${seatbid.seat}`].bid_id,
-            bidderRequests
-          );
+          let bidRequest;
+          let key = `${bid.impid}${seatbid.seat}`;
+          if (bidIdMap[key]) {
+            bidRequest = utils.getBidRequest(
+              bidIdMap[key],
+              bidderRequests
+            );
+          }
 
           const cpm = bid.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest);
+          let bidObject = bidfactory.createBid(status, bidRequest || {
+            bidder: seatbid.seat,
+            src: TYPE
+          });
 
-          bidObject.source = TYPE;
-          bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
 
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
@@ -630,13 +633,7 @@ export function PrebidServer() {
       utils.logError('error parsing response: ', result.status);
     }
 
-    const videoBid = bids.some(bidResponse => bidResponse.bid.mediaType === 'video');
-    const cacheEnabled = config.getConfig('cache.url');
-
-    // video bids with cache enabled need to be cached first before they are considered done
-    if (!(videoBid && cacheEnabled)) {
-      done();
-    }
+    done();
     doClientSideSyncs(requestedBidders);
   }
 
