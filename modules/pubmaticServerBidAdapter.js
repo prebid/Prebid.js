@@ -224,7 +224,7 @@ export const spec = {
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: (validBidRequests, bidderRequest) => {
-    window.owResponseTime = utils.timestamp();
+    window.PWT.owLatency = utils.timestamp();
     let conf = _initConf();
     let payload = _createOrtbTemplate(conf);
 
@@ -294,7 +294,7 @@ export const spec = {
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: (response, request) => {
-    window.owResponseTime = utils.timestamp() - window.owResponseTime;
+    window.PWT.owLatency = utils.timestamp() - window.PWT.owLatency;
     const bidResponses = [];
     try {
       if (response.body && response.body.seatbid) {
