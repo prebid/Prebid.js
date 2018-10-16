@@ -1,10 +1,10 @@
 {
   "name": "prebid.js",
-  "version": "1.25.0-pre",
+  "version": "1.28.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "test": "gulp run-tests",
+    "test": "gulp test",
     "lint": "gulp lint"
   },
   "repository": {
@@ -103,7 +103,9 @@
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
+    "crypto-js": "^3.1.9-1",
     "gulp-sourcemaps": "^2.6.0",
+    "jsencrypt": "^3.0.0-rc.1",
     "just-clone": "^1.0.2"
   }
 }
