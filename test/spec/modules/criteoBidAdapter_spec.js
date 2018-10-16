@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import { cryptoVerify, spec, FAST_BID_PUBKEY_HEX_EXPONENT, FAST_BID_PUBKEY_HEX_MODULUS } from 'modules/criteoBidAdapter';
-import { hex_to_bytes } from 'asmcrypto.js/dist_es5/other/exportedUtils';
+import { cryptoVerify, spec, FAST_BID_PUBKEY } from 'modules/criteoBidAdapter';
 import * as utils from 'src/utils';
 
 describe('The Criteo bidding adapter', function () {
@@ -74,11 +73,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-<<<<<<< HEAD
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=185&av=\d+&cb=\d/);
-=======
       expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
->>>>>>> 1.19.0
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -118,11 +113,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-<<<<<<< HEAD
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=185&av=\d+&cb=\d/);
-=======
       expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
->>>>>>> 1.19.0
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -161,11 +152,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-<<<<<<< HEAD
-      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=185&av=\d+&cb=\d/);
-=======
       expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
->>>>>>> 1.19.0
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
@@ -308,25 +295,20 @@ describe('The Criteo bidding adapter', function () {
     });
   });
 
-  describe('cryptoVerify', () => {
-    const publicKey = [
-      hex_to_bytes(FAST_BID_PUBKEY_HEX_MODULUS),
-      hex_to_bytes(FAST_BID_PUBKEY_HEX_EXPONENT),
-    ];
-
+  describe('cryptoVerify', function () {
     const TEST_HASH = 'vBeD8Q7GU6lypFbzB07W8hLGj7NL+p7dI9ro2tCxkrmyv0F6stNuoNd75Us33iNKfEoW+cFWypelr6OJPXxki2MXWatRhJuUJZMcK4VBFnxi3Ro+3a0xEfxE4jJm4eGe98iC898M+/YFHfp+fEPEnS6pEyw124ONIFZFrcejpHU=';
 
-    it('should verify right signature', () => {
-      expect(cryptoVerify(publicKey, TEST_HASH, 'test')).to.equal(true);
+    it('should verify right signature', function () {
+      expect(cryptoVerify(FAST_BID_PUBKEY, TEST_HASH, 'test')).to.equal(true);
     });
 
-    it('should verify wrong signature', () => {
-      expect(cryptoVerify(publicKey, TEST_HASH, 'test wrong')).to.equal(false);
+    it('should verify wrong signature', function () {
+      expect(cryptoVerify(FAST_BID_PUBKEY, TEST_HASH, 'test wrong')).to.equal(false);
     });
 
-    it('should return undefined with incompatible browsers', () => {
+    it('should return undefined with incompatible browsers', function () {
       // Here use a null hash to make the call to crypto library fail and simulate a browser failure
-      expect(cryptoVerify(publicKey, null, 'test')).to.equal.undefined;
+      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.equal.undefined;
     });
   });
 });

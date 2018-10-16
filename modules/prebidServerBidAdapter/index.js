@@ -3,7 +3,6 @@ import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S, EVENTS } from 'src/constants';
-import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
@@ -44,7 +43,6 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
- * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
@@ -98,7 +96,8 @@ function queueSync(bidderCodes, gdprConsent) {
 
   const payload = {
     uuid: utils.generateUUID(),
-    bidders: bidderCodes
+    bidders: bidderCodes,
+    account: _s2sConfig.accountId
   };
 
   if (gdprConsent) {
@@ -354,10 +353,8 @@ const LEGACY_PROTOCOL = {
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
  */
+let bidIdMap = {};
 const OPEN_RTB_PROTOCOL = {
-
-  bidMap: {},
-
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
     let aliases = {};
@@ -478,17 +475,22 @@ const OPEN_RTB_PROTOCOL = {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
-          const bidRequest = utils.getBidRequest(
-            this.bidMap[`${bid.impid}${seatbid.seat}`].bid_id,
-            bidderRequests
-          );
+          let bidRequest;
+          let key = `${bid.impid}${seatbid.seat}`;
+          if (bidIdMap[key]) {
+            bidRequest = utils.getBidRequest(
+              bidIdMap[key],
+              bidderRequests
+            );
+          }
 
           const cpm = bid.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest);
+          let bidObject = bidfactory.createBid(status, bidRequest || {
+            bidder: seatbid.seat,
+            src: TYPE
+          });
 
-          bidObject.source = TYPE;
-          bidObject.bidderCode = seatbid.seat;
           bidObject.cpm = cpm;
 
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
@@ -615,11 +617,6 @@ export function PrebidServer() {
       });
 
       bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
-
-      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
-        // cookie sync
-        cookieSet(_s2sConfig.cookieSetUrl);
-      }
     } catch (error) {
       utils.logError(error);
     }

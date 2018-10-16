@@ -35,13 +35,13 @@ describe('referer detection', () => {
     const getRefererInfo = detectReferer(mockIframe2WinObject);
     let result = getRefererInfo();
     let expectedResult = {
-      referer: 'http%3A%2F%2Fexample.com%2Fpage.html',
+      referer: 'http://example.com/page.html',
       reachedTop: true,
       numIframes: 2,
       stack: [
-        'http%3A%2F%2Fexample.com%2Fpage.html',
-        'http%3A%2F%2Fexample.com%2Fiframe1.html',
-        'http%3A%2F%2Fexample.com%2Fiframe2.html'
+        'http://example.com/page.html',
+        'http://example.com/iframe1.html',
+        'http://example.com/iframe2.html'
       ]
     };
     expect(result).to.deep.equal(expectedResult);
@@ -66,13 +66,13 @@ describe('referer detection', () => {
     const getRefererInfo = detectReferer(mockIframe2WinObject);
     let result = getRefererInfo();
     let expectedResult = {
-      referer: 'http%3A%2F%2Faaa.com%2Fiframe1.html',
+      referer: 'http://aaa.com/iframe1.html',
       reachedTop: false,
       numIframes: 2,
       stack: [
         null,
-        'http%3A%2F%2Faaa.com%2Fiframe1.html',
-        'http%3A%2F%2Fbbb.com%2Fiframe2.html'
+        'http://aaa.com/iframe1.html',
+        'http://bbb.com/iframe2.html'
       ]
     };
     expect(result).to.deep.equal(expectedResult);
