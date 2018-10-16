@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import { spec } from 'modules/buyerBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
+const ENDPOINT_URL = 'https://buyer.dspx.tv/request';
+
 describe('buyerAdapter', function () {
   const adapter = newBidder(spec);
 
@@ -50,42 +52,49 @@ describe('buyerAdapter', function () {
     const request = spec.buildRequests(bidRequests);
 
     it('sends bid request to our endpoint via GET', function () {
-      expect(request.method).to.equal('GET');
+      expect(request[0].method).to.equal('GET');
     });
   });
 
   describe('interpretResponse', function () {
-    let response = [{
-      'cpm': 0.5,
-      'width': '300',
-      'height': '250',
-      'callback_uid': '220ed41385952a',
-      'type': 'Default Ad',
-      'tag': '<!-- test creative -->',
-      'creativeId': '1f99ac5c3ef10a4097499a5686b30aff-6682',
-      'requestId': '220ed41385952a',
-      'currency': 'EUR',
-      'ttl': 60,
-      'netRevenue': true,
-      'zone': '6682'
-    }];
+    let serverResponse = {
+      'body': {
+        'cpm': 500,
+        'crid': 100500,
+        'width': '300',
+        'height': '250',
+        'tag': '<!-- test creative -->',
+        'requestId': '220ed41385952a',
+        'currency': 'EUR',
+        'ttl': 60,
+        'netRevenue': true,
+        'zone': '6682'
+      }
+    };
 
     let expectedResponse = [{
-      'requestId': '220ed41385952a',
-      'cpm': 0.5,
-      'width': '300',
-      'height': '250',
-      'creativeId': '1f99ac5c3ef10a4097499a5686b30aff-6682',
-      'currency': 'EUR',
-      'netRevenue': true,
-      'ttl': 60,
-      'ad': '<!-- test creative -->',
-      'mediaType': 'banner',
+      requestId: '23beaa6af6cdde',
+      cpm: 0.5,
+      width: 0,
+      height: 0,
+      creativeId: 100500,
+      dealId: '',
+      currency: 'EUR',
+      netRevenue: true,
+      ttl: 300,
+      referrer: '',
+      ad: '<!-- test creative -->'
     }];
 
     it('should get the correct bid response by display ad', function () {
-      let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let bidRequest = [{
+        'method': 'GET',
+        'url': ENDPOINT_URL,
+        'data': {
+          'bid_id': '30b31c1838de1e'
+        }
+      }];
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -100,6 +109,9 @@ describe('buyerAdapter', function () {
 
   describe('getUserSyncs function', function () {
     it('should be empty', function () {
+      const syncOptions = {
+        'iframeEnabled': 'true'
+      };
       let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync.length).to.equal(0);
     });
