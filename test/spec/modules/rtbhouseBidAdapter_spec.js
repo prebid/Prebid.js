@@ -2,22 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbhouseBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
-const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
-const consentStr = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-/**
- * Helpers
- */
-
-function buildEndpointUrl(region) {
-  return 'https://' + region + '.' + ENDPOINT_URL;
-}
-
-/**
-	* endof Helpers
-	*/
-
-describe('RTBHouseAdapter', function () {
+describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -57,12 +42,12 @@ describe('RTBHouseAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [
       {
-	      'bidder': 'rtbhouse',
-	      'params': {
-	        'publisherId': 'PREBID_TEST',
-	        'region': 'prebid-eu',
-	        'test': 1
-	      },
+        'bidder': 'rtbhouse',
+        'params': {
+          'publisherId': 'PREBID_TEST',
+          'region': 'prebid-eu',
+          'test': 1
+        },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
@@ -71,16 +56,32 @@ describe('RTBHouseAdapter', function () {
       }
     ];
 
-    it('should build test param into the request', function () {
-    	let builtTestRequest = spec.buildRequests(bidRequests).data;
-    	expect(JSON.parse(builtTestRequest).test).to.equal(1);
+    it('should build test param into the request', () => {
+      let builtTestRequest = spec.buildRequests(bidRequests).data;
+      expect(JSON.parse(builtTestRequest).test).to.equal(1);
+    });
+
+    it('should build valid OpenRTB banner object', () => {
+      const request = JSON.parse(spec.buildRequests((bidRequests)).data);
+      const imp = request.imp[0];
+      expect(imp.banner).to.deep.equal({
+        w: 300,
+        h: 250,
+        format: [{
+          w: 300,
+          h: 250
+        }, {
+          w: 300,
+          h: 600
+        }]
+      })
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest);
-      expect(request.url).to.equal(buildEndpointUrl(bidRequest[0].params.region));
+      expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebid/bids');
       expect(request.method).to.equal('POST');
     });
 
@@ -96,7 +97,12 @@ describe('RTBHouseAdapter', function () {
     it('should populate GDPR and consent string if available for EEA users', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: consentStr}});
+      const request = spec.buildRequests(bidRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+        }
+      });
       let data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
@@ -114,15 +120,15 @@ describe('RTBHouseAdapter', function () {
 
   describe('interpretResponse', function () {
     let response = [{
-  	  'id': 'bidder_imp_identifier',
-	    'impid': '552b8922e28f27',
-	    'price': 0.5,
-	    'adid': 'Ad_Identifier',
-	    'adm': '<!-- test creative -->',
-	    'adomain': ['rtbhouse.com'],
-	    'cid': 'Ad_Identifier',
-	    'w': 300,
-	    'h': 250
+      'id': 'bidder_imp_identifier',
+      'impid': '552b8922e28f27',
+      'price': 0.5,
+      'adid': 'Ad_Identifier',
+      'adm': '<!-- test creative -->',
+      'adomain': ['rtbhouse.com'],
+      'cid': 'Ad_Identifier',
+      'w': 300,
+      'h': 250
     }];
 
     it('should get correct bid response', function () {
@@ -141,14 +147,14 @@ describe('RTBHouseAdapter', function () {
         }
       ];
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
       let response = '';
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });
