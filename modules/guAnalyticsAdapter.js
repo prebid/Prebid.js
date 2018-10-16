@@ -6,7 +6,6 @@ import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 
 const analyticsType = 'endpoint';
-const QUEUE_TIMEOUT = 4000;
 const SENDALL_ON = {};
 
 // Look there: http://jsben.ch/qhIE6
@@ -159,9 +158,8 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTim
   return ev;
 }
 
-export function ExpiringQueue(callback, ttl) {
+export function AnalyticsQueue() {
   let queue = [];
-  let timeoutId;
 
   this.push = (event) => {
     if (event instanceof Array) {
@@ -169,13 +167,11 @@ export function ExpiringQueue(callback, ttl) {
     } else {
       queue.push(event);
     }
-    reset();
   };
 
   this.popAll = () => {
     let result = queue;
     queue = [];
-    reset();
     return result;
   };
 
@@ -187,18 +183,9 @@ export function ExpiringQueue(callback, ttl) {
     return queue;
   };
 
-  this.init = reset;
-
-  function reset() {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => {
-      if (queue.length) {
-        callback();
-      }
-    }, ttl);
-  }
+  this.init = () => {
+    queue = [];
+  };
 }
 
 analyticsAdapter.context = {};
@@ -218,7 +205,7 @@ analyticsAdapter.enableAnalytics = (config) => {
     ajaxUrl: config.options.ajaxUrl,
     pv: config.options.pv,
     requestTemplate: buildRequestTemplate(config.options),
-    queue: new ExpiringQueue(sendAll, QUEUE_TIMEOUT)
+    queue: new AnalyticsQueue()
   };
   analyticsAdapter.originEnableAnalytics(config);
 };
