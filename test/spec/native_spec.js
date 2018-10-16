@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
+import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 const bid = {
@@ -31,9 +32,9 @@ describe('native.js', function () {
 
   it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
-    expect(targeting.hb_native_title).to.equal(bid.native.title);
-    expect(targeting.hb_native_body).to.equal(bid.native.body);
-    expect(targeting.hb_native_linkurl).to.equal(bid.native.clickUrl);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
   });
 
   it('fires impression trackers', function () {

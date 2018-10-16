@@ -15,6 +15,10 @@ export const RENDERED = 'rendered';
 const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
 
+export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
+  key => CONSTANTS.TARGETING_KEYS[key]
+);
+
 // return unexpired bids
 export const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
@@ -262,7 +266,7 @@ export function newTargeting(auctionManager) {
           .reduce((acc, key) => {
             const targetingValue = [winner.adserverTargeting[key]];
             const targeting = { [key.substring(0, MAX_DFP_KEYLENGTH)]: targetingValue };
-            if (key === 'hb_deal') {
+            if (key === CONSTANTS.TARGETING_KEYS.DEAL) {
               const bidderCodeTargetingKey = `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH);
               const bidderCodeTargeting = { [bidderCodeTargetingKey]: targetingValue };
               return [...acc, targeting, bidderCodeTargeting];
@@ -278,7 +282,7 @@ export function newTargeting(auctionManager) {
   function getStandardKeys() {
     return auctionManager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
       .map(targeting => targeting.key)
-      .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
+      .concat(TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
   }
 
   /**
@@ -360,7 +364,7 @@ export function newTargeting(auctionManager) {
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
-    const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+    const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
 

@@ -19,7 +19,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for your repo, all of the following git commands will have to be modified to reference the proper remote (e.g. `upstream`)_
 
-1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid) for master branch will show you detailed results. 
+1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid/Prebid.js) for master branch will show you detailed results. 
   
    In case of failure do following, 
      - Try to fix the failing tests.
