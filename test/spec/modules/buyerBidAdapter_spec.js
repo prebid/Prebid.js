@@ -11,7 +11,12 @@ describe('buyerAdapter', function () {
     let bid = {
       'bidder': 'buyer',
       'params': {
-        'placement': '6682'
+        'placement': '6682',
+        'pfilter': {
+          'floorprice': 1000000
+        },
+        'bcat': 'IAB2,IAB4',
+        'dvt': 'desktop'
       },
       'sizes': [
         [300, 250]
@@ -39,7 +44,12 @@ describe('buyerAdapter', function () {
     let bidRequests = [{
       'bidder': 'buyer',
       'params': {
-        'placement': '6682'
+        'placement': '6682',
+        'pfilter': {
+          'floorprice': 1000000
+        },
+        'bcat': 'IAB2,IAB4',
+        'dvt': 'desktop'
       },
       'sizes': [
         [300, 250]
@@ -53,6 +63,7 @@ describe('buyerAdapter', function () {
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
+      expect(request[0].data.dvt).to.equal('desktop');
     });
   });
 
