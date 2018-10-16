@@ -209,4 +209,11 @@ describe('Gu analytics adapter', () => {
     ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
     expect(ev[0]).to.be.eql({ev: 'bidwon', aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15', bid: '24a5288f9d6d6b'});
   });
+
+  it('should not send orphan auction events', () => {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    timer.tick(4500);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(1);
+  });
 });
