@@ -36,8 +36,8 @@ export const spec = {
       if (params.pfilter !== undefined) {
         payload.pfilter = params.pfilter;
       }
-      if (params.bcats !== undefined) {
-        payload.bcats = params.bcats;
+      if (params.bcat !== undefined) {
+        payload.bcat = params.bcat;
       }
       if (params.dvt !== undefined) {
         payload.dvt = params.dvt;
