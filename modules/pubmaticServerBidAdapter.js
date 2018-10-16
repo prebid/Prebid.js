@@ -308,7 +308,7 @@ export const spec = {
     if (window.PWT.owLatency.hasOwnProperty(wiid)) {
       window.PWT.owLatency[wiid].endTime = endTime;
     } else {
-      window.PWT.owLatency[conf.wiid] = {
+      window.PWT.owLatency[wiid] = {
         endTime: endTime
       }
     }
