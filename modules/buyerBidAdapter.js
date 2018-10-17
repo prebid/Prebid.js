@@ -3,7 +3,7 @@ import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'buyer';
-const ENDPOINT_URL = 'https://buyer.dspx.tv/request';
+const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -45,7 +45,7 @@ export const spec = {
       return {
         method: 'GET',
         url: ENDPOINT_URL,
-        data: payload,
+        data: objectToQueryString(payload),
       }
     });
   },
@@ -60,7 +60,7 @@ export const spec = {
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = utils.getTopWindowUrl();
       const bidResponse = {
-        requestId: bidRequest.data.bid_id,
+        requestId: response.bid_id,
         cpm: cpm,
         width: response.width,
         height: response.height,
@@ -81,4 +81,20 @@ export const spec = {
     return syncs;
   }
 }
+
+function objectToQueryString(obj, prefix) {
+  let str = [];
+  let p;
+  for (p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      let k = prefix ? prefix + '[' + p + ']' : p;
+      let v = obj[p];
+      str.push((v !== null && typeof v === 'object')
+        ? objectToQueryString(v, k)
+        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    }
+  }
+  return str.join('&');
+}
+
 registerBidder(spec);

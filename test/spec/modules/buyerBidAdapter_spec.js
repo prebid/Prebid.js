@@ -46,7 +46,11 @@ describe('buyerAdapter', function () {
       'params': {
         'placement': '6682',
         'pfilter': {
-          'floorprice': 1000000
+          'floorprice': 1000000,
+          'private_auction': 0,
+          'geo': {
+            'country': 'DE'
+          }
         },
         'bcat': 'IAB2,IAB4',
         'dvt': 'desktop'
@@ -63,7 +67,7 @@ describe('buyerAdapter', function () {
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
-      expect(request[0].data.dvt).to.equal('desktop');
+      expect(request[0].data.replace(/rnd=\d+\&/g, '')).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&ref=http%253A%252F%252Flocalhost%253A9876%252F&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop');
     });
   });
 
