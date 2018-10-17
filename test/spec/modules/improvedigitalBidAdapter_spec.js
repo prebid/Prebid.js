@@ -264,19 +264,40 @@ describe('Improve Digital Adapter Tests', function () {
       let response = JSON.parse(JSON.stringify(serverResponse));
       let bids;
 
-      response.body.bid[0].lid = 'xyz';
+      delete response.body.bid[0].lid;
+      response.body.bid[0].buying_type = 'deal_id';
       bids = spec.interpretResponse(response);
       expect(bids[0].dealId).to.not.exist;
 
       response.body.bid[0].lid = 268515;
+      delete response.body.bid[0].buying_type;
+      bids = spec.interpretResponse(response);
+      expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = 268515;
+      response.body.bid[0].buying_type = 'classic';
+      bids = spec.interpretResponse(response);
+      expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = 268515;
+      response.body.bid[0].buying_type = 'deal_id';
       bids = spec.interpretResponse(response);
       expect(bids[0].dealId).to.equal(268515);
 
-      response.body.bid[0].lid = {
-        1: 268515
-      };
+      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
+      response.body.bid[0].buying_type = 'deal_id';
       bids = spec.interpretResponse(response);
-      expect(bids[0].dealId).to.equal(268515);
+      expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
+      response.body.bid[0].buying_type = [ 'deal_id', 'classic' ];
+      bids = spec.interpretResponse(response);
+      expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
+      response.body.bid[0].buying_type = [ 'classic', 'deal_id', 'deal_id' ];
+      bids = spec.interpretResponse(response);
+      expect(bids[0].dealId).to.equal(12456);
     });
 
     it('should set currency', function () {
