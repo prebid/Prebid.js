@@ -216,4 +216,10 @@ describe('Gu analytics adapter', () => {
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(1);
   });
+
+  it('should have a version number', () => {
+    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    expect(payload.v).to.be.eql(1);
+  });
 });
