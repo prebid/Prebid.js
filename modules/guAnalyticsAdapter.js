@@ -42,6 +42,10 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
       if (handler) {
         let events = handler(args);
         if (events && analyticsAdapter.context.queue) {
+          if (eventType === CONSTANTS.EVENTS.BID_WON) {
+            // clear queue to avoid sending late bids with bidWon event
+            analyticsAdapter.context.queue.init();
+          }
           analyticsAdapter.context.queue.push(events);
         }
         if (SENDALL_ON[eventType]) {

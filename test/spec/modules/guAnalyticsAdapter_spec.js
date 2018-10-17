@@ -109,6 +109,10 @@ describe('Gu analytics adapter', () => {
     dealId: 'd12345'
   };
 
+  function payloadSent(ajax) {
+    JSON.parse(ajaxStub.firstCall.args[2])
+  }
+
   before(() => {
     sandbox = sinon.sandbox.create();
     ajaxStub = sandbox.stub(ajax, 'ajax');
@@ -128,6 +132,7 @@ describe('Gu analytics adapter', () => {
   });
 
   afterEach(() => {
+    analyticsAdapter.context.queue.init();
     ajaxStub.reset();
     events.getEvents.restore();
   });
@@ -163,6 +168,11 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid request events', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
     const ev = analyticsAdapter.context.queue.peekAll();
@@ -172,6 +182,13 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid response event', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(4);
@@ -193,8 +210,16 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle auction end event', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(447);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
@@ -215,5 +240,16 @@ describe('Gu analytics adapter', () => {
     timer.tick(4500);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(1);
+  });
+
+  it('should ignore responses sent with bid won event', () => {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    const ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+    expect(ev).to.be.eql([{
+      ev: 'bidwon',
+      aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
+      bid: '24a5288f9d6d6b'
+    }]);
   });
 });
