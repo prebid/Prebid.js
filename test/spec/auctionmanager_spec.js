@@ -881,7 +881,7 @@ describe('auctionmanager.js', function () {
     });
 
     afterEach(() => {
-      doneSpy.reset();
+      doneSpy.resetHistory();
       xhr.restore();
       config.resetConfig();
     });
