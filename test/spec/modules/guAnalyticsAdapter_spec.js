@@ -109,10 +109,6 @@ describe('Gu analytics adapter', () => {
     dealId: 'd12345'
   };
 
-  function payloadSent(ajax) {
-    JSON.parse(ajaxStub.firstCall.args[2])
-  }
-
   before(() => {
     sandbox = sinon.sandbox.create();
     ajaxStub = sandbox.stub(ajax, 'ajax');
