@@ -16,7 +16,13 @@ describe('Gu analytics adapter', () => {
     adId: '24a5288f9d6d6b',
     adUnitCode: 'div-gpt-ad-1460505748561-0',
     adUrl: undefined,
-    adserverTargeting: {hb_bidder: 'improvedigital', hb_adid: '24a5288f9d6d6b', hb_pb: '1.40', hb_size: '600x290', hb_deal: 268515},
+    adserverTargeting: {
+      hb_bidder: 'improvedigital',
+      hb_adid: '24a5288f9d6d6b',
+      hb_pb: '1.40',
+      hb_size: '600x290',
+      hb_deal: 268515
+    },
     auctionId: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
     bidder: 'improvedigital',
     bidderCode: 'improvedigital',
@@ -60,7 +66,7 @@ describe('Gu analytics adapter', () => {
     bidderCode: 'b1',
     auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     bidderRequestId: '1a6fc81528d0f7',
-    bids: [ BIDONE ],
+    bids: [BIDONE],
     auctionStart: 1509369418387,
     timeout: 3000,
     start: 1509369418389
@@ -219,7 +225,8 @@ describe('Gu analytics adapter', () => {
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
-    ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    ev = payload.hb_ev;
     expect(ev[4]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
   });
 
@@ -227,7 +234,8 @@ describe('Gu analytics adapter', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0); // The queue has been flushed.
-    ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    ev = payload.hb_ev;
     expect(ev[0]).to.be.eql({ev: 'bidwon', aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15', bid: '24a5288f9d6d6b'});
   });
 
@@ -238,10 +246,17 @@ describe('Gu analytics adapter', () => {
     expect(ev).to.have.length(1);
   });
 
+  it('should have a version number', () => {
+    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    expect(payload.v).to.be.eql(1);
+  });
+
   it('should ignore responses sent with bid won event', () => {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
-    const ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    const ev = payload.hb_ev;
     expect(ev).to.be.eql([{
       ev: 'bidwon',
       aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
