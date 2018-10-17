@@ -224,8 +224,10 @@ export const spec = {
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: (validBidRequests, bidderRequest) => {
+    var startTime = utils.timestamp();
     let conf = _initConf();
     let payload = _createOrtbTemplate(conf);
+    window.PWT.owLatency = window.PWT.owLatency || {};
 
     if (utils.isEmpty(validBidRequests)) {
       utils.logWarn('No Valid Bid Request found for given adUnits');
@@ -279,6 +281,14 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
+
+    if (window.PWT.owLatency.hasOwnProperty(conf.wiid)) {
+      window.PWT.owLatency[conf.wiid].startTime = startTime;
+    } else {
+      window.PWT.owLatency[conf.wiid] = {
+        startTime: startTime
+      }
+    }
     return {
       method: 'POST',
       url: utils.getParameterByName('pwtvc') ? ENDPOINT + '?debug=1' : ENDPOINT,
@@ -293,6 +303,15 @@ export const spec = {
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: (response, request) => {
+    var endTime = utils.timestamp();
+    var wiid = JSON.parse(request.data).ext.wrapper.wiid;
+    if (window.PWT.owLatency.hasOwnProperty(wiid)) {
+      window.PWT.owLatency[wiid].endTime = endTime;
+    } else {
+      window.PWT.owLatency[wiid] = {
+        endTime: endTime
+      }
+    }
     const bidResponses = [];
     try {
       if (response.body && response.body.seatbid) {
