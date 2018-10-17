@@ -347,10 +347,9 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const bidders = (s2sBidders) ? allBidders.filter(bidder => {
       return !includes(s2sBidders, bidder);
     }) : allBidders;
-
+    
     adUnit.transactionId = utils.generateUUID();
-   
-
+    
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
       const spec = adapter && adapter.getSpec && adapter.getSpec();
