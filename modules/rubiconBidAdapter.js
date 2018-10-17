@@ -76,7 +76,6 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
-  aliases: ['rubiconLite'],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
@@ -127,18 +126,18 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
-    let requests = [];
+    var requests = [];
     const videoRequests = bidRequests.filter(hasVideoMediaType).map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let data = {
+      var data = {
         id: bidRequest.transactionId,
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('timeout') || 1000,
+        tmax: config.getConfig('TTL') || 1000,
         imp: [{
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,
@@ -149,24 +148,19 @@ export const spec = {
         }],
         ext: {
           prebid: {
-            cache: {
-              vastxml: {
-                ttlseconds: 300
-              }
-            },
             targeting: {
               includewinners: true
-            },
-            aliases: {
-              rubiconLite: 'rubicon'
             }
           }
+        },
+        vastxml: {
+          ttlseconds: 300
         }
       };
 
       appendSiteAppDevice(data);
 
-      addFrankParameters(data, bidRequest);
+      addVideoParameters(data, bidRequest);
 
       const digiTrust = getDigiTrustQueryParams();
       if (digiTrust) {
@@ -662,7 +656,7 @@ function appendSiteAppDevice(request) {
   }
 }
 
-function addFrankParameters(data, bidRequest) {
+function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skip === undefined) {
     data.imp[0].video.skip = bidRequest.params.video.skip;
   }
