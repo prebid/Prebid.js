@@ -5,6 +5,12 @@ import * as adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 
+/*
+ * Update whenever you want to make sure you're sending the right version of analytics.
+ * This is useful when some browsers are using old code and some new, for example.
+ */
+const VERSION = 1;
+
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
 
@@ -53,6 +59,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
 
 function buildRequestTemplate(options) {
   return {
+    v: VERSION,
     pv: options.pv
   }
 }
