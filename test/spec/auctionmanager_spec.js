@@ -9,7 +9,6 @@ import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 import find from 'core-js/library/fn/array/find';
 
-const adloader = require('../../src/adloader');
 var assert = require('assert');
 
 /* use this method to test individual files instead of the whole prebid.js project */
@@ -551,7 +550,6 @@ describe('auctionmanager.js', function () {
     });
 
     describe('when auction timeout is 3000', function () {
-      let loadScriptStub;
       before(function () {
         makeRequestsStub.returns(TEST_BID_REQS);
       });
@@ -567,17 +565,12 @@ describe('auctionmanager.js', function () {
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
 
-        loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-          args[1]();
-        });
-
         spec = mockBidder(BIDDER_CODE, bids);
         registerBidder(spec);
       });
 
       afterEach(function () {
         auctionModule.newAuction.restore();
-        loadScriptStub.restore();
       });
 
       function checkPbDg(cpm, expected, msg) {
@@ -673,7 +666,6 @@ describe('auctionmanager.js', function () {
     });
 
     describe('when auction timeout is 20', function () {
-      let loadScriptStub;
       let eventsEmitSpy;
       let getBidderRequestStub;
 
@@ -697,10 +689,6 @@ describe('auctionmanager.js', function () {
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
 
-        loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-          args[1]();
-        });
-
         spec = mockBidder(BIDDER_CODE, [bids[0]]);
         registerBidder(spec);
 
@@ -722,7 +710,6 @@ describe('auctionmanager.js', function () {
       });
       afterEach(function () {
         auctionModule.newAuction.restore();
-        loadScriptStub.restore();
         events.emit.restore();
         getBidderRequestStub.restore();
       });

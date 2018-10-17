@@ -1,21 +1,9 @@
 import { expect } from 'chai';
 import { spec, internals } from 'modules/rockyouBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-const adloader = require('src/adloader');
 
 describe('RockYouAdapter', function () {
   const adapter = newBidder(spec);
-  let loadScriptStub;
-
-  before(function() {
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
-  });
-
-  after(function() {
-    loadScriptStub.restore();
-  });
 
   describe('bid validator', function () {
     it('rejects a bid that is missing the placementId', function () {
