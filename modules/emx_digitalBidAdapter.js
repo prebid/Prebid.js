@@ -19,12 +19,12 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidRequests) {
     const {host, href, protocol} = utils.getTopWindowLocation();
-    var emxData = {};
-    var emxImps = [];
-    var auctionId = bidRequests.auctionId;
-    var timeout = config.getConfig('bidderTimeout');
-    var timestamp = Date.now();
-    var url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
+    let emxData = {};
+    let emxImps = [];
+    const auctionId = bidRequests.auctionId;
+    const timeout = config.getConfig('bidderTimeout');
+    const timestamp = Date.now();
+    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
 
     utils._each(validBidRequests, function (bid) {
       let tagId = String(utils.getBidIdParameter('tagid', bid.params));
@@ -64,6 +64,8 @@ export const spec = {
           gdpr: bidRequests.gdprConsent.gdprApplies === true ? 1 : 0
         }
       };
+    }
+    if (bidRequests.gdprConsent && bidRequests.gdprConsent.gdprApplies) {
       emxData.user = {
         ext: {
           consent: bidRequests.gdprConsent.consentString
@@ -80,8 +82,8 @@ export const spec = {
     };
   },
   interpretResponse: function (serverResponse) {
-    var emxBidResponses = [];
-    var response = serverResponse.body || {};
+    let emxBidResponses = [];
+    let response = serverResponse.body || {};
     if (response.seatbid && response.seatbid.length > 0 && response.seatbid[0].bid) {
       response.seatbid.forEach(function (emxBid) {
         emxBid = emxBid.bid[0];
@@ -101,8 +103,6 @@ export const spec = {
       });
     }
     return emxBidResponses;
-  },
-  getUserSyncs: function (syncOptions) {
   }
 };
 registerBidder(spec);
