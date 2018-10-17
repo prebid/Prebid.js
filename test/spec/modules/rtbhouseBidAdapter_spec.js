@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/rtbhouseBidAdapter';
+import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('RTBHouseAdapter', () => {
@@ -116,6 +116,195 @@ describe('RTBHouseAdapter', () => {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('');
     });
+
+    it('should include banner imp in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].banner).to.not.be.empty;
+    });
+
+    describe('native imp', () => {
+      function basicRequest(extension) {
+        return Object.assign({
+          bidder: 'bidder',
+          adUnitCode: 'adunit-code',
+          bidId: '1',
+          params: {
+            publisherId: 'PREBID_TEST',
+            region: 'prebid-eu',
+            test: 1
+          }
+        }, extension);
+      }
+
+      function buildImp(request) {
+        return JSON.parse(spec.buildRequests([request]).data).imp[0];
+      }
+
+      it('should extract native params when single mediaType', () => {
+        const imp = buildImp(basicRequest({
+          mediaType: 'native',
+          nativeParams: {
+            title: {
+              required: true,
+              len: 100
+            }
+          }
+        }));
+        expect(imp.native.request.assets[0]).to.deep.equal({
+          id: OPENRTB.NATIVE.ASSET_ID.TITLE,
+          required: 1,
+          title: {
+            len: 100
+          }
+        })
+      });
+
+      it('should extract native params when many mediaTypes', () => {
+        const imp = buildImp(basicRequest({
+          mediaTypes: {
+            native: {
+              title: {
+                len: 100
+              }
+            }
+          }
+        }));
+        expect(imp.native.request.assets[0]).to.deep.equal({
+          id: OPENRTB.NATIVE.ASSET_ID.TITLE,
+          required: 0,
+          title: {
+            len: 100
+          }
+        })
+      });
+
+      it('should not contain banner in imp', () => {
+        const imp = buildImp(basicRequest({
+          mediaTypes: {
+            native: {
+              title: {
+                required: true
+              }
+            }
+          }
+        }));
+        expect(imp.banner).to.be.empty;
+      });
+
+      describe('image sizes', () => {
+        it('should parse single image size', () => {
+          const imp = buildImp(basicRequest({
+            mediaTypes: {
+              native: {
+                image: {
+                  sizes: [300, 250]
+                }
+              }
+            }
+          }));
+          expect(imp.native.request.assets[0]).to.deep.equal({
+            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
+            required: 0,
+            img: {
+              w: 300,
+              h: 250,
+              type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
+            }
+          })
+        });
+
+        it('should parse multiple image sizes', () => {
+          const imp = buildImp(basicRequest({
+            mediaTypes: {
+              native: {
+                image: {
+                  sizes: [[300, 250], [100, 100]]
+                }
+              }
+            }
+          }));
+          expect(imp.native.request.assets[0]).to.deep.equal({
+            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
+            required: 0,
+            img: {
+              w: 300,
+              h: 250,
+              type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
+            }
+          })
+        })
+      });
+
+      it('should parse aspect ratios with min_width', () => {
+        const imp = buildImp(basicRequest({
+          mediaTypes: {
+            native: {
+              icon: {
+                aspect_ratios: [{
+                  min_width: 300,
+                  ratio_width: 2,
+                  ratio_height: 3,
+                }]
+              }
+            }
+          }
+        }));
+        expect(imp.native.request.assets[0]).to.deep.equal({
+          id: OPENRTB.NATIVE.ASSET_ID.ICON,
+          required: 0,
+          img: {
+            type: OPENRTB.NATIVE.IMAGE_TYPE.ICON,
+            wmin: 300,
+            hmin: 450,
+          }
+        })
+      });
+
+      it('should parse aspect ratios without min_width', () => {
+        const imp = buildImp(basicRequest({
+          mediaTypes: {
+            native: {
+              icon: {
+                aspect_ratios: [{
+                  ratio_width: 2,
+                  ratio_height: 3,
+                }]
+              }
+            }
+          }
+        }));
+        expect(imp.native.request.assets[0]).to.deep.equal({
+          id: OPENRTB.NATIVE.ASSET_ID.ICON,
+          required: 0,
+          img: {
+            type: OPENRTB.NATIVE.IMAGE_TYPE.ICON,
+            wmin: 100,
+            hmin: 150,
+          }
+        })
+      });
+
+      it('should handle all native assets', () => {
+        const imp = buildImp(basicRequest({
+          mediaTypes: {
+            native: {
+              title: {},
+              image: {},
+              icon: {},
+              sponsoredBy: {},
+              body: {},
+              cta: {},
+            }
+          }
+        }));
+        expect(imp.native.request.assets.length).to.equal(6);
+        imp.native.request.assets.forEach(asset => {
+          expect(asset.id).to.be.at.least(1)
+        })
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -156,6 +345,67 @@ describe('RTBHouseAdapter', () => {
       let bidderRequest;
       let result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(result.length).to.equal(0);
+    });
+
+    describe('native', () => {
+      const adm = {
+        native: {
+          ver: 1.1,
+          link: {
+            url: 'http://example.com'
+          },
+          imptrackers: [
+            'http://example.com/imptracker'
+          ],
+          assets: [{
+            id: OPENRTB.NATIVE.ASSET_ID.TITLE,
+            required: 1,
+            title: {
+              text: 'Title text'
+            }
+          }, {
+            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
+            required: 1,
+            img: {
+              url: 'http://example.com/image.jpg',
+              w: 150,
+              h: 50
+            }
+          }, {
+            id: OPENRTB.NATIVE.ASSET_ID.BODY,
+            required: 0,
+            data: {
+              value: 'Body text'
+            }
+          }],
+        }
+      };
+      const response = [{
+        'id': 'id',
+        'impid': 'impid',
+        'price': 1,
+        'adid': 'adid',
+        'adm': JSON.stringify(adm),
+        'adomain': ['rtbhouse.com'],
+        'cid': 'cid',
+        'w': 1,
+        'h': 1
+      }];
+
+      it('should contain native assets in valid format', () => {
+        const bids = spec.interpretResponse({body: response}, {});
+        expect(bids[0].native).to.deep.equal({
+          title: 'Title text',
+          clickUrl: encodeURIComponent('http://example.com'),
+          impressionTrackers: ['http://example.com/imptracker'],
+          image: {
+            url: encodeURIComponent('http://example.com/image.jpg'),
+            width: 150,
+            height: 50
+          },
+          body: 'Body text'
+        });
+      });
     });
   });
 });
