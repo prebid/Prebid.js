@@ -138,14 +138,13 @@ describe('auctionmanager.js', function () {
 
     /* return the expected response for a given bid, filter by keys if given */
     function getDefaultExpected(bid, keys) {
-      var expected = {
-        'hb_bidder': bid.bidderCode,
-        'hb_adid': bid.adId,
-        'hb_pb': bid.pbMg,
-        'hb_size': bid.getSize(),
-        'hb_source': bid.source,
-        'hb_format': bid.mediaType,
-      };
+      var expected = {};
+      expected[ CONSTANTS.TARGETING_KEYS.BIDDER ] = bid.bidderCode;
+      expected[ CONSTANTS.TARGETING_KEYS.AD_ID ] = bid.adId;
+      expected[ CONSTANTS.TARGETING_KEYS.PRICE_BUCKET ] = bid.pbMg;
+      expected[ CONSTANTS.TARGETING_KEYS.SIZE ] = bid.getSize();
+      expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
+      expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
 
       if (!keys) {
         return expected;
@@ -175,35 +174,35 @@ describe('auctionmanager.js', function () {
         standard: {
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return bidResponse.pbHg;
               }
             }, {
-              key: 'hb_size',
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
               val: function (bidResponse) {
                 return bidResponse.size;
               }
             },
             {
-              key: 'hb_source',
+              key: CONSTANTS.TARGETING_KEYS.SOURCE,
               val: function (bidResponse) {
                 return bidResponse.source;
               }
             },
             {
-              key: 'hb_format',
+              key: CONSTANTS.TARGETING_KEYS.FORMAT,
               val: function (bidResponse) {
                 return bidResponse.mediaType;
               }
@@ -214,7 +213,7 @@ describe('auctionmanager.js', function () {
       };
 
       var expected = getDefaultExpected(bid);
-      expected.hb_pb = bid.pbHg;
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -226,23 +225,23 @@ describe('auctionmanager.js', function () {
         appnexus: {
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return bidResponse.pbHg;
               }
             }, {
-              key: 'hb_size',
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
               val: function (bidResponse) {
                 return bidResponse.size;
               }
@@ -253,7 +252,7 @@ describe('auctionmanager.js', function () {
       };
 
       var expected = getDefaultExpected(bid);
-      expected.hb_pb = bid.pbHg;
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -265,23 +264,23 @@ describe('auctionmanager.js', function () {
         nonExistentBidder: {
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return bidResponse.pbHg;
               }
             }, {
-              key: 'hb_size',
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
               val: function (bidResponse) {
                 return bidResponse.size;
               }
@@ -310,17 +309,17 @@ describe('auctionmanager.js', function () {
           },
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return 10.00;
@@ -330,8 +329,8 @@ describe('auctionmanager.js', function () {
 
         }
       };
-      var expected = getDefaultExpected(bid, ['hb_bidder', 'hb_adid']);
-      expected.hb_pb = 10.0;
+      var expected = getDefaultExpected(bid, [CONSTANTS.TARGETING_KEYS.BIDDER, CONSTANTS.TARGETING_KEYS.AD_ID]);
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 10.0;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -367,17 +366,17 @@ describe('auctionmanager.js', function () {
           },
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return 15.00;
@@ -388,24 +387,24 @@ describe('auctionmanager.js', function () {
         standard: {
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 // change default here
                 return 10.00;
               },
             },
             {
-              key: 'hb_size',
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
               val: function (bidResponse) {
                 return bidResponse.size;
               }
@@ -414,8 +413,8 @@ describe('auctionmanager.js', function () {
 
         }
       };
-      var expected = getDefaultExpected(bid, ['hb_bidder', 'hb_adid', 'hb_size']);
-      expected.hb_pb = 15.0;
+      var expected = getDefaultExpected(bid, [CONSTANTS.TARGETING_KEYS.BIDDER, CONSTANTS.TARGETING_KEYS.AD_ID, CONSTANTS.TARGETING_KEYS.SIZE]);
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 15.0;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -428,17 +427,17 @@ describe('auctionmanager.js', function () {
           sendStandardTargeting: false,
           adserverTargeting: [
             {
-              key: 'hb_bidder',
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
                 return bidResponse.bidderCode;
               }
             }, {
-              key: 'hb_adid',
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
             }, {
-              key: 'hb_pb',
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 return bidResponse.pbHg;
               }
@@ -447,7 +446,7 @@ describe('auctionmanager.js', function () {
         }
       };
       var expected = getDefaultExpected(bid);
-      expected.hb_pb = 5.57;
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 5.57;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -608,7 +607,7 @@ describe('auctionmanager.js', function () {
         auction.callBids();
 
         let registeredBid = auction.getBidsReceived().pop();
-        assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
+        assert.equal(registeredBid.adserverTargeting[CONSTANTS.TARGETING_KEYS.DEAL], 'test deal', 'dealId placed in adserverTargeting');
       });
 
       it('should pass through default adserverTargeting sent from adapter', function () {
@@ -617,7 +616,7 @@ describe('auctionmanager.js', function () {
         auction.callBids();
 
         let registeredBid = auction.getBidsReceived().pop();
-        assert.equal(registeredBid.adserverTargeting.hb_bidder, BIDDER_CODE);
+        assert.equal(registeredBid.adserverTargeting[CONSTANTS.TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
 

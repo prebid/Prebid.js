@@ -1,4 +1,5 @@
 import {ajax} from 'src/ajax';
+import includes from 'core-js/library/fn/array/includes';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
@@ -491,7 +492,7 @@ function getAllUnrespondedBidRequests() {
   let respondedBidIds = getAllRespondedBidIds();
   let bidRequests = rivrAnalytics.context.auctionObject.bidRequests;
   let allNotRespondedBidRequests = bidRequests.reduce((cache, requestBidder) => {
-    let notRespondedBids = requestBidder.bids.filter((bid) => !respondedBidIds.includes(bid.bidId));
+    let notRespondedBids = requestBidder.bids.filter((bid) => !includes(respondedBidIds, bid.bidId));
     notRespondedBids.forEach((bid) => bid.start = requestBidder.start);
     return cache.concat(notRespondedBids);
   }, []);
