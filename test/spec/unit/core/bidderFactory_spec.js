@@ -7,6 +7,7 @@ import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
+const adloader = require('src/adloader');
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
   bids: [
@@ -34,6 +35,13 @@ describe('bidders created by newBidder', function () {
   let bidder;
   let addBidResponseStub;
   let doneStub;
+  let loadScriptStub;
+
+  before(function() {
+    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+      args[1]();
+    });
+  });
 
   beforeEach(function () {
     spec = {
@@ -46,6 +54,10 @@ describe('bidders created by newBidder', function () {
 
     addBidResponseStub = sinon.stub();
     doneStub = sinon.stub();
+  });
+
+  after(function() {
+    loadScriptStub.restore();
   });
 
   describe('when the ajax response is irrelevant', function () {

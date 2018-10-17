@@ -1,9 +1,21 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
+const adloader = require('src/adloader');
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
+  let loadScriptStub;
+
+  before(function() {
+    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+      args[1]();
+    });
+  });
+
+  after(function() {
+    loadScriptStub.restore();
+  });
 
   beforeEach(function () {
     bidRequests = [

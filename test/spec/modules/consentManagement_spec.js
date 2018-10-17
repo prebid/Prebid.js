@@ -678,8 +678,8 @@ describe('consentManagement', function () {
 
       // Run tests with JSON response and String response
       // from CMP window postMessage listener.
-      // testIFramedPage('with/JSON response', false);
-      // testIFramedPage('with/String response', true);
+      testIFramedPage('with/JSON response', false);
+      testIFramedPage('with/String response', true);
 
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
