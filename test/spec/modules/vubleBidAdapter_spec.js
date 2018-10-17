@@ -3,21 +3,8 @@
 import {expect} from 'chai';
 import {spec as adapter} from 'modules/vubleBidAdapter';
 import * as utils from 'src/utils';
-const adloader = require('../../../src/adloader');
 
 describe('VubleAdapter', function () {
-  let loadScriptStub;
-
-  before(function() {
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
-  });
-
-  after(function() {
-    loadScriptStub.restore();
-  });
-
   describe('Check methods existance', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');

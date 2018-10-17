@@ -4,21 +4,9 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
-const adloader = require('../../../src/adloader');
 
 describe('xhbAdapter', function () {
   const adapter = newBidder(spec);
-  let loadScriptStub;
-
-  before(function() {
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
-  });
-
-  after(function() {
-    loadScriptStub.restore();
-  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {

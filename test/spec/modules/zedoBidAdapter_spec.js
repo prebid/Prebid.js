@@ -1,20 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/zedoBidAdapter';
-const adloader = require('src/adloader');
 
 describe('The ZEDO bidding adapter', function () {
-  let loadScriptStub;
-
-  before(function() {
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
-  });
-
-  after(function() {
-    loadScriptStub.restore();
-  });
-
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {
