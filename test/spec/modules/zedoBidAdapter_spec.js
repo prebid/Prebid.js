@@ -1,7 +1,20 @@
 import { expect } from 'chai';
 import { spec } from 'modules/zedoBidAdapter';
+const adloader = require('src/adloader');
 
 describe('The ZEDO bidding adapter', function () {
+  let loadScriptStub;
+
+  before(function() {
+    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
+      args[1]();
+    });
+  });
+
+  after(function() {
+    loadScriptStub.restore();
+  });
+
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {
@@ -245,7 +258,6 @@ describe('The ZEDO bidding adapter', function () {
       expect(bids[0].vastXml).to.not.equal('');
       expect(bids[0].ad).to.be.an('undefined');
       expect(bids[0].renderer).not.to.be.an('undefined');
-      bids[0].renderer.render(bids[0]);
     });
   });
 
