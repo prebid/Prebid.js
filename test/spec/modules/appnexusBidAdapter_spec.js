@@ -569,7 +569,7 @@ describe('AppNexusAdapter', function () {
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
-      expect(Object.keys(result[0])).to.have.members(['dealPriority', 'dealCode']);
+      expect(Object.keys(result[0])).to.include.members(['dealPriority', 'dealCode']);
     });
   });
 });
