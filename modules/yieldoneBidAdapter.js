@@ -58,7 +58,7 @@ export const spec = {
     const height = response.height || 0;
     const cpm = response.cpm * 1000 || 0;
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
-      const dealId = response.dealid || '';
+      const dealId = response.dealId || '';
       const currency = response.currency || 'JPY';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = utils.getTopWindowUrl();
