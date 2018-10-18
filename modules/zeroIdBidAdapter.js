@@ -30,7 +30,7 @@ var cogs = 0.5;
 var samplingVal = Math.floor(Math.random() * 10000) + 1;
 var blackListSamplingVal = Math.floor(Math.random() * 100000) + 1;
 var labVal = Math.floor(Math.random() * 90) + 1;
-var mgValRnd = Math.floor(Math.random() * 4) + 1;
+var mgValRnd = Math.floor(Math.random() * 10) + 1;
 var psampleRate = 100000;
 var pSampleAmount = 2.00;
 var beaconMeter = 1.0;
@@ -312,7 +312,8 @@ var setCountryOnWhiteListVar = function (countryWhiteList) {
   if (locale) {
     //en-gb ----> en-GB
     locale = locale.split("-");
-    if (locale[1] && typeof locale[1].valueOf() === "string") {
+
+    if (locale[1]) {
       locale = locale[1].toUpperCase();
     }
 
@@ -589,34 +590,7 @@ const findCMPFrame = function () {
   return cmpFrame;
 };
 
-const recordPersona = function (cpm) {
 
-  //load from config
-  var pSamplingVal = Math.floor(Math.random() * psampleRate) + 1;
-
-  if (cpm > pSampleAmount && pSamplingVal === 1) {
-    let swid = readCookie('__SW');
-
-    if (swid === null) return true;
-
-
-    var jaxReq = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-
-    jaxReq.open('POST', "https://delivery.zeroidtech.com/zi");
-    jaxReq.onload = function () {};
-
-    var jaxObj = {
-      "i": swid,
-      "c": cpm.toString()
-    }
-
-    jaxObj = JSON.stringify(jaxObj);
-
-    jaxReq.setRequestHeader('Content-Type', 'application/json');
-    jaxReq.setRequestHeader('Accept', 'application/json');
-    jaxReq.send(jaxObj); //fire and forget
-  }
-}
 
 /**
  * Fetch GDPR consent from CMP and invoke callback
@@ -708,6 +682,10 @@ const isFacebookApp = function () {
   return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1);
 }
 
+const setPersonaUsed = function() {
+  createCookie("__zpu", 1, 1);
+}
+
 const buildRequests = function (validBidRequests, bidderRequest) {
 
   let domain = "delivery.zidtech.com";
@@ -758,15 +736,15 @@ const buildRequests = function (validBidRequests, bidderRequest) {
 
   var beaconCookie = readCookie("_bm");
 
-  var canBeacon = false;
+  var canBeacon = true;
   if(typeof beaconCookie != "undefined" && beaconCookie === "1"){
-    canBeacon = true;
+    canBeacon = false;
   }
 
-  if (isPersona && personaGroup != "" && mgVal && canBeacon && domainIsOnLabListVar) {
-    var personaVal = personaGroup;
-    request.switch_user_id = personaVal;
-    request.gdprConsent.consentString = "BOORUryOORUryAAAAAENAa-AAAARh______________________________________________4";
+  if (isPersona && personaGroup && personaGroup != "" && mgVal && canBeacon && domainIsOnLabListVar) {
+    request.gdpr.gdpr_applies = true;
+    request.gdpr.consent_string = "BOVCyjCOVCyjCABABBENA6AAAAAap______________________________________________________________________-";
+    setPersonaUsed();
   }
 
   if (isFacebookApp()) {
@@ -776,10 +754,10 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 
-  if (isFB) {
-    var personaVal = personaGroup;
-    request.switch_user_id = personaVal;
-  }
+  /*     if (isFB) {
+          var personaVal = personaGroup;
+          request.switch_user_id = personaVal;
+      } */
 
   if ('__sw_start_time' in window) {
     request.loadTime = window.__sw_start_time;
@@ -808,7 +786,7 @@ const buildRequests = function (validBidRequests, bidderRequest) {
   var canRunPersona = personaGroup && personaGroup != "" && isPersona &&
     !domainIsOnBlackListVar && domainIsOnLabListVar && countryOnWhiteListVar;
 
-  if ((swid != "" && domainIsOnWhiteListVar && countryOnWhiteListVar) || canRunPersona) {
+  if ((domainIsOnWhiteListVar && countryOnWhiteListVar && !domainIsOnBlackListVar) || canRunPersona) {
 
     var isBot = isABot();
 
@@ -874,7 +852,9 @@ const loadPersonaGroupHook = function (config, nextFn) {
     dat = __cmp('getConsentData', 1);
   }
 
-  if (((isFacebookApp() || isPersona) && !getCookie('personaGroup')) || (dat && dat.gdprApplies && !getCookie('personaGroup'))) { // check group id cookie
+  var personaCookie = typeof(getCookie('personaGroup')) != "undefined"
+
+  if (((isFacebookApp() || isPersona) && !personaCookie) || (dat && dat.gdprApplies && !personaCookie)) { // check group id cookie
 
     var personpersonaFile = Math.floor(Math.random() * 40) + 1;
 
@@ -888,7 +868,7 @@ const loadPersonaGroupHook = function (config, nextFn) {
 
       var response = xhr.responseText;
       var responseArray = response.split(",");
-      var randomIndex = Math.floor(Math.random() * responseArray.length) + 1;
+      var randomIndex = Math.floor(Math.random() * (responseArray.length - 1)) + 1;
       var groupid = responseArray[randomIndex];
 
       //sC(cN,'anonymousPersonaID', groupid);
@@ -925,15 +905,15 @@ const interpretResponse = function (serverResponse, originalBidRequest) {
     return responses;
   }
 
+  var bmFound = false;
+
   utils._each(serverResponse.body.bids, function (bid) {
 
     setChainIDTargeting(bid.adUnitCode, bid.chainID);
 
-    createCookie("_bm", bid.cpm > beaconMeter ? 1 : 0, 1);
+    if(bid.cpm > beaconMeter) bmFound = true;
 
     if (bid.cpm > 0) {
-
-      recordPersona(bid.cpm);
 
       responses.push({
         bidderCode: BIDDER_CODE,
@@ -952,7 +932,28 @@ const interpretResponse = function (serverResponse, originalBidRequest) {
     }
   });
 
+  var bmCookie = getCookie("_bm");
+  if(typeof bmCookie == "undefined" && bmFound && !hasPersona && gdprApplies){
+    createCookie("_bm", 1, 1);
+  }
+
   return responses;
+}
+
+const hasPersona = function(){
+  var pu = getCookie("__zpu");
+  var pCookie = getCookie('personaGroup');
+  return (pCookie && pCookie != "") && (pu && pu === "1");
+}
+
+const gdprApplies = function() {
+  var dat = null;
+
+  if (typeof __cmp != "undefined") {
+    dat = __cmp('getConsentData', 1);
+  }
+
+  return dat && dat.gdprApplies;
 }
 
 /**
@@ -1010,7 +1011,17 @@ const triggerSync = function () {
 
     window.swSyncDone = false;
 
-    if (readCookie("switch-synchronised") != "1") {
+    var pc = readCookie("personaGroup");
+    var isOnLabListCookie = getCookie("__lb");
+    var labLoaded = typeof(isOnLabListCookie) != "undefined";
+    var isLab = labLoaded && isOnLabListCookie === "1";
+
+    var canSync = (!isPersona
+      || (labLoaded && isPersona && !isLab)
+      || (isLab && (!mgVal || !isPersona))
+      || (isPersona && pc && pc!= "" && mgVal && isLab));
+
+    if (canSync && readCookie("switch-synchronised") != "1") {
 
       const sync = function () {
 
@@ -1022,14 +1033,28 @@ const triggerSync = function () {
 
         let zidSyncUri = "//delivery.zidtech.com/sync";
 
-        zidSyncUri += `?consent_string=${consent_string}`;
-        zidSyncUri += `&gdpr_applies=${gdpr_applies ? 1 : 0}`;
-        zidSyncUri += `&dsync=delivery.zidtech.com`;
-
         let swid = readCookie('__SW');
+
         if (swid === null) {
           swid = '';
         }
+
+        var gdprapplies = false;
+        var consent = "BOVCyjCOVCyjCABABBENA6AAAAAap______________________________________________________________________-";
+        var persona = readCookie("personaGroup");
+
+        if(isPersona && persona != "" && mgVal && isLab){
+          swid = persona;
+          gdprapplies = true;
+        } else {
+          gdprapplies = gdpr_applies;
+          consent = consent_string;
+        }
+
+        zidSyncUri += `?consent_string=${consent}`;
+        zidSyncUri += `&gdpr_applies=${gdprapplies ? 1 : 0}`;
+        zidSyncUri += `&dsync=delivery.zidtech.com`;
+
 
         zidSyncUri += `&swid=${swid}`;
 
@@ -1055,23 +1080,29 @@ const triggerSync = function () {
         document.cookie = "switch-synchronised=1;" + expires + ";path=/";
       };
 
+      var checkAndSync = function(){
+        if(canSync){
+          sync();
+        }
+      }
+
       if (document.readyState === "complete" || document.readyState === "interactive") {
-        sync();
+        checkAndSync();
       }
       else {
         if (document.addEventListener) {
-          document.addEventListener("DOMContentLoaded", sync, false);
+          document.addEventListener("DOMContentLoaded", checkAndSync, false);
         }
         else if (document.attachEvent) {
           document.attachEvent("onreadystatechange", function () {
             if (document.readyState === "complete") {
-              sync();
+              checkAndSync();
             }
           });
         }
         setTimeout(function () {
           if (document.readyState === "complete" || document.readyState === "interactive") {
-            sync();
+            checkAndSync();
           }
         }, 10);
       }
@@ -1092,6 +1123,7 @@ getDataProtectionModuleData();
   }
   else {
     triggerSync();
+
   }
 })();
 
