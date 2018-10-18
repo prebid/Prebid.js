@@ -237,6 +237,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   };
 
+  if (rtbBid.deal_priority && rtbBid.deal_code) {
+    Object.assign(bid, {
+      dealPriority: rtbBid.deal_priority,
+      dealCode: rtbBid.deal_code
+    });
+  }
+
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
