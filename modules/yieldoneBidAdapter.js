@@ -63,7 +63,7 @@ export const spec = {
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = utils.getTopWindowUrl();
       const bidResponse = {
-        requestId: bidRequest.data.uid,
+        requestId: response.uid,
         cpm: cpm,
         width: response.width,
         height: response.height,
