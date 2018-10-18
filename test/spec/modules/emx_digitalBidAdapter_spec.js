@@ -51,55 +51,55 @@ describe('emx_digital Adapter', function () {
 
   describe('buildRequests', function () {
     const bidRequests = [{
-        'bidder': 'emx_digital',
-        'params': {
-          'tagid': '25251'
-        },
-        'adUnitCode': 'adunit-code',
-        'mediaTypes': {
-            'banner': {
-              'sizes': [
-                [300, 250],
-                [300, 600]
-              ]
-          }
-        },
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c2501de1e',
-        'bidderRequestId': '22edbae3120bf6',
-        'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
-        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec'
-      },{
-          'bidder': 'emx_digital',
-          'params': {
-            'tagid': '25251'
-          },
-          'adUnitCode': 'adunit-code',
-            'mediaTypes': {
-              'banner': {
-                'sizes': [
-                  [300, 250],
-                  [300, 600]
-                ]
-              }
-            },
+      'bidder': 'emx_digital',
+      'params': {
+        'tagid': '25251'
+      },
+      'adUnitCode': 'adunit-code',
+      'mediaTypes': {
+        'banner': {
           'sizes': [
             [300, 250],
             [300, 600]
-          ],
-          'bidId': '30b31c2501de1e',
-          'bidderRequestId': '22edbae3120bf6',
-          'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec'
-        }];
+          ]
+        }
+      },
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '30b31c2501de1e',
+      'bidderRequestId': '22edbae3120bf6',
+      'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec'
+    }, {
+      'bidder': 'emx_digital',
+      'params': {
+        'tagid': '25251'
+      },
+      'adUnitCode': 'adunit-code',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [300, 250],
+            [300, 600]
+          ]
+        }
+      },
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '30b31c2501de1e',
+      'bidderRequestId': '22edbae3120bf6',
+      'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec'
+    }];
     let bidderRequest = {
-        'bidderCode': 'emx_digital',
-        'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
-        'bidderRequestId': '22edbae3120bf6',
-        'timeout': 1500,
+      'bidderCode': 'emx_digital',
+      'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
+      'bidderRequestId': '22edbae3120bf6',
+      'timeout': 1500,
     };
     bidderRequest.bids = bidRequests
 
@@ -184,14 +184,14 @@ describe('emx_digital Adapter', function () {
     it('should have the right gdpr info when enabled', function () {
       let consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
       let bidderRequest = {
-          'bidderCode': 'emx_digital',
-          'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
-          'bidderRequestId': '22edbae3120bf6',
-          'timeout': 1500,
-          'gdprConsent': {
-              'consentString': consentString,
-              'gdprApplies': true
-          }
+        'bidderCode': 'emx_digital',
+        'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
+        'bidderRequestId': '22edbae3120bf6',
+        'timeout': 1500,
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true
+        }
       };
       bidderRequest.bids = bidRequests
       let request = spec.buildRequests(bidRequests, bidderRequest);
@@ -203,17 +203,17 @@ describe('emx_digital Adapter', function () {
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
       let bidderRequest = {
-          'bidderCode': 'emx_digital',
-          'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
-          'bidderRequestId': '22edbae3120bf6',
-          'timeout': 1500,
-          'gdprConsent': {
-              'gdprApplies': false
-          }
+        'bidderCode': 'emx_digital',
+        'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
+        'bidderRequestId': '22edbae3120bf6',
+        'timeout': 1500,
+        'gdprConsent': {
+          'gdprApplies': false
+        }
       };
       bidderRequest.bids = bidRequests
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      
+
       request = JSON.parse(request.data)
       expect(request.regs.ext).to.have.property('gdpr', 0);
       expect(request).to.not.have.property('user');
@@ -235,7 +235,7 @@ describe('emx_digital Adapter', function () {
           'w': 300
         }],
         'seat': '1356'
-      },{
+      }, {
         'bid': [{
           'adid': '123456abcdf',
           'adm': '<!-- Creative -->',
@@ -261,7 +261,7 @@ describe('emx_digital Adapter', function () {
       'mediaType': 'banner',
       'ad': '<!-- Creative -->',
       'ttl': 300
-    },{
+    }, {
       'requestId': '12819a18-56e1-4256-b836-b69a10202668',
       'cpm': 0.7,
       'width': 300,
@@ -298,7 +298,7 @@ describe('emx_digital Adapter', function () {
         body: serverResponse
       });
       expect(Array.isArray(result.seatbid))
-      
+
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.ad).to.equal(serverResponse.seatbid[0].bid[0].adm);
@@ -311,7 +311,7 @@ describe('emx_digital Adapter', function () {
       expect(ad0.requestId).to.equal(serverResponse.seatbid[0].bid[0].id);
       expect(ad0.ttl).to.equal(300);
       expect(ad0.width).to.equal(serverResponse.seatbid[0].bid[0].w);
-      
+
       expect(ad1.ad).to.equal(serverResponse.seatbid[1].bid[0].adm);
       expect(ad1.cpm).to.equal(serverResponse.seatbid[1].bid[0].price);
       expect(ad1.creativeId).to.equal(serverResponse.seatbid[1].bid[0].crid);
@@ -322,7 +322,6 @@ describe('emx_digital Adapter', function () {
       expect(ad1.requestId).to.equal(serverResponse.seatbid[1].bid[0].id);
       expect(ad1.ttl).to.equal(300);
       expect(ad1.width).to.equal(serverResponse.seatbid[1].bid[0].w);
-      
     });
 
     it('handles nobid responses', function () {
