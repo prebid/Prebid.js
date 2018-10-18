@@ -17,7 +17,6 @@ export const spec = {
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
-      const size = utils.parseSizesInput(bidRequest.sizes).join(',');
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
       const referrer = encodeURIComponent(utils.getTopWindowUrl());
@@ -25,12 +24,25 @@ export const spec = {
       const payload = {
         v: 'hb1',
         p: placementId,
-        sz: size,
         cb: cb,
         r: referrer,
         uid: bidId,
         t: 'i'
       };
+
+      const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      const context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+      if (bidRequest.mediaType === VIDEO || (videoMediaType && context !== 'instream')) {
+        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
+        const size = utils.parseSizesInput(sizes)[0];
+        payload.w = size.split('x')[0];
+        payload.h = size.split('x')[1];
+      } else if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
+      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
+        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
+        payload.sz = utils.parseSizesInput(sizes).join(',');
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
@@ -60,9 +72,17 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer,
-        ad: response.adTag
+        referrer: referrer
       };
+
+      if (response.adTag) {
+        bidResponse.mediaType = BANNER;
+        bidResponse.ad = response.adTag;
+      } else if (response.adm) {
+        bidResponse.mediaType = VIDEO;
+        bidResponse.vastXml = response.adm;
+      }
+
       bidResponses.push(bidResponse);
     }
     return bidResponses;
