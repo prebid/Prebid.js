@@ -69,3 +69,5 @@ Buyer adapter for Prebid.js 1.0
         }
     ];
 ```
+
+Required param field is only `placement`. 
