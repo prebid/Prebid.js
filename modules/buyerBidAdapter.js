@@ -53,7 +53,7 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
     const crid = response.crid || 0;
-    const cpm = response.cpm / 1000 || 0;
+    const cpm = response.cpm / 1000000 || 0;
     if (cpm !== 0 && crid !== 0) {
       const dealId = response.dealid || '';
       const currency = response.currency || 'EUR';
