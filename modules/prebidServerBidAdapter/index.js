@@ -3,7 +3,6 @@ import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S, EVENTS } from 'src/constants';
-import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
@@ -44,7 +43,6 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
- * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
@@ -620,11 +618,6 @@ export function PrebidServer() {
       });
 
       bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
-
-      if (result.status === 'no_cookie' && _s2sConfig.cookieSet && typeof _s2sConfig.cookieSetUrl === 'string') {
-        // cookie sync
-        cookieSet(_s2sConfig.cookieSetUrl);
-      }
     } catch (error) {
       utils.logError(error);
     }
