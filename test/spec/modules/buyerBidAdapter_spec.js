@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/buyerBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT_URL = 'https://buyer.dspx.tv/request';
+const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 
 describe('buyerAdapter', function () {
   const adapter = newBidder(spec);
@@ -74,7 +74,7 @@ describe('buyerAdapter', function () {
   describe('interpretResponse', function () {
     let serverResponse = {
       'body': {
-        'cpm': 500,
+        'cpm': 5000000,
         'crid': 100500,
         'width': '300',
         'height': '250',
