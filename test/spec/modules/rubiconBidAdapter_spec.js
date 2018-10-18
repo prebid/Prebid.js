@@ -818,6 +818,72 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        describe('first party data', function () {
+          it('should not have any tg_v or tg_i params if all are undefined', function () {
+            let params = {
+              inventory: {
+                rating: null,
+                prodtype: undefined
+              },
+              visitor: {
+                ucat: undefined,
+                lastsearch: null,
+                likes: undefined
+              },
+            };
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that no tg_v or tg_i keys are present in the request
+            let matchingExp = RegExp('^tg_(i|v)\..*$')
+            Object.keys(data).forEach(key => {
+              expect(key).to.not.match(matchingExp);
+            });
+          });
+
+          it('should contain valid params when some are undefined', function () {
+            let params = {
+              inventory: {
+                rating: undefined,
+                prodtype: ['tech', 'mobile']
+              },
+              visitor: {
+                ucat: null,
+                lastsearch: 'iphone',
+                likes: undefined
+              },
+            };
+            let undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes']
+            let expectedQuery = {
+              'tg_v.lastsearch': 'iphone',
+              'tg_i.prodtype': 'tech,mobile',
+            }
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure none of the undefined keys are in query
+            undefinedKeys.forEach(key => {
+              expect(typeof data[key]).to.equal('undefined');
+            });
+
+            // make sure the expected and defined ones do show up still
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.equal(value);
+            });
+          });
+        });
+
         describe('singleRequest config', function () {
           it('should group all bid requests with the same site id', function () {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);

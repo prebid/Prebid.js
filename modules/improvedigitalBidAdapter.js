@@ -5,7 +5,7 @@ import { config } from 'src/config';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.3.0',
+  version: '4.4.0',
   code: BIDDER_CODE,
   aliases: ['id'],
 
@@ -78,11 +78,24 @@ export const spec = {
       bid.cpm = parseFloat(bidObject.price);
       bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
-      if (utils.isNumber(bidObject.lid)) {
+
+      // Deal ID. Composite ads can have multiple line items and the ID of the first
+      // dealID line item will be used.
+      if (utils.isNumber(bidObject.lid) && bidObject.buying_type === 'deal_id') {
         bid.dealId = bidObject.lid;
-      } else if (typeof bidObject.lid === 'object' && bidObject.lid['1']) {
-        bid.dealId = bidObject.lid['1'];
+      } else if (Array.isArray(bidObject.lid) &&
+        Array.isArray(bidObject.buying_type) &&
+        bidObject.lid.length === bidObject.buying_type.length) {
+        let isDeal = false;
+        bidObject.buying_type.forEach((bt, i) => {
+          if (isDeal) return;
+          if (bt === 'deal_id') {
+            isDeal = true;
+            bid.dealId = bidObject.lid[i];
+          }
+        });
       }
+
       bid.height = bidObject.h;
       bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
       bid.requestId = bidObject.id;
