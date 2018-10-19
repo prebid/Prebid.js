@@ -63,7 +63,13 @@ describe('buyerAdapter', function () {
       'auctionId': '1d1a030790a475'
     }];
 
-    const request = spec.buildRequests(bidRequests);
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'some_referrer.net'
+      }
+    }
+
+    const request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
@@ -120,16 +126,6 @@ describe('buyerAdapter', function () {
       };
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
-    });
-  });
-
-  describe('getUserSyncs function', function () {
-    it('should be empty', function () {
-      const syncOptions = {
-        'iframeEnabled': 'true'
-      };
-      let userSync = spec.getUserSyncs(syncOptions);
-      expect(userSync.length).to.equal(0);
     });
   });
 });

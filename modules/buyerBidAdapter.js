@@ -20,7 +20,7 @@ export const spec = {
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(utils.getTopWindowUrl()); // bidderRequest.refererInfo ??
+      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       const bidId = bidRequest.bidId;
       const payload = {
         _f: 'html',
@@ -75,10 +75,6 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = [];
-    return syncs;
   }
 }
 
