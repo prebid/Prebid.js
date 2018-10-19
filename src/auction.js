@@ -96,6 +96,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _bidderRequests = [];
   let _bidsReceived = [];
   let _auctionStart;
+  let _auctionEnd;
   let _auctionId = utils.generateUUID();
   let _auctionStatus;
   let _callback = callback;
@@ -105,6 +106,22 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+
+  function getProperties() {
+    return {
+      auctionId: _auctionId,
+      auctionStart: _auctionStart,
+      auctionEnd: _auctionEnd,
+      auctionStatus: _auctionStatus,
+      adUnits: _adUnits,
+      adUnitCodes: _adUnitCodes,
+      labels: _labels,
+      bidderRequests: _bidderRequests,
+      bidsReceived: _bidsReceived,
+      winningBids: _winningBids,
+      timeout: _timeout
+    };
+  }
 
   function startAuctionTimer() {
     const timedOut = true;
@@ -129,10 +146,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         }
       }
 
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: _auctionId});
-
       try {
         _auctionStatus = AUCTION_COMPLETED;
+        _auctionEnd = Date.now();
+
+        events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
+
         const adUnitCodes = _adUnitCodes;
         const bids = _bidsReceived
           .filter(adUnitsFilter.bind(this, adUnitCodes))
@@ -185,12 +204,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
           _auctionStatus = AUCTION_IN_PROGRESS;
 
-          const auctionInit = {
-            timestamp: _auctionStart,
-            auctionId: _auctionId,
-            timeout: _timeout
-          };
-          events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
+          events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
 
           let callbacks = auctionCallbacks(auctionDone, this);
           let boundObj = {

@@ -580,7 +580,11 @@ function mapSizes(sizes) {
  * @returns {boolean}
  */
 export function hasVideoMediaType(bidRequest) {
-  return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  if (typeof utils.deepAccess(bidRequest, 'params.video') === 'undefined' && Array.isArray(utils.deepAccess(bidRequest, 'params.sizes'))) {
+    utils.logWarn('Rubicon bid adapter Warning: no video params found, convert to banner with the bidder size id');
+    return false;
+  }
+  return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
 }
 
 /**
