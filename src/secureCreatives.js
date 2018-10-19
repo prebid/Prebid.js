@@ -6,11 +6,10 @@
 import events from './events';
 import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode } from './utils';
+import { isSlotMatchingAdUnitCode, logWarn } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
-import { utils } from 'mocha';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -81,7 +80,7 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
       elementStyle.width = width + 'px';
       elementStyle.height = height + 'px';
     } else {
-      utils.logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
   });
 
