@@ -36,13 +36,9 @@ export const spec = {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
-    let priceType = 'net';
     let reqId;
 
     bids.forEach(bid => {
-      if (bid.params.priceType === 'gross') {
-        priceType = 'gross';
-      }
       reqId = bid.bidderRequestId;
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
@@ -54,7 +50,6 @@ export const spec = {
 
     const payload = {
       u: utils.getTopWindowUrl(),
-      pt: priceType,
       auids: auids.join(','),
       r: reqId
     };
@@ -91,7 +86,6 @@ export const spec = {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
-    const priceType = bidRequest.data.pt;
 
     let errorMessage;
 
@@ -102,7 +96,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
@@ -121,7 +115,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -138,7 +132,7 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
           height: serverBid.h,
           creativeId: serverBid.auid, // bid.bidId,
           currency: 'USD',
-          netRevenue: priceType !== 'gross',
+          netRevenue: false,
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/gridBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('GridAdapter', function () {
+describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -88,7 +88,6 @@ describe('GridAdapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '1');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
@@ -98,33 +97,8 @@ describe('GridAdapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '1,2');
       expect(payload).to.have.property('r', '22edbae2733bf6');
-    });
-
-    it('pt parameter must be "gross" if params.priceType === "gross"', function () {
-      bidRequests[1].params.priceType = 'gross';
-      const request = spec.buildRequests(bidRequests);
-      expect(request.data).to.be.an('string');
-      const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('pt', 'gross');
-      expect(payload).to.have.property('auids', '1,2');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      delete bidRequests[1].params.priceType;
-    });
-
-    it('pt parameter must be "net" or "gross"', function () {
-      bidRequests[1].params.priceType = 'some';
-      const request = spec.buildRequests(bidRequests);
-      expect(request.data).to.be.an('string');
-      const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '1,2');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      delete bidRequests[1].params.priceType;
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
@@ -189,7 +163,7 @@ describe('GridAdapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
-          'netRevenue': true,
+          'netRevenue': false,
           'ttl': 360,
         }
       ];
@@ -246,7 +220,7 @@ describe('GridAdapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
-          'netRevenue': true,
+          'netRevenue': false,
           'ttl': 360,
         },
         {
@@ -259,7 +233,7 @@ describe('GridAdapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
-          'netRevenue': true,
+          'netRevenue': false,
           'ttl': 360,
         },
         {
@@ -272,7 +246,7 @@ describe('GridAdapter', function () {
           'ad': '<div>test content 2</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
-          'netRevenue': true,
+          'netRevenue': false,
           'ttl': 360,
         }
       ];

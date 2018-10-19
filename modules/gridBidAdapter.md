@@ -1,6 +1,6 @@
 # Overview
 
-Module Name: Grid Bidder Adapter
+Module Name: The Grid Media Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: grid-tech@themediagrid.com
 
