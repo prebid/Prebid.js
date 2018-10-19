@@ -65,6 +65,8 @@ describe('PubMaticServer adapter', () => {
         }
       }
     };
+    window.PWT = {
+    };
   });
 
   describe('implementation', () => {
