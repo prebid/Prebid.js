@@ -11,7 +11,6 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 var s2sTesting = require('../../../../modules/s2sTesting');
 var events = require('../../../../src/events');
-const adloader = require('../../../../src/adloader');
 
 const CONFIG = {
   enabled: true,
@@ -39,7 +38,6 @@ var rubiconAdapterMock = {
   bidder: 'rubicon',
   callBids: sinon.stub()
 };
-let loadScriptStub;
 
 describe('adapterManager tests', function () {
   let orgAppnexusAdapter;
@@ -51,9 +49,6 @@ describe('adapterManager tests', function () {
     orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
     orgRubiconAdapter = AdapterManager.bidderRegistry['rubicon'];
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
   });
 
   after(function () {
@@ -61,7 +56,6 @@ describe('adapterManager tests', function () {
     AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
     AdapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
-    loadScriptStub.restore();
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
