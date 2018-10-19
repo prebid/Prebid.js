@@ -70,7 +70,6 @@ describe('buyerAdapter', function () {
     }
 
     const request = spec.buildRequests(bidRequests, bidderRequest);
-
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
       let data = request[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
