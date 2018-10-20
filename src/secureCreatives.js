@@ -9,6 +9,7 @@ import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -53,9 +54,11 @@ function receiveMessage(ev) {
 }
 
 function sendAdToCreative(adObject, remoteDomain, source) {
-  const { adId, ad, adUrl, width, height } = adObject;
-
-  if (adId) {
+  const { adId, ad, adUrl, width, height, renderer } = adObject;
+  // rendering for outstream safeframe
+  if (isRendererRequired(renderer)) {
+    executeRenderer(renderer, adObject);
+  } else if (adId) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
@@ -72,8 +75,8 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     let elementStyle = getElementByAdUnit(elmType).style;
-    elementStyle.width = width;
-    elementStyle.height = height;
+    elementStyle.width = width + 'px';
+    elementStyle.height = height + 'px';
   });
   function getElementByAdUnit(elmType) {
     return document.getElementById(find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)

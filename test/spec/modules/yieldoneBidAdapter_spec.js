@@ -144,4 +144,20 @@ describe('yieldoneBidAdapter', function() {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs', function () {
+    const userSyncUrl = '//y.one.impact-ad.jp/push_sync';
+
+    it('handles empty sync options', function () {
+      expect(spec.getUserSyncs({})).to.be.empty;
+    });
+
+    it('should return a sync url if iframe syncs are enabled', function () {
+      expect(spec.getUserSyncs({
+        'iframeEnabled': true
+      })).to.deep.equal([{
+        type: 'iframe', url: userSyncUrl
+      }]);
+    });
+  });
 });

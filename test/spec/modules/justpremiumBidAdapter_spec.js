@@ -53,7 +53,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.2')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.3')
     })
   })
 

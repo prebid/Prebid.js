@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.2';
+const ADAPTER_VERSION = '1.3';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -13,7 +13,7 @@ export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-export const VIDEO_TARGETING = ['mimes'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let appId = '';

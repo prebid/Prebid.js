@@ -562,8 +562,11 @@ describe('Media.net bid adapter', function () {
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GDPR);
     });
 
-    describe('build requests: when page meta-data is available', function () {
-      it('should pass canonical, twitter and fb paramters if available', function () {
+    describe('build requests: when page meta-data is available', () => {
+      beforeEach(() => {
+        spec.clearMnData();
+      });
+      it('should pass canonical, twitter and fb paramters if available', () => {
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'

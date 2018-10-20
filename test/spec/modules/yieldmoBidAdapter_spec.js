@@ -104,7 +104,7 @@ describe('YieldmoAdapter', function () {
           width: 300,
           height: 250,
           ad: '<html><head></head><body><script>//GEX ad object</script><div id=\"ym_123\" class=\"ym\"></div><script>//js code</script></body></html>',
-          creativeId: '9874652394875'
+          creative_id: '9874652394875'
         }],
         header: 'header?'
       };
