@@ -27,10 +27,11 @@ const bid1 = {
   'bidder': 'rubicon',
   'size': '300x250',
   'adserverTargeting': {
-    'hb_bidder': 'rubicon',
-    'hb_adid': '148018fe5e',
-    'hb_pb': '0.53',
-    'foobar': '300x250'
+    'foobar': '300x250',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '148018fe5e',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.53',
+    [CONSTANTS.TARGETING_KEYS.DEAL]: '1234'
   },
   'netRevenue': true,
   'currency': 'USD',
@@ -57,10 +58,10 @@ const bid2 = {
   'bidder': 'rubicon',
   'size': '300x250',
   'adserverTargeting': {
-    'hb_bidder': 'rubicon',
-    'hb_adid': '5454545',
-    'hb_pb': '0.25',
-    'foobar': '300x250'
+    'foobar': '300x250',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '5454545',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.25'
   },
   'netRevenue': true,
   'currency': 'USD',
@@ -87,10 +88,10 @@ const bid3 = {
   'bidder': 'rubicon',
   'size': '300x600',
   'adserverTargeting': {
-    'hb_bidder': 'rubicon',
-    'hb_adid': '48747745',
-    'hb_pb': '0.75',
-    'foobar': '300x600'
+    'foobar': '300x600',
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '48747745',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.75'
   },
   'netRevenue': true,
   'currency': 'USD',
@@ -120,6 +121,18 @@ describe('targeting tests', function () {
       targetingModule.isBidNotExpired.restore();
     });
 
+    describe('when hb_deal is present in bid.adserverTargeting', function () {
+      it('returns targeting with both hb_deal and hb_deal_{bidder_code}', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // We should add both keys rather than one or the other
+        expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', `hb_deal_${bid1.bidderCode}`);
+
+        // We should assign both keys the same value
+        expect(targeting['/123456/header-bid-tag-0']['hb_deal']).to.deep.equal(targeting['/123456/header-bid-tag-0'][`hb_deal_${bid1.bidderCode}`]);
+      });
+    });
+
     it('selects the top bid when _sendAllBids true', function () {
       config.setConfig({ enableSendAllBids: true });
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
@@ -127,12 +140,12 @@ describe('targeting tests', function () {
       // we should only get the targeting data for the one requested adunit
       expect(Object.keys(targeting).length).to.equal(1);
 
-      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf('hb_pb_') != -1)
+      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
 
       // expect the winning CPM to be equal to the sendAllBidCPM
-      expect(targeting['/123456/header-bid-tag-0']['hb_pb_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0']['hb_pb']);
+      expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
   }); // end getAllTargeting tests
 

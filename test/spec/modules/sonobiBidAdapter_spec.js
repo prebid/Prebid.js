@@ -294,7 +294,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=http://localhost/"></script>',
+        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=http%3A%2F%2Flocalhost%2F"></script>`,
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
@@ -306,7 +306,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http://localhost/',
+        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
@@ -318,13 +318,20 @@ describe('SonobiBidAdapter', function () {
 
     it('should map bidResponse to prebidResponse', function () {
       const response = spec.interpretResponse(bidResponse, bidRequests);
-      response.forEach(resp => {
-        let regx = /http:\/\/localhost:9876\/.*?(?="|$)/
-        resp.ad = resp.ad.replace(regx, 'http://localhost/');
+      response.forEach((resp, i) => {
+        expect(resp.requestId).to.equal(prebidResponse[i].requestId);
+        expect(resp.cpm).to.equal(prebidResponse[i].cpm);
+        expect(resp.width).to.equal(prebidResponse[i].width);
+        expect(resp.height).to.equal(prebidResponse[i].height);
+        expect(resp.ttl).to.equal(prebidResponse[i].ttl);
+        expect(resp.creativeId).to.equal(prebidResponse[i].creativeId);
+        expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue);
+        expect(resp.currency).to.equal(prebidResponse[i].currency);
+        expect(resp.aid).to.equal(prebidResponse[i].aid);
+        expect(resp.ad.indexOf('localhost')).to.be.greaterThan(0);
       });
-      expect(response).to.deep.equal(prebidResponse);
-    })
-  })
+    });
+  });
 
   describe('.getUserSyncs', function () {
     let bidResponse = [{

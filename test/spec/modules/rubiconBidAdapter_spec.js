@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import adapterManager from 'src/adaptermanager';
-import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType} from 'modules/rubiconBidAdapter';
+import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
@@ -466,13 +466,33 @@ describe('the rubicon adapter', function () {
           });
         });
 
-        it('page_url should use params.referrer, config.getConfig("pageUrl"), utils.getTopWindowUrl() in that order', function () {
-          sandbox.stub(utils, 'getTopWindowUrl').callsFake(() => 'http://www.prebid.org');
+        it('should add referer info to request data', function () {
+          let refererInfo = {
+            referer: 'http://www.prebid.org',
+            reachedTop: true,
+            numIframes: 1,
+            stack: [
+              'http://www.prebid.org/page.html',
+              'http://www.prebid.org/iframe1.html',
+            ]
+          };
 
+          bidderRequest = Object.assign({refererInfo}, bidderRequest);
+          delete bidderRequest.bids[0].params.referrer;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+
+          expect(parseQuery(request.data).rf).to.exist;
+          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+        });
+
+        it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
+          let refererInfo = { referer: 'http://www.prebid.org' };
+          bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
 
@@ -795,6 +815,72 @@ describe('the rubicon adapter', function () {
             [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             data = parseQuery(request.data);
             expect(data['gdpr']).to.equal('0');
+          });
+        });
+
+        describe('first party data', function () {
+          it('should not have any tg_v or tg_i params if all are undefined', function () {
+            let params = {
+              inventory: {
+                rating: null,
+                prodtype: undefined
+              },
+              visitor: {
+                ucat: undefined,
+                lastsearch: null,
+                likes: undefined
+              },
+            };
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that no tg_v or tg_i keys are present in the request
+            let matchingExp = RegExp('^tg_(i|v)\..*$')
+            Object.keys(data).forEach(key => {
+              expect(key).to.not.match(matchingExp);
+            });
+          });
+
+          it('should contain valid params when some are undefined', function () {
+            let params = {
+              inventory: {
+                rating: undefined,
+                prodtype: ['tech', 'mobile']
+              },
+              visitor: {
+                ucat: null,
+                lastsearch: 'iphone',
+                likes: undefined
+              },
+            };
+            let undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes']
+            let expectedQuery = {
+              'tg_v.lastsearch': 'iphone',
+              'tg_i.prodtype': 'tech,mobile',
+            }
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure none of the undefined keys are in query
+            undefinedKeys.forEach(key => {
+              expect(typeof data[key]).to.equal('undefined');
+            });
+
+            // make sure the expected and defined ones do show up still
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.equal(value);
+            });
           });
         });
 
@@ -1286,7 +1372,26 @@ describe('the rubicon adapter', function () {
           expect(request.data.slots[0].size_id).to.equal(203);
         });
 
-        it('should get size from bid.sizes too', function () {
+        it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
+          createVideoBidderRequestNoVideo();
+
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {
+            sizes: [[300, 250]]
+          };
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const bidRequestCopy = clone(bidderRequest);
+
+          let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+        });
+
+        it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
@@ -1532,6 +1637,129 @@ describe('the rubicon adapter', function () {
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
           expect(bids[1].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
           expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
+        });
+
+        it('should use "network-advertiser" if no creative_id', function () {
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43, 10, 2
+            ],
+            'tracking': '',
+            'inventory': {}
+          };
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+              'size_id': '15',
+              'ad_id': '6',
+              'advertiser': 7,
+              'network': 8,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.811,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '15_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('8-7');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '43',
+              'ad_id': '7',
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '43_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('-');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '10',
+              'ad_id': '7',
+              'network': 8,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '10_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('8-');
+
+          response.ads = [
+            {
+              'status': 'ok',
+              'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+              'size_id': '2',
+              'ad_id': '7',
+              'advertiser': 7,
+              'type': 'script',
+              'script': 'alert(\'foo\')',
+              'campaign_id': 10,
+              'cpm': 0.911,
+              'targeting': [
+                {
+                  'key': 'rpfl_14062',
+                  'values': [
+                    '2_tier_all_test'
+                  ]
+                }
+              ]
+            }
+          ];
+
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].creativeId).to.equal('-7');
         });
 
         it('should be fine with a CPM of 0', function () {

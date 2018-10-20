@@ -107,6 +107,16 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.refererInfo) {
+      let refererinfo = {
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        rd_top: bidderRequest.refererInfo.reachedTop,
+        rd_ifs: bidderRequest.refererInfo.numIframes,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+      }
+      payload.referrer_detection = refererinfo;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
