@@ -3,14 +3,14 @@
 ```
 Module Name:  Gamoshi Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   arik@gamoshi.com, eric@kfirs.com
+Maintainer:   moses@gamoshi.com
 ```
 
 # Description
 
-Connects to Gamoshi's Gambid platform & exchange for bids.
+Connects to Gamoshi's Programmatic advertising platform as a service.
 
-Gambid bid adapter supports Banner & Outstream Video. The *only* required parameter (in the `params` section) is the `supplyPartnerId` parameter.
+Gamoshi bid adapter supports Banner & Outstream Video. The *only* required parameter (in the `params` section) is the `supplyPartnerId` parameter.
 
 # Test Parameters
 ```
