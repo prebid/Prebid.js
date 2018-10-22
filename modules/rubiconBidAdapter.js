@@ -11,10 +11,8 @@ function isSecure() {
 
 // use protocol relative urls for http or https
 export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
+export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
-
-const TIMEOUT_BUFFER = 500;
 
 var sizeMap = {
   1: '468x60',
@@ -108,7 +106,7 @@ export const spec = {
     }
 
     // video
-    if (hasVideoMediaType(bid)) {
+    if (bidType(bid) === 'video') {
       if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
         if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
           utils.logError('Rubicon bid adapter Error: size id is missing for instream/legacy video request.');
@@ -138,7 +136,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    const videoRequests = bidRequests.filter(hasVideoMediaType).map(bidRequest => {
+    const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
       let data = {
@@ -221,7 +219,7 @@ export const spec = {
 
     if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
-      requests = videoRequests.concat(bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest)).map(bidRequest => {
+      requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
@@ -236,7 +234,7 @@ export const spec = {
     } else {
       // single request requires bids to be grouped by site id into a single request
       // note: utils.groupBy wasn't used because deep property access was needed
-      const nonVideoRequests = bidRequests.filter(bidRequest => !hasVideoMediaType(bidRequest));
+      const nonVideoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner');
       const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
         return groupedBids;
@@ -270,9 +268,9 @@ export const spec = {
     return requests;
   },
 
-  getOrderedParams: function (params) {
-    const containsTgV = /^tg_v/;
-    const containsTgI = /^tg_i/;
+  getOrderedParams: function(params) {
+    const containsTgV = /^tg_v/
+    const containsTgI = /^tg_i/
 
     const orderedParams = [
       'account_id',
@@ -310,15 +308,15 @@ export const spec = {
    * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
    * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
    */
-  combineSlotUrlParams: function (aSlotUrlParams) {
+  combineSlotUrlParams: function(aSlotUrlParams) {
     // if only have params for one slot, return those params
     if (aSlotUrlParams.length === 1) {
       return aSlotUrlParams[0];
     }
 
     // reduce param values from all slot objects into an array of values in a single object
-    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function (oCombinedParams, oSlotUrlParams, iIndex) {
-      Object.keys(oSlotUrlParams).forEach(function (param) {
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function(param) {
         if (!oCombinedParams.hasOwnProperty(param)) {
           oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
         }
@@ -332,7 +330,7 @@ export const spec = {
     // convert arrays into semicolon delimited strings
     const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
 
-    Object.keys(oCombinedSlotUrlParams).forEach(function (param) {
+    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
       const sValues = oCombinedSlotUrlParams[param].join(';');
       // consolidate param values into one value if they are all the same
       const match = sValues.match(re);
@@ -347,7 +345,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @returns {Object} - object key values named and formatted as slot params
    */
-  createSlotParams: function (bidRequest, bidderRequest) {
+  createSlotParams: function(bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
@@ -374,7 +372,7 @@ export const spec = {
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
       'tg_fl.eid': bidRequest.code,
-      'rf': _getPageUrl(bidRequest)
+      'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
     if (bidderRequest.gdprConsent) {
@@ -630,7 +628,7 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (hasVideoMediaType(bid)) {
+  if (bidType(bid) === 'video') {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
