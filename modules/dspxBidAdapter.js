@@ -2,12 +2,12 @@ import * as utils from 'src/utils';
 import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
-const BIDDER_CODE = 'buyer';
+const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['buyer'],
+  aliases: ['dspx'],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);
   },
