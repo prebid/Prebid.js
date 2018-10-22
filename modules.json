@@ -1,6 +1,7 @@
 [
     "33acrossBidAdapter",
     "adyoulikeBidAdapter",
+    "aolBidAdapter",
     "appnexusBidAdapter",
     "audienceNetworkBidAdapter",
     "beachfrontBidAdapter",
@@ -33,5 +34,4 @@
     "trustxBidAdapter",
     "undertoneBidAdapter",
     "unrulyBidAdapter",
-    "zeroIdBidAdapter"
 ]
