@@ -62,7 +62,8 @@ function toStorageRequest(bid) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
   return {
     type: 'xml',
-    value: vastValue
+    value: vastValue,
+    ttlseconds: Number(bid.ttl)
   };
 }
 

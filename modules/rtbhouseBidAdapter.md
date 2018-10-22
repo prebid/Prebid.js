@@ -14,6 +14,7 @@ Please reach out to pmp@rtbhouse.com to receive your own
 # Test Parameters
 ```
     var adUnits = [
+           // banner
            {
                code: 'test-div',
                sizes: [[300, 250]],
@@ -26,6 +27,32 @@ Please reach out to pmp@rtbhouse.com to receive your own
                        }
                    }
                ]
+           },
+           // native
+           {
+                code: 'test-div',
+                mediaTypes: {
+                    native: {
+                        title: {
+                            required: true
+                        },
+                        image: {
+                            required: true
+                        },
+                        body: {
+                            required: true
+                        }
+                    }
+                },
+                bids: [
+                    {
+                        bidder: "rtbhouse",
+                        params: {
+                            region: 'prebid-eu',
+                            publisherId: 'PREBID_TEST_ID'
+                        }
+                    }
+                ]
            }
        ];
 ```

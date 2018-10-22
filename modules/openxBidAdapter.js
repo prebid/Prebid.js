@@ -8,7 +8,7 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.4';
+const BIDDER_VERSION = '2.1.5';
 
 let shouldSendBoPixel = true;
 
@@ -220,6 +220,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     if (config.getConfig('consentManagement.cmpApi') === 'iab') {
       defaultParams.x_gdpr_f = 1;
     }
+  }
+
+  if (bids[0].crumbs && bids[0].crumbs.pubcid) {
+    defaultParams.pubcid = bids[0].crumbs.pubcid;
   }
 
   return defaultParams;

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, resetInvibes } from 'modules/invibesBidAdapter';
+import { spec, resetInvibes, stubDomainOptions } from 'modules/invibesBidAdapter';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -39,6 +39,21 @@ describe('invibesBidAdapter:', function () {
       transactionId: 't2'
     }
   ];
+
+  let StubbedPersistence = function(initialValue) {
+    var value = initialValue;
+    return {
+      load: function () {
+        let str = value || '';
+        try {
+          return JSON.parse(str);
+        } catch (e) { }
+      },
+      save: function (obj) {
+        value = JSON.stringify(obj);
+      }
+    }
+  };
 
   beforeEach(function () {
     resetInvibes();
@@ -83,6 +98,18 @@ describe('invibesBidAdapter:', function () {
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
+
+      it('returns false when bid response was previously received', function() {
+        const validBid = {
+          bidder: BIDDER_CODE,
+          params: {
+            placementId: PLACEMENT_ID
+          }
+        }
+
+        top.window.invibes.bidResponse = { prop: 'prop' };
+        expect(spec.isBidRequestValid(validBid)).to.be.false;
+      });
     });
   });
 
@@ -126,38 +153,52 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.lId).to.not.exist;
     });
 
-    it('graduate and send the domain id', function () {
-      top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}';
-      let request = spec.buildRequests(bidRequests);
-      expect(request.data.lId).to.exist;
-    });
-
-    it('send the domain id if already graduated', function () {
-      top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi"}';
-      let request = spec.buildRequests(bidRequests);
-      expect(request.data.lId).to.exist;
-    });
-
-    it('send the domain id after replacing it with new format', function () {
-      top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi.8537626"}';
-      let request = spec.buildRequests(bidRequests);
-      expect(request.data.lId).to.exist;
-    });
-
     it('try to graduate but not enough count - doesnt send the domain id', function () {
-      top.window.invibes.optIn = 1;
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":5}';
-      let request = spec.buildRequests(bidRequests);
+	  let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: true } } } };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.not.exist;
     });
 
     it('try to graduate but not old enough - doesnt send the domain id', function () {
-      top.window.invibes.optIn = 1;
+	  let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: true } } } };
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.lId).to.not.exist;
+    });
+
+    it('graduate and send the domain id', function () {
+	  let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: true } } } };
+	  stubDomainOptions(new StubbedPersistence('{"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}'));
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.lId).to.exist;
+    });
+
+    it('send the domain id if already graduated', function () {
+	  let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: true } } } };
+	  stubDomainOptions(new StubbedPersistence('{"id":"f8zoh044p9oi"}'));
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.lId).to.exist;
+    });
+
+    it('send the domain id after replacing it with new format', function () {
+	  let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: true } } } };
+	  stubDomainOptions(new StubbedPersistence('{"id":"f8zoh044p9oi.8537626"}'));
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.lId).to.exist;
+    });
+
+    it('dont send the domain id if consent declined', function () {
+      let bidderRequest = { gdprConsent: { vendorData: { vendorConsents: { 436: false } } } };
+      stubDomainOptions(new StubbedPersistence('{"id":"f8zoh044p9oi.8537626"}'));
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.lId).to.not.exist;
+    });
+
+    it('dont send the domain id if no consent', function () {
+	  let bidderRequest = { };
+	  stubDomainOptions(new StubbedPersistence('{"id":"f8zoh044p9oi.8537626"}'));
+      let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.not.exist;
     });
   });
