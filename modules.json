@@ -2,6 +2,7 @@
     "33acrossBidAdapter",
     "adyoulikeBidAdapter",
     "appnexusBidAdapter",
+    "aolBidAdapter",
     "audienceNetworkBidAdapter",
     "beachfrontBidAdapter",
     "consentManagement",
@@ -32,6 +33,5 @@
     "tripleliftBidAdapter",
     "trustxBidAdapter",
     "undertoneBidAdapter",
-    "unrulyBidAdapter",
-    "zeroIdBidAdapter"
+    "unrulyBidAdapter"
 ]
