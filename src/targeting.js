@@ -2,6 +2,7 @@ import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, gro
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
+import { sizeSupported } from './sizeMapping';
 import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
@@ -198,6 +199,7 @@ export function newTargeting(auctionManager) {
 
   function getBidsReceived() {
     const bidsReceived = auctionManager.getBidsReceived()
+      .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
       .filter(isUnusedBid)
       .filter(exports.isBidNotExpired)
     ;
