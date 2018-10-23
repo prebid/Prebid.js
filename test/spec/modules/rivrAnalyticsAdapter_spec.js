@@ -358,8 +358,10 @@ describe('RIVR Analytics adapter', () => {
   it('sendImpressions(), when authToken is defined and there are impressions, it sends impressions to the tracker', () => {
     const aMockString = 'anImpressionPropertyValue';
     const IMPRESSION_MOCK = { anImpressionProperty: aMockString };
+    const CLIENT_ID_MOCK = 'aClientID';
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
     analyticsAdapter.context.authToken = 'anAuthToken';
+    analyticsAdapter.context.clientID = CLIENT_ID_MOCK;
     analyticsAdapter.context.queue = new ExpiringQueue(
       () => {},
       () => {},
@@ -376,12 +378,13 @@ describe('RIVR Analytics adapter', () => {
 
     expect(ajaxStub.callCount).to.be.equal(1);
     expect(payload.impressions.length).to.be.equal(1);
-    expect(ajaxStub.getCall(0).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/impressions/);
+    expect(ajaxStub.getCall(0).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/aClientID\/impressions/);
     expect(payload.impressions[0].anImpressionProperty).to.be.equal(aMockString);
   });
 
-  it('reportClickEvent(), when authToken is not defined, it calls endpoint', () => {
+  it('reportClickEvent() calls endpoint', () => {
     const CLIENT_ID_MOCK = 'aClientId';
+    const AUTH_TOKEN_MOCK = 'aToken';
     const CLICK_URL_MOCK = 'clickURLMock';
     const EVENT_MOCK = {
       currentTarget: {
@@ -397,7 +400,7 @@ describe('RIVR Analytics adapter', () => {
       }
     };
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-    analyticsAdapter.context.authToken = undefined;
+    analyticsAdapter.context.authToken = AUTH_TOKEN_MOCK;
     analyticsAdapter.context.clientID = CLIENT_ID_MOCK;
     analyticsAdapter.context.auctionObject.nullProperty = null;
     analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
@@ -407,9 +410,11 @@ describe('RIVR Analytics adapter', () => {
     reportClickEvent(EVENT_MOCK);
 
     const payload = JSON.parse(ajaxStub.getCall(0).args[2]);
+    const options = ajaxStub.getCall(0).args[3];
 
     expect(ajaxStub.callCount).to.be.equal(1);
     expect(ajaxStub.getCall(0).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/aClientId\/clicks/);
+    expect(options.customHeaders.Authorization).to.equal('Basic aToken');
     expect(payload.timestamp).to.be.equal('1970-01-01T00:00:00.000Z');
     expect(payload.request_id).to.be.a('string');
     expect(payload.click_url).to.be.equal(CLICK_URL_MOCK);

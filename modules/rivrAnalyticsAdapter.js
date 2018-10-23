@@ -62,7 +62,6 @@ export function sendAuction() {
       `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
       () => {},
       JSON.stringify(req),
-      // TODO extract this object to variable
       {
         contentType: 'application/json',
         customHeaders: {
@@ -80,7 +79,7 @@ export function sendImpressions() {
       let impressionsReq = Object.assign({}, {impressions});
       logInfo('sending impressions request to analytics => ', impressionsReq);
       ajax(
-        `http://${rivrAnalytics.context.host}/impressions`,
+        `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/impressions`,
         () => {},
         JSON.stringify(impressionsReq),
         {
@@ -240,10 +239,17 @@ export function reportClickEvent(event) {
     'click_url': clickUrl
   };
   logInfo('Sending click events with parameters: ', req);
-
-  // TODO add Authentication header
-  ajax(`http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`, () => {
-  }, JSON.stringify(req));
+  ajax(
+    `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`,
+    () => {},
+    JSON.stringify(req),
+    {
+      contentType: 'application/json',
+      customHeaders: {
+        'Authorization': 'Basic ' + rivrAnalytics.context.authToken
+      }
+    }
+  );
 };
 
 function addClickHandler(bannerId) {
