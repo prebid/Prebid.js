@@ -25,6 +25,33 @@ export function setSizeConfig(config) {
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**
+ * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
+ * @param bidOrAdUnit the bidder or adUnit to get label info on
+ * @param activeLabels the labels passed to requestBids
+ * @returns {LabelDescriptor}
+ */
+export function getLabels(bidOrAdUnit, activeLabels) {
+  if (bidOrAdUnit.labelAll) {
+    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+  }
+  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+}
+
+/**
+ * Determines whether a single size is valid given configured sizes
+ * @param {Array} size [width, height]
+ * @param {Array<SizeConfig>} configs
+ * @returns {boolean}
+ */
+export function sizeSupported(size, configs = sizeConfig) {
+  let maps = evaluateSizeConfig(configs);
+  if (!maps.shouldFilter) {
+    return true;
+  }
+  return !!maps.sizesSupported[size];
+}
+
+/**
  * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
  * @param {Array<string>} labels Labels specified on adUnit or bidder
  * @param {boolean} labelAll if true, all labels must match to be enabled

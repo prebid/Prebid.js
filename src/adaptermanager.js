@@ -1,7 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp } from './utils';
-import { resolveStatus } from './sizeMapping';
+import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from 'src/ajax';
@@ -33,19 +33,6 @@ var _analyticsRegistry = {};
  * @property {Array<string>} labels the labels listed on the bidder or adUnit
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
-
-/**
- * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
- * @param bidOrAdUnit the bidder or adUnit to get label info on
- * @param activeLabels the labels passed to requestBids
- * @returns {LabelDescriptor}
- */
-function getLabels(bidOrAdUnit, activeLabels) {
-  if (bidOrAdUnit.labelAll) {
-    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
-  }
-  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
-}
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
   return adUnits.reduce((result, adUnit) => {
