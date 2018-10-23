@@ -581,7 +581,6 @@ function mapSizes(sizes) {
  */
 export function hasVideoMediaType(bidRequest) {
   if (typeof utils.deepAccess(bidRequest, 'params.video') === 'undefined' && Array.isArray(utils.deepAccess(bidRequest, 'params.sizes'))) {
-    utils.logWarn('Rubicon bid adapter Warning: no video params found, convert to banner with the bidder size id');
     return false;
   }
   return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
