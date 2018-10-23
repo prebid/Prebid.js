@@ -200,6 +200,52 @@ function logAllErrors(errors) {
   });
 }
 
+function _getDataFromImpArray (impData, id, key) {
+  for(var index in impData) {
+    if (impData[index].ext.wrapper.div  === id) {
+      switch (key) {
+        case "requestId": 
+          return impData[index].id;
+        case "width":
+          return impData[index].banner.w;
+        case "height":
+          return impData[index].banner.h;
+      }
+    }
+  }
+}
+
+function _createDummyBids (impData, bidResponses, miObj){
+  let bidMap = window.PWT.bidMap;
+  //impData[0].ext.wrapper.div
+  //bidMap.id
+  for(var id in bidMap) {
+    for (var adapterID in bidMap[id].adapters) {
+      if (adapterID !== 'prebid') {
+        bidResponses.push({
+          requestId: _getDataFromImpArray(impData, id, "requestId"),
+          bidderCode: BIDDER_CODE,
+          originalBidder: adapterID,
+          pubmaticServerErrorCode: undefined,
+          width: _getDataFromImpArray(impData, id, "width"),
+          height: _getDataFromImpArray(impData, id, "height"),
+          creativeId: 0,
+          dealId: '',
+          currency: CURRENCY,
+          netRevenue: true,
+          ttl: 300,
+          referrer: utils.getTopWindowUrl(),
+          ad: '',
+          cpm: 0,
+          serverSideResponseTime: 0,
+          mi: miObj.hasOwnProperty(adapterID) ? miObj[adapterID] : undefined
+        });
+      }
+    }
+  }
+  console.log(bidResponses);
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -324,37 +370,45 @@ export const spec = {
         // Supporting multiple bid responses for same adSize
         const referrer = utils.getTopWindowUrl();
         const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
-        response.body.seatbid.forEach(seatbidder => {
+        
+		    const miObj = response.body.ext && response.body.ext.mi || { pubmatic: 1, appnexus: 0, rubicon: 0};
+        let requestData = JSON.parse(request.data);
+
+        _createDummyBids(requestData.imp, bidResponses, (response.body.ext && response.body.ext.mi) || { pubmatic: 1, appnexus: 0, rubicon: 0, pulsepoint: 1});
+
+		    response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
           seatbidder.bid.forEach(bid => {
             if (bid.id !== null && bid.ext.summary) {
               bid.ext.summary.forEach((summary, index) => {
                 if (summary.bidder) {
-                  const firstSummary = index === 0;
-                  const newBid = {
-                    requestId: bid.impid,
-                    bidderCode: BIDDER_CODE,
-                    originalBidder: summary.bidder,
-                    pubmaticServerErrorCode: summary.errorCode,
-                    cpm: (parseFloat(summary.bid) || 0).toFixed(2),
-                    width: summary.width,
-                    height: summary.height,
-                    creativeId: firstSummary ? (bid.crid || bid.id) : bid.id,
-                    dealId: firstSummary ? (bid.dealid || UNDEFINED) : UNDEFINED,
-                    currency: CURRENCY,
-                    netRevenue: true,
-                    ttl: 300,
-                    referrer: referrer,
-                    ad: firstSummary ? bid.adm : '',
-                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0
-                    /* setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
+                  var firstSummary = index === 0;
+                  bidResponses.forEach(function (br) {
+                    if (br.requestId == bid.impid && br.originalBidder === summary.bidder) {
+                      br.requestId = bid.id;
+                      br.bidderCode = BIDDER_CODE;
+                      //br.originalBidder = summary.bidder;
+                      br.pubmaticServerErrorCode = summary.errorCode;
+                      br.cpm = (parseFloat(summary.bid) || 0).toFixed(2);
+                      br.width = summary.width || br.width;
+                      br.height = summary.height || br.height;
+                      br.creativeId = firstSummary ? bid.crid || bid.id : bid.id;
+                      br.dealId = firstSummary ? bid.dealid || UNDEFINED : UNDEFINED;
+                      br.currency = CURRENCY;
+                      br.netRevenue = true;
+                      br.ttl = 300;
+                      br.referrer = referrer;
+                      br.ad = firstSummary ? bid.adm : '';
+                      br.serverSideResponseTime = partnerResponseTimeObj[summary.bidder] || 0;
+                      /* setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
                        probable causes for this happening will be, pubmaticServerErrorCode is one of the following:
                        1 = GADS_UNMAPPED_SLOT_ERROR
                        2 = GADS_MISSING_CONF_ERROR
                        6 = INVALID_CONFIGURATION_ERROR
-                    */
-                  };
-                  bidResponses.push(newBid);
+                      */
+                      //mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                    }
+                  });
                 }
               });
             }
