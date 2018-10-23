@@ -224,7 +224,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  let bid = {
+  const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
@@ -233,18 +233,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     netRevenue: true,
     ttl: 300,
     appnexus: {
-      buyerMemberId: rtbBid.buyer_member_id
+      buyerMemberId: rtbBid.buyer_member_id,
+      dealPriority: rtbBid.deal_priority,
+      dealCode: rtbBid.deal_code
     }
   };
-
-  if (rtbBid.deal_priority && rtbBid.deal_code) {
-    bid = utils.mergeDeep(bid, {
-      appnexus: {
-        dealPriority: rtbBid.deal_priority,
-        dealCode: rtbBid.deal_code
-      }
-    });
-  }
 
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
