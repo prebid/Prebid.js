@@ -1125,3 +1125,27 @@ export function convertTypes(types, params) {
   });
   return params;
 }
+
+/**
+ * Deep merge objects
+ * @param {Object} target
+ * @param {Object} source
+ * @returns {Object} result
+ */
+export function mergeDeep(target, source) {
+  let output = Object.assign({}, target);
+  if (exports.isPlainObject(target) && exports.isPlainObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (exports.isPlainObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] });
+        } else {
+          output[key] = exports.mergeDeep(target[key], source[key]);
+        }
+      } else {
+        Object.assign(output, { [key]: source[key] });
+      }
+    });
+  }
+  return output;
+}
