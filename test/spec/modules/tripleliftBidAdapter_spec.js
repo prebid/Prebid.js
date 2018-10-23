@@ -82,10 +82,6 @@ describe('triplelift adapter', function () {
           iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
         }
       ],
-      gdprConsent: {
-        consentString: 'BOONm0NOONma-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVOQ6gEaY',
-        gdprApplies: true
-      },
       refererInfo: {
         referer: 'http://.examplereferer.com'
       }
@@ -152,10 +148,6 @@ describe('triplelift adapter', function () {
           iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
         }
       ],
-      gdprConsent: {
-        consentString: 'BOONm0NOONma-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVOQ6gEaY',
-        gdprApplies: true
-      },
       refererInfo: {
         referer: 'http://.examplereferer.com'
       }
@@ -226,10 +218,6 @@ describe('triplelift adapter', function () {
             iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
           }
         ],
-        gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
-          gdprApplies: true
-        },
         refererInfo: {
           referer: 'http://.examplereferer.com'
         }
