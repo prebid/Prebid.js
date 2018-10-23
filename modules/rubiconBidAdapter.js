@@ -92,11 +92,9 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-
     if (!/^\d+$/.test(bid.params.accountId)) {
       return false;
     }
-
     return !!bidType(bid, true);
   },
   /**
