@@ -409,7 +409,7 @@ export const spec = {
         utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
       }
     } else {
-      // Commenting out for prebid 1.21 release. Needs to be uncommented and changes from Prebid PR2941 to be pulled in. 
+      // Commenting out for prebid 1.21 release. Needs to be uncommented and changes from Prebid PR2941 to be pulled in.
       // utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
 
