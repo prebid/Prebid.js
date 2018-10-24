@@ -289,7 +289,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     switch (eventType) {
       case AUCTION_INIT:
         let cacheEntry = _pick(args, [
-          'timestamp',
+          'auctionStart as timestamp',
           'timeout'
         ]);
         cacheEntry.bids = {};
