@@ -781,6 +781,37 @@ describe('OpenxAdapter', function () {
       const request = spec.buildRequests(bidRequestsWithDnt);
       expect(request[0].data.ns).to.equal(1);
     });
+
+    describe('publisher common id query param', function() {
+      it('should not send a pubcid query param when there is no crumbs.pubcid defined in the bid requests', function () {
+        const request = spec.buildRequests(bidRequestsWithMediaType);
+        expect(request[0].data).to.not.have.any.keys('pubcid');
+      });
+
+      it('should send a pubcid query param when crumbs.pubcid is defined in the bid requests', function () {
+        const bidRequestsWithPubcid = [{
+          bidder: 'openx',
+          params: {
+            unit: '11',
+            delDomain: 'test-del-domain'
+          },
+          crumbs: {
+            pubcid: 'c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          bidId: 'test-bid-id-1',
+          bidderRequestId: 'test-bid-request-1',
+          auctionId: 'test-auction-1'
+        }];
+        const request = spec.buildRequests(bidRequestsWithPubcid);
+        expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
+      });
+    })
   });
 
   describe('buildRequests for video', function () {

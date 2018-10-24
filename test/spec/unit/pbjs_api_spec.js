@@ -26,7 +26,7 @@ var prebid = require('src/prebid');
 var utils = require('src/utils');
 // var bidmanager = require('src/bidmanager');
 var bidfactory = require('src/bidfactory');
-var adloader = require('src/adloader');
+var adloader = require('test/mocks/adloaderStub');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
 var adserver = require('src/adserver');
@@ -1194,6 +1194,39 @@ describe('Unit: Prebid Module', function () {
   })
 
   describe('requestBids', function () {
+    let sandbox;
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+    describe('bidRequests is empty', function () {
+      it('should log warning message and execute callback if bidRequests is empty', function () {
+        let bidsBackHandler = function bidsBackHandlerCallback() {};
+        let spyExecuteCallback = sinon.spy(bidsBackHandler);
+        let logWarnSpy = sandbox.spy(utils, 'logWarn');
+
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              bids: [],
+            }, {
+              code: 'test2',
+              bids: [],
+            }
+          ],
+          bidsBackHandler: spyExecuteCallback
+        });
+
+        assert.ok(logWarnSpy.calledWith('No valid bid requests returned for auction'), 'expected warning message was logged');
+        assert.ok(spyExecuteCallback.calledOnce, 'callback executed when bidRequests is empty');
+      });
+    });
+  });
+
+  describe('requestBids', function () {
     let xhr;
     let requests;
 
@@ -1591,8 +1624,8 @@ describe('Unit: Prebid Module', function () {
   describe('emit', function () {
     it('should be able to emit event without arguments', function () {
       var spyEventsEmit = sinon.spy(events, 'emit');
-      events.emit(CONSTANTS.EVENTS.AUCTION_END);
-      assert.ok(spyEventsEmit.calledWith('auctionEnd'));
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS);
+      assert.ok(spyEventsEmit.calledWith('requestBids'));
       events.emit.restore();
     });
   });
@@ -1633,14 +1666,12 @@ describe('Unit: Prebid Module', function () {
 
   describe('loadScript', function () {
     it('should call adloader.loadScript', function () {
-      const loadScriptSpy = sinon.spy(adloader, 'loadScript');
       const tagSrc = '';
       const callback = Function;
       const useCache = false;
 
       $$PREBID_GLOBAL$$.loadScript(tagSrc, callback, useCache);
-      assert.ok(loadScriptSpy.calledWith(tagSrc, callback, useCache), 'called adloader.loadScript');
-      adloader.loadScript.restore();
+      assert.ok(adloader.loadScriptStub.calledWith(tagSrc, callback, useCache), 'called adloader.loadScript');
     });
   });
 
