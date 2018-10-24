@@ -83,23 +83,23 @@ describe('triplelift adapter', function () {
         }
       ],
       refererInfo: {
-        referer: 'http://.examplereferer.com'
+        referer: 'http://examplereferer.com'
       }
     };
 
     it('exists and is an object', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {bidderRequest});
       expect(request).to.exist.and.to.be.a('object');
     });
 
     it('should only parse sizes that are of the proper length and format', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {bidderRequest});
       expect(request.data.imp[0].banner.format).to.have.length(2);
       expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should be a post request and populate the payload', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {bidderRequest});
       const payload = request.data;
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
@@ -108,7 +108,7 @@ describe('triplelift adapter', function () {
     });
 
     it('should return a query string for TL call', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {bidderRequest});
       const url = request.url;
       expect(url).to.exist;
       expect(url).to.be.a('string');
@@ -149,7 +149,7 @@ describe('triplelift adapter', function () {
         }
       ],
       refererInfo: {
-        referer: 'http://.examplereferer.com'
+        referer: 'http://examplereferer.com'
       }
     };
 
@@ -219,7 +219,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://.examplereferer.com'
+          referer: 'http://examplereferer.com'
         }
       };
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
