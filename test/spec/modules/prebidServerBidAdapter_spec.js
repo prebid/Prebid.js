@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager from 'src/adaptermanager';
 import * as utils from 'src/utils';
-import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
@@ -723,7 +722,6 @@ describe('S2S Adapter', function () {
       sinon.stub(utils, 'triggerPixel');
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
-      sinon.stub(cookie, 'cookieSet');
       sinon.stub(events, 'emit');
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
@@ -734,7 +732,6 @@ describe('S2S Adapter', function () {
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       events.emit.restore();
-      cookie.cookieSet.restore();
       logWarnSpy.restore();
     });
 
@@ -907,30 +904,6 @@ describe('S2S Adapter', function () {
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('does not call cookieSet cookie sync when no_cookie response && not opted in', function () {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-
-      let myConfig = Object.assign({}, CONFIG);
-
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-      sinon.assert.notCalled(cookie.cookieSet);
-    });
-
-    it('calls cookieSet cookie sync when no_cookie response && opted in', function () {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-      let myConfig = Object.assign({
-        cookieSet: true,
-        cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
-      }, CONFIG);
-
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-      sinon.assert.calledOnce(cookie.cookieSet);
-    });
-
     it('handles OpenRTB responses and call BIDDER_DONE', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
@@ -1070,8 +1043,6 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('accountId', '123');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.cookieSet).to.be.false;
-      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
@@ -1093,8 +1064,6 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('accountId', 'abc');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
-      expect(vendorConfig.cookieSet).to.be.false;
-      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');

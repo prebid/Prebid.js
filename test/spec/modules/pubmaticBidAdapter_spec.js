@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pubmaticBidAdapter';
 import * as utils from 'src/utils';
+import {config} from 'src/config';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -447,6 +448,197 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
+
+      it('Request should have digitrust params', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        var bidRequest = {};
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: true,
+            identity: {
+              privacy: {optout: false},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, bidRequest);
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal([{
+          'source': 'digitru.st',
+          'uids': [{
+            'id': 'testId',
+            'atype': 1,
+            'ext': {
+              'keyv': 4
+            }
+          }]
+        }]);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      it('Request should not have digitrust params when DigiTrust not loaded', function() {
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+      });
+
+      it('Request should not have digitrust params due to optout', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: true,
+            identity: {
+              privacy: {optout: true},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      it('Request should not have digitrust params due to failure', function() {
+        window.DigiTrust = {
+          getUser: function () {
+          }
+        };
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          ({
+            success: false,
+            identity: {
+              privacy: {optout: false},
+              id: 'testId',
+              keyv: 4
+            }
+          })
+        );
+
+        let request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.user.eids).to.deep.equal(undefined);
+        sandbox.restore();
+        delete window.DigiTrust;
+      });
+
+      describe('DigiTrustId from config', function() {
+        var origGetConfig;
+        let sandbox;
+        beforeEach(() => {
+          sandbox = sinon.sandbox.create();
+          window.DigiTrust = {
+            getUser: sandbox.spy()
+          };
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+          delete window.DigiTrust;
+        });
+
+        it('Request should have digiTrustId config params', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: true,
+                identity: {
+                  privacy: {optout: false},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            };
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'digitru.st',
+            'uids': [{
+              'id': 'testId',
+              'atype': 1,
+              'ext': {
+                'keyv': 4
+              }
+            }]
+          }]);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params due to optout', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: true,
+                identity: {
+                  privacy: {optout: true},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            }
+            return config[key];
+          });
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params due to failure', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              digiTrustId: {
+                success: false,
+                identity: {
+                  privacy: {optout: false},
+                  id: 'testId',
+                  keyv: 4
+                }
+              }
+            }
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should not have called DigiTrust.getUser()
+          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+        });
+
+        it('Request should not have digiTrustId config params if they do not exist', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {};
+            return config[key];
+          });
+
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+          // should have called DigiTrust.getUser() once
+          expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+        });
+      });
 
       it('Request params check for video ad', function () {
         let request = spec.buildRequests(videoBidRequests);

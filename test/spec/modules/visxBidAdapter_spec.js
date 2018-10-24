@@ -98,21 +98,8 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('cur', 'EUR');
     });
 
-    it('pt parameter must be "gross" if params.priceType === "gross"', function () {
+    it('pt parameter must be "net" if params.priceType === "gross"', function () {
       bidRequests[1].params.priceType = 'gross';
-      const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('pt', 'gross');
-      expect(payload).to.have.property('auids', '903535,903536');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
-      delete bidRequests[1].params.priceType;
-    });
-
-    it('pt parameter must be "net" or "gross"', function () {
-      bidRequests[1].params.priceType = 'some';
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
       expect(payload).to.be.an('object');
@@ -123,6 +110,33 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('cur', 'EUR');
       delete bidRequests[1].params.priceType;
     });
+
+    it('pt parameter must be "net" if params.priceType === "net"', function () {
+      bidRequests[1].params.priceType = 'net';
+      const request = spec.buildRequests(bidRequests);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('pt', 'net');
+      expect(payload).to.have.property('auids', '903535,903536');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('cur', 'EUR');
+      delete bidRequests[1].params.priceType;
+    });
+
+    it('pt parameter must be "net" if params.priceType === "undefined"', function () {
+      bidRequests[1].params.priceType = 'undefined';
+      const request = spec.buildRequests(bidRequests);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('pt', 'net');
+      expect(payload).to.have.property('auids', '903535,903536');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('cur', 'EUR');
+      delete bidRequests[1].params.priceType;
+    });
+
     it('should add currency from currency.bidderCurrencyDefault', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'JPY' : 'USD');
@@ -136,6 +150,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('cur', 'JPY');
       getConfigStub.restore();
     });
+
     it('should add currency from currency.adServerCurrency', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
@@ -149,6 +164,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('cur', 'USD');
       getConfigStub.restore();
     });
+
     it('if gdprConsent is present payload must have gdpr params', function () {
       const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
       const payload = request.data;
