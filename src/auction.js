@@ -110,6 +110,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   function getProperties() {
     return {
       auctionId: _auctionId,
+      timestamp: _auctionStart,
       auctionStart: _auctionStart,
       auctionEnd: _auctionEnd,
       auctionStatus: _auctionStatus,
