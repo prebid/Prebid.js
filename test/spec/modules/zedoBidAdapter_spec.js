@@ -268,4 +268,40 @@ describe('The ZEDO bidding adapter', function () {
       expect(syncs[0].url).to.contains('gdpr=0');
     });
   });
+
+  describe('bid events', function () {
+    it('should trigger a pixel', function () {
+      const bid = {
+        'bidderCode': 'zedo',
+        'width': '300',
+        'height': '250',
+        'statusMessage': 'Bid available',
+        'adId': '148018fe5e',
+        'cpm': 0.5,
+        'ad': 'dummy data',
+        'ad_id': '12345',
+        'sizeId': '15',
+        'params': [{
+          'channelCode': '123456',
+          'dimId': '85'
+        }],
+        'requestTimestamp': 1540401686,
+        'responseTimestamp': 1540401687,
+        'timeToRespond': 6253,
+        'pbLg': '0.50',
+        'pbMg': '0.50',
+        'pbHg': '0.53',
+        'adUnitCode': '/123456/header-bid-tag-0',
+        'bidder': 'zedo',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'zedo',
+          'hb_adid': '148018fe5e',
+          'hb_pb': '10.00',
+        }
+      };
+      spec.onBidWon(bid);
+      spec.onTimeout(bid);
+    });
+  });
 });
