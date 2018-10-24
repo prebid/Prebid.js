@@ -1,4 +1,4 @@
-import analyticsAdapter from 'modules/guAnalyticsAdapter';
+import analyticsAdapter, {AnalyticsQueue} from 'modules/guAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
@@ -134,7 +134,7 @@ describe('Gu analytics adapter', () => {
   });
 
   afterEach(() => {
-    analyticsAdapter.context.queue.init();
+    analyticsAdapter.context.queue = new AnalyticsQueue();
     ajaxStub.reset();
     events.getEvents.restore();
   });
@@ -242,14 +242,13 @@ describe('Gu analytics adapter', () => {
   it('should not send orphan auction events', () => {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(4500);
-    const ev = analyticsAdapter.context.queue.peekAll();
-    expect(ev).to.have.length(1);
+    expect(ajaxStub.called).to.be.equal(false);
   });
 
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args[2]);
-    expect(payload.v).to.be.eql(1);
+    expect(payload.v).to.be.eql(2);
   });
 
   it('should ignore responses sent with bid won event', () => {
@@ -262,5 +261,11 @@ describe('Gu analytics adapter', () => {
       aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
       bid: '24a5288f9d6d6b'
     }]);
+  });
+
+  it('should ignore events when auction has not been initialised', () => {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.be.eql([]);
   });
 });

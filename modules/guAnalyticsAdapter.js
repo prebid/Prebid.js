@@ -9,7 +9,7 @@ import {ajax} from 'src/ajax';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 1;
+const VERSION = 2;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
@@ -171,12 +171,15 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTim
 
 export function AnalyticsQueue() {
   let queue = [];
+  let initialised = false;
 
   this.push = (event) => {
-    if (event instanceof Array) {
-      queue.push.apply(queue, event);
-    } else {
-      queue.push(event);
+    if (initialised) {
+      if (event instanceof Array) {
+        queue.push.apply(queue, event);
+      } else {
+        queue.push(event);
+      }
     }
   };
 
@@ -196,6 +199,7 @@ export function AnalyticsQueue() {
 
   this.init = () => {
     queue = [];
+    initialised = true;
   };
 }
 
