@@ -174,11 +174,11 @@ export function getNativeTargeting(bid) {
       value = value.url;
     }
 
-    // encode fields as they might contain invalid DFP key-value values
-    // such as `=` or `!`.
-    value = encodeURIComponent(value);
-
     if (key) {
+      // encode fields as they might contain invalid DFP key-value values
+      // such as `=` or `!`.
+      value = encodeURIComponent(value);
+
       keyValues[key] = value;
     }
   });
