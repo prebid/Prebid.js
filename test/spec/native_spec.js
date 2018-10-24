@@ -6,10 +6,10 @@ const utils = require('src/utils');
 const bid = {
   native: {
     title: 'Native Creative',
-    body: 'Cool description great stuff',
+    body: 'Cool description great stuff!',
     cta: 'Do it',
     sponsoredBy: 'AppNexus',
-    clickUrl: 'https://www.link.example',
+    clickUrl: 'https://www.link.example?param=value',
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
     javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
@@ -32,9 +32,12 @@ describe('native.js', function () {
 
   it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
+    const title = decodeURIComponent(targeting[CONSTANTS.NATIVE_KEYS.title]);
+    const body = decodeURIComponent(targeting[CONSTANTS.NATIVE_KEYS.body]);
+    const linkurl = decodeURIComponent(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]);
+    expect(title).to.equal(bid.native.title);
+    expect(body).to.equal(bid.native.body);
+    expect(linkurl).to.equal(bid.native.clickUrl);
   });
 
   it('fires impression trackers', function () {

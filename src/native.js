@@ -115,13 +115,24 @@ export function nativeBidIsValid(bid, bidRequests) {
  * message should contain an `action` set to 'click'.
  *
  * // Native creative template example usage
- * <a href="%%CLICK_URL_UNESC%%%%PATTERN:hb_native_linkurl%%"
+ * <a class='js-native-link' href=''
  *    target="_blank"
- *    onclick="fireTrackers('click')">
- *    %%PATTERN:hb_native_title%%
+ *    onclick="fireTrackers('click')"
+ *    id="native-title">
  * </a>
  *
  * <script>
+ *   var linkUrl = '%%PATTERN:hb_native_linkurl%%';
+ *   linkUrl = '%%CLICK_URL_UNESC%%' + decodeURIComponent(linkUrl);
+ *   var links = document.getElementsByClassName('js-native-link');
+ *   for (var i = 0; i < links.length; i++) {
+ *     links[i].href = linkUrl;
+ *   };
+ *
+ *   var titleText = '%%PATTERN:hb_native_title%%';
+ *   titleText = decodeURIComponent(titleText);
+ *   document.getElementById('native-title').innerHTML = titleText;
+ *
  *   function fireTrackers(action) {
  *     var message = {message: 'Prebid Native', adId: '%%PATTERN:hb_adid%%'};
  *     if (action === 'click') {message.action = 'click';} // fires click trackers
@@ -162,6 +173,10 @@ export function getNativeTargeting(bid) {
     if (typeof value === 'object' && value.url) {
       value = value.url;
     }
+
+    // encode fields as they might contain invalid DFP key-value values
+    // such as `=` or `!`.
+    value = encodeURIComponent(value);
 
     if (key) {
       keyValues[key] = value;
