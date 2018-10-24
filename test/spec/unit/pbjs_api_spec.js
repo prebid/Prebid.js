@@ -1165,7 +1165,8 @@ describe('Unit: Prebid Module', function () {
         isBidRequestValid: sinon.stub(),
         buildRequests: sinon.stub(),
         interpretResponse: sinon.stub(),
-        getUserSyncs: sinon.stub()
+        getUserSyncs: sinon.stub(),
+        onTimeout: sinon.stub()
       };
 
       registerBidder(spec);
@@ -1190,6 +1191,8 @@ describe('Unit: Prebid Module', function () {
 
       expect(bidsBackHandlerStub.getCall(0).args[1]).to.equal(true,
         'bidsBackHandler should be called with timedOut=true');
+
+      sinon.assert.called(spec.onTimeout);
     });
   })
 

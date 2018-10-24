@@ -134,6 +134,43 @@ describe('adapterManager tests', function () {
     });
   });
 
+  describe('callTimedOutBidders', function () {
+    var criteoSpec = { onTimeout: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onTimeout callback when callTimedOutBidders is called', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'criteo', params: {placementId: 'id'}},
+        ]
+      }];
+      const timedOutBidders = [{
+        bidId: 'bidId',
+        bidder: 'criteo',
+        adUnitCode: adUnits[0].code,
+        auctionId: 'auctionId',
+      }];
+      AdapterManager.callTimedOutBidders(adUnits, timedOutBidders, CONFIG.timeout);
+      sinon.assert.called(criteoSpec.onTimeout);
+    });
+  }); // end callTimedOutBidders
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
