@@ -7,6 +7,7 @@ const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
 const SUBLIME_VERSION = '0.1';
+let SUBLIME_ZONE = null;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -55,8 +56,8 @@ export const spec = {
     let sacHost = params.sacHost || DEFAULT_SAC_HOST;
     let bidHost = params.bidHost || DEFAULT_BID_HOST;
     let protocol = params.protocol || DEFAULT_PROTOCOL;
-    let zoneId = params.zoneId;
     let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
+    SUBLIME_ZONE = params.zoneId;
 
     window[callbackName] = (response) => {
       var requestIdEncoded = encodeURIComponent(requestId);
@@ -76,7 +77,7 @@ export const spec = {
     };
     let script = document.createElement('script');
     script.type = 'application/javascript';
-    script.src = 'https://' + sacHost + '/sublime/' + zoneId + '/prebid?callback=' + callbackName;
+    script.src = 'https://' + sacHost + '/sublime/' + SUBLIME_ZONE + '/prebid?callback=' + callbackName;
     document.body.appendChild(script);
 
     return {
@@ -115,6 +116,11 @@ export const spec = {
       };
       if (bidResponse.cpm) {
         bidResponses.push(bidResponse);
+        top.sublime.analytics.fire('bid', {
+          qs: {
+            z: SUBLIME_ZONE
+          }
+        });
       }
     }
     return bidResponses;
