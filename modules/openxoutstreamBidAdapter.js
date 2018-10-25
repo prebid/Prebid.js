@@ -86,7 +86,9 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     auid: '540141567',
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
     openrtb: '%7B%22mimes%22%3A%5B%22video%2Fmp4%22%5D%7D',
-    nocache: new Date().getTime()
+    nocache: new Date().getTime(),
+    vht: bids[0].params.height || bids[0].sizes[0][1],
+    vwd: bids[0].params.width || bids[0].sizes[0][0]
   };
 
   if (utils.deepAccess(bidderRequest, 'gdprConsent')) {

@@ -99,6 +99,7 @@ describe('OpenXOutstreamAdapter', function () {
           'delDomain': 'test-del-domain'
         },
         'adUnitCode': 'adunit-code',
+        'sizes': [300, 250],
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300, 600]]
