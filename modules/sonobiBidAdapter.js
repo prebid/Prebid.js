@@ -2,6 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -46,13 +47,18 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().host,
+      'ref': getTopWindowLocation().href,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
       'lib_name': 'prebid',
-      'lib_v': '$prebid.version$'
+      'lib_v': '$prebid.version$',
+      'us': 0,
     };
+
+    if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+      payload.us = config.getConfig('userSync').syncsPerBidder;
+    }
 
     if (validBidRequests[0].params.hfa) {
       payload.hfa = validBidRequests[0].params.hfa;
@@ -64,7 +70,9 @@ export const spec = {
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
-      payload.consent_string = bidderRequest.gdprConsent.consentString;
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.consent_string = bidderRequest.gdprConsent.consentString;
+      }
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -115,6 +123,7 @@ export const spec = {
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
           creativeId: bid.sbi_crid || bid.sbi_aid,
+          aid: bid.sbi_aid,
           netRevenue: true,
           currency: 'USD'
         };
@@ -150,9 +159,7 @@ export const spec = {
           });
         });
       }
-    } catch (e) {
-      logError(e)
-    }
+    } catch (e) {}
     return syncs;
   }
 };
@@ -178,16 +185,16 @@ function _validateFloor (bid) {
   return '';
 }
 
-const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
+const _creative = (mediaType) => (sbiDc, sbiAid) => {
   if (mediaType === 'video') {
-    return _videoCreative(sbi_dc, sbi_aid)
+    return _videoCreative(sbiDc, sbiAid)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(getTopWindowLocation().href)}`;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+function _videoCreative(sbiDc, sbiAid) {
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(getTopWindowLocation().href)}`
 }
 
 function _getBidIdFromTrinityKey (key) {

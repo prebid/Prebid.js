@@ -22,7 +22,7 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -30,13 +30,9 @@ export const spec = {
       config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
-    let priceType = 'net';
     let reqId;
 
     bids.forEach(bid => {
-      if (bid.params.priceType === 'gross') {
-        priceType = 'gross';
-      }
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
@@ -48,12 +44,20 @@ export const spec = {
 
     const payload = {
       u: utils.getTopWindowUrl(),
-      pt: priceType,
+      pt: 'net',
       auids: auids.join(','),
-      test: 1,
       r: reqId,
       cur: currency,
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      }
+      payload.gdpr_applies =
+        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+    }
 
     return {
       method: 'GET',
@@ -66,7 +70,6 @@ export const spec = {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
-    const priceType = bidRequest.data.pt;
     const currency = bidRequest.data.cur;
 
     let errorMessage;
@@ -78,17 +81,26 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, currency, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.pixelEnabled) {
+      var query = [];
+      if (gdprConsent) {
+        if (gdprConsent.consentString) {
+          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+        }
+        query.push('gdpr_applies=' + encodeURIComponent(
+          (typeof gdprConsent.gdprApplies === 'boolean')
+            ? Number(gdprConsent.gdprApplies) : 1));
+      }
       return [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
+        url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
   }
@@ -105,7 +117,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, priceType, currency, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -121,7 +133,7 @@ function _addBidResponse(serverBid, bidsMap, priceType, currency, bidResponses) 
           height: serverBid.h,
           creativeId: serverBid.auid,
           currency: currency || DEFAULT_CUR,
-          netRevenue: priceType !== 'gross',
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid
