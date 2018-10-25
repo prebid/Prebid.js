@@ -346,7 +346,7 @@ function padEnd(str, targetLength, paddingChar) {
   }
   return str;
 }
-
+/* eslint-disable camelcase */
 // Code taken from http://pajhome.org.uk/crypt/md5/sha1.js
 /*
  * Configurable variables. You may need to tweak these to be compatible with
@@ -481,3 +481,4 @@ function binb2str(bin) {
   }
   return str;
 }
+/* eslint-enable camelcase */
