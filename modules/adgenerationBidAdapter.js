@@ -43,13 +43,11 @@ export const spec = {
       data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
       data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
       data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
-      data = utils.tryAppendQueryString(data, 'tp', utils.getTopWindowUrl());
-
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = utils.tryAppendQueryString(data, 'imark', '1');
       }
-
+      data = utils.tryAppendQueryString(data, 'tp', utils.getTopWindowUrl());
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);

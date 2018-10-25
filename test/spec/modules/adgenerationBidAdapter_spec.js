@@ -87,8 +87,8 @@ describe('AdgenerationAdapter', function () {
       }
     ];
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Flocalhost%3A9876%2F&imark=1`,
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Flocalhost%3A9876%2F'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=` + encodeURIComponent(utils.getTopWindowUrl()),
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=' + encodeURIComponent(utils.getTopWindowUrl())
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -113,7 +113,6 @@ describe('AdgenerationAdapter', function () {
       expect(request.data).to.equal(data.native);
     });
   });
-
   describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
