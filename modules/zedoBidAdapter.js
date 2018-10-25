@@ -289,7 +289,7 @@ function getLoggingData(eid, data) {
     channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
     network = channel > 0 ? parseInt(channel / 1000000) : 0;
     dim = utils.deepAccess(adunit, 'params.0.dimId') * 256 || 0;
-    timeToRespond = adunit.timeToRespond;
+    timeToRespond = adunit.timeout ? adunit.timeout : adunit.timeToRespond;
     cpm = adunit.cpm;
   });
   params.n = network;
