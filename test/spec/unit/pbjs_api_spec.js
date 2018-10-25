@@ -1194,6 +1194,39 @@ describe('Unit: Prebid Module', function () {
   })
 
   describe('requestBids', function () {
+    let sandbox;
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+    describe('bidRequests is empty', function () {
+      it('should log warning message and execute callback if bidRequests is empty', function () {
+        let bidsBackHandler = function bidsBackHandlerCallback() {};
+        let spyExecuteCallback = sinon.spy(bidsBackHandler);
+        let logWarnSpy = sandbox.spy(utils, 'logWarn');
+
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              bids: [],
+            }, {
+              code: 'test2',
+              bids: [],
+            }
+          ],
+          bidsBackHandler: spyExecuteCallback
+        });
+
+        assert.ok(logWarnSpy.calledWith('No valid bid requests returned for auction'), 'expected warning message was logged');
+        assert.ok(spyExecuteCallback.calledOnce, 'callback executed when bidRequests is empty');
+      });
+    });
+  });
+
+  describe('requestBids', function () {
     let xhr;
     let requests;
 
