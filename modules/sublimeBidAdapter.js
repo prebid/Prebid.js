@@ -27,6 +27,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest - Info describing the request to the server.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -71,7 +72,8 @@ export const spec = {
         '&request_id=' + requestIdEncoded +
         '&ad=' + encodeURIComponent(response.ad || '') +
         '&cpm=' + encodeURIComponent(response.cpm || 0) +
-        '&currency=' + encodeURIComponent(response.currency || 'USD')
+        '&currency=' + encodeURIComponent(response.currency || 'USD') +
+        '&v=' + SUBLIME_VERSION
       );
       return xhr;
     };
@@ -136,6 +138,6 @@ export const spec = {
   getUserSyncs: (syncOptions, serverResponses) => {
     return [];
   }
-}
+};
 
 registerBidder(spec);
