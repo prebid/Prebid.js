@@ -45,8 +45,7 @@ export const spec = {
     const payload = {
       validBidRequests,
       bidderRequest,
-      url: utils.getTopWindowUrl(),
-      referrer: utils.getTopWindowReferrer(),
+      referrerInfo: bidderRequest.refererInfo,
       userAgent: navigator.userAgent,
       screen: {
         width: window.screen.width,
@@ -54,6 +53,7 @@ export const spec = {
       },
       language: navigator.language,
       cookies: document.cookie.split(';'),
+      prebidUpdateVersion: '1.29.0',
     };
     const payloadString = JSON.stringify(payload);
     return {

@@ -117,21 +117,19 @@ describe('adikteevBidAdapter', () => {
       expect(requestData).to.exist.and.have.all.keys(
         'validBidRequests',
         'bidderRequest',
-        'url',
-        'referrer',
         'userAgent',
         'screen',
         'language',
         'cookies',
+        'prebidUpdateVersion',
       );
       expect(requestData.validBidRequests).to.deep.equal(validBidRequests);
       expect(requestData.bidderRequest).to.deep.equal(bidderRequest);
-      expect(requestData.url).to.deep.equal(utils.getTopWindowUrl());
-      expect(requestData.referrer).to.deep.equal(utils.getTopWindowReferrer());
       expect(requestData.userAgent).to.deep.equal(navigator.userAgent);
       expect(requestData.screen.width).to.deep.equal(window.screen.width);
       expect(requestData.screen.height).to.deep.equal(window.screen.height);
       expect(requestData.language).to.deep.equal(navigator.language);
+      expect(requestData.prebidUpdateVersion).to.deep.equal('1.29.0');
     });
 
     describe('staging environment', () => {
