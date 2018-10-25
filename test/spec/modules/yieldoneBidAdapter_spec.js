@@ -3,6 +3,7 @@ import { spec } from 'modules/yieldoneBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -11,12 +12,10 @@ describe('yieldoneBidAdapter', function() {
     let bid = {
       'bidder': 'yieldone',
       'params': {
-        placementId: '44082'
+        placementId: '36891'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250]
-      ],
+      'sizes': [[300, 250], [336, 280]],
       'bidId': '23beaa6af6cdde',
       'bidderRequestId': '19c0c1efdf37e7',
       'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -43,12 +42,10 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44082'
+          placementId: '36891'
         },
         'adUnitCode': 'adunit-code1',
-        'sizes': [
-          [300, 250]
-        ],
+        'sizes': [[300, 250], [336, 280]],
         'bidId': '23beaa6af6cdde',
         'bidderRequestId': '19c0c1efdf37e7',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -56,12 +53,10 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44337'
+          placementId: '47919'
         },
         'adUnitCode': 'adunit-code2',
-        'sizes': [
-          [300, 250]
-        ],
+        'sizes': [[300, 250]],
         'bidId': '382091349b149f"',
         'bidderRequestId': '"1f9c98192de251"',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -78,6 +73,20 @@ describe('yieldoneBidAdapter', function() {
     it('attaches source and version to endpoint URL as query params', function () {
       expect(request[0].url).to.equal(ENDPOINT);
       expect(request[1].url).to.equal(ENDPOINT);
+    });
+
+    it('parameter sz has more than one size on banner requests', function () {
+      expect(request[0].data.sz).to.equal('300x250,336x280');
+      expect(request[1].data.sz).to.equal('300x250');
+    });
+
+    it('width and height should be set as separate parameters on outstream requests', function () {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+      const request = spec.buildRequests([bidRequest]);
+      expect(request[0].data.w).to.equal('300');
+      expect(request[0].data.h).to.equal('250');
     });
   });
 
@@ -146,8 +155,6 @@ describe('yieldoneBidAdapter', function() {
   });
 
   describe('getUserSyncs', function () {
-    const userSyncUrl = '//y.one.impact-ad.jp/push_sync';
-
     it('handles empty sync options', function () {
       expect(spec.getUserSyncs({})).to.be.empty;
     });
@@ -156,7 +163,7 @@ describe('yieldoneBidAdapter', function() {
       expect(spec.getUserSyncs({
         'iframeEnabled': true
       })).to.deep.equal([{
-        type: 'iframe', url: userSyncUrl
+        type: 'iframe', url: USER_SYNC_URL
       }]);
     });
   });
