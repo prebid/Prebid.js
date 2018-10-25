@@ -34,7 +34,6 @@ describe('adikteevBidAdapter', () => {
         bidder: 'adikteev',
         params: {
           placementId: 12345,
-          currency: 'EUR',
           bidFloorPrice: 0.1,
         },
         mediaTypes: {
@@ -62,7 +61,6 @@ describe('adikteevBidAdapter', () => {
         bidder: '', // invalid bidder
         params: {
           placementId: 12345,
-          currency: 'EUR',
           bidFloorPrice: 0.1,
         },
         mediaTypes: {
@@ -75,7 +73,6 @@ describe('adikteevBidAdapter', () => {
         bidder: 'adikteev',
         params: {
           placementId: '', // invalid placementId
-          currency: 'EUR',
           bidFloorPrice: 0.1,
         },
         mediaTypes: {
@@ -88,7 +85,6 @@ describe('adikteevBidAdapter', () => {
         bidder: 'adikteev',
         params: {
           placementId: 12345,
-          currency: 'EUR',
           bidFloorPrice: 0.1,
         },
         mediaTypes: {
@@ -121,6 +117,8 @@ describe('adikteevBidAdapter', () => {
         'screen',
         'language',
         'cookies',
+        // 'refererInfo',
+        // 'currency',
         'prebidUpdateVersion',
       );
       expect(requestData.validBidRequests).to.deep.equal(validBidRequests);

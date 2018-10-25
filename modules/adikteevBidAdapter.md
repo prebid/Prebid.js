@@ -26,7 +26,6 @@ Module that connects to Adikteev's demand sources
                     bidder: 'adikteev',
                     params: {
                         placementId: 12345,
-                        currency: 'EUR',
                         bidFloorPrice: 0.1,
                     }
                 }

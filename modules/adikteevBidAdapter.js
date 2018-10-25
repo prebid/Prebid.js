@@ -1,6 +1,7 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER} from 'src/mediaTypes';
 import * as utils from '../src/utils';
+import {config} from 'src/config';
 
 export const BIDDER_CODE = 'adikteev';
 export const ENDPOINT_URL = 'https://serve-adserver.adikteev.com/api/prebid/bid';
@@ -32,8 +33,6 @@ export const spec = {
     return !!(
       bid &&
       bid.params &&
-      bid.params.currency &&
-      bid.params.currency === 'EUR' &&
       bid.params.bidFloorPrice &&
       bid.params.placementId &&
       bid.bidder === BIDDER_CODE &&
@@ -45,7 +44,8 @@ export const spec = {
     const payload = {
       validBidRequests,
       bidderRequest,
-      referrerInfo: bidderRequest.refererInfo,
+      refererInfo: bidderRequest.refererInfo,
+      currency: config.getConfig('currency'),
       userAgent: navigator.userAgent,
       screen: {
         width: window.screen.width,
