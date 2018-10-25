@@ -31,8 +31,7 @@ export const spec = {
       };
 
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      const context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-      if (bidRequest.mediaType === VIDEO || (videoMediaType && context !== 'instream')) {
+      if (bidRequest.mediaType === VIDEO || videoMediaType) {
         const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
         const size = utils.parseSizesInput(sizes)[0];
         payload.w = size.split('x')[0];
