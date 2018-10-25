@@ -69,7 +69,7 @@ export const spec = {
         });
       });
 
-      const gdprConsent = bidderRequest ? bidderRequest.gdprConsent : {};
+      const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
@@ -92,7 +92,8 @@ export const spec = {
         },
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
-        gdprConsent: gdprConsent.consentString
+        gdprConsent: gdprConsent.consentString,
+        prebidJsVersion: pbjs.version
       };
 
       const data = JSON.stringify(requestData);
