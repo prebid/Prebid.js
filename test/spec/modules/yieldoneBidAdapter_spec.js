@@ -91,15 +91,14 @@ describe('yieldoneBidAdapter', function() {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = [
+    let bidRequestBanner = [
       {
         'method': 'GET',
         'url': '//y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
-          'p': '44082',
-          'w': '300',
-          'h': '250',
+          'p': '36891',
+          'sz': '300x250,336x280',
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
@@ -108,34 +107,89 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    let serverResponse = {
+    let serverResponseBanner = {
       body: {
         'adTag': '<!-- adtag -->',
+        'uid': '23beaa6af6cdde',
+        'height': 250,
+        'width': 300,
         'cpm': 0.0536616,
         'crid': '2494768',
+        'currency': 'JPY',
         'statusMessage': 'Bid available',
-        'uid': '23beaa6af6cdde',
-        'width': 300,
-        'height': 250
+        'dealId': 'P1-FIX-7800-DSP-MON'
       }
     };
 
-    it('should get the correct bid response', function () {
+    it('should get the correct bid response for banner', function () {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 300,
         'height': 250,
         'creativeId': '2494768',
-        'dealId': '',
+        'dealId': 'P1-FIX-7800-DSP-MON',
         'currency': 'JPY',
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+    });
+
+    let serverResponseVideo = {
+      body: {
+        'uid': '23beaa6af6cdde',
+        'height': 360,
+        'width': 640,
+        'cpm': 0.0536616,
+        'dealId': 'P1-FIX-766-DSP-MON',
+        'crid': '2494768',
+        'currency': 'JPY',
+        'statusMessage': 'Bid available',
+        'adm': '<!-- vast -->'
+      }
+    };
+
+    let bidRequestVideo = [
+      {
+        'method': 'GET',
+        'url': '//y.one.impact-ad.jp/h_bid',
+        'data': {
+          'v': 'hb1',
+          'p': '41993',
+          'w': '640',
+          'h': '360',
+          'cb': 12892917383,
+          'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+          'uid': '23beaa6af6cdde',
+          't': 'i'
+        }
+      }
+    ];
+
+    it('should get the correct bid response for video', function () {
+      let expectedResponse = [{
+        'requestId': '23beaa6af6cdde',
+        'cpm': 53.6616,
+        'width': 640,
+        'height': 360,
+        'creativeId': '2494768',
+        'dealId': 'P1-FIX-7800-DSP-MON',
+        'currency': 'JPY',
+        'netRevenue': true,
+        'ttl': 3000,
+        'referrer': '',
+        'mediaType': 'video',
+        'vastXml': '<!-- vast -->'
+      }];
+      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
     });
 
     it('handles empty bid response', function () {
@@ -149,7 +203,7 @@ describe('yieldoneBidAdapter', function() {
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequest[0]);
+      let result = spec.interpretResponse(response, bidRequestBanner[0]);
       expect(result.length).to.equal(0);
     });
   });
