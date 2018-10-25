@@ -29,6 +29,22 @@ var adUnits = [
            placementId: '36891'
          }
        }]
+   },
+   // Video adUnit
+   {
+      code: 'video-div',
+      mediaTypes: {
+        video: {
+          playerSize: [[640, 480]],
+          context: 'outstream'
+        },
+      },
+      bids: [{
+         bidder: 'yieldone',
+         params: {
+           placementId: '41993'
+         }
+       }]
    }
 ```
 
