@@ -4,7 +4,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
-export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+// export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+export const QUANTCAST_DOMAIN = 'localhost';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
@@ -69,7 +70,7 @@ export const spec = {
         });
       });
 
-      const gdprConsent = bidderRequest ? bidderRequest.gdprConsent : {};
+      const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
@@ -101,6 +102,12 @@ export const spec = {
         ? QUANTCAST_TEST_DOMAIN
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
+
+      if (qcDomain !== QUANTCAST_TEST_DOMAIN) {
+        for (var i = 0; i < 20000; i += 1) {
+          console.log('xxxxxxxxxx');
+        }
+      }
 
       return {
         data,
@@ -157,6 +164,13 @@ export const spec = {
     });
 
     return bidResponsesList;
+  },
+  onTimeout(timeoutData) {
+    const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+    const data = {
+      mode: 'no-cors'
+    };
+    fetch(url, data);
   }
 };
 
