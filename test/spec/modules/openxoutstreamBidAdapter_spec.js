@@ -147,9 +147,9 @@ describe('OpenXOutstreamAdapter', function () {
         };
         serverRequest = {
           payload: {
-            bids: [{
+            bid: {
               bidId: '2d36ac90d654af',
-            }],
+            },
           }
         };
       });
