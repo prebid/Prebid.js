@@ -9,7 +9,7 @@ import {ajax} from 'src/ajax';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 2;
+const VERSION = 3;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
@@ -70,7 +70,7 @@ function buildRequestTemplate(options) {
 
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
-  if (events.length !== 0) {
+  if (isValid(events)) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
     ajax(
       `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`,
@@ -83,6 +83,10 @@ function sendAll() {
       }
     );
   }
+}
+
+function isValid(events) {
+  return events.length > 0 && (events[0].ev === 'init' || events[0].ev === 'bidwon');
 }
 
 function trackBidWon(args) {
@@ -171,15 +175,12 @@ function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTim
 
 export function AnalyticsQueue() {
   let queue = [];
-  let initialised = false;
 
   this.push = (event) => {
-    if (initialised) {
-      if (event instanceof Array) {
-        queue.push.apply(queue, event);
-      } else {
-        queue.push(event);
-      }
+    if (event instanceof Array) {
+      queue.push.apply(queue, event);
+    } else {
+      queue.push(event);
     }
   };
 
@@ -199,7 +200,6 @@ export function AnalyticsQueue() {
 
   this.init = () => {
     queue = [];
-    initialised = true;
   };
 }
 

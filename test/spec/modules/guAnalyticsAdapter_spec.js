@@ -239,16 +239,29 @@ describe('Gu analytics adapter', () => {
     expect(ev[0]).to.be.eql({ev: 'bidwon', aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15', bid: '24a5288f9d6d6b'});
   });
 
-  it('should not send orphan auction events', () => {
+  it('should not send orphan responses', () => {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(4500);
+    expect(ajaxStub.called).to.be.equal(false);
+  });
+
+  it('should not send orphan end events', () => {
+    timer.tick(460);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
+    expect(ajaxStub.called).to.be.equal(false);
+  });
+
+  it('should not send orphan auction events', () => {
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    timer.tick(584);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
     expect(ajaxStub.called).to.be.equal(false);
   });
 
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args[2]);
-    expect(payload.v).to.be.eql(2);
+    expect(payload.v).to.be.eql(3);
   });
 
   it('should ignore responses sent with bid won event', () => {
@@ -261,11 +274,5 @@ describe('Gu analytics adapter', () => {
       aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
       bid: '24a5288f9d6d6b'
     }]);
-  });
-
-  it('should ignore events when auction has not been initialised', () => {
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
-    const ev = analyticsAdapter.context.queue.peekAll();
-    expect(ev).to.be.eql([]);
   });
 });
