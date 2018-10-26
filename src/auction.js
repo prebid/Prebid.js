@@ -484,6 +484,11 @@ export function getStandardBidderSettings(mediaType) {
           return bidResponse.adId;
         }
       }, {
+        key: CONSTANTS.TARGETING_KEYS.CPM,
+        val: function (bidResponse) {
+          return bidResponse.cpm;
+        }
+      }, {
         key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
         val: function (bidResponse) {
           if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {

@@ -147,6 +147,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND ] = bid.timeToRespond;
+      expected[ CONSTANTS.TARGETING_KEYS.CPM ] = bid.cpm;
 
       if (!keys) {
         return expected;
@@ -184,6 +185,11 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.CPM,
+              val: function (bidResponse) {
+                return bidResponse.cpm;
               }
             }, {
               key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
