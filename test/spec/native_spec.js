@@ -16,6 +16,19 @@ const bid = {
   }
 };
 
+const bidWithUndefinedFields = {
+  native: {
+    title: 'Native Creative',
+    body: undefined,
+    cta: undefined,
+    sponsoredBy: 'AppNexus',
+    clickUrl: 'https://www.link.example',
+    clickTrackers: ['https://tracker.example'],
+    impressionTrackers: ['https://impression.example'],
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+  }
+};
+
 describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
@@ -38,6 +51,16 @@ describe('native.js', function () {
     expect(title).to.equal(bid.native.title);
     expect(body).to.equal(bid.native.body);
     expect(linkurl).to.equal(bid.native.clickUrl);
+  });
+
+  it('should only include native targeting keys with values', function () {
+    const targeting = getNativeTargeting(bidWithUndefinedFields);
+
+    expect(Object.keys(targeting)).to.deep.equal([
+      CONSTANTS.NATIVE_KEYS.title,
+      CONSTANTS.NATIVE_KEYS.sponsoredBy,
+      CONSTANTS.NATIVE_KEYS.clickUrl
+    ]);
   });
 
   it('fires impression trackers', function () {

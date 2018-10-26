@@ -103,6 +103,22 @@ export const spec = {
       });
     }
     return emxBidResponses;
+  },
+  getUserSyncs: function (syncOptions) {
+    const syncs = [];
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: '//biddr.brealtime.com/check.html'
+      });
+    }
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: '//edba.brealtime.com/'
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);

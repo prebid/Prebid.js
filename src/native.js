@@ -158,7 +158,7 @@ export function fireNativeTrackers(message, adObject) {
 }
 
 /**
- * Gets native targeting key-value paris
+ * Gets native targeting key-value pairs
  * @param {Object} bid
  * @return {Object} targeting
  */
@@ -174,7 +174,7 @@ export function getNativeTargeting(bid) {
       value = value.url;
     }
 
-    if (key) {
+    if (key && value) {
       // encode fields as they might contain invalid DFP key-value values
       // such as `=` or `!`.
       value = encodeURIComponent(value);
