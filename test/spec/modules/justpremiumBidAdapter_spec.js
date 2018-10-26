@@ -1,13 +1,13 @@
 import { expect } from 'chai'
-import { spec } from 'modules/justpremiumBidAdapter'
+import { spec, pixel } from 'modules/justpremiumBidAdapter'
 
 describe('justpremium adapter', function () {
   let sandbox;
-  let appendChildStub;
+  let pixelStub;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    appendChildStub = sandbox.stub(document.body, 'appendChild');
+    pixelStub = sandbox.stub(pixel, 'fire');
   });
 
   afterEach(function() {
@@ -167,7 +167,7 @@ describe('justpremium adapter', function () {
         'timeout': 1
       }]);
 
-      expect(appendChildStub.calledOnce).to.equal(true);
+      expect(pixelStub.calledOnce).to.equal(true);
 
       done()
     })

@@ -10,8 +10,6 @@ describe('UOL Bid Adapter', function () {
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    getCurrentPositionStub = sandbox.stub(navigator.geolocation, 'getCurrentPosition');
-    queryStub = sandbox.stub(navigator.permissions, 'query');
   });
 
   afterEach(function() {
@@ -158,6 +156,11 @@ describe('UOL Bid Adapter', function () {
     if (navigator.permissions && navigator.permissions.query && navigator.geolocation) {
       describe('buildRequest geolocation param', function () { // shall only be tested if browser engine supports geolocation and permissions API.
         let geolocation = { lat: 4, long: 3, timestamp: 123121451 };
+
+        beforeEach(function() {
+          getCurrentPositionStub = sandbox.stub(navigator.geolocation, 'getCurrentPosition');
+          queryStub = sandbox.stub(navigator.permissions, 'query');
+        });
 
         it('should not contain user coordinates if browser doesnt support permission query', function () {
           localStorage.setItem('uolLocationTracker', JSON.stringify(geolocation));
