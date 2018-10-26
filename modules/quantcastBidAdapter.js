@@ -167,10 +167,10 @@ export const spec = {
   },
   onTimeout(timeoutData) {
     const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
-    const data = {
+    const params = {
       mode: 'no-cors'
     };
-    fetch(url, data);
+    fetch(url, params);
   }
 };
 

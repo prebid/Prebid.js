@@ -221,10 +221,10 @@ describe('Quantcast adapter', function () {
       };
       qcSpec.onTimeout(timeoutData);
       const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
-      const expectedData = {
+      const expectedParams = {
         mode: 'no-cors'
       };
-      fetchStub.withArgs(expectedUrl, expectedData).calledOnce.should.be.true;
+      fetchStub.withArgs(expectedUrl, expectedParams).calledOnce.should.be.true;
       fetchStub.restore();
     });
   });
