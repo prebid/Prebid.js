@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { resolveStatus, setSizeConfig } from 'src/sizeMapping';
+import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping';
 import includes from 'core-js/library/fn/array/includes';
 
 let utils = require('src/utils');
@@ -75,6 +75,13 @@ describe('sizeMapping', function () {
   });
 
   describe('when handling sizes', function () {
+    it('should allow us to validate a single size', function() {
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+
+      expect(sizeSupported([300, 250])).to.equal(true);
+      expect(sizeSupported([80, 80])).to.equal(false);
+    });
+
     it('should log a warning when mediaQuery property missing from sizeConfig', function () {
       let errorConfig = deepClone(sizeConfig);
 
