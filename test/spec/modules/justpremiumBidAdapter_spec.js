@@ -144,7 +144,7 @@ describe('justpremium adapter', function () {
   })
 
   describe('onTimeout', function () {
-    it('onTimeout', (done) => {
+    it('onTimeout', function(done) {
       spec.onTimeout([{
         'bidId': '25cd3ec3fd6ed7',
         'bidder': 'justpremium',
