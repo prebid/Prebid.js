@@ -93,7 +93,7 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
-        prebidJsVersion: pbjs.version
+        prebidJsVersion: '$prebid.version$'
       };
 
       const data = JSON.stringify(requestData);
