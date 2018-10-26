@@ -530,8 +530,6 @@ exports.callBidWonBidder = function(bidder, bid, adUnits) {
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
-exports.callSetTargetingBidder = function(bidder, bid, adUnits) {
-  // Adding user configured params to setTargeting event data
-  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+exports.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
 };
