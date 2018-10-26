@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
+import { stub } from 'sinon';
 import {
   QUANTCAST_DOMAIN,
   QUANTCAST_TEST_DOMAIN,
@@ -209,6 +210,22 @@ describe('Quantcast adapter', function () {
       const interpretedResponse = qcSpec.interpretResponse(response);
 
       expect(interpretedResponse.length).to.equal(0);
+    });
+  });
+
+  describe('`onTimeout`', function() {
+    it('makes a request to the notify endpoint', function() {
+      const fetchStub = stub(window, 'fetch').callsFake(function() {});
+      const timeoutData = {
+        bidder: 'quantcast'
+      };
+      qcSpec.onTimeout(timeoutData);
+      const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+      const expectedData = {
+        mode: 'no-cors'
+      };
+      fetchStub.withArgs(expectedUrl, expectedData).calledOnce.should.be.true;
+      fetchStub.restore();
     });
   });
 });
