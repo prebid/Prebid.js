@@ -1194,6 +1194,52 @@ describe('Unit: Prebid Module', function () {
 
       sinon.assert.called(spec.onTimeout);
     });
+
+    it('should execute callback after setTargeting', function () {
+      let spec = {
+        code: BIDDER_CODE,
+        isBidRequestValid: sinon.stub(),
+        buildRequests: sinon.stub(),
+        interpretResponse: sinon.stub(),
+        onSetTargeting: sinon.stub()
+      };
+
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.isBidRequestValid.returns(true);
+      spec.interpretResponse.returns(bids);
+
+      const bidId = 1;
+      const auctionId = 1;
+      let adResponse = Object.assign({
+        auctionId: auctionId,
+        adId: String(bidId),
+        width: 300,
+        height: 250,
+        adUnitCode: bidRequests[0].bids[0].adUnitCode,
+        adserverTargeting: {
+          'hb_bidder': BIDDER_CODE,
+          'hb_adid': bidId,
+          'hb_pb': bids[0].cpm,
+          'hb_size': '300x250',
+        },
+        bidder: bids[0].bidderCode,
+      }, bids[0]);
+      auction.getBidsReceived = function() { return [adResponse]; }
+      auction.getAuctionId = () => auctionId;
+
+      clock = sinon.useFakeTimers();
+      let requestObj = {
+        bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
+        timeout: 2000,
+        adUnits: adUnits
+      };
+
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+
+      sinon.assert.called(spec.onSetTargeting);
+    });
   })
 
   describe('requestBids', function () {
