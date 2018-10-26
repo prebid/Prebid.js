@@ -20,10 +20,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    if (bidRequest.params.delDomain) {
-      return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
-    }
-    return false;
+    return !!(bidRequest.params.delDomain && bidRequest.params.unit)
   },
   buildRequests: function(bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -36,12 +33,6 @@ export const spec = {
   interpretResponse: function(serverResponse, serverRequest) {
     return handleVastResponse(serverResponse, serverRequest.payload)
   },
-
-  transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
-      'unit': 'string',
-    }, params);
-  }
 };
 
 function getViewportDimensions(isIfr) {
@@ -83,7 +74,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     tws: getViewportDimensions(isInIframe),
     be: 1,
     bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
-    auid: '540141567',
+    auid: bids[0].params.unit,
     dddid: utils._map(bids, bid => bid.transactionId).join(','),
     openrtb: '%7B%22mimes%22%3A%5B%22video%2Fmp4%22%5D%7D',
     nocache: new Date().getTime(),
