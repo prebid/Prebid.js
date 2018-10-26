@@ -2,6 +2,18 @@ import { expect } from 'chai'
 import { spec } from 'modules/justpremiumBidAdapter'
 
 describe('justpremium adapter', function () {
+  let sandbox;
+  let appendChildStub;
+
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
+    appendChildStub = sandbox.stub(document.body, 'appendChild');
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
   let adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
@@ -153,7 +165,9 @@ describe('justpremium adapter', function () {
           'zone': 21521
         }],
         'timeout': 1
-      }])
+      }]);
+
+      expect(appendChildStub.calledOnce).to.equal(true);
 
       done()
     })
