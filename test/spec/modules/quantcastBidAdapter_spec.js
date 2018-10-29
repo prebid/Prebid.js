@@ -43,8 +43,15 @@ describe('Quantcast adapter', function () {
       expect(qcSpec.isBidRequestValid()).to.equal(false);
     });
 
-    it('should return `false` when bid `mediaType` is `video`', function () {
-      const bidRequest = { mediaType: 'video' };
+    it('should return `false` when bid is for outstream video', function () {
+      const bidRequest = {
+        mediaType: 'video',
+        mediaTypes: {
+          video: {
+            context: 'outstream'
+          }
+        }
+      };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(false);
     });
