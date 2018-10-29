@@ -241,7 +241,6 @@ function _createDummyBids (impData, bidResponses, miObj) {
       }
     }
   }
-  console.log(bidResponses);
 }
 
 export const spec = {
