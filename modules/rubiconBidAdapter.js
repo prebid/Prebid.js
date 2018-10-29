@@ -168,7 +168,7 @@ export const spec = {
           data.regs = {ext: {gdpr: gdprApplies}};
         }
 
-        let consentString = bidderRequest.gdprConsent.consentString;
+        const consentString = bidderRequest.gdprConsent.consentString;
         if (data.user) {
           if (data.user.ext) {
             data.user.ext.consent = consentString;
@@ -599,7 +599,7 @@ function _renderCreative(script, impId) {
 
 function parseSizes(bid) {
   let params = bid.params;
-  if (bidType(bid) === 'video') {
+  if (hasVideoMediaType(bid)) {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
