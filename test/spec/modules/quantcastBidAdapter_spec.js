@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
-import { stub } from 'sinon';
+import { stub, sandbox } from 'sinon';
 import {
   QUANTCAST_DOMAIN,
   QUANTCAST_TEST_DOMAIN,
@@ -215,7 +215,9 @@ describe('Quantcast adapter', function () {
 
   describe('`onTimeout`', function() {
     it('makes a request to the notify endpoint', function() {
-      const fetchStub = stub(window, 'fetch').callsFake(function() {});
+      // const fetchStub = stub(window, 'fetch').callsFake(function() {});
+      const sinonSandbox = sandbox.create();
+      const fetchStub = sinonSandbox.stub(window, 'fetch').callsFake(function() {});
       const timeoutData = {
         bidder: 'quantcast'
       };
@@ -226,6 +228,7 @@ describe('Quantcast adapter', function () {
       };
       fetchStub.withArgs(expectedUrl, expectedParams).calledOnce.should.be.true;
       fetchStub.restore();
+      sinonSandbox.restore();
     });
   });
 });
