@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { spec } from 'modules/buyerBidAdapter';
+import { spec } from 'modules/dspxBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 
-describe('buyerAdapter', function () {
+describe('dspxAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'buyer',
+      'bidder': 'dspx',
       'params': {
         'placement': '6682',
         'pfilter': {
@@ -42,7 +42,7 @@ describe('buyerAdapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [{
-      'bidder': 'buyer',
+      'bidder': 'dspx',
       'params': {
         'placement': '6682',
         'pfilter': {

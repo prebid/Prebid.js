@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
+import { parse as parseUrl } from 'src/url';
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
@@ -150,9 +151,14 @@ describe('BeachfrontAdapter', function () {
             playerSize: [ width, height ]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ]);
+        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const bidderRequest = {
+          refererInfo: {
+            referer: topLocation.href
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
         const data = requests[0].data;
-        const topLocation = utils.getTopWindowLocation();
         expect(data.isPrebid).to.equal(true);
         expect(data.appId).to.equal(bidRequest.params.appId);
         expect(data.domain).to.equal(document.location.hostname);
@@ -270,9 +276,14 @@ describe('BeachfrontAdapter', function () {
             sizes: [ width, height ]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ]);
+        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const bidderRequest = {
+          refererInfo: {
+            referer: topLocation.href
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
         const data = requests[0].data;
-        const topLocation = utils.getTopWindowLocation();
         expect(data.slots).to.deep.equal([
           {
             slot: bidRequest.adUnitCode,
