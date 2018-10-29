@@ -90,19 +90,15 @@ export const spec = {
       return false;
     }
 
-    if (!/^\d+$/.test(bid.params.accountId)) {
-      return false;
-    }
-
     let params = bid.params;
 
-    params.accountId = parseInt(params.accountId);
-    params.siteId = parseInt(params.siteId);
-    params.zoneId = parseInt(params.zoneId);
-
-    if (isNaN(params.accountId) || isNaN(params.siteId) || isNaN(params.zoneId)) {
-      utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.');
-      return false;
+    // validate account, site, zone have numeric values
+    for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
+      params[props[i]] = parseInt(params[props[i]])
+      if (isNaN(params[props[i]])) {
+        utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.')
+        return false
+      }
     }
 
     // video
