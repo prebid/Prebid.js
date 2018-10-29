@@ -276,7 +276,7 @@ function logEvent(eid, data) {
     hostname: utils.getTopWindowLocation().protocol === 'http:' ? EVENT_PIXEL_URL : SECURE_EVENT_PIXEL_URL,
     search: getLoggingData(eid, data)
   };
-  utils.triggerPixel(url.format(getParams));
+  utils.triggerPixel(url.format(getParams).replace(/&/g, ';'));
 }
 
 function getLoggingData(eid, data) {
@@ -296,8 +296,8 @@ function getLoggingData(eid, data) {
   params.c = channel;
   params.s = '0';
   params.x = dim;
-  params.ai = encodeURI('prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
-  params.pu = utils.getTopWindowUrl() || '';
+  params.ai = encodeURI('Prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
+  params.pu = encodeURI(utils.getTopWindowUrl()) || '';
   params.eid = eid;
   params.e = 'e';
   params.z = Math.random();
