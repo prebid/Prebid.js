@@ -579,7 +579,7 @@ function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
+  } else if (!pageUrl && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
