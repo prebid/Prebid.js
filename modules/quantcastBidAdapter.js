@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { ajax } from 'src/ajax';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
@@ -160,10 +161,7 @@ export const spec = {
   },
   onTimeout(timeoutData) {
     const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
-    const params = {
-      mode: 'no-cors'
-    };
-    fetch(url, params);
+    ajax(url, null, null);
   }
 };
 

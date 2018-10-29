@@ -13,6 +13,7 @@ import {
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
 import { parse } from 'src/url';
+import * as ajax from 'src/ajax';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -215,19 +216,15 @@ describe('Quantcast adapter', function () {
 
   describe('`onTimeout`', function() {
     it('makes a request to the notify endpoint', function() {
-      // const fetchStub = stub(window, 'fetch').callsFake(function() {});
       const sinonSandbox = sandbox.create();
-      const fetchStub = sinonSandbox.stub(window, 'fetch').callsFake(function() {});
+      const ajaxStub = sinonSandbox.stub(ajax, 'ajax').callsFake(function() {});
       const timeoutData = {
         bidder: 'quantcast'
       };
       qcSpec.onTimeout(timeoutData);
       const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
-      const expectedParams = {
-        mode: 'no-cors'
-      };
-      fetchStub.withArgs(expectedUrl, expectedParams).calledOnce.should.be.true;
-      fetchStub.restore();
+      ajaxStub.withArgs(expectedUrl, null, null).calledOnce.should.be.true;
+      ajaxStub.restore();
       sinonSandbox.restore();
     });
   });
