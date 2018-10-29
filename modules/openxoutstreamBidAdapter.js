@@ -105,12 +105,8 @@ function buildCommonQueryParamsFromBids(bid, bidderRequest) {
 
 function buildOXBannerRequest(bid, bidderRequest) {
   let queryParams = buildCommonQueryParamsFromBids(bid, bidderRequest);
-  // let auids = utils._map(bids, bid => bid.params.unit)
-  // queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
+  queryParams.aus = utils.parseSizesInput(bid.sizes).join(',');
 
-  // if (auids.some(auid => auid)) {
-  //   queryParams.auid = auids.join(',');
-  // }
   if (bid.params.doNotTrack) {
     queryParams.ns = 1;
   }
