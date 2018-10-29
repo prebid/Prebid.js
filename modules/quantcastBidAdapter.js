@@ -102,12 +102,6 @@ export const spec = {
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
-      if (qcDomain !== QUANTCAST_TEST_DOMAIN) {
-        for (var i = 0; i < 20000; i += 1) {
-          console.log('xxxxxxxxxx');
-        }
-      }
-
       return {
         data,
         method: 'POST',
