@@ -52,7 +52,8 @@ describe('RTBHouseAdapter', () => {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475'
+        'auctionId': '1d1a030790a475',
+        'transactionId': 'example-transaction-id',
       }
     ];
 
@@ -122,6 +123,13 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].banner).to.not.be.empty;
+    });
+
+    it('should include source.tid in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source.tid).to.equal('example-transaction-id');
     });
 
     describe('native imp', () => {

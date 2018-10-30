@@ -45,7 +45,10 @@ export const spec = {
       imp: validBidRequests.map(slot => mapImpression(slot)),
       site: mapSite(validBidRequests),
       cur: DEFAULT_CURRENCY_ARR,
-      test: validBidRequests[0].params.test || 0
+      test: validBidRequests[0].params.test || 0,
+      source: {
+        tid: validBidRequests[0].transactionId
+      }
     };
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
