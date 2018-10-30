@@ -1086,7 +1086,7 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
-          expect(post.ext.prebid.cache.vastxml.ttlseconds).to.equal(300);
+          expect(post.vastxml.ttlseconds).to.equal(300);
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
         });
 
@@ -1124,7 +1124,7 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
-          expect(post.ext.prebid.cache.vastxml.ttlseconds).to.equal(300);
+          expect(post.vastxml.ttlseconds).to.equal(300);
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
         });
 
