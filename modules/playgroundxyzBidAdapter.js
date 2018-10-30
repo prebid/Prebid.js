@@ -3,11 +3,11 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'playgroundxyz';
-const URL = 'https://ads.playground.xyz/host-config/prebid';
+const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playgroundxyz'],
+  aliases: ['playgroundxyz', 'pxyz'],
   supportedMediaTypes: [BANNER],
 
   /**
@@ -43,11 +43,6 @@ export const spec = {
       imp: bidRequests.map(mapImpression)
     };
 
-    const options = {
-      contentType: 'application/json',
-      withCredentials: false
-    };
-
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
@@ -58,7 +53,6 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: JSON.stringify(payload),
-      options,
       bidderRequest
     };
   },
@@ -75,14 +69,20 @@ export const spec = {
 
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      utils.logError(errorMessage);
+      if (serverResponse && serverResponse.error) {
+        errorMessage += `: ${serverResponse.error}`;
+        utils.logError(errorMessage);
+      }
       return bids;
     }
 
     if (!utils.isArray(serverResponse.seatbid)) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
       utils.logError(errorMessage += 'Malformed seatbid response');
+      return bids;
+    }
+
+    if (!serverResponse.seatbid) {
       return bids;
     }
 
@@ -104,6 +104,12 @@ export const spec = {
       return [{
         type: 'iframe',
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+      }];
+    }
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
       }];
     }
   }
@@ -131,6 +137,12 @@ function mapImpression(bid) {
     ext: {
       appnexus: {
         placement_id: parseInt(bid.params.placementId, 10)
+      },
+      pxyz: {
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
       }
     }
   };

@@ -14,6 +14,8 @@ export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.j
 export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
+const TIMEOUT_BUFFER = 500;
+
 var sizeMap = {
   1: '468x60',
   2: '728x90',
