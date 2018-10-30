@@ -152,7 +152,7 @@ describe('the rubicon adapter', function () {
         w: 640,
         h: 480,
         skip: 1,
-        skipdelay: 15,
+        skipafter: 15,
         pos: 1,
         protocols: [1, 2, 3, 4, 5, 6]
       }
@@ -160,7 +160,7 @@ describe('the rubicon adapter', function () {
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 480,
       'playerWidth': 640,
       'size_id': 201,
@@ -176,7 +176,7 @@ describe('the rubicon adapter', function () {
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 320,
       'playerWidth': 640,
       'size_id': 201,
@@ -212,13 +212,13 @@ describe('the rubicon adapter', function () {
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 320,
       'playerWidth': 640,
       'size_id': 203,
       'aeParams': {
         'p_aso.video.ext.skip': '1',
-        'p_aso.video.ext.skipdelay': '15'
+        'p_aso.video.ext.skipafter': '15'
       }
     };
   }
@@ -976,13 +976,13 @@ describe('the rubicon adapter', function () {
             bidCopy4.params.video = {
               'language': 'en',
               'p_aso.video.ext.skip': true,
-              'p_aso.video.ext.skipdelay': 15,
+              'p_aso.video.ext.skipafter': 15,
               'playerHeight': 320,
               'playerWidth': 640,
               'size_id': 201,
               'aeParams': {
                 'p_aso.video.ext.skip': '1',
-                'p_aso.video.ext.skipdelay': '15'
+                'p_aso.video.ext.skipafter': '15'
               }
             };
             bidderRequest.bids.push(bidCopy4);
@@ -1018,7 +1018,7 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
@@ -1053,13 +1053,13 @@ describe('the rubicon adapter', function () {
           expect(imp.video.maxduration).to.equal(30);
           expect(imp.video.startdelay).to.equal(0);
           expect(imp.video.skip).to.equal(1);
-          expect(imp.video.skipdelay).to.equal(15);
+          expect(imp.video.skipafter).to.equal(15);
           expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
           expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
