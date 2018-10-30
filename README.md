@@ -1,185 +1,223 @@
-This repository contains the source files for the Prebid.js documentation site at [Prebid.org](http://prebid.org).
+[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
+[![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
+[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
+[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
-Please see the sections below for more information.
+# Prebid.js
 
-+ [Contributing](#contributing)
-+ [License](#license)
-+ [Prerequisites](#prerequisites)
-+ [Running Jekyll Locally](#running-jekyll-locally)
-+ [Alphabetization of Bidder Adapters](#alphabetization-of-bidder-adaptors)
-+ [The Downloads Page](#the-downloads-page)
-+ [Thanks](#thanks)
+> A free and open source library for publishers to quickly implement header bidding.
 
-<a name="contributing" />
+This README is for developers who want to contribute to Prebid.js.
+Additional documentation can be found at [the Prebid homepage](http://prebid.org).
+Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
-## Contributing
+**Table of Contents**
 
-Thanks in advance for your contribution!  Contributors are listed in the **Thanks** section below.
+- [Install](#Install)
+- [Build](#Build)
+- [Run](#Run)
+- [Contribute](#Contribute)
 
-For smaller changes, such as fixing a typo or adding a new section to an existing page, submit a pull request.
+<a name="Install"></a>
 
-For larger changes such as reorganizing the site and moving/removing content, you may want to open an issue so we can discuss the work beforehand.  This is a good idea because:
+## Install
 
-+ We want to value your time, so you don't do unnecessary work
-+ We want to value our users' time; we don't want to break links and bookmarks for users
+    $ git clone https://github.com/prebid/Prebid.js.git
+    $ cd Prebid.js
+    $ npm install
 
-<a name="license" />
+*Note:* You need to have `NodeJS` 4.x or greater installed.
 
-## License
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
 
-All docs are under the license shown in the `LICENSE` file in this directory.
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installd globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
 
-<a name="prerequisites" />
+To remove the old package, you can use the command: `npm rm gulp -g`
 
-## Prerequisites
+Once setup, run the following command to globally install the `gulp-cli` package: `npm install gulp-cli -g`
 
-The site uses [Jekyll](http://jekyllrb.com/), which is written in the [Ruby](http://www.ruby-lang.org/en/) language.
 
-To follow the instructions in the next section, you will need to install the [Bundler](http://bundler.io/) Ruby gem.
+<a name="Build"></a>
 
-Try the following command:
+## Build for Development
 
-```
-$ gem install bundler
-```
+To build the project on your local machine, run:
 
-If you are on a Mac and the above command fails with a permissions error (e.g., `"ERROR:  While executing gem ... You don't have write permissions for the /Library/Ruby/Gems/... directory."`), try the following steps:
+    $ gulp serve
 
-1. Build your own `ruby` binary using [Homebrew](https://brew.sh/): `brew install ruby`.  The Homebrew-built Ruby should include its own version of the `gem` command which avoids modifying system libraries.
-2. Try `gem install bundler` again.  If it still fails, try `sudo gem install bundler`.  After that, you should be able to avoid any further use of `sudo` by running `bundler` with the arguments shown in the next section.
+This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
 
-<a name="running-jekyll-locally" />
++ `./build/dev/prebid.js` - Full source code for dev and debug
++ `./build/dev/prebid.js.map` - Source map for dev and debug
++ `./build/dist/prebid.js` - Minified production code
++ `./prebid.js_<version>.zip` - Distributable zip archive
 
-## Running Jekyll Locally
+### Build Optimization
 
-Before submitting a pull request, you should run the site locally to make sure your edits actually work.
+The standard build output contains all the available modules from within the `modules` folder.
 
-To get started editing the site and seeing your changes, clone this repo and enter the following commands in your terminal:
+You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
-- `cd /path/to/prebid.github.io`
+For example, when running the serve command: `gulp serve --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter`
 
-- `bundle install --path vendor/bundle`
+Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
-- `bundle exec jekyll serve`
+**Build standalone prebid.js**
 
-You should see output that looks something like this:
+- Clone the repo, run `npm install`
+- Then run the build:
 
-```
-Configuration file: /Users/rloveland/Dropbox/Code/prebid.github.io/_config.yml  
-            Source: /Users/rloveland/Dropbox/Code/prebid.github.io  
-       Destination: /Users/rloveland/Dropbox/Code/prebid.github.io/_site  
- Incremental build: disabled. Enable with --incremental  
-      Generating...   
-                    done in 13.596 seconds.  
- Auto-regeneration: enabled for '/Users/rloveland/Dropbox/Code/prebid.github.io'  
-Configuration file: /Users/rloveland/Dropbox/Code/prebid.github.io/_config.yml  
-    Server address: http://127.0.0.1:8080/  
-  Server running... press ctrl-c to stop.  
-...  
-...  
-```
+        $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
+        
+Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
 
-Open the `Server address` URL in your browser, and you should see a locally running copy of the site.
-
-<a name="alphabetization-of-bidder-adaptors" />
-
-## Alphabetization of Bidder Adaptors
-
-Please don't alphabetize the lists of adapters in your PR, either on the home page or the downloads page.
-
-The adapters are not listed in alphabetical order, they're listed in the order in which they were added to the Prebid.js repo, using (approximately) this command in `src/adapters`:
-
-```
-for file in `ls | grep -f <(git ls-files)`; do
-    HASH=`git rev-list HEAD $file | tail -n 1`;
-    DATE=`git show -s --format="%ci" $HASH --`;
-    printf "%-35s %-35s %s\n" $file "$DATE" $HASH;
-done | sort -d -k 2
+    $ gulp build --modules=modules.json
+        
+With `modules.json` containing the following
+```json modules.json
+[
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "sovrnBidAdapter"
+]
 ```
 
-<a name="the-downloads-page" />
+**Build prebid.js using npm for bundling**
 
-## The Downloads Page
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
 
-Please don't submit PRs to the Prebid.org downloads page. That page gets updated in tandem with the Prebid.js release process.
+- Add `prebid.js` as a `npm` dependency of your project: `npm install prebid.js`
+- Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
-The Downloads page is generated from [the Markdown bidder adapter docs](https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders), so the process for updating is:
+        $ gulp build --modules=path/to/your/list-of-modules.json
 
-1. Your adapter code is merged into Prebid.js
-2. Your bidder docs PR is submitted over here to the docs site
-3. Your adapter code is included with a release
-4. Once your adapter code is actually released, we merge the adapter docs PR, and the Downloads page is automagically updated with a checkbox to include your adapter.
+Most likely your custom `prebid.js` will only change when there's:
 
-This means an adaptor is not available to download from Prebid.org as soon as the code gets merged into Prebid.js - it will be available after the next release (usually in a couple of weeks).
+- A change in your list of modules
+- A new release of `prebid.js`
 
-<a name="thanks" />
+Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
 
-## Thanks
+<a name="Run"></a>
 
-Many thanks to the following people who have submitted content to Prebid.org.  We really appreciate the help!
+## Test locally
 
-In alphabetical order:
+To lint the code:
 
-+ Alejandro Villanueva <admin@ialex.org>
-+ Andrew Bowman <gbowman@appnexus.com>
-+ Andy Stocker <astocker@blinkx.com>
-+ Artem Dmitriev <art.dm.ser@gmail.com>
-+ Bart van Bragt <github.com@vanbragt.com>
-+ Bret Gorsline <bgorsline@rubiconproject.com>
-+ Carson Banov <carson@spanishdict.com>
-+ Chris Hepner <me@chrishepner.info>
-+ Christopher Allene <christopher.allene@piximedia.fr>
-+ Dan Harton <dan@sparklit.com>
-+ David <david@singernet.com>
-+ David M <david.mejorado@gmail.com>
-+ Ilya Pirogov <ilja.pirogov@gmail.com>
-+ Itay Ovits <itay@komoona.com>
-+ Jackson Faddis <github@betab.it>
-+ Jonny Greenspan <greens@cooper.edu>
-+ Joseph Frazer <frazjp65@users.noreply.github.com>
-+ Julien Delhommeau <jdelhommeau@appnexus.com>
-+ Kir Apukhtin <kirill@roxot.com>
-+ Kizzard <kiz@kizzard.net>
-+ Lin Rubo <rubo.lin@qq.com>
-+ Matan Arbel <matana@ybrantdigital.com>
-+ Mats Attnas <mats.attnas@twenga.com>
-+ Matt Jacobson <mjacobson@appnexus.com>
-+ Matt Jacobson <mjacobsonny@gmail.com>
-+ Matt Kendall <emailmatthere@gmail.com>
-+ Matt Kendall <mkendall@appnexus.com>
-+ Matt Lane <mlane@appnexus.com>
-+ Mordhak <adrien.desmoules@gmail.com>
-+ Nate Guisinger <ncozi@appnexus.com>
-+ Niksok <belnamtar@mail.ru>
-+ Paul <heranyang@gmail.com>
-+ Paul Yang <heranyang@gmail.com>
-+ Paul Young <heranyang+prebid@gmail.com>
-+ Pavlos Kalogiannidis <pkalogiannidis@wideorbit.com>
-+ Prebid-Team <prebid-team@vertoz.com>
-+ Raffael Vogler <raffael.vogler.de@gmail.com>
-+ Rich Loveland <loveland.richard@gmail.com>
-+ Rich Loveland <rloveland@appnexus.com>
-+ Ronald Berner <ronald@sonobi.com>
-+ Sahagun, Manny <msahagun@conversantmedia.com>
-+ Tiffany Wu <twu@triplelift.com>
-+ Vladimir Marteev <xor104@gmail.com>
-+ astudnicky <astudnicky@sonobi.com>
-+ bjorn-wo <bandersson@wideorbit.com>
-+ bjorna <bandersson@wideorbit.com>
-+ christopher-allene-piximedia <christopher.allene@piximedia.fr>
-+ devmusings <devmusings@users.noreply.github.com>
-+ dlogachev <denis@adkernel.com>
-+ eyal <eyal@sekindo.com>
-+ lntho <leon.tzuhao.ho@gmail.com>
-+ lukian <luciano.ferraro@gmail.com>
-+ naegelin <chris@spotflux.com>
-+ ncozi <ncozi@appnexus.com>
-+ onaydenov <onaydenov@users.noreply.github.com>
-+ prebid <heranyang+prebid@gmail.com>
-+ prebid <prebid@users.noreply.github.com>
-+ protonate <ncozi@appnexus.com>
-+ rizhang <rizhang@umich.edu>
-+ rml <rloveland@appnexus.com>
-+ ronenst <stern.ronen@gmail.com>
-+ sberry <sberry@appnexus.com>
-+ studnicky <astudnicky@sonobi.com>
+```bash
+gulp lint
+```
+
+To run the unit tests:
+
+```bash
+gulp test
+```
+
+To generate and view the code coverage reports:
+
+```bash
+gulp test-coverage
+gulp view-coverage
+```
+
+For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+
+1. Change `{id}` values appropriately to set up ad units and bidders
+2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+
+For development:
+
+```javascript
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dev/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
+```
+
+For deployment:
+
+```javascript
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
+```
+
+Build and run the project locally with:
+
+```bash
+gulp serve
+```
+
+This runs `lint` and `test`, then starts a web server at `http://localhost:9999` serving from the project root.
+Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev`
+directory you will have sourcemaps available in your browser's developer tools.
+
+To run the example file, go to:
+
++ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
+
+As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
+
+<a name="Contribute"></a>
+
+## Contribute
+
+Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+
+For guidelines, see [Contributing](./CONTRIBUTING.md).
+
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/PR_REVIEW.md).
+
+### Add a Bidder Adapter
+
+To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
+
+### Code Quality
+
+Code quality is defined by `.eslintrc` and errors are reported in the terminal.
+
+If you are contributing code, you should [configure your editor](http://eslint.org/docs/user-guide/integrations#editors) with the provided `.eslintrc` settings.
+
+### Unit Testing with Karma
+
+        $ gulp test --watch --browsers=chrome
+
+This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
+
++ To access the Karma debug page, go to `http://localhost:9876/debug.html`
+
++ For test results, see the console
+
++ To set breakpoints in source code, see the developer tools
+
+Detailed code coverage reporting can be generated explicitly with
+
+        $ gulp test --coverage
+
+The results will be in
+
+        ./build/coverage
+
+*Note*: Starting in June 2016, all pull requests to Prebid.js need to include tests with greater than 80% code coverage before they can be merged.  For more information, see [#421](https://github.com/prebid/Prebid.js/issues/421).
+
+For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://prebid.org/dev-docs/testing-prebid.html).
+
+### Supported Browsers
+
+Prebid.js is supported on IE10+ and modern browsers.
+
+### Governance
+Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

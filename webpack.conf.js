@@ -19,7 +19,7 @@ module.exports = {
     ],
   },
   output: {
-    jsonpFunction: prebid.globalVarName+"Chunk"
+    jsonpFunction: prebid.globalVarName + "Chunk"
   },
   module: {
     rules: [
@@ -29,9 +29,6 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: ['es2015']
-            }
           }
         ]
       },
@@ -41,9 +38,6 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: ['es2015']
-            }
           }
         ],
       },
@@ -94,7 +88,7 @@ module.exports = {
       name: 'prebid',
       filename: 'prebid-core.js',
       minChunks: function(module, count) {
-        return !(count < 2 || neverBundle.includes(path.basename(module.resource)))
+        return !(count < 2 || neverBundle.indexOf(path.basename(module.resource)) !== -1)
       }
     })
   ]

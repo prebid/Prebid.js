@@ -21,13 +21,16 @@ export const spec = {
    * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
    */
-  buildRequests: function(bidReqs) {
+  buildRequests: function(bidReqs, bidderRequest) {
+    const loc = utils.getTopWindowLocation();
     let sovrnImps = [];
+    let iv;
     utils._each(bidReqs, function (bid) {
+      iv = iv || utils.getBidIdParameter('iv', bid.params);
       sovrnImps.push({
         id: bid.bidId,
         banner: { w: 1, h: 1 },
-        tagid: utils.getBidIdParameter('tagid', bid.params),
+        tagid: String(utils.getBidIdParameter('tagid', bid.params)),
         bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
       });
     });
@@ -35,13 +38,29 @@ export const spec = {
       id: utils.getUniqueIdentifierStr(),
       imp: sovrnImps,
       site: {
-        domain: window.location.host,
-        page: window.location.pathname + location.search + location.hash
+        domain: loc.host,
+        page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      sovrnBidReq.regs = {
+        ext: {
+          gdpr: +bidderRequest.gdprConsent.gdprApplies
+        }};
+      sovrnBidReq.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString
+        }};
+    }
+
+    let url = `//ap.lijit.com/rtb/bid?` +
+      `src=${REPO_AND_VERSION}`;
+    if (iv) url += `&iv=${iv}`;
+
     return {
       method: 'POST',
-      url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
+      url: url,
       data: JSON.stringify(sovrnBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -65,18 +84,36 @@ export const spec = {
           cpm: parseFloat(sovrnBid.price),
           width: parseInt(sovrnBid.w),
           height: parseInt(sovrnBid.h),
-          creativeId: sovrnBid.id,
-          dealId: sovrnBid.dealId || null,
+          creativeId: sovrnBid.crid || sovrnBid.id,
+          dealId: sovrnBid.dealid || null,
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,
           ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-          ttl: 60000
+          ttl: 60
         });
       });
     }
     return sovrnBidResponses;
-  }
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
+      let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
+        .map(rsp => { return rsp.body.ext.iid });
+      let consentString = '';
+      if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+        consentString = gdprConsent.consentString
+      }
+      if (iidArr[0]) {
+        return [{
+          type: 'iframe',
+          url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+        }];
+      }
+    }
+    return [];
+  },
 };
 
 registerBidder(spec);

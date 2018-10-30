@@ -16,8 +16,8 @@ const utils = require('./utils');
 const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
-const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
+const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 
 const DEFAULT_TIMEOUTBUFFER = 200;
 
@@ -83,15 +83,6 @@ export function newConfig() {
         this._publisherDomain = val;
       },
 
-      // delay to request cookie sync to stay out of critical path
-      _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-      get cookieSyncDelay() {
-        return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
-      },
-      set cookieSyncDelay(val) {
-        this._cookieSyncDelay = val;
-      },
-
       // calls existing function which may be moved after deprecation
       _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
       set priceGranularity(val) {
@@ -112,6 +103,26 @@ export function newConfig() {
       _customPriceBucket: {},
       get customPriceBucket() {
         return this._customPriceBucket;
+      },
+
+      _mediaTypePriceGranularity: {},
+      get mediaTypePriceGranularity() {
+        return this._mediaTypePriceGranularity;
+      },
+      set mediaTypePriceGranularity(val) {
+        this._mediaTypePriceGranularity = Object.keys(val).reduce((aggregate, item) => {
+          if (validatePriceGranularity(val[item])) {
+            if (typeof val === 'string') {
+              aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
+            } else if (typeof val === 'object') {
+              aggregate[item] = val[item];
+              utils.logMessage(`Using custom price granularity for ${item}`);
+            }
+          } else {
+            utils.logWarn(`Invalid price granularity for media type: ${item}`);
+          }
+          return aggregate;
+        }, {});
       },
 
       _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
@@ -141,6 +152,14 @@ export function newConfig() {
       },
       set timeoutBuffer(val) {
         this._timoutBuffer = val;
+      },
+
+      _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
+      get disableAjaxTimeout() {
+        return this._disableAjaxTimeout;
+      },
+      set disableAjaxTimeout(val) {
+        this._disableAjaxTimeout = val;
       },
 
     };
