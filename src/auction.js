@@ -111,7 +111,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     return {
       auctionId: _auctionId,
       timestamp: _auctionStart,
-      auctionStart: _auctionStart,
       auctionEnd: _auctionEnd,
       auctionStatus: _auctionStatus,
       adUnits: _adUnits,
