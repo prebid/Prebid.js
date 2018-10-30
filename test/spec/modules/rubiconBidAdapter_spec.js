@@ -400,8 +400,8 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
 
           delete bidderRequest.bids[0].params.latLong;
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          data = parseQuery(request.data);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
           expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
 
@@ -416,8 +416,8 @@ describe('the rubicon adapter', function () {
           });
 
           bidderRequest.bids[0].params.latLong = [];
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
 
           expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
 
@@ -446,7 +446,6 @@ describe('the rubicon adapter', function () {
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           delete bidderRequest.bids[0].params.referrer;
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
 
           expect(parseQuery(request.data).rf).to.exist;
           expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
@@ -621,7 +620,6 @@ describe('the rubicon adapter', function () {
         });
 
         describe('digiTrustId config', function () {
-          var origGetConfig;
           beforeEach(function () {
             window.DigiTrust = {
               getUser: sandbox.spy()

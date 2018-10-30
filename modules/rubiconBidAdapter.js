@@ -110,7 +110,7 @@ export const spec = {
     const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let data = {
+      const data = {
         id: bidRequest.transactionId,
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
@@ -573,6 +573,7 @@ function _getDigiTrustQueryParams() {
 
 /**
  * @param {BidRequest} bidRequest
+ * @param bidderRequest
  * @returns {string}
  */
 function _getPageUrl(bidRequest, bidderRequest) {
