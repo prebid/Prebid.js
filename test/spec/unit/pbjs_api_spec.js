@@ -9,7 +9,7 @@ import {
   createBidReceived
 } from 'test/fixtures/fixtures';
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { targeting, newTargeting, RENDERED } from 'src/targeting';
+import { targeting, newTargeting } from 'src/targeting';
 import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
@@ -1900,7 +1900,7 @@ describe('Unit: Prebid Module', function () {
       const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
         bid => bid.adId === winningBid.adId);
 
-      expect(markedBid.status).to.equal(RENDERED);
+      expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
       resetAuction();
     });
 
@@ -1914,7 +1914,7 @@ describe('Unit: Prebid Module', function () {
       const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
         bid => bid.adId === winningBid.adId);
 
-      expect(markedBid.status).to.not.equal(RENDERED);
+      expect(markedBid.status).to.not.equal(CONSTANTS.BID_STATUS.RENDERED);
       resetAuction();
     });
 
@@ -1930,7 +1930,7 @@ describe('Unit: Prebid Module', function () {
       const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
         bid => bid.adId === winningBid.adId);
 
-      expect(markedBid.status).to.equal(RENDERED);
+      expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
       resetAuction();
     });
 
@@ -1946,7 +1946,7 @@ describe('Unit: Prebid Module', function () {
       const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
         bid => bid.adId === winningBid.adId);
 
-      expect(markedBid.status).to.equal(RENDERED);
+      expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
       resetAuction();
     });
   });
