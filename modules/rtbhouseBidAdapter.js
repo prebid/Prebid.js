@@ -92,12 +92,19 @@ registerBidder(spec);
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
 function mapImpression(slot) {
-  return {
+  const imp = {
     id: slot.bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
   };
+
+  const bidfloor = parseFloat(slot.params.bidfloor);
+  if (bidfloor) {
+    imp.bidfloor = bidfloor
+  }
+
+  return imp;
 }
 
 /**

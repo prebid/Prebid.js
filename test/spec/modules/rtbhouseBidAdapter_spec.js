@@ -150,6 +150,14 @@ describe('RTBHouseAdapter', () => {
       expect(data.source.tid).to.equal('example-transaction-id');
     });
 
+    it('should include bidfloor in request if available', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].params.bidfloor = 0.01;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].bidfloor).to.equal(0.01)
+    });
+
     describe('native imp', () => {
       function basicRequest(extension) {
         return Object.assign({
