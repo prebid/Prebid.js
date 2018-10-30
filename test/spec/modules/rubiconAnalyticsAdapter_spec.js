@@ -167,7 +167,7 @@ const MOCK = {
       {
         'bidder': 'rubicon',
         'params': {
-          'accountId': '14062',
+          'accountId': '1001',
           'siteId': '70608',
           'zoneId': '335918',
           'userId': '12346',
@@ -285,6 +285,9 @@ const ANALYTICS_MESSAGE = {
             }
           ],
           'status': 'success',
+          'accountId': 1001,
+          'siteId': 70608,
+          'zoneId': 335918,
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
@@ -300,7 +303,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'clientLatencyMillis': 3214,
               'params': {
-                'accountId': '14062',
+                'accountId': '1001',
                 'siteId': '70608',
                 'zoneId': '335918'
               },
@@ -381,8 +384,10 @@ const ANALYTICS_MESSAGE = {
       'clientLatencyMillis': 3214,
       'samplingFactor': 1,
       'accountId': 1001,
+      'siteId': 70608,
+      'zoneId': 335918,
       'params': {
-        'accountId': '14062',
+        'accountId': '1001',
         'siteId': '70608',
         'zoneId': '335918'
       },
@@ -620,7 +625,7 @@ describe('rubicon analytics adapter', function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
-          accountId: '1001'
+          accountId: 1001
         }
       });
     });

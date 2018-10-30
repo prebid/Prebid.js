@@ -162,9 +162,9 @@ function sendMessage(auctionId, bidWonId) {
       // Add site and zone id if not there and if we found a rubicon bidder
       if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) >= 0) {
         if (utils.deepAccess(bid, 'params.accountId') == accountId) {
-          adUnit.accountId = accountId;
-          adUnit.siteId = utils.deepAccess(bid, 'params.siteId');
-          adUnit.zoneId = utils.deepAccess(bid, 'params.zoneId');
+          adUnit.accountId = parseInt(accountId);
+          adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
+          adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
         }
       }
 
@@ -466,8 +466,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cache.timeouts[args.auctionId] = setTimeout(() => {
           sendMessage.call(this, args.auctionId);
         }, SEND_TIMEOUT);
-        // reset rubiconAliases in case another auction occurs
-        rubiconAliases = [];
         break;
       case BID_TIMEOUT:
         args.forEach(badBid => {
