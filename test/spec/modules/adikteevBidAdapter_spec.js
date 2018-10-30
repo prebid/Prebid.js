@@ -144,7 +144,6 @@ describe('adikteevBidAdapter', () => {
         {
           body: [
             {
-              requestId: '1258a5aa-d08f-11e8-a8d5-f2801f1b9fd1',
               cpm: 1,
               width: 300,
               height: 250,
@@ -156,7 +155,17 @@ describe('adikteevBidAdapter', () => {
             }
           ]
         };
-      const bidResponses = spec.interpretResponse(serverResponse);
+      const payload = {
+        validBidRequests: [{
+          bidId: '2ef7bb021ac847'
+        }],
+      };
+      const bidRequests = {
+        method: 'POST',
+        url: stagingEnvironmentSwitch ? ENDPOINT_URL_STAGING : ENDPOINT_URL,
+        data: JSON.stringify(payload),
+      };
+      const bidResponses = spec.interpretResponse(serverResponse, bidRequests);
       expect(bidResponses).to.be.an('array').that.is.not.empty; // yes, syntax is correct
       expect(bidResponses[0]).to.have.all.keys(
         'requestId',
@@ -170,7 +179,7 @@ describe('adikteevBidAdapter', () => {
         'currency',
       );
 
-      expect(bidResponses[0].requestId).to.equal(serverResponse.body[0].requestId);
+      expect(bidResponses[0].requestId).to.equal(payload.validBidRequests[0].bidId);
       expect(bidResponses[0].cpm).to.equal(serverResponse.body[0].cpm);
       expect(bidResponses[0].width).to.equal(serverResponse.body[0].width);
       expect(bidResponses[0].height).to.equal(serverResponse.body[0].height);

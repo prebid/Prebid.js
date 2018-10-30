@@ -37,7 +37,7 @@ export const spec = {
       bid.params.placementId &&
       bid.bidder === BIDDER_CODE &&
       validateSizes(bid.mediaTypes.banner.sizes)
-    )
+    );
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -55,15 +55,24 @@ export const spec = {
       cookies: document.cookie.split(';'),
       prebidUpdateVersion: '1.29.0',
     };
-    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: stagingEnvironmentSwitch ? ENDPOINT_URL_STAGING : ENDPOINT_URL,
-      data: payloadString,
+      data: JSON.stringify(payload),
     };
   },
 
-  interpretResponse: ({body}) => body,
+  interpretResponse: (serverResponse, bidRequests) => {
+    const returnedBids = [];
+    const validBidRequests = JSON.parse(bidRequests.data).validBidRequests;
+    serverResponse.body.forEach((value, index) => {
+      const overrides = {
+        requestId: validBidRequests[index].bidId,
+      };
+      returnedBids.push(Object.assign({}, value, overrides));
+    });
+    return returnedBids;
+  },
 
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
