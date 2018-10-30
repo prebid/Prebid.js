@@ -640,6 +640,10 @@ describe('PubMatic adapter', function () {
         });
       });
 
+      describe('AdsrvrOrgId from config', function() {
+
+      });
+
       it('Request params check for video ad', function () {
         let request = spec.buildRequests(videoBidRequests);
         let data = JSON.parse(request.data);
