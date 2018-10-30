@@ -113,6 +113,27 @@
                   "items": {
                     "$ref": "#/definitions/bid"
                   }
+                },
+                "accountId": {
+                  "anyOf": [
+                    {"type": "number"},
+                    {"type": "null"}
+                  ],
+                  "description": "The Rubicon AccountId associated with this adUnit - Removed if null"
+                },
+                "siteId": {
+                  "anyOf": [
+                    {"type": "number"},
+                    {"type": "null"}
+                  ],
+                  "description": "The Rubicon siteId associated with this adUnit - Removed if null"
+                },
+                "zoneId": {
+                  "anyOf": [
+                    {"type": "number"},
+                    {"type": "null"}
+                  ],
+                  "description": "The Rubicon zoneId associated with this adUnit - Removed if null"
                 }
               }
             }
@@ -166,6 +187,20 @@
                   "success",
                   "error"
                 ]
+              },
+              "siteId": {
+                "anyOf": [
+                  {"type": "number"},
+                  {"type": "null"}
+                ],
+                "description": "The Rubicon siteId associated with this adUnit - Removed if null"
+              },
+              "zoneId": {
+                "anyOf": [
+                  {"type": "number"},
+                  {"type": "null"}
+                ],
+                "description": "The Rubicon zoneId associated with this adUnit - Removed if null"
               }
             }
           }

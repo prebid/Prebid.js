@@ -146,7 +146,6 @@ const MOCK = {
         'bidRequestsCount': 1
       }
       ],
-      'auctionStart': 1519767010567,
       'timeout': 3000,
       'refererInfo': {
         'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
