@@ -168,7 +168,7 @@ class LogError {
         delete this.error.s
         errstr = this.buildErrorString(this.error)
         if (errstr.length > 2083) {
-          errstr = buildErrorString({m: 'unknown error message', t: this.error.t, u: this.error.u})
+          errstr = this.buildErrorString({m: 'unknown error message', t: this.error.t, u: this.error.u})
         }
       }
     }
