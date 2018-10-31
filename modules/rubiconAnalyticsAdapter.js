@@ -160,7 +160,7 @@ function sendMessage(auctionId, bidWonId) {
       }
 
       // Add site and zone id if not there and if we found a rubicon bidder
-      if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) >= 0) {
+      if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
         if (utils.deepAccess(bid, 'params.accountId') == accountId) {
           adUnit.accountId = parseInt(accountId);
           adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
