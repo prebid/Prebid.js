@@ -561,5 +561,15 @@ describe('AppNexusAdapter', function () {
         bidderRequest.bids[0].renderer.options
       );
     });
+
+    it('should add deal_priority and deal_code', function() {
+      let responseWithDeal = deepClone(response);
+      responseWithDeal.tags[0].ads[0].deal_priority = 'high';
+      responseWithDeal.tags[0].ads[0].deal_code = '123';
+
+      let bidderRequest;
+      let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
+    });
   });
 });

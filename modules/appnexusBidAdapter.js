@@ -233,7 +233,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     netRevenue: true,
     ttl: 300, //300ms seems a bit unrealistic, as the adserver and possible other bidders might need more time to respond i would rather set it at leaset @30s (30.000ms) or don't implement a ttl at all, and just filter stale requests server side
     appnexus: {
-      buyerMemberId: rtbBid.buyer_member_id
+      buyerMemberId: rtbBid.buyer_member_id,
+      dealPriority: rtbBid.deal_priority,
+      dealCode: rtbBid.deal_code
     }
   };
 
