@@ -20,7 +20,7 @@ Only native format is supported. Using OpenRTB standard.
             native: {
                 image: {
                     required: false,
-                    sizes: [50, 50]
+                    sizes: [100, 50]
                 },
                 title: {
                     required: false,
@@ -44,11 +44,11 @@ Only native format is supported. Using OpenRTB standard.
         bids: [{
             bidder: 'adformOpenRTB',
             params: {
-                mid: 161556,
-                adxDomain: 'axd.adform.net',  //optional
-                site: '23455',                //optional
-                priceType: 'gross'            //optional, default is 'net'
-                publisher: {                  //optional block
+                mid: 606169,                  // required
+                adxDomain: 'axd.adform.net',  // optional
+                siteId: '23455',              // optional
+                priceType: 'gross'            // optional, default is 'net'
+                publisher: {                  // optional block
                   id: "2706",
                   name: "Publishers Name",
                   domain: "publisher.com"
