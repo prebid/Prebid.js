@@ -9,7 +9,7 @@ import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
-import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
+import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage } from 'src/utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -53,6 +53,8 @@ import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecutio
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
  *   important ones should come first, since publishers may limit how many are dropped on their page.
+ * @property {function(object): object} transformBidParams Updates bid params before creating bid request
+ }}
  */
 
 /**
@@ -158,10 +160,12 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax, requestDone) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
+
+      const _requestDone = function(){logMessage("calling request DONE");if(requestDone) requestDone();};
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid, last) {
@@ -170,33 +174,69 @@ export function newBidder(spec) {
         if (isValid(adUnitCode, bid, [bidderRequest])) {
           addBidResponse(adUnitCode, bid, last);
         }
+        if(last){
+          _requestDone();
+        }
+      }
+
+      function setRequestPropsFilter(requestObj, props){
+        for(let i in props){
+          switch(i){
+            case 'doneTime':
+              if(!requestObj[i]){
+                requestObj[i] = props[i];
+              }
+            break;
+            default:
+              requestObj[i] = props[i];
+          }
+        }
+      }
+      function setRequestProps(request, props){       
+        //two possible options here? 
+        if(request.bidRequest){
+          setRequestPropsFilter(request.bidRequest, props);
+        }else if(request.bidderRequest){
+          setRequestPropsFilter(request.bidderRequest, props);
+        }
+      }
+
+      function markRequestDoneWithNoBids(request){
+        setRequestProps(request, {
+          doneTime: timestamp(),
+          noBids: true,
+        });
+      }
+
+      function handleResponse(bids, request) {
+        //TODO: delegate onResponse handling to after this call via this call
+        if(!bids || bids.length==0){
+          markRequestDoneWithNoBids(request);
+          _requestDone();        
+        }
       }
 
       // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses(bids) {
-        const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
-
-        const videoBid = bidsArray.some(bid => bid.mediaType === 'video');
-        const cacheEnabled = config.getConfig('cache.url');
-
-        // video bids with cache enabled need to be cached first before they are considered done
-        if (!(videoBid && cacheEnabled)) {
-          done();
-        }
-
-        // TODO: the code above needs to be refactored. We should always call done when we're done. if the auction
-        // needs to do cleanup before _it_ can be done it should handle that itself in the auction.  It should _not_
-        // require us, the bidders, to conditionally call done.  That makes the whole done API very flaky.
-        // As soon as that is refactored, we can move this emit event where it should be, within the done function.
+        done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-
         registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      const invalidBidRequests =  bidderRequest.bids.filter((bid)=>{
+        if(validBidRequests.indexOf(bid) === -1){
+          return true;
+        }
+        return false;
+      });
+      invalidBidRequests.forEach(bid=>{
+        markRequestDoneWithNoBids({bidRequest:bid});
+      });
       if (validBidRequests.length === 0) {
+        handleResponse([], {bidderRequest:bidderRequest});
         afterAllResponses();
         return;
       }
@@ -211,6 +251,7 @@ export function newBidder(spec) {
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
+        handleResponse([], {bidderRequest:bidderRequest});
         afterAllResponses();
         return;
       }
@@ -265,6 +306,7 @@ export function newBidder(spec) {
             break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+            handleResponse([], request);
             onResponse();
         }
 
@@ -288,19 +330,39 @@ export function newBidder(spec) {
             bids = spec.interpretResponse(response, request);
           } catch (err) {
             logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
-            onResponse();
+            handleResponse([], request);
+            onResponse();            
             return;
           }
 
           if (bids) {
+            let bidIds;
+            if(bids.reduce){
+              bidIds = bids.reduce((ids, bid)=>{
+                ids.push(bid.requestId);
+                return ids;
+              },[]);
+            }else{
+              bidIds = [bids.requestId];
+            }
+            markNoBidsUsingRequestMap(bidIds);
+
             if (bids.forEach) {
               bids.forEach(addBidUsingRequestMap);
             } else {
               addBidUsingRequestMap(bids, 0, [bids]);//fake triggering last element
             }
           }
+          handleResponse(bids, request);
           onResponse(bids);
-
+          
+          function markNoBidsUsingRequestMap(bidResponseIds) {
+            for(var id in bidRequestMap){
+              if(!includes(bidResponseIds, id)){
+                markRequestDoneWithNoBids({bidRequest:bidRequestMap[id]});//could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
+              }
+            }
+          }
           function addBidUsingRequestMap(bid, index, array) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
@@ -311,7 +373,7 @@ export function newBidder(spec) {
             }
           }
 
-          function headerParser(xmlHttpResponse) {
+          function headerParser(xmlHttpResponse) {//xmlHttpResponse not used?
             return {
               get: responseObj.getResponseHeader.bind(responseObj)
             };
@@ -322,6 +384,7 @@ export function newBidder(spec) {
         // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          handleResponse([], request);
           onResponse();
         }
       }
@@ -330,9 +393,10 @@ export function newBidder(spec) {
 
   function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
+      let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
+        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
+        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
       }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
@@ -381,7 +445,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
   function errorMessage(msg) {

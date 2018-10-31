@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/ixBidAdapter';
 
-describe('IndexexchangeAdapter', () => {
+describe('IndexexchangeAdapter', function () {
   const IX_ENDPOINT = 'http://as.casalemedia.com/cygnus';
   const BIDDER_VERSION = 7.2;
 
@@ -58,44 +58,44 @@ describe('IndexexchangeAdapter', () => {
     ]
   };
 
-  describe('inherited functions', () => {
-    it('should exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('should exists and is a function', function () {
       const adapter = newBidder(spec);
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found for a banner ad', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found for a banner ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
     });
 
-    it('should return true when optional params found for a banner ad', () => {
+    it('should return true when optional params found for a banner ad', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when siteID is number', () => {
+    it('should return true when siteID is number', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.siteId = 123;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when siteID is missing', () => {
+    it('should return false when siteID is missing', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       delete bid.params.siteId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when size is missing', () => {
+    it('should return false when size is missing', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       delete bid.params.size;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when size array is wrong length', () => {
+    it('should return false when size array is wrong length', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.size = [
         300,
@@ -105,32 +105,91 @@ describe('IndexexchangeAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when size array is array of strings', () => {
+    it('should return false when size array is array of strings', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.size = ['300', '250'];
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when there is only bidFloor', () => {
+    it('should return false when mediaTypes is not banner', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes = {
+        video: {
+          sizes: [[300, 250]]
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaTypes.banner does not have sizes', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes = {
+        banner: {
+          size: [[300, 250]]
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is not banner', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'banne';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is video', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'video';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when mediaType is native', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.params.mediaTypes;
+      bid.mediaType = 'native';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true when mediaType is missing and has sizes', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when mediaType is banner', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.mediaType = 'banner';
+      bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when there is only bidFloor', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when there is only bidFloorCur', () => {
+    it('should return false when there is only bidFloorCur', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloorCur = 'USD';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when bidFloor is string', () => {
+    it('should return false when bidFloor is string', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = '50';
       bid.params.bidFloorCur = 'USD';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when bidFloorCur is number', () => {
+    it('should return false when bidFloorCur is number', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 70;
@@ -138,18 +197,24 @@ describe('IndexexchangeAdapter', () => {
     });
   });
 
-  describe('buildRequestsBanner', () => {
+  describe('buildRequestsBanner', function () {
     const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
     const requestUrl = request.url;
     const requestMethod = request.method;
     const query = request.data;
 
-    it('request should be made to IX endpoint with GET method', () => {
+    const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutMediaType[0].mediaTypes;
+    bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
+    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType);
+    const queryWithoutMediaType = requestWithoutMediaType.data;
+
+    it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
       expect(requestUrl).to.equal(IX_ENDPOINT);
     });
 
-    it('query object (version, siteID and request) should be correct', () => {
+    it('query object (version, siteID and request) should be correct', function () {
       expect(query.v).to.equal(BIDDER_VERSION);
       expect(query.s).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
       expect(query.r).to.exist;
@@ -157,7 +222,7 @@ describe('IndexexchangeAdapter', () => {
       expect(query.sd).to.equal(1);
     });
 
-    it('payload should have correct format and value', () => {
+    it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
@@ -173,7 +238,7 @@ describe('IndexexchangeAdapter', () => {
       expect(payload.imp).to.have.lengthOf(1);
     });
 
-    it('impression should have correct format and value', () => {
+    it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
       const sidValue = `${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`;
 
@@ -188,7 +253,7 @@ describe('IndexexchangeAdapter', () => {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
-    it('impression should have bidFloor and bidFloorCur if configured', () => {
+    it('impression should have bidFloor and bidFloorCur if configured', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';
@@ -199,7 +264,71 @@ describe('IndexexchangeAdapter', () => {
       expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
     });
 
-    it('should add first party data to page url in bid request if it exists in config', () => {
+    it('payload without mediaType should have correct format and value', function () {
+      const payload = JSON.parse(queryWithoutMediaType.r);
+
+      expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
+      expect(payload.site).to.exist;
+      expect(payload.site.page).to.exist;
+      expect(payload.site.page).to.contain('http');
+      expect(payload.site.ref).to.exist;
+      expect(payload.site.ref).to.be.a('string');
+      expect(payload.ext).to.exist;
+      expect(payload.ext.source).to.equal('prebid');
+      expect(payload.imp).to.exist;
+      expect(payload.imp).to.be.an('array');
+      expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('impression without mediaType should have correct format and value', function () {
+      const impression = JSON.parse(queryWithoutMediaType.r).imp[0];
+      const sidValue = `${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`;
+
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal(sidValue);
+    });
+
+    it('impression should have sid if id is configured as number', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.id = 50;
+      const requestBidFloor = spec.buildRequests([bid]);
+      const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal('50');
+    });
+
+    it('impression should have sid if id is configured as string', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.id = 'abc';
+      const requestBidFloor = spec.buildRequests([bid]);
+      const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(impression.banner).to.exist;
+      expect(impression.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impression.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impression.banner.topframe).to.exist;
+      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal('abc');
+    });
+
+    it('should add first party data to page url in bid request if it exists in config', function () {
       config.setConfig({
         ix: {
           firstPartyData: {
@@ -218,7 +347,7 @@ describe('IndexexchangeAdapter', () => {
       expect(pageUrl).to.equal(expectedPageUrl);
     });
 
-    it('should not set first party data if it is not an object', () => {
+    it('should not set first party data if it is not an object', function () {
       config.setConfig({
         ix: {
           firstPartyData: 500
@@ -231,7 +360,7 @@ describe('IndexexchangeAdapter', () => {
       expect(pageUrl).to.equal(utils.getTopWindowUrl());
     });
 
-    it('should not set first party or timeout if it is not present', () => {
+    it('should not set first party or timeout if it is not present', function () {
       config.setConfig({
         ix: {}
       });
@@ -243,7 +372,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
-    it('should not set first party or timeout if it is setConfig is not called', () => {
+    it('should not set first party or timeout if it is setConfig is not called', function () {
       const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
@@ -251,7 +380,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
-    it('should set timeout if publisher set it through setConfig', () => {
+    it('should set timeout if publisher set it through setConfig', function () {
       config.setConfig({
         ix: {
           timeout: 500
@@ -262,7 +391,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithTimeout.data.t).to.equal(500);
     });
 
-    it('should set timeout if timeout is a string', () => {
+    it('should set timeout if timeout is a string', function () {
       config.setConfig({
         ix: {
           timeout: '500'
@@ -272,25 +401,10 @@ describe('IndexexchangeAdapter', () => {
 
       expect(requestStringTimeout.data.t).to.be.undefined;
     });
-
-    it('should default to assuming media type is banner', () => {
-      const bidsWithoutMediaType = [
-        Object.assign({}, DEFAULT_BANNER_VALID_BID[0])
-      ];
-      delete bidsWithoutMediaType[0].mediaTypes;
-
-      const request = spec.buildRequests(bidsWithoutMediaType);
-      const payload = JSON.parse(request.data.r);
-
-      expect(payload.id).to.equal(bidsWithoutMediaType[0].bidderRequestId);
-      expect(payload.imp).to.exist;
-      expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
-    });
   });
 
-  describe('interpretResponseBanner', () => {
-    it('should get correct bid response', () => {
+  describe('interpretResponseBanner', function () {
+    it('should get correct bid response', function () {
       const expectedParse = [
         {
           requestId: '1a2b3c4d',
@@ -300,7 +414,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -309,7 +423,7 @@ describe('IndexexchangeAdapter', () => {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('should set creativeId to default value if not provided', () => {
+    it('should set creativeId to default value if not provided', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       delete bidResponse.seatbid[0].bid[0].crid;
       const expectedParse = [
@@ -321,7 +435,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -330,7 +444,7 @@ describe('IndexexchangeAdapter', () => {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('should set Japanese price correctly', () => {
+    it('should set Japanese price correctly', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       bidResponse.cur = 'JPY';
       const expectedParse = [
@@ -342,7 +456,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: undefined
         }
@@ -351,7 +465,7 @@ describe('IndexexchangeAdapter', () => {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('should set dealId correctly', () => {
+    it('should set dealId correctly', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       bidResponse.seatbid[0].bid[0].ext.dealid = 'deal';
       const expectedParse = [
@@ -363,7 +477,7 @@ describe('IndexexchangeAdapter', () => {
           height: 250,
           ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 60,
+          ttl: 35,
           netRevenue: true,
           dealId: 'deal'
         }
@@ -372,7 +486,7 @@ describe('IndexexchangeAdapter', () => {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('bidrequest should have consent info if gdprApplies and consentString exist', () => {
+    it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
       const options = {
         gdprConsent: {
           gdprApplies: true,
@@ -387,7 +501,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
     });
 
-    it('bidrequest should not have consent field if consentString is undefined', () => {
+    it('bidrequest should not have consent field if consentString is undefined', function () {
       const options = {
         gdprConsent: {
           gdprApplies: true,
@@ -401,7 +515,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithConsent.user).to.be.undefined;
     });
 
-    it('bidrequest should not have gdpr field if gdprApplies is undefined', () => {
+    it('bidrequest should not have gdpr field if gdprApplies is undefined', function () {
       const options = {
         gdprConsent: {
           consentString: '3huaa11=qu3198ae',
@@ -415,7 +529,7 @@ describe('IndexexchangeAdapter', () => {
       expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
     });
 
-    it('bidrequest should not have consent info if options.gdprConsent is undefined', () => {
+    it('bidrequest should not have consent info if options.gdprConsent is undefined', function () {
       const options = {};
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithConsent = JSON.parse(validBidWithConsent.data.r);

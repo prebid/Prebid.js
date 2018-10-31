@@ -1,177 +1,205 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { EVENTS } from 'src/constants.json';
 
-const CONSUMABLE_BIDDER_CODE = 'consumable'
+const BIDDER_CODE = 'consumable';
 
-const SYNC_TYPES = {
-  IFRAME: {
-    TAG: 'iframe',
-    TYPE: 'iframe'
-  },
-  IMAGE: {
-    TAG: 'img',
-    TYPE: 'image'
-  }
-};
+const BASE_URI = 'https://e.serverbid.com/api/v2'
 
-const pubapiTemplate = ({host, network, placement, alias}) => `//${host}/pubapi/3.0/${network}/${placement}/0/0/ADTECH;v=2;cmd=bid;cors=yes;alias=${alias};misc=${new Date().getTime()}`
-const CONSUMABLE_URL = 'adserver-us.adtech.advertising.com';
-const CONSUMABLE_TTL = 60;
-const CONSUMABLE_NETWORK = '10947.1';
-
-$$PREBID_GLOBAL$$.consumableGlobals = {
-  pixelsDropped: false
-};
-
-function parsePixelItems(pixels) {
-  let itemsRegExp = /<(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  let tagNameRegExp = /\w*(?=\s)/;
-  let srcRegExp = /src=("|')(.*?)\1/;
-  let pixelsItems = [];
-
-  if (pixels) {
-    let matchedItems = pixels.match(itemsRegExp);
-    if (matchedItems) {
-      matchedItems.forEach(item => {
-        let tagName = item.match(tagNameRegExp)[0];
-        let url = item.match(srcRegExp)[2];
-
-        if (tagName && url) {
-          pixelsItems.push({
-            type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
-            url: url
-          });
-        }
-      });
-    }
-  }
-
-  return pixelsItems;
-}
-
-function _buildConsumableUrl(bid) {
-  const params = bid.params;
-
-  return pubapiTemplate({
-    host: CONSUMABLE_URL,
-    network: params.network || CONSUMABLE_NETWORK,
-    placement: parseInt(params.placement, 10)
-  });
-}
-
-function formatBidRequest(bid) {
-  let bidRequest;
-
-  bidRequest = {
-    url: _buildConsumableUrl(bid),
-    method: 'GET'
-  };
-
-  bidRequest.bidderCode = bid.bidder;
-  bidRequest.bidId = bid.bidId;
-  bidRequest.userSyncOn = bid.params.userSyncOn;
-  bidRequest.unitId = bid.params.unitId;
-  bidRequest.unitName = bid.params.unitName;
-  bidRequest.zoneId = bid.params.zoneId;
-  bidRequest.network = bid.params.network || CONSUMABLE_NETWORK;
-
-  return bidRequest;
-}
-
-function _parseBidResponse (response, bidRequest) {
-  let bidData;
-  try {
-    bidData = response.seatbid[0].bid[0];
-  } catch (e) {
-    return;
-  }
-
-  let cpm;
-
-  if (bidData.ext && bidData.ext.encp) {
-    cpm = bidData.ext.encp;
-  } else {
-    cpm = bidData.price;
-
-    if (cpm === null || isNaN(cpm)) {
-      utils.logError('Invalid cpm in bid response', CONSUMABLE_BIDDER_CODE, bid);
-      return;
-    }
-  }
-  cpm = cpm * (parseFloat(bidRequest.zoneId) / parseFloat(bidRequest.network));
-
-  let oad = bidData.adm;
-  let cb = bidRequest.network === '9599.1' ? 7654321 : Math.round(new Date().getTime());
-  let ad = '<script type=\'text/javascript\'>document.write(\'<div id=\"' + bidRequest.unitName + '-' + bidRequest.unitId + '\">\');</script>' + oad;
-  ad += '<script type=\'text/javascript\'>document.write(\'</div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<div class=\"' + bidRequest.unitName + '\"></div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/' + bidRequest.unitId + '/' + bidRequest.unitName + '/widget/unit.js?cb=' + cb + '\" charset=\"utf-8\" async></scr\'+\'ipt>\');</script>'
-  if (response.ext && response.ext.pixels) {
-    if (config.getConfig('consumable.userSyncOn') !== EVENTS.BID_RESPONSE) {
-      ad += _formatPixels(response.ext.pixels);
-    }
-  }
-
-  return {
-    bidderCode: bidRequest.bidderCode,
-    requestId: bidRequest.bidId,
-    ad: ad,
-    cpm: cpm,
-    width: bidData.w,
-    height: bidData.h,
-    creativeId: bidData.crid,
-    pubapiId: response.id,
-    currency: response.cur,
-    dealId: bidData.dealid,
-    netRevenue: true,
-    ttl: CONSUMABLE_TTL
-  };
-}
-
-function _formatPixels (pixels) {
-  let formattedPixels = pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
-
-  return '<script>var w=window,prebid;' +
-    'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
-    'if(prebid && prebid.consumableGlobals && !prebid.consumableGlobals.pixelsDropped){' +
-    'try{prebid.consumableGlobals.pixelsDropped=true;' + formattedPixels + 'break;}' +
-    'catch(e){continue;}' +
-    '}}</script>';
-}
+let siteId = 0;
+let bidder = 'consumable';
 
 export const spec = {
-  code: CONSUMABLE_BIDDER_CODE,
+  code: BIDDER_CODE,
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
-    return bid.params && bid.params.placement
+    return !!(bid.params.networkId && bid.params.siteId && bid.params.unitId && bid.params.unitName);
   },
-  buildRequests: function (bids) {
-    return bids.map(formatBidRequest);
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+
+  buildRequests: function(validBidRequests) {
+    // Do we need to group by bidder? i.e. to make multiple requests for
+    // different endpoints.
+
+    let ret = {
+      method: 'POST',
+      url: '',
+      data: '',
+      bidRequest: []
+    };
+
+    if (validBidRequests.length < 1) {
+      return ret;
+    }
+
+    // These variables are used in creating the user sync URL.
+    siteId = validBidRequests[0].params.siteId;
+    bidder = validBidRequests[0].bidder;
+
+    const data = Object.assign({
+      placements: [],
+      time: Date.now(),
+      user: {},
+      url: utils.getTopWindowUrl(),
+      referrer: document.referrer,
+      enableBotFiltering: true,
+      includePricingData: true,
+      parallel: true
+    }, validBidRequests[0].params);
+
+    validBidRequests.map(bid => {
+      const placement = Object.assign({
+        divName: bid.bidId,
+        adTypes: bid.adTypes || getSize(bid.sizes)
+      }, bid.params);
+
+      if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
+        data.placements.push(placement);
+      }
+    });
+
+    ret.data = JSON.stringify(data);
+    ret.bidRequest = validBidRequests;
+    ret.url = BASE_URI;
+
+    return ret;
   },
-  interpretResponse: function ({body}, bidRequest) {
-    if (!body) {
-      utils.logError('Empty bid response', bidRequest.bidderCode, body);
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, bidRequest) {
+    let bid;
+    let bids;
+    let bidId;
+    let bidObj;
+    let bidResponses = [];
+
+    bids = bidRequest.bidRequest;
+
+    serverResponse = (serverResponse || {}).body;
+    for (let i = 0; i < bids.length; i++) {
+      bid = {};
+      bidObj = bids[i];
+      bidId = bidObj.bidId;
+
+      if (serverResponse) {
+        const decision = serverResponse.decisions && serverResponse.decisions[bidId];
+        const price = decision && decision.pricing && decision.pricing.clearPrice;
+
+        if (decision && price) {
+          bid.requestId = bidId;
+          bid.cpm = price;
+          bid.width = decision.width;
+          bid.height = decision.height;
+          bid.unitId = bidObj.params.unitId;
+          bid.unitName = bidObj.params.unitName;
+          bid.ad = retrieveAd(decision, bid.unitId, bid.unitName);
+          bid.currency = 'USD';
+          bid.creativeId = decision.adId;
+          bid.ttl = 360;
+          bid.netRevenue = true;
+          bid.referrer = utils.getTopWindowUrl();
+
+          bidResponses.push(bid);
+        }
+      }
+    }
+
+    return bidResponses;
+  },
+
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//sync.serverbid.com/ss/' + siteId + '.html'
+      }];
     } else {
-      let bid = _parseBidResponse(body, bidRequest);
-      if (bid) {
-        return bid;
-      }
+      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
     }
-  },
-  getUserSyncs: function(options, bidResponses) {
-    let bidResponse = bidResponses[0];
-
-    if (config.getConfig('consumable.userSyncOn') === EVENTS.BID_RESPONSE) {
-      if (!$$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped && bidResponse.ext && bidResponse.ext.pixels) {
-        $$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped = true;
-
-        return parsePixelItems(bidResponse.ext.pixels);
-      }
-    }
-
-    return [];
   }
 };
+
+const sizeMap = [
+  null,
+  '120x90',
+  '120x90',
+  '468x60',
+  '728x90',
+  '300x250',
+  '160x600',
+  '120x600',
+  '300x100',
+  '180x150',
+  '336x280',
+  '240x400',
+  '234x60',
+  '88x31',
+  '120x60',
+  '120x240',
+  '125x125',
+  '220x250',
+  '250x250',
+  '250x90',
+  '0x0',
+  '200x90',
+  '300x50',
+  '320x50',
+  '320x480',
+  '185x185',
+  '620x45',
+  '300x125',
+  '800x250'
+];
+
+sizeMap[77] = '970x90';
+sizeMap[123] = '970x250';
+sizeMap[43] = '300x600';
+sizeMap[286] = '970x66';
+sizeMap[3230] = '970x280';
+sizeMap[429] = '486x60';
+sizeMap[374] = '700x500';
+sizeMap[934] = '300x1050';
+sizeMap[1578] = '320x100';
+sizeMap[331] = '320x250';
+sizeMap[3301] = '320x267';
+sizeMap[2730] = '728x250';
+
+function getSize(sizes) {
+  const result = [];
+  sizes.forEach(function(size) {
+    const index = sizeMap.indexOf(size[0] + 'x' + size[1]);
+    if (index >= 0) {
+      result.push(index);
+    }
+  });
+  return result;
+}
+
+function retrieveAd(decision, unitId, unitName) {
+  let oad = decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
+  let cb = Math.round(new Date().getTime());
+  let ad = '<script type=\'text/javascript\'>document.write(\'<div id=\"' + unitName + '-' + unitId + '\">\');</script>' + oad;
+  ad += '<script type=\'text/javascript\'>document.write(\'</div>\');</script>';
+  ad += '<script type=\'text/javascript\'>document.write(\'<div class=\"' + unitName + '\"></div>\');</script>';
+  ad += '<script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/' + unitId + '/' + unitName + '/widget/unit.js?cb=' + cb + '\" charset=\"utf-8\" async></scr\'+\'ipt>\');</script>'
+
+  return ad;
+}
 
 registerBidder(spec);

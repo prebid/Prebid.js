@@ -9,7 +9,10 @@ import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool, RENDERED, BID_TARGETING_SET } from './targeting';
 import { createHook } from 'src/hook';
+import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
+import { adunitCounter } from './adUnits';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -27,11 +30,11 @@ const eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
+// initialize existing debugging sessions if present
+sessionLoader();
+
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
-
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -108,8 +111,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  let bidsReceived = auctionManager.getBidsReceived();
-  return targeting.getAllTargeting(adUnitCode, bidsReceived);
+  return targeting.getAllTargeting(adUnitCode);
 };
 
 /**
@@ -156,9 +158,10 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
+ * @param {function(object)} customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -172,7 +175,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargetingForGPT(targetingSet);
+  targeting.setTargetingForGPT(targetingSet, customSlotMatching);
 
   Object.keys(targetingSet).forEach((adUnitCode) => {
     Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
@@ -246,8 +249,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
         utils.insertElement(creativeComment, doc, 'body');
 
-        if (renderer && renderer.url) {
-          renderer.render(bid);
+        if (isRendererRequired(renderer)) {
+          executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
           emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
@@ -336,12 +339,22 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
     // get the bidder's mediaTypes
-    const bidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adaptermanager.bidderRegistry;
+
+    const s2sConfig = config.getConfig('s2sConfig');
+    const s2sBidders = s2sConfig && s2sConfig.bidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
+      return !includes(s2sBidders, bidder);
+    }) : allBidders;
+
+    if (!adUnit.transactionId) {
+      adUnit.transactionId = utils.generateUUID();
+    }
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
-      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      const spec = adapter && adapter.getSpec && adapter.getSpec();
       // banner is default if not specified in spec
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
@@ -353,6 +366,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       }
     });
+    adunitCounter.incrementCounter(adUnit.code);
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -382,13 +396,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
-    // generate transactionid for each new adUnits
-    // Append array to existing
-    adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === 'object') {
-    // Generate the transaction id for the adunit
-    adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
   // emit event
@@ -595,6 +604,33 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 };
 
 /**
+ * Mark the winning bid as used, should only be used in conjunction with video
+ * @typedef {Object} MarkBidRequest
+ * @property {string} adUnitCode The ad unit code
+ * @property {string} adId The id representing the ad we want to mark
+ *
+ * @alias module:pbjs.markWinningBidAsUsed
+*/
+$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
+  let bids = [];
+
+  if (markBidRequest.adUnitCode && markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+  } else if (markBidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+  } else if (markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+  } else {
+    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+  }
+
+  if (bids.length > 0) {
+    bids[0].status = RENDERED;
+  }
+};
+
+/**
  * Get Prebid config options
  * @param {Object} options
  * @alias module:pbjs.getConfig
@@ -632,7 +668,6 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
  * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
  * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
- * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
  * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
  * @alias module:pbjs.setConfig
  * ```

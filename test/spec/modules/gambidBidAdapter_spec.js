@@ -4,29 +4,29 @@ import * as utils from 'src/utils';
 
 const supplyPartnerId = '123';
 
-describe('GambidAdapter', () => {
-  describe('isBidRequestValid', () => {
-    it('should validate supply-partner ID', () => {
+describe('GambidAdapter', function () {
+  describe('isBidRequestValid', function () {
+    it('should validate supply-partner ID', function () {
       expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: 123 } })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true);
     });
-    it('should validate RTB endpoint', () => {
+    it('should validate RTB endpoint', function () {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true); // RTB endpoint has a default
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', rtbEndpoint: 123 } })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', rtbEndpoint: 'https://some.url.com' } })).to.equal(true);
     });
-    it('should validate bid floor', () => {
+    it('should validate bid floor', function () {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true); // bidfloor has a default
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: '123' } })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: 0.1 } })).to.equal(true);
     });
-    it('should validate adpos', () => {
+    it('should validate adpos', function () {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true); // adpos has a default
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', adpos: '123' } })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', adpos: 0.1 } })).to.equal(true);
     });
-    it('should validate instl', () => {
+    it('should validate instl', function () {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true); // adpos has a default
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: '123' } })).to.equal(false);
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: -1 } })).to.equal(false);
@@ -35,7 +35,7 @@ describe('GambidAdapter', () => {
       expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: 2 } })).to.equal(false);
     });
   });
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',
@@ -49,7 +49,7 @@ describe('GambidAdapter', () => {
       'transactionId': 'a123456789'
     };
 
-    it('returns an array', () => {
+    it('returns an array', function () {
       let response;
 
       response = spec.buildRequests([]);
@@ -67,21 +67,21 @@ describe('GambidAdapter', () => {
       expect(response.length).to.equal(2);
     });
 
-    it('targets correct endpoint', () => {
+    it('targets correct endpoint', function () {
       let response;
 
       response = spec.buildRequests([ bidRequest ])[ 0 ];
       expect(response.method).to.equal('POST');
-      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb\\.gambid\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
       expect(response.data.id).to.equal(bidRequest.auctionId);
 
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gambid.io/a12';
       response = spec.buildRequests([ bidRequestWithEndpoint ])[ 0 ];
-      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&bidder=prebid$`, 'g'));
+      expect(response.url).to.match(new RegExp(`^https://rtb2\\.gambid\\.io/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
     });
 
-    it('builds request correctly', () => {
+    it('builds request correctly', function () {
       let stub = sinon.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
 
       let response;
@@ -114,7 +114,7 @@ describe('GambidAdapter', () => {
       stub.restore();
     });
 
-    it('builds request banner object correctly', () => {
+    it('builds request banner object correctly', function () {
       let response;
 
       const bidRequestWithBanner = utils.deepClone(bidRequest);
@@ -136,7 +136,7 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].banner.pos).to.equal(bidRequestWithPosEquals1.params.pos);
     });
 
-    it('builds request video object correctly', () => {
+    it('builds request video object correctly', function () {
       let response;
 
       const bidRequestWithVideo = utils.deepClone(bidRequest);
@@ -158,7 +158,7 @@ describe('GambidAdapter', () => {
       expect(response.data.imp[ 0 ].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
     });
   });
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',
@@ -214,6 +214,7 @@ describe('GambidAdapter', () => {
               'h': 600,
               'w': 120,
               'ext': {
+                'vast_url': 'http://my.vast.com',
                 'utrk': [
                   { 'type': 'iframe', 'url': '//p.partner1.io/user/sync/1' }
                 ]
@@ -248,7 +249,7 @@ describe('GambidAdapter', () => {
         }
       ]
     };
-    it('returns an empty array on missing response', () => {
+    it('returns an empty array on missing response', function () {
       let response;
 
       response = spec.interpretResponse(undefined, { bidRequest: bannerBidRequest });
@@ -259,7 +260,7 @@ describe('GambidAdapter', () => {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
     });
-    it('aggregates banner bids from all seat bids', () => {
+    it('aggregates banner bids from all seat bids', function () {
       const response = spec.interpretResponse({ body: rtbResponse }, { bidRequest: bannerBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(2);
@@ -290,7 +291,7 @@ describe('GambidAdapter', () => {
       // expect(ad1.ad).to.be.an('undefined');
       // expect(ad1.vastXml).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].adm);
     });
-    it('aggregates video bids from all seat bids', () => {
+    it('aggregates video bids from all seat bids', function () {
       const response = spec.interpretResponse({ body: rtbResponse }, { bidRequest: videoBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(2);
@@ -306,6 +307,7 @@ describe('GambidAdapter', () => {
       expect(ad0.currency).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].cur || rtbResponse.cur || 'USD');
       expect(ad0.ad).to.be.an('undefined');
       expect(ad0.vastXml).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].adm);
+      expect(ad0.vastUrl).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.vast_url);
 
       expect(ad1.requestId).to.equal(videoBidRequest.bidId);
       expect(ad1.cpm).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].price);
@@ -317,8 +319,9 @@ describe('GambidAdapter', () => {
       expect(ad1.currency).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].cur || rtbResponse.cur || 'USD');
       expect(ad1.ad).to.be.an('undefined');
       expect(ad1.vastXml).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].adm);
+      expect(ad1.vastUrl).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.vast_url);
     });
-    it('aggregates user-sync pixels', () => {
+    it('aggregates user-sync pixels', function () {
       const response = spec.getUserSyncs({}, [ { body: rtbResponse } ]);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(4);

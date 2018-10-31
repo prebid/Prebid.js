@@ -2,6 +2,7 @@ import * as utils from 'src/utils'
 
 import { config } from 'src/config'
 import { registerBidder } from 'src/adapters/bidderFactory'
+import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -39,7 +40,11 @@ function _getBrowserParams() {
     sh: topScreen.height,
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1
+    dpr: topWindow.devicePixelRatio || 1,
+    jcsi: {
+      t: 0,
+      rq: 7
+    }
   }
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {
@@ -174,8 +179,17 @@ function interpretResponse (serverResponse, bidRequest) {
       pvid
     }
   } = Object.assign(defaultResponse, serverResponseBody)
-  let isTestUnit = (bidRequest.data && bidRequest.data.pi === 3 && bidRequest.data.si === 9)
-  let [width, height] = utils.parseSizesInput(bidRequest.sizes)[0].split('x')
+  let data = bidRequest.data || {}
+  let product = data.pi
+  let isTestUnit = (product === 3 && data.si === 9)
+  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  let [width, height] = sizes[0].split('x')
+
+  // return 1x1 when breakout expected
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+    width = '1'
+    height = '1'
+  }
 
   // update Page View ID from server response
   pageViewId = pvid
