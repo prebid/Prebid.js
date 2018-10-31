@@ -55,9 +55,9 @@ export const spec = {
         ck: utils.cookiesAreEnabled(),
         tid: params.placementId,
         pid: params.publisherId,
-        rp: params.reservePrice,
-        re: refInfo.referer,
-        st: refInfo.stack,
+        rp: params.reservePrice || 0,
+        re: refInfo ? refInfo.referer : '',
+        st: refInfo ? refInfo.stack : [],
         tz: getBdfTz(new Date()),
         sr: sr,
         tm: bidderRequest.timeout,
@@ -102,7 +102,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (serverResponses) {
     if (serverResponses.userSyncs) {
       const syncs = serverResponses.UserSyncs.map((sync) => {
         return {
