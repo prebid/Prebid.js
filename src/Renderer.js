@@ -1,5 +1,13 @@
-import { loadScript } from 'src/adloader';
-import * as utils from 'src/utils';
+import { loadScript } from './adloader';
+import * as utils from './utils';
+
+/**
+ * @typedef {object} Renderer
+ *
+ * A Renderer stores some functions which are used to render a particular Bid.
+ * These are used in Outstream Video Bids, returned on the Bid by the adapter, and will
+ * be used to render that bid unless the Publisher overrides them.
+ */
 
 export function Renderer(options) {
   const { url, config, id, callback, loaded } = options;
@@ -68,3 +76,21 @@ Renderer.prototype.process = function() {
     }
   }
 };
+
+/**
+ * Checks whether creative rendering should be done by Renderer or not.
+ * @param {Object} renderer Renderer object installed by adapter
+ * @returns {Boolean}
+ */
+export function isRendererRequired(renderer) {
+  return !!(renderer && renderer.url);
+}
+
+/**
+ * Render the bid returned by the adapter
+ * @param {Object} renderer Renderer object installed by adapter
+ * @param {Object} bid Bid response
+ */
+export function executeRenderer(renderer, bid) {
+  renderer.render(bid);
+}

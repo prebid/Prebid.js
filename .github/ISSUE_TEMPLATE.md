@@ -6,8 +6,12 @@
 
 ## Steps to reproduce
 <!--
-  If this is a bug, please provide a list of steps to reproduce the issue and
-  if possible a link to a test page or minimal demo of the problem via
+  If this is a bug, please provide a list of steps to reproduce the issue
+-->
+
+## Test page
+<!--
+Include a link to a test page or minimal demo of the problem via
   https://jsfiddle.net, http://jsbin.com or similar.
 -->
 

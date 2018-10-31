@@ -24,17 +24,24 @@ export function formatQS(query) {
     .join('&');
 }
 
-export function parse(url) {
+export function parse(url, options) {
   let parsed = document.createElement('a');
-  parsed.href = decodeURIComponent(url);
+  if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
+    parsed.href = url;
+  } else {
+    parsed.href = decodeURIComponent(url);
+  }
+  // in window.location 'search' is string, not object
+  let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
   return {
+    href: parsed.href,
     protocol: (parsed.protocol || '').replace(/:$/, ''),
     hostname: parsed.hostname,
     port: +parsed.port,
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
-    search: parseQS(parsed.search || ''),
+    search: (qsAsString) ? parsed.search : parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host
+    host: parsed.host || window.location.host
   };
 }
 

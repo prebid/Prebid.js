@@ -4,8 +4,12 @@
  */
 
 import events from './events';
-import fireNativeImpressions from './native';
+import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
+import { isSlotMatchingAdUnitCode } from './utils';
+import { auctionManager } from './auctionManager';
+import find from 'core-js/library/fn/array/find';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -22,8 +26,8 @@ function receiveMessage(ev) {
     return;
   }
 
-  if (data.adId) {
-    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
+  if (data && data.adId) {
+    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });
 
@@ -31,7 +35,7 @@ function receiveMessage(ev) {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      auctionManager.addWinningBid(adObject);
 
       events.emit(BID_WON, adObject);
     }
@@ -42,17 +46,19 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      fireNativeImpressions(adObject);
-      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+      fireNativeTrackers(data, adObject);
+      auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
   }
 }
 
 function sendAdToCreative(adObject, remoteDomain, source) {
-  const { adId, ad, adUrl, width, height } = adObject;
-
-  if (adId) {
+  const { adId, ad, adUrl, width, height, renderer } = adObject;
+  // rendering for outstream safeframe
+  if (isRendererRequired(renderer)) {
+    executeRenderer(renderer, adObject);
+  } else if (adId) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
@@ -66,12 +72,14 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(window.googletag.pubads()
-    .getSlots().find(slot => {
-      return slot.getAdUnitPath() === adUnitCode ||
-        slot.getSlotElementId() === adUnitCode;
-    }).getSlotElementId()).querySelector('iframe');
-
-  iframe.width = '' + width;
-  iframe.height = '' + height;
+  // resize both container div + iframe
+  ['div', 'iframe'].forEach(elmType => {
+    let elementStyle = getElementByAdUnit(elmType).style;
+    elementStyle.width = width + 'px';
+    elementStyle.height = height + 'px';
+  });
+  function getElementByAdUnit(elmType) {
+    return document.getElementById(find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
+      .getSlotElementId()).querySelector(elmType);
+  }
 }
