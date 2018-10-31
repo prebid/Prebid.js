@@ -2,8 +2,8 @@ import * as utils from 'src/utils'
 import { registerBidder } from 'src/adapters/bidderFactory'
 import { BANNER } from 'src/mediaTypes'
 import { REPO_AND_VERSION } from 'src/constants'
-import { ajax } from 'src/ajax'
-const errorUrl = 'https://pcb.aws.lijit.com/collect'
+const errorUrl = 'https://pcb.aws.lijit.com/c'
+let errorpxls = []
 
 export const spec = {
   code: 'sovrn',
@@ -75,7 +75,7 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      new LogError(e, {bidReqs, bidderRequest}).send()
+      new LogError(e, {bidReqs, bidderRequest}).append()
     }
   },
 
@@ -110,12 +110,13 @@ export const spec = {
       }
       return sovrnBidResponses
     } catch (e) {
-      new LogError(e, {id, seatbid}).send()
+      new LogError(e, {id, seatbid}).append()
     }
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     try {
+      let tracks = []
       if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
         let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
           .map(rsp => { return rsp.body.ext.iid });
@@ -124,15 +125,21 @@ export const spec = {
           consentString = gdprConsent.consentString
         }
         if (iidArr[0]) {
-          return [{
+          tracks.push({
             type: 'iframe',
             url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
-          }];
+          });
         }
       }
-      return []
+      if (errorpxls.length && syncOptions.pixelEnabled) {
+        tracks = tracks.concat(errorpxls)
+      }
+      return tracks
     } catch (e) {
-      new LogError(e, {syncOptions, serverResponses, gdprConsent}).send()
+      if (syncOptions.pixelEnabled) {
+        return errorpxls
+      }
+      return []
     }
   },
 }
@@ -141,26 +148,32 @@ class LogError {
   constructor(e, data) {
     utils.logError(e)
     this.error = {}
-    this.error.payload = 'error'
-    this.error.ts = utils.timestamp()
-    this.error.message = e.message
-    this.error.data = data
-    this.error.source = 'sovrnBidAdapter'
-    this.error.stack = e.stack
-    this.error.prebidVersion = $$PREBID_GLOBAL$$.version
-    this.error.url = utils.getTopWindowLocation().href
-    this.error.userAgent = navigator.userAgent
+    this.error.t = utils.timestamp()
+    this.error.m = e.message
+    this.error.s = e.stack
+    this.error.d = data
+    this.error.v = REPO_AND_VERSION
+    this.error.u = utils.getTopWindowLocation().href
+    this.error.ua = navigator.userAgent
   }
-  send() {
-    ajax(
-      errorUrl,
-      null,
-      JSON.stringify(this.error),
-      {
-        contentType: 'application/json',
-        method: 'POST',
+  buildErrorString(obj) {
+    return errorUrl + '?b=' + btoa(JSON.stringify(obj))
+  }
+  append() {
+    let errstr = this.buildErrorString(this.error)
+    if (errstr.length > 2083) {
+      delete this.error.d
+      errstr = this.buildErrorString(this.error)
+      if (errstr.length > 2083) {
+        delete this.error.s
+        errstr = this.buildErrorString(this.error)
+        if (errstr.length > 2083) {
+          errstr = buildErrorString({m: 'unknown error message', t: this.error.t, u: this.error.u})
+        }
       }
-    )
+    }
+    let obj = {type: 'image', url: errstr}
+    errorpxls.push(obj)
   }
 }
 
