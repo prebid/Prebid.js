@@ -43,9 +43,12 @@ export const spec = {
     const request = {
       id: validBidRequests[0].auctionId,
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      site: mapSite(validBidRequests),
+      site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
-      test: validBidRequests[0].params.test || 0
+      test: validBidRequests[0].params.test || 0,
+      source: {
+        tid: validBidRequests[0].transactionId
+      }
     };
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -89,12 +92,19 @@ registerBidder(spec);
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
 function mapImpression(slot) {
-  return {
+  const imp = {
     id: slot.bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
   };
+
+  const bidfloor = parseFloat(slot.params.bidfloor);
+  if (bidfloor) {
+    imp.bidfloor = bidfloor
+  }
+
+  return imp;
 }
 
 /**
@@ -118,9 +128,10 @@ function mapBanner(slot) {
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
+ * @param {object} bidderRequest by Prebid
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
-function mapSite(slot) {
+function mapSite(slot, bidderRequest) {
   const pubId = slot && slot.length > 0
     ? slot[0].params.publisherId
     : 'unknown';
@@ -128,7 +139,7 @@ function mapSite(slot) {
     publisher: {
       id: pubId.toString(),
     },
-    page: utils.getTopWindowUrl(),
+    page: bidderRequest.refererInfo.referer,
     name: utils.getOrigin()
   }
 }
