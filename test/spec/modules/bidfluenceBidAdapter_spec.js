@@ -77,7 +77,6 @@ describe('Bidfluence Adapter test', () => {
     it('sends gdpr info if exists', function () {
       expect(payload.gdpr).to.equal(true);
       expect(payload.gdprc).to.equal(CONSENT_STRING);
-      expect(payload.gdprvd).to.not.be.undefined;
     });
   });
 
