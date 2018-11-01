@@ -11,10 +11,9 @@ function isSecure() {
 
 // use protocol relative urls for http or https
 export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
+export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb/auction';
+export const ORTB_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
-
-const TIMEOUT_BUFFER = 500;
 
 var sizeMap = {
   1: '468x60',
@@ -82,7 +81,6 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
-  aliases: ['rubiconLite'],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
@@ -97,7 +95,15 @@ export const spec = {
       return false;
     }
 
-    return !!bidType(bid, true);
+    // validate account, site, zone have numeric values
+    for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
+      bid.params[props[i]] = parseInt(bid.params[props[i]]);
+      if (isNaN(bid.params[props[i]])) {
+        utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.');
+        return false;
+      }
+    }
+    return !!bidType(bid, true)
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -110,58 +116,74 @@ export const spec = {
     const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
-      let params = bidRequest.params;
-      let size = parseSizes(bidRequest);
-
-      let data = {
-        page_url: _getPageUrl(bidRequest, bidderRequest),
-        resolution: _getScreenResolution(),
-        account_id: params.accountId,
-        integration: INTEGRATION,
-        'x_source.tid': bidRequest.transactionId,
-        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
-        stash_creatives: true,
-        slots: []
+      const data = {
+        id: bidRequest.transactionId,
+        test: config.getConfig('debug') ? 1 : 0,
+        cur: ['USD'],
+        source: {
+          tid: bidRequest.transactionId
+        },
+        tmax: config.getConfig('TTL') || 1000,
+        imp: [{
+          id: bidRequest.adUnitCode,
+          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          ext: {
+            rubicon: bidRequest.params
+          },
+          video: utils.deepAccess(bidRequest, 'mediaTypes.video')
+        }],
+        ext: {
+          prebid: {
+            targeting: {
+              includewinners: true
+            }
+          }
+        },
+        vastxml: {
+          ttlseconds: 300
+        }
       };
 
-      // Define the slot object
-      let slotData = {
-        site_id: params.siteId,
-        zone_id: params.zoneId,
-        position: params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
-        floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
-        element_id: bidRequest.adUnitCode,
-        name: bidRequest.adUnitCode,
-        width: size[0],
-        height: size[1],
-        size_id: utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : params.video.size_id
-      };
+      appendSiteAppDevice(data);
 
-      if (params.video) {
-        data.ae_pass_through_parameters = params.video.aeParams;
-        slotData.language = params.video.language;
+      addVideoParameters(data, bidRequest);
+
+      const digiTrust = getDigiTrustQueryParams();
+      if (digiTrust) {
+        data.user = {
+          ext: {
+            digitrust: digiTrust
+          }
+        };
       }
-
-      if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
-      }
-
-      if (params.keywords && Array.isArray(params.keywords)) {
-        slotData.keywords = params.keywords;
-      }
-
-      if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
-      }
-
-      data.slots.push(slotData);
 
       if (bidderRequest.gdprConsent) {
-        // add 'gdpr' only if 'gdprApplies' is defined
+        // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
+        let gdprApplies;
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          data.gdpr = Number(bidderRequest.gdprConsent.gdprApplies);
+          gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
-        data.gdpr_consent = bidderRequest.gdprConsent.consentString;
+
+        if (data.regs) {
+          if (data.regs.ext) {
+            data.regs.ext.gdpr = gdprApplies;
+          } else {
+            data.regs.ext = {gdpr: gdprApplies};
+          }
+        } else {
+          data.regs = {ext: {gdpr: gdprApplies}};
+        }
+
+        const consentString = bidderRequest.gdprConsent.consentString;
+        if (data.user) {
+          if (data.user.ext) {
+            data.user.ext.consent = consentString;
+          } else {
+            data.user.ext = {consent: consentString};
+          }
+        } else {
+          data.user = {ext: {consent: consentString}};
+        }
       }
 
       return {
@@ -375,6 +397,62 @@ export const spec = {
       return [];
     }
 
+    // video response from PBS Java openRTB
+    if (responseObj.seatbid) {
+      const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
+      if (Array.isArray(responseErrors) && responseErrors.length > 0) {
+        responseErrors.forEach(error => {
+          utils.logError('Got error from PBS Java openRTB: ' + error);
+        });
+      }
+      const bids = [];
+      responseObj.seatbid.forEach(seatbid => {
+        (seatbid.bid || []).forEach(bid => {
+          let bidObject = {
+            requestId: bidRequest.bidId,
+            currency: responseObj.cur || 'USD',
+            creativeId: bid.crid,
+            cpm: bid.price || 0,
+            bidderCode: seatbid.seat,
+            ttl: 300,
+            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
+            height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
+          };
+
+          if (bid.dealid) {
+            bidObject.dealId = bid.dealid;
+          }
+
+          let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
+          if (bidRequest && serverResponseTimeMs) {
+            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
+          }
+
+          if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
+            bidObject.mediaType = VIDEO;
+            if (bid.adm) {
+              bidObject.vastXml = bid.adm;
+            }
+            if (bid.nurl) {
+              bidObject.vastUrl = bid.nurl;
+            }
+            const videoCacheKey = utils.deepAccess(bid, 'ext.prebid.targeting.hb_uuid');
+            if (videoCacheKey) {
+              bidObject.vastUrl = videoCacheKey;
+              bidObject.videoCacheKey = videoCacheKey;
+            }
+          } else {
+            utils.logError('Prebid Server Java openRTB returns response with media type other than video for video request.');
+          }
+
+          bids.push(bidObject);
+        });
+      });
+
+      return bids;
+    }
+
     let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
@@ -469,11 +547,17 @@ export const spec = {
    * @return {Object} params bid params
    */
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    const convertedParams = utils.convertTypes({
       'accountId': 'number',
       'siteId': 'number',
       'zoneId': 'number'
     }, params);
+
+    if (isOpenRtb) {
+
+    }
+
+    return convertedParams;
   }
 };
 
@@ -501,13 +585,14 @@ function _getDigiTrustQueryParams() {
 
 /**
  * @param {BidRequest} bidRequest
+ * @param bidderRequest
  * @returns {string}
  */
 function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
+  } else if (!pageUrl && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
@@ -555,6 +640,73 @@ function parseSizes(bid) {
   }
 
   return masSizeOrdering(sizes);
+}
+
+function getDigiTrustQueryParams() {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return {
+    id: digiTrustId.id,
+    keyv: digiTrustId.keyv,
+    pref: 0
+  };
+}
+
+function appendSiteAppDevice(request) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+  } else {
+    request.site = {
+      page: utils.getTopWindowUrl()
+    }
+  }
+  if (typeof config.getConfig('device') === 'object') {
+    request.device = config.getConfig('device');
+  }
+}
+
+function addVideoParameters(data, bidRequest) {
+  if (typeof data.imp[0].video === 'object' && data.imp[0].video.skip === undefined) {
+    data.imp[0].video.skip = bidRequest.params.video.skip;
+  }
+  if (typeof data.imp[0].video === 'object' && data.imp[0].video.skipafter === undefined) {
+    data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
+  }
+  if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
+    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : bidRequest.params.position === 'btf' ? 3 : 0;
+  }
+  if (data.imp[0].bidfloor === undefined) {
+    data.imp[0].bidfloor = parseFloat(bidRequest.params.floor) > 0.01 ? bidRequest.params.floor : 0.01;
+  }
+  if (typeof data.imp[0].video === 'object' && data.imp[0].video.w === undefined) {
+    if (bidRequest.params.video.playerWidth) {
+      data.imp[0].video.w = bidRequest.params.video.playerWidth;
+    } else if (Array.isArray(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize')) && bidRequest.mediaTypes.video.playerSize.length === 1) {
+      data.imp[0].video.w = bidRequest.mediaTypes.video.playerSize[0][0];
+    } else if (Array.isArray(bidRequest.sizes) && bidRequest.sizes.length > 0 && Array.isArray(bidRequest.sizes[0]) && bidRequest.sizes[0].length > 1) {
+      data.imp[0].video.w = bidRequest.sizes[0][0];
+    }
+  }
+  if (typeof data.imp[0].video === 'object' && data.imp[0].video.h === undefined) {
+    if (bidRequest.params.video.playerWidth) {
+      data.imp[0].video.h = bidRequest.params.video.playerHeight;
+    } else if (Array.isArray(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize')) && bidRequest.mediaTypes.video.playerSize.length === 1) {
+      data.imp[0].video.h = bidRequest.mediaTypes.video.playerSize[0][1];
+    } else if (Array.isArray(bidRequest.sizes) && bidRequest.sizes.length > 0 && Array.isArray(bidRequest.sizes[0]) && bidRequest.sizes[0].length > 1) {
+      data.imp[0].video.h = bidRequest.sizes[0][1];
+    }
+  }
 }
 
 function mapSizes(sizes) {
