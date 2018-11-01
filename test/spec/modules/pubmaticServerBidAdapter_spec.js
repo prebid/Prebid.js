@@ -117,13 +117,13 @@ describe('PubMaticServer adapter', () => {
         'seatbid': [{
           'bid': [{
             'id': '36d41be239a8e',
-            'impid': '36d41be239a8e',
+            'impid': '23acc48ad47af5',
             'price': 0,
             'h': 0,
             'w': 0,
             'ext': {
               'summary': [{
-                'bidder': 'indexExchange',
+                'bidder': 'pubmatic',
                 'bid': 0,
                 'errorCode': 5,
                 'errorMessage': 'Timeout error',
@@ -393,7 +393,6 @@ describe('PubMaticServer adapter', () => {
       });
     });
 
-    /*Fix this test case -
     describe('Response checking', () => {
       it('should set serverSideResponseTime to 0 when error code retured by endpoint is 5', () => {
         let request = spec.buildRequests(bidRequests);
@@ -401,6 +400,25 @@ describe('PubMaticServer adapter', () => {
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].serverSideResponseTime).to.equal(0);
       });
-    });*/
+
+      it('should set serverSideResponseTime to -1 when error code retured by endpoint any of the following 1/2/6', () => {
+        let request = spec.buildRequests(bidRequests);
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 1;
+
+        let response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
+
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 2;
+        response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
+
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 6;
+        response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
+      });
+    });
   });
 });

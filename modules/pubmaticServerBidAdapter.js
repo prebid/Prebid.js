@@ -372,16 +372,22 @@ export const spec = {
         let requestData = JSON.parse(request.data);
 
         _createDummyBids(requestData.imp, bidResponses, miObj);
-        response.body.seatbid.forEach(seatbidder => {
-          seatbidder.bid &&
-          seatbidder.bid.forEach(bid => {
-            if (bid.id !== null && bid.ext.summary) {
-              bid.ext.summary.forEach((summary, index) => {
-                if (summary.bidder) {
-                  const firstSummary = index === 0;
-                  bidResponses.forEach(function (br) {
+        response.body.seatbid.forEach(function (seatbidder) {
+          seatbidder.bid && seatbidder.bid.forEach(function (bid) {
+            if (/* bid.id !== null && */bid.ext.summary) {
+              bid.ext.summary.forEach(function (summary, index) {
+                var firstSummary = index === 0;
+                bidResponses.forEach(function (br) {
+                  if (summary.errorCode === 6) {
+                    /* special handling of error code 6, where bid objects are not present in the response.
+                       here directly use the dummy bids, just update the error code and response time
+                    */
+                    if (br.requestId == bid.impid) {
+                      br.pubmaticServerErrorCode = summary.errorCode;
+                      br.serverSideResponseTime = -1
+                    }
+                  } else if (summary.bidder) {
                     if (br.requestId == bid.impid && br.originalBidder === summary.bidder) {
-                      br.bidderCode = BIDDER_CODE;
                       br.pubmaticServerErrorCode = summary.errorCode;
                       br.cpm = (parseFloat(summary.bid) || 0).toFixed(2);
                       br.width = summary.width || br.width;
@@ -393,8 +399,8 @@ export const spec = {
                       br.ttl = 300;
                       br.referrer = referrer;
                       br.ad = firstSummary ? bid.adm : '';
-                      br.serverSideResponseTime = (summary.errorCode === 1 || summary.errorCode === 2 || summary.errorCode === 6)
-                        ? -1 : ((summary.errorCode === 5) ? 0 : (partnerResponseTimeObj[summary.bidder] || 0));
+                      br.serverSideResponseTime = (summary.errorCode === 1 || summary.errorCode === 2)
+                        ? -1 : summary.errorCode === 5 ? 0 : partnerResponseTimeObj[summary.bidder] || 0;
                       /* errorCodes meaning:
                         1 = GADS_UNMAPPED_SLOT_ERROR
                         2 = GADS_MISSING_CONF_ERROR
@@ -409,8 +415,8 @@ export const spec = {
                         - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
                       */
                     }
-                  });
-                }
+                  }
+                });
               });
             }
           });
