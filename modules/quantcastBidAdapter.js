@@ -4,7 +4,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
-export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+// export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+export const QUANTCAST_DOMAIN = 'localhost';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
@@ -18,7 +19,10 @@ export const QUANTCAST_PORT =
     ? '8080'
     : '8443';
 
-function makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent) {
+console.log('hello1');
+
+// TODO : refactor
+function extractBidSizes(bid) {
   const bidSizes = [];
 
   bid.sizes.forEach(size => {
@@ -27,6 +31,12 @@ function makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent) {
       height: size[1]
     });
   });
+
+  return bidSizes;
+}
+
+function makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent) {
+  const bidSizes = extractBidSizes(bid);
 
   // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
   const requestData = {
@@ -55,13 +65,48 @@ function makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent) {
   return requestData;
 }
 
+function makeVideoBidRequest(bid, loc, referrer, domain, gdprConsent) {
+  const video = bid.params.video;
+  if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+    video['w'] = bid.mediaTypes.video.playerSize[0][0];
+    video['h'] = bid.mediaTypes.video.playerSize[0][1];
+  } else {
+    video['w'] = bid.mediaTypes.video.playerSize[0];
+    video['h'] = bid.mediaTypes.video.playerSize[1];
+  }
+
+  const requestData = {
+    publisherId: bid.params.publisherId,
+    requestId: bid.bidId,
+    imp: [
+      {
+        video: video,
+        placementCode: bid.placementCode,
+        bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+      }
+    ],
+    site: {
+      page: loc.href,
+      referrer,
+      domain
+    },
+    bidId: bid.bidId,
+    gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
+    gdprConsent: gdprConsent.consentString
+  };
+
+  return requestData;
+}
+
+console.log('hello2');
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
  */
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypse: ['banner', 'video'],
+  supportedMediaTypes: ['banner', 'video'],
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -71,6 +116,7 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
+    console.log(bid);
     if (!bid) {
       return false;
     }
@@ -83,6 +129,7 @@ export const spec = {
       return false;
     }
 
+    console.log('bid valid');
     return true;
   },
 
@@ -95,6 +142,7 @@ export const spec = {
    * @return ServerRequest information describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
+    console.log(bidRequests);
     const bids = bidRequests || [];
     const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
@@ -103,14 +151,26 @@ export const spec = {
     const domain = loc.hostname;
 
     const bidRequestsList = bids.map(bid => {
-      const requestData = makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent);
-      const data = JSON.stringify(requestData);
+      console.log(bid);
+      let requestData;
+      const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
 
+      if (videoContext === 'instream') {
+        console.log('making video request');
+        console.log(bid.mediaTypes);
+        requestData = makeVideoBidRequest(bid, loc, referrer, domain, gdprConsent);
+        console.log('made')
+      } else {
+        requestData = makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent);
+      }
+
+      const data = JSON.stringify(requestData);
       const qcDomain = bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
         ? QUANTCAST_TEST_DOMAIN
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
+      console.log(data);
       return {
         data,
         method: 'POST',
@@ -168,5 +228,7 @@ export const spec = {
     return bidResponsesList;
   }
 };
+
+console.log('hello3');
 
 registerBidder(spec);
