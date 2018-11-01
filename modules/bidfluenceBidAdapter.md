@@ -4,6 +4,8 @@
 Module Name: Bidfluence Adapter
 Module Type: Bidder Adapter
 Maintainer: integrations@bidfluence.com
+prebid_1_0_supported : true
+gdpr_supported: true
 ```
 
 # Description
