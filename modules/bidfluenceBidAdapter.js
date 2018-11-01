@@ -65,9 +65,8 @@ export const spec = {
         sdt: getUTCDate(),
         w: width,
         h: height,
-        gdpr: gdpr.gdprApplies,
-        gdprc: gdpr.consentString,
-        gdprvd: gdpr.vendorData
+        gdpr: gdpr ? gdpr.gdprApplies : false,
+        gdprc: gdpr ? gdpr.consentString : ''
       };
       const payloadString = JSON.stringify(payload);
       return {
