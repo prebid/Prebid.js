@@ -4,8 +4,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
-// export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
-export const QUANTCAST_DOMAIN = 'localhost';
+export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
@@ -19,9 +18,6 @@ export const QUANTCAST_PORT =
     ? '8080'
     : '8443';
 
-console.log('hello1');
-
-// TODO : refactor
 function extractBidSizes(bid) {
   const bidSizes = [];
 
@@ -35,37 +31,7 @@ function extractBidSizes(bid) {
   return bidSizes;
 }
 
-function makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent) {
-  const bidSizes = extractBidSizes(bid);
-
-  // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
-  const requestData = {
-    publisherId: bid.params.publisherId,
-    requestId: bid.bidId,
-    imp: [
-      {
-        banner: {
-          battr: bid.params.battr,
-          sizes: bidSizes
-        },
-        placementCode: bid.placementCode,
-        bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
-      }
-    ],
-    site: {
-      page: loc.href,
-      referrer,
-      domain
-    },
-    bidId: bid.bidId,
-    gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
-    gdprConsent: gdprConsent.consentString
-  };
-
-  return requestData;
-}
-
-function makeVideoBidRequest(bid, loc, referrer, domain, gdprConsent) {
+function makeVideoImp(bid) {
   const video = bid.params.video;
   if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
     video['w'] = bid.mediaTypes.video.playerSize[0][0];
@@ -74,31 +40,23 @@ function makeVideoBidRequest(bid, loc, referrer, domain, gdprConsent) {
     video['w'] = bid.mediaTypes.video.playerSize[0];
     video['h'] = bid.mediaTypes.video.playerSize[1];
   }
-
-  const requestData = {
-    publisherId: bid.params.publisherId,
-    requestId: bid.bidId,
-    imp: [
-      {
-        video: video,
-        placementCode: bid.placementCode,
-        bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
-      }
-    ],
-    site: {
-      page: loc.href,
-      referrer,
-      domain
-    },
-    bidId: bid.bidId,
-    gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
-    gdprConsent: gdprConsent.consentString
+  return {
+    video: video,
+    placementCode: bid.placementCode,
+    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
   };
-
-  return requestData;
 }
 
-console.log('hello2');
+function makeBannerImp(bid) {
+  return {
+    banner: {
+      battr: bid.params.battr,
+      sizes: extractBidSizes(bid),
+    },
+    placementCode: bid.placementCode,
+    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+  };
+}
 
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
@@ -116,20 +74,16 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
-    console.log(bid);
     if (!bid) {
       return false;
     }
 
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-
-    // TODO : add test to check that outstream is filtered out
     if (videoMediaType && context == 'outstream') {
       return false;
     }
 
-    console.log('bid valid');
     return true;
   },
 
@@ -142,7 +96,6 @@ export const spec = {
    * @return ServerRequest information describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
-    console.log(bidRequests);
     const bids = bidRequests || [];
     const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
@@ -151,18 +104,28 @@ export const spec = {
     const domain = loc.hostname;
 
     const bidRequestsList = bids.map(bid => {
-      console.log(bid);
-      let requestData;
+      let imp;
       const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
-
       if (videoContext === 'instream') {
-        console.log('making video request');
-        console.log(bid.mediaTypes);
-        requestData = makeVideoBidRequest(bid, loc, referrer, domain, gdprConsent);
-        console.log('made')
+        imp = makeVideoImp(bid);
       } else {
-        requestData = makeBannerBidRequest(bid, loc, referrer, domain, gdprConsent);
+        imp = makeBannerImp(bid);
       }
+
+      // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
+      const requestData = {
+        publisherId: bid.params.publisherId,
+        requestId: bid.bidId,
+        imp: [imp],
+        site: {
+          page: loc.href,
+          referrer,
+          domain
+        },
+        bidId: bid.bidId,
+        gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
+        gdprConsent: gdprConsent.consentString
+      };
 
       const data = JSON.stringify(requestData);
       const qcDomain = bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
@@ -170,7 +133,6 @@ export const spec = {
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
-      console.log(data);
       return {
         data,
         method: 'POST',
@@ -228,7 +190,5 @@ export const spec = {
     return bidResponsesList;
   }
 };
-
-console.log('hello3');
 
 registerBidder(spec);
