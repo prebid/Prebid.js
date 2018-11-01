@@ -32,6 +32,33 @@ describe('Quantcast adapter', function () {
     };
   });
 
+  function setupVideoBidRequest() {
+    bidRequest.params = {
+      publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
+      // Video object as specified in OpenRTB 2.5
+      video: {
+        mimes: ['video/mp4'], // required
+        minduration: 3, // optional
+        maxduration: 5, // optional
+        protocols: [3], // optional
+        startdelay: 1, // optional
+        linearity: 1, // optinal
+        battr: [1, 2], // optional
+        maxbitrate: 10, // optional
+        playbackmethod: [1], // optional
+        delivery: [1], // optional
+        placement: 1, // optional
+        api: [2, 3] // optional
+      }
+    };
+    bidRequest['mediaTypes'] = {
+      video: {
+        context: 'instream',
+        playerSize: [600, 300]
+      }
+    }
+  };
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(quantcastAdapter.callBids).to.exist.and.to.be.a('function');
@@ -101,13 +128,13 @@ describe('Quantcast adapter', function () {
       expect(requests[0].method).to.equal('POST');
     });
 
-    it('sends bid requests contains all the required parameters', function () {
+    it('sends banner bid requests contains all the required parameters', function () {
       const referrer = utils.getTopWindowUrl();
       const loc = utils.getTopWindowLocation();
       const domain = loc.hostname;
 
       const requests = qcSpec.buildRequests([bidRequest]);
-      const expectedBidRequest = {
+      const expectedBannerBidRequest = {
         publisherId: QUANTCAST_TEST_PUBLISHER,
         requestId: '2f7b179d443f14',
         imp: [
@@ -129,7 +156,52 @@ describe('Quantcast adapter', function () {
         gdprSignal: 0
       };
 
-      expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
+      expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
+    });
+
+    it('sends video bid requests contains all the required parameters', function () {
+      setupVideoBidRequest();
+
+      const referrer = utils.getTopWindowUrl();
+      const loc = utils.getTopWindowLocation();
+      const domain = loc.hostname;
+
+      const requests = qcSpec.buildRequests([bidRequest]);
+      const expectedVideoBidRequest = {
+        publisherId: QUANTCAST_TEST_PUBLISHER,
+        requestId: '2f7b179d443f14',
+        imp: [
+          {
+            video: {
+              mimes: ['video/mp4'],
+              minduration: 3,
+              maxduration: 5,
+              protocols: [3],
+              startdelay: 1,
+              linearity: 1,
+              battr: [1, 2],
+              maxbitrate: 10,
+              playbackmethod: [1],
+              delivery: [1],
+              placement: 1,
+              api: [2, 3],
+              w: 600,
+              h: 300
+            },
+            placementCode: 'div-gpt-ad-1438287399331-0',
+            bidFloor: 1e-10
+          }
+        ],
+        site: {
+          page: loc.href,
+          referrer,
+          domain
+        },
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0
+      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
   });
 
