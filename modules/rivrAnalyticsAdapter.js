@@ -1,11 +1,12 @@
 import {ajax} from 'src/ajax';
-import includes from 'core-js/library/fn/array/includes';
 import adapter from 'src/AnalyticsAdapter';
+import find from 'core-js/library/fn/array/find';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import { logInfo, generateUUID } from 'src/utils';
+import { logInfo, generateUUID, timestamp } from 'src/utils';
 
 const analyticsType = 'endpoint';
+const rivrUsrIdCookieKey = 'rvr_usr_id';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 
@@ -23,17 +24,11 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
           rivrAnalytics.context.queue.init();
         }
         if (rivrAnalytics.context.auctionObject) {
-          rivrAnalytics.context.auctionObject = fulfillAuctionObject();
-          saveUnoptimisedParams();
+          rivrAnalytics.context.auctionObject = createNewAuctionObject();
+          saveUnoptimisedAdUnits();
           fetchLocalization();
         }
         handler = trackAuctionInit;
-        break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
-        handler = trackBidRequest;
-        break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
-        handler = trackBidResponse;
         break;
       case CONSTANTS.EVENTS.BID_WON:
         handler = trackBidWon;
@@ -56,7 +51,7 @@ export function sendAuction() {
     removeEmptyProperties(rivrAnalytics.context.auctionObject);
     let auctionObject = rivrAnalytics.context.auctionObject;
     let req = Object.assign({}, {Auction: auctionObject});
-    rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+    rivrAnalytics.context.auctionObject = createNewAuctionObject();
     logInfo('sending request to analytics => ', req);
     ajax(
       `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
@@ -98,46 +93,91 @@ function trackAuctionInit(args) {
   rivrAnalytics.context.auctionObject.id = args.auctionId;
 };
 
-function trackBidRequest(args) {
-  setCurrentPublisherId(args);
-  let bidRequest = args;
-  rivrAnalytics.context.auctionObject.bidRequests.push(bidRequest);
-};
-
-function trackBidResponse(args) {
-  let bidResponse = createBidResponse(args);
-  rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse);
-};
-
 function trackBidWon(args) {
-  let auctionObject = rivrAnalytics.context.auctionObject;
-  let auctionImpression = createAuctionImpression(args);
-  auctionObject.imp.push(auctionImpression);
-  assignBidWonStatusToResponse(args);
+  setWinningBidStatus(args);
 };
 
-function trackAuctionEnd(args) {
-  rivrAnalytics.context.auctionTimeEnd = Date.now();
-  fillBidResponsesOfUnrespondedBidRequests();
+function setWinningBidStatus(args) {
+  let auctionObject = rivrAnalytics.context.auctionObject;
+  const bidderObjectForThisWonBid = find(auctionObject.bidders, (bidder) => {
+    return bidder.id === args.bidderCode;
+  });
+  if (bidderObjectForThisWonBid) {
+    const bidObjectForThisWonBid = find(bidderObjectForThisWonBid.bids, (bid) => {
+      return bid.impId === args.adUnitCode;
+    });
+    if (bidObjectForThisWonBid) {
+      bidObjectForThisWonBid.status = 1;
+    }
+  }
 };
+
+export function trackAuctionEnd(args) {
+  rivrAnalytics.context.auctionTimeEnd = Date.now();
+  rivrAnalytics.context.auctionObject.bidders = buildBiddersArrayFromAuctionEnd(args);
+  rivrAnalytics.context.auctionObject.impressions = buildImpressionsArrayFromAuctionEnd(args);
+};
+
+function buildImpressionsArrayFromAuctionEnd(auctionEndEvent) {
+  return auctionEndEvent.adUnits.map((adUnit) => {
+    const impression = {};
+    impression.id = adUnit.code;
+    impression.adType = 'unknown';
+    impression.acceptedSizes = [];
+    const bidReceivedForThisAdUnit = find(auctionEndEvent.bidsReceived, (bidReceived) => {
+      return adUnit.code === bidReceived.adUnitCode;
+    });
+    if (adUnit.mediaTypes) {
+      if (adUnit.mediaTypes.banner) {
+        buildAdTypeDependentFieldsForImpression(impression, 'banner', adUnit, bidReceivedForThisAdUnit);
+      } else if (adUnit.mediaTypes.video) {
+        buildAdTypeDependentFieldsForImpression(impression, 'video', adUnit, bidReceivedForThisAdUnit);
+      }
+    }
+    return impression;
+  });
+}
+
+function buildAdTypeDependentFieldsForImpression(impression, adType, adUnit, bidReceivedForThisAdUnit) {
+  impression.adType = adType;
+  impression.acceptedSizes = adUnit.mediaTypes[adType].sizes.map((acceptedSize) => {
+    return {
+      w: acceptedSize[0],
+      h: acceptedSize[1]
+    };
+  });
+  if (bidReceivedForThisAdUnit) {
+    impression[adType] = {
+      w: bidReceivedForThisAdUnit.width,
+      h: bidReceivedForThisAdUnit.height
+    };
+  }
+}
+
+function buildBiddersArrayFromAuctionEnd(auctionEndEvent) {
+  return auctionEndEvent.bidderRequests.map((bidderRequest) => {
+    const bidder = {};
+    bidder.id = bidderRequest.bidderCode;
+    bidder.bids = bidderRequest.bids.map((bid) => {
+      const bidReceivedForThisRequest = find(auctionEndEvent.bidsReceived, (bidReceived) => {
+        return bidderRequest.bidderCode === bidReceived.bidderCode &&
+          bid.bidId === bidReceived.adId &&
+          bid.adUnitCode === bidReceived.adUnitCode;
+      });
+      return {
+        adomain: [''],
+        clearPrice: 0.0,
+        impId: bid.adUnitCode,
+        price: bidReceivedForThisRequest ? bidReceivedForThisRequest.cpm : 0.0,
+        status: 0
+      };
+    });
+    return bidder;
+  });
+}
 
 function trackBidTimeout(args) {
   return [args];
-};
-
-function setCurrentPublisherId(bidRequested) {
-  let site = rivrAnalytics.context.auctionObject.site;
-  let app = rivrAnalytics.context.auctionObject.app;
-  let pubId = rivrAnalytics.context.pubId;
-  if (!site.publisher.id || app.publisher.id) {
-    if (pubId) {
-      site.publisher.id = pubId;
-      app.publisher.id = pubId;
-    } else {
-      site.publisher.id = bidRequested.bids[0].crumbs.pubcid;
-      app.publisher.id = bidRequested.bids[0].crumbs.pubcid;
-    }
-  }
 };
 
 export function fetchLocalization() {
@@ -158,70 +198,10 @@ export function setAuctionAbjectPosition(position) {
 }
 
 function getPlatformType() {
-  if (navigator.userAgent.match(/mobile/i)) {
-    return 'Mobile';
-  } else if (navigator.userAgent.match(/iPad|Android|Touch/i)) {
-    return 'Tablet';
+  if (navigator.userAgent.match(/mobile/i) || navigator.userAgent.match(/iPad|Android|Touch/i)) {
+    return 1;
   } else {
-    return 'Desktop';
-  }
-};
-
-function createBidResponse(bidResponseEvent) {
-  return {
-    timestamp: bidResponseEvent.responseTimestamp,
-    status: bidResponseEvent.getStatusCode(),
-    total_duration: bidResponseEvent.timeToRespond,
-    bidderId: null,
-    bidder_name: bidResponseEvent.bidder,
-    cur: bidResponseEvent.currency,
-    seatbid: [
-      {
-        seat: null,
-        bid: [
-          {
-            status: 2,
-            clear_price: bidResponseEvent.cpm,
-            attr: [],
-            crid: bidResponseEvent.creativeId,
-            cid: null,
-            id: null,
-            adid: bidResponseEvent.adId,
-            adomain: [],
-            iurl: null
-          }
-        ]
-      }
-    ]
-  }
-};
-
-function createSingleEmptyBidResponse(bidResponse) {
-  return {
-    timestamp: bidResponse.start,
-    total_duration: null,
-    bidderId: null,
-    bidder_name: bidResponse.bidder,
-    cur: null,
-    response: 'noBid',
-    seatbid: []
-  }
-};
-
-function createAuctionImpression(bidWonEvent) {
-  return {
-    tagid: bidWonEvent.adUnitCode,
-    displaymanager: null,
-    displaymanagerver: null,
-    secure: null,
-    bidfloor: null,
-    banner: {
-      w: bidWonEvent.width,
-      h: bidWonEvent.height,
-      pos: null,
-      expandable: [],
-      api: []
-    }
+    return 2;
   }
 };
 
@@ -314,75 +294,40 @@ function addHandlers(bannersIds) {
   })
 };
 
-function fulfillAuctionObject() {
-  let newAuction = {
-    id: null,
-    timestamp: null,
-    at: null,
-    bcat: [],
-    imp: [],
-    app: {
-      id: null,
-      name: null,
-      domain: window.location.href,
-      bundle: null,
-      cat: [],
-      publisher: {
-        id: null,
-        name: null
-      }
+export function createNewAuctionObject() {
+  const auction = {
+    id: '',
+    publisher: rivrAnalytics.context.clientID,
+    blockedCategories: [''],
+    timestamp: timestamp(),
+    user: {
+      id: rivrAnalytics.context.userId
     },
     site: {
-      id: null,
-      name: null,
-      domain: window.location.href,
-      cat: [],
-      publisher: {
-        id: null,
-        name: null
-      }
+      domain: window.location.host,
+      page: window.location.pathname,
+      categories: rivrAnalytics.context.siteCategories
     },
+    impressions: [],
+    bidders: [],
     device: {
-      geo: {
-        city: null,
-        country: null,
-        region: null,
-        zip: null,
-        type: null,
-        metro: null
-      },
-      devicetype: getPlatformType(),
-      osv: null,
-      os: null,
-      model: null,
-      make: null,
-      carrier: null,
-      ip: null,
-      didsha1: null,
-      dpidmd5: null,
-      ext: {
-        uid: null
-      }
+      userAgent: navigator.userAgent,
+      browser: '',
+      deviceType: getPlatformType()
     },
-    user: {
-      id: null,
-      yob: null,
-      gender: null,
-    },
-    bidResponses: [],
-    bidRequests: [],
+    'ext.rivr.originalvalues': [],
     'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
     modelVersion: localStorage.getItem('rivr_model_version') || null,
-    'ext.rivr.originalvalues': []
-  };
-  return newAuction;
+  }
+
+  return auction;
 };
 
-function saveUnoptimisedParams() {
+export function saveUnoptimisedAdUnits() {
   let units = rivrAnalytics.context.adUnits;
   if (units) {
     if (units.length > 0) {
-      let allUnits = connectAllUnits(units);
+      let allUnits = concatAllUnits(units);
       allUnits.forEach((adUnit) => {
         adUnit.bids.forEach((bid) => {
           let configForBidder = fetchConfigForBidder(bid.bidder);
@@ -396,11 +341,8 @@ function saveUnoptimisedParams() {
   }
 };
 
-function connectAllUnits(units) {
-  return units.reduce((acc, units) => {
-    units.forEach((unit) => acc.push(unit))
-    return acc
-  }, []);
+export function concatAllUnits(units) {
+  return Array.prototype.concat.apply([], units);
 }
 
 export function createUnOptimisedParamsField(bid, config) {
@@ -474,47 +416,22 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
   }
 };
 
-function assignBidWonStatusToResponse(wonBid) {
-  let wonBidId = wonBid.adId;
-  rivrAnalytics.context.auctionObject.bidResponses.forEach((response) => {
-    if (response.seatbid.length > 0) {
-      let bidObjectResponse = response.seatbid[0].bid[0];
-      if (wonBidId === bidObjectResponse.adid) {
-        bidObjectResponse.status = 1
-      }
-    }
-  });
-};
-
-function fillBidResponsesOfUnrespondedBidRequests() {
-  let unRespondedBidRequests = getAllUnrespondedBidRequests();
-  unRespondedBidRequests.forEach((bid) => {
-    let emptyBidResponse = createSingleEmptyBidResponse(bid);
-    rivrAnalytics.context.auctionObject.bidResponses.push(emptyBidResponse);
-  });
-};
-
-function getAllUnrespondedBidRequests() {
-  let respondedBidIds = getAllRespondedBidIds();
-  let bidRequests = rivrAnalytics.context.auctionObject.bidRequests;
-  let allNotRespondedBidRequests = bidRequests.reduce((cache, requestBidder) => {
-    let notRespondedBids = requestBidder.bids.filter((bid) => !includes(respondedBidIds, bid.bidId));
-    notRespondedBids.forEach((bid) => bid.start = requestBidder.start);
-    return cache.concat(notRespondedBids);
-  }, []);
-  return allNotRespondedBidRequests;
-};
-
-function getAllRespondedBidIds() {
-  return rivrAnalytics.context.auctionObject.bidResponses.map((response) => response.seatbid[0].bid[0].adid);
-};
-
 function removeEmptyProperties(obj) {
   Object.keys(obj).forEach(function(key) {
     if (obj[key] && typeof obj[key] === 'object') removeEmptyProperties(obj[key])
     else if (obj[key] == null) delete obj[key]
   });
 };
+
+function getCookie(name) {
+  var value = '; ' + document.cookie;
+  var parts = value.split('; ' + name + '=');
+  if (parts.length == 2) return parts.pop().split(';').shift();
+}
+
+function storeAndReturnRivrUsrIdCookie() {
+  return document.cookie = 'rvr_usr_id=' + generateUUID();
+}
 
 // save the base class function
 rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
@@ -527,10 +444,11 @@ rivrAnalytics.enableAnalytics = (config) => {
     copiedUnits = JSON.parse(stringifiedAdUnits);
   }
   rivrAnalytics.context = {
+    userId: getCookie(rivrUsrIdCookieKey) || storeAndReturnRivrUsrIdCookie(),
     host: config.options.host || DEFAULT_HOST,
-    pubId: config.options.pubId,
     auctionObject: {},
     adUnits: copiedUnits,
+    siteCategories: config.options.siteCategories || [],
     clientID: config.options.clientID,
     authToken: config.options.authToken,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)

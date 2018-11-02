@@ -9,6 +9,9 @@ import {
   dataLoaderForHandler,
   pinHandlerToHTMLElement,
   setAuctionAbjectPosition,
+  createNewAuctionObject,
+  concatAllUnits,
+  trackAuctionEnd,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -20,9 +23,11 @@ const events = require('../../../src/events');
 describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
-  const PUBLISHER_ID_MOCK = 777;
+  const RVR_CLIENT_ID_MOCK = 'aCliendId';
+  const SITE_CATEGORIES_MOCK = ['cat1', 'cat2'];
   const EMITTED_AUCTION_ID = 1;
   const TRACKER_BASE_URL_MOCK = 'tracker.rivr.simplaex.com';
+  const UUID_REG_EXP = new RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', 'i');
   let sandbox;
   let ajaxStub;
   let timer;
@@ -43,8 +48,9 @@ describe('RIVR Analytics adapter', () => {
     adaptermanager.enableAnalytics({
       provider: 'rivr',
       options: {
-        pubId: PUBLISHER_ID_MOCK,
-        adUnits: [utils.deepClone(AD_UNITS_MOCK)]
+        clientID: RVR_CLIENT_ID_MOCK,
+        adUnits: [utils.deepClone(BANNER_AD_UNITS_MOCK)],
+        siteCategories: SITE_CATEGORIES_MOCK,
       }
     });
   });
@@ -89,11 +95,15 @@ describe('RIVR Analytics adapter', () => {
     timer.tick(50);
   });
 
-  it('enableAnalytics - should configure host and pubId in adapter context', () => {
+  it('enableAnalytics - should configure host and clientID in adapter context', () => {
     // adaptermanager.enableAnalytics() is called in beforeEach. If only called here it doesn't seem to work.
 
     expect(analyticsAdapter.context).to.have.property('host', TRACKER_BASE_URL_MOCK);
-    expect(analyticsAdapter.context).to.have.property('pubId', PUBLISHER_ID_MOCK);
+    expect(analyticsAdapter.context).to.have.property('clientID', RVR_CLIENT_ID_MOCK);
+  });
+
+  it('enableAnalytics - should set a cookie containing a user id', () => {
+    expect(UUID_REG_EXP.test(analyticsAdapter.context.userId)).to.equal(true);
   });
 
   it('Firing AUCTION_INIT should set auction id of context when AUCTION_INIT event is fired', () => {
@@ -138,79 +148,6 @@ describe('RIVR Analytics adapter', () => {
     expect(auctionObject3['modelVersion']).to.be.eql(null);
   });
 
-  it('Firing BID_REQUESTED it sets app and site publisher id in auction object', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-
-    const sitePubcid = analyticsAdapter.context.auctionObject.site.publisher.id;
-    const appPubcid = analyticsAdapter.context.auctionObject.app.publisher.id;
-    expect(sitePubcid).to.be.eql(PUBLISHER_ID_MOCK);
-    expect(appPubcid).to.be.eql(PUBLISHER_ID_MOCK);
-  });
-
-  it('Firing BID_REQUESTED it adds bid request in bid requests array', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-
-    const requestEvent = analyticsAdapter.context.auctionObject.bidRequests;
-    expect(requestEvent).to.have.length(1);
-    expect(requestEvent[0]).to.be.eql({
-      bidderCode: 'adapter',
-      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-      bidderRequestId: '1a6fc81528d0f6',
-      bids: [{
-        bidder: 'adapter',
-        params: {},
-        adUnitCode: 'container-1',
-        transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
-        sizes: [[300, 250]],
-        bidId: '208750227436c1',
-        bidderRequestId: '1a6fc81528d0f6',
-        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
-      }],
-      auctionStart: 1509369418387,
-      timeout: 3000,
-      start: 1509369418389
-    });
-  });
-
-  it('Firing BID_RESPONSE it inserts bid response object in auctionObject', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    const bidResponses = analyticsAdapter.context.auctionObject.bidResponses;
-
-    expect(bidResponses).to.have.length(1);
-    expect(bidResponses[0]).to.be.eql({
-      timestamp: 1509369418832,
-      status: 1,
-      'total_duration': 443,
-      bidderId: null,
-      'bidder_name': 'adapter',
-      cur: 'EU',
-      seatbid: [
-        {
-          seat: null,
-          bid: [
-            {
-              status: 2,
-              'clear_price': 0.015,
-              attr: [],
-              crid: 999,
-              cid: null,
-              id: null,
-              adid: '208750227436c1',
-              adomain: [],
-              iurl: null
-            }
-          ]
-        }
-      ]
-    });
-  });
-
   it('Firing AUCTION_END it sets auction time end to current time', () => {
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
 
@@ -223,54 +160,28 @@ describe('RIVR Analytics adapter', () => {
     expect(endTime).to.be.eql(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
   });
 
-  it('Firing AUCTION_END when there are unresponded bid requests should insert then to bidResponses in auctionObject with null duration', () => {
+  it('Firing AUCTION_END populates impressions array in auction object', () => {
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
 
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST3);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, BID_RESPONSE_MOCK);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
 
-    const responses = analyticsAdapter.context.auctionObject.bidResponses;
-    expect(responses.length).to.be.eql(2);
-    expect(responses[0].total_duration).to.be.eql(null);
-    expect(responses[1].total_duration).to.be.eql(null);
+    const impressions = analyticsAdapter.context.auctionObject.impressions;
+    expect(impressions.length).to.be.eql(3);
   });
 
-  it('Firing BID_WON when it happens after BID_RESPONSE should add won event as auction impression to imp array', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
+  it('Firing BID_WON should set to 1 the status of the corresponding bid', () => {
+    analyticsAdapter.context.auctionObject = utils.deepClone(AUCTION_OBJECT_AFTER_AUCTION_END_MOCK);
 
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BID_RESPONSE_MOCK);
+    events.emit(CONSTANTS.EVENTS.BID_WON, BID_WON_MOCK);
 
-    const wonEvent = analyticsAdapter.context.auctionObject.imp;
+    expect(analyticsAdapter.context.auctionObject.bidders.length).to.be.equal(3);
 
-    expect(wonEvent.length).to.be.eql(1);
-    expect(wonEvent[0]).to.be.eql({
-      tagid: 'container-1',
-      displaymanager: null,
-      displaymanagerver: null,
-      secure: null,
-      bidfloor: null,
-      banner: {
-        w: 300,
-        h: 250,
-        pos: null,
-        expandable: [],
-        api: []
-      }
-    });
-  });
+    expect(analyticsAdapter.context.auctionObject.bidders[0].bids[0].status).to.be.equal(0);
 
-  it('Firing BID_WON when it happens after BID_RESPONSE should change the status of winning bidResponse to 1', () => {
-    const BID_STATUS_WON = 1;
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
+    expect(analyticsAdapter.context.auctionObject.bidders[1].bids[0].status).to.be.equal(0);
 
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BID_RESPONSE_MOCK);
-
-    const responseWhichIsWonAlso = analyticsAdapter.context.auctionObject.bidResponses[0];
-
-    expect(responseWhichIsWonAlso.seatbid[0].bid[0].status).to.be.eql(BID_STATUS_WON);
+    expect(analyticsAdapter.context.auctionObject.bidders[2].bids[0].status).to.be.equal(1);
+    expect(analyticsAdapter.context.auctionObject.bidders[2].bids[1].status).to.be.equal(0);
   });
 
   it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it sends the auction', () => {
@@ -284,31 +195,23 @@ describe('RIVR Analytics adapter', () => {
     expect(ajaxStub.calledOnce).to.be.equal(true);
   });
 
-  it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it clears imp, bidResponses and bidRequests', () => {
+  it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it resets auctionObject', () => {
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
 
     analyticsAdapter.context.authToken = 'anAuthToken';
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BID_RESPONSE_MOCK);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
 
-    let impressions = analyticsAdapter.context.auctionObject.imp;
-    let responses = analyticsAdapter.context.auctionObject.bidResponses;
-    let requests = analyticsAdapter.context.auctionObject.bidRequests;
+    let impressions = analyticsAdapter.context.auctionObject.impressions;
 
-    expect(impressions.length).to.be.eql(1);
-    expect(responses.length).to.be.eql(1);
-    expect(requests.length).to.be.eql(1);
+    expect(impressions.length).to.be.eql(3);
 
     timer.tick(EXPIRING_QUEUE_TIMEOUT + 500);
 
-    let impressionsAfterSend = analyticsAdapter.context.auctionObject.imp;
-    let responsesAfterSend = analyticsAdapter.context.auctionObject.bidResponses;
-    let requestsAfterSend = analyticsAdapter.context.auctionObject.bidRequests;
+    let impressionsAfterSend = analyticsAdapter.context.auctionObject.impressions;
+    let biddersAfterSend = analyticsAdapter.context.auctionObject.bidders;
 
     expect(impressionsAfterSend.length).to.be.eql(0);
-    expect(responsesAfterSend.length).to.be.eql(0);
-    expect(requestsAfterSend.length).to.be.eql(0);
+    expect(biddersAfterSend.length).to.be.eql(0);
   });
 
   it('sendAuction(), when authToken is defined, it fires call clearing empty payload properties', () => {
@@ -547,7 +450,72 @@ describe('RIVR Analytics adapter', () => {
     expect(analyticsAdapter.context.auctionObject.device.geo.lat).to.be.equal('aLatitude');
   });
 
-  const AD_UNITS_MOCK = [
+  it('createNewAuctionObject(), it creates a new auction object', () => {
+    const MILLIS_FROM_EPOCH_TO_NOW_MOCK = 123456;
+    timer.tick(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
+
+    const result = createNewAuctionObject();
+
+    expect(result.device.deviceType).to.be.equal(2);
+    expect(result.publisher).to.be.equal(RVR_CLIENT_ID_MOCK);
+    expect(result.device.userAgent).to.be.equal(navigator.userAgent);
+    expect(result.timestamp).to.be.equal(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
+    expect(result.site.domain.substring(0, 9)).to.be.equal('localhost');
+    expect(result.site.page).to.be.equal('/context.html');
+    expect(result.site.categories).to.be.equal(SITE_CATEGORIES_MOCK);
+  });
+
+  it('concatAllUnits(), returns a flattened array with all banner and video adunits', () => {
+    const allAdUnits = [BANNER_AD_UNITS_MOCK, VIDEO_AD_UNITS_MOCK];
+
+    const result = concatAllUnits(allAdUnits);
+
+    expect(result.length).to.be.eql(2);
+    expect(result[0].code).to.be.eql('banner-container1');
+    expect(result[1].code).to.be.eql('video');
+  });
+
+  it('trackAuctionEnd(), populates the bidders array from bidderRequests and bidsReceived', () => {
+    trackAuctionEnd(AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK);
+
+    const result = analyticsAdapter.context.auctionObject.bidders;
+
+    expect(result.length).to.be.eql(3);
+
+    expect(result[0].id).to.be.eql('vuble');
+    expect(result[0].bids[0].price).to.be.eql(0);
+
+    expect(result[1].id).to.be.eql('vertamedia');
+    expect(result[1].bids[0].price).to.be.eql(0);
+
+    expect(result[2].id).to.be.eql('appnexus');
+    expect(result[2].bids[0].price).to.be.eql(0.5);
+    expect(result[2].bids[0].impId).to.be.eql('/19968336/header-bid-tag-0');
+    expect(result[2].bids[1].price).to.be.eql(0.7);
+    expect(result[2].bids[1].impId).to.be.eql('/19968336/header-bid-tag-1');
+  });
+
+  it('trackAuctionEnd(), populates the impressions array from adUnits', () => {
+    trackAuctionEnd(AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
+
+    const result = analyticsAdapter.context.auctionObject.impressions;
+
+    expect(result.length).to.be.eql(3);
+
+    expect(result[0].id).to.be.eql('/19968336/header-bid-tag-0');
+    expect(result[0].adType).to.be.eql('banner');
+
+    expect(result[1].id).to.be.eql('/19968336/header-bid-tag-1');
+    expect(result[1].adType).to.be.eql('banner');
+    expect(result[1].acceptedSizes).to.be.eql([{w: 728, h: 90}, {w: 970, h: 250}]);
+    expect(result[1].banner).to.be.eql({w: 300, h: 250});
+
+    expect(result[2].id).to.be.eql('video');
+    expect(result[2].adType).to.be.eql('video');
+    expect(result[2].acceptedSizes).to.be.eql([{w: 640, h: 360}, {w: 640, h: 480}]);
+  });
+
+  const BANNER_AD_UNITS_MOCK = [
     {
       code: 'banner-container1',
       mediaTypes: {
@@ -572,6 +540,35 @@ describe('RIVR Analytics adapter', () => {
       ]
     }
   ];
+
+  const VIDEO_AD_UNITS_MOCK = [
+    {
+      code: 'video',
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          sizes: [[640, 360], [640, 480]]
+        }
+      },
+      bids: [
+        {
+          bidder: 'vuble',
+          params: {
+            env: 'net',
+            pubId: '18',
+            zoneId: '12345',
+            referrer: 'http://www.vuble.tv/', // optional
+            floorPrice: 5.00 // optional
+          }
+        },
+        {
+          bidder: 'vertamedia',
+          params: {
+            aid: 331133
+          }
+        }
+      ]
+    }];
 
   const REQUEST = {
     bidderCode: 'adapter',
@@ -651,9 +648,56 @@ describe('RIVR Analytics adapter', () => {
     size: '300x250'
   };
 
+  const BID_WON_MOCK = {
+    bidderCode: 'appnexus',
+    width: 300,
+    height: 600,
+    statusMessage: 'Bid available',
+    adId: '63301dc59deb3b',
+    mediaType: 'banner',
+    source: 'client',
+    requestId: '63301dc59deb3b',
+    cpm: 0.5,
+    creativeId: 98493581,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300,
+    appnexus: {
+      buyerMemberId: 9325
+    },
+    ad: '...HTML CONTAINING THE AD...',
+    auctionId: '1825871c-b4c2-401a-b219-64549d412495',
+    responseTimestamp: 1540560447955,
+    requestTimestamp: 1540560447622,
+    bidder: 'appnexus',
+    adUnitCode: '/19968336/header-bid-tag-0',
+    timeToRespond: 333,
+    pbLg: '0.50',
+    pbMg: '0.50',
+    pbHg: '0.50',
+    pbAg: '0.50',
+    pbDg: '0.50',
+    pbCg: '',
+    size: '300x600',
+    adserverTargeting: {
+      hb_bidder: 'appnexus',
+      hb_adid: '63301dc59deb3b',
+      hb_pb: '0.50',
+      hb_size: '300x600',
+      hb_source: 'client',
+      hb_format: 'banner'
+    },
+    status: 'rendered',
+    params: [
+      {
+        placementId: 13144370
+      }
+    ]
+  };
+
   const CONTEXT_AFTER_AUCTION_INIT = {
     host: TRACKER_BASE_URL_MOCK,
-    pubId: PUBLISHER_ID_MOCK,
+    clientID: RVR_CLIENT_ID_MOCK,
     queue: {
       mockProp: 'mockValue'
     },
@@ -698,5 +742,391 @@ describe('RIVR Analytics adapter', () => {
       modelVersion: null,
       'ext.rivr.originalvalues': []
     }
+  };
+
+  const AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK = {
+    auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+    auctionStart: 1540560217395,
+    auctionEnd: 1540560217703,
+    auctionStatus: 'completed',
+    adUnits: [
+      {
+        code: '/19968336/header-bid-tag-0',
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ]
+          }
+        },
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId: 'aee9bf8d-6d8f-425b-a42a-52c875371ebc',
+        sizes: [
+          [
+            300,
+            250
+          ],
+          [
+            300,
+            600
+          ]
+        ]
+      },
+      {
+        code: '/19968336/header-bid-tag-1',
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [
+                728,
+                90
+              ],
+              [
+                970,
+                250
+              ]
+            ]
+          }
+        },
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId: '3d5f0f89-e9cd-4714-b314-3f0fb7fcf8e3',
+        sizes: [
+          [
+            728,
+            90
+          ],
+          [
+            970,
+            250
+          ]
+        ]
+      },
+      {
+        code: 'video',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            sizes: [
+              [
+                640,
+                360
+              ],
+              [
+                640,
+                480
+              ]
+            ]
+          }
+        },
+        bids: [
+          {
+            bidder: 'vuble',
+            params: {
+              env: 'net',
+              pubId: '18',
+              zoneId: '12345',
+              referrer: 'http: //www.vuble.tv/',
+              floorPrice: 5
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          },
+          {
+            bidder: 'vertamedia',
+            params: {
+              aid: 331133
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId: 'df11a105-4eef-4ceb-bbc3-a49224f7c49d'
+      }
+    ],
+    adUnitCodes: [
+      '/19968336/header-bid-tag-0',
+      '/19968336/header-bid-tag-1',
+      'video'
+    ],
+    bidderRequests: [],
+    bidsReceived: [
+      {
+        bidderCode: 'appnexus',
+        width: 300,
+        height: 250,
+        statusMessage: 'Bid available',
+        adId: '6de82e80757293',
+        mediaType: 'banner',
+        source: 'client',
+        requestId: '6de82e80757293',
+        cpm: 0.5,
+        creativeId: 96846035,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 300,
+        appnexus: {
+          buyerMemberId: 9325
+        },
+        ad: '...HTML CONTAINING THE AD...',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        responseTimestamp: 1540560217636,
+        requestTimestamp: 1540560217403,
+        bidder: 'appnexus',
+        adUnitCode: '/19968336/header-bid-tag-1',
+        timeToRespond: 233,
+        pbLg: '0.50',
+        pbMg: '0.50',
+        pbHg: '0.50',
+        pbAg: '0.50',
+        pbDg: '0.50',
+        pbCg: '',
+        size: '728x90',
+        adserverTargeting: {
+          hb_bidder: 'appnexus',
+          hb_adid: '7e1a45d85bd57c',
+          hb_pb: '0.50',
+          hb_size: '728x90',
+          hb_source: 'client',
+          hb_format: 'banner'
+        }
+      }
+    ],
+    winningBids: [],
+    timeout: 3000
+  };
+
+  const AUCTION_OBJECT_AFTER_AUCTION_END_MOCK = {
+    bidders: [
+      {
+        id: 'vuble',
+        bids: [
+          {
+            adomain: [
+              ''
+            ],
+            clearPrice: 0,
+            impId: 'video',
+            price: 0,
+            status: 0
+          }
+        ]
+      },
+      {
+        id: 'vertamedia',
+        bids: [
+          {
+            adomain: [
+              ''
+            ],
+            clearPrice: 0,
+            impId: 'video',
+            price: 0,
+            status: 0
+          }
+        ]
+      },
+      {
+        id: 'appnexus',
+        bids: [
+          {
+            adomain: [
+              ''
+            ],
+            clearPrice: 0,
+            impId: '/19968336/header-bid-tag-0',
+            price: 0.5,
+            status: 0
+          },
+          {
+            adomain: [
+              ''
+            ],
+            clearPrice: 0,
+            impId: '/19968336/header-bid-tag-1',
+            price: 0.7,
+            status: 0
+          }
+        ]
+      }
+    ],
+    impressions: []
+  };
+
+  const AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK = {
+    auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+    auctionStart: 1540560217395,
+    auctionEnd: 1540560217703,
+    auctionStatus: 'completed',
+    adUnits: [],
+    adUnitCodes: [
+      '/19968336/header-bid-tag-0',
+      '/19968336/header-bid-tag-1',
+      'video'
+    ],
+    bidderRequests: [
+      {
+        bidderCode: 'vuble',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '1bb11e055665bc',
+        bids: [
+          {
+            bidder: 'vuble',
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: 'video',
+            transactionId: 'df11a105-4eef-4ceb-bbc3-a49224f7c49d',
+            bidId: '2859b890da7418',
+            bidderRequestId: '1bb11e055665bc',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        refererInfo: {
+          referer: 'http: //localhost: 8080/',
+          reachedTop: true,
+          numIframes: 0,
+          stack: [
+            'http://localhost:8080/'
+          ]
+        },
+        start: 1540560217401,
+        doneCbCallCount: 0
+      },
+      {
+        bidderCode: 'vertamedia',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '3c2cbf7f1466cb',
+        bids: [
+          {
+            bidder: 'vertamedia',
+            params: {
+              aid: 331133
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: 'video',
+            transactionId: 'df11a105-4eef-4ceb-bbc3-a49224f7c49d',
+            bidId: '45b3ad5c2dc794',
+            bidderRequestId: '3c2cbf7f1466cb',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        start: 1540560217401
+      },
+      {
+        bidderCode: 'appnexus',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '5312eef4418cd7',
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: '/19968336/header-bid-tag-0',
+            transactionId: 'aee9bf8d-6d8f-425b-a42a-52c875371ebc',
+            bidId: '6de82e80757293',
+            bidderRequestId: '5312eef4418cd7',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          },
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: '/19968336/header-bid-tag-1',
+            transactionId: '3d5f0f89-e9cd-4714-b314-3f0fb7fcf8e3',
+            bidId: '7e1a45d85bd57c',
+            bidderRequestId: '5312eef4418cd7',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        start: 1540560217403,
+        doneCbCallCount: 0
+      }
+    ],
+    bidsReceived: [
+      {
+        bidderCode: 'appnexus',
+        adId: '6de82e80757293',
+        mediaType: 'banner',
+        source: 'client',
+        requestId: '6de82e80757293',
+        cpm: 0.5,
+        creativeId: 96846035,
+        appnexus: {
+          buyerMemberId: 9325
+        },
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidder: 'appnexus',
+        adUnitCode: '/19968336/header-bid-tag-0',
+      },
+      {
+        bidderCode: 'appnexus',
+        adId: '7e1a45d85bd57c',
+        mediaType: 'banner',
+        source: 'client',
+        requestId: '7e1a45d85bd57c',
+        cpm: 0.7,
+        creativeId: 96846035,
+        appnexus: {
+          buyerMemberId: 9325
+        },
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidder: 'appnexus',
+        adUnitCode: '/19968336/header-bid-tag-1',
+      }
+    ],
+    winningBids: [],
+    timeout: 3000
   };
 });
