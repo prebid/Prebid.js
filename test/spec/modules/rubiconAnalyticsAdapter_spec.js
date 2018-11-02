@@ -106,9 +106,59 @@ const MOCK = {
     [BID2.adUnitCode]: BID2.adserverTargeting
   },
   AUCTION_INIT: {
-    'timestamp': 1519767010567,
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-    'timeout': 3000
+    'timestamp': 1519767010567,
+    'auctionStatus': 'inProgress',
+    'adUnits': [ {
+      'code': '/19968336/header-bid-tag1',
+      'sizes': [[640, 480]],
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        }
+      } ],
+      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
+    }
+    ],
+    'adUnitCodes': ['/19968336/header-bid-tag1'],
+    'bidderRequests': [ {
+      'bidderCode': 'rubicon',
+      'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480]]
+          }
+        },
+        'adUnitCode': '/19968336/header-bid-tag1',
+        'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+        'sizes': [[640, 480]],
+        'bidId': '2ecff0db240757',
+        'bidderRequestId': '1be65d7958826a',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+      ],
+      'auctionStart': 1519767010567,
+      'timeout': 3000,
+      'refererInfo': {
+        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      }
+    }
+    ],
+    'bidsReceived': [],
+    'winningBids': [],
+    'timeout': 3000,
+    'config': {
+      'accountId': 1001, 'endpoint': '//localhost:9999/event'
+    }
   },
   BID_REQUESTED: {
     'bidder': 'rubicon',
