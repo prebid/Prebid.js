@@ -52,17 +52,26 @@ describe('RTBHouseAdapter', () => {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475'
+        'auctionId': '1d1a030790a475',
+        'transactionId': 'example-transaction-id',
       }
     ];
+    const bidderRequest = {
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://example.com',
+        'stack': ['http://example.com']
+      }
+    };
 
     it('should build test param into the request', () => {
-      let builtTestRequest = spec.buildRequests(bidRequests).data;
+      let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).test).to.equal(1);
     });
 
     it('should build valid OpenRTB banner object', () => {
-      const request = JSON.parse(spec.buildRequests((bidRequests)).data);
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
       const imp = request.imp[0];
       expect(imp.banner).to.deep.equal({
         w: 300,
@@ -80,7 +89,7 @@ describe('RTBHouseAdapter', () => {
     it('sends bid request to ENDPOINT via POST', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
       expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebid/bids');
       expect(request.method).to.equal('POST');
     });
@@ -88,7 +97,7 @@ describe('RTBHouseAdapter', () => {
     it('should not populate GDPR if for non-EEA users', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
       let data = JSON.parse(request.data);
       expect(data).to.not.have.property('regs');
       expect(data).to.not.have.property('user');
@@ -97,12 +106,15 @@ describe('RTBHouseAdapter', () => {
     it('should populate GDPR and consent string if available for EEA users', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest, {
-        gdprConsent: {
-          gdprApplies: true,
-          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
-        }
-      });
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gdprConsent: {
+            gdprApplies: true,
+            consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+          }
+        })
+      );
       let data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
@@ -111,7 +123,14 @@ describe('RTBHouseAdapter', () => {
     it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
       let bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true}});
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gdprConsent: {
+            gdprApplies: true
+          }
+        })
+      );
       let data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('');
@@ -119,9 +138,24 @@ describe('RTBHouseAdapter', () => {
 
     it('should include banner imp in request', () => {
       const bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].banner).to.not.be.empty;
+    });
+
+    it('should include source.tid in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source.tid).to.equal('example-transaction-id');
+    });
+
+    it('should include bidfloor in request if available', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].params.bidfloor = 0.01;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].bidfloor).to.equal(0.01)
     });
 
     describe('native imp', () => {
@@ -139,7 +173,8 @@ describe('RTBHouseAdapter', () => {
       }
 
       function buildImp(request) {
-        return JSON.parse(spec.buildRequests([request]).data).imp[0];
+        const resultRequest = spec.buildRequests([request], bidderRequest);
+        return JSON.parse(resultRequest.data).imp[0];
       }
 
       it('should extract native params when single mediaType', () => {
