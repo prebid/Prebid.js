@@ -274,6 +274,11 @@ export function newBidder(spec) {
       }
 
       function processRequest(request) {
+        if(!request.bidRequest && !request.bidderRequest && request.bidId){
+          if(bidRequestMap[request.bidId]){
+            request.bidRequest = bidRequestMap[request.bidId];
+          }
+        }
         switch (request.method) {
           case 'GET':
             ajax(
