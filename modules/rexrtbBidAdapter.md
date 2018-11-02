@@ -1,15 +1,15 @@
 # Overview
 
-Module Name: rxrtb Bidder Adapter
+Module Name: REXRTB Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: contact@picellaltd.com
+Maintainer: tech@rexrtb.com
 
 
 # Description
 
-Module that connects to rxrtb's demand source
+Module that connects to REXRTB's demand source
 
 # Test Parameters
 ```javascript
@@ -19,7 +19,7 @@ Module that connects to rxrtb's demand source
             sizes: [[728, 98]],
             bids: [
                 {
-                    bidder: 'rxrtb',
+                    bidder: 'rexrtb',
                     params: {
                         id: 89,
                         token: '658f11a5efbbce2f9be3f1f146fcbc22',

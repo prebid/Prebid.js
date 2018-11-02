@@ -233,7 +233,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     netRevenue: true,
     ttl: 300,
     appnexus: {
-      buyerMemberId: rtbBid.buyer_member_id
+      buyerMemberId: rtbBid.buyer_member_id,
+      dealPriority: rtbBid.deal_priority,
+      dealCode: rtbBid.deal_code
     }
   };
 

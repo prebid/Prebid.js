@@ -3,11 +3,11 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'playgroundxyz';
-const URL = 'https://ads.playground.xyz/host-config/prebid';
+const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playgroundxyz'],
+  aliases: ['playgroundxyz', 'pxyz'],
   supportedMediaTypes: [BANNER],
 
   /**
@@ -69,14 +69,20 @@ export const spec = {
 
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      utils.logError(errorMessage);
+      if (serverResponse && serverResponse.error) {
+        errorMessage += `: ${serverResponse.error}`;
+        utils.logError(errorMessage);
+      }
       return bids;
     }
 
     if (!utils.isArray(serverResponse.seatbid)) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
       utils.logError(errorMessage += 'Malformed seatbid response');
+      return bids;
+    }
+
+    if (!serverResponse.seatbid) {
       return bids;
     }
 
@@ -131,6 +137,12 @@ function mapImpression(bid) {
     ext: {
       appnexus: {
         placement_id: parseInt(bid.params.placementId, 10)
+      },
+      pxyz: {
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
       }
     }
   };
