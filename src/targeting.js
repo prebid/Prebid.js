@@ -35,18 +35,9 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
   // filter top bid for each bucket by bidder
   Object.keys(buckets).forEach(bucketKey => {
     let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(highestCpmCallback, getEmptyBid())));
+    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(highestCpmCallback)));
   });
   return bids;
-}
-
-function getEmptyBid(adUnitCode) {
-  return {
-    adUnitCode: adUnitCode,
-    cpm: 0,
-    adserverTargeting: {},
-    timeToRespond: 0
-  };
 }
 
 /**
@@ -222,7 +213,7 @@ export function newTargeting(auctionManager) {
       .filter(uniques)
       .map(adUnitCode => bidsReceived
         .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-        .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
+        .reduce(getHighestCpm));
   };
 
   /**

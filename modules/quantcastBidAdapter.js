@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { ajax } from 'src/ajax';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
@@ -69,7 +70,7 @@ export const spec = {
         });
       });
 
-      const gdprConsent = bidderRequest ? bidderRequest.gdprConsent : {};
+      const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
@@ -157,6 +158,10 @@ export const spec = {
     });
 
     return bidResponsesList;
+  },
+  onTimeout(timeoutData) {
+    const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+    ajax(url, null, null);
   }
 };
 

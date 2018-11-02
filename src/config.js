@@ -19,7 +19,7 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 
-const DEFAULT_TIMEOUTBUFFER = 200;
+const DEFAULT_TIMEOUTBUFFER = 400;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -146,12 +146,12 @@ export function newConfig() {
       },
 
       // timeout buffer to adjust for bidder CDN latency
-      _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+      _timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       get timeoutBuffer() {
-        return this._timoutBuffer;
+        return this._timeoutBuffer;
       },
       set timeoutBuffer(val) {
-        this._timoutBuffer = val;
+        this._timeoutBuffer = val;
       },
 
       _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
