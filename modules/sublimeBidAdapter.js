@@ -64,7 +64,7 @@ export const spec = {
       var requestIdEncoded = encodeURIComponent(requestId);
       var hasAd = response.ad ? '1' : '0';
       var xhr = new XMLHttpRequest();
-      var url = protocol + '://' + bidHost + '/notify?request_id=' + requestIdEncoded + '&a=' + hasAd;
+      var url = protocol + '://' + bidHost + '/notify?request_id=' + requestIdEncoded + '&a=' + hasAd + '&z=' + SUBLIME_ZONE;
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.send(
@@ -88,6 +88,7 @@ export const spec = {
       data: {
         prebid: 1,
         request_id: requestId,
+        z: SUBLIME_ZONE
       }
     };
   },
