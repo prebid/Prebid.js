@@ -178,6 +178,14 @@ export const spec = {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
 
+      if (utils.isArray(params.keywords) && params.keywords.length > 0) {
+        params.keywords.forEach(function(keyPairObj) {
+          if (utils.isArray(keyPairObj.value) && keyPairObj.value.length > 0 && keyPairObj.value[0] === '') {
+            delete keyPairObj.value;
+          }
+        });
+      }
+
       Object.keys(params).forEach(paramKey => {
         let convertedKey = utils.convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
@@ -345,7 +353,16 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+    if (keywords.length > 0) {
+      keywords.forEach(function(keyPairObj) {
+        if (utils.isArray(keyPairObj.value) && keyPairObj.value.length > 0 && keyPairObj.value[0] === '') {
+          delete keyPairObj.value;
+        }
+      });
+    }
+    tag.keywords = keywords;
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
