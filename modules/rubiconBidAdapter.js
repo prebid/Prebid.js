@@ -92,11 +92,9 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-
     if (!/^\d+$/.test(bid.params.accountId)) {
       return false;
     }
-
     return !!bidType(bid, true);
   },
   /**
@@ -111,7 +109,7 @@ export const spec = {
       bidRequest.startTime = new Date().getTime();
 
       let params = bidRequest.params;
-      let size = parseSizes(bidRequest);
+      let size = parseSizes(bidRequest, 'video');
 
       let data = {
         page_url: _getPageUrl(bidRequest, bidderRequest),
@@ -306,7 +304,7 @@ export const spec = {
     const params = bidRequest.params;
 
     // use rubicon sizes if provided, otherwise adUnit.sizes
-    const parsedSizes = parseSizes(bidRequest);
+    const parsedSizes = parseSizes(bidRequest, 'banner');
 
     const [latitude, longitude] = params.latLong || [];
 
@@ -341,14 +339,18 @@ export const spec = {
     // visitor properties
     if (params.visitor !== null && typeof params.visitor === 'object') {
       Object.keys(params.visitor).forEach((key) => {
-        data[`tg_v.${key}`] = params.visitor[key].toString();
+        if (params.visitor[key] != null) {
+          data[`tg_v.${key}`] = params.visitor[key].toString(); // initialize array;
+        }
       });
     }
 
     // inventory properties
     if (params.inventory !== null && typeof params.inventory === 'object') {
       Object.keys(params.inventory).forEach((key) => {
-        data[`tg_i.${key}`] = params.inventory[key].toString();
+        if (params.inventory[key] != null) {
+          data[`tg_i.${key}`] = params.inventory[key].toString();
+        }
       });
     }
 
@@ -525,9 +527,9 @@ function _renderCreative(script, impId) {
 </html>`;
 }
 
-function parseSizes(bid) {
+function parseSizes(bid, mediaType) {
   let params = bid.params;
-  if (hasVideoMediaType(bid)) {
+  if (mediaType === 'video') {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
@@ -576,7 +578,10 @@ function mapSizes(sizes) {
  * @returns {boolean}
  */
 export function hasVideoMediaType(bidRequest) {
-  return bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  if (typeof utils.deepAccess(bidRequest, 'params.video') === 'undefined' && Array.isArray(utils.deepAccess(bidRequest, 'params.sizes'))) {
+    return false;
+  }
+  return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
 }
 
 /**
@@ -620,7 +625,7 @@ function bidType(bid, log = false) {
       return undefined;
     }
   }
-  if (parseSizes(bid).length > 0) {
+  if (parseSizes(bid, 'banner').length > 0) {
     if (log && validVideo === false) {
       utils.logWarn('Rubicon bid adapter Warning: invalid video requested for adUnit, continuing with banner request.');
     }
