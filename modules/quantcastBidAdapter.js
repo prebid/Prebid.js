@@ -4,7 +4,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
-export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+// export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
+export const QUANTCAST_DOMAIN = 'localhost';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
@@ -172,9 +173,9 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl } = bid;
 
-      return {
+      const result = {
         requestId: response.requestId,
         cpm,
         width,
@@ -183,8 +184,15 @@ export const spec = {
         ttl: QUANTCAST_TTL,
         creativeId,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency
+        currency,
       };
+
+      if (videoUrl !== undefined && videoUrl) {
+        result['vastUrl'] = videoUrl;
+        result['mediaType'] = 'video';
+      }
+
+      return result;
     });
 
     return bidResponsesList;

@@ -238,6 +238,27 @@ describe('Quantcast adapter', function () {
       headers: {}
     };
 
+    const videoBody = {
+      bidderCode: 'qcx',
+      requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+      bids: [
+        {
+          statusCode: 1,
+          placementCode: 'video1',
+          cpm: 4.5,
+          currency: 'USD',
+          videoUrl: 'https://vast.quantserve.com/vast?p=&r=&gdpr=&gdpr_consent=&rand=1337&d=H4sIAAAAAAAAAONi4mIQcrzFqGLi5OzibOzmpGtm4eyia-LoaqDraGRupOtobGJhYuni6GRiYLmLiYWrp5f_BBPDDybGScxcPs7-aRYmpmVVoVJgCSXBkozMYl0gKslI1S1Izk9JBQALkFy_YAAAAA&h=uRnsTjyXbOrXJtBQiaMn239i9GI',
+          width: 600,
+          height: 300
+        }
+      ]
+    };
+
+    const videoResponse = {
+      body: videoBody,
+      headers: {}
+    };
+
     it('should return an empty array if `serverResponse` is `undefined`', function () {
       const interpretedResponse = qcSpec.interpretResponse();
 
@@ -270,6 +291,25 @@ describe('Quantcast adapter', function () {
         currency: 'USD'
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
+
+      expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct bid response for instream video', function() {
+      const expectedResponse = {
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+        cpm: 4.5,
+        width: 600,
+        height: 300,
+        vastUrl: 'https://vast.quantserve.com/vast?p=&r=&gdpr=&gdpr_consent=&rand=1337&d=H4sIAAAAAAAAAONi4mIQcrzFqGLi5OzibOzmpGtm4eyia-LoaqDraGRupOtobGJhYuni6GRiYLmLiYWrp5f_BBPDDybGScxcPs7-aRYmpmVVoVJgCSXBkozMYl0gKslI1S1Izk9JBQALkFy_YAAAAA&h=uRnsTjyXbOrXJtBQiaMn239i9GI',
+        mediaType: 'video',
+        ttl: QUANTCAST_TTL,
+        creativeId: undefined,
+        ad: undefined,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency: 'USD'
+      };
+      const interpretedResponse = qcSpec.interpretResponse(videoResponse);
 
       expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
