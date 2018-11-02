@@ -146,12 +146,12 @@ export function newConfig() {
       },
 
       // timeout buffer to adjust for bidder CDN latency
-      _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+      _timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       get timeoutBuffer() {
-        return this._timoutBuffer;
+        return this._timeoutBuffer;
       },
       set timeoutBuffer(val) {
-        this._timoutBuffer = val;
+        this._timeoutBuffer = val;
       },
 
       _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
