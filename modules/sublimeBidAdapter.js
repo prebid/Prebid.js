@@ -61,6 +61,12 @@ export const spec = {
     SUBLIME_ZONE = params.zoneId;
 
     window[callbackName] = (response) => {
+      top.sublime.analytics.fire('dpnlp', {
+        qs: {
+          z: SUBLIME_ZONE
+        }
+      });
+
       var requestIdEncoded = encodeURIComponent(requestId);
       var hasAd = response.ad ? '1' : '0';
       var xhr = new XMLHttpRequest();
