@@ -1281,7 +1281,7 @@ describe('Unit: Prebid Module', function () {
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       });
 
-      it('should attach transactionIds to ads (or pass through transactionId if it already exists)', function () {
+      it('should always attach new transactionIds to adUnits passed to requestBids', function () {
         $$PREBID_GLOBAL$$.requestBids({
           adUnits: [
             {
@@ -1296,7 +1296,8 @@ describe('Unit: Prebid Module', function () {
         });
 
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId')
-          .and.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
+          .and.to.match(/[a-f0-9\-]{36}/i)
+          .and.not.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
           .and.to.match(/[a-f0-9\-]{36}/i);
       });
