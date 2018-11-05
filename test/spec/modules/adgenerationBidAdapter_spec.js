@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adgenerationBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {NATIVE} from 'src/mediaTypes';
+import {config} from 'src/config';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -91,6 +92,7 @@ describe('AdgenerationAdapter', function () {
     };
     const data = {
       banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
       native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
     };
     it('sends bid request to ENDPOINT via GET', function () {
@@ -114,6 +116,26 @@ describe('AdgenerationAdapter', function () {
     it('should attache params to the native request', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       expect(request.data).to.equal(data.native);
+    });
+    it('allows setConfig to set bidder currency for JPY', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'JPY'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data).to.equal(data.banner);
+      config.resetConfig();
+    });
+    it('allows setConfig to set bidder currency for USD', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'USD'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data).to.equal(data.bannerUSD);
+      config.resetConfig();
     });
   });
   describe('interpretResponse', function () {
