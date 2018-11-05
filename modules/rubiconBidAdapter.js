@@ -605,7 +605,7 @@ function bidType(bid, log = false) {
       }
     } else { // Otherwise its the legacy way where mediaType == 'video'
       if (log) {
-        utils.logWarn('Rubicon video bid requested using legacy `adUnit.mediaType = `video``\nThis will be depracted soon\nPlease move towards the PBJS standard using mediaTypes object!');
+        utils.logWarn('Rubicon video bid requested using legacy `adUnit.mediaType = `video``\nThis is deprecated\nPlease move towards the PBJS standard using mediaTypes object!');
       }
       if (isNaN(parseInt(utils.deepAccess(bid, 'params.video.size_id')))) {
         if (log) {
