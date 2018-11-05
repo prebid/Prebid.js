@@ -15,5 +15,6 @@
   "undertoneBidAdapter",
   "unrulyBidAdapter",
   "consumableBidAdapter",
+  "sortableBidAdapter",
   "googleAnalyticsAdapter"
 ]
