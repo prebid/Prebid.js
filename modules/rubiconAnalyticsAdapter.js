@@ -235,7 +235,7 @@ function sendMessage(auctionId, bidWonId) {
 function parseBidResponse(bid) {
   return _pick(bid, [
     'getCpmInNewCurrency as bidPriceUSD', (fn) => {
-      if (bid.currency === 'USD') {
+      if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
       }
       // use currency conversion function if present
