@@ -266,7 +266,7 @@ let rubiconAliases = ['rubicon'];
 */
 function setRubiconAliases(aliasRegistry) {
   Object.keys(aliasRegistry).forEach(function (alias) {
-    if (aliasRegistry[alias] && aliasRegistry[alias] === 'rubicon') {
+    if (aliasRegistry[alias] === 'rubicon') {
       rubiconAliases.push(alias);
     }
   });
