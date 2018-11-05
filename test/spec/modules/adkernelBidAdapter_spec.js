@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import {parse as parseUrl} from 'src/url';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -113,15 +112,13 @@ describe('Adkernel adapter', function () {
       }
     };
 
-  function buildRequest(bidRequests, bidderRequest = {}, url = 'https://example.com/index.html', dnt = true) {
-    let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
-      let loc = parseUrl(url);
-      loc.protocol += ':';
-      return loc;
-    });
+  function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
+    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}})
+  }
+  const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
+  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
-    wmock.restore();
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data.r));
     return [pbRequests, rtbRequests];
@@ -195,7 +192,8 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}});
+        buildBidderRequest('http://example.com/index.html',
+          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1});
@@ -204,7 +202,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      let [_, bidRequests] = buildRequest([bid1_zone1], {gdprConsent: {gdprApplies: false}});
+      let [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', {gdprConsent: {gdprApplies: false}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
@@ -212,7 +210,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should\'t pass dnt if state is unknown', function () {
-      let [_, bidRequests] = buildRequest([bid1_zone1], {}, 'https://example.com/index.html', false);
+      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
       expect(bidRequests[0].device).to.not.have.property('dnt');
     });
   });
