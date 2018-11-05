@@ -178,9 +178,9 @@ export const spec = {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
 
-      if (utils.isArray(params.keywords) && params.keywords.length > 0) {
+      if (utils.isPopulatedArray(params.keywords)) {
         params.keywords.forEach(function(keyPairObj) {
-          if (utils.isArray(keyPairObj.value) && keyPairObj.value.length > 0 && keyPairObj.value[0] === '') {
+          if (utils.isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
             delete keyPairObj.value;
           }
         });
@@ -357,7 +357,7 @@ function bidToTag(bid) {
 
     if (keywords.length > 0) {
       keywords.forEach(function(keyPairObj) {
-        if (utils.isArray(keyPairObj.value) && keyPairObj.value.length > 0 && keyPairObj.value[0] === '') {
+        if (utils.isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
           delete keyPairObj.value;
         }
       });
