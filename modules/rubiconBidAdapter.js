@@ -670,7 +670,7 @@ export function masSizeOrdering(sizes) {
 export function determineRubiconVideoSizeId(bid) {
   // If we have size_id in the bid then use it
   let rubiconSizeId = parseInt(utils.deepAccess(bid, 'params.video.size_id'));
-  if (Number.isInteger(rubiconSizeId)) {
+  if (!isNaN(rubiconSizeId)) {
     return rubiconSizeId;
   }
   // otherwise 203 for outstream and 201 for instream
