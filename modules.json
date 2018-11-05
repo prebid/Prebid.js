@@ -16,5 +16,6 @@
   "unrulyBidAdapter",
   "consumableBidAdapter",
   "sortableBidAdapter",
+  "medianetBidAdapter",
   "googleAnalyticsAdapter"
 ]
