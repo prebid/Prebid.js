@@ -178,12 +178,8 @@ export const spec = {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
 
-      if (utils.isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(function(keyPairObj) {
-          if (utils.isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-            delete keyPairObj.value;
-          }
-        });
+      if (isPopulatedArray(params.keywords)) {
+        params.keywords.forEach(deleteValues);
       }
 
       Object.keys(params).forEach(paramKey => {
@@ -196,6 +192,16 @@ export const spec = {
     }
 
     return params;
+  }
+}
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
   }
 }
 
@@ -356,11 +362,7 @@ function bidToTag(bid) {
     let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
-      keywords.forEach(function(keyPairObj) {
-        if (utils.isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-          delete keyPairObj.value;
-        }
-      });
+      keywords.forEach(deleteValues);
     }
     tag.keywords = keywords;
   }

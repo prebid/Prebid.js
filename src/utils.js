@@ -439,10 +439,6 @@ exports.isBoolean = function(object) {
   return exports.isA(object, tBoolean);
 }
 
-exports.isPopulatedArray = function(arr) {
-  return !!(exports.isArray(arr) && arr.length > 0);
-}
-
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
