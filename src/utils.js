@@ -1092,7 +1092,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
       let values = [];
       exports._each(v, (val) => {
         val = exports.getValueString(paramName + '.' + k, val);
-        if (val) { values.push(val); }
+        if (val || val === '') { values.push(val); }
       });
       v = values;
     } else {
