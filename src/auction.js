@@ -290,11 +290,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     adaptermanager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
   }
 
+  function setBidTargeting(bid) {
+    adaptermanager.callSetTargetingBidder(bid.bidder, bid);
+  }
+
   return {
     addBidReceived,
     executeCallback,
     callBids,
     addWinningBid,
+    setBidTargeting,
     getWinningBids: () => _winningBids,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
