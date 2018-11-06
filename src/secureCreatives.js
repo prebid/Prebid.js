@@ -105,8 +105,7 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   }
 
   function getAstElementId(adUnitCode) {
-    let apn = window.apntag;
-    let astTagIds = apn.requests && apn.requests.tags && Object.keys(apn.requests.tags);
-    return astTagIds.length > 0 && find(astTagIds.filter(tagId => tagId === adUnitCode), tag => tag);
+    let astTag = window.apntag.getTag(adUnitCode);
+    return astTag && astTag.targetId;
   }
 }
