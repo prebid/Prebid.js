@@ -624,7 +624,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   } else {
     utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
   }
-
+console.log('Floor', 'markWinningBidAsUsed', bids)
   if (bids.length > 0) {
     bids[0].status = RENDERED;
   }
