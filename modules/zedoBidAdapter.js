@@ -3,6 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import { Renderer } from 'src/Renderer';
+import * as url from 'src/url';
 
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmh.json';
@@ -22,6 +23,8 @@ const DIM_TYPE = {
   '103': 'display'
   // '85': 'pre-mid-post-roll',
 };
+const EVENT_PIXEL_URL = 'm1.zedo.com/log/p.gif';
+const SECURE_EVENT_PIXEL_URL = 'tt1.zedo.com/log/p.gif';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -137,7 +140,23 @@ export const spec = {
         url: url
       }];
     }
-  }
+  },
+
+  onTimeout: function (timeoutData) {
+    try {
+      logEvent('117', timeoutData);
+    } catch (e) {
+      utils.logError(e);
+    }
+  },
+
+  onBidWon: function (bid) {
+    try {
+      logEvent('116', [bid]);
+    } catch (e) {
+      utils.logError(e);
+    }
+  },
 };
 
 function getCreative(ad) {
@@ -249,6 +268,41 @@ function parseMediaType(creativeBid) {
   } else {
     return BANNER;
   }
+}
+
+function logEvent(eid, data) {
+  let getParams = {
+    protocol: utils.getTopWindowLocation().protocol === 'http:' ? 'http' : 'https',
+    hostname: utils.getTopWindowLocation().protocol === 'http:' ? EVENT_PIXEL_URL : SECURE_EVENT_PIXEL_URL,
+    search: getLoggingData(eid, data)
+  };
+  utils.triggerPixel(url.format(getParams).replace(/&/g, ';'));
+}
+
+function getLoggingData(eid, data) {
+  data = (utils.isArray(data) && data) || [];
+
+  let params = {};
+  let channel, network, dim, adunitCode, timeToRespond, cpm;
+  data.map((adunit) => {
+    adunitCode = adunit.adUnitCode;
+    channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
+    network = channel > 0 ? parseInt(channel / 1000000) : 0;
+    dim = utils.deepAccess(adunit, 'params.0.dimId') * 256 || 0;
+    timeToRespond = adunit.timeout ? adunit.timeout : adunit.timeToRespond;
+    cpm = adunit.cpm;
+  });
+  params.n = network;
+  params.c = channel;
+  params.s = '0';
+  params.x = dim;
+  params.ai = encodeURI('Prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
+  params.pu = encodeURI(utils.getTopWindowUrl()) || '';
+  params.eid = eid;
+  params.e = 'e';
+  params.z = Math.random();
+
+  return params;
 }
 
 registerBidder(spec);
