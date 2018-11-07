@@ -13,76 +13,6 @@ const TIME_TO_LIVE = 60
 let browserParams = {};
 let pageViewId = null
 
-function hasTopAccess () {
-  var hasTopAccess = false
-  try { hasTopAccess = !!top.document } catch (e) {}
-  return hasTopAccess
-}
-
-function isInSafeFrame (windowRef) {
-  const w = windowRef || window
-  if (w.$sf) return w.$sf
-  else if (hasTopAccess() && w !== top) return isInSafeFrame(w.parent)
-  return null
-}
-
-function getGoogleTag (windowRef) {
-  try {
-    const w = windowRef || window
-    var GOOGLETAG = null
-    if ('googletag' in w) {
-      GOOGLETAG = w.googletag
-    } else if (w !== top) {
-      GOOGLETAG = getGoogleTag(w.parent)
-    }
-    return GOOGLETAG
-  } catch (error) {
-    utils.logError('Error getting googletag ', error)
-    return null
-  }
-}
-
-function getAMPContext (windowRef) {
-  const w = windowRef || window
-  var context = null
-  var nameJSON = null
-  if (utils.isPlainObject(w.context)) {
-    context = w.context
-  } else {
-    try {
-      nameJSON = JSON.parse(w.name || null)
-    } catch (error) {
-      utils.logError('Error getting w.name', error)
-    }
-    if (utils.isPlainObject(nameJSON)) {
-      context = nameJSON._context || (nameJSON.attributes ? nameJSON.attributes._context : null)
-    }
-    if (utils.isPlainObject(w.AMP_CONTEXT_DATA)) {
-      context = w.AMP_CONTEXT_DATA
-    }
-  }
-  return context
-}
-
-function getJCSI () {
-  const entrypointOffset = 7
-  const inFrame = (window.top && window.top !== window)
-  const frameType = (!inFrame ? 1 : (isInSafeFrame() ? 2 : (hasTopAccess() ? 3 : 4)))
-  const context = []
-  if (getAMPContext()) {
-    context.push(1)
-  }
-  if (getGoogleTag()) {
-    context.push(2)
-  }
-  const jcsi = {
-    ep: entrypointOffset,
-    fc: frameType,
-    ctx: context
-  }
-  return JSON.stringify(jcsi)
-}
-
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams() {
   let topWindow
@@ -111,7 +41,10 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: getJCSI()
+    jcsi: {
+      t: 0,
+      rq: 7
+    }
   }
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {

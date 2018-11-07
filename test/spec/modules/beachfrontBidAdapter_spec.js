@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import * as utils from 'src/utils';
+import { parse as parseUrl } from 'src/url';
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
@@ -150,9 +151,14 @@ describe('BeachfrontAdapter', function () {
             playerSize: [ width, height ]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ]);
+        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const bidderRequest = {
+          refererInfo: {
+            referer: topLocation.href
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
         const data = requests[0].data;
-        const topLocation = utils.getTopWindowLocation();
         expect(data.isPrebid).to.equal(true);
         expect(data.appId).to.equal(bidRequest.params.appId);
         expect(data.domain).to.equal(document.location.hostname);
@@ -218,11 +224,13 @@ describe('BeachfrontAdapter', function () {
       it('must override video targeting params', function () {
         const bidRequest = bidRequests[0];
         const mimes = ['video/webm'];
+        const playbackmethod = 2;
+        const maxduration = 30;
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.params.video = { mimes };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration });
       });
 
       it('must add GDPR consent data to the request', function () {
@@ -268,9 +276,14 @@ describe('BeachfrontAdapter', function () {
             sizes: [ width, height ]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ]);
+        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const bidderRequest = {
+          refererInfo: {
+            referer: topLocation.href
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
         const data = requests[0].data;
-        const topLocation = utils.getTopWindowLocation();
         expect(data.slots).to.deep.equal([
           {
             slot: bidRequest.adUnitCode,
