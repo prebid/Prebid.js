@@ -50,8 +50,8 @@ export const spec = {
       // set some vars
       let cpm = 0;
       // if there is a value for  0 (`ffa`) use that
-      if(typeof floors[0] != 'undefined') {
-        cpm = floors[0] / 1e6;
+      if(typeof floors[68] != 'undefined') {
+        cpm = floors[68] / 1e6;
       } else {
         // if not...
         freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'FLOOR VALUE NOT FOUND, PRODUCING AVERAGE');
