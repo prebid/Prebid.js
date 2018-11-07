@@ -4,7 +4,7 @@ import { config } from 'src/config';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'livewrapped';
-export const URL = 'https://lwadm.com/ad';
+export const URL = '//lwadm.com/ad';
 const VERSION = '1.1';
 
 export const spec = {
@@ -65,7 +65,7 @@ export const spec = {
       ifa: ifa ? ifa.params.ifa : undefined,
       tid: tid ? tid.params.tid : undefined,
       version: VERSION,
-      gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : false,
+      gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
       cookieSupport: !utils.isSafariBrowser() && utils.cookiesAreEnabled(),
       adRequests: [...adRequests]
