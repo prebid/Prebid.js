@@ -176,9 +176,9 @@ describe('Undertone Adapter', function () {
       const result = spec.getUserSyncs({ pixelEnabled: true });
       expect(result).to.have.lengthOf(2);
       expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=1&of=2');
+      expect(result[0].url).to.equal('//usr.undertone.com/userpixel/syncOne?id=1&of=2');
       expect(result[1].type).to.equal('image');
-      expect(result[1].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=2&of=2');
+      expect(result[1].url).to.equal('//usr.undertone.com/userpixel/syncOne?id=2&of=2');
     });
   });
 });
