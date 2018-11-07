@@ -64,7 +64,6 @@ export const spec = {
           cpm.push(floors[bidder] / 1e6)
         })
         // then, reduce the array and get the avg
-        let len = cpm.length
         cpm = (cpm.reduce((a, b) => a + b, 0) / cpm.length);
       }
       freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Avg CPM is', cpm);
