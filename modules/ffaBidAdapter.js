@@ -2,7 +2,9 @@ import * as utils from 'src/utils';
 import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'example';
-const ENDPOINT_URL = '//local.freestar.io/projects/pubfig.js/examples/ffa.json' //@TODO: update this to the proper URL for data dispensary
+const deviceType = !freestar.deviceInfo.device.type ? "desktop" : freestar.deviceInfo.device.type;
+const ENDPOINT_URL = `${freestar.msg.dispensaryURL}/floors/v2`
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ffa'], // short code
@@ -13,6 +15,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    // every bid is valid to us
     return true;
   },
   /**
@@ -22,11 +25,14 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
+    // instead of requesting a bid based on the adUnit
+    // call data dispensary for the networkFloorMap
     return {
-      method: 'POST',
+      method: 'GET',
       url: ENDPOINT_URL,
       data: {
-        validBidRequests
+        key: `${freestar.fsdata.siteId}${deviceType}`, // pass siteId + deviceType
+        validBidRequests // adUnits will be used in interpretResponse
       },
     };
   },
@@ -37,58 +43,91 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    // @TODO: handle real payload from data dispensary
-    const bidResponses = [];
-    bidRequest.data.validBidRequests.forEach((bidRequest) => {
+    // grab some vars
+    const bidResponses = [], floors = serverResponse.body.networkFloorMap, bids = bidRequest.data.validBidRequests;
+    // loop through the bids
+    bids.forEach((bid) => {
+      // set some vars
       let cpm = 0;
-      if(typeof serverResponse.body.ffa != 'undefined') {
-        cpm = serverResponse.body.ffa;
+      // if there is a value for  0 (`ffa`) use that
+      if(typeof floors[0] != 'undefined') {
+        cpm = floors[0] / 1e6;
       } else {
-        freestar.log({styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', 'FFA floor not found...');
-        if(typeof freestar.networkFloor != 'undefined') {
-          cpm = [];
-          Object.keys(freestar.networkFloor).forEach((bidder) => {
-            freestar.log({styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', bidder, freestar.networkFloor[bidder]);
-            cpm.push(freestar.networkFloor[bidder])
-          })
-          let len = cpm.length
-          cpm = (cpm.reduce((a, b) => a + b, 0) / cpm.length);
-        }
-        freestar.log({styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', 'AVG CPM.', cpm);
+        // if not...
+        freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'FLOOR VALUE NOT FOUND, PRODUCING AVERAGE');
+        // recast cpm to an array
+        cpm = [];
+        // loop through the networkFloor keys
+        Object.keys(floors).forEach((bidder) => {
+          freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bidder, floors[bidder] / 1e6);
+          // push each value to the cpm array
+          cpm.push(floors[bidder] / 1e6)
+        })
+        // then, reduce the array and get the avg
+        let len = cpm.length
+        cpm = (cpm.reduce((a, b) => a + b, 0) / cpm.length);
       }
+      freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Avg CPM is', cpm);
+      // build the bid response, using whatever cpm was derived above
+      // pass a custom ad creative to be rendered on the page, in which the magic happens
       bidResponses.push({
-          requestId: bidRequest.bidId,
+          requestId: bid.bidId,
           cpm: cpm,
-          width: bidRequest.sizes[0][0],
-          height: bidRequest.sizes[0][1],
-          creativeId: bidRequest.auctionId,
+          width: bid.sizes[0][0],
+          height: bid.sizes[0][1],
+          creativeId: bid.auctionId,
           currency: 'USD',
           netRevenue: true,
           ttl: 60,
           ad: `
             <script type="text/javascript">
-                let winner = ${JSON.stringify(bidRequest)}, bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
+                // get some vars
+                // filter bids to make sure it hasn't been rendered yet
+                // then sort the array by cpm
+                if(typeof winner == 'undefined') {
+                    let winner;
+                }
+                winner = ${JSON.stringify(bid)}, bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
                     if(bid.status != 'rendered') {
                         return bid;
                     }
                 }).sort((a,b) => {
                     return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
                 });
+                // if there are bids...
                 if(bids.length > 1) {
-                    parent.freestar.log({styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', 'Rendering Next Ad...', bids[1].cpm, bids[1].adId);
-                    parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[1].adId);
-                    // @TODO: this seems to not work, same ad is used each time after first load
+                    // pass the highest bid to pbjs.renderAd
+                    // and mark it as a winning bid
+                    parent.freestar.log({title:'FFA:', styles:'background: black; color: gold; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
+                    parent.freestar.log({title:'FFA:', styles:'background: black; color: gold; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
+                    parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[0].adId);
                     parent.pbjs.markWinningBidAsUsed({
-                        adUnitCode: winner.adUnitCode,
-                        adId: bids[1].adId
+                        adUnitCode: bids[0].adUnitCode,
+                        adId: bids[0].adId
+                    });
+                    parent.freestar.msg.que.push({
+                        eventType: 'ffaBidWon',
+                        args: {
+                            winningCPM: ${cpm},
+                            nextHighestBidCPM: bids[0].cpm,
+                            nextHighestBidBidderCode: bids[0].bidderCode,
+                            nextHighestBidMediaType: bids[0].mediaType,
+                            lowestHighestBidCPM: bids[bids.length - 1].cpm,
+                            lowestHighestBidBidderCode: bids[bids.length - 1].bidderCode,
+                            lowestHighestBidMediaType: bids[bids.length - 1].mediaType,
+                        }
                     });
                 } else {
-                    parent.freestar.log({styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', 'NO OTHER BIDS FOUND');
+                    // if not...
+                    // rebid on the slot
+                    parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND');
+                    parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
                 }
             </script>
           `
         });
     })
+    // return the bid response
     return bidResponses;
   },
 
@@ -100,6 +139,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses) {
+    // no syncs
     return;
   },
 
@@ -117,8 +157,6 @@ export const spec = {
     */
     onBidWon: function(bid) {
       // Bidder specific code
-      parent.freestar.log({styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Freestar Floor Adapter', 'onBidWon', bid);
-      // @TODO: phone home with the winning message
     }
 }
 registerBidder(spec);
