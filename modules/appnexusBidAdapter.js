@@ -28,6 +28,7 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 
+// test comment
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
