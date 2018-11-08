@@ -13,6 +13,7 @@
     "criteoBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
+    "ffaBidAdapter",
     "gumgumBidAdapter",
     "ixBidAdapter",
     "justpremiumBidAdapter",
