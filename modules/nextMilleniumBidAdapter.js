@@ -3,7 +3,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'nextMillenium';
-const ENDPOINT_URL = 'https://brainlyads.com/hb/s2s';
+const HOST = 'https://brainlyads.com';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 360;
 
@@ -12,7 +12,9 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placement_id && utils.isNumber(bid.params.placement_id));
+    return !!(
+      bid.params.placement_id && utils.isNumber(bid.params.placement_id)
+    );
   },
 
   buildRequests: function(validBidRequests) {
@@ -21,7 +23,7 @@ export const spec = {
     utils._each(validBidRequests, function(bid) {
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL,
+        url: HOST + '/hb/s2s',
         options: {
           contentType: 'application/json',
           withCredentials: true
@@ -38,30 +40,46 @@ export const spec = {
 
   interpretResponse: function(serverResponse, bidRequest) {
     try {
-      const response = serverResponse.body;
+      const bidResponse = serverResponse.body;
       const bidResponses = [];
 
-      utils._each(response, function(bidResponse) {
-        if (!bidResponse.is_passback) {
-          bidResponses.push({
-            requestId: bidRequest.bidId,
-            cpm: bidResponse.price,
-            width: bidResponse.size[0],
-            height: bidResponse.size[1],
-            creativeId: bidResponse.hash,
-            currency: CURRENCY,
-            netRevenue: false,
-            ttl: TIME_TO_LIVE,
-            ad: bidResponse.content
-          });
-        }
-      });
+      if (Number(bidResponse.cpm) > 0) {
+        bidResponses.push({
+          requestId: bidRequest.bidId,
+          cpm: bidResponse.cpm,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          creativeId: bidResponse.creativeId,
+          currency: CURRENCY,
+          netRevenue: false,
+          ttl: TIME_TO_LIVE,
+          ad: bidResponse.ad
+        });
+      }
 
       return bidResponses;
     } catch (err) {
       utils.logError(err);
       return [];
     }
+  },
+
+  getUserSyncs: function(syncOptions) {
+    const syncs = []
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: HOST + '/hb/s2s/matching'
+      });
+    }
+
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: HOST + '/hb/s2s/matching'
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
