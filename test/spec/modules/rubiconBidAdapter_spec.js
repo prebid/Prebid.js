@@ -818,6 +818,72 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        describe('first party data', function () {
+          it('should not have any tg_v or tg_i params if all are undefined', function () {
+            let params = {
+              inventory: {
+                rating: null,
+                prodtype: undefined
+              },
+              visitor: {
+                ucat: undefined,
+                lastsearch: null,
+                likes: undefined
+              },
+            };
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that no tg_v or tg_i keys are present in the request
+            let matchingExp = RegExp('^tg_(i|v)\..*$')
+            Object.keys(data).forEach(key => {
+              expect(key).to.not.match(matchingExp);
+            });
+          });
+
+          it('should contain valid params when some are undefined', function () {
+            let params = {
+              inventory: {
+                rating: undefined,
+                prodtype: ['tech', 'mobile']
+              },
+              visitor: {
+                ucat: null,
+                lastsearch: 'iphone',
+                likes: undefined
+              },
+            };
+            let undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes']
+            let expectedQuery = {
+              'tg_v.lastsearch': 'iphone',
+              'tg_i.prodtype': 'tech,mobile',
+            }
+
+            // Overwrite the bidder request params with the above ones
+            Object.assign(bidderRequest.bids[0].params, params);
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure none of the undefined keys are in query
+            undefinedKeys.forEach(key => {
+              expect(typeof data[key]).to.equal('undefined');
+            });
+
+            // make sure the expected and defined ones do show up still
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.equal(value);
+            });
+          });
+        });
+
         describe('singleRequest config', function () {
           it('should group all bid requests with the same site id', function () {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);
@@ -1246,8 +1312,13 @@ describe('the rubicon adapter', function () {
           expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
         });
 
-        it('should not validate bid request when a invalid video object and no banner object is passed in', function () {
-          createVideoBidderRequestNoVideo();
+        it('should not validate bid request when a params.video object is present but no context instream or outstream is passed in', function () {
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes = {
+            video: {}
+          }
+          bid.params.video = {};
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
@@ -1255,20 +1326,23 @@ describe('the rubicon adapter', function () {
           const bidRequestCopy = clone(bidderRequest.bids[0]);
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = {};
+          bidRequestCopy.params.video = {sizeId: 201};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = undefined;
+          bidRequestCopy.mediaTypes.video = {context: undefined};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = 123;
+          bidRequestCopy.mediaTypes.video = {context: ''};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = {size_id: undefined};
+          bidRequestCopy.mediaTypes.video = {context: 'random'};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          delete bidRequestCopy.params.video;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+          bidRequestCopy.mediaTypes.video = {context: 'instream'};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+
+          bidRequestCopy.mediaTypes.video = {context: 'outstream'};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
         });
 
         it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', function () {
@@ -1278,19 +1352,20 @@ describe('the rubicon adapter', function () {
           );
 
           const bidderRequestCopy = clone(bidderRequest);
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
-
           bidderRequestCopy.bids[0].params.video = {};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = undefined;
+          bidderRequestCopy.bids[0].params.video = {size_id: undefined};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = NaN;
+          bidderRequestCopy.bids[0].params.video = {size_id: 'size'};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          delete bidderRequestCopy.bids[0].params.video;
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+          bidderRequestCopy.bids[0].params.video = {size_id: '201'};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+
+          bidderRequestCopy.bids[0].params.video = {size_id: 201};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
         });
 
         it('bid request is valid when video context is outstream', function () {
@@ -1304,6 +1379,36 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
           expect(request.data.slots[0].size_id).to.equal(203);
+        });
+
+        it('should send banner request when outstream or instream video included but no rubicon video obect is present', function () {
+          let bid = bidderRequest.bids[0];
+          // add banner and video mediaTypes
+          bidderRequest.mediaTypes = {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              context: 'outstream'
+            }
+          };
+          // no video object in rubicon params, so we should see one call made for banner
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+
+          bidderRequest.mediaTypes.video.context = 'instream';
+
+          requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {

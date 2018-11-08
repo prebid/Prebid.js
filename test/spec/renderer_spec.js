@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { Renderer } from 'src/Renderer';
-const adloader = require('../../src/adloader');
 
 describe('Renderer: A renderer installed on a bid response', function () {
   let testRenderer1;
@@ -8,13 +7,7 @@ describe('Renderer: A renderer installed on a bid response', function () {
   let spyRenderFn;
   let spyEventHandler;
 
-  let loadScriptStub;
-
   beforeEach(function () {
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
-
     testRenderer1 = Renderer.install({
       url: 'https://httpbin.org/post',
       config: { test: 'config1' },
@@ -28,10 +21,6 @@ describe('Renderer: A renderer installed on a bid response', function () {
 
     spyRenderFn = sinon.spy();
     spyEventHandler = sinon.spy();
-  });
-
-  afterEach(function () {
-    loadScriptStub.restore();
   });
 
   it('is an instance of Renderer', function () {
