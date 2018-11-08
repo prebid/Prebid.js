@@ -35,5 +35,6 @@
     "tripleliftBidAdapter",
     "trustxBidAdapter",
     "undertoneBidAdapter",
-    "unrulyBidAdapter"
+    "unrulyBidAdapter",
+    "yieldNexusBidAdapter"
 ]
