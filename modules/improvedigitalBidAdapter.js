@@ -1,12 +1,11 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import { userSync } from 'src/userSync';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.2.0',
+  version: '4.4.0',
   code: BIDDER_CODE,
   aliases: ['id'],
 
@@ -79,11 +78,24 @@ export const spec = {
       bid.cpm = parseFloat(bidObject.price);
       bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
-      if (utils.isNumber(bidObject.lid)) {
+
+      // Deal ID. Composite ads can have multiple line items and the ID of the first
+      // dealID line item will be used.
+      if (utils.isNumber(bidObject.lid) && bidObject.buying_type === 'deal_id') {
         bid.dealId = bidObject.lid;
-      } else if (typeof bidObject.lid === 'object' && bidObject.lid['1']) {
-        bid.dealId = bidObject.lid['1'];
+      } else if (Array.isArray(bidObject.lid) &&
+        Array.isArray(bidObject.buying_type) &&
+        bidObject.lid.length === bidObject.buying_type.length) {
+        let isDeal = false;
+        bidObject.buying_type.forEach((bt, i) => {
+          if (isDeal) return;
+          if (bt === 'deal_id') {
+            isDeal = true;
+            bid.dealId = bidObject.lid[i];
+          }
+        });
       }
+
       bid.height = bidObject.h;
       bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
       bid.requestId = bidObject.id;
@@ -91,15 +103,34 @@ export const spec = {
       bid.width = bidObject.w;
 
       bids.push(bid);
-
-      // Register user sync URLs
-      if (utils.isArray(bidObject.sync)) {
-        utils._each(bidObject.sync, function (syncElement) {
-          userSync.registerSync('image', spec.code, syncElement);
-        });
-      }
     });
     return bids;
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    if (syncOptions.pixelEnabled) {
+      const syncs = [];
+      serverResponses.forEach(response => {
+        response.body.bid.forEach(bidObject => {
+          if (utils.isArray(bidObject.sync)) {
+            bidObject.sync.forEach(syncElement => {
+              if (syncs.indexOf(syncElement) === -1) {
+                syncs.push(syncElement);
+              }
+            });
+          }
+        });
+      });
+      return syncs.map(sync => ({ type: 'image', url: sync }));
+    }
+    return [];
   }
 };
 

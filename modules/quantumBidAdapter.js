@@ -127,7 +127,7 @@ export const spec = {
 
           let jstracker = '';
           if (serverBody.native.jstracker) {
-            jstracker = serverBody.native.jstracker;
+            jstracker = encodeURIComponent(serverBody.native.jstracker);
           }
 
           if (serverBody.nurl) {

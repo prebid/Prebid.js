@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import {parse as parseUrl} from 'src/url'
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
@@ -22,13 +23,13 @@ export const spec = {
       'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
   },
   buildRequests: function(bidRequests, bidderRequest) {
-    let impDispatch = dispatchImps(bidRequests);
+    let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
     const gdprConsent = bidderRequest.gdprConsent;
     const auctionId = bidderRequest.auctionId;
     const requests = [];
     Object.keys(impDispatch).forEach(host => {
       Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent);
+        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, bidderRequest.refererInfo);
         requests.push({
           method: 'GET',
           url: `${window.location.protocol}//${host}/rtbg`,
@@ -87,7 +88,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
   }
 };
 
@@ -96,8 +97,9 @@ registerBidder(spec);
 /**
  *  Dispatch impressions by ad network host and zone
  */
-function dispatchImps(bidRequests) {
-  return bidRequests.map(buildImp)
+function dispatchImps(bidRequests, refererInfo) {
+  let secure = (refererInfo && refererInfo.referer.indexOf('https:') === 0);
+  return bidRequests.map(bidRequest => buildImp(bidRequest, secure))
     .reduce((acc, curr, index) => {
       let bidRequest = bidRequests[index];
       let zoneId = bidRequest.params.zoneId;
@@ -112,7 +114,7 @@ function dispatchImps(bidRequests) {
 /**
  *  Builds parameters object for single impression
  */
-function buildImp(bidRequest) {
+function buildImp(bidRequest, secure) {
   const imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
@@ -137,7 +139,7 @@ function buildImp(bidRequest) {
         .forEach(param => imp.video[param] = bidRequest.params.video[param]);
     }
   }
-  if (utils.getTopWindowLocation().protocol === 'https:') {
+  if (secure) {
     imp.secure = 1;
   }
   return imp;
@@ -149,7 +151,7 @@ function buildImp(bidRequest) {
  * @return Array[Array[Number]]
  */
 function canonicalizeSizesArray(sizes) {
-  if (sizes.length == 2 && !utils.isArray(sizes[0])) {
+  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
     return [sizes];
   }
   return sizes;
@@ -160,12 +162,14 @@ function canonicalizeSizesArray(sizes) {
  * @param imps collection of impressions
  * @param auctionId
  * @param gdprConsent
+ * @param refInfo
+ * @return Object complete rtb request
  */
-function buildRtbRequest(imps, auctionId, gdprConsent) {
+function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
   let req = {
     'id': auctionId,
     'imp': imps,
-    'site': createSite(),
+    'site': createSite(refInfo),
     'at': 1,
     'device': {
       'ip': 'caller',
@@ -197,12 +201,20 @@ function getLanguage() {
 /**
  * Creates site description object
  */
-function createSite() {
-  var location = utils.getTopWindowLocation();
-  return {
-    'domain': location.hostname,
-    'page': location.href.split('?')[0]
+function createSite(refInfo) {
+  let url = parseUrl(refInfo.referer);
+  let result = {
+    'domain': url.hostname,
+    'page': url.protocol + '://' + url.hostname + url.pathname
   };
+  if (self === top && document.referrer) {
+    result.ref = document.referrer;
+  }
+  let keywords = document.getElementsByTagName('meta')['keywords'];
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+  return result;
 }
 
 /**

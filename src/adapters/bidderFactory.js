@@ -53,6 +53,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSiz
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
  *   important ones should come first, since publishers may limit how many are dropped on their page.
+ * @property {function(object): object} transformBidParams Updates bid params before creating bid request
+ }}
  */
 
 /**
@@ -175,22 +177,8 @@ export function newBidder(spec) {
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses(bids) {
-        const bidsArray = bids ? (bids[0] ? bids : [bids]) : [];
-
-        const videoBid = bidsArray.some(bid => bid.mediaType === 'video');
-        const cacheEnabled = config.getConfig('cache.url');
-
-        // video bids with cache enabled need to be cached first before they are considered done
-        if (!(videoBid && cacheEnabled)) {
-          done();
-        }
-
-        // TODO: the code above needs to be refactored. We should always call done when we're done. if the auction
-        // needs to do cleanup before _it_ can be done it should handle that itself in the auction.  It should _not_
-        // require us, the bidders, to conditionally call done.  That makes the whole done API very flaky.
-        // As soon as that is refactored, we can move this emit event where it should be, within the done function.
+        done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-
         registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
@@ -381,7 +369,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 export function isValid(adUnitCode, bid, bidRequests) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
   function errorMessage(msg) {

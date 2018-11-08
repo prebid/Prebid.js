@@ -5,18 +5,15 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
-var path = require('path');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
-var clean = require('gulp-clean');
+var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
-var del = require('del');
-var gulpDocumentation = require('gulp-documentation');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
@@ -36,23 +33,134 @@ var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' *
 var analyticsDirectory = '../analytics';
 var port = 9999;
 
-// Tasks
-gulp.task('default', ['webpack']);
+// these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
+var explicitModules = [
+  'pre1api'
+];
 
-gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
+// all the following functions are task functions
+function bundleToStdout() {
+  nodeBundle().then(file => console.log(file));
+}
+bundleToStdout.displayName = 'bundle-to-stdout';
 
-gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
-
-gulp.task('run-tests', ['lint', 'test-coverage']);
-
-gulp.task('build', ['build-bundle-prod']);
-
-gulp.task('clean', function () {
+function clean() {
   return gulp.src(['build'], {
-      read: false
-    })
-    .pipe(clean());
-});
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
+}
+
+function e2etestReport() {
+  var reportPort = 9010;
+  var targetDestinationDir = './e2etest-report';
+  helpers.createEnd2EndTestReport(targetDestinationDir);
+  connect.server({
+    port: reportPort,
+    root: './',
+    livereload: true
+  });
+
+  setTimeout(function() {
+    opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
+  }, 5000);
+};
+e2etestReport.displayName = 'e2etest-report';
+
+// Dependant task for building postbid. It escapes postbid-config file.
+function escapePostbidConfig() {
+  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
+    .pipe(jsEscape())
+    .pipe(gulp.dest('build/postbid/'));
+};
+escapePostbidConfig.displayName = 'escape-postbid-config';
+
+function lint(done) {
+  if (argv.nolint) {
+    return done();
+  }
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
+    .pipe(eslint())
+    .pipe(eslint.format('stylish'))
+    .pipe(eslint.failAfterError());
+};
+
+// View the code coverage report in the browser.
+function viewCoverage(done) {
+  var coveragePort = 1999;
+
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/karma_html',
+    livereload: false
+  });
+  opens('http://localhost:' + coveragePort);
+  done();
+};
+viewCoverage.displayName = 'view-coverage';
+
+// Watch Task with Live Reload
+function watch(done) {
+  var mainWatcher = gulp.watch([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'test/spec/**/*.js',
+    '!test/spec/loaders/**/*.js'
+  ]);
+  var loaderWatcher = gulp.watch([
+    'loaders/**/*.js',
+    'test/spec/loaders/**/*.js'
+  ]);
+
+  connect.server({
+    https: argv.https,
+    port: port,
+    root: './',
+    livereload: true
+  });
+
+  mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
+  loaderWatcher.on('all', gulp.series(lint));
+  done();
+};
+
+function makeDevpackPkg() {
+  var cloned = _.cloneDeep(webpackConfig);
+  cloned.devtool = 'source-map';
+  var externalModules = helpers.getArgModules();
+
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
+    .pipe(webpackStream(cloned, webpack))
+    .pipe(replace('$prebid.version$', prebid.version))
+    .pipe(gulp.dest('build/dev'))
+    .pipe(connect.reload());
+}
+
+function makeWebpackPkg() {
+  var cloned = _.cloneDeep(webpackConfig);
+
+  delete cloned.devtool;
+
+  var externalModules = helpers.getArgModules();
+
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
+    .pipe(webpackStream(cloned, webpack))
+    .pipe(replace('$prebid.version$', prebid.version))
+    .pipe(uglify())
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
+    .pipe(optimizejs())
+    .pipe(gulp.dest('build/dist'))
+    .pipe(connect.reload());
+}
 
 function gulpBundle(dev) {
   return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
@@ -71,20 +179,15 @@ function nodeBundle(modules) {
   });
 }
 
-// these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
-var explicitModules = [
-  'pre1api'
-];
-
 function bundle(dev, moduleArr) {
-  var modules = moduleArr || helpers.getArgModules(),
-      allModules = helpers.getModuleNames(modules);
+  var modules = moduleArr || helpers.getArgModules();
+  var allModules = helpers.getModuleNames(modules);
 
-  if(modules.length === 0) {
-    modules = allModules.filter(module => !explicitModules.includes(module));
+  if (modules.length === 0) {
+    modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
     var diff = _.difference(modules, allModules);
-    if(diff.length !== 0) {
+    if (diff.length !== 0) {
       throw new gutil.PluginError({
         plugin: 'bundle',
         message: 'invalid modules: ' + diff.join(', ')
@@ -106,13 +209,13 @@ function bundle(dev, moduleArr) {
   gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
-      entries
-    )
+    entries
+  )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-        global: prebid.globalVarName
-      }
+      global: prebid.globalVarName
+    }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
@@ -125,58 +228,14 @@ function newKarmaCallback(done) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
       if (argv.browserstack) {
-        process.exit(0);
+        // process.exit(0);
+        done(); // test this with travis (or circleci)
       } else {
         done();
       }
     }
   }
 }
-
-gulp.task('build-bundle-dev', ['devpack'], gulpBundle.bind(null, true));
-gulp.task('build-bundle-prod', ['webpack'], gulpBundle.bind(null, false));
-gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
-
-gulp.task('bundle-to-stdout', function() {
-  nodeBundle().then(file => console.log(file));
-});
-
-gulp.task('devpack', ['clean'], function () {
-  var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
-  var externalModules = helpers.getArgModules();
-
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  const moduleSources = helpers.getModulePaths(externalModules);
-
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(gulp.dest('build/dev'))
-    .pipe(connect.reload());
-});
-
-gulp.task('webpack', ['clean'], function () {
-  var cloned = _.cloneDeep(webpackConfig);
-
-  delete cloned.devtool;
-
-  var externalModules = helpers.getArgModules();
-
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  const moduleSources = helpers.getModulePaths(externalModules);
-
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(optimizejs())
-    .pipe(gulp.dest('build/dist'))
-    .pipe(connect.reload());
-});
 
 // Run the unit tests.
 //
@@ -186,41 +245,33 @@ gulp.task('webpack', ['clean'], function () {
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
-gulp.task('test', ['clean'], function (done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
+// If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
+function test(done) {
+  if (argv.notest) {
+    done();
+  } else {
+    var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-  var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
-  if (browserOverride.length > 0) {
-    karmaConf.browsers = browserOverride;
+    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    if (browserOverride.length > 0) {
+      karmaConf.browsers = browserOverride;
+    }
+
+    new KarmaServer(karmaConf, newKarmaCallback(done)).start();
   }
-
-  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
-});
+}
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
-gulp.task('test-coverage', ['clean'], function(done) {
+function testCoverage(done) {
   new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
-});
+}
 
-// View the code coverage report in the browser.
-gulp.task('view-coverage', function (done) {
-  var coveragePort = 1999;
-
-  connect.server({
-    port: coveragePort,
-    root: 'build/coverage/karma_html',
-    livereload: false
-  });
-  opens('http://localhost:' + coveragePort);
-  done();
-});
-
-gulp.task('coveralls', ['test-coverage'], function() { // 2nd arg is a dependency: 'test' must be finished
+function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
-});
+}
 
 // Watch Task with Live Reload
 gulp.task('watch', function () {
@@ -229,7 +280,7 @@ gulp.task('watch', function () {
     'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['lint', 'build-bundle-dev', 'test']);
+  ], ['build-bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
@@ -242,29 +293,9 @@ gulp.task('watch', function () {
   });
 });
 
-gulp.task('lint', () => {
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
-    .pipe(eslint())
-    .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError());
-});
-
-gulp.task('clean-docs', function () {
-  del(['docs']);
-});
-
-gulp.task('docs', ['clean-docs'], function () {
-  return gulp.src('src/prebid.js')
-    .pipe(gulpDocumentation('md'))
-    .on('error', function (err) {
-      gutil.log('`gulp-documentation` failed:', err.message);
-    })
-    .pipe(gulp.dest('docs'));
-});
-
-gulp.task('e2etest', ['devpack', 'webpack'], function() {
+function e2eTest() {
   var cmdQueue = [];
-  if(argv.browserstack) {
+  if (argv.browserstack) {
     var browsers = require('./browsers.json');
     delete browsers['bs_ie_9_windows_7'];
 
@@ -276,11 +307,11 @@ gulp.task('e2etest', ['devpack', 'webpack'], function() {
 
     var startWith = 'bs';
 
-    Object.keys(browsers).filter(function(v){
+    Object.keys(browsers).filter(function(v) {
       return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
-    }).map(function(v,i,arr) {
-      var newArr = (i%2 === 0) ? arr.slice(i,i+2) : null;
-      if(newArr) {
+    }).map(function(v, i, arr) {
+      var newArr = (i % 2 === 0) ? arr.slice(i, i + 2) : null;
+      if (newArr) {
         var cmd = 'nightwatch --env ' + newArr.join(',') + cmdStr;
         cmdQueue.push(cmd);
       }
@@ -289,38 +320,50 @@ gulp.task('e2etest', ['devpack', 'webpack'], function() {
 
   return gulp.src('')
     .pipe(shell(cmdQueue.join(';')));
-});
-
-gulp.task('e2etest-report', function() {
-  var reportPort = 9010;
-  var targetDestinationDir = './e2etest-report';
-  helpers.createEnd2EndTestReport(targetDestinationDir);
-  connect.server({
-    port: reportPort,
-    root: './',
-    livereload: true
-  });
-
-  setTimeout(function() {
-    opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
-  }, 5000);
-});
+}
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
 // More info can be found here http://prebid.org/overview/what-is-post-bid.html
-gulp.task('build-postbid', ['escape-postbid-config'], function() {
+
+function buildPostbid() {
   var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
 
   return gulp.src('./integrationExamples/postbid/oas/postbid.js')
     .pipe(replace('\[%%postbid%%\]', fileContent))
     .pipe(gulp.dest('build/postbid/'));
-});
+}
 
-// Dependant task for building postbid. It escapes postbid-config file.
-gulp.task('escape-postbid-config', function() {
-  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
-    .pipe(jsEscape())
-    .pipe(gulp.dest('build/postbid/'));
-});
+// support tasks
+gulp.task(lint);
+gulp.task(watch);
+
+gulp.task(clean);
+
+gulp.task(escapePostbidConfig);
+
+gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+
+// public tasks (dependencies are needed for each task since they can be ran on their own)
+gulp.task('test', gulp.series(clean, lint, test));
+
+gulp.task('test-coverage', gulp.series(clean, testCoverage));
+gulp.task(viewCoverage);
+
+gulp.task('coveralls', gulp.series('test-coverage', coveralls));
+
+gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
+gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
+
+gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('default', gulp.series(clean, makeWebpackPkg));
+
+gulp.task(e2etestReport);
+gulp.task('e2etest', gulp.series(clean, gulp.parallel(makeDevpackPkg, makeWebpackPkg), e2eTest));
+
+// other tasks
+gulp.task(bundleToStdout);
+gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+gulp.task('serve-nw', gulp.parallel(lint, watch, 'e2etest'));
 
 module.exports = nodeBundle;

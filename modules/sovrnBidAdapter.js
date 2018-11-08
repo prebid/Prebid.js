@@ -42,7 +42,6 @@ export const spec = {
         page: loc.host + loc.pathname + loc.search + loc.hash
       }
     };
-    if (iv) sovrnBidReq.iv = iv;
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       sovrnBidReq.regs = {
@@ -55,9 +54,13 @@ export const spec = {
         }};
     }
 
+    let url = `//ap.lijit.com/rtb/bid?` +
+      `src=${REPO_AND_VERSION}`;
+    if (iv) url += `&iv=${iv}`;
+
     return {
       method: 'POST',
-      url: `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`,
+      url: url,
       data: JSON.stringify(sovrnBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -87,12 +90,30 @@ export const spec = {
           netRevenue: true,
           mediaType: BANNER,
           ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-          ttl: 60000
+          ttl: 60
         });
       });
     }
     return sovrnBidResponses;
-  }
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
+      let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
+        .map(rsp => { return rsp.body.ext.iid });
+      let consentString = '';
+      if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+        consentString = gdprConsent.consentString
+      }
+      if (iidArr[0]) {
+        return [{
+          type: 'iframe',
+          url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+        }];
+      }
+    }
+    return [];
+  },
 };
 
 registerBidder(spec);
