@@ -85,10 +85,10 @@ function _createServerRequest(bidRequest, gdprConsent) {
   };
   ttxRequest.ext = {
     ttx: {
-      caller: {
+      caller: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }
+      }]
     }
   }
 

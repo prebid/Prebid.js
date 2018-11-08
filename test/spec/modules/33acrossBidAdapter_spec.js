@@ -61,10 +61,10 @@ describe('33acrossBidAdapter:', function () {
       },
       ext: {
         ttx: {
-          caller: {
+          caller: [{
             'name': 'prebidjs',
             'version': '$prebid.version$'
-          }
+          }]
         }
       }
     };
