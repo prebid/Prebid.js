@@ -24,9 +24,8 @@ var adUnits = [
       {
         bidder: 'openxoutstream',
         params: {
-          unit: '53943996499',
+          unit: '540141567',
           delDomain: 'se-demo-d.openx.net',
-          publisher_page_url: 'yieldmo.com',
           width:  '300',
           height: '250',
         }

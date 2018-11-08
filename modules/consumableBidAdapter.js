@@ -127,7 +127,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//s.zkcdn.net/ss/' + siteId + '.html'
+        url: '//sync.serverbid.com/ss/' + siteId + '.html'
       }];
     } else {
       utils.logWarn(bidder + ': Please enable iframe based user syncing.');

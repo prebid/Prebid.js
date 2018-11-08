@@ -365,7 +365,7 @@ const OPEN_RTB_PROTOCOL = {
         // OpenRTB response contains the adunit code and bidder name. These are
         // combined to create a unique key for each bid since an id isn't returned
         const key = `${adUnit.code}${bid.bidder}`;
-        this.bidMap[key] = bid;
+        bidIdMap[key] = bid;
         // check for and store valid aliases to add to the request
         if (adaptermanager.aliasRegistry[bid.bidder]) {
           aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];

@@ -1,0 +1,25 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'install' ]
+2 info using npm@3.10.10
+3 info using node@v6.9.5
+4 verbose stack Error: Cannot find module 'realize-package-specifier'
+4 verbose stack     at Function.Module._resolveFilename (module.js:469:15)
+4 verbose stack     at Function.Module._load (module.js:417:25)
+4 verbose stack     at Module.require (module.js:497:17)
+4 verbose stack     at require (internal/module.js:20:19)
+4 verbose stack     at Object.<anonymous> (/usr/local/lib/node_modules/npm/lib/install/deps.js:11:31)
+4 verbose stack     at Module._compile (module.js:570:32)
+4 verbose stack     at Object.Module._extensions..js (module.js:579:10)
+4 verbose stack     at Module.load (module.js:487:32)
+4 verbose stack     at tryModuleLoad (module.js:446:12)
+4 verbose stack     at Function.Module._load (module.js:438:3)
+5 verbose cwd /Users/acook/Documents/Projects/Prebid.js
+6 error Darwin 17.7.0
+7 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "install"
+8 error node v6.9.5
+9 error npm  v3.10.10
+10 error code MODULE_NOT_FOUND
+11 error Cannot find module 'realize-package-specifier'
+12 error If you need help, you may report this error at:
+12 error     <https://github.com/npm/npm/issues>
+13 verbose exit [ 1, true ]

@@ -110,7 +110,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   function getProperties() {
     return {
       auctionId: _auctionId,
-      auctionStart: _auctionStart,
+      timestamp: _auctionStart,
       auctionEnd: _auctionEnd,
       auctionStatus: _auctionStatus,
       adUnits: _adUnits,
@@ -196,6 +196,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
     if (bidRequests.length < 1) {
       utils.logWarn('No valid bid requests returned for auction');
+      auctionDone();
     } else {
       let call = {
         bidRequests,
