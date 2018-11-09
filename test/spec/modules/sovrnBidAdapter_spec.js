@@ -317,7 +317,10 @@ describe('sovrnBidAdapter', function() {
   })
   describe('LogError', () => {
     it('should build and append an error object', () => {
-      const thrown = new Error()
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
       const data = {name: 'Oscar Hathenswiotch'}
       const err = new LogError(thrown, data)
       err.append()
@@ -327,7 +330,10 @@ describe('sovrnBidAdapter', function() {
       expect(errdata.d.name).to.equal('Oscar Hathenswiotch')
     })
     it('should drop data when there is too much', () => {
-      const thrown = new Error()
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
       const tooLong = () => {
         let str = ''
         for (let i = 0; i < 10000; i++) {
@@ -344,7 +350,10 @@ describe('sovrnBidAdapter', function() {
       expect(errdata.d).to.be.an('undefined')
     })
     it('should drop data and stack when there is too much', () => {
-      const thrown = new Error()
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
       const tooLong = () => {
         let str = ''
         for (let i = 0; i < 10000; i++) {
@@ -363,7 +372,10 @@ describe('sovrnBidAdapter', function() {
       expect(errdata.s).to.be.an('undefined')
     })
     it('should drop send a reduced message when other reduction methods fail', () => {
-      const thrown = new Error()
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
       const tooLong = () => {
         let str = ''
         for (let i = 0; i < 10000; i++) {
