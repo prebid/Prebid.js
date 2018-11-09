@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { spec } from 'modules/sovrnBidAdapter';
+import { spec, LogError } from 'modules/sovrnBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { REPO_AND_VERSION } from 'src/constants';
+import { SSL_OP_SINGLE_ECDH_USE } from 'constants';
 
 const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
 
@@ -299,19 +300,87 @@ describe('sovrnBidAdapter', function() {
           'type': 'iframe',
           'url': '//ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
         }
-      ];
+      ]
       let returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
-    });
+    })
 
     it('should not return if iid missing on server response', () => {
-      let returnStatement = spec.getUserSyncs(syncOptions, []);
+      let returnStatement = spec.getUserSyncs(syncOptions, [])
       expect(returnStatement).to.be.empty;
-    });
+    })
 
     it('should not return if iframe syncs disabled', () => {
-      let returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse);
-      expect(returnStatement).to.be.empty;
-    });
-  });
-});
+      let returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse)
+      expect(returnStatement).to.be.empty
+    })
+  })
+  describe('LogError', () => {
+    it('should build and append an error object', () => {
+      const thrown = new Error()
+      const data = {name: 'Oscar Hathenswiotch'}
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(1)
+      const errdata = JSON.parse(atob(errList[0].url.split('=')[1]))
+      expect(errdata.d.name).to.equal('Oscar Hathenswiotch')
+    })
+    it('should drop data when there is too much', () => {
+      const thrown = new Error()
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch', tooLong: tooLong()}
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(2)
+      const errdata = JSON.parse(atob(errList[1].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+    })
+    it('should drop data and stack when there is too much', () => {
+      const thrown = new Error()
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch'}
+      thrown.stack = tooLong()
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(3)
+      const errdata = JSON.parse(atob(errList[2].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+      expect(errdata.s).to.be.an('undefined')
+    })
+    it('should drop send a reduced message when other reduction methods fail', () => {
+      const thrown = new Error()
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch'}
+      thrown.message = tooLong()
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(4)
+      const errdata = JSON.parse(atob(errList[3].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+      expect(errdata.s).to.be.an('undefined')
+      expect(errdata.m).to.equal('unknown error message')
+    })
+  })
+})

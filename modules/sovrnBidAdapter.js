@@ -144,7 +144,7 @@ export const spec = {
   },
 }
 
-class LogError {
+export class LogError {
   constructor(e, data) {
     utils.logError(e)
     this.error = {}
@@ -174,6 +174,9 @@ class LogError {
     }
     let obj = {type: 'image', url: errstr}
     errorpxls.push(obj)
+  }
+  static getErrPxls() {
+    return errorpxls
   }
 }
 
