@@ -30,6 +30,7 @@
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
+    "NO_BID": "noBid",
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "SET_TARGETING": "setTargeting",
