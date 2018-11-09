@@ -60,8 +60,18 @@ export const spec = {
     let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
     SUBLIME_ZONE = params.zoneId;
 
+    // debug pixel if window[callbackName] already exists
+    if (typeof window[callbackName] === "function") {
+      if (typeof top.sublime !== "undefined") {
+        top.sublime.analytics.fire('dpbcalae', {
+          qs: {
+            z: SUBLIME_ZONE
+          }
+        });
+      }
+    }
     window[callbackName] = (response) => {
-      top.sublime.analytics.fire('dpnlp', {
+      top.sublime.analytics.fire('dpubclbcal', {
         qs: {
           z: SUBLIME_ZONE
         }
@@ -106,6 +116,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
+    // debug pixel interpret response
+    top.sublime.analytics.fire('dintres', {
+      qs: {
+        z: SUBLIME_ZONE
+      }
+    });
+
     const bidResponses = [];
     const request = serverResponse.body;
 
@@ -130,8 +147,23 @@ export const spec = {
             z: SUBLIME_ZONE
           }
         });
+      } else {
+        // debug pixel no cpm
+        top.sublime.analytics.fire('dirnocpm', {
+          qs: {
+            z: SUBLIME_ZONE
+          }
+        });
       }
+    } else {
+        // debug pixel no request
+        top.sublime.analytics.fire('dirnorq', {
+          qs: {
+            z: SUBLIME_ZONE
+          }
+        });
     }
+
     return bidResponses;
   },
 
