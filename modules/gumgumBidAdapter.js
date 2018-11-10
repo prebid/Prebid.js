@@ -40,7 +40,11 @@ function _getBrowserParams() {
     sh: topScreen.height,
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1
+    dpr: topWindow.devicePixelRatio || 1,
+    jcsi: {
+      t: 0,
+      rq: 7
+    }
   }
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {

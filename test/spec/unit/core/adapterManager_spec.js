@@ -11,7 +11,6 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 var s2sTesting = require('../../../../modules/s2sTesting');
 var events = require('../../../../src/events');
-const adloader = require('../../../../src/adloader');
 
 const CONFIG = {
   enabled: true,
@@ -39,7 +38,6 @@ var rubiconAdapterMock = {
   bidder: 'rubicon',
   callBids: sinon.stub()
 };
-let loadScriptStub;
 
 describe('adapterManager tests', function () {
   let orgAppnexusAdapter;
@@ -51,9 +49,6 @@ describe('adapterManager tests', function () {
     orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
     orgRubiconAdapter = AdapterManager.bidderRegistry['rubicon'];
-    loadScriptStub = sinon.stub(adloader, 'loadScript').callsFake((...args) => {
-      args[1]();
-    });
   });
 
   after(function () {
@@ -61,7 +56,6 @@ describe('adapterManager tests', function () {
     AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
     AdapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
-    loadScriptStub.restore();
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
@@ -140,6 +134,108 @@ describe('adapterManager tests', function () {
     });
   });
 
+  describe('callTimedOutBidders', function () {
+    var criteoSpec = { onTimeout: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onTimeout callback when callTimedOutBidders is called', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'criteo', params: {placementId: 'id'}},
+        ]
+      }];
+      const timedOutBidders = [{
+        bidId: 'bidId',
+        bidder: 'criteo',
+        adUnitCode: adUnits[0].code,
+        auctionId: 'auctionId',
+      }];
+      AdapterManager.callTimedOutBidders(adUnits, timedOutBidders, CONFIG.timeout);
+      sinon.assert.called(criteoSpec.onTimeout);
+    });
+  }); // end callTimedOutBidders
+
+  describe('onBidWon', function () {
+    var criteoSpec = { onBidWon: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onBidWon callback when a bid is won', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+
+      AdapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onBidWon);
+    });
+  }); // end onBidWon
+
+  describe('onSetTargeting', function () {
+    var criteoSpec = { onSetTargeting: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+      AdapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onSetTargeting);
+    });
+  }); // end onSetTargeting
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
@@ -175,7 +271,7 @@ describe('adapterManager tests', function () {
                   'placementId': '543221',
                   'test': 'me'
                 },
-                'placementCode': '/19968336/header-bid-tag1',
+                'adUnitCode': '/19968336/header-bid-tag1',
                 'sizes': [
                   [
                     728,
@@ -213,7 +309,7 @@ describe('adapterManager tests', function () {
                 'params': {
                   'placementId': '5324321'
                 },
-                'placementCode': '/19968336/header-bid-tag-0',
+                'adUnitCode': '/19968336/header-bid-tag-0',
                 'sizes': [
                   [
                     300,
@@ -339,7 +435,7 @@ describe('adapterManager tests', function () {
                   'placementId': '543221',
                   'test': 'me'
                 },
-                'placementCode': '/19968336/header-bid-tag1',
+                'adUnitCode': '/19968336/header-bid-tag1',
                 'sizes': [
                   [
                     728,
@@ -377,7 +473,7 @@ describe('adapterManager tests', function () {
                 'params': {
                   'placementId': '5324321'
                 },
-                'placementCode': '/19968336/header-bid-tag-0',
+                'adUnitCode': '/19968336/header-bid-tag-0',
                 'sizes': [
                   [
                     300,
@@ -762,6 +858,26 @@ describe('adapterManager tests', function () {
       })
     });
 
+    it('should make separate bidder request objects for each bidder', () => {
+      adUnits = [utils.deepClone(getAdUnits()[0])];
+
+      let bidRequests = AdapterManager.makeBidRequests(
+        adUnits,
+        Date.now(),
+        utils.getUniqueIdentifierStr(),
+        function callback() {},
+        []
+      );
+
+      let sizes1 = bidRequests[1].bids[0].sizes;
+      let sizes2 = bidRequests[0].bids[0].sizes;
+
+      // mutate array
+      sizes1.splice(0, 1);
+
+      expect(sizes1).not.to.deep.equal(sizes2);
+    });
+
     describe('setBidderSequence', function () {
       beforeEach(function () {
         sinon.spy(utils, 'shuffle');
@@ -911,7 +1027,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].adUnitsS2SCopy.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bidder).to.equal('rubicon');
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].placementCode).to.equal(adUnits[1].code);
+        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bid_id).to.equal(bidRequests[0].bids[0].bid_id);
         expect(bidRequests[0].adUnitsS2SCopy[0].labelAny).to.deep.equal(['visitor-uk', 'desktop']);
       });

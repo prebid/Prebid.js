@@ -76,7 +76,10 @@ function escapePostbidConfig() {
 };
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
-function lint() {
+function lint(done) {
+  if (argv.nolint) {
+    return done();
+  }
   return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
@@ -181,7 +184,7 @@ function bundle(dev, moduleArr) {
   var allModules = helpers.getModuleNames(modules);
 
   if (modules.length === 0) {
-    modules = allModules.filter(module => !explicitModules.includes(module));
+    modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {

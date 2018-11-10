@@ -100,7 +100,7 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', function () {
@@ -114,12 +114,12 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
       const vastXml = '<VAST version="3.0"></VAST>';
-      assertRequestMade({ vastXml: vastXml }, vastXml);
+      assertRequestMade({ vastXml: vastXml, ttl: 25 }, vastXml);
     });
 
     function assertRequestMade(bid, expectedValue) {
@@ -134,6 +134,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
+          ttlseconds: 25
         }],
       });
     }

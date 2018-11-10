@@ -261,6 +261,8 @@ describe('AppNexusAdapter', function () {
               singleArrNum: [5],
               multiValMixed: ['value1', 2, 'value3'],
               singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
               badValue: {'foo': 'bar'} // should be dropped
             }
           }
@@ -285,6 +287,10 @@ describe('AppNexusAdapter', function () {
       }, {
         'key': 'singleValNum',
         'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
       }]);
     });
 
@@ -368,6 +374,32 @@ describe('AppNexusAdapter', function () {
       expect(payload.device.geo).to.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
+      });
+    });
+
+    it('should add referer info to payload', function () {
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+          reachedTop: true,
+          numIframes: 2,
+          stack: [
+            'http://example.com/page.html',
+            'http://example.com/iframe1.html',
+            'http://example.com/iframe2.html'
+          ]
+        }
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.referrer_detection).to.exist;
+      expect(payload.referrer_detection).to.deep.equal({
+        rd_ref: 'http%3A%2F%2Fexample.com%2Fpage.html',
+        rd_top: true,
+        rd_ifs: 2,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       });
     });
   })
@@ -534,6 +566,16 @@ describe('AppNexusAdapter', function () {
       expect(result[0].renderer.config).to.deep.equal(
         bidderRequest.bids[0].renderer.options
       );
+    });
+
+    it('should add deal_priority and deal_code', function() {
+      let responseWithDeal = deepClone(response);
+      responseWithDeal.tags[0].ads[0].deal_priority = 'high';
+      responseWithDeal.tags[0].ads[0].deal_code = '123';
+
+      let bidderRequest;
+      let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
   });
 });
