@@ -29,8 +29,14 @@ const s2sDefaultConfig = {
   adapter: 'prebidServer'
 };
 
+
+
 config.setDefaults({
-  's2sConfig': s2sDefaultConfig
+  's2sConfig': s2sDefaultConfig,
+  'cache': {
+    'url': 'https://prebid-server.rubiconproject.com/cache',
+    'ttl': 300
+  }
 });
 
 /**

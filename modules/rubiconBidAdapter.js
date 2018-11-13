@@ -128,6 +128,14 @@ export const spec = {
         }],
         ext: {
           prebid: {
+            cache: {
+              vastXml: {
+                returnCreative: false    // don't return the VAST
+              },
+              bids: {
+                returnCreative: true
+              }
+            },
             targeting: {
               includewinners: true
             }
@@ -541,11 +549,26 @@ export const spec = {
    * @return {Object} params bid params
    */
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    params =  utils.convertTypes({
       'accountId': 'number',
       'siteId': 'number',
       'zoneId': 'number'
     }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 };
 
