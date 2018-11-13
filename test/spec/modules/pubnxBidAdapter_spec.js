@@ -72,7 +72,7 @@ describe('PubNXAdapter', function () {
       'ad': '<!-- Creative -->',
       'slotBidId': '44b3fcfd24aa93',
       'nurl': '<!-- Pixelurl -->',
-      'statusText': 'Vertoz:Success'
+      'statusText': 'Success'
     };
 
     it('should get correct bid response', function () {
