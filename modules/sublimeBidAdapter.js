@@ -9,6 +9,25 @@ const DEFAULT_PROTOCOL = 'https';
 const SUBLIME_VERSION = '0.1';
 let SUBLIME_ZONE = null;
 
+/**
+ * Send a pixel to antenna
+ * @param {String} name The pixel name
+ */
+function sendAntennaPixel(name) {
+  if (typeof top.sublime !== 'undefined') {
+    top.sublime.analytics.fire(name, {
+      qs: {
+        z: SUBLIME_ZONE
+      }
+    });
+  } else {
+    var ts = new Date().getTime();
+    var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + SUBLIME_ZONE + '&e=' + name;
+
+    utils.triggerPixel(url);
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['sskz', 'sublime-skinz'],
@@ -60,22 +79,16 @@ export const spec = {
     let callbackName = (params.callbackName || DEFAULT_CALLBACK_NAME) + '_' + params.zoneId;
     SUBLIME_ZONE = params.zoneId;
 
+    // debug pixel build request
+    sendAntennaPixel('dpbduireq');
+
     // debug pixel if window[callbackName] already exists
-    if (typeof window[callbackName] === "function") {
-      if (typeof top.sublime !== "undefined") {
-        top.sublime.analytics.fire('dpbcalae', {
-          qs: {
-            z: SUBLIME_ZONE
-          }
-        });
-      }
+    if (typeof window[callbackName] === 'function') {
+      sendAntennaPixel('dpbcalae');
     }
+
     window[callbackName] = (response) => {
-      top.sublime.analytics.fire('dpubclbcal', {
-        qs: {
-          z: SUBLIME_ZONE
-        }
-      });
+      sendAntennaPixel('dpubclbcal');
 
       var requestIdEncoded = encodeURIComponent(requestId);
       var hasAd = response.ad ? '1' : '0';
@@ -117,16 +130,13 @@ export const spec = {
    */
   interpretResponse: (serverResponse) => {
     // debug pixel interpret response
-    top.sublime.analytics.fire('dintres', {
-      qs: {
-        z: SUBLIME_ZONE
-      }
-    });
+    sendAntennaPixel('dintres');
 
     const bidResponses = [];
-    const request = serverResponse.body;
+    const response = serverResponse.body;
 
-    if (request) {
+    if (response) {
+      const regexNoAd = /no ad/gmi;
       const bidResponse = {
         requestId: serverResponse.body.request_id || '',
         cpm: serverResponse.body.cpm || 0,
@@ -140,28 +150,27 @@ export const spec = {
         referrer: '',
         ad: serverResponse.body.ad || '',
       };
-      if (bidResponse.cpm) {
-        bidResponses.push(bidResponse);
-        top.sublime.analytics.fire('bid', {
-          qs: {
-            z: SUBLIME_ZONE
-          }
-        });
+
+      if (!response.cpm) {
+        sendAntennaPixel('dirnocpm');
+      }
+
+      if (response.timeout) {
+        // Debug timeout from the long polling server
+        sendAntennaPixel('dlptimeout');
+      } else if (bidResponse.ad.match(regexNoAd)) {
+        // Debug LP response no ad (a=0 in the notify)
+        sendAntennaPixel('dlpnoad');
+      } else if (bidResponse.ad === '') {
+        // Debug no ad in the interpret response, what happenned ?
+        sendAntennaPixel('drespnoad');
       } else {
-        // debug pixel no cpm
-        top.sublime.analytics.fire('dirnocpm', {
-          qs: {
-            z: SUBLIME_ZONE
-          }
-        });
+        sendAntennaPixel('bid');
+        bidResponses.push(bidResponse);
       }
     } else {
       // debug pixel no request
-      top.sublime.analytics.fire('dirnorq', {
-        qs: {
-          z: SUBLIME_ZONE
-        }
-      });
+      sendAntennaPixel('dirnorq');
     }
 
     return bidResponses;
@@ -183,10 +192,7 @@ export const spec = {
    */
   onTimeout: (timeoutData) => {
     // debug pixel timeout from pbjs
-    var ts = new Date().getTime();
-    var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + timeoutData.params[0].zoneId + '&e=dbidtimeout';
-
-    utils.triggerPixel(url);
+    sendAntennaPixel('dbidtimeout');
   }
 };
 
