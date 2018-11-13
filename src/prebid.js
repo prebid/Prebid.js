@@ -315,8 +315,17 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  */
 $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit(REQUEST_BIDS);
-  const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  const cbTimeout = timeout || config.getConfig('bidderTimeout');
+  const s2sConfig = config.getConfig('s2sConfig');
+
+  if (s2sConfig) {
+    let newTimeout = utils.evaluateTimeout(cbTimeout, s2sConfig.timeout);
+    if (newTimeout !== s2sConfig.timeout) {
+      s2sConfig.timeout = newTimeout;
+      config.setConfig({s2sConfig: s2sConfig});
+    }
+  }
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
@@ -342,7 +351,6 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adaptermanager.bidderRegistry;
 
-    const s2sConfig = config.getConfig('s2sConfig');
     const s2sBidders = s2sConfig && s2sConfig.bidders;
     const bidders = (s2sBidders) ? allBidders.filter(bidder => {
       return !includes(s2sBidders, bidder);

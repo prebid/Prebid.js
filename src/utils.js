@@ -1143,3 +1143,12 @@ export function convertTypes(types, params) {
   });
   return params;
 }
+
+export function evaluateTimeout(auctionTimeout, adapterTimeout, adapterName = 's2sConfig') {
+  if (auctionTimeout <= adapterTimeout) {
+    let newTimeout = Math.floor(0.75 * auctionTimeout);
+    exports.logInfo(`Detected auction timeout was smaller than the timeout set for ${adapterName}.  Adjusting ${adapterName} timeout to new value to compensate: ${newTimeout}`);
+    return newTimeout;
+  }
+  return adapterTimeout;
+}
