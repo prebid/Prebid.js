@@ -21,6 +21,7 @@
     "komoonaBidAdapter",
     "openxBidAdapter",
     "prebidServerBidAdapter",
+    "pubCommonId",
     "pubmaticBidAdapter",
     "pulsepointBidAdapter",
     "quantcastBidAdapter",
