@@ -156,12 +156,12 @@ export const spec = {
         });
       }
     } else {
-        // debug pixel no request
-        top.sublime.analytics.fire('dirnorq', {
-          qs: {
-            z: SUBLIME_ZONE
-          }
-        });
+      // debug pixel no request
+      top.sublime.analytics.fire('dirnorq', {
+        qs: {
+          z: SUBLIME_ZONE
+        }
+      });
     }
 
     return bidResponses;
@@ -176,6 +176,17 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     return [];
+  },
+
+  /**
+   * @param {TimedOutBid} timeoutData
+   */
+  onTimeout: (timeoutData) => {
+    // debug pixel timeout from pbjs
+    var ts = new Date().getTime();
+    var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + timeoutData.params[0].zoneId + '&e=dbidtimeout';
+
+    utils.triggerPixel(url);
   }
 };
 
