@@ -26,7 +26,7 @@ export const spec = {
     const timeout = config.getConfig('bidderTimeout');
     const timestamp = Date.now();
     const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
-    const networkProtocol = protocol.includes('https');
+    const networkProtocol = protocol.indexOf('https') > -1 ? 1 : 0;
 
     utils._each(validBidRequests, function (bid) {
       let tagId = String(utils.getBidIdParameter('tagid', bid.params));
