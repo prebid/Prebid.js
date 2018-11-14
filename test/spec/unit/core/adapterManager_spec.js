@@ -134,6 +134,108 @@ describe('adapterManager tests', function () {
     });
   });
 
+  describe('callTimedOutBidders', function () {
+    var criteoSpec = { onTimeout: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onTimeout callback when callTimedOutBidders is called', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'criteo', params: {placementId: 'id'}},
+        ]
+      }];
+      const timedOutBidders = [{
+        bidId: 'bidId',
+        bidder: 'criteo',
+        adUnitCode: adUnits[0].code,
+        auctionId: 'auctionId',
+      }];
+      AdapterManager.callTimedOutBidders(adUnits, timedOutBidders, CONFIG.timeout);
+      sinon.assert.called(criteoSpec.onTimeout);
+    });
+  }); // end callTimedOutBidders
+
+  describe('onBidWon', function () {
+    var criteoSpec = { onBidWon: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onBidWon callback when a bid is won', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+
+      AdapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onBidWon);
+    });
+  }); // end onBidWon
+
+  describe('onSetTargeting', function () {
+    var criteoSpec = { onSetTargeting: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      AdapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete AdapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+      AdapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onSetTargeting);
+    });
+  }); // end onSetTargeting
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
