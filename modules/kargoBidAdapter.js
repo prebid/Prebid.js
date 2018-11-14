@@ -50,6 +50,7 @@ export const spec = {
         ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnit.id,
+        dealId: adUnit.targetingCustom,
         netRevenue: true,
         currency: bidRequest.currency
       });
