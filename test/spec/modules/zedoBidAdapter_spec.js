@@ -268,4 +268,86 @@ describe('The ZEDO bidding adapter', function () {
       expect(syncs[0].url).to.contains('gdpr=0');
     });
   });
+
+  describe('bid events', function () {
+    it('should trigger a win pixel', function () {
+      const bid = {
+        'bidderCode': 'zedo',
+        'width': '300',
+        'height': '250',
+        'statusMessage': 'Bid available',
+        'adId': '148018fe5e',
+        'cpm': 0.5,
+        'ad': 'dummy data',
+        'ad_id': '12345',
+        'sizeId': '15',
+        'adResponse':
+          {
+            'creatives': [
+              {
+                'adId': '12345',
+                'height': '480',
+                'width': '640',
+                'isFoc': true,
+                'creativeDetails': {
+                  'type': 'VAST',
+                  'adContent': '<VAST></VAST>'
+                },
+                'seeder': {
+                  'network': 1234,
+                  'servedChan': 1234567,
+                },
+                'cpm': '1200000',
+                'servedChan': 1234,
+              }]
+          },
+        'params': [{
+          'channelCode': '123456',
+          'dimId': '85'
+        }],
+        'requestTimestamp': 1540401686,
+        'responseTimestamp': 1540401687,
+        'timeToRespond': 6253,
+        'pbLg': '0.50',
+        'pbMg': '0.50',
+        'pbHg': '0.53',
+        'adUnitCode': '/123456/header-bid-tag-0',
+        'bidder': 'zedo',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'zedo',
+          'hb_adid': '148018fe5e',
+          'hb_pb': '10.00',
+        }
+      };
+      spec.onBidWon(bid);
+      spec.onTimeout(bid);
+    });
+    it('should trigger a timeout pixel', function () {
+      const bid = {
+        'bidderCode': 'zedo',
+        'width': '300',
+        'height': '250',
+        'statusMessage': 'Bid available',
+        'adId': '148018fe5e',
+        'cpm': 0.5,
+        'ad': 'dummy data',
+        'ad_id': '12345',
+        'sizeId': '15',
+        'params': [{
+          'channelCode': '123456',
+          'dimId': '85'
+        }],
+        'timeout': 1,
+        'requestTimestamp': 1540401686,
+        'responseTimestamp': 1540401687,
+        'timeToRespond': 6253,
+        'adUnitCode': '/123456/header-bid-tag-0',
+        'bidder': 'zedo',
+        'size': '300x250',
+      };
+      spec.onBidWon(bid);
+      spec.onTimeout(bid);
+    });
+  });
 });
