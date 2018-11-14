@@ -20,5 +20,6 @@
   "gumgumBidAdapter",
   "lockerdomeBidAdapter",
   "kargoBidAdapter",
+  "teadsBidAdapter",
   "googleAnalyticsAdapter"
 ]
