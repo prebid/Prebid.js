@@ -59,7 +59,7 @@ export const spec = {
         cpm = [];
         // loop through the networkFloor keys
         Object.keys(floors).forEach((bidder) => {
-          freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bidder, floors[bidder] / 1e6);
+          // freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bidder, floors[bidder] / 1e6);
           // push each value to the cpm array
           cpm.push(floors[bidder] / 1e6)
         })
@@ -87,7 +87,10 @@ export const spec = {
                     let winner;
                 }
                 winner = ${JSON.stringify(bid)}, bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
-                    if(bid.status != 'rendered') {
+                    if(
+                        bid.status != 'rendered'
+                        // && bid.bidderCode != 'ffa'
+                      ) {
                         return bid;
                     }
                 }).sort((a,b) => {
@@ -97,15 +100,15 @@ export const spec = {
                 if(bids.length > 1) {
                     // pass the highest bid to pbjs.renderAd
                     // and mark it as a winning bid
-                    parent.freestar.log({title:'FFA:', styles:'background: black; color: gold; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
-                    parent.freestar.log({title:'FFA:', styles:'background: black; color: gold; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
                     parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[0].adId);
                     parent.pbjs.markWinningBidAsUsed({
                         adUnitCode: bids[0].adUnitCode,
                         adId: bids[0].adId
                     });
                     parent.freestar.msg.que.push({
-                        eventType: 'ffaBidWon',
+                        eventType: 'ffa',
                         args: {
                             winningCPM: ${cpm},
                             nextHighestBidCPM: bids[0].cpm,
@@ -114,6 +117,7 @@ export const spec = {
                             lowestHighestBidCPM: bids[bids.length - 1].cpm,
                             lowestHighestBidBidderCode: bids[bids.length - 1].bidderCode,
                             lowestHighestBidMediaType: bids[bids.length - 1].mediaType,
+                            placement: winner.adUnitCode
                         }
                     });
                 } else {
