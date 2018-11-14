@@ -17,5 +17,8 @@
   "consumableBidAdapter",
   "sortableBidAdapter",
   "medianetBidAdapter",
+  "gumgumBidAdapter",
+  "lockerdomeBidAdapter",
+  "kargoBidAdapter",
   "googleAnalyticsAdapter"
 ]
