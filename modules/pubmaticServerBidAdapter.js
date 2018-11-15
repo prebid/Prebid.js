@@ -200,6 +200,51 @@ function logAllErrors(errors) {
   });
 }
 
+function _getDataFromImpArray (impData, id, key) {
+  for (var index in impData) {
+    if (impData[index].ext.wrapper.div === id) {
+      switch (key) {
+        case 'requestId':
+          return impData[index].id;
+        case 'width':
+          return impData[index].banner.w;
+        case 'height':
+          return impData[index].banner.h;
+      }
+    }
+  }
+}
+
+
+
+function _createDummyBids (impData, bidResponses, miObj) {
+  let bidMap = window.PWT.bidMap;
+  for (var id in bidMap) {
+   for (var adapterID in bidMap[id].adapters) {
+      if (adapterID !== 'prebid') {
+        bidResponses.push({
+         requestId: _getDataFromImpArray(impData, id, 'requestId'),
+         bidderCode: BIDDER_CODE,
+         originalBidder: adapterID,
+         pubmaticServerErrorCode: undefined,
+         width: _getDataFromImpArray(impData, id, 'width'),
+         height: _getDataFromImpArray(impData, id, 'height'),
+         creativeId: 0,
+         dealId: '',
+         currency: CURRENCY,
+         netRevenue: true,
+         ttl: 300,
+         referrer: utils.getTopWindowUrl(),
+         ad: '',
+         cpm: 0,
+         serverSideResponseTime: -1,
+         mi: miObj.hasOwnProperty(adapterID) ? miObj[adapterID] : undefined
+      });
+    }
+  }
+ }
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -354,42 +399,46 @@ export const spec = {
                     mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED
                   }
                 } else {
-                  requestData.imp.forEach(function(impObj) {
-                    if (impObj.id === bid.impid) {
-                      newBid = {
-                        requestId: impObj.id,
-                        bidderCode: BIDDER_CODE,
-                        originalBidder: summary.bidder,
-                        pubmaticServerErrorCode: summary.errorCode,
-                        width: impObj.banner.w,
-                        height: impObj.banner.h,
-                        creativeId: 0,
-                        dealId: '',
-                        currency: CURRENCY,
-                        netRevenue: true,
-                        ttl: 300,
-                        referrer: referrer,
-                        ad: '',
-                        cpm: 0,
-                        serverSideResponseTime: (summary.errorCode === 1 || summary.errorCode === 2 || summary.errorCode === 6) ? -1
-                          : summary.errorCode === 5 ? 0 : partnerResponseTimeObj[summary.bidder] || 0,
-                        /* errorCodes meaning:
-                            1 = GADS_UNMAPPED_SLOT_ERROR
-                            2 = GADS_MISSING_CONF_ERROR
-                            3 = TIMEOUT_ERROR
-                            4 = NO_BID_PREBID_ERROR
-                            5 = PARTNER_TIMEDOUT_ERROR
-                            6 = INVALID_CONFIGURATION_ERROR
-                            7 = NO_GDPR_CONSENT_ERROR
-                            500 = API_RESPONSE_ERROR
-                            - setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
-                            - setting serverSideResponseTime as -1, in cases where errorCode is 1,2 or 6. In these cases we do not log this bid in logger
-                            - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
-                        */
-                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                  if (summary.errorCode === 6) {
+                    _createDummyBids(requestData.imp, bidResponses, miObj);
+                  } else {
+                    requestData.imp.forEach(function(impObj) {
+                      if (impObj.id === bid.impid) {
+                        newBid = {
+                          requestId: impObj.id,
+                          bidderCode: BIDDER_CODE,
+                          originalBidder: summary.bidder,
+                          pubmaticServerErrorCode: summary.errorCode,
+                          width: impObj.banner.w,
+                          height: impObj.banner.h,
+                          creativeId: 0,
+                          dealId: '',
+                          currency: CURRENCY,
+                          netRevenue: true,
+                          ttl: 300,
+                          referrer: referrer,
+                          ad: '',
+                          cpm: 0,
+                          serverSideResponseTime: (summary.errorCode === 1 || summary.errorCode === 2 || summary.errorCode === 6) ? -1
+                            : summary.errorCode === 5 ? 0 : partnerResponseTimeObj[summary.bidder] || 0,
+                          /* errorCodes meaning:
+                              1 = GADS_UNMAPPED_SLOT_ERROR
+                              2 = GADS_MISSING_CONF_ERROR
+                              3 = TIMEOUT_ERROR
+                              4 = NO_BID_PREBID_ERROR
+                              5 = PARTNER_TIMEDOUT_ERROR
+                              6 = INVALID_CONFIGURATION_ERROR
+                              7 = NO_GDPR_CONSENT_ERROR
+                              500 = API_RESPONSE_ERROR
+                              - setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
+                              - setting serverSideResponseTime as -1, in cases where errorCode is 1,2 or 6. In these cases we do not log this bid in logger
+                              - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
+                          */
+                          mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                        }
                       }
-                    }
-                  });
+                    });
+                  }
                 }
                 bidResponses.push(newBid);
               });
