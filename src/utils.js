@@ -202,7 +202,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 };
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
@@ -218,7 +218,7 @@ exports.getTopWindowLocation = function() {
 }
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getTopFrameReferrer = function () {
   try {
@@ -240,7 +240,7 @@ exports.getTopFrameReferrer = function () {
 };
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getAncestorOrigins = function () {
   if (window.document.location && window.document.location.ancestorOrigins &&
@@ -261,6 +261,9 @@ exports.getWindowLocation = function () {
   return window.location;
 };
 
+/**
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
+ */
 exports.getTopWindowUrl = function () {
   let href;
   try {
@@ -271,6 +274,9 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+/**
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
+ */
 exports.getTopWindowReferrer = function() {
   try {
     return window.top.document.referrer;
@@ -1088,7 +1094,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
       let values = [];
       exports._each(v, (val) => {
         val = exports.getValueString(paramName + '.' + k, val);
-        if (val) { values.push(val); }
+        if (val || val === '') { values.push(val); }
       });
       v = values;
     } else {

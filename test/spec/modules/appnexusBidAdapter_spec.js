@@ -261,6 +261,8 @@ describe('AppNexusAdapter', function () {
               singleArrNum: [5],
               multiValMixed: ['value1', 2, 'value3'],
               singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
               badValue: {'foo': 'bar'} // should be dropped
             }
           }
@@ -285,6 +287,10 @@ describe('AppNexusAdapter', function () {
       }, {
         'key': 'singleValNum',
         'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
       }]);
     });
 
