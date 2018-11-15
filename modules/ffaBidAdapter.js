@@ -5,6 +5,14 @@ const BIDDER_CODE = 'example';
 const deviceType = !freestar.deviceInfo.device.type ? "desktop" : freestar.deviceInfo.device.type;
 const ENDPOINT_URL = `${freestar.msg.dispensaryURL}/floors/v2`
 
+function diceRoll() {
+  if (Math.floor(Math.random() * Math.floor(9)) === 5) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ffa'], // short code
@@ -15,8 +23,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    // every bid is valid to us
-    return true;
+    // 10% of bids are valid to us
+    return diceRoll();
   },
   /**
    * Make a server request from the list of BidRequests.
