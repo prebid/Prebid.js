@@ -183,7 +183,7 @@ export const spec = {
         ttl: QUANTCAST_TTL,
         creativeId,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency,
+        currency
       };
 
       if (videoUrl !== undefined && videoUrl) {
