@@ -300,4 +300,11 @@ describe('Adkernel adapter', function () {
       expect(syncs[0]).to.have.property('url', 'http://adk.sync.com/sync');
     });
   });
+
+  describe('adapter configuration', () => {
+    it('should have aliases', () => {
+      expect(spec.aliases).to.have.lengthOf(1);
+      expect(spec.aliases[0]).to.be.equal('headbidding');
+    });
+  });
 });

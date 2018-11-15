@@ -1,4 +1,5 @@
 import * as utils from 'src/utils';
+import { ajax } from 'src/ajax';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
@@ -124,7 +125,8 @@ export const spec = {
         },
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
-        gdprConsent: gdprConsent.consentString
+        gdprConsent: gdprConsent.consentString,
+        prebidJsVersion: '$prebid.version$'
       };
 
       const data = JSON.stringify(requestData);
@@ -195,6 +197,10 @@ export const spec = {
     });
 
     return bidResponsesList;
+  },
+  onTimeout(timeoutData) {
+    const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+    ajax(url, null, null);
   }
 };
 

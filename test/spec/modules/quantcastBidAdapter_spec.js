@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
+import { stub, sandbox } from 'sinon';
 import {
   QUANTCAST_DOMAIN,
   QUANTCAST_TEST_DOMAIN,
@@ -12,6 +13,7 @@ import {
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
 import { parse } from 'src/url';
+import * as ajax from 'src/ajax';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -153,7 +155,8 @@ describe('Quantcast adapter', function () {
           domain
         },
         bidId: '2f7b179d443f14',
-        gdprSignal: 0
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
@@ -328,6 +331,21 @@ describe('Quantcast adapter', function () {
       const interpretedResponse = qcSpec.interpretResponse(response);
 
       expect(interpretedResponse.length).to.equal(0);
+    });
+  });
+
+  describe('`onTimeout`', function() {
+    it('makes a request to the notify endpoint', function() {
+      const sinonSandbox = sandbox.create();
+      const ajaxStub = sinonSandbox.stub(ajax, 'ajax').callsFake(function() {});
+      const timeoutData = {
+        bidder: 'quantcast'
+      };
+      qcSpec.onTimeout(timeoutData);
+      const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+      ajaxStub.withArgs(expectedUrl, null, null).calledOnce.should.be.true;
+      ajaxStub.restore();
+      sinonSandbox.restore();
     });
   });
 });

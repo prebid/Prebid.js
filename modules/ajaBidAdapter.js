@@ -93,7 +93,7 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions.pixelEnabled && serverResponses.length) {
       const bidderResponseBody = serverResponses[0].body;
       if (bidderResponseBody.syncs) {
         bidderResponseBody.syncs.forEach(sync => {
