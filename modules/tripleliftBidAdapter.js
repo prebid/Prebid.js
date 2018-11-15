@@ -113,7 +113,7 @@ function _buildResponseObject(bidderRequest, bid) {
   let width = bid.width || 1;
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
-  let creativeId = bid.crid;
+  let creativeId = bid.crid || '';
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
