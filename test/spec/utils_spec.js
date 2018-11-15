@@ -847,12 +847,81 @@ describe('Utils', function () {
     });
   });
 
-  describe('insertElement', function () {
-    it('returns a node at bottom of head if no target is given', function () {
-      const toInsert = document.createElement('div');
-      const head = document.getElementsByTagName('head')[0];
-      const inserted = utils.insertElement(toInsert);
-      expect(inserted).to.equal(head.lastChild);
+  describe('transformBidderParamKeywords', function () {
+    it('returns an array of objects when keyvalue is an array', function () {
+      let keywords = {
+        genre: ['rock', 'pop']
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['rock', 'pop']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a string', function () {
+      let keywords = {
+        genre: 'opera'
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['opera']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a number', function () {
+      let keywords = {
+        age: 15
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'age',
+        value: ['15']
+      }]);
+    });
+
+    it('returns an array of objects when using multiple keys with values of differing types', function () {
+      let keywords = {
+        genre: 'classical',
+        mix: ['1', 2, '3', 4],
+        age: 10
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['classical']
+      }, {
+        key: 'mix',
+        value: ['1', '2', '3', '4']
+      }, {
+        key: 'age',
+        value: ['10']
+      }]);
+    });
+
+    it('returns an array of objects when the keyvalue uses an empty string', function() {
+      let keywords = {
+        test: [''],
+        test2: ''
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'test',
+        value: ['']
+      }, {
+        key: 'test2',
+        value: ['']
+      }]);
+
+      describe('insertElement', function () {
+        it('returns a node at bottom of head if no target is given', function () {
+          const toInsert = document.createElement('div');
+          const head = document.getElementsByTagName('head')[0];
+          const inserted = utils.insertElement(toInsert);
+          expect(inserted).to.equal(head.lastChild);
+        });
+      });
     });
   });
 });

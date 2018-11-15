@@ -121,7 +121,8 @@ describe('Quantcast adapter', function () {
           domain
         },
         bidId: '2f7b179d443f14',
-        gdprSignal: 0
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
