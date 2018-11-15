@@ -162,7 +162,7 @@ describe('Quantcast adapter', function () {
       expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
     });
 
-    it('sends video bid requests contains all the required parameters', function () {
+    it('sends video bid requests containing all the required parameters', function () {
       setupVideoBidRequest();
 
       const referrer = utils.getTopWindowUrl();
@@ -201,7 +201,8 @@ describe('Quantcast adapter', function () {
           domain
         },
         bidId: '2f7b179d443f14',
-        gdprSignal: 0
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
