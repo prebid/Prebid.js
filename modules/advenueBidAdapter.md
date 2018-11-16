@@ -18,7 +18,7 @@ Module that connects to Advenue SSP demand sources
                 bids: [{
                         bidder: 'advenue',
                         params: {
-                            placementId: 0,
+                            zone: 0,
                             traffic: 'banner'
                         }
                     }]
