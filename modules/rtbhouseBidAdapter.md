@@ -7,7 +7,7 @@ Maintainer: prebid@rtbhouse.com
 # Description
 
 Connects to RTB House unique demand.
-Banner formats are supported.
+Banner and native formats are supported.
 Unique publisherId is required. 
 Please reach out to pmp@rtbhouse.com to receive your own
 
@@ -23,7 +23,8 @@ Please reach out to pmp@rtbhouse.com to receive your own
                        bidder: "rtbhouse",
                        params: {
                            region: 'prebid-eu',
-                           publisherId: 'PREBID_TEST_ID'
+                           publisherId: 'PREBID_TEST_ID',
+                           bidfloor: 0.01  // optional
                        }
                    }
                ]
@@ -50,6 +51,7 @@ Please reach out to pmp@rtbhouse.com to receive your own
                         params: {
                             region: 'prebid-eu',
                             publisherId: 'PREBID_TEST_ID'
+                            bidfloor: 0.01  // optional
                         }
                     }
                 ]

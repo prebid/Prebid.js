@@ -12,6 +12,7 @@ const DISPLAY = 'display';
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['onefiftytwomedia'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return bid && bid.params && bid.params.aid;

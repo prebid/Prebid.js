@@ -3,6 +3,7 @@ import { spec } from 'modules/yieldoneBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -11,12 +12,10 @@ describe('yieldoneBidAdapter', function() {
     let bid = {
       'bidder': 'yieldone',
       'params': {
-        placementId: '44082'
+        placementId: '36891'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250]
-      ],
+      'sizes': [[300, 250], [336, 280]],
       'bidId': '23beaa6af6cdde',
       'bidderRequestId': '19c0c1efdf37e7',
       'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -43,12 +42,10 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44082'
+          placementId: '36891'
         },
         'adUnitCode': 'adunit-code1',
-        'sizes': [
-          [300, 250]
-        ],
+        'sizes': [[300, 250], [336, 280]],
         'bidId': '23beaa6af6cdde',
         'bidderRequestId': '19c0c1efdf37e7',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -56,12 +53,10 @@ describe('yieldoneBidAdapter', function() {
       {
         'bidder': 'yieldone',
         'params': {
-          placementId: '44337'
+          placementId: '47919'
         },
         'adUnitCode': 'adunit-code2',
-        'sizes': [
-          [300, 250]
-        ],
+        'sizes': [[300, 250]],
         'bidId': '382091349b149f"',
         'bidderRequestId': '"1f9c98192de251"',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
@@ -79,18 +74,31 @@ describe('yieldoneBidAdapter', function() {
       expect(request[0].url).to.equal(ENDPOINT);
       expect(request[1].url).to.equal(ENDPOINT);
     });
+
+    it('parameter sz has more than one size on banner requests', function () {
+      expect(request[0].data.sz).to.equal('300x250,336x280');
+      expect(request[1].data.sz).to.equal('300x250');
+    });
+
+    it('width and height should be set as separate parameters on outstream requests', function () {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes.video = {context: 'outstream'};
+      const request = spec.buildRequests([bidRequest]);
+      expect(request[0].data.w).to.equal('300');
+      expect(request[0].data.h).to.equal('250');
+    });
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = [
+    let bidRequestBanner = [
       {
         'method': 'GET',
         'url': '//y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
-          'p': '44082',
-          'w': '300',
-          'h': '250',
+          'p': '36891',
+          'sz': '300x250,336x280',
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
@@ -99,34 +107,89 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    let serverResponse = {
+    let serverResponseBanner = {
       body: {
         'adTag': '<!-- adtag -->',
+        'uid': '23beaa6af6cdde',
+        'height': 250,
+        'width': 300,
         'cpm': 0.0536616,
         'crid': '2494768',
+        'currency': 'JPY',
         'statusMessage': 'Bid available',
-        'uid': '23beaa6af6cdde',
-        'width': 300,
-        'height': 250
+        'dealId': 'P1-FIX-7800-DSP-MON'
       }
     };
 
-    it('should get the correct bid response', function () {
+    it('should get the correct bid response for banner', function () {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 300,
         'height': 250,
         'creativeId': '2494768',
-        'dealId': '',
+        'dealId': 'P1-FIX-7800-DSP-MON',
         'currency': 'JPY',
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+    });
+
+    let serverResponseVideo = {
+      body: {
+        'uid': '23beaa6af6cdde',
+        'height': 360,
+        'width': 640,
+        'cpm': 0.0536616,
+        'dealId': 'P1-FIX-766-DSP-MON',
+        'crid': '2494768',
+        'currency': 'JPY',
+        'statusMessage': 'Bid available',
+        'adm': '<!-- vast -->'
+      }
+    };
+
+    let bidRequestVideo = [
+      {
+        'method': 'GET',
+        'url': '//y.one.impact-ad.jp/h_bid',
+        'data': {
+          'v': 'hb1',
+          'p': '41993',
+          'w': '640',
+          'h': '360',
+          'cb': 12892917383,
+          'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+          'uid': '23beaa6af6cdde',
+          't': 'i'
+        }
+      }
+    ];
+
+    it('should get the correct bid response for video', function () {
+      let expectedResponse = [{
+        'requestId': '23beaa6af6cdde',
+        'cpm': 53.6616,
+        'width': 640,
+        'height': 360,
+        'creativeId': '2494768',
+        'dealId': 'P1-FIX-7800-DSP-MON',
+        'currency': 'JPY',
+        'netRevenue': true,
+        'ttl': 3000,
+        'referrer': '',
+        'mediaType': 'video',
+        'vastXml': '<!-- vast -->'
+      }];
+      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
     });
 
     it('handles empty bid response', function () {
@@ -140,14 +203,12 @@ describe('yieldoneBidAdapter', function() {
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequest[0]);
+      let result = spec.interpretResponse(response, bidRequestBanner[0]);
       expect(result.length).to.equal(0);
     });
   });
 
   describe('getUserSyncs', function () {
-    const userSyncUrl = '//y.one.impact-ad.jp/push_sync';
-
     it('handles empty sync options', function () {
       expect(spec.getUserSyncs({})).to.be.empty;
     });
@@ -156,7 +217,7 @@ describe('yieldoneBidAdapter', function() {
       expect(spec.getUserSyncs({
         'iframeEnabled': true
       })).to.deep.equal([{
-        type: 'iframe', url: userSyncUrl
+        type: 'iframe', url: USER_SYNC_URL
       }]);
     });
   });

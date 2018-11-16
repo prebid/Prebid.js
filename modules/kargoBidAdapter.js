@@ -50,6 +50,7 @@ export const spec = {
         ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnit.id,
+        dealId: adUnit.targetingCustom,
         netRevenue: true,
         currency: bidRequest.currency
       });
@@ -76,8 +77,8 @@ export const spec = {
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
-    for (let key in cookies) {
-      let cookie = cookies[key];
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i];
       while (cookie.charAt(0) === ' ') {
         cookie = cookie.substring(1, cookie.length);
       }
