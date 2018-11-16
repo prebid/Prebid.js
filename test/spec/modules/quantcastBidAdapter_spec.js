@@ -131,11 +131,14 @@ describe('Quantcast adapter', function () {
     });
 
     it('sends banner bid requests contains all the required parameters', function () {
-      const referrer = utils.getTopWindowUrl();
-      const loc = utils.getTopWindowLocation();
-      const domain = loc.hostname;
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/hello.html',
+          canonicalUrl: 'http://example.com/hello.html'
+        }
+      };
 
-      const requests = qcSpec.buildRequests([bidRequest]);
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedBannerBidRequest = {
         publisherId: QUANTCAST_TEST_PUBLISHER,
         requestId: '2f7b179d443f14',
@@ -150,9 +153,9 @@ describe('Quantcast adapter', function () {
           }
         ],
         site: {
-          page: loc.href,
-          referrer,
-          domain
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
@@ -165,11 +168,14 @@ describe('Quantcast adapter', function () {
     it('sends video bid requests containing all the required parameters', function () {
       setupVideoBidRequest();
 
-      const referrer = utils.getTopWindowUrl();
-      const loc = utils.getTopWindowLocation();
-      const domain = loc.hostname;
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/hello.html',
+          canonicalUrl: 'http://example.com/hello.html'
+        }
+      };
 
-      const requests = qcSpec.buildRequests([bidRequest]);
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedVideoBidRequest = {
         publisherId: QUANTCAST_TEST_PUBLISHER,
         requestId: '2f7b179d443f14',
@@ -196,9 +202,9 @@ describe('Quantcast adapter', function () {
           }
         ],
         site: {
-          page: loc.href,
-          referrer,
-          domain
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,

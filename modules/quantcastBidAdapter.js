@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
@@ -59,6 +60,15 @@ function makeBannerImp(bid) {
   };
 }
 
+function getDomain(url) {
+  if (!url) {
+    return url;
+  }
+  var a = document.createElement('a');
+  a.href = url;
+  return a.host;
+}
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
@@ -100,9 +110,9 @@ export const spec = {
     const bids = bidRequests || [];
     const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
-    const referrer = utils.getTopWindowUrl();
-    const loc = utils.getTopWindowLocation();
-    const domain = loc.hostname;
+    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || window.location.href;
+    const domain = getDomain(page);
 
     const bidRequestsList = bids.map(bid => {
       let imp;
@@ -119,7 +129,7 @@ export const spec = {
         requestId: bid.bidId,
         imp: [imp],
         site: {
-          page: loc.href,
+          page,
           referrer,
           domain
         },
