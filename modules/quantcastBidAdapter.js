@@ -64,9 +64,7 @@ function getDomain(url) {
   if (!url) {
     return url;
   }
-  var a = document.createElement('a');
-  a.href = url;
-  return a.host;
+  return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
 }
 
 /**
