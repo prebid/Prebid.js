@@ -111,7 +111,7 @@ export const spec = {
     const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || window.location.href;
+    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
     const bidRequestsList = bids.map(bid => {
