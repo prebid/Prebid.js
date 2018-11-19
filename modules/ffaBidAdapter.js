@@ -6,8 +6,8 @@ const deviceType = !freestar.deviceInfo.device.type ? "desktop" : freestar.devic
 const ENDPOINT_URL = `${freestar.msg.dispensaryURL}/floors/v2`
 
 function diceRoll() {
-  const luckyNumbers = [81, 14, 54, 63, 88];
-  if (luckyNumbers.indexOf(Math.floor(Math.random() * Math.floor(99))) > -1) {
+  const unluckyNumbers = [81, 14, 54, 63, 88];
+  if (unluckyNumbers.indexOf(Math.floor(Math.random() * Math.floor(99))) === -1) {
     return true;
   } else {
     return false;
