@@ -15,17 +15,17 @@ const ENDPOINT = 'hb.emxdgt.com';
 let emxAdapter = {};
 
 emxAdapter.validateSizes = function(sizes) {
-    if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
-      return false;
-    }
-    return sizes.every(size => utils.isArray(size) && size.length === 2);
+  if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
+    return false;
+  }
+  return sizes.every(size => utils.isArray(size) && size.length === 2);
 }
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!bid.params.tagid && 
+    return !!bid.params.tagid &&
             typeof bid.params.tagid === 'string' &&
             (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'string') &&
             bid.bidder === BIDDER_CODE &&
@@ -44,10 +44,10 @@ export const spec = {
     utils._each(validBidRequests, function (bid) {
       let tagId = utils.getBidIdParameter('tagid', bid.params);
       let bidFloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
-
       let sizes = bid.mediaTypes.bannner.sizes;
-      !emxAdapter.validateSizes(sizes) ? sizes = bid.sizes : null;
-      
+      if (!validateSizes(sizes)) {
+        sizes = bid.sizes
+      }
       let emxBid = {
         id: bid.bidId,
         tid: bid.transactionId,
@@ -126,10 +126,10 @@ export const spec = {
   getUserSyncs: function (syncOptions) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
-    syncs.push({
-      type: 'iframe',
-      url: '//biddr.brealtime.com/check.html'
-    });
+      syncs.push({
+        type: 'iframe',
+        url: '//biddr.brealtime.com/check.html'
+      });
     }
     if (syncOptions.pixelEnabled) {
       syncs.push({
