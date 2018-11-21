@@ -144,11 +144,12 @@ export const spec = {
                 } else {
                     // if not...
                     // if not a 1x1 //@TODO: should this be the case?
-                    if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
+                    // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
                       parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner);
                       parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
-                    }
+                    // }
+                    
                 }
             </script>
           `
