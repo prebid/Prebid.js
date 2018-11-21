@@ -132,7 +132,7 @@ export const spec = {
         name: bidRequest.adUnitCode,
         width: size[0],
         height: size[1],
-        size_id: utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : params.video.size_id
+        size_id: determineRubiconVideoSizeId(bidRequest)
       };
 
       if (params.video) {
@@ -573,12 +573,12 @@ function mapSizes(sizes) {
 
 /**
  * Test if bid has mediaType or mediaTypes set for video.
- * note: 'mediaType' has been deprecated, however support will remain for a transitional period
+ * Also makes sure the video object is present in the rubicon bidder params
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
 export function hasVideoMediaType(bidRequest) {
-  if (typeof utils.deepAccess(bidRequest, 'params.video') === 'undefined' && Array.isArray(utils.deepAccess(bidRequest, 'params.sizes'))) {
+  if (typeof utils.deepAccess(bidRequest, 'params.video') !== 'object') {
     return false;
   }
   return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
@@ -591,43 +591,54 @@ export function hasVideoMediaType(bidRequest) {
  * @returns {string|undefined} Returns 'video' or 'banner' if resolves to a type, or undefined otherwise (invalid).
  */
 function bidType(bid, log = false) {
-  let validVideo;
+  // Is it considered video ad unit by rubicon
   if (hasVideoMediaType(bid)) {
-    validVideo = true;
-
-    if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'instream' || bid.mediaType === VIDEO) {
-      if (typeof utils.deepAccess(bid, 'params.video.size_id') === 'undefined') {
+    // legacy mediaType or the new mediaTypes
+    // this is the preffered "new" way to define mediaTypes
+    if (typeof utils.deepAccess(bid, `mediaTypes.${VIDEO}`) !== 'undefined') {
+      // We require either context as instream or outstream
+      if (['outstream', 'instream'].indexOf(utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
         if (log) {
-          utils.logError('Rubicon bid adapter Error: size id is missing for instream video request.');
+          utils.logError('Rubicon bid adapter requires mediaTypes.video.context to be one of outstream or instream');
         }
-        validVideo = false;
+        return;
       }
-    } else if (utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream') {
-      if (utils.deepAccess(bid, 'params.video.size_id') !== 203) {
-        if (log) {
-          utils.logWarn('Rubicon bid adapter Warning: outstream video is sending invalid size id, converting size id to 203.');
-        }
-      }
-    } else {
+    } else { // Otherwise its the legacy way where mediaType == 'video'
       if (log) {
-        utils.logError('Rubicon bid adapter Error: no instream or outstream context defined in mediaTypes.');
+        utils.logWarn('Rubicon video bid requested using legacy `adUnit.mediaType = `video``\nThis is deprecated\nPlease move towards the PBJS standard using mediaTypes object!');
       }
-      validVideo = false;
-    }
-    if (validVideo) {
-      if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+      if (isNaN(parseInt(utils.deepAccess(bid, 'params.video.size_id')))) {
         if (log) {
-          utils.logWarn('Rubicon bid adapter Warning: video and banner requested for same adUnit, continuing with video request, multi-format request is not supported by rubicon yet.');
+          utils.logError('Rubicon bid adapter needs params.video.size_id to be declared and an integer in order to process a legacy video request using mediaType == video');
         }
+        return;
       }
-      return 'video';
-    } else if (typeof utils.deepAccess(bid, `mediaTypes.${BANNER}`) === 'undefined') {
-      return undefined;
     }
-  }
-  if (parseSizes(bid, 'banner').length > 0) {
-    if (log && validVideo === false) {
-      utils.logWarn('Rubicon bid adapter Warning: invalid video requested for adUnit, continuing with banner request.');
+    // we require playerWidth and playerHeight to come from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes
+    if (parseSizes(bid, 'video').length < 2) {
+      if (log) {
+        utils.logError('Rubicon bid adapter could not determine the playerSize of the video\nplayerWidth and playerHeight are inferred from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes, in that order');
+      }
+      return;
+    }
+
+    if (log) {
+      utils.logMessage('Rubicon bid adapter making video request for adUnit', bid.adUnitCode);
+    }
+    return 'video';
+  } else {
+    // we require banner sizes to come from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order
+    // if we cannot determine them, we reject it!
+    if (parseSizes(bid, 'banner').length === 0) {
+      if (log) {
+        utils.logError('Rubicon bid adapter could not determine the sizes for a banner request\nThey are inferred from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order');
+      }
+      return;
+    }
+
+    // everything looks good for banner so lets do it
+    if (log) {
+      utils.logMessage('Rubicon bid adapter making banner request for adUnit', bid.adUnitCode);
     }
     return 'banner';
   }
@@ -654,6 +665,17 @@ export function masSizeOrdering(sizes) {
     // and finally ascending order
     return first - second;
   });
+}
+
+export function determineRubiconVideoSizeId(bid) {
+  // If we have size_id in the bid then use it
+  let rubiconSizeId = parseInt(utils.deepAccess(bid, 'params.video.size_id'));
+  if (!isNaN(rubiconSizeId)) {
+    return rubiconSizeId;
+  }
+  // otherwise 203 for outstream and 201 for instream
+  // When this function is used we know it has to be one of outstream or instream
+  return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
 var hasSynced = false;

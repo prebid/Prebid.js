@@ -65,20 +65,18 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
   let maps = evaluateSizeConfig(configs);
 
   if (!isPlainObject(mediaTypes)) {
-    mediaTypes = {};
+    // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
+    if (sizes) {
+      mediaTypes = {
+        banner: {
+          sizes
+        }
+      };
+    } else {
+      mediaTypes = {};
+    }
   } else {
     mediaTypes = deepClone(mediaTypes);
-  }
-
-  // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
-  if (sizes) {
-    if (!mediaTypes.banner) {
-      mediaTypes.banner = {
-        sizes
-      }
-    } else if (!mediaTypes.banner.sizes) {
-      mediaTypes.banner.sizes = sizes;
-    }
   }
 
   let oldSizes = deepAccess(mediaTypes, 'banner.sizes');

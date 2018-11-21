@@ -113,6 +113,7 @@ function buildBid(tag) {
 export const spec = {
   code: 'adkernelAdn',
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&

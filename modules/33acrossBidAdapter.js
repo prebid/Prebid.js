@@ -83,6 +83,14 @@ function _createServerRequest(bidRequest, gdprConsent) {
       gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0
     }
   };
+  ttxRequest.ext = {
+    ttx: {
+      caller: [{
+        'name': 'prebidjs',
+        'version': '$prebid.version$'
+      }]
+    }
+  }
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
