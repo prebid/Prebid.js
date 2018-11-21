@@ -6,12 +6,17 @@ const deviceType = !freestar.deviceInfo.device.type ? "desktop" : freestar.devic
 const ENDPOINT_URL = `${freestar.msg.dispensaryURL}/floors/v2`
 
 function diceRoll() {
-  const unluckyNumbers = [81, 14, 54, 63, 88];
-  if (unluckyNumbers.indexOf(Math.floor(Math.random() * Math.floor(99))) === -1) {
+  if (Math.floor(Math.random() * Math.floor(99)) === 51) {
     return true;
   } else {
     return false;
   }
+  // const unluckyNumbers = [81, 14, 54, 63, 88];
+  // if (unluckyNumbers.indexOf(Math.floor(Math.random() * Math.floor(99))) === -1) {
+  //   return true;
+  // } else {
+  //   return false;
+  // }
 }
 
 export const spec = {
@@ -139,11 +144,12 @@ export const spec = {
                 } else {
                     // if not...
                     // if not a 1x1 //@TODO: should this be the case?
-                    if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
+                    // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
                       parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner);
                       parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
-                    }
+                    // }
+                    
                 }
             </script>
           `
