@@ -293,8 +293,6 @@ function outstreamRender(bid) {
     try {
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
       const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
-      const contentWidth = utils.getBidIdParameter('content_width', bid.renderer.config.outstream_options);
-      const contentHeight = utils.getBidIdParameter('content_height', bid.renderer.config.outstream_options);
       const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
@@ -344,7 +342,6 @@ function outstreamRender(bid) {
         }
         framedoc.body.appendChild(script);
       } else {
-        const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
         if (slot && window.document.getElementById(slot)) {
           window.document.getElementById(slot).appendChild(script);
         } else {
