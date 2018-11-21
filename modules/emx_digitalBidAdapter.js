@@ -29,7 +29,7 @@ export const spec = {
             typeof bid.params.tagid === 'string' &&
             (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'string') &&
             bid.bidder === BIDDER_CODE &&
-            (validateSizes(bid.mediaTypes.banner.sizes) || validateSizes(bid.sizes));
+            (emxAdapter.validateSizes(bid.mediaTypes.banner.sizes) || emxAdapter.validateSizes(bid.sizes));
   },
   buildRequests: function (validBidRequests, bidRequests) {
     const {host, href, protocol} = utils.getTopWindowLocation();
@@ -44,8 +44,8 @@ export const spec = {
     utils._each(validBidRequests, function (bid) {
       let tagId = utils.getBidIdParameter('tagid', bid.params);
       let bidFloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
-      let sizes = bid.mediaTypes.bannner.sizes;
-      if (!validateSizes(sizes)) {
+      let sizes = bid.mediaTypes.banner.sizes;
+      if (!emxAdapter.validateSizes(sizes)) {
         sizes = bid.sizes
       }
       let emxBid = {
