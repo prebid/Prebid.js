@@ -336,7 +336,7 @@ function outstreamRender(bid) {
         }
       }
 
-      const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
+      inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
         const rawframe = window.document.getElementById(inIframe);
         let framedoc = rawframe.contentDocument;
