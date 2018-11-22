@@ -235,7 +235,7 @@ function _createDummyBids (impData, bidResponses, errorCode) {
           referrer: utils.getTopWindowUrl(),
           ad: '',
           cpm: 0,
-          serverSideResponseTime: -1
+          serverSideResponseTime: (errorCode === 3) ? 0 : -1
         });
       }
     }
@@ -376,7 +376,7 @@ export const spec = {
               bid.ext.summary.forEach(function (summary, index) {
                 var firstSummary = index === 0;
                 let newBid = {};
-                if (summary.errorCode === 6) {
+                if (summary.errorCode === 6 || summary.errorCode === 3) {
                   // special handling for error code 6. Create all dummy bids from request data.
                   bidResponses.length === 0 && _createDummyBids(requestData.imp, bidResponses, summary.errorCode);
                 } else {
