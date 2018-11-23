@@ -13,7 +13,7 @@ node {
         sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
         
         dir('playerdigiteka') {
-            sh('git clone https://davydgtk:password@github.com/digiteka/playerDigiteka.git .')
+            sh('git clone https://davydgtk:af7ab00e1a960fd0c6a681793008c85c65d5a65a@github.com/digiteka/playerDigiteka.git .')
             sh('git checkout -f ft-' +env.BRANCH_NAME)
             sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
