@@ -11,6 +11,7 @@ node {
     stage('Build'){
         sh('npm install')
         sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
+        sh ('mkdir playerdigiteka')
         
         dir('playerdigiteka') {
             sh('git clone https://github.com/digiteka/playerDigiteka.git .')
