@@ -1,0 +1,10 @@
+[
+  "appnexusBidAdapter",
+  "freewheel-sspBidAdapter",
+  "spotxBidAdapter",
+
+  "telariaBidAdapter",
+  "rubiconBidAdapter",
+
+  "dfpAdServerVideo"
+]
