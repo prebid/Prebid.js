@@ -6,8 +6,51 @@ const constants = require('src/constants.json');
 describe('PubMaticServer adapter', () => {
   let bidRequests;
   let bidResponses;
+  let errorCodeBidResponses;
+  window.PWT = {};
 
   beforeEach(() => {
+    window.PWT.bidMap = {
+      '/19968336/header-bid-tag-1': {
+        name: '/19968336/header-bid-tag-1',
+        sizes: ['300x250'],
+        adapters: {
+          pubmatic: {
+            adapterID: 'pubmatic',
+            callInitiatedTim: 1540366843207,
+            bids: {
+              '33094594bdbcc': {
+                adapterID: 'pubmatic',
+                kgpv: '300x250@300x250:5',
+                bidID: '33094594bdbcc',
+                grossEcpm: 0,
+                netEcpm: 0,
+                defaultBid: 1,
+                adHtml: '',
+                adUrl: '',
+                height: 0,
+                width: 0,
+                creativeID: '',
+                keyValuePairs: {},
+                isPostTimeout: false,
+                receivedTime: 1540366843207,
+                isServerSide: 1,
+                dealID: '',
+                dealChannel: '',
+                isWinningBid: false,
+                status: 0,
+                serverSideResponseTime: 0
+              }
+            },
+            lastBidID: '33094594bdbcc'
+          }
+        },
+        creationTime: 1540366843192,
+        impressionID: 'dc031f5c-1391-4e7e-8bb7-732888688aa1-eeiuu',
+        analyticsEnabled: false,
+        expired: false
+      }
+    };
     bidRequests = [
       {
         bidder: 'pubmaticServer',
@@ -42,7 +85,7 @@ describe('PubMaticServer adapter', () => {
         'seatbid': [{
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315B2F',
-            'impid': '22bddb28db77d',
+            'impid': '23acc48ad47af5',
             'price': 1.3,
             'adm': 'image3.pubmatic.com Layer based creative',
             'h': 250,
@@ -61,11 +104,36 @@ describe('PubMaticServer adapter', () => {
         'ext': {
           'responsetimemillis': {
             'pubmatic': 47
+          },
+          'matchedimpression': {
+            'pubmatic': 1
           }
         }
       }
     };
-    window.PWT = {
+    errorCodeBidResponses = {
+      'body': {
+        'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+        'seatbid': [{
+          'bid': [{
+            'id': '36d41be239a8e',
+            'impid': '23acc48ad47af5',
+            'price': 0,
+            'h': 0,
+            'w': 0,
+            'ext': {
+              'summary': [{
+                'bidder': 'pubmatic',
+                'bid': 0,
+                'errorCode': 5,
+                'errorMessage': 'Timeout error',
+                'width': 0,
+                'height': 0
+              }]
+            }
+          }]
+        }]
+      }
     };
   });
 
@@ -322,6 +390,34 @@ describe('PubMaticServer adapter', () => {
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].originalBidder).to.equal(bidResponses.body.seatbid[0].bid[0].ext.summary[0].bidder);
         expect(response[0].bidderCode).to.equal(spec.code);
+      });
+    });
+
+    describe('Response checking', () => {
+      it('should set serverSideResponseTime to 0 when error code retured by endpoint is 5', () => {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(0);
+      });
+
+      it('should set serverSideResponseTime to -1 when error code retured by endpoint any of the following 1/2/6', () => {
+        let request = spec.buildRequests(bidRequests);
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 1;
+
+        let response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
+
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 2;
+        response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
+
+        errorCodeBidResponses.body.seatbid[0].bid[0].ext.summary[0].errorCode = 6;
+        response = spec.interpretResponse(errorCodeBidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].serverSideResponseTime).to.equal(-1);
       });
     });
   });
