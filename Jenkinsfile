@@ -15,9 +15,12 @@ node {
     }
     
     stage('Checkout Player'){
-        git url: "https://github.com/digiteka/playerDigiteka.git ",
-                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5',
-                 branch: master
+        dir('playerDigiteka') {
+            git url: "https://github.com/digiteka/playerDigiteka.git"
+        }
+        //,
+          //       credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5',
+            //     branch: master
 
         // The rest of your Groovy here...
         //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
