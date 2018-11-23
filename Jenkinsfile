@@ -23,7 +23,7 @@ node {
             sh('git checkout ft-' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ft-' +env.BRANCH_NAME)
             //sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             //sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
-            sh('git push origin ft-' +env.BRANCH_NAME)
+            sh('git push ft-' +env.BRANCH_NAME)
         }
     }
     
