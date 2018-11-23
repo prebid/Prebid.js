@@ -10,6 +10,7 @@ node {
     
     stage('Build'){
         sh('npm install')
+        sh('npm install -g gulp')
         sh('gulp build --modules=modules.json')
     }
     
