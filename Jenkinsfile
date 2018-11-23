@@ -1,6 +1,6 @@
 node {
     env.NODEJS_HOME = "${tool 'node8.4.0'}"
-    // on linux / mac voila33
+    // on linux / mac voila3
     env.PATH="${env.NODEJS_HOME}/bin:${env.PATH}"
     
     stage('Checkout'){
