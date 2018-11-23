@@ -33,7 +33,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return Boolean(bid.bidId &&
         bid.params &&
-        !isNaN(bid.params.zone) &&
+        !isNaN(bid.params.placementId) &&
         spec.supportedMediaTypes.indexOf(bid.params.traffic) !== -1
     );
   },
@@ -69,7 +69,7 @@ export const spec = {
       const bid = validBidRequests[i];
       const params = bid.params;
       placements.push({
-        placementId: params.zone,
+        placementId: params.placementId,
         bidId: bid.bidId,
         sizes: bid.sizes,
         traffic: params.traffic
