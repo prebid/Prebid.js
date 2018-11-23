@@ -23,10 +23,10 @@ node {
 
         // The rest of your Groovy here...
         //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
-        //sh('git checkout -f ft-' +env.BRANCH_NAME)
+        sh('git checkout -f ft-' +env.BRANCH_NAME)
         //sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
         //sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
-        //sh('git push origin ft-' +env.BRANCH_NAME)
+        sh('git push origin ft-' +env.BRANCH_NAME)
     
     }
     
