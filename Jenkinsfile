@@ -9,15 +9,13 @@ node {
     }
     
     stage('Build'){
-        //dir('src'){
-            //sh('npm install')
-            //sh('npm run build')
-        //}
+        sh('npm install')
+        sh('gulp build --modules=modules.json')
     }
     
     stage ('Deploy') {
-        //dir('src/build'){
-         //sh 'scp -v -o StrictHostKeyChecking=no  dtkplayer-vjs.js root@ovh-lb5.dginfra.net:/home/web/prod/ultimedia_v2/www/js/player-digiteka/dtkplayer-vjs-'+env.BRANCH_NAME+'.js'
-        //}
+        dir('build/dist'){
+            sh 'scp -v -o StrictHostKeyChecking=no  prebid.js root@ovh-lb5.dginfra.net:/home/web/prod/ultimedia_v2/www/js/player-digiteka/prebid-'+env.BRANCH_NAME+'.js'
+        }
      }
 }
