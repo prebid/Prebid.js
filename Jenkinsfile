@@ -16,7 +16,7 @@ node {
     
     stage('Checkout Player'){
         dir('playerDigiteka') {
-            git branch: 'master',
+            git branch: 'origin/master',
                 url: 'https://github.com/digiteka/playerDigiteka.git',
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
             
