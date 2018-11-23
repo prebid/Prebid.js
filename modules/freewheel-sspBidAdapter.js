@@ -328,7 +328,11 @@ export const spec = {
 
       var mediaTypes = bidrequest.mediaTypes || {};
       if (mediaTypes.video) {
-        // bidResponse.vastXml = serverResponse;
+
+          /**
+           * Added By Digiteka !!
+           */
+        bidResponse.vastXml = serverResponse.replace(/<AdSystem.*>.*<\/AdSystem>/, "<AdSystem>prebid.org wrapper</AdSystem>");
         bidResponse.mediaType = 'video';
 
         var blob = new Blob([serverResponse], {type: 'application/xml'});
