@@ -11,20 +11,21 @@ node {
     stage('Build'){
         sh('npm install')
         sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
-        //sh ('mkdir playerdigiteka')
-        
-        dir('playerdigiteka') {
-             git url: "ssh://ambrugeat@github.com/digiteka/playerDigiteka.git ",
+       
+    }
+    
+    stage('Checkout Player'){
+        git url: "ssh://ambrugeat@github.com/digiteka/playerDigiteka.git ",
                  credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5',
                  branch: master
 
-            // The rest of your Groovy here...
-            sh('git clone https://github.com/digiteka/playerDigiteka.git .')
-            //sh('git checkout -f ft-' +env.BRANCH_NAME)
-            //sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
-            //sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
-            //sh('git push origin ft-' +env.BRANCH_NAME)
-        }
+        // The rest of your Groovy here...
+        //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
+        //sh('git checkout -f ft-' +env.BRANCH_NAME)
+        //sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
+        //sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
+        //sh('git push origin ft-' +env.BRANCH_NAME)
+    
     }
     
     stage ('Deploy') {
