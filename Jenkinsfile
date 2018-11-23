@@ -16,8 +16,10 @@ node {
     
     stage('Checkout Player'){
         dir('playerDigiteka') {
-            git url: 'https://github.com/digiteka/playerDigiteka.git',
+            git branch: 'master',
+                url: 'https://github.com/digiteka/playerDigiteka.git',
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
+            
             // The rest of your Groovy here...
             //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
             sh('git checkout ft-' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ft-' +env.BRANCH_NAME)
