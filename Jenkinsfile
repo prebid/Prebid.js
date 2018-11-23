@@ -17,7 +17,7 @@ node {
     stage('Checkout Player'){
         dir('playerDigiteka') {
             git branch: 'master',
-                url: 'https://ambrugeat@github.com/digiteka/playerDigiteka.git',
+                url: 'https://github.com/digiteka/playerDigiteka.git',
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
             
             // The rest of your Groovy here...
@@ -25,7 +25,9 @@ node {
             sh('git checkout ft-' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ft-' +env.BRANCH_NAME)
             //sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             //sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
+           withCredentials([string(credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5', variable: 'ambrugeat')]) {
             sh('git push origin ft-' +env.BRANCH_NAME)
+            }
           
         }
     }
