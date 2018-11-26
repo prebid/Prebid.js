@@ -1,14 +1,8 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adaptermanager';
 import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
 import {config} from 'src/config';
-import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
-
-var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
@@ -158,7 +152,7 @@ describe('the rubicon adapter', function () {
         w: 640,
         h: 480,
         skip: 1,
-        skipdelay: 15,
+        skipafter: 15,
         pos: 1,
         protocols: [1, 2, 3, 4, 5, 6]
       }
@@ -166,7 +160,7 @@ describe('the rubicon adapter', function () {
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 480,
       'playerWidth': 640,
       'size_id': 201,
@@ -182,7 +176,7 @@ describe('the rubicon adapter', function () {
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 320,
       'playerWidth': 640,
       'size_id': 201,
@@ -212,13 +206,16 @@ describe('the rubicon adapter', function () {
         context: 'outstream'
       },
     };
+    bid.params.accountId = 14062;
+    bid.params.siteId = 70608;
+    bid.params.zoneId = 335918;
     bid.params.video = {
       'language': 'en',
       'skip': 1,
-      'skipdelay': 15,
+      'skipafter': 15,
       'playerHeight': 320,
       'playerWidth': 640,
-      'size_id': 201,
+      'size_id': 203
     };
   }
 
@@ -1069,8 +1066,6 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
-          let url = request.url;
-
           expect(post).to.have.property('imp')
             .with.length.of(1);
           let imp = post.imp[0];
@@ -1080,7 +1075,7 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
@@ -1098,8 +1093,6 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
-          let url = request.url;
-
           expect(post).to.have.property('imp')
             .with.length.of(1);
           let imp = post.imp[0];
@@ -1112,13 +1105,13 @@ describe('the rubicon adapter', function () {
           expect(imp.video.maxduration).to.equal(30);
           expect(imp.video.startdelay).to.equal(0);
           expect(imp.video.skip).to.equal(1);
-          expect(imp.video.skipdelay).to.equal(15);
+          expect(imp.video.skipafter).to.equal(15);
           expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
           expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipdelay).to.equal(15);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
@@ -1128,7 +1121,7 @@ describe('the rubicon adapter', function () {
 
         it('should send request with proper ad position', function () {
           createVideoBidderRequest();
-          var positionBidderRequest = clone(bidderRequest);
+          let positionBidderRequest = clone(bidderRequest);
           positionBidderRequest.bids[0].mediaTypes.video.pos = '1';
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
 
@@ -1147,6 +1140,8 @@ describe('the rubicon adapter', function () {
             },
             params: {
               accountId: 1001,
+              siteId: 123,
+              zoneId: 456,
               video: {
                 size_id: 201
               }
@@ -1225,11 +1220,10 @@ describe('the rubicon adapter', function () {
 
           let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
-          expect(request.data.slots[0].size_id).to.equal(203);
+          expect(request.data.imp[0].ext.rubicon.video.size_id).to.equal(203);
         });
 
         it('should send banner request when outstream or instream video included but no rubicon video obect is present', function () {
-          let bid = bidderRequest.bids[0];
           // add banner and video mediaTypes
           bidderRequest.mediaTypes = {
             banner: {
@@ -1275,34 +1269,6 @@ describe('the rubicon adapter', function () {
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
           expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
-        });
-
-        it('should get size from bid.sizes too', () => {
-          createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const bidRequestCopy = clone(bidderRequest);
-
-          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
-
-          expect(request.data.slots[0].width).to.equal(300);
-          expect(request.data.slots[0].height).to.equal(250);
-        });
-
-        it('should get size from bid.sizes too with legacy config mediaType', function () {
-          createLegacyVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const bidRequestCopy = clone(bidderRequest);
-
-          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
-
-          expect(request.data.slots[0].width).to.equal(300);
-          expect(request.data.slots[0].height).to.equal(250);
         });
       });
 

@@ -10,11 +10,11 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
-const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//localhost:8080/openrtb2/auction';
-const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
-let sizeMap = {
+var sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
@@ -81,7 +81,6 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
-  aliases: ['rubiconLite'],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
@@ -91,10 +90,15 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    if (!/^\d+$/.test(bid.params.accountId)) {
-      return false;
+    // validate account, site, zone have numeric values
+    for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
+      bid.params[props[i]] = parseInt(bid.params[props[i]])
+      if (isNaN(bid.params[props[i]])) {
+        utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.')
+        return false
+      }
     }
-    return !!bidType(bid, true);
+    return !!bidType(bid, true)
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -114,7 +118,7 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('timeout') || 1000,
+        tmax: config.getConfig('TTL') || 1000,
         imp: [{
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,
@@ -126,23 +130,26 @@ export const spec = {
         ext: {
           prebid: {
             cache: {
-              vastxml: {
-                ttlseconds: 300
+              vastXml: {
+                returnCreative: false // don't return the VAST
+              },
+              bids: {
+                returnCreative: true
               }
             },
             targeting: {
               includewinners: true
-            },
-            aliases: {
-              rubiconLite: 'rubicon'
             }
           }
+        },
+        vastxml: {
+          ttlseconds: 300
         }
-      };
+      }
 
       appendSiteAppDevice(data);
 
-      addFrankParameters(data, bidRequest);
+      addVideoParameters(data, bidRequest);
 
       const digiTrust = getDigiTrustQueryParams();
       if (digiTrust) {
@@ -170,7 +177,7 @@ export const spec = {
           data.regs = {ext: {gdpr: gdprApplies}};
         }
 
-        let consentString = bidderRequest.gdprConsent.consentString;
+        const consentString = bidderRequest.gdprConsent.consentString;
         if (data.user) {
           if (data.user.ext) {
             data.user.ext.consent = consentString;
@@ -456,7 +463,7 @@ export const spec = {
     let ads = responseObj.ads;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && spec.hasVideoMediaType(bidRequest) && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -547,11 +554,26 @@ export const spec = {
    * @return {Object} params bid params
    */
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    params = utils.convertTypes({
       'accountId': 'number',
       'siteId': 'number',
       'zoneId': 'number'
     }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 };
 
@@ -586,7 +608,7 @@ function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl = config.getConfig('pageUrl');
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl && bidderRequest.refererInfo) {
+  } else if (!pageUrl) {
     pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
@@ -670,7 +692,7 @@ function appendSiteAppDevice(request) {
   }
 }
 
-function addFrankParameters(data, bidRequest) {
+function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skip === undefined) {
     data.imp[0].video.skip = bidRequest.params.video.skip;
   }
@@ -811,18 +833,7 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-export function determineRubiconVideoSizeId(bid) {
-  // If we have size_id in the bid then use it
-  let rubiconSizeId = parseInt(utils.deepAccess(bid, 'params.video.size_id'));
-  if (!isNaN(rubiconSizeId)) {
-    return rubiconSizeId;
-  }
-  // otherwise 203 for outstream and 201 for instream
-  // When this function is used we know it has to be one of outstream or instream
-  return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
-}
-
-var hasSynced = false;
+let hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
