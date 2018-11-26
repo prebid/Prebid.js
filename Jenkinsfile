@@ -17,7 +17,7 @@ node {
     stage('Checkout Player'){
         dir('playerDigiteka') {
             git branch: 'master',
-                url: 'ambrugeat@github.com:digiteka/playerDigiteka.git',
+                url: 'git@github.com:digiteka/playerDigiteka.git',
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
             
             // The rest of your Groovy here...
@@ -27,6 +27,8 @@ node {
             sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             
             withCredentials([usernamePassword(credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                sh('git config --global user.email "jenkins@jenkins.com"')
+                sh('git config --global user.name "$USERNAME"')
                 sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
                 
                 //sh 'echo $PASSWORD'
