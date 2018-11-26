@@ -6,26 +6,31 @@ const DEFAULT_BID_HOST = 'pbjs.ayads.co';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.2';
+const SUBLIME_VERSION = '0.3';
 let SUBLIME_ZONE = null;
 
 /**
  * Send a pixel to antenna
  * @param {String} name The pixel name
+ * @param {String} [requestId]
  */
-function sendAntennaPixel(name) {
+function sendAntennaPixel(name, requestId) {
   if (typeof top.sublime !== 'undefined') {
-    top.sublime.analytics.fire(name, {
+    let param = {
       qs: {
         z: SUBLIME_ZONE
       }
-    });
+    };
+    if (requestId) {
+      param.qs.reqid = encodeURIComponent(requestId);
+    }
+    top.sublime.analytics.fire(name, param);
   } else {
-    var et = Math.round(sublime.window.performance.now());
+    var et = Math.round(window.performance.now());
     var ts = new Date().getTime();
     var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + SUBLIME_ZONE + '&e=' + name + '&et=' + et;
     if (requestId) {
-      url += '&uuid2' + encodeURIComponent(requestId);
+      url += '&reqid=' + encodeURIComponent(requestId);
     }
     utils.triggerPixel(url);
   }
@@ -83,15 +88,15 @@ export const spec = {
     SUBLIME_ZONE = params.zoneId;
 
     // debug pixel build request
-    sendAntennaPixel('dpbduireq');
+    sendAntennaPixel('dpbduireq', requestId);
 
     // debug pixel if window[callbackName] already exists
     if (typeof window[callbackName] === 'function') {
-      sendAntennaPixel('dpbcalae');
+      sendAntennaPixel('dpbcalae', requestId);
     }
 
     window[callbackName] = (response) => {
-      sendAntennaPixel('dpubclbcal');
+      sendAntennaPixel('dpubclbcal', requestId);
 
       var requestIdEncoded = encodeURIComponent(requestId);
       var hasAd = response.ad ? '1' : '0';
@@ -155,20 +160,20 @@ export const spec = {
       };
 
       if (!response.cpm) {
-        sendAntennaPixel('dirnocpm');
+        sendAntennaPixel('dirnocpm', bidResponse.requestId);
       }
 
       if (response.timeout) {
         // Debug timeout from the long polling server
-        sendAntennaPixel('dlptimeout');
+        sendAntennaPixel('dlptimeout', bidResponse.requestId);
       } else if (bidResponse.ad.match(regexNoAd)) {
         // Debug LP response no ad (a=0 in the notify)
-        sendAntennaPixel('dlpnoad');
+        sendAntennaPixel('dlpnoad', bidResponse.requestId);
       } else if (bidResponse.ad === '') {
         // Debug no ad in the interpret response, what happenned ?
-        sendAntennaPixel('drespnoad');
+        sendAntennaPixel('drespnoad', bidResponse.requestId);
       } else {
-        sendAntennaPixel('bid');
+        sendAntennaPixel('bid', bidResponse.requestId);
         bidResponses.push(bidResponse);
       }
     } else {
