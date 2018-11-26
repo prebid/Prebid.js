@@ -8,7 +8,7 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.4';
+const BIDDER_VERSION = '2.1.5';
 
 let shouldSendBoPixel = true;
 
@@ -20,11 +20,12 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
+    const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
+    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && hasDelDomainOrPlatform) {
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
 
-    return !!(bidRequest.params.unit && bidRequest.params.delDomain);
+    return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
   },
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -206,6 +207,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
+  if (bids[0].params.platform) {
+    defaultParams.ph = bids[0].params.platform;
+  }
+
   if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
     let gdprConsentConfig = bidderRequest.gdprConsent;
 
@@ -220,6 +225,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     if (config.getConfig('consentManagement.cmpApi') === 'iab') {
       defaultParams.x_gdpr_f = 1;
     }
+  }
+
+  if (bids[0].crumbs && bids[0].crumbs.pubcid) {
+    defaultParams.pubcid = bids[0].crumbs.pubcid;
   }
 
   return defaultParams;
@@ -273,7 +282,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.aumfs = customFloorsForAllBids.join(',');
   }
 
-  let url = `//${bids[0].params.delDomain}/w/1.0/arj`;
+  let url = queryParams.ph
+    ? `//u.openx.net/w/1.0/arj`
+    : `//${bids[0].params.delDomain}/w/1.0/arj`;
+
   return {
     method: 'GET',
     url: url,
