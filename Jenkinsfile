@@ -17,7 +17,7 @@ node {
     stage('Checkout Player'){
         dir('playerDigiteka') {
             git branch: 'master',
-                url: 'git@github.com:digiteka/playerDigiteka.git',
+                url: 'ambrugeat@github.com:digiteka/playerDigiteka.git',
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
             
             // The rest of your Groovy here...
