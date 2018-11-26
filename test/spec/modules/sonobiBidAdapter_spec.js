@@ -242,8 +242,7 @@ describe('SonobiBidAdapter', function () {
           },
           'adUnitCode': 'adunit-code-2',
           'sizes': [[120, 600], [300, 600], [160, 600]],
-          'bidId': '30b31c1838de1e',
-          'mediaType': 'video'
+          'bidId': '30b31c1838de1e'
         },
         {
           'bidder': 'sonobi',
@@ -274,6 +273,7 @@ describe('SonobiBidAdapter', function () {
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.25,
             'sbi_dozer': 'dozerkey',
+            'sbi_ct': 'video'
           },
           '/7780971/sparks_prebid_LB|30b31c1838de1g': {},
         },
@@ -321,14 +321,22 @@ describe('SonobiBidAdapter', function () {
       response.forEach((resp, i) => {
         expect(resp.requestId).to.equal(prebidResponse[i].requestId);
         expect(resp.cpm).to.equal(prebidResponse[i].cpm);
-        expect(resp.width).to.equal(prebidResponse[i].width);
-        expect(resp.height).to.equal(prebidResponse[i].height);
+
         expect(resp.ttl).to.equal(prebidResponse[i].ttl);
         expect(resp.creativeId).to.equal(prebidResponse[i].creativeId);
         expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue);
         expect(resp.currency).to.equal(prebidResponse[i].currency);
         expect(resp.aid).to.equal(prebidResponse[i].aid);
-        expect(resp.ad.indexOf('localhost')).to.be.greaterThan(0);
+        if (resp.mediaType === 'video') {
+          expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
+          expect(resp.ad).to.be.undefined;
+          expect(resp.width).to.be.undefined;
+          expect(resp.height).to.be.undefined;
+        } else {
+          expect(resp.ad.indexOf('localhost')).to.be.greaterThan(0);
+          expect(resp.width).to.equal(prebidResponse[i].width);
+          expect(resp.height).to.equal(prebidResponse[i].height);
+        }
       });
     });
   });
