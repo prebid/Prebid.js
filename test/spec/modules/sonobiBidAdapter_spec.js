@@ -275,13 +275,12 @@ describe('SonobiBidAdapter', function () {
             'sbi_dozer': 'dozerkey',
             'sbi_ct': 'video'
           },
-          '30b31c1838de2e': {
-            'sbi_size': '300x250',
+          '/7780971/sparks_prebid_LB_OUTSTREAM|30b31c1838de1g': {
+            'sbi_size': '300x600',
             'sbi_apoc': 'remnant',
-            'sbi_aid': '30292e432662bd5f86d90774b944b028',
-            'sbi_mouse': 1.25,
-            'sbi_dozer': 'dozerkey',
-            'sbi_ct': 'outstream'
+            'sbi_crid': '1234abcd',
+            'sbi_aid': '30292e432662bd5f86d90774b944b038',
+            'sbi_mouse': 1.07,
           },
           '/7780971/sparks_prebid_LB|30b31c1838de1g': {},
         },
@@ -323,18 +322,17 @@ describe('SonobiBidAdapter', function () {
         'aid': '30292e432662bd5f86d90774b944b038'
       },
       {
-        'requestId': '30b31c1838de2e',
-        'cpm': 1.25,
+        'requestId': '30b31c1838de1g',
+        'cpm': 1.07,
         'width': 300,
-        'height': 250,
-        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b028&ref=http%3A%2F%2Flocalhost%2F',
+        'height': 600,
+        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b038&as=null&ref=http%3A%2F%2Flocalhost%2F"></script>`,
         'ttl': 500,
-        'creativeId': '30292e432662bd5f86d90774b944b028',
+        'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'dozerkey',
-        'aid': '30292e432662bd5f86d90774b944b028'
-      }
+        'aid': '30292e432662bd5f86d90774b944b038'
+      },
     ];
 
     it('should map bidResponse to prebidResponse', function () {

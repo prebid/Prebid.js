@@ -105,7 +105,7 @@ export const spec = {
     Object.keys(bidResponse.slots).forEach(slot => {
       const bid = bidResponse.slots[slot];
       const bidId = _getBidIdFromTrinityKey(slot);
-      const mediaType = (bid.sbi_ct === 'video' || bid.sbi_ct === 'outstream') ? 'video' : null;
+      const mediaType = (bid.sbi_ct === 'video') ? 'video' : null;
       const createCreative = _creative(mediaType);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
