@@ -1,9 +1,20 @@
 import * as utils from 'src/utils';
 import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { auctionManager } from 'src/auctionManager';
 const BIDDER_CODE = 'example';
 const deviceType = !freestar.deviceInfo.device.type ? "desktop" : freestar.deviceInfo.device.type;
 const ENDPOINT_URL = `${freestar.msg.dispensaryURL}/floors/v2`
+
+/**
+ * Global access to auctionManager.findBidByAdId(adId);
+ * @param adId
+ * @returns {*|Object}
+ */
+pbjs.findBidByAdId = function(adId) {
+  const bid = auctionManager.findBidByAdId(adId);
+  return bid;
+}
 
 function diceRoll() {
   if (Math.floor(Math.random() * Math.floor(99)) === 51) {
@@ -72,7 +83,7 @@ export const spec = {
         cpm = floors[68] / 1e6;
       } else {
         // if not...
-        freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'FLOOR VALUE NOT FOUND, PRODUCING AVERAGE');
+        freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, bid.adUnitCode, 'FLOOR VALUE NOT FOUND, PRODUCING AVERAGE');
         // recast cpm to an array
         cpm = [];
         // loop through the networkFloor keys
@@ -84,19 +95,19 @@ export const spec = {
         // then, reduce the array and get the avg
         cpm = (cpm.reduce((a, b) => a + b, 0) / cpm.length);
       }
-      freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, 'Avg CPM is', cpm);
+      freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bid.adUnitCode, 'Avg CPM is', cpm);
       // build the bid response, using whatever cpm was derived above
       // pass a custom ad creative to be rendered on the page, in which the magic happens
       bidResponses.push({
-          requestId: bid.bidId,
-          cpm: cpm,
-          width: bid.sizes[0][0],
-          height: bid.sizes[0][1],
-          creativeId: bid.auctionId,
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 60,
-          ad: `
+        requestId: bid.bidId,
+        cpm: cpm,
+        width: bid.sizes[0][0],
+        height: bid.sizes[0][1],
+        creativeId: bid.auctionId,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 60,
+        ad: `
             <script type="text/javascript">
                 // get some vars
                 // filter bids to make sure it hasn't been rendered yet
@@ -104,7 +115,9 @@ export const spec = {
                 if(typeof winner == 'undefined') {
                     let winner;
                 }
-                winner = ${JSON.stringify(bid)}, bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
+                winner = parent.pbjs.getBidResponsesForAdUnitCode('${bid.adUnitCode}').bids.sort((a,b) => {
+                    return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
+                })[0], bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
                     if(
                         bid.adId != winner.adId
                         && bid.status != 'rendered'
@@ -115,12 +128,12 @@ export const spec = {
                 }).sort((a,b) => {
                     return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
                 });
-                parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
+                parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Floor was the winning bid...');
                 // if there are bids...
                 if(bids.length > 1) {
                     // pass the highest bid to pbjs.renderAd
                     // and mark it as a winning bid
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
                     parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[0].adId);
                     parent.pbjs.markWinningBidAsUsed({
                         adUnitCode: bids[0].adUnitCode,
@@ -136,7 +149,7 @@ export const spec = {
                       lowestFormat: bids[bids.length - 1].mediaType,
                       placement: winner.adUnitCode
                     };
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Message Details', payload);
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Message Details', payload);
                     parent.freestar.msg.que.push({
                         eventType: 'ffa',
                         args: payload
@@ -146,20 +159,20 @@ export const spec = {
                     // if not a 1x1 //@TODO: should this be the case?
                     // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
-                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner);
+                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'NO OTHER BIDS FOUND', winner);
                       parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
                     // }
                     
                 }
             </script>
           `
-        });
+      });
     })
     // return the bid response
     return bidResponses;
   },
 
-    /**
+  /**
    * Register the user sync pixels which should be dropped after the auction.
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
@@ -182,9 +195,9 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
-    */
-    onBidWon: function(bid) {
-      // Bidder specific code
-    }
+   */
+  onBidWon: function(bid) {
+    // Bidder specific code
+  }
 }
 registerBidder(spec);
