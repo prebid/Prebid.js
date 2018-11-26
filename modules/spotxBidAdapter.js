@@ -43,7 +43,7 @@ export const spec = {
 
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if ((bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) || utils.getBidIdParameter('ad_unit', bid.params) == 'outstream') {
+    if ((bid.mediaType === 'video' || (videoMediaType && context === 'outstream')) || utils.getBidIdParameter('ad_unit', bid.params) == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
         if (!utils.getBidIdParameter('outstream_options', bid.params)) {
           utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
@@ -111,6 +111,44 @@ export const spec = {
 
       if (utils.getBidIdParameter('custom', bid.params) != '') {
         ext.custom = utils.getBidIdParameter('custom', bid.params);
+      }
+
+      if (utils.getBidIdParameter('pre_market_bids', bid.params) != '' && utils.isArray(utils.getBidIdParameter('pre_market_bids', bid.params))) {
+        const preMarketBids = utils.getBidIdParameter('pre_market_bids', bid.params);
+        ext.pre_market_bids = [];
+        for (let i in preMarketBids) {
+          let preMarketBid = preMarketBids[i];
+          let vastStr = '';
+          if (preMarketBid['vast_url']) {
+            vastStr = '<VAST><Ad><Wrapper><VASTAdTagURI>' + preMarketBid['vast_url'] + '</VASTAdTagURI></Wrapper></Ad></VAST>';
+          } else if (preMarketBid['vast_string']) {
+            vastStr = preMarketBid['vast_string'];
+          }
+          ext.pre_market_bids.push({
+            id: preMarketBid['deal_id'],
+            seatbid: [{
+              bid: [{
+                id: preMarketBid['deal_id'],
+                impid: Date.now(),
+                dealid: preMarketBid['deal_id'],
+                price: preMarketBid['price'],
+                adm: vastStr
+              }]
+            }],
+            cur: preMarketBid['currency'],
+            ext: {
+              event_log: [{
+                ad_id: preMarketBid['deal_id'],
+                id: 3,
+                ts: parseFloat(Date.now() / 1000)
+              }, {
+                ad_id: preMarketBid['deal_id'],
+                id: 5,
+                ts: parseFloat(Date.now() / 1000)
+              }]
+            }
+          });
+        }
       }
 
       const mimes = utils.getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
@@ -292,8 +330,6 @@ function outstreamRender(bid) {
   } else {
     try {
       utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
-      const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       const script = window.document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
@@ -334,6 +370,7 @@ function outstreamRender(bid) {
         }
       }
 
+      const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
         const rawframe = window.document.getElementById(inIframe);
         let framedoc = rawframe.contentDocument;
@@ -342,6 +379,7 @@ function outstreamRender(bid) {
         }
         framedoc.body.appendChild(script);
       } else {
+        const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
         if (slot && window.document.getElementById(slot)) {
           window.document.getElementById(slot).appendChild(script);
         } else {
