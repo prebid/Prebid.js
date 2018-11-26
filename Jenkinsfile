@@ -24,7 +24,7 @@ node {
             //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
             sh('git checkout ft-' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ft-' +env.BRANCH_NAME)
             sh('git branch')
-            sh('cp ../prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
+            sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
            withCredentials([usernamePassword(credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
             sh 'echo $PASSWORD'
