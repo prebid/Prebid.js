@@ -6,7 +6,7 @@ const DEFAULT_BID_HOST = 'pbjs.ayads.co';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.1';
+const SUBLIME_VERSION = '0.2';
 let SUBLIME_ZONE = null;
 
 /**
@@ -21,9 +21,12 @@ function sendAntennaPixel(name) {
       }
     });
   } else {
+    var et = Math.round(sublime.window.performance.now());
     var ts = new Date().getTime();
-    var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + SUBLIME_ZONE + '&e=' + name;
-
+    var url = 'https://antenna.ayads.co/?t=' + ts + '&z=' + SUBLIME_ZONE + '&e=' + name + '&et=' + et;
+    if (requestId) {
+      url += '&uuid2' + encodeURIComponent(requestId);
+    }
     utils.triggerPixel(url);
   }
 }
