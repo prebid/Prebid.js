@@ -128,12 +128,12 @@ export const spec = {
                 }).sort((a,b) => {
                     return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
                 });
-                parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Floor was the winning bid...');
+                parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
                 // if there are bids...
                 if(bids.length > 1) {
                     // pass the highest bid to pbjs.renderAd
                     // and mark it as a winning bid
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
                     parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[0].adId);
                     parent.pbjs.markWinningBidAsUsed({
                         adUnitCode: bids[0].adUnitCode,
@@ -149,7 +149,7 @@ export const spec = {
                       lowestFormat: bids[bids.length - 1].mediaType,
                       placement: winner.adUnitCode
                     };
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'Message Details', payload);
+                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Message Details', payload);
                     parent.freestar.msg.que.push({
                         eventType: 'ffa',
                         args: payload
@@ -159,7 +159,7 @@ export const spec = {
                     // if not a 1x1 //@TODO: should this be the case?
                     // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
-                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, winner.adUnitCode, winner.adId, 'NO OTHER BIDS FOUND', winner);
+                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner);
                       parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
                     // }
                     
