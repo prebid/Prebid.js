@@ -492,7 +492,12 @@ export const spec = {
               netRevenue: NET_REVENUE,
               ttl: 300,
               referrer: utils.getTopWindowUrl(),
-              ad: bid.adm
+              ad: bid.adm,
+              pubmatic: {
+                dspid: utils.deepAccess(bid, 'ext.dspid'),
+                advid: utils.deepAccess(bid, 'ext.advid'),
+                adomain: bid.adomain,
+              }
             };
             let parsedRequest = JSON.parse(request.data);
             if (parsedRequest.imp && parsedRequest.imp.length > 0) {

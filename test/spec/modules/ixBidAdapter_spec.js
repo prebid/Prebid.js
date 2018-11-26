@@ -416,7 +416,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          ix: {
+            advbrandid: 303325,
+            advbrand: 'OECTA',
+            adomain: ['www.abc.com']
+          }
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE });
@@ -437,7 +442,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          ix: {
+            advbrandid: 303325,
+            advbrand: 'OECTA',
+            adomain: ['www.abc.com']
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -458,7 +468,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          ix: {
+            advbrandid: 303325,
+            advbrand: 'OECTA',
+            adomain: ['www.abc.com']
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -479,7 +494,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: 'deal'
+          dealId: 'deal',
+          ix: {
+            advbrandid: 303325,
+            advbrand: 'OECTA',
+            adomain: ['www.abc.com']
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });

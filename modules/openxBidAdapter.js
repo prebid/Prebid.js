@@ -114,6 +114,9 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
       bidResponse.tbd = adUnit.tbd;
     }
     bidResponse.ts = adUnit.ts;
+    bidResponse.openx = {
+      brand_id: adUnit.brand_id
+    };
 
     bidResponses.push(bidResponse);
 
