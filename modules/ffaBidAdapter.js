@@ -29,6 +29,12 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    bid.sizes.forEach((size) => {
+      if(size.indexOf(1) != -1) {
+        freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, '1x1 FOUND, NOT BIDDING');
+        return false;
+      }
+    })
     if(freestar.debug < 50) {
       // 10% of bids are valid to us
       return diceRoll();
