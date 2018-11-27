@@ -23,7 +23,7 @@ node {
             
             // The rest of your Groovy here...
             //sh('git clone https://github.com/digiteka/playerDigiteka.git .')
-            sh('git checkout ft-' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ft-' +env.BRANCH_NAME)
+            sh('git checkout ' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ' +env.BRANCH_NAME)
             sh('git branch')
             //sh('cp ../build/dist/prebid.js app/library/dtkplayer/addons/PrebidLibrary.js')
             sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
