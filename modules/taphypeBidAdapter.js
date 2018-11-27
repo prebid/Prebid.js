@@ -3,7 +3,6 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 
 export const spec = {
   code: 'taphype',
-  supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     return !!bid.params.placementId;
   },
@@ -23,7 +22,6 @@ export const spec = {
     return requests;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    console.log(serverResponse);
     if (!serverResponse || !serverResponse.body || !serverResponse.body.ad) {
       return [];
     }
