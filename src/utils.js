@@ -552,16 +552,18 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
 exports.insertElement = function(elm, doc, target) {
   doc = doc || document;
   let elToAppend;
+  const head = doc.getElementsByTagName('head');
   if (target) {
     elToAppend = doc.getElementsByTagName(target);
   } else {
-    elToAppend = doc.getElementsByTagName('head');
+    elToAppend = head;
   }
   try {
     elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
     if (elToAppend.length) {
       elToAppend = elToAppend[0];
-      elToAppend.insertBefore(elm, elToAppend.firstChild);
+      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
+      return elToAppend.insertBefore(elm, refChild);
     }
   } catch (e) {}
 };
