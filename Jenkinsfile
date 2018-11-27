@@ -36,7 +36,7 @@ node {
                 //echo USERNAME
                 // or inside double quotes for string interpolation
                 echo "username is $USERNAME"
-                sh('git push origin ft-' +env.BRANCH_NAME)
+                sh('git push origin ' +env.BRANCH_NAME)
             }
           
         }
