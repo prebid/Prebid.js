@@ -261,6 +261,8 @@ describe('AppNexusAdapter', function () {
               singleArrNum: [5],
               multiValMixed: ['value1', 2, 'value3'],
               singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
               badValue: {'foo': 'bar'} // should be dropped
             }
           }
@@ -285,6 +287,10 @@ describe('AppNexusAdapter', function () {
       }, {
         'key': 'singleValNum',
         'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
       }]);
     });
 
@@ -457,12 +463,18 @@ describe('AppNexusAdapter', function () {
           'currency': 'USD',
           'ttl': 300,
           'netRevenue': true,
+          'adUnitCode': 'code',
           'appnexus': {
             'buyerMemberId': 958
           }
         }
       ];
-      let bidderRequest;
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
@@ -499,7 +511,12 @@ describe('AppNexusAdapter', function () {
           }]
         }]
       };
-      let bidderRequest;
+      let bidderRequest = {
+        bids: [{
+          bidId: '84ab500420319d',
+          adUnitCode: 'code'
+        }]
+      }
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
@@ -532,7 +549,12 @@ describe('AppNexusAdapter', function () {
         },
         'impression_trackers': ['http://example.com'],
       };
-      let bidderRequest;
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
 
       let result = spec.interpretResponse({ body: response1 }, {bidderRequest});
       expect(result[0].native.title).to.equal('Native Creative');
@@ -548,6 +570,7 @@ describe('AppNexusAdapter', function () {
 
       const bidderRequest = {
         bids: [{
+          bidId: '3db3773286ee59',
           renderer: {
             options: {
               adText: 'configured'
@@ -560,6 +583,21 @@ describe('AppNexusAdapter', function () {
       expect(result[0].renderer.config).to.deep.equal(
         bidderRequest.bids[0].renderer.options
       );
+    });
+
+    it('should add deal_priority and deal_code', function() {
+      let responseWithDeal = deepClone(response);
+      responseWithDeal.tags[0].ads[0].deal_priority = 'high';
+      responseWithDeal.tags[0].ads[0].deal_code = '123';
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
   });
 });
