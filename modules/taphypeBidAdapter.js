@@ -1,4 +1,3 @@
-import {BANNER} from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 export const spec = {
