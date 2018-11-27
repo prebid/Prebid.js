@@ -1122,10 +1122,36 @@ describe('the rubicon adapter', function () {
         it('should send request with proper ad position', function () {
           createVideoBidderRequest();
           let positionBidderRequest = clone(bidderRequest);
-          positionBidderRequest.bids[0].mediaTypes.video.pos = '1';
+          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(1);
+        });
 
-          expect(request.data.imp[0].video.pos).to.equal('1');
+        it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
+          createVideoBidderRequest();
+          let positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = undefined;
+          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(0);
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'atf'
+          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(1);
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'btf';
+          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(3);
+
+          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest.bids[0].params.position = 'foobar';
+          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(0);
         });
 
         it('should validate bid request with invalid video if a mediaTypes banner property is defined', function () {
@@ -1140,8 +1166,8 @@ describe('the rubicon adapter', function () {
             },
             params: {
               accountId: 1001,
-              siteId: 123,
-              zoneId: 456,
+              siteId: 100,
+              zoneId: 200,
               video: {
                 size_id: 201
               }

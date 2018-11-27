@@ -103,7 +103,7 @@ export const spec = {
   /**
    * @param {BidRequest[]} bidRequests
    * @param bidderRequest
-   * @return ServerRequest[]
+   * @return BidRequest[]
    */
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
@@ -125,7 +125,7 @@ export const spec = {
           ext: {
             rubicon: bidRequest.params
           },
-          video: utils.deepAccess(bidRequest, 'mediaTypes.video')
+          video: utils.deepAccess(bidRequest, 'mediaTypes.video') || {}
         }],
         ext: {
           prebid: {
@@ -146,6 +146,8 @@ export const spec = {
           ttlseconds: 300
         }
       }
+      // if value is set, will overwrite with same value
+      data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
 
       appendSiteAppDevice(data);
 
@@ -700,29 +702,15 @@ function addVideoParameters(data, bidRequest) {
     data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
   }
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
-    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : bidRequest.params.position === 'btf' ? 3 : 0;
+    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : (bidRequest.params.position === 'btf' ? 3 : 0);
   }
   if (data.imp[0].bidfloor === undefined) {
     data.imp[0].bidfloor = parseFloat(bidRequest.params.floor) > 0.01 ? bidRequest.params.floor : 0.01;
   }
-  if (typeof data.imp[0].video === 'object' && data.imp[0].video.w === undefined) {
-    if (bidRequest.params.video.playerWidth) {
-      data.imp[0].video.w = bidRequest.params.video.playerWidth;
-    } else if (Array.isArray(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize')) && bidRequest.mediaTypes.video.playerSize.length === 1) {
-      data.imp[0].video.w = bidRequest.mediaTypes.video.playerSize[0][0];
-    } else if (Array.isArray(bidRequest.sizes) && bidRequest.sizes.length > 0 && Array.isArray(bidRequest.sizes[0]) && bidRequest.sizes[0].length > 1) {
-      data.imp[0].video.w = bidRequest.sizes[0][0];
-    }
-  }
-  if (typeof data.imp[0].video === 'object' && data.imp[0].video.h === undefined) {
-    if (bidRequest.params.video.playerWidth) {
-      data.imp[0].video.h = bidRequest.params.video.playerHeight;
-    } else if (Array.isArray(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize')) && bidRequest.mediaTypes.video.playerSize.length === 1) {
-      data.imp[0].video.h = bidRequest.mediaTypes.video.playerSize[0][1];
-    } else if (Array.isArray(bidRequest.sizes) && bidRequest.sizes.length > 0 && Array.isArray(bidRequest.sizes[0]) && bidRequest.sizes[0].length > 1) {
-      data.imp[0].video.h = bidRequest.sizes[0][1];
-    }
-  }
+
+  const size = parseSizes(bidRequest, 'video')
+  data.imp[0].video.w = size[0]
+  data.imp[0].video.h = size[1]
 }
 
 function mapSizes(sizes) {
@@ -833,7 +821,18 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-let hasSynced = false;
+export function determineRubiconVideoSizeId(bid) {
+  // If we have size_id in the bid then use it
+  let rubiconSizeId = parseInt(utils.deepAccess(bid, 'params.video.size_id'));
+  if (!isNaN(rubiconSizeId)) {
+    return rubiconSizeId;
+  }
+  // otherwise 203 for outstream and 201 for instream
+  // When this function is used we know it has to be one of outstream or instream
+  return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
+}
+
+var hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
