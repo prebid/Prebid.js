@@ -1,7 +1,6 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
+import { getTopWindowLocation, parseSizesInput, logError, generateUUID, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 import { config } from '../src/config';
 
 const BIDDER_CODE = 'sonobi';
@@ -104,12 +103,10 @@ export const spec = {
     }
 
     Object.keys(bidResponse.slots).forEach(slot => {
-      const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
-      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
-      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
-      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const mediaType = (bid.sbi_ct === 'video') ? 'video' : null;
+      const createCreative = _creative(mediaType);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
           width = 1,
@@ -132,8 +129,7 @@ export const spec = {
           bids.dealId = bid.sbi_dozer;
         }
 
-        const creativeType = bid.sbi_ct;
-        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+        if (mediaType === 'video') {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
