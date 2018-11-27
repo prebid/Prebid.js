@@ -26,7 +26,7 @@ node {
             sh('git branch | grep -v "master" | xargs git branch -D')
             sh('git fetch --all')
             sh('git checkout ' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ' +env.BRANCH_NAME)
-            sh('git branch')
+            sh('git branch -r')
             //sh('cp ../build/dist/prebid.js app/library/dtkplayer/addons/PrebidLibrary.js')
             sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             
