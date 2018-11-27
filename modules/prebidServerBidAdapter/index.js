@@ -28,6 +28,8 @@ const s2sDefaultConfig = {
   adapter: 'prebidServer'
 };
 
+
+
 config.setDefaults({
   's2sConfig': s2sDefaultConfig,
   'cache': {
