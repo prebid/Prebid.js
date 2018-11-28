@@ -31,7 +31,7 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
-var port = 9999;
+var port = 9800;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -267,7 +267,7 @@ function testCoverage(done) {
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
-                       // first send results of istanbul's test coverage to coveralls.io.
+  // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
@@ -355,7 +355,7 @@ gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, /*lint,*/ gulp.parallel('build-bundle-dev', watch/*, test*/)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
 gulp.task(e2etestReport);
