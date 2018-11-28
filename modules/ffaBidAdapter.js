@@ -46,12 +46,13 @@ export const spec = {
         return false;
       }
     })
-    if(freestar.debug < 50) {
-      // 10% of bids are valid to us
-      return diceRoll();
-    } else {
-      return true;
-    }
+    // if(freestar.debug < 50) {
+    //   // 10% of bids are valid to us
+    //   return diceRoll();
+    // } else {
+    //   return true;
+    // }
+    return true;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -165,8 +166,15 @@ export const spec = {
                     // if not a 1x1 //@TODO: should this be the case?
                     // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
-                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner);
-                      parent.freestar.fsRequestBids([winner.adUnitCode], [parent.freestar.dfpSlotInfo[winner.adUnitCode].slot]);
+                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner, parent.freestar.dfpSlotInfo[winner.adUnitCode]);
+                      let slots = parent.googletag.pubads().getSlots();
+                      slot = slots.filter((slot) => {
+                          let adUnitPath = slot.getAdUnitPath();
+                          if(adUnitPath.indexOf(winner.adUnitCode) != -1) {
+                              return slot;
+                          }
+                      })
+                      parent.freestar.fsRequestBids([winner.adUnitCode], [slot]);
                     // }
                     
                 }
