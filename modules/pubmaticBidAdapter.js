@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
+import {config} from 'src/config';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
@@ -8,6 +9,7 @@ const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
+const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -91,7 +93,6 @@ function _parseAdSlot(bid) {
   bid.params.width = 0;
   bid.params.height = 0;
   var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
-
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -275,15 +276,73 @@ function _createImpressionObject(bid, conf) {
   return impObj;
 }
 
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return digiTrustId;
+}
+
+function _handleDigitrustId(eids) {
+  let digiTrustId = _getDigiTrustObject(PUBMATIC_DIGITRUST_KEY);
+  if (digiTrustId !== null) {
+    eids.push({
+      'source': 'digitru.st',
+      'uids': [
+        {
+          'id': digiTrustId.id || '',
+          'atype': 1,
+          'ext': {
+            'keyv': parseInt(digiTrustId.keyv) || 0
+          }
+        }
+      ]
+    });
+  }
+}
+
+function _handleTTDId(eids) {
+  let adsrvrOrgId = config.getConfig('adsrvrOrgId');
+  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    eids.push({
+      'source': 'adserver.org',
+      'uids': [
+        {
+          'id': adsrvrOrgId.TDID,
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }
+      ]
+    });
+  }
+}
+
+function _handleEids(payload) {
+  let eids = [];
+  _handleDigitrustId(eids);
+  _handleTTDId(eids);
+  if (eids.length > 0) {
+    payload.user.eids = eids;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
-   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return boolean True if this is a valid bid, and false otherwise.
+  */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
@@ -307,11 +366,11 @@ export const spec = {
   },
 
   /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
-   */
+  * Make a server request from the list of BidRequests.
+  *
+  * @param {validBidRequests[]} - an array of bids
+  * @return ServerRequest Info describing the request to the server.
+  */
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
@@ -319,7 +378,9 @@ export const spec = {
     var dctr = '';
     var dctrLen;
     var dctrArr = [];
-    validBidRequests.forEach(bid => {
+    var bid;
+    validBidRequests.forEach(originalBid => {
+      bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
@@ -327,7 +388,7 @@ export const spec = {
           return;
         }
       } else {
-        if (!(bid.params.width && bid.params.height && bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
+        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
           utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
@@ -413,6 +474,8 @@ export const spec = {
       // utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
 
+    _handleEids(payload);
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -421,11 +484,11 @@ export const spec = {
   },
 
   /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} response A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
+  * Unpack the response from the server into a list of bids.
+  *
+  * @param {*} response A successful response from the server.
+  * @return {Bid[]} An array of bids which were nested inside the server.
+  */
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
@@ -493,8 +556,8 @@ export const spec = {
   },
 
   /**
-   * Register User Sync.
-   */
+  * Register User Sync.
+  */
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
     let syncurl = USYNCURL + publisherId;
 
