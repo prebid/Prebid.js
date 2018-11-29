@@ -11,6 +11,7 @@ describe('user sync', function () {
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
+  let insertHtmlIntoIframeStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
@@ -39,6 +40,7 @@ describe('user sync', function () {
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
   afterEach(function () {
@@ -47,6 +49,7 @@ describe('user sync', function () {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
+    insertHtmlIntoIframeStub.restore();
   });
 
   it('should register and fire a pixel URL', function () {
@@ -96,6 +99,19 @@ describe('user sync', function () {
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should register and load html into iframe', function () {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        html: {
+          bidders: ['testBidder']
+        }
+      }
+    });
+    userSync.registerSync('html', 'testBidder', '<div>hoge.sync();</div>');
+    userSync.syncUsers();
+    expect(insertHtmlIntoIframeStub.getCall(0).args[0]).to.equal('<div>hoge.sync();</div>');
   });
 
   it('should only trigger syncs once per page', function () {
@@ -193,22 +209,25 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
-  it('should register both image and iframe pixels with filterSettings.all config', function () {
+  it('should register image and iframe and html pixels with filterSettings.all config', function () {
     const userSync = newTestUserSync({
       filterSettings: {
         all: {
-          bidders: ['atestBidder', 'testBidder'],
+          bidders: ['atestBidder', 'testBidder', 'btestBidder'],
           filter: 'include'
         },
       }
     });
     userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.registerSync('html', 'btestBidder', '<div>hoge.sync();</div>');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+    expect(insertHtmlIntoIframeStub.getCall(0)).to.not.be.null;
+    expect(insertHtmlIntoIframeStub.getCall(0).args[0]).to.equal('<div>hoge.sync();</div>');
   });
 
   it('should register iframe and not register image pixels based on filterSettings config', function () {
@@ -229,6 +248,26 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(0)).to.be.null;
     expect(insertUserSyncIframeStub.getCall(0)).to.not.be.null;
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should register html and not register image pixels based on filterSettings config', function () {
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: '*',
+          filter: 'exclude'
+        },
+        html: {
+          bidders: ['testBidder']
+        }
+      }
+    });
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('html', 'testBidder', '<div>hoge.sync();</div>');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.be.null;
+    expect(insertHtmlIntoIframeStub.getCall(0)).to.not.be.null;
+    expect(insertHtmlIntoIframeStub.getCall(0).args[0]).to.equal('<div>hoge.sync();</div>');
   });
 
   it('should throw a warning and default to basic resgistration rules when filterSettings config is invalid', function () {

@@ -32,7 +32,8 @@ export function newUserSync(userSyncDependencies) {
   // for now - default both to false in case filterSettings config is absent/misconfigured
   let permittedPixels = {
     image: false,
-    iframe: false
+    iframe: false,
+    html: false
   }
 
   // Use what is in config by default
@@ -51,7 +52,8 @@ export function newUserSync(userSyncDependencies) {
   function getDefaultQueue() {
     return {
       image: [],
-      iframe: []
+      iframe: [],
+      html: []
     };
   }
 
@@ -70,6 +72,8 @@ export function newUserSync(userSyncDependencies) {
       fireImagePixels();
       // Iframe syncs
       loadIframes();
+      // Html syncs in iframe
+      loadHtmlIntoIframes();
     } catch (e) {
       return utils.logError('Error firing user syncs', e);
     }
@@ -117,6 +121,23 @@ export function newUserSync(userSyncDependencies) {
   }
 
   /**
+   * @function loadHtmlIntoIframes
+   * @summary Loops through html/js syncs and loads an iframe element into the page
+   */
+  function loadHtmlIntoIframes() {
+    if (!permittedPixels.html) {
+      return;
+    }
+    // Randomize the order of these syncs just like the pixels above
+    utils.shuffle(queue.html).forEach((sync) => {
+      let [bidderName, html] = sync;
+      utils.logMessage(`Invoking html in iframe user sync for bidder: ${bidderName}`);
+      // Insert html into iframe and Insert iframe into DOM
+      utils.insertHtmlIntoIframe(html);
+    });
+  }
+
+  /**
    * @function incrementAdapterBids
    * @summary Increment the count of user syncs queue for the adapter
    * @private
@@ -139,13 +160,13 @@ export function newUserSync(userSyncDependencies) {
    * @public
    * @params {string} type The type of the sync including image, iframe
    * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
+   * @params {string} src the pixel url or iframe url or html depending on the type
 
    * @example <caption>Using Image Sync</caption>
    * // registerSync(type, adapter, pixelUrl)
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
-  publicApi.registerSync = (type, bidder, url) => {
+  publicApi.registerSync = (type, bidder, src) => {
     if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "${type}" not supported`);
     }
@@ -166,7 +187,7 @@ export function newUserSync(userSyncDependencies) {
     }
 
     // the bidder's pixel has passed all checks and is allowed to register
-    queue[type].push([bidder, url]);
+    queue[type].push([bidder, src]);
     numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
   };
 

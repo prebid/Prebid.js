@@ -321,13 +321,18 @@ export function newBidder(spec) {
       let syncs = spec.getUserSyncs({
         iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
         pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
+        htmlEnabled: !!(filterConfig && (filterConfig.html || filterConfig.all)),
       }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];
         }
         syncs.forEach((sync) => {
-          userSync.registerSync(sync.type, spec.code, sync.url)
+          if (sync.url) {
+            userSync.registerSync(sync.type, spec.code, sync.url);
+          } else if (sync.html) {
+            userSync.registerSync(sync.type, spec.code, sync.html);
+          }
         });
       }
     }
