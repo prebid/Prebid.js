@@ -1450,28 +1450,64 @@ describe('OpenxAdapter', function () {
   describe('user sync', function () {
     const syncUrl = 'http://testpixels.net';
 
-    it('should register the pixel iframe from banner ad response', function () {
+    describe('iframe sync', function () {
+      it('should register the pixel iframe from banner ad response', function () {
+        let syncs = spec.getUserSyncs(
+          {iframeEnabled: true},
+          [{body: {ads: {pixels: syncUrl}}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+      });
+
+      it('should register the pixel iframe from video ad response', function () {
+        let syncs = spec.getUserSyncs(
+          {iframeEnabled: true},
+          [{body: {pixels: syncUrl}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+      });
+
+      it('should register the default iframe if no pixels available', function () {
+        let syncs = spec.getUserSyncs(
+          {iframeEnabled: true},
+          []
+        );
+        expect(syncs).to.deep.equal([{type: 'iframe', url: '//u.openx.net/w/1.0/pd'}]);
+      });
+    });
+
+    describe('pixel sync', function () {
+      it('should register the image pixel from banner ad response', function () {
+        let syncs = spec.getUserSyncs(
+          {pixelEnabled: true},
+          [{body: {ads: {pixels: syncUrl}}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'image', url: syncUrl}]);
+      });
+
+      it('should register the image pixel from video ad response', function () {
+        let syncs = spec.getUserSyncs(
+          {pixelEnabled: true},
+          [{body: {pixels: syncUrl}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'image', url: syncUrl}]);
+      });
+
+      it('should register the default image pixel if no pixels available', function () {
+        let syncs = spec.getUserSyncs(
+          {pixelEnabled: true},
+          []
+        );
+        expect(syncs).to.deep.equal([{type: 'image', url: '//u.openx.net/w/1.0/pd'}]);
+      });
+    });
+
+    it('should prioritize iframe over image for user sync', function () {
       let syncs = spec.getUserSyncs(
-        {iframeEnabled: true},
+        {iframeEnabled: true, pixelEnabled: true},
         [{body: {ads: {pixels: syncUrl}}}]
       );
       expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
-    });
-
-    it('should register the pixel iframe from video ad response', function () {
-      let syncs = spec.getUserSyncs(
-        {iframeEnabled: true},
-        [{body: {pixels: syncUrl}}]
-      );
-      expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
-    });
-
-    it('should register the default iframe if no pixels available', function () {
-      let syncs = spec.getUserSyncs(
-        {iframeEnabled: true},
-        []
-      );
-      expect(syncs).to.deep.equal([{type: 'iframe', url: '//u.openx.net/w/1.0/pd'}]);
     });
   });
 
