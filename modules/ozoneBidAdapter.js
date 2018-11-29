@@ -3,12 +3,12 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ozone';
 
-var OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
-var OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
+const OZONEURI = '//elb.the-ozone-project.com/openrtb2/auction';
+const OZONECOOKIESYNC = '//elb.the-ozone-project.com/static/load-cookie.html';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedFormat: ['banner'],
+
   /**
    * Basic check to see whether required parameters are in the request.
    * @param bid
@@ -16,48 +16,48 @@ export const spec = {
    */
   isBidRequestValid(bid) {
     if (!(bid.params.hasOwnProperty('placementId'))) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : missing placementId : siteId, placementId and publisherId are REQUIRED');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : missing placementId : siteId, placementId and publisherId are REQUIRED');
       return false;
     }
     if (!(bid.params.placementId).toString().match(/^[0-9]{10}$/)) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : placementId must be exactly 10 numeric characters');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : placementId must be exactly 10 numeric characters');
       return false;
     }
     if (!(bid.params.hasOwnProperty('publisherId'))) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : missing publisherId : siteId, placementId and publisherId are REQUIRED');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : missing publisherId : siteId, placementId and publisherId are REQUIRED');
       return false;
     }
     if (!(bid.params.publisherId).toString().match(/^[a-zA-Z0-9\-]{12}$/)) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : publisherId must be exactly 12 alphanumieric characters including hyphens');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : publisherId must be exactly 12 alphanumieric characters including hyphens');
       return false;
     }
     if (!(bid.params.hasOwnProperty('siteId'))) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : missing siteId : siteId, placementId and publisherId are REQUIRED');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : missing siteId : siteId, placementId and publisherId are REQUIRED');
       return false;
     }
     if (!(bid.params.siteId).toString().match(/^[0-9]{10}$/)) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : siteId must be exactly 10 numeric characters');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : siteId must be exactly 10 numeric characters');
       return false;
     }
     if (bid.params.hasOwnProperty('customData')) {
       if (typeof bid.params.customData !== 'object') {
-        console.log('OZONE BID ADAPTER VALIDATION FAILED : customData is not an object');
+        utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : customData is not an object');
         return false;
       }
     }
     if (bid.params.hasOwnProperty('customParams')) {
-      console.log('OZONE BID ADAPTER VALIDATION FAILED : customParams should be renamed to customData');
+      utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : customParams should be renamed to customData');
       return false;
     }
     if (bid.params.hasOwnProperty('ozoneData')) {
       if (typeof bid.params.ozoneData !== 'object') {
-        console.log('OZONE BID ADAPTER VALIDATION FAILED : ozoneData is not an object');
+        utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : ozoneData is not an object');
         return false;
       }
     }
     if (bid.params.hasOwnProperty('lotameData')) {
       if (typeof bid.params.lotameData !== 'object') {
-        console.log('OZONE BID ADAPTER VALIDATION FAILED : lotameData is not an object');
+        utils.logInfo('OZONE BID ADAPTER VALIDATION FAILED : lotameData is not an object');
         return false;
       }
     }
@@ -108,7 +108,7 @@ export const spec = {
           }
           return false;
         });
-        console.log(['going to return winnersClean:', winnersClean]);
+        utils.logInfo(['going to return winnersClean:', winnersClean]);
         return winnersClean;
       } else {
         return [];
@@ -181,10 +181,13 @@ export const spec = {
       data: JSON.stringify(ozoneRequest),
       bidderRequest: bidderRequest
     };
-    console.log(['buildRequests going to return', ret]);
+    utils.logInfo(['buildRequests going to return', ret]);
     return ret;
   },
-  getUserSyncs(optionsType) {
+  getUserSyncs(optionsType, serverResponse) {
+    if (!serverResponse || serverResponse.length === 0) {
+      return [];
+    }
     if (optionsType.iframeEnabled) {
       return [{
         type: 'iframe',
