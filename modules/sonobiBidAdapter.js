@@ -91,13 +91,13 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {*} bidderRequests - Info describing the request to the server.
+   * @param {*} bidderRequest - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse, bidderRequests) => {
+  interpretResponse: (serverResponse, bidderRequest) => {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
-    const referrer = bidderRequests.data.ref;
+    const referrer = bidderRequest.data.ref;
 
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
