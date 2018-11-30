@@ -122,6 +122,16 @@ export const spec = {
 
 }
 
+export let pixel = {
+  fire(url) {
+    let img = document.createElement('img')
+    img.src = url
+    img.id = 'jp-pixel-track'
+    img.style.cssText = 'display:none !important;'
+    document.body.appendChild(img)
+  }
+};
+
 function track (data, payload, type) {
   let pubUrl = ''
 
@@ -147,11 +157,7 @@ ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=$
 sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
 cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`
 
-  let img = document.createElement('img')
-  img.src = pixelUrl
-  img.id = 'jp-pixel-track'
-  img.style.cssText = 'display:none !important;'
-  document.body.appendChild(img)
+  pixel.fire(pixelUrl);
 }
 
 function findBid (params, bids) {

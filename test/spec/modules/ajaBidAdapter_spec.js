@@ -141,4 +141,46 @@ describe('AjaAdapter', function () {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs', function () {
+    const bidResponse1 = {
+      body: {
+        'is_ad_return': true,
+        'ad': { /* ad body */ },
+        'syncs': [
+          'https://example.test/1'
+        ]
+      }
+    };
+
+    const bidResponse2 = {
+      body: {
+        'is_ad_return': true,
+        'ad': { /* ad body */ },
+        'syncs': [
+          'https://example.test/2'
+        ]
+      }
+    };
+
+    it('should use a sync url from first response', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [bidResponse1, bidResponse2]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://example.test/1'
+        }
+      ]);
+    });
+
+    it('handle empty response (e.g. timeout)', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns empty syncs when not enabled', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [bidResponse1]);
+      expect(syncs).to.deep.equal([]);
+    });
+  });
 });

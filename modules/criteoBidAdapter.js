@@ -6,7 +6,7 @@ import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-const ADAPTER_VERSION = 14;
+const ADAPTER_VERSION = 15;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -125,6 +125,26 @@ export const spec = {
     if (publisherTagAvailable()) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
       adapter.handleBidTimeout();
+    }
+  },
+
+  /**
+   * @param {Bid} bid
+   */
+  onBidWon: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleBidWon(bid);
+    }
+  },
+
+  /**
+   * @param {Bid} bid
+   */
+  onSetTargeting: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleSetTargeting(bid);
     }
   },
 };
