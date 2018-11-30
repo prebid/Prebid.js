@@ -1,5 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 
@@ -98,7 +98,6 @@ export const spec = {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
     const referrer = bidderRequests.data.ref;
-    bidderRequests = bidderRequests.bidderRequests;
 
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
