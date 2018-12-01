@@ -3,8 +3,8 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ozone';
 
-const OZONEURI = '//elb.the-ozone-project.com/openrtb2/auction';
-const OZONECOOKIESYNC = '//elb.the-ozone-project.com/static/load-cookie.html';
+const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
+const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
 
 export const spec = {
   code: BIDDER_CODE,
