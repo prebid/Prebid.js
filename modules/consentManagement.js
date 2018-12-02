@@ -17,13 +17,25 @@ const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 export let userCMP;
 export let consentTimeout;
 export let allowAuction;
+export let staticConsentData;
 
 let consentData;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
-  'iab': lookupIabConsent
+  'iab': lookupIabConsent,
+  'static': lookupStaticConsentData
 };
+
+/**
+ * This function reads the consent string from the config to obtain the consent information of the user.
+ * @param {function(string)} cmpSuccess acts as a success callback when the value is read from config; pass along consentObject (string) from CMP
+ * @param {function(string)} cmpError acts as an error callback while interacting with the config string; pass along an error message (string)
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ */
+function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
+  cmpSuccess(staticConsentData, hookConfig);
+}
 
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
@@ -90,6 +102,10 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       f = f.parent;
     }
 
+    if (!cmpFrame) {
+      return cmpError('CMP not found.', hookConfig);
+    }
+
     callCmpWhileInIframe('getConsentData', cmpFrame, callbackHandler.consentDataCallback);
     callCmpWhileInIframe('getVendorConsents', cmpFrame, callbackHandler.vendorConsentsCallback);
   }
@@ -124,12 +140,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window.__cmp = function(cmd, arg, callback) {
-      if (!cmpFrame) {
-        removePostMessageListener();
-
-        let errmsg = 'CMP not found';
-        return cmpError(errmsg, hookConfig);
-      }
       let callId = Math.random() + '';
       let msg = {__cmpCall: {
         command: cmd,
@@ -219,11 +229,17 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processCmpData(consentObject, hookConfig) {
+  let gdprApplies = consentObject && consentObject.getConsentData && consentObject.getConsentData.gdprApplies;
   if (
-    !utils.isPlainObject(consentObject) ||
-    (!utils.isPlainObject(consentObject.getVendorConsents) || Object.keys(consentObject.getVendorConsents).length === 0) ||
-    (!utils.isPlainObject(consentObject.getConsentData) || Object.keys(consentObject.getConsentData).length === 0)) {
-    cmpFailed(`CMP returned unexpected value during lookup process; returned value was (${consentObject}).`, hookConfig);
+    (typeof gdprApplies !== 'boolean') ||
+    (gdprApplies === true &&
+      !(utils.isStr(consentObject.getConsentData.consentData) &&
+        utils.isPlainObject(consentObject.getVendorConsents) &&
+        Object.keys(consentObject.getVendorConsents).length > 1
+      )
+    )
+  ) {
+    cmpFailed(`CMP returned unexpected value during lookup process.`, hookConfig, consentObject);
   } else {
     clearTimeout(hookConfig.timer);
     storeConsentData(consentObject);
@@ -243,15 +259,16 @@ function cmpTimedOut(hookConfig) {
  * This function contains the controlled steps to perform when there's a problem with CMP.
  * @param {string} errMsg required; should be a short descriptive message for why the failure/issue happened.
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {object} extraArgs contains additional data that's passed along in the error/warning messages for easier debugging
 */
-function cmpFailed(errMsg, hookConfig) {
+function cmpFailed(errMsg, hookConfig, extraArgs) {
   clearTimeout(hookConfig.timer);
 
   // still set the consentData to undefined when there is a problem as per config options
   if (allowAuction) {
     storeConsentData(undefined);
   }
-  exitModule(errMsg, hookConfig);
+  exitModule(errMsg, hookConfig, extraArgs);
 }
 
 /**
@@ -282,8 +299,9 @@ function storeConsentData(cmpConsentObject) {
  * 3. bad exit with auction canceled (error message is logged).
  * @param {string} errMsg optional; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {object} extraArgs contains additional data that's passed along in the error/warning messages for easier debugging
  */
-function exitModule(errMsg, hookConfig) {
+function exitModule(errMsg, hookConfig, extraArgs) {
   if (hookConfig.haveExited === false) {
     hookConfig.haveExited = true;
 
@@ -293,10 +311,10 @@ function exitModule(errMsg, hookConfig) {
 
     if (errMsg) {
       if (allowAuction) {
-        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.');
+        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
         nextFn.apply(context, args);
       } else {
-        utils.logError(errMsg + ' Canceling auction as per consentManagement config.');
+        utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
         if (typeof hookConfig.bidsBackHandler === 'function') {
           hookConfig.bidsBackHandler();
         } else {
@@ -343,6 +361,16 @@ export function setConfig(config) {
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
 
+  utils.logInfo('consentManagement module has been activated...');
+
+  if (userCMP === 'static') {
+    if (utils.isPlainObject(config.consentData)) {
+      staticConsentData = config.consentData;
+      consentTimeout = 0;
+    } else {
+      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+    }
+  }
   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
 }
 config.getConfig('consentManagement', config => setConfig(config.consentManagement));

@@ -55,7 +55,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:
 
 - Look in `test/spec` and its subdirectories
-- Tests for bidder adaptors are located in `test/spec/adapters`
+- Tests for bidder adaptors are located in `test/spec/modules`
 
 A test module might have the following general structure:
 

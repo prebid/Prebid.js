@@ -55,7 +55,7 @@ export const spec = {
 
     const data = JSON.stringify(payload);
     const options = {
-      withCredentials: false
+      withCredentials: true
     };
 
     return {
