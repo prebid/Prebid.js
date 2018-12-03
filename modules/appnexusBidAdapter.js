@@ -498,6 +498,10 @@ function hasAppId(bid) {
   return !!bid.params.app
 }
 
+function hasDebug(bid) {
+  return !!bid.debug
+}
+
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
 }
