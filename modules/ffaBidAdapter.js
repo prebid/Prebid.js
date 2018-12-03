@@ -103,6 +103,7 @@ export const spec = {
         cpm = (cpm.reduce((a, b) => a + b, 0) / cpm.length);
       }
       freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bid.adUnitCode, 'Avg CPM is', cpm);
+      freestar.log({title:'FFA:', styles:'background: black; color: #fff; border-radius: 3px; padding: 3px'}, bid.adUnitCode, bid);
       // build the bid response, using whatever cpm was derived above
       // pass a custom ad creative to be rendered on the page, in which the magic happens
       bidResponses.push({
@@ -122,9 +123,9 @@ export const spec = {
                 if(typeof winner == 'undefined') {
                     let winner;
                 }
-                winner = parent.pbjs.getBidResponsesForAdUnitCode('${bid.adUnitCode}').bids.sort((a,b) => {
+                winner = top.pbjs.getBidResponsesForAdUnitCode('${bid.adUnitCode}').bids.sort((a,b) => {
                     return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
-                })[0], bids = parent.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
+                })[0], bids = top.pbjs.getBidResponsesForAdUnitCode(winner.adUnitCode).bids.filter((bid) => {
                     if(
                         bid.adId != winner.adId
                         && bid.status != 'rendered'
@@ -135,14 +136,14 @@ export const spec = {
                 }).sort((a,b) => {
                     return (a.cpm < b.cpm) ? 1 : ((b.cpm < a.cpm) ? -1 : 0);
                 });
-                parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
+                top.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Floor was the winning bid...');
                 // if there are bids...
                 if(bids.length > 1) {
                     // pass the highest bid to pbjs.renderAd
                     // and mark it as a winning bid
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId);
-                    parent.pbjs.renderAd(parent.document.getElementById(winner.adUnitCode).querySelector('iframe').contentWindow.document, bids[0].adId);
-                    parent.pbjs.markWinningBidAsUsed({
+                    top.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId, self.parent);
+                    top.pbjs.renderAd(document, bids[0].adId);
+                    top.pbjs.markWinningBidAsUsed({
                         adUnitCode: bids[0].adUnitCode,
                         adId: bids[0].adId
                     });
@@ -156,8 +157,8 @@ export const spec = {
                       lowestFormat: bids[bids.length - 1].mediaType,
                       placement: winner.adUnitCode
                     };
-                    parent.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Message Details', payload);
-                    parent.freestar.msg.que.push({
+                    top.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Message Details', payload);
+                    top.freestar.msg.que.push({
                         eventType: 'ffa',
                         args: payload
                     });
@@ -166,8 +167,8 @@ export const spec = {
                     // if not a 1x1 //@TODO: should this be the case?
                     // if(winner.sizes[0][0] > 1 && winner.sizes[0][0] > 1) {
                       // rebid on the slot
-                      parent.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND');
-                      parent.freestar.fsRequestBids([winner.adUnitCode]);
+                      top.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner, top.freestar.dfpSlotInfo[winner.adUnitCode]);
+                      top.freestar.fsRequestBids([winner.adUnitCode]);
                     // }
                 }
             </script>
