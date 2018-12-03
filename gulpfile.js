@@ -56,7 +56,7 @@ function e2etestReport() {
   var reportPort = 9010;
   var targetDestinationDir = './e2etest-report';
   helpers.createEnd2EndTestReport(targetDestinationDir);
-  gulp.src('./', {allowEmpty: true})
+  gulp.src('./')
     .pipe(webserver({
       port: reportPort,
       directoryListing: true,
@@ -91,14 +91,14 @@ function lint(done) {
 function viewCoverage(done) {
   var coveragePort = 1999;
 
-  gulp.src('./', { allowEmpty: true })
+  var stream = gulp.src('./')
     .pipe(webserver({
       port: coveragePort,
       directoryListing: true,
       livereload: false,
       open: 'build/coverage/karma_html/index.html'
     }));
-  done();
+  stream.on('finish', done);
 };
 viewCoverage.displayName = 'view-coverage';
 
@@ -115,7 +115,7 @@ function watch(done) {
     'test/spec/loaders/**/*.js'
   ]);
 
-  gulp.src('./', {allowEmpty: true})
+  var stream = gulp.src('./')
     .pipe(webserver({
       https: argv.https,
       port: port,
@@ -125,7 +125,7 @@ function watch(done) {
 
   mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
   loaderWatcher.on('all', gulp.series(lint));
-  done();
+  stream.on('finish', done);
 };
 
 function makeDevpackPkg() {
@@ -228,12 +228,7 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      if (argv.browserstack) {
-        // process.exit(0);
-        done(); // test this with travis (or circleci)
-      } else {
-        done();
-      }
+      done();
     }
   }
 }
