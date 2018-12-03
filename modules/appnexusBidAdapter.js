@@ -81,14 +81,21 @@ export const spec = {
     let debugObj = {};
     let debugObjParams = {};
     const debugCookieName = 'apn_prebid_debug';
-    const debugCookie = getCookie(debugCookieName) || null;
+    const debugCookie = utils.getCookie(debugCookieName) || null;
+
     if (debugCookie) {
       try {
         debugObj = JSON.parse(debugCookie);
       } catch (e) {
         utils.logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
+    } else {
+      const debugBidRequest = find(bidRequests, hasDebug);
+      if (debugBidRequest && debugBidRequest.debug) {
+        debugObj = debugBidRequest.debug;
+      }
     }
+
     if (debugObj && debugObj.enabled) {
       Object.keys(debugObj)
         .filter(param => includes(DEBUG_PARAMS, param))
