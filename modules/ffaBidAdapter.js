@@ -46,13 +46,13 @@ export const spec = {
         return false;
       }
     })
-    // if(freestar.debug < 50) {
-    //   // 10% of bids are valid to us
-    //   return diceRoll();
-    // } else {
-    //   return true;
-    // }
-    return true;
+    if(freestar.debug < 50) {
+      // 10% of bids are valid to us
+      return diceRoll();
+    } else {
+      return true;
+    }
+    // return true;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -170,7 +170,6 @@ export const spec = {
                       top.freestar.log({title:'FFA:', styles:'background: red; color: #fff; border-radius: 3px; padding: 3px'}, 'NO OTHER BIDS FOUND', winner, top.freestar.dfpSlotInfo[winner.adUnitCode]);
                       top.freestar.fsRequestBids([winner.adUnitCode]);
                     // }
-                    
                 }
             </script>
           `
