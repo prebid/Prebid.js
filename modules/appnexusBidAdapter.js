@@ -498,11 +498,6 @@ function hasAppId(bid) {
   return !!bid.params.app
 }
 
-function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
-}
-
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
 }
