@@ -48,7 +48,7 @@
     "gulp-webserver": "^0.9.1",
     "gulp-coveralls": "^0.1.4",
     "gulp-eslint": "^4.0.0",
-    "gulp-footer": "github:jsnellbaker/gulp-footer#master",
+    "gulp-footer": "github:prebid/gulp-footer#master",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
     "gulp-js-escape": "^1.0.1",
