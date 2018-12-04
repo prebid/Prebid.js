@@ -558,6 +558,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
@@ -581,6 +583,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
