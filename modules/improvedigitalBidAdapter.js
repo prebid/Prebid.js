@@ -303,19 +303,25 @@ function ImproveDigitalAdServerJSClient(endPoint) {
   };
 
   this.formatRequest = function(requestParameters, bidRequestObject) {
+    let bidId = null;
+    if(bidRequestObject && bidRequestObject.bid_request && bidRequestObject.bid_request.imp &&  bidRequestObject.bid_request.imp.length>0 && bidRequestObject.bid_request.imp[0].id){
+      bidId = bidRequestObject.bid_request.imp[0].id;
+    }
     switch (requestParameters.returnObjType) {
       case this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT:
         return {
           method: 'GET',
           url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
-          data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${JSON.stringify(bidRequestObject)}`
+          data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${JSON.stringify(bidRequestObject)}`,
+          bidId:bidId,
         };
       default:
         const baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://` +
           `${this.CONSTANTS.AD_SERVER_BASE_URL}/` +
           `${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
         return {
-          url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject))
+          url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject)),
+          bidId:bidId,
         }
     }
   };
