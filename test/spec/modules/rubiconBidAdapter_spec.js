@@ -1070,6 +1070,7 @@ describe('the rubicon adapter', function () {
             .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(imp.exp).to.equal(300);
           expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
           expect(imp.ext.rubicon.video.playerHeight).to.equal(320);
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
@@ -1096,6 +1097,7 @@ describe('the rubicon adapter', function () {
             .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(imp.exp).to.equal(300);
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
