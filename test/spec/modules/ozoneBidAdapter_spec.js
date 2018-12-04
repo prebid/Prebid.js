@@ -424,17 +424,13 @@ describe('ozone Adapter', function () {
   describe('interpretResponse', function () {
     it('should build bid array', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
-      console.log(['interpretResponse request  = ', request]);
       const result = spec.interpretResponse(validResponse, request);
-      console.log(['interpretResponse result  = ', result]);
       expect(result.length).to.equal(1);
     });
 
     it('should have all relevant fields', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
-      console.log(['Request: ', request]);
       const result = spec.interpretResponse(validResponse, request);
-      console.log(['result[0]: ', result[0]]);
       const bid = result[0];
       expect(bid.cpm).to.equal(validResponse.body.seatbid[0].bid[0].cpm);
       expect(bid.width).to.equal(validResponse.body.seatbid[0].bid[0].width);
@@ -445,9 +441,7 @@ describe('ozone Adapter', function () {
       var validBidderRequestWithGdpr = validBidderRequest;
       validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
       const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
-      console.log(['interpretResponse request  = ', request]);
       const result = spec.interpretResponse(validResponse, request);
-      console.log(['interpretResponse result  = ', result]);
       expect(result.length).to.equal(1);
     });
   });
