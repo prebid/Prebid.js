@@ -134,6 +134,9 @@ function resetCurrency() {
 }
 
 export function addBidResponseHook(adUnitCode, bid, fn) {
+  if(arguments.length >= 4 && utils.isBoolean(arguments[2])){
+    fn = arguments[3];
+  }
   if (!bid) {
     return fn.apply(this, arguments); // if no bid, call original and let it display warnings
   }
