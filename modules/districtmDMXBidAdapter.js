@@ -31,7 +31,7 @@ export const spec = {
               nBid.netRevenue = true;
               nBid.creativeId = nBid.crid;
               nBid.currency = 'USD';
-              nBid.ttl = 60;
+              nBid.ttl = 300;
 
               return nBid;
             } else {
