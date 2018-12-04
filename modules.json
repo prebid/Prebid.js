@@ -21,5 +21,7 @@
   "lockerdomeBidAdapter",
   "kargoBidAdapter",
   "teadsBidAdapter",
+  "pubmaticBidAdapter",
+  "rhythmoneBidAdapter",
   "googleAnalyticsAdapter"
 ]
