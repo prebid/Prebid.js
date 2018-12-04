@@ -10,6 +10,7 @@ import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage } from 'src/utils';
+import { isAdUnitCodeMatchingSlot } from '../utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -165,7 +166,7 @@ export function newBidder(spec) {
         return;
       }
 
-      const _requestDone = function(){logMessage("calling request DONE");if(requestDone) requestDone();};
+      const _requestDone = function(){logMessage("calling request DONE "+bidderRequest.bidderCode+" "+(timestamp() - bidderRequest.start)+'ms '+(timestamp() - bidderRequest.auctionStart)+'ms');if(requestDone) requestDone();};
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid, last) {
@@ -198,6 +199,14 @@ export function newBidder(spec) {
           setRequestPropsFilter(request.bidRequest, props);
         }else if(request.bidderRequest){
           setRequestPropsFilter(request.bidderRequest, props);
+        }else if(bidderRequest){
+          /*debugger;
+          setRequestPropsFilter(bidderRequest, props);
+          if(bidderRequest.bids){
+            for(let i=0;i<bidderRequest.bids.length;i++){
+              setRequestPropsFilter(bidderRequest.bids[i], props);
+            }
+          }*/
         }
       }
 
@@ -210,6 +219,12 @@ export function newBidder(spec) {
 
       function handleResponse(bids, request) {
         //TODO: delegate onResponse handling to after this call via this call
+        //debugger;
+        console.log(bidderRequest);
+        /*if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
+          debugger;
+        }*/
+        logMessage("handleResponse Done ", request, bids);
         if(!bids || bids.length==0){
           markRequestDoneWithNoBids(request);
           _requestDone();        
@@ -279,6 +294,9 @@ export function newBidder(spec) {
             request.bidRequest = bidRequestMap[request.bidId];
           }
         }
+        /*if(!request.bidRequest && !request.bidderRequest && bidderRequest.bidderCode == 'ix'){
+          debugger;
+        }*/
         switch (request.method) {
           case 'GET':
             ajax(

@@ -246,9 +246,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           debugger;
         }
       }else if(auctionTimedOut){
-        debugger;
+        //debugger;
         return normalizeResponse(bidfactory.createBid(CONSTANTS.STATUS.TIMEOUT, request), request, bidder);
       }
+      utils.logInfo('could not resolve response for: '+bidder.bidderCode+' timeout: '+auctionTimedOut, bidRes, responseMap, request, bidder, adUnitCode, requestId)
+      //debugger;
     }
 
     const responseMap = bidRes.reduce((placements, bid) =>{
@@ -294,11 +296,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           if(map[adUnit].bids[requestId].response){
             respones.push(map[adUnit].bids[requestId].response);
           }
+          if(auctionTimedOut){
+            if(!map[adUnit].bids[requestId].response){
+              debugger;
+            }
+          }
         }
         if(requests == respones.length){
           updateMap[adUnit] = {bids:respones};
           if(!_adUnitsDone[adUnit]){
-            logMessage("adunit IS ready: "+adUnit+" "+requests+"/"+respones.length);
+            logMessage("adunit IS ready: "+adUnit+" "+requests+"/"+respones.length+" "+(timestamp() - _auctionStart)+'ms');
             events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, updateMap, [adUnit]);
           }else if(_adUnitsDone[adUnit] && _adUnitsDone[adUnit]!=respones.length){
             debugger;
@@ -306,7 +313,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           }
           _adUnitsDone[adUnit] = respones.length;
         }else{
-          logMessage("adunit not ready: "+adUnit+" "+requests+"/"+respones.length);
+          logMessage("adunit not ready: "+adUnit+" "+requests+"/"+respones.length+" "+(timestamp() - _auctionStart)+'ms');
         }        
 
       }
