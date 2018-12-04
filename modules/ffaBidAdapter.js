@@ -83,6 +83,9 @@ export const spec = {
     const bidResponses = [], floors = serverResponse.body.networkFloorMap, bids = bidRequest.data.validBidRequests;
     // loop through the bids
     bids.forEach((bid) => {
+      if(typeof floors == 'undefined') {
+        return false;
+      }
       // set some vars
       let cpm = 0;
       // if there is a value for  0 (`ffa`) use that
@@ -140,9 +143,15 @@ export const spec = {
                 // if there are bids...
                 if(bids.length > 1) {
                     // pass the highest bid to pbjs.renderAd
-                    // and mark it as a winning bid
+                    // and mark it as a winning bid 
+                    let target = top.document.getElementById(winner.adUnitCode).querySelector('iframe');
+                    // chk = target.contentWindow.document.querySelector('#_' + winner.adId);
+                    // if(chk != null) {
+                    //     target = chk;
+                    // }
+                    target.style = 'width:' + bids[0].width + 'px !important; height:' + bids[0].height + 'px !important;';
                     top.freestar.log({title:'FFA:', styles:'background: gold; color: black; border-radius: 3px; padding: 3px'}, 'Rendering Next Ad...', bids[0].bidderCode, '$' + bids[0].cpm, bids[0].adId, self.parent);
-                    top.pbjs.renderAd(document, bids[0].adId);
+                    top.pbjs.renderAd(target.contentWindow.document, bids[0].adId);
                     top.pbjs.markWinningBidAsUsed({
                         adUnitCode: bids[0].adUnitCode,
                         adId: bids[0].adId
