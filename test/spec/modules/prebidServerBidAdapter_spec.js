@@ -592,6 +592,29 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('adds device.w and device.h even if the config lacks a device object', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        w: window.innerWidth,
+        h: window.innerHeight
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
     it('adds site if app is not present', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
