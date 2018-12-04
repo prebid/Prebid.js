@@ -144,7 +144,7 @@ export const spec = {
       // if value is set, will overwrite with same value
       data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
 
-      appendSiteAppDevice(data);
+      appendSiteAppDevice(data, bidRequest, bidderRequest);
 
       addVideoParameters(data, bidRequest);
 
@@ -658,22 +658,31 @@ function getDigiTrustQueryParams() {
   };
 }
 
-function appendSiteAppDevice(request) {
-  if (!request) return;
+/**
+ * @param {Object} data
+ * @param bidRequest
+ * @param bidderRequest
+ */
+function appendSiteAppDevice(data, bidRequest, bidderRequest) {
+  if (!data) return;
 
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
-    request.app = config.getConfig('app');
+    data.app = config.getConfig('app');
   } else {
-    request.site = {
-      page: utils.getTopWindowUrl()
+    data.site = {
+      page: _getPageUrl(bidRequest, bidderRequest)
     }
   }
   if (typeof config.getConfig('device') === 'object') {
-    request.device = config.getConfig('device');
+    data.device = config.getConfig('device');
   }
 }
 
+/**
+ * @param {Object} data
+ * @param {BidRequest} bidRequest
+ */
 function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skip === undefined) {
     data.imp[0].video.skip = bidRequest.params.video.skip;
@@ -693,6 +702,10 @@ function addVideoParameters(data, bidRequest) {
   data.imp[0].video.h = size[1]
 }
 
+/**
+ * @param sizes
+ * @returns {*}
+ */
 function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
   // map sizes while excluding non-matches
