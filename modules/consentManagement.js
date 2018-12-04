@@ -48,8 +48,10 @@ function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
 function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
     const cmpResponse = {};
+    
 
     function afterEach() {
+      utils.logInfo(`CMP framework completecheck: `,!!(cmpResponse.getConsentData && cmpResponse.getVendorConsents));
       if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
         cmpSuccess(cmpResponse, hookConfig);
       }
@@ -57,12 +59,20 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 
     return {
       consentDataCallback: function(consentResponse) {
+        utils.logInfo(`CMP framework received consentCallback: `,consentResponse);
         cmpResponse.getConsentData = consentResponse;
         afterEach();
       },
       vendorConsentsCallback: function(consentResponse) {
+        utils.logInfo(`CMP framework received vendorCallback: `,consentResponse);
         cmpResponse.getVendorConsents = consentResponse;
         afterEach();
+      },
+      hasConsentData:function(){
+        return !!cmpResponse.getConsentData;
+      },
+      hasVendorConsentData:function(){
+        return !!cmpResponse.getVendorConsents;
       }
     }
   }
@@ -84,9 +94,23 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     cmpFunction = window.__cmp || utils.getWindowTop().__cmp;
   } catch (e) {}
 
-  if (utils.isFn(cmpFunction)) {
-    cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
-    cmpFunction('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
+  if (utils.isFn(cmpFunction)) {       
+    let tryDelegate = function(){
+      let didCall = false;
+      if(!callbackHandler.hasConsentData()) {
+        cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
+        didCall = true;
+      }
+      if(!callbackHandler.hasVendorConsentData()) {
+        cmpFunction('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
+        didCall = true;
+      }
+      utils.logInfo(`CMP framework calling directly for consent data didCalls: `+didCall +' hookConfig.exit: '+hookConfig.haveExited);      
+      if(didCall && !hookConfig.haveExited){
+        setTimeout(tryDelegate,40);
+      }
+    }
+    tryDelegate();    
   } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
     callCmpWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', callbackHandler.vendorConsentsCallback);
