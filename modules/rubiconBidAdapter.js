@@ -120,6 +120,7 @@ export const spec = {
         },
         tmax: config.getConfig('TTL') || 1000,
         imp: [{
+          exp: 300,
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,
           ext: {
@@ -141,9 +142,6 @@ export const spec = {
               includewinners: true
             }
           }
-        },
-        vastxml: {
-          ttlseconds: 300
         }
       }
       // if value is set, will overwrite with same value
