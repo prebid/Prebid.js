@@ -133,9 +133,6 @@ export const spec = {
             cache: {
               vastXml: {
                 returnCreative: false // don't return the VAST
-              },
-              bids: {
-                returnCreative: true
               }
             },
             targeting: {
