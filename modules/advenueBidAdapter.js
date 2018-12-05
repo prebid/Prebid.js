@@ -6,20 +6,6 @@ const BIDDER_CODE = 'advenue';
 const URL = '//supply.advenuemedia.co.uk/?c=o&m=multi';
 const URL_SYNC = '//supply.advenuemedia.co.uk/?c=o&m=cookie';
 
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) return false;
-  switch (bid.mediaType) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastUrl);
-    case NATIVE:
-      return Boolean(bid.native);
-    default:
-      return false;
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -94,9 +80,6 @@ export const spec = {
       serverResponse = serverResponse.body;
       for (let i = 0; i < serverResponse.length; i++) {
         let resItem = serverResponse[i];
-        if (isBidResponseValid(resItem)) {
-          response.push(resItem);
-        }
       }
     } catch (e) {
       utils.logMessage(e);
