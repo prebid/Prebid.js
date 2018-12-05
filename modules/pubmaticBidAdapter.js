@@ -1,11 +1,19 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import {config} from 'src/config';
+import {
+  registerBidder
+} from 'src/adapters/bidderFactory';
+import {
+  BANNER,
+  VIDEO,
+  NATIVE
+} from 'src/mediaTypes';
+import {
+  config
+} from 'src/config';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
-const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com:8080/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
@@ -25,7 +33,8 @@ const DATA_TYPES = {
   'NUMBER': 'number',
   'STRING': 'string',
   'BOOLEAN': 'boolean',
-  'ARRAY': 'array'
+  'ARRAY': 'array',
+  'OBJECT': 'object'
 };
 const VIDEO_CUSTOM_PARAMS = {
   'mimes': DATA_TYPES.ARRAY,
@@ -42,6 +51,18 @@ const VIDEO_CUSTOM_PARAMS = {
   'placement': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER
+}
+const NATIVE_CUSTOM_PARAMS = {
+  'ver': DATA_TYPES.STRING,
+  'layout': DATA_TYPES.NUMBER,
+  'adUnit': DATA_TYPES.NUMBER,
+  'context': DATA_TYPES.NUMBER,
+  'contextsubtype': DATA_TYPES.NUMBER,
+  'plcmttype': DATA_TYPES.NUMBER,
+  'plcmtcnt': DATA_TYPES.NUMBER,
+  'seq': DATA_TYPES.NUMBER,
+  'assets': DATA_TYPES.ARRAY,
+  'ext': DATA_TYPES.OBJECT
 }
 const NET_REVENUE = false;
 const dealChannelValues = {
@@ -221,6 +242,7 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
+  var nativeObj = {};
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
 
   impObj = {
@@ -257,6 +279,17 @@ function _createImpressionObject(bid, conf) {
     }
 
     impObj.video = videoObj;
+  } else if (bid.params.hasOwnProperty('native')) {
+    var nativeData = bid.params.native;
+    for (var nativekey in NATIVE_CUSTOM_PARAMS) {
+      if (nativeData.hasOwnProperty(nativekey)) {
+        nativeObj[nativekey] = _checkParamDataType(nativekey, nativeData[nativekey], NATIVE_CUSTOM_PARAMS[nativekey])
+      }
+    }
+    nativeObj.assets && nativeObj.assets.length > 0 && nativeObj.assets.forEach(function (element, idx) {
+      element.id = idx + 1;
+    });
+    impObj.native = nativeObj;
   } else {
     bannerObj = {
       pos: 0,
@@ -268,7 +301,10 @@ function _createImpressionObject(bid, conf) {
       sizes = sizes.splice(1, sizes.length - 1);
       var format = [];
       sizes.forEach(size => {
-        format.push({w: size[0], h: size[1]});
+        format.push({
+          w: size[0],
+          h: size[1]
+        });
       });
       bannerObj.format = format;
     }
@@ -279,7 +315,9 @@ function _createImpressionObject(bid, conf) {
 
 function _getDigiTrustObject(key) {
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({
+      member: key
+    }));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId();
@@ -295,15 +333,13 @@ function _handleDigitrustId(eids) {
   if (digiTrustId !== null) {
     eids.push({
       'source': 'digitru.st',
-      'uids': [
-        {
-          'id': digiTrustId.id || '',
-          'atype': 1,
-          'ext': {
-            'keyv': parseInt(digiTrustId.keyv) || 0
-          }
+      'uids': [{
+        'id': digiTrustId.id || '',
+        'atype': 1,
+        'ext': {
+          'keyv': parseInt(digiTrustId.keyv) || 0
         }
-      ]
+      }]
     });
   }
 }
@@ -313,15 +349,13 @@ function _handleTTDId(eids) {
   if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
     eids.push({
       'source': 'adserver.org',
-      'uids': [
-        {
-          'id': adsrvrOrgId.TDID,
-          'atype': 1,
-          'ext': {
-            'rtiPartner': 'TDID'
-          }
+      'uids': [{
+        'id': adsrvrOrgId.TDID,
+        'atype': 1,
+        'ext': {
+          'rtiPartner': 'TDID'
         }
-      ]
+      }]
     });
   }
 }
@@ -337,27 +371,33 @@ function _handleEids(payload) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit:');
         return false;
       }
       if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent.');
+        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit:');
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent.');
+          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:');
+          return false;
+        }
+      }
+      if (bid.params.hasOwnProperty('native')) {
+        if (!bid.params.native.hasOwnProperty('assets') || !utils.isArray(bid.params.native.assets) || bid.params.native.assets.length === 0) {
+          utils.logWarn(BIDDER_CODE + ': For native ads, assets is mandatory and must specify atleast 1 asset value. Call to OpenBid will not be sent for ad unit:');
           return false;
         }
       }
@@ -367,11 +407,11 @@ export const spec = {
   },
 
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: (validBidRequests, bidderRequest) => {
     var conf = _initConf();
     var payload = _createOrtbTemplate(conf);
@@ -385,6 +425,12 @@ export const spec = {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          return;
+        }
+      } else if (bid.params.hasOwnProperty('native')) {
+        // Check for valid ad slot in native
+        if (!bid.params.native.assets || bid.params.native.assets.length < 1) {
           utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
@@ -484,11 +530,11 @@ export const spec = {
   },
 
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {*} response A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} response A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
@@ -498,38 +544,76 @@ export const spec = {
         respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
-          utils.isArray(seatbidder.bid) &&
-          seatbidder.bid.forEach(bid => {
-            let newBid = {
-              requestId: bid.impid,
-              cpm: (parseFloat(bid.price) || 0).toFixed(2),
-              width: bid.w,
-              height: bid.h,
-              creativeId: bid.crid || bid.id,
-              dealId: bid.dealid,
-              currency: respCur,
-              netRevenue: NET_REVENUE,
-              ttl: 300,
-              referrer: utils.getTopWindowUrl(),
-              ad: bid.adm
-            };
-            let parsedRequest = JSON.parse(request.data);
-            if (parsedRequest.imp && parsedRequest.imp.length > 0) {
-              parsedRequest.imp.forEach(req => {
-                if (bid.impid === req.id && req.hasOwnProperty('video')) {
-                  newBid.mediaType = 'video';
-                  newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                  newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                  newBid.vastXml = bid.adm;
-                }
-              });
-            }
-            if (bid.ext && bid.ext.deal_channel) {
-              newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-            }
+            utils.isArray(seatbidder.bid) &&
+            seatbidder.bid.forEach(bid => {
+              let newBid = {
+                requestId: bid.impid,
+                cpm: (parseFloat(bid.price) || 0).toFixed(2),
+                width: bid.w,
+                height: bid.h,
+                creativeId: bid.crid || bid.id,
+                dealId: bid.dealid,
+                currency: respCur,
+                netRevenue: NET_REVENUE,
+                ttl: 300,
+                referrer: utils.getTopWindowUrl(),
+                ad: bid.adm
+              };
+              let parsedRequest = JSON.parse(request.data);
+              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
+                parsedRequest.imp.forEach(req => {
+                  if (bid.impid === req.id && req.hasOwnProperty('video')) {
+                    newBid.mediaType = 'video';
+                    newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                    newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                    newBid.vastXml = bid.adm;
+                  }
+                  if (bid.impid === req.id && req.hasOwnProperty('native')) {
+                    newBid.mediaType = 'native';
+                    if (bid.hasOwnProperty('adm')) {
+                      var adm = '';
+                      try {
+                        adm = JSON.parse(bid.adm);
+                      } catch (ex) {
+                        adm = JSON.parse(bid.adm.replace(/\\/g, ''));
+                      }
+                      if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+                        const nativeAd = adm.native.assets[0];
+                        newBid[NATIVE] = {
+                          title: nativeAd.title || '',
+                          body: nativeAd.desc || '',
+                          cta: nativeAd.ctatext || '',
+                          sponsoredBy: adm.native.sponsored || 'PubMatic',
+                          clickUrl: adm.native.link.url || 'www.pubmatic.com',
+                          clickTrackers: adm.native.link.click_trackers || '',
+                          impressionTrackers: adm.native.impression_trackers || '',
+                          javascriptTrackers: adm.native.javascript_trackers || '',
+                        };
+                        if (nativeAd.image) {
+                          newBid['native'].image = {
+                            url: nativeAd.image.url || '',
+                            height: nativeAd.image.height || 150,
+                            width: nativeAd.image.width || 150,
+                          };
+                        }
+                        if (nativeAd.icon) {
+                          newBid['native'].icon = {
+                            url: nativeAd.icon.url || '',
+                            height: nativeAd.icon.height || '',
+                            width: nativeAd.icon.width || '',
+                          };
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+              if (bid.ext && bid.ext.deal_channel) {
+                newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+              }
 
-            bidResponses.push(newBid);
-          });
+              bidResponses.push(newBid);
+            });
         });
       }
     } catch (error) {
@@ -539,8 +623,8 @@ export const spec = {
   },
 
   /**
-  * Register User Sync.
-  */
+   * Register User Sync.
+   */
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
     let syncurl = USYNCURL + publisherId;
 
@@ -566,7 +650,7 @@ export const spec = {
    * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
    * @return {Object} params bid params
    */
-  transformBidParams: function(params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb) {
     return utils.convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'

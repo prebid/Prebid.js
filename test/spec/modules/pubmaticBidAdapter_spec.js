@@ -9,6 +9,8 @@ describe('PubMatic adapter', function () {
   let videoBidRequests;
   let multipleMediaRequests;
   let bidResponses;
+  let nativeBidRequests;
+  let nativeBidRequestsWithoutAsset;
 
   beforeEach(function () {
     bidRequests = [
@@ -123,6 +125,68 @@ describe('PubMatic adapter', function () {
         }
       }
     ];
+
+    nativeBidRequests = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: true
+          },
+          image: {
+            required: true
+          }
+        }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: 'div-1',
+        native: {
+          ver: '1.2',
+          layout: 3,
+          assets: [
+            {
+              id: 1,
+              title: 'New Image',
+              img: {
+                h: 300,
+                w: 250,
+              }
+            }
+          ]
+        }
+      }
+    }];
+
+    nativeBidRequestsWithoutAsset = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: true
+          },
+          image: {
+            required: true
+          }
+        }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: 'div-1',
+        native: {
+          ver: '1.2',
+          layout: 3
+        }
+      }
+    }]
 
     bidResponses = {
       'body': {
@@ -977,6 +1041,21 @@ describe('PubMatic adapter', function () {
 
         expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
+      });
+
+      it('Request params check for native ad', function () {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].tagid).to.equal('div-1');
+        expect(data.imp[0]['native']['assets']).to.exist.and.to.be.an('array');
+        expect(data.imp[0]['native']['assets'][0]).to.eql(nativeBidRequests[0].params.native['assets'][0]);
+      });
+
+      it('Request object should not contain native request if assets is not provided', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithoutAsset);
+        console.log(request);
+        expect(request).to.equal(undefined);
       });
   	});
 
