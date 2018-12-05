@@ -12,7 +12,6 @@ export const API_SERVERS_MAP = {
 };
 
 const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
-const SHOW_CALLBACK_ENDPOINT = '/v1/prebid/show_cb';
 
 export const spec = {
   code: 'appier',
@@ -68,32 +67,6 @@ export const spec = {
     // our server directly returns the format needed by prebid.js so no more
     // transformation is needed here.
     return bidResults;
-  },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-   */
-  onBidWon: function(bid) {
-    // FIXME: remove this after we generate image beacon in backend
-    // add a image beacon url to the creative html if there isn't one already.
-    if (bid.ad.search(SHOW_CALLBACK_ENDPOINT) === -1) {
-      const hzid = bid.appierParams.hzid;
-      const cpm = bid.cpm;
-      const currency = bid.currency;
-      const requestId = bid.requestId;
-      const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency, requestId);
-      bid.ad += `<img src="${showCallbackUrl}">`;
-    }
-  },
-
-  /**
-   * Generate a show callback beacon image URL
-   */
-  generateShowCallbackUrl(hzid, cpm, currency, requestId) {
-    // FIXME: remove this after we generate image beacon in backend
-    const server = this.getApiServer();
-    return `//${server}${SHOW_CALLBACK_ENDPOINT}?hzid=${hzid}&cpm=${cpm}&currency=${currency}&rid=${requestId}`;
   },
 
   /**

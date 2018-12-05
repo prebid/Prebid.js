@@ -129,64 +129,6 @@ describe('AppierAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
-    let fakeBid = {
-      'bidder': 'appier',
-      'width': 300,
-      'height': 250,
-      'adId': '330a22bdea4cac',
-      'mediaType': 'banner',
-      'cpm': 0.28,
-      'ad': '',
-      'requestId': '418b37f85e772c',
-      'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'size': '350x250',
-      'adserverTargeting': {
-        'hb_bidder': 'appier',
-        'hb_adid': '330a22bdea4cac',
-        'hb_pb': '0.20',
-        'hb_size': '350x250'
-      },
-      'currency': 'TWD',
-      'appierParams': {
-        'hzid': 'test_hzid'
-      }
-    };
-
-    // FIXME: this is for backward compatibility and should be removed later
-    // after we can generate the beacon url in backend.
-    it('should generate beacon URL for show callback if it does not exist', function() {
-      fakeBid.ad = '<div>test creative</div>';
-
-      spec.onBidWon(fakeBid);
-
-      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.28', 'TWD', '418b37f85e772c');
-      const imgTag = `<img src="${beaconUrl}">`;
-
-      expect(fakeBid.ad).contains(imgTag);
-    });
-
-    it('should not generate beacon URL for show callback if it already exists', function() {
-      const origAd = '<div>test creative</div><img src="https://fake.server/v1/prebid/show_cb?hzid=test_hzid&cpm=0.28">';
-      fakeBid.ad = origAd;
-
-      spec.onBidWon(fakeBid);
-
-      expect(fakeBid.ad).equals(origAd);
-    });
-  });
-
-  describe('generateShowCallbackUrl', function() {
-    it('should generate a show callback url passing cpm and currency', function() {
-      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD', '418b37f85e772c');
-
-      expect(beaconUrl).matches(/hzid=test_hzid/);
-      expect(beaconUrl).matches(/cpm=0.20/);
-      expect(beaconUrl).matches(/currency=TWD/);
-      expect(beaconUrl).matches(/rid=418b37f85e772c/);
-    });
-  });
-
   describe('getApiServer', function() {
     it('should use the server specified by setConfig(appier.server)', function() {
       config.setConfig({
