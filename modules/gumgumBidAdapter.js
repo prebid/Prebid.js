@@ -49,7 +49,7 @@ function _getBrowserParams() {
     dpr: topWindow.devicePixelRatio || 1,
     jcsi: JSON.stringify({ t: 0, rq: 7 })
   }
-  
+
   ns = getNetworkSpeed()
   if (ns) {
     browserParams.ns = ns
