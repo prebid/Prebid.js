@@ -139,7 +139,7 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
   }
 
   let bidder = bid.bidderCode || bid.bidder;
-  if (bidderCurrencyDefault[bidder]) {
+  if (bidderCurrencyDefault[bidder] && !bid.originalCurrency) {
     let currencyDefault = bidderCurrencyDefault[bidder];
     if (bid.currency && currencyDefault !== bid.currency) {
       utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
