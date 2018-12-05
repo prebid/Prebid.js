@@ -84,8 +84,10 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
-  window.rivraddon.analytics.enableAnalytics(config, ExpiringQueue, {utils, ajax, find});
-  rivrAnalytics.originEnableAnalytics(config);
+  if (window.rivraddon && window.rivraddon.analytics) {
+    window.rivraddon.analytics.enableAnalytics(config, ExpiringQueue, {utils, ajax, find});
+    rivrAnalytics.originEnableAnalytics(config);
+  }
 };
 
 adaptermanager.registerAnalyticsAdapter({
