@@ -75,16 +75,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    let response = [];
     try {
       serverResponse = serverResponse.body;
-      for (let i = 0; i < serverResponse.length; i++) {
-        let resItem = serverResponse[i];
-      }
     } catch (e) {
       utils.logMessage(e);
     };
-    return response;
+    return serverResponse;
   },
 
   getUserSyncs: () => {
