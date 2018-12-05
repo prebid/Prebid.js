@@ -137,7 +137,7 @@ describe('AppierAdapter', function () {
       'adId': '330a22bdea4cac',
       'mediaType': 'banner',
       'cpm': 0.28,
-      'ad': '<div>test creative</div>',
+      'ad': '',
       'requestId': '418b37f85e772c',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'size': '350x250',
@@ -147,20 +147,32 @@ describe('AppierAdapter', function () {
         'hb_pb': '0.20',
         'hb_size': '350x250'
       },
-      // FIXME: not sure if the following fields are available here. They are not documented.
       'currency': 'TWD',
       'appierParams': {
         'hzid': 'test_hzid'
       }
     };
 
-    it('should generate beacon URL for show callback', function() {
+    // FIXME: this is for backward compatibility and should be removed later
+    // after we can generate the beacon url in backend.
+    it('should generate beacon URL for show callback if it does not exist', function() {
+      fakeBid.ad = '<div>test creative</div>';
+
       spec.onBidWon(fakeBid);
 
-      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.20', 'TWD', '418b37f85e772c');
+      const beaconUrl = spec.generateShowCallbackUrl('test_hzid', '0.28', 'TWD', '418b37f85e772c');
       const imgTag = `<img src="${beaconUrl}">`;
 
       expect(fakeBid.ad).contains(imgTag);
+    });
+
+    it('should not generate beacon URL for show callback if it already exists', function() {
+      const origAd = '<div>test creative</div><img src="https://fake.server/v1/prebid/show_cb?hzid=test_hzid&cpm=0.28">';
+      fakeBid.ad = origAd;
+
+      spec.onBidWon(fakeBid);
+
+      expect(fakeBid.ad).equals(origAd);
     });
   });
 

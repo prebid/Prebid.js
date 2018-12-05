@@ -75,19 +75,23 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
-    const hzid = bid.appierParams.hzid;
-    const cpm = bid.adserverTargeting.hb_pb;
-    const currency = bid.currency;
-    const requestId = bid.requestId;
-    const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency, requestId);
-    // add the image beacon to creative html
-    bid.ad += `<img src="${showCallbackUrl}">`;
+    // FIXME: remove this after we generate image beacon in backend
+    // add a image beacon url to the creative html if there isn't one already.
+    if (bid.ad.search(SHOW_CALLBACK_ENDPOINT) === -1) {
+      const hzid = bid.appierParams.hzid;
+      const cpm = bid.cpm;
+      const currency = bid.currency;
+      const requestId = bid.requestId;
+      const showCallbackUrl = this.generateShowCallbackUrl(hzid, cpm, currency, requestId);
+      bid.ad += `<img src="${showCallbackUrl}">`;
+    }
   },
 
   /**
    * Generate a show callback beacon image URL
    */
   generateShowCallbackUrl(hzid, cpm, currency, requestId) {
+    // FIXME: remove this after we generate image beacon in backend
     const server = this.getApiServer();
     return `//${server}${SHOW_CALLBACK_ENDPOINT}?hzid=${hzid}&cpm=${cpm}&currency=${currency}&rid=${requestId}`;
   },
