@@ -18,6 +18,7 @@
     "ixBidAdapter",
     "justpremiumBidAdapter",
     "lockerdomeBidAdapter",
+    "kargoBidAdapter",
     "komoonaBidAdapter",
     "openxBidAdapter",
     "prebidServerBidAdapter",

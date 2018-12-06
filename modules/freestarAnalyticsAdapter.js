@@ -2,10 +2,21 @@ import { ajax } from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
+import { auctionManager } from 'src/auctionManager';
 
 const utils = require('src/utils');
 
 const analyticsType = 'endpoint';
+
+/**
+ * Global access to auctionManager.findBidByAdId(adId);
+ * @param adId
+ * @returns {*|Object}
+ */
+pbjs.findBidByAdId = function(adId) {
+  const bid = auctionManager.findBidByAdId(adId);
+  return bid;
+}
 
 let freestarAnalytics = Object.assign(adapter({ analyticsType }),
   {
