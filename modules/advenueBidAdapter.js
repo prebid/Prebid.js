@@ -30,17 +30,17 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     let winTop;
     try {
-      winTop = utils.getWindowTop();
+      winTop = window.top;
       winTop.location.toString();
     } catch (e) {
       utils.logMessage(e);
       winTop = window;
     };
 
-    const location = utils.getTopWindowLocation();
+    const location = winTop.location;
     const placements = [];
     const request = {
       'secure': (location.protocol === 'https:') ? 1 : 0,
