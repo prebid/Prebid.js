@@ -1047,9 +1047,10 @@ describe('PubMatic adapter', function () {
         let request = spec.buildRequests(nativeBidRequests);
         let data = JSON.parse(request.data);
         expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
         expect(data.imp[0].tagid).to.equal('div-1');
-        expect(data.imp[0]['native']['assets']).to.exist.and.to.be.an('array');
-        expect(data.imp[0]['native']['assets'][0]).to.eql(nativeBidRequests[0].params.native['assets'][0]);
+        expect(data.imp[0]['native']['request']['assets']).to.exist.and.to.be.an('array');
+        expect(data.imp[0]['native']['request']['assets'][0]).to.eql(nativeBidRequests[0].params.native['assets'][0]);
       });
 
       it('Request object should not contain native request if assets is not provided', function () {
