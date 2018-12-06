@@ -273,6 +273,7 @@ function _createImpressionObject(bid, conf) {
     impObj.video = videoObj;
   } else if (bid.params.hasOwnProperty('native')) {
     var nativeData = bid.params.native;
+    impObj.native = {};
     for (var nativekey in NATIVE_CUSTOM_PARAMS) {
       if (nativeData.hasOwnProperty(nativekey)) {
         nativeObj[nativekey] = _checkParamDataType(nativekey, nativeData[nativekey], NATIVE_CUSTOM_PARAMS[nativekey])
@@ -281,7 +282,7 @@ function _createImpressionObject(bid, conf) {
     nativeObj.assets && nativeObj.assets.length > 0 && nativeObj.assets.forEach(function (element, idx) {
       element.id = idx + 1;
     });
-    impObj.native = nativeObj;
+    impObj.native['request'] = nativeObj;
   } else {
     bannerObj = {
       pos: 0,
