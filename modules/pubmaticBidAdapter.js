@@ -44,18 +44,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER
 }
-const NATIVE_CUSTOM_PARAMS = {
-  'ver': DATA_TYPES.STRING,
-  'layout': DATA_TYPES.NUMBER,
-  'adUnit': DATA_TYPES.NUMBER,
-  'context': DATA_TYPES.NUMBER,
-  'contextsubtype': DATA_TYPES.NUMBER,
-  'plcmttype': DATA_TYPES.NUMBER,
-  'plcmtcnt': DATA_TYPES.NUMBER,
-  'seq': DATA_TYPES.NUMBER,
-  'assets': DATA_TYPES.ARRAY,
-  'ext': DATA_TYPES.OBJECT
-}
+
 const NET_REVENUE = false;
 const dealChannelValues = {
   1: 'PMP',
@@ -230,11 +219,120 @@ function _checkParamDataType(key, value, datatype) {
   }
 }
 
+function _createNativeRequest(params) {
+  var nativeRequestObject = {
+    assets: []
+  };
+  for (var key in params) {
+    var assetObj = {};
+    if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty('key'))) {
+      switch (key) {
+        case 'title':
+          assetObj = {
+            id: 1,
+            req: params[key].required,
+            title: {
+              len: params[key].length,
+              ext: params[key].ext
+            }
+          };
+          break;
+        case 'image':
+          assetObj = {
+            id: 2,
+            req: params[key].required,
+            img: {
+              type: params[key].type,
+              w: params[key].w || params[key].width || params[key].sizes[0],
+              h: params[key].h || params[key].height || params[key].sizes[1],
+              wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : undefined),
+              hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : undefined),
+              mimes: params[key].mimes,
+              ext: params[key].ext
+            }
+          };
+          break;
+        case 'data':
+          assetObj = {
+            id: 9,
+            req: params[key].required,
+            data: {
+              type: params[key].type,
+              Len: params[key].length || params[key].len,
+              ext: params[key].ext
+            }
+          };
+          break;
+        case 'video':
+          assetObj = {
+            id: 7,
+            req: params[key].required,
+            video: {
+              minduration: params[key].minduration,
+              maxduration: params[key].maxduration,
+              protocols: params[key].protocols,
+              mimes: params[key].mimes,
+              ext: params[key].ext
+            }
+          };
+          break;
+        case 'ext':
+          assetObj = {
+            id: 8,
+            req: params[key].required
+          };
+          break;
+        case 'sponsoredBy':
+          assetObj = {
+            id: 4,
+            req: params[key].required,
+            sponsoredBy: {}
+          };
+          break;
+        case 'clickUrl':
+          assetObj = {
+            id: 6,
+            req: params[key].required,
+            clickUrl: {}
+          };
+          break;
+        case 'body':
+          assetObj = {
+            id: 5,
+            req: params[key].required,
+            desc: {}
+          };
+          break;
+        case 'icon':
+          assetObj = {
+            id: 3,
+            req: params[key].required,
+            icon: {
+              type: params[key].type,
+              w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
+              h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
+            }
+          };
+          break;
+        case 'cta':
+          assetObj = {
+            id: 10,
+            req: params[key].required,
+            cta: {}
+          };
+          break;
+      }
+    }
+    nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
+  };
+  return nativeRequestObject;
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
-  var nativeObj = {};
+  // var nativeObj = {};
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
 
   impObj = {
@@ -271,18 +369,11 @@ function _createImpressionObject(bid, conf) {
     }
 
     impObj.video = videoObj;
-  } else if (bid.params.hasOwnProperty('native')) {
-    var nativeData = bid.params.native;
+  } else if (bid.nativeParams) {
     impObj.native = {};
-    for (var nativekey in NATIVE_CUSTOM_PARAMS) {
-      if (nativeData.hasOwnProperty(nativekey)) {
-        nativeObj[nativekey] = _checkParamDataType(nativekey, nativeData[nativekey], NATIVE_CUSTOM_PARAMS[nativekey])
-      }
-    }
-    nativeObj.assets && nativeObj.assets.length > 0 && nativeObj.assets.forEach(function (element, idx) {
-      element.id = idx + 1;
-    });
-    impObj.native['request'] = nativeObj;
+    var nativeRequest = _createNativeRequest(bid.nativeParams)
+    impObj.native['request'] = JSON.stringify(nativeRequest);
+    console.log(impObj);
   } else {
     bannerObj = {
       pos: 0,
@@ -388,12 +479,12 @@ export const spec = {
           return false;
         }
       }
-      if (bid.params.hasOwnProperty('native')) {
-        if (!bid.params.native.hasOwnProperty('assets') || !utils.isArray(bid.params.native.assets) || bid.params.native.assets.length === 0) {
-          utils.logWarn(BIDDER_CODE + ': For native ads, assets is mandatory and must specify atleast 1 asset value. Call to OpenBid will not be sent for ad unit:');
-          return false;
-        }
-      }
+      // if (bid.params.hasOwnProperty('native')) {
+      //   if (!bid.params.native.hasOwnProperty('assets') || !utils.isArray(bid.params.native.assets) || bid.params.native.assets.length === 0) {
+      //     utils.logWarn(BIDDER_CODE + ': For native ads, assets is mandatory and must specify atleast 1 asset value. Call to OpenBid will not be sent for ad unit:');
+      //     return false;
+      //   }
+      // }
       return true;
     }
     return false;
@@ -421,18 +512,19 @@ export const spec = {
           utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
-      } else if (bid.params.hasOwnProperty('native')) {
-        // Check for valid ad slot in native
-        if (!bid.params.native.assets || bid.params.native.assets.length < 1) {
-          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
-          return;
-        }
       } else {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
           utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
           return;
         }
       }
+      // else if (bid.) {
+      //   // Check for valid ad slot in native
+      //   if (!bid.params.native.assets || bid.params.native.assets.length < 1) {
+      //     utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+      //     return;
+      //   }
+      // }
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
@@ -563,6 +655,7 @@ export const spec = {
                   }
                   if (bid.impid === req.id && req.hasOwnProperty('native')) {
                     newBid.mediaType = 'native';
+                    newBid.native = {};
                     if (bid.hasOwnProperty('adm')) {
                       var adm = '';
                       try {
@@ -571,31 +664,39 @@ export const spec = {
                         adm = JSON.parse(bid.adm.replace(/\\/g, ''));
                       }
                       if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
-                        const nativeAd = adm.native.assets[0];
-                        newBid[NATIVE] = {
-                          title: nativeAd.title || '',
-                          body: nativeAd.desc || '',
-                          cta: nativeAd.ctatext || '',
-                          sponsoredBy: adm.native.sponsored || 'PubMatic',
-                          clickUrl: adm.native.link.url || 'www.pubmatic.com',
-                          clickTrackers: adm.native.link.click_trackers || '',
-                          impressionTrackers: adm.native.impression_trackers || '',
-                          javascriptTrackers: adm.native.javascript_trackers || '',
-                        };
-                        if (nativeAd.image) {
-                          newBid['native'].image = {
-                            url: nativeAd.image.url || '',
-                            height: nativeAd.image.height || 150,
-                            width: nativeAd.image.width || 150,
-                          };
+                        for (let i = 0, len = adm.native.assets.length; i < len; i++) {
+                          switch (adm.native.assets[i].id) {
+                            case 1:
+                              native.title = assets[i].title.text;
+                              break;
+                            case 2:
+                              native.image = {
+                                url: assets[i].img.url,
+                                height: assets[i].img.h,
+                                width: assets[i].img.w,
+                              };
+                              break;
+                            case 3:
+                              native.icon = {
+                                url: assets[i].img.url,
+                                height: assets[i].img.h,
+                                width: assets[i].img.w,
+                              };
+                              break;
+                            case 4:
+                              native.sponsoredBy = assets[i].data.value;
+                              break;
+                            case 5:
+                              native.body = assets[i].data.value;
+                              break;
+                            case 6:
+                              native.cta = assets[i].data.value;
+                              break;
+                          }
                         }
-                        if (nativeAd.icon) {
-                          newBid['native'].icon = {
-                            url: nativeAd.icon.url || '',
-                            height: nativeAd.icon.height || '',
-                            width: nativeAd.icon.width || '',
-                          };
-                        }
+                        native.clickUrl = adm.native.link.url;
+                        native.clickTrackers = adm.native.link.clicktrackers || [];
+                        native.impressionTrackers = adm.native.imptrackers || [];
                       }
                     }
                   }
