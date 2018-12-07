@@ -64,49 +64,30 @@ export const spec = {
     return true;
   },
   /**
+   * Interpret the response if the array contains BIDDER elements, in the format: [ [bidder1 bid 1, bidder1 bid 2], [bidder2 bid 1, bidder2 bid 2] ]
    * @param serverResponse
    * @param request
    * @returns {*}
    */
   interpretResponse(serverResponse, request) {
+    utils.logInfo('ozone interpretResponse version 2018-12-05 16:46');
     serverResponse = serverResponse.body || {};
     if (serverResponse.seatbid) {
       if (utils.isArray(serverResponse.seatbid)) {
-        const {seatbid: arrSeatbid} = serverResponse;
-        let winnerAds = arrSeatbid.reduce((bid, ads) => {
-          var _seat = ads.seat;
-          let ad = ads.bid.reduce(function(currentWinningBid, considerBid) {
-            if (currentWinningBid.price < considerBid.price) {
-              const bid = matchRequest(considerBid.impid, request);
-              const {width, height} = defaultSize(bid);
-              considerBid.cpm = considerBid.price;
-              considerBid.bidId = considerBid.impid;
-              considerBid.requestId = considerBid.impid;
-              considerBid.width = considerBid.w || width;
-              considerBid.height = considerBid.h || height;
-              considerBid.ad = considerBid.adm;
-              considerBid.netRevenue = true;
-              considerBid.creativeId = considerBid.crid;
-              considerBid.currency = 'USD';
-              considerBid.ttl = 60;
-              considerBid.seat = _seat;
-
-              return considerBid;
-            } else {
-              currentWinningBid.cpm = currentWinningBid.price;
-              return currentWinningBid;
-            }
-          }, {price: 0});
-          if (ad.adm) {
-            bid.push(ad)
+        // serverResponse seems good, let's get the list of bids from the request object:
+        let arrRequestBids = request.bidderRequest.bids;
+        // build up a list of winners, one for each bidId in arrBidIds
+        let arrWinners = [];
+        for (let i = 0; i < arrRequestBids.length; i++) {
+          let winner = ozoneGetWinnerForRequestBid(arrRequestBids[i], serverResponse.seatbid);
+          if (winner !== null) {
+            const {defaultWidth, defaultHeight} = defaultSize(arrRequestBids[i]);
+            winner = ozoneAddStandardProperties(winner, defaultWidth, defaultHeight);
+            arrWinners.push(winner);
           }
-          return bid;
-        }, [])
-        let winnersClean = winnerAds.filter(w => {
-          if (w.bidId) {
-            return true;
-          }
-          return false;
+        }
+        let winnersClean = arrWinners.filter(w => {
+          return (w.bidId); // will be cast to boolean
         });
         utils.logInfo(['going to return winnersClean:', winnersClean]);
         return winnersClean;
@@ -184,6 +165,7 @@ export const spec = {
     utils.logInfo(['buildRequests going to return', ret]);
     return ret;
   },
+
   getUserSyncs(optionsType, serverResponse) {
     if (!serverResponse || serverResponse.length === 0) {
       return [];
@@ -226,8 +208,51 @@ export function checkDeepArray(Arr) {
 export function defaultSize(thebidObj) {
   const {sizes} = thebidObj;
   const returnObject = {};
-  returnObject.width = checkDeepArray(sizes)[0];
-  returnObject.height = checkDeepArray(sizes)[1];
+  returnObject.defaultWidth = checkDeepArray(sizes)[0];
+  returnObject.defaultHeight = checkDeepArray(sizes)[1];
   return returnObject;
 }
+
+/**
+ * Do the messy searching for the best bid response in the serverResponse.seatbid array matching the requestBid.bidId
+ * @param requestBid
+ * @param serverResponseSeatBid
+ * @returns {*} bid object
+ */
+export function ozoneGetWinnerForRequestBid(requestBid, serverResponseSeatBid) {
+  let thisBidWinner = null;
+  for (let j = 0; j < serverResponseSeatBid.length; j++) {
+    let theseBids = serverResponseSeatBid[j].bid;
+    let thisSeat = serverResponseSeatBid[j].seat;
+    for (let k = 0; k < theseBids.length; k++) {
+      if (theseBids[k].impid === requestBid.bidId) { // we've found a matching server response bid for this request bid
+        if ((thisBidWinner == null) || (thisBidWinner.price < theseBids[k].price)) {
+          thisBidWinner = theseBids[k];
+          thisBidWinner.seat = thisSeat; // we need to add this here - it's the name of the winning bidder, not guaranteed to be available in the bid object.
+        }
+      }
+    }
+  }
+  return thisBidWinner;
+}
+
+/**
+ * We expect to be able to find a standard set of properties on winning bid objects; add them here.
+ * @param seatBid
+ * @returns {*}
+ */
+export function ozoneAddStandardProperties(seatBid, defaultWidth, defaultHeight) {
+  seatBid.cpm = seatBid.price;
+  seatBid.bidId = seatBid.impid;
+  seatBid.requestId = seatBid.impid;
+  seatBid.width = seatBid.w || defaultWidth;
+  seatBid.height = seatBid.h || defaultHeight;
+  seatBid.ad = seatBid.adm;
+  seatBid.netRevenue = true;
+  seatBid.creativeId = seatBid.crid;
+  seatBid.currency = 'USD';
+  seatBid.ttl = 60;
+  return seatBid;
+}
+
 registerBidder(spec);
