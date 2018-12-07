@@ -4,24 +4,166 @@ import * as utils from '../src/utils';
 import {config} from '../src/config';
 
 export const BIDDER_CODE = 'adikteev';
-export const ENDPOINT_URL = 'https://serve-adserver.adikteev.com/api/prebid/bid';
-export const ENDPOINT_URL_STAGING = 'https://serve-adserver-staging.adikteev.com/api/prebid/bid';
-export const USER_SYNC_IFRAME_URL = 'https://serve-adserver.adikteev.com/api/prebid/sync-iframe';
-export const USER_SYNC_IFRAME_URL_STAGING = 'https://serve-adserver-staging.adikteev.com/api/prebid/sync-iframe';
-export const USER_SYNC_IMAGE_URL = 'https://serve-adserver.adikteev.com/api/prebid/sync-image';
-export const USER_SYNC_IMAGE_URL_STAGING = 'https://serve-adserver-staging.adikteev.com/api/prebid/sync-image';
+export const AK_PBJS_VERSION = '1.35.0';
 
-export let stagingEnvironmentSwitch = false; // Don't use it. Allow us to make tests on staging
+export const AK_BASE_URL = 'https://prebid.adikteev.com';
+export const AK_BASE_URL_STAGING = 'https://prebid-staging.adikteev.com';
+export const AK_BASE_URL_DEVELOPMENT = 'http://localhost:3000';
 
-export function setstagingEnvironmentSwitch(value) {
-  stagingEnvironmentSwitch = value;
-}
+export const ENDPOINT_PATH = '/api/prebid/bid';
+export const USER_SYNC_IFRAME_URL_PATH = '/api/prebid/sync-iframe';
+export const USER_SYNC_IMAGE_URL_PATH = '/api/prebid/sync-image';
 
-function validateSizes(sizes) {
-  if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
+export const PRODUCTION = 'production';
+export const STAGING = 'staging';
+export const DEVELOPMENT = 'development';
+export const DEFAULT_ENV = PRODUCTION;
+
+export const conformBidRequest = bidRequest => {
+  return {
+    params: bidRequest.params,
+    crumbs: bidRequest.crumbs,
+    sizes: bidRequest.sizes,
+    bidId: bidRequest.bidId,
+    bidderRequestId: bidRequest.bidderRequestId,
+  };
+};
+
+export const akDebug = (parameterDebug, configDebug) => {
+  if (parameterDebug && parameterDebug.length && parameterDebug.length > 0) return JSON.parse(parameterDebug);
+  else if (configDebug) return configDebug;
+  else return false;
+};
+
+export const akEnv = (parameterAkEnv, configAkEnv) => {
+  if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], parameterAkEnv)) return parameterAkEnv;
+  else if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], configAkEnv)) return configAkEnv;
+  else return DEFAULT_ENV;
+};
+
+export const akOverrides = (parameterAkOverrides, configAkOverrides) => {
+  if (parameterAkOverrides && parameterAkOverrides.length !== 0) {
+    let parsedParams = null;
+    try {
+      parsedParams = JSON.parse(parameterAkOverrides);
+    } catch (error) {
+      parsedParams = null;
+    }
+    if (parsedParams) return parsedParams;
+  }
+  if (configAkOverrides && Object.keys(configAkOverrides).length !== 0) return configAkOverrides;
+  else return {};
+};
+
+export const akUrl = (environment) => {
+  switch (environment) {
+    case DEVELOPMENT:
+      return AK_BASE_URL_DEVELOPMENT;
+    case STAGING:
+      return AK_BASE_URL_STAGING;
+    default:
+      return AK_BASE_URL;
+  }
+};
+
+export const endpointUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(ENDPOINT_PATH);
+export const userSyncIframeUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(USER_SYNC_IFRAME_URL_PATH);
+export const userSyncImageUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(USER_SYNC_IMAGE_URL_PATH);
+
+export const getViewDimensions = () => {
+  let w = window;
+  let prefix = 'inner';
+
+  if (window.innerWidth === undefined || window.innerWidth === null) {
+    w = document.documentElement || document.body;
+    prefix = 'client';
+  }
+
+  return {
+    width: w[`${prefix}Width`],
+    height: w[`${prefix}Height`],
+  };
+};
+
+export const getDeviceDimensions = () => {
+  return {
+    width: window.screen ? window.screen.width : '',
+    height: window.screen ? window.screen.height : '',
+  };
+};
+
+export const getDocumentDimensions = () => {
+  const de = document.documentElement;
+  const be = document.body;
+
+  const bodyHeight = be ? Math.max(be.offsetHeight, be.scrollHeight) : 0;
+
+  const w = Math.max(de.clientWidth, de.offsetWidth, de.scrollWidth);
+  const h = Math.max(
+    de.clientHeight,
+    de.offsetHeight,
+    de.scrollHeight,
+    bodyHeight
+  );
+
+  return {
+    width: isNaN(w) ? '' : w,
+    height: isNaN(h) ? '' : h,
+  };
+};
+
+export const isWebGLEnabled = () => {
+  // Create test canvas
+  let canvas = document.createElement('canvas');
+
+  // The gl context
+  let gl = null;
+
+  // Try to get the regular WebGL
+  try {
+    gl = canvas.getContext('webgl');
+  } catch (ex) {
+    canvas = undefined;
     return false;
   }
-  return sizes.every(size => utils.isArray(size) && size.length === 2);
+
+  // No regular WebGL found
+  if (!gl) {
+    // Try experimental WebGL
+    try {
+      gl = canvas.getContext('experimental-webgl');
+    } catch (ex) {
+      canvas = undefined;
+      return false;
+    }
+  }
+
+  return !!gl;
+};
+
+export const getDeviceInfo = (deviceDimensions, viewDimensions, documentDimensions, webGL) => {
+  return {
+    browserWidth: viewDimensions.width,
+    browserHeight: viewDimensions.height,
+    deviceWidth: deviceDimensions.width,
+    deviceHeight: deviceDimensions.height,
+    documentWidth: documentDimensions.width,
+    documentHeight: documentDimensions.height,
+    webGL: webGL,
+  };
+};
+
+const validateSizes = sizes => utils.isArray(sizes) && sizes.some(size => utils.isArray(size) && size.length === 2);
+
+export function conformCookies(documentCookie) {
+  return documentCookie
+    .split('; ')
+    .filter(i => i.indexOf('=') !== -1)
+    .reduce((acc, kv) => {
+      const [k, v] = kv.split('=');
+      acc[k] = v;
+      return acc;
+    }, {});
 }
 
 export const spec = {
@@ -29,11 +171,9 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (bid) => {
-    setstagingEnvironmentSwitch(stagingEnvironmentSwitch || !!bid.params.stagingEnvironment);
     return !!(
       bid &&
       bid.params &&
-      bid.params.bidFloorPrice &&
       bid.params.placementId &&
       bid.bidder === BIDDER_CODE &&
       validateSizes(bid.mediaTypes.banner.sizes)
@@ -41,51 +181,43 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    const payload = {
-      validBidRequests,
-      bidderRequest,
-      refererInfo: bidderRequest.refererInfo,
-      currency: config.getConfig('currency'),
-      userAgent: navigator.userAgent,
-      screen: {
-        width: window.screen.width,
-        height: window.screen.height
+    const payload = Object.assign({},
+      {
+        akPbjsVersion: AK_PBJS_VERSION,
+        bidRequests: validBidRequests.map(conformBidRequest),
+        cookies: conformCookies(document.cookie),
+        currency: config.getConfig('currency'),
+        debug: akDebug(utils.getParameterByName('akDebug'), config.getConfig('akDebug')),
+        language: navigator.language,
+        refererInfo: bidderRequest.refererInfo,
+        deviceInfo: getDeviceInfo(getDeviceDimensions(), getViewDimensions(), getDocumentDimensions(), isWebGLEnabled()),
+        userAgent: navigator.userAgent,
       },
-      language: navigator.language,
-      cookies: document.cookie.split(';'),
-      prebidUpdateVersion: '1.29.0',
-    };
+      akOverrides(utils.getParameterByName('akOverrides'), config.getConfig('akOverrides')));
+
     return {
       method: 'POST',
-      url: stagingEnvironmentSwitch ? ENDPOINT_URL_STAGING : ENDPOINT_URL,
+      url: endpointUrl(utils.getParameterByName('akEnv'), config.getConfig('akEnv')),
       data: JSON.stringify(payload),
     };
   },
 
-  interpretResponse: (serverResponse, bidRequests) => {
-    const returnedBids = [];
-    const validBidRequests = JSON.parse(bidRequests.data).validBidRequests;
-    serverResponse.body.forEach((value, index) => {
-      const overrides = {
-        requestId: validBidRequests[index].bidId,
-      };
-      returnedBids.push(Object.assign({}, value, overrides));
-    });
-    return returnedBids;
-  },
+  interpretResponse: (serverResponse) => serverResponse.body,
 
   getUserSyncs: (syncOptions, serverResponses) => {
+    const parameterAkEnv = utils.getParameterByName('akEnv');
+    const configAkEnv = config.getConfig('akEnv');
     const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: stagingEnvironmentSwitch ? USER_SYNC_IFRAME_URL_STAGING : USER_SYNC_IFRAME_URL,
+        url: userSyncIframeUrl(parameterAkEnv, configAkEnv),
       });
     }
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'image',
-        url: stagingEnvironmentSwitch ? USER_SYNC_IMAGE_URL_STAGING : USER_SYNC_IMAGE_URL,
+        url: userSyncImageUrl(parameterAkEnv, configAkEnv),
       });
     }
     return syncs;
