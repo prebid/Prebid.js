@@ -540,6 +540,12 @@ export function getStandardBidderSettings(mediaType) {
           return bidResponse.timeToRespond;
         }
       },
+      {
+        key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
+        val: function (bidResponse) {
+          return bidResponse.auctionId;
+        }
+      },
     ]
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
