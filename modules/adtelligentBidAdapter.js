@@ -116,7 +116,7 @@ function bidToTag(bidRequests, bidderRequest) {
     domain: utils.getTopWindowLocation().hostname
   };
 
-  if(bidderRequest && bidderRequest.gdprConsent){
+  if (bidderRequest && bidderRequest.gdprConsent) {
     tag.gdpr = 1;
     tag.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
