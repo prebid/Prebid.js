@@ -13,6 +13,7 @@ const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'langua
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const NATIVE_MAPPING = {
   body: 'description',
+  body2: 'desc2',
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
@@ -25,6 +26,7 @@ const NATIVE_MAPPING = {
     minimumParams: { sizes: [{}] },
   },
   sponsoredBy: 'sponsored_by',
+  privacyLink: 'privacy_link'
 };
 const SOURCE = 'pbjs';
 
@@ -283,8 +285,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
+      body2: nativeAd.desc2,
       cta: nativeAd.ctatext,
+      rating: nativeAd.rating,
       sponsoredBy: nativeAd.sponsored,
+      privacyLink: nativeAd.privacy_link,
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
