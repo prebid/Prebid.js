@@ -325,7 +325,6 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
-  // var nativeObj = {};
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
 
   impObj = {
@@ -366,7 +365,6 @@ function _createImpressionObject(bid, conf) {
     impObj.native = {};
     var nativeRequest = _createNativeRequest(bid.nativeParams)
     impObj.native['request'] = encodeURI(JSON.stringify(nativeRequest));
-    console.log(impObj);
   } else {
     bannerObj = {
       pos: 0,
@@ -392,9 +390,7 @@ function _createImpressionObject(bid, conf) {
 
 function _getDigiTrustObject(key) {
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({
-      member: key
-    }));
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId();
@@ -450,11 +446,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
-   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return boolean True if this is a valid bid, and false otherwise.
+  */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
@@ -472,12 +468,6 @@ export const spec = {
           return false;
         }
       }
-      // if (bid.params.hasOwnProperty('native')) {
-      //   if (!bid.params.native.hasOwnProperty('assets') || !utils.isArray(bid.params.native.assets) || bid.params.native.assets.length === 0) {
-      //     utils.logWarn(BIDDER_CODE + ': For native ads, assets is mandatory and must specify atleast 1 asset value. Call to OpenBid will not be sent for ad unit:');
-      //     return false;
-      //   }
-      // }
       return true;
     }
     return false;
@@ -511,13 +501,6 @@ export const spec = {
           return;
         }
       }
-      // else if (bid.) {
-      //   // Check for valid ad slot in native
-      //   if (!bid.params.native.assets || bid.params.native.assets.length < 1) {
-      //     utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
-      //     return;
-      //   }
-      // }
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;

@@ -1037,18 +1037,11 @@ describe('PubMatic adapter', function () {
       it('Request params check for native ad', function () {
         let request = spec.buildRequests(nativeBidRequests);
         let data = JSON.parse(request.data);
-        console.log(data.imp[0]);
         expect(data.imp[0].native).to.exist;
         expect(data.imp[0].native['request']).to.exist;
         expect(data.imp[0].tagid).to.equal('div-1');
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
       });
-
-      // it('Request object should not contain native request if assets is not provided', function () {
-      //   let request = spec.buildRequests(nativeBidRequestsWithoutAsset);
-      //   console.log(request);
-      //   expect(request).to.equal(undefined);
-      // });
   	});
 
     it('Request params dctr check', function () {
