@@ -211,6 +211,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
     url: rtbBid.renderer_url,
     config: rendererOptions,
     loaded: false,
+    adUnitCode
   });
 
   try {
@@ -238,6 +239,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -246,6 +248,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     currency: 'USD',
     netRevenue: true,
     ttl: 300,
+    adUnitCode: bidRequest.adUnitCode,
     appnexus: {
       buyerMemberId: rtbBid.buyer_member_id,
       dealPriority: rtbBid.deal_priority,
