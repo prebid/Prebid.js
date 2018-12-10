@@ -23,5 +23,6 @@
   "teadsBidAdapter",
   "pubmaticBidAdapter",
   "rhythmoneBidAdapter",
+  "sublimeBidAdapter",
   "googleAnalyticsAdapter"
 ]
