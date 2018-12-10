@@ -846,6 +846,11 @@ export function cookiesAreEnabled() {
   return window.document.cookie.indexOf('prebid.cookieTest') != -1;
 }
 
+export function getCookie(name) {
+  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+  return m ? decodeURIComponent(m[2]) : null;
+}
+
 /**
  * Given a function, return a function which only executes the original after
  * it's been called numRequiredCalls times.
