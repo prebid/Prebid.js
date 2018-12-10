@@ -1,5 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 
@@ -59,9 +59,10 @@ export const spec = {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
 
-    if (validBidRequests[0].params.hfa) {
-      payload.hfa = validBidRequests[0].params.hfa;
+    if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? deepAccess(validBidRequests[0], 'params.hfa') : `PRE-${deepAccess(validBidRequests[0], 'crumbs.pubcid')}`;
     }
+
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
