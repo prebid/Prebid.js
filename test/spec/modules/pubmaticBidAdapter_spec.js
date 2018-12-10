@@ -143,6 +143,9 @@ describe('PubMatic adapter', function () {
           }
         }
       },
+      nativeParams: {
+        title: { required: true }
+      },
       bidder: 'pubmatic',
       params: {
         publisherId: '5670',

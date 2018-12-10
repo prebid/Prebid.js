@@ -252,15 +252,36 @@ function _createNativeRequest(params) {
             }
           };
           break;
-        case 'data':
+        case 'icon':
           assetObj = {
-            id: 9,
+            id: 3,
             req: params[key].required,
-            data: {
+            icon: {
               type: params[key].type,
-              Len: params[key].length || params[key].len,
-              ext: params[key].ext
+              w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
+              h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
             }
+          };
+          break;
+        case 'sponsoredBy':
+          assetObj = {
+            id: 4,
+            req: params[key].required,
+            sponsoredBy: {}
+          };
+          break;
+        case 'body':
+          assetObj = {
+            id: 5,
+            req: params[key].required,
+            desc: {}
+          };
+          break;
+        case 'clickUrl':
+          assetObj = {
+            id: 6,
+            req: params[key].required,
+            clickUrl: {}
           };
           break;
         case 'video':
@@ -282,43 +303,15 @@ function _createNativeRequest(params) {
             req: params[key].required
           };
           break;
-        case 'sponsoredBy':
+        case 'data':
           assetObj = {
-            id: 4,
+            id: 9,
             req: params[key].required,
-            sponsoredBy: {}
-          };
-          break;
-        case 'clickUrl':
-          assetObj = {
-            id: 6,
-            req: params[key].required,
-            clickUrl: {}
-          };
-          break;
-        case 'body':
-          assetObj = {
-            id: 5,
-            req: params[key].required,
-            desc: {}
-          };
-          break;
-        case 'icon':
-          assetObj = {
-            id: 3,
-            req: params[key].required,
-            icon: {
+            data: {
               type: params[key].type,
-              w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-              h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
+              Len: params[key].length || params[key].len,
+              ext: params[key].ext
             }
-          };
-          break;
-        case 'cta':
-          assetObj = {
-            id: 10,
-            req: params[key].required,
-            cta: {}
           };
           break;
       }
@@ -372,7 +365,7 @@ function _createImpressionObject(bid, conf) {
   } else if (bid.nativeParams) {
     impObj.native = {};
     var nativeRequest = _createNativeRequest(bid.nativeParams)
-    impObj.native['request'] = JSON.stringify(nativeRequest);
+    impObj.native['request'] = encodeURI(JSON.stringify(nativeRequest));
     console.log(impObj);
   } else {
     bannerObj = {
@@ -667,36 +660,37 @@ export const spec = {
                         for (let i = 0, len = adm.native.assets.length; i < len; i++) {
                           switch (adm.native.assets[i].id) {
                             case 1:
-                              native.title = assets[i].title.text;
+                              newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
                               break;
                             case 2:
-                              native.image = {
-                                url: assets[i].img.url,
-                                height: assets[i].img.h,
-                                width: assets[i].img.w,
+                              newBid.native.image = {
+                                url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+                                height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+                                width: adm.native.assets[i].img && adm.native.assets[i].img.w,
                               };
                               break;
                             case 3:
-                              native.icon = {
-                                url: assets[i].img.url,
-                                height: assets[i].img.h,
-                                width: assets[i].img.w,
+                              newBid.native.icon = {
+                                url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+                                height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+                                width: adm.native.assets[i].img && adm.native.assets[i].img.w,
                               };
                               break;
                             case 4:
-                              native.sponsoredBy = assets[i].data.value;
+                              newBid.native.sponsoredBy = adm.native.assets[i].sponsored;
                               break;
                             case 5:
-                              native.body = assets[i].data.value;
+                              newBid.native.body = adm.native.assets[i].desc;
                               break;
                             case 6:
-                              native.cta = assets[i].data.value;
+                              newBid.native.cta = adm.native.assets[i].ctatext;
                               break;
                           }
                         }
-                        native.clickUrl = adm.native.link.url;
-                        native.clickTrackers = adm.native.link.clicktrackers || [];
-                        native.impressionTrackers = adm.native.imptrackers || [];
+                        newBid.native.clickUrl = adm.native.link && adm.native.link.url;
+                        newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
+                        newBid.native.impressionTrackers = adm.native.imptrackers || [];
+                        newBid.native.jstracker = adm.native.jstracker || [];
                       }
                     }
                   }
