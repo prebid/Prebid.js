@@ -2,12 +2,11 @@
  * This modules adds Universal ID support to prebid.js
  */
 // import {config} from 'config'
-
 // import * as utils from 'src/utils'
 // import { config } from 'src/config';
 
 const STORAGE_TYPE_COOKIE = 'cookie';
-const STORAGE_TYPE_LOCALSTORAGE = 'localStorage';
+const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
  * ID data for appending to bid requests from the requestBidHook
@@ -76,6 +75,7 @@ const submodules = [
   }
 
 ]
+
 /**
  * @param navigator - navigator passed for easier testing through dependency injection
  * @param document - document passed for easier testing through dependency injection

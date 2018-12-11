@@ -31,7 +31,7 @@ describe('Universal ID', function () {
           },
           cookie: ''
         });
-        expect(result).to.deep.equal(['localStorage', 'cookie']);
+        expect(result).to.deep.equal(['html5', 'cookie']);
       });
 
       it('returns array with \'localStorage\' item, if only localStorage is enabled', function() {
@@ -47,7 +47,7 @@ describe('Universal ID', function () {
             return ''
           }
         });
-        expect(result).to.deep.equal(['localStorage']);
+        expect(result).to.deep.equal(['html5']);
       });
 
       it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred setting test cookie', function() {
@@ -66,7 +66,7 @@ describe('Universal ID', function () {
             return 'prebid.cookieTest'
           }
         });
-        expect(result).to.deep.equal(['localStorage']);
+        expect(result).to.deep.equal(['html5']);
       });
 
       it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred getting test cookie', function() {
@@ -83,7 +83,7 @@ describe('Universal ID', function () {
             throw new Error('error getting test cookie');
           }
         });
-        expect(result).to.deep.equal(['localStorage']);
+        expect(result).to.deep.equal(['html5']);
       });
 
       it('returns array with \'cookie\' item, if only cookie storage is enabled', function() {
