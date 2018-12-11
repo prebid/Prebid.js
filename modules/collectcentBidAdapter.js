@@ -40,7 +40,7 @@ export const spec = {
     };
 
     const placements = [];
-    const location = new URL(bidderRequest.refererInfo.referer);
+    const location = bidderRequest ? new URL(bidderRequest.refererInfo.referer) : winTop.location;
     const request = {
       'secure': (location.protocol === 'https:') ? 1 : 0,
       'deviceWidth': winTop.screen.width,
