@@ -169,6 +169,30 @@ describe('Universal ID', function () {
         const result = validateConfig(config, submodules);
         expect(result).to.equal(false);
       });
+
+      it('return false if config does not define configuration for any of the submodules', function() {
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          return [{
+            name: 'foo'
+          }, {
+            name: 'bar'
+          }];
+        });
+        const result = validateConfig(config, submodules);
+        expect(result).to.equal(false);
+      });
+
+      it('return true if config defines configurations for both of the submodules', function() {
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          return [{
+            name: 'pubcid'
+          }, {
+            name: 'openid'
+          }];
+        });
+        const result = validateConfig(config, submodules);
+        expect(result).to.equal(true);
+      });
     })
   });
 });
