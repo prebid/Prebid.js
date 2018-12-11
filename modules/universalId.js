@@ -171,6 +171,8 @@ export function initUniversalId (config, navigator, document) {
     // exit if no configurations are set
     // return;
   }
+
+  // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
 }
 
 // call init
