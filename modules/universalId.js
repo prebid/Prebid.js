@@ -140,12 +140,14 @@ export function validateConfig (config, submodules) {
     return false;
   }
   return submodules.some(submodule => {
-    const submoduleConfig = submoduleConfigs[submodule.configKey];
-    if (!submoduleConfig) {
-      return false;
+    const submoduleConfig = submoduleConfigs.find(item => {
+      return item.name == submodule.configKey;
+    });
+    if (submoduleConfig !== null && typeof submoduleConfig === 'object') {
+      return true;
     }
     // validate require submodule config props here
-    return true;
+    return false;
   });
 }
 
