@@ -193,6 +193,18 @@ describe('Universal ID', function () {
         const result = validateConfig(config, submodules);
         expect(result).to.equal(true);
       });
-    })
+
+      it('return true if config defines a configuration for one of the submodules', function() {
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          return [{
+            name: 'pubCommonId'
+          }, {
+            name: 'foo'
+          }];
+        });
+        const result = validateConfig(config, submodules);
+        expect(result).to.equal(true);
+      });
+    });
   });
 });
