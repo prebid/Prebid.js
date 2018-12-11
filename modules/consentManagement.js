@@ -20,6 +20,7 @@ export let allowAuction;
 export let staticConsentData;
 
 let consentData;
+let addedConsentHook = false;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -216,7 +217,9 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
     if (consentTimeout === 0) {
       processCmpData(undefined, hookConfig);
     } else {
+      //clearTimeout(hookConfig.timer);
       hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
+      utils.logInfo(`CMP framework setTimeout: ` + hookConfig.timer);
     }
   }
 }
@@ -371,6 +374,9 @@ export function setConfig(config) {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
-  $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
+  if(!addedConsentHook){
+    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
+  }
+  addedConsentHook = true;
 }
 config.getConfig('consentManagement', config => setConfig(config.consentManagement));
