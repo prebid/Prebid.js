@@ -144,6 +144,11 @@ export function validateConfig (config, submodules) {
       return item.name == submodule.configKey;
     });
     if (submoduleConfig !== null && typeof submoduleConfig === 'object') {
+      // TODO Question, how should validation handle both 'value' and 'storage' are definedxx
+      // TODO validate that a property exists for 'value' or 'storage'
+      // IF 'storage' exists, then a 'value' property should not exist
+      //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
+      // ELSE IF 'value' exists, then it should contain data
       return true;
     }
     // validate require submodule config props here
