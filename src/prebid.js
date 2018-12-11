@@ -246,7 +246,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
-        const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+        const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} TagMan=>Prebid.js Header Bidding`);
         utils.insertElement(creativeComment, doc, 'body');
 
         if (isRendererRequired(renderer)) {
