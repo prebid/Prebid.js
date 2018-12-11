@@ -34,14 +34,13 @@ export const spec = {
     let winTop;
     try {
       winTop = window.top;
-      winTop.location.toString();
     } catch (e) {
       utils.logMessage(e);
       winTop = window;
     };
 
-    const location = winTop.location;
     const placements = [];
+    const location = new URL(bidderRequest.refererInfo.referer);
     const request = {
       'secure': (location.protocol === 'https:') ? 1 : 0,
       'deviceWidth': winTop.screen.width,
