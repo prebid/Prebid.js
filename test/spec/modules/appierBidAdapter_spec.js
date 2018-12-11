@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, API_SERVERS_MAP } from 'modules/appierBidAdapter';
+import { spec, API_SERVERS_MAP, ADAPTER_VERSION } from 'modules/appierBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 
@@ -77,7 +77,8 @@ describe('AppierAdapter', function () {
       expect(builtRequests[0].url).match(/v1\/prebid\/bid/);
       expect(builtRequests[0].data).deep.equal({
         'bids': fakeBidRequests,
-        'refererInfo': fakeBidderRequest.refererInfo
+        'refererInfo': fakeBidderRequest.refererInfo,
+        'version': ADAPTER_VERSION
       });
     });
   });

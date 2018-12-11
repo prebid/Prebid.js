@@ -2,6 +2,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER } from 'src/mediaTypes';
 import { config } from 'src/config';
 
+export const ADAPTER_VERSION = '1.0.0';
 const SUPPORTED_AD_TYPES = [BANNER];
 
 // we have different servers for different regions / farms
@@ -41,7 +42,8 @@ export const spec = {
     const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
     const payload = {
       'bids': bidRequests,
-      'refererInfo': bidderRequest.refererInfo
+      'refererInfo': bidderRequest.refererInfo,
+      'version': ADAPTER_VERSION
     };
     return [{
       method: 'POST',
