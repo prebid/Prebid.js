@@ -46,7 +46,7 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
  */
 const submodules = [
   {
-    configKey: 'pubcid',
+    configKey: 'pubCommonId',
     expires: 2628000,
     decode: function(idData) {
       return {
@@ -63,7 +63,7 @@ const submodules = [
       }
     }
   }, {
-    configKey: 'openid',
+    configKey: 'openId',
     expires: 20000,
     decode: function(idData) {
       return {
