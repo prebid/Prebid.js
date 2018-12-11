@@ -154,7 +154,9 @@ describe('Universal ID', function () {
         expect(result).to.deep.equal([]);
       });
     });
+  });
 
+  describe('Config function', function() {
     describe('validateConfig', function() {
       const submodules = [{
         configKey: 'pubCommonId'
