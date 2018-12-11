@@ -14,8 +14,8 @@ const STORAGE_TYPE_LOCALSTORAGE = 'localStorage'
  */
 function browserSupportsCookie (navigator, document) {
   try {
-    if (navigator.cookieEnabled === true && document.cookie.length !== 0) {
-      return true;
+    if (navigator.cookieEnabled === false) {
+      return false;
     }
     document.cookie = 'prebid.cookieTest';
     return document.cookie.indexOf('prebid.cookieTest') !== -1;
