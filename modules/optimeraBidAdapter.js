@@ -1,6 +1,6 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'optimera';
-const SCORES_BASE_URL = 'https://s3.amazonaws.com/elasticbeanstalk-us-east-1-397719490216/json/client/';
+const SCORES_BASE_URL = 'https://s3.amazonaws.com/optimera-client/';
 
 export const spec = {
   code: BIDDER_CODE,
