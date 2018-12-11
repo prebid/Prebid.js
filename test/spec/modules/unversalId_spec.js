@@ -1,7 +1,9 @@
 import {
-  enabledStorageTypes
+  enabledStorageTypes,
+  validateConfig
 } from 'modules/universalId';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 import * as utils from 'src/utils';
 import * as auctionModule from 'src/auction';
 import {expect, assert} from 'chai'
@@ -150,6 +152,22 @@ describe('Universal ID', function () {
           }
         });
         expect(result).to.deep.equal([]);
+      });
+    });
+
+    describe('validateConfig', function() {
+      const submodules = [{
+        configKey: 'pubcid'
+      }, {
+        configKey: 'openid'
+      }];
+
+      it('return false if config does not define usersync.universalIds', function() {
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          return undefined;
+        });
+        const result = validateConfig(config, submodules);
+        expect(result).to.equal(false);
       });
     })
   });
