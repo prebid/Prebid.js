@@ -157,9 +157,9 @@ describe('Universal ID', function () {
 
     describe('validateConfig', function() {
       const submodules = [{
-        configKey: 'pubcid'
+        configKey: 'pubCommonId'
       }, {
-        configKey: 'openid'
+        configKey: 'openId'
       }];
 
       it('return false if config does not define usersync.universalIds', function() {
@@ -185,9 +185,9 @@ describe('Universal ID', function () {
       it('return true if config defines configurations for both of the submodules', function() {
         sandbox.stub(config, 'getConfig').callsFake((key) => {
           return [{
-            name: 'pubcid'
+            name: 'pubCommonId'
           }, {
-            name: 'openid'
+            name: 'openId'
           }];
         });
         const result = validateConfig(config, submodules);
