@@ -1,8 +1,6 @@
 import * as utils from 'src/utils';
 import analyticsAdapter from 'modules/rivrAnalyticsAdapter';
 import {
-  ExpiringQueue,
-  sendAuction,
   sendImpressions,
   handleClickEventWithClosureScope,
   createUnOptimisedParamsField,
@@ -87,49 +85,15 @@ describe('RIVR Analytics adapter', () => {
     delete window.rivraddon;
   });
 
-  it('ExpiringQueue should call sendImpression callback after expiring queue timeout is elapsed', (done) => {
-    const sendImpressionMock = () => {
-      let elements = queue.popAll();
-      expect(elements).to.be.eql([1, 2, 3, 4]);
-      elements = queue.popAll();
-      expect(elements).to.have.lengthOf(0);
-      expect(Date.now()).to.be.equal(200);
-      done();
-    };
-    const sendAuctionMock = () => {};
-
-    let queue = new ExpiringQueue(
-      sendImpressionMock,
-      sendAuctionMock,
-      EXPIRING_QUEUE_TIMEOUT_MOCK);
-
-    queue.push(1);
-
-    setTimeout(() => {
-      queue.push([2, 3]);
-      timer.tick(50);
-    }, 50);
-    setTimeout(() => {
-      queue.push([4]);
-      timer.tick(100);
-    }, 100);
-    timer.tick(50);
-  });
-
   it('enableAnalytics - should call rivraddon enableAnalytics with the correct arguments', () => {
     // adaptermanager.enableAnalytics() is called in beforeEach. If just called here it doesn't seem to work.
     const firstArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[0];
     const secondArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[1];
-    const thirdArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[2];
 
     expect(firstArgument.provider).to.be.equal('rivr');
 
-    expect(typeof secondArgument).to.be.equal('function');
-    expect(secondArgument.name).to.be.equal('ExpiringQueue');
-
-    expect(thirdArgument).to.have.property('utils');
-    expect(thirdArgument).to.have.property('ajax');
-    expect(thirdArgument).to.have.property('find');
+    expect(secondArgument).to.have.property('utils');
+    expect(secondArgument).to.have.property('ajax');
   });
 
   it('Firing an event when rivraddon context is not defined it should do nothing', () => {
