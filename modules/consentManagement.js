@@ -10,6 +10,9 @@ import { gdprDataHandler } from 'src/adaptermanager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
+const CONSTANTS = require('src/constants.json');
+const events = require('src/events');
+
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
@@ -335,6 +338,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
+      events.emit(CONSTANTS.EVENTS.CMP_FAILED, {errMsg:errMsg});
       if (allowAuction) {
         utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
         nextFn.apply(context, args);
@@ -347,6 +351,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
         }
       }
     } else {
+      events.emit(CONSTANTS.EVENTS.CMP_SUCCESS, {});
       nextFn.apply(context, args);
     }
   }
