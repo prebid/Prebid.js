@@ -217,9 +217,7 @@ export function requestBidsHook(reqBidsConfigObj, fn) {
     if (consentTimeout === 0) {
       processCmpData(undefined, hookConfig);
     } else {
-      //clearTimeout(hookConfig.timer);
       hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
-      utils.logInfo(`CMP framework setTimeout: ` + hookConfig.timer);
     }
   }
 }
