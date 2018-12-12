@@ -1,9 +1,8 @@
 /**
  * This modules adds Universal ID support to prebid.js
  */
-// import {config} from 'config'
 // import * as utils from 'src/utils'
-// import { config } from 'src/config';
+import { config } from 'src/config';
 
 const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
@@ -77,8 +76,8 @@ const submodules = [
 ]
 
 /**
- * @param navigator - navigator passed for easier testing through dependency injection
- * @param document - document passed for easier testing through dependency injection
+ * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
+ * @param {Document} document - document passed for easier testing through dependency injection
  * @returns {boolean}
  */
 function browserSupportsCookie (navigator, document) {
@@ -112,8 +111,8 @@ function browserSupportsLocaStorage (localStorage) {
 /**
  * helper to check if local storage or cookies are enabled
  *
- * @param navigator - navigator passed for easier testing through dependency injection
- * @param document - document passed for easier testing through dependency injection
+ * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
+ * @param {Document} document - document passed for easier testing through dependency injection
  * @returns {boolean|*}
  */
 export function enabledStorageTypes (navigator, document) {
@@ -135,47 +134,59 @@ export function enabledStorageTypes (navigator, document) {
  */
 export function validateConfig (config, submodules) {
   const submoduleConfigs = config.getConfig('usersync.universalIds');
-
+  // exit if no configurations are set
   if (!Array.isArray(submoduleConfigs)) {
-    // exit if no configurations are set
     return false;
   }
   // check that at least one config exists
   return submodules.some(submodule => {
-    const submoduleConfig = submoduleConfigs.find(item => {
-      return item.name == submodule.configKey;
-    });
+    const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey)
+    // return true if a valid config exists for submodule
     if (submoduleConfig && typeof submoduleConfig === 'object') {
-      if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
-        // valid if config value obj exists
-        return true;
-      } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object') {
-        // valid if config storage obj exists
-        return true;
-      }
+      return true;
     }
-    // invalid: no config value or storage obj exists
+    // false if no config exists for submodule
     return false;
   });
 }
 
 /**
  * init universal id module if config values are set correctly
+ *
+ * @param {PrebidConfig} config
+ * @param {Array.<IdSubmodule>} submodules
+ * @param {Navigator} navigator
+ * @param {Document} document
+ * @returns {Array} - returns array of enabled universalId submodules
  */
-export function initUniversalId (config, navigator, document) {
-  // check if cookie/local storage is active
-  // check if any universal id configurations are valid (must opt-in to enable)
-  if (enabledStorageTypes(navigator, document) && validateConfig(config, submodules)) {
-    submodules.forEach(submodule => {
-      // TODO Question, how should validation handle both 'value' and 'storage' are defined
-      // TODO validate that a property exists for 'value' or 'storage'
-      // IF 'storage' exists, then a 'value' property should not exist
-      //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
-      // ELSE IF 'value' exists, then it should contain data
-      // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
-    });
+export function initUniversalId (config, submodules, navigator, document) {
+  // valid if at least one configuration is valid
+  if (!validateConfig(config, submodules)) {
+    return []
   }
+
+  // storage enabled storage types, use to check if submodule has a valid configuration
+  const storageTypes = enabledStorageTypes(navigator, document);
+
+  // process and return list of enabled submodules
+  return submodules.reduce((carry, submodule) => {
+    const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
+    // skip, config with name matching submodule.configKey does not exist
+    if (!submoduleConfig) {
+      return carry;
+    }
+
+    // There are two paths for a submodule, if config sets 'value' or 'storage' properties
+    //  1. sudmodule either passes a value set in config
+    //  2. submodule uses local storage to get value (or if local storage is empty calls submodule getId)
+    if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
+      carry.push('found value config, add directly to bidAdapters');
+    } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
+      typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
+      carry.push('found storage config, try to load from local storage');
+    }
+    return carry;
+  }, []);
 }
 
-// call init
-// initUniversalId(window.navigator, window.document);
+initUniversalId(config, submodules, window.navigator, window.document);
