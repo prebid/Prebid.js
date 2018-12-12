@@ -162,14 +162,14 @@ describe('Universal ID', function () {
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
-      const result = validateConfig({
+      expect(validateConfig({
         getConfig: function () {}
-      }, submodules);
-      expect(result).to.equal(false);
+      }, submodules)).to.equal(false);
     });
 
     it('return false if config does not define configuration for any of the submodules', function() {
-      const result = validateConfig({
+      // no config objs for submodule configKey values
+      expect(validateConfig({
         getConfig: function () {
           return [{
             name: 'foo'
@@ -177,12 +177,36 @@ describe('Universal ID', function () {
             name: 'bar'
           }];
         }
-      }, submodules);
-      expect(result).to.equal(false);
+      }, submodules)).to.equal(false);
+
+      // config objs exist for configKey, but no sub obj exits
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId'
+          }, {
+            name: 'openId'
+          }];
+        }
+      }, submodules)).to.equal(false);
+
+      // config objs exist for configKey, but no valid 'value' or 'storage' sub obj
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            foo: {}
+          }, {
+            name: 'openId',
+            bar: {}
+          }];
+        }
+      }, submodules)).to.equal(false);
     });
 
     it('return true if config defines value configurations for both of the submodules', function() {
-      const result = validateConfig({
+      // submodules contain valid 'value' objs
+      expect(validateConfig({
         getConfig: function () {
           return [{
             name: 'pubCommonId',
@@ -192,12 +216,24 @@ describe('Universal ID', function () {
             value: {}
           }];
         }
-      }, submodules);
-      expect(result).to.equal(true);
+      }, submodules)).to.equal(true);
+      // submodules contain valid 'storage' objs
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            storage: {}
+          }, {
+            name: 'openId',
+            storage: {}
+          }];
+        }
+      }, submodules)).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
-      const result = validateConfig({
+      // one submodule contains a valid 'value' obj
+      expect(validateConfig({
         getConfig: function () {
           return [{
             name: 'pubCommonId',
@@ -206,8 +242,19 @@ describe('Universal ID', function () {
             name: 'foo'
           }];
         }
-      }, submodules);
-      expect(result).to.equal(true);
+      }, submodules)).to.equal(true);
+
+      // one submodule contains a valid 'storage' obj
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            storage: {}
+          }, {
+            name: 'foo'
+          }];
+        }
+      }, submodules)).to.equal(true);
     });
   });
 });
