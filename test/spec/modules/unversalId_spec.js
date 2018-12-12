@@ -19,140 +19,138 @@ describe('Universal ID', function () {
     sandbox.restore();
   });
 
-  describe('Storage function', function() {
-    describe('enabledStorageTypes', function() {
-      it('returns array with \'localStorage\' and \'cookie\' items, if both local storage and cookies are enabled', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
-          cookie: ''
-        });
-        expect(result).to.deep.equal(['html5', 'cookie']);
+  describe('enabledStorageTypes', function() {
+    it('returns array with \'localStorage\' and \'cookie\' items, if both local storage and cookies are enabled', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
+        cookie: ''
       });
+      expect(result).to.deep.equal(['html5', 'cookie']);
+    });
 
-      it('returns array with \'localStorage\' item, if only localStorage is enabled', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: false
-        }, {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
-          set cookie(v) {},
-          get cookie() {
-            return ''
+    it('returns array with \'localStorage\' item, if only localStorage is enabled', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: false
+      }, {
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
+        set cookie(v) {},
+        get cookie() {
+          return ''
+        }
+      });
+      expect(result).to.deep.equal(['html5']);
+    });
+
+    it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred setting test cookie', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
+        set cookie(v) {
+          // simulate error setting cookie!!!!
+          throw new Error('error setting test cookie' + v);
+        },
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
+      });
+      expect(result).to.deep.equal(['html5']);
+    });
+
+    it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred getting test cookie', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
+        set cookie(v) {},
+        get cookie() {
+          // simulate error getting cookie!!!!
+          throw new Error('error getting test cookie');
+        }
+      });
+      expect(result).to.deep.equal(['html5']);
+    });
+
+    it('returns array with \'cookie\' item, if only cookie storage is enabled', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
+      });
+      expect(result).to.deep.equal(['cookie']);
+    });
+
+    it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred getting local storage test data', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) {
+            // simulate error calling localStorage.getItem(key)
+            throw new Error('error getting local storage key: ' + key);
           }
-        });
-        expect(result).to.deep.equal(['html5']);
+        },
+        set cookie(v) {},
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
       });
+      expect(result).to.deep.equal(['cookie']);
+    });
 
-      it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred setting test cookie', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+    it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred setting local storage test data', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: true
+      }, {
+        localStorage: {
+          setItem: function(key, value) {
+            // simulate error calling localStorage.getItem(key)
+            throw new Error('error setting local storage key: ' + key + ' = ' + value);
           },
-          set cookie(v) {
-            // simulate error setting cookie!!!!
-            throw new Error('error setting test cookie' + v);
-          },
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        });
-        expect(result).to.deep.equal(['html5']);
-      });
-
-      it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred getting test cookie', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
-          set cookie(v) {},
-          get cookie() {
-            // simulate error getting cookie!!!!
-            throw new Error('error getting test cookie');
-          }
-        });
-        expect(result).to.deep.equal(['html5']);
-      });
-
-      it('returns array with \'cookie\' item, if only cookie storage is enabled', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: undefined,
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        });
-        expect(result).to.deep.equal(['cookie']);
-      });
-
-      it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred getting local storage test data', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) {
-              // simulate error calling localStorage.getItem(key)
-              throw new Error('error getting local storage key: ' + key);
+          getItem: function(key) {
+            if (key === 'prebid.cookieTest') {
+              return '1';
             }
-          },
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
           }
-        });
-        expect(result).to.deep.equal(['cookie']);
+        },
+        set cookie(v) {},
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
       });
+      expect(result).to.deep.equal(['cookie']);
+    });
 
-      it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred setting local storage test data', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: true
-        }, {
-          localStorage: {
-            setItem: function(key, value) {
-              // simulate error calling localStorage.getItem(key)
-              throw new Error('error setting local storage key: ' + key + ' = ' + value);
-            },
-            getItem: function(key) {
-              if (key === 'prebid.cookieTest') {
-                return '1';
-              }
-            }
-          },
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        });
-        expect(result).to.deep.equal(['cookie']);
+    it('returns empty array if neither local storage or cookies are not enabled', function() {
+      const result = enabledStorageTypes({
+        cookieEnabled: false
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return ''
+        }
       });
-
-      it('returns empty array if neither local storage or cookies are not enabled', function() {
-        const result = enabledStorageTypes({
-          cookieEnabled: false
-        }, {
-          localStorage: undefined,
-          set cookie(v) {},
-          get cookie() {
-            return ''
-          }
-        });
-        expect(result).to.deep.equal([]);
-      });
+      expect(result).to.deep.equal([]);
     });
   });
 
@@ -184,29 +182,31 @@ describe('Universal ID', function () {
     });
 
     it('return true if config defines value configurations for both of the submodules', function() {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        return [{
-          name: 'pubCommonId',
-          value: {}
-        }, {
-          name: 'openId',
-          value: {}
-        }];
-      });
-      const result = validateConfig(config, submodules);
+      const result = validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            value: {}
+          }, {
+            name: 'openId',
+            value: {}
+          }];
+        }
+      }, submodules);
       expect(result).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        return [{
-          name: 'pubCommonId',
-          value: {}
-        }, {
-          name: 'foo'
-        }];
-      });
-      const result = validateConfig(config, submodules);
+      const result = validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            value: {}
+          }, {
+            name: 'foo'
+          }];
+        }
+      }, submodules);
       expect(result).to.equal(true);
     });
   });
