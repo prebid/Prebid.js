@@ -250,7 +250,7 @@ function RhythmOneBidAdapter() {
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
         bidResponse.mediaType = 'video';
-        bidResponse.ttl = 10000;
+        bidResponse.ttl = 10;
       } else {
         bidResponse.ad = bid.adm;
       }
