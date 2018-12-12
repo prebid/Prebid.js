@@ -1,7 +1,7 @@
 import {
   enabledStorageTypes,
   validateConfig,
-  initUniversalId
+  initSubmodules
 } from 'modules/universalId';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
@@ -211,7 +211,7 @@ describe('Universal ID', function () {
     });
   });
 
-  describe('initUniversalId', function() {
+  describe('initSubmodules', function() {
     const submodules = [{
       configKey: 'pubCommonId'
     }, {
@@ -219,7 +219,7 @@ describe('Universal ID', function () {
     }];
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
-      expect(initUniversalId({
+      expect(initSubmodules({
         getConfig: function () {
           return [{
             name: 'foo'
@@ -239,7 +239,7 @@ describe('Universal ID', function () {
     });
 
     it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
-      expect(initUniversalId({
+      expect(initSubmodules({
         getConfig: function () {
           return [{
             name: 'pubCommonId',
@@ -261,7 +261,7 @@ describe('Universal ID', function () {
     });
 
     it('returns array with both submodules enabled, if storage exists and both submodule configs contain valid configs', function() {
-      expect(initUniversalId({
+      expect(initSubmodules({
         getConfig: function () {
           return [{
             name: 'pubCommonId',

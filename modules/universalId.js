@@ -4,15 +4,6 @@
 // import * as utils from 'src/utils'
 import { config } from 'src/config';
 
-const STORAGE_TYPE_COOKIE = 'cookie';
-const STORAGE_TYPE_LOCALSTORAGE = 'html5';
-
-/**
- * ID data for appending to bid requests from the requestBidHook
- * @type {Array.<Object>}
- */
-// const extendedBidRequestData = []
-
 /**
  * @callback getIdCallback
  * @param {Object} response - assumed to be a json object
@@ -39,6 +30,15 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
  * @property {decode} decode
  * @property {getId} getId
  */
+
+const STORAGE_TYPE_COOKIE = 'cookie';
+const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+
+/**
+ * ID data for appending to bid requests from the requestBidHook
+ * @type {Array.<Object>}
+ */
+const extendedBidRequestData = []
 
 /**
  * @type {IdSubmodule[]}
@@ -110,7 +110,6 @@ function browserSupportsLocaStorage (localStorage) {
 
 /**
  * helper to check if local storage or cookies are enabled
- *
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
  * @param {Document} document - document passed for easier testing through dependency injection
  * @returns {boolean|*}
@@ -151,15 +150,14 @@ export function validateConfig (config, submodules) {
 }
 
 /**
- * init universal id module if config values are set correctly
- *
+ * init submodules if config values are set correctly
  * @param {PrebidConfig} config
  * @param {Array.<IdSubmodule>} submodules
  * @param {Navigator} navigator
  * @param {Document} document
- * @returns {Array} - returns array of enabled universalId submodules
+ * @returns {Array} - returns list of enabled submodules
  */
-export function initUniversalId (config, submodules, navigator, document) {
+export function initSubmodules (config, submodules, navigator, document) {
   // valid if at least one configuration is valid
   if (!validateConfig(config, submodules)) {
     return []
@@ -181,12 +179,25 @@ export function initUniversalId (config, submodules, navigator, document) {
     //  2. submodule uses local storage to get value (or if local storage is empty calls submodule getId)
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
       carry.push('found value config, add directly to bidAdapters');
+      // add obj to list to pass to adapters
+      extendedBidRequestData.push(submoduleConfig.value);
     } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
       carry.push('found storage config, try to load from local storage');
+
+      // TODO: try to load storage value
+      // 1. if it exists, call submodule decode and pass value to adapters
+      // 2. else, call submodule getId
+
+      // TODO: review impact on event loop from try/catch around cookie/localStorage access
+      // 1. if no large impact, ignore using setTimer
+      // 2. else surround with setTimeout
     }
     return carry;
   }, []);
 }
 
-initUniversalId(config, submodules, window.navigator, window.document);
+const enabledSubmodules = initSubmodules(config, submodules, window.navigator, window.document);
+if (enabledSubmodules.length) {
+  // TODO: add requestBidsHook
+}
