@@ -139,20 +139,21 @@ export function validateConfig (config, submodules) {
     // exit if no configurations are set
     return false;
   }
+  // check that at least one config exists
   return submodules.some(submodule => {
     const submoduleConfig = submoduleConfigs.find(item => {
       return item.name == submodule.configKey;
     });
-    if (submoduleConfig !== null && typeof submoduleConfig === 'object') {
-      // validate require submodule config props here
-
-      // TODO Question, how should validation handle both 'value' and 'storage' are definedxx
-      // TODO validate that a property exists for 'value' or 'storage'
-      // IF 'storage' exists, then a 'value' property should not exist
-      //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
-      // ELSE IF 'value' exists, then it should contain data
-      return true;
+    if (submoduleConfig && typeof submoduleConfig === 'object') {
+      if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
+        // valid if config value obj exists
+        return true;
+      } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object') {
+        // valid if config storage obj exists
+        return true;
+      }
     }
+    // invalid: no config value or storage obj exists
     return false;
   });
 }
@@ -167,13 +168,16 @@ export function initUniversalId (config, navigator, document) {
     return;
   }
 
-  // check if any universal id types are set in configuration (must opt-in to enable)
-  if (!validateConfig(config, submodules)) {
-    // exit if no configurations are set
-    // return;
-  }
+  // check if any universal id configurations are valid (must opt-in to enable)
+  if (validateConfig(config, submodules)) {
+    // TODO Question, how should validation handle both 'value' and 'storage' are defined
+    // TODO validate that a property exists for 'value' or 'storage'
+    // IF 'storage' exists, then a 'value' property should not exist
+    //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
+    // ELSE IF 'value' exists, then it should contain data
 
-  // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
+    // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
+  }
 }
 
 // call init
