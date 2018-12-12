@@ -110,8 +110,8 @@ function browserSupportsLocaStorage (localStorage) {
 }
 
 /**
- * Helper to check if local storage or cookies are enabled
- * Question: Should we add the local storage methods to utils?
+ * helper to check if local storage or cookies are enabled
+ *
  * @param navigator - navigator passed for easier testing through dependency injection
  * @param document - document passed for easier testing through dependency injection
  * @returns {boolean|*}
@@ -129,6 +129,7 @@ export function enabledStorageTypes (navigator, document) {
 
 /**
  * check if any universal id types are set in configuration (must opt-in to enable)
+ *
  * @param {PrebidConfig} config
  * @param {Array.<IdSubmodule>} submodules
  */
@@ -163,20 +164,16 @@ export function validateConfig (config, submodules) {
  */
 export function initUniversalId (config, navigator, document) {
   // check if cookie/local storage is active
-  if (!enabledStorageTypes(navigator, document)) {
-    // exit if no cookies or local storage
-    return;
-  }
-
   // check if any universal id configurations are valid (must opt-in to enable)
-  if (validateConfig(config, submodules)) {
-    // TODO Question, how should validation handle both 'value' and 'storage' are defined
-    // TODO validate that a property exists for 'value' or 'storage'
-    // IF 'storage' exists, then a 'value' property should not exist
-    //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
-    // ELSE IF 'value' exists, then it should contain data
-
-    // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
+  if (enabledStorageTypes(navigator, document) && validateConfig(config, submodules)) {
+    submodules.forEach(submodule => {
+      // TODO Question, how should validation handle both 'value' and 'storage' are defined
+      // TODO validate that a property exists for 'value' or 'storage'
+      // IF 'storage' exists, then a 'value' property should not exist
+      //    AND it should have a 'type' and 'name' (UNLESS WE DECIDE THAT A DEFAULT VALUE SHOULD BE USED IN PLACE)
+      // ELSE IF 'value' exists, then it should contain data
+      // TODO if config IdSubmodule property 'value' is set, pass the OpenIDs directly through to Prebid.js (Publisher has integrated with OpenID on their own)
+    });
   }
 }
 
