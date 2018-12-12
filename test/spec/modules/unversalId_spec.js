@@ -1,11 +1,10 @@
 import {
   enabledStorageTypes,
-  validateConfig
+  validateConfig,
+  initUniversalId
 } from 'modules/universalId';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import * as utils from 'src/utils';
-import * as auctionModule from 'src/auction';
 import {expect, assert} from 'chai'
 
 describe('Universal ID', function () {
@@ -167,8 +166,31 @@ describe('Universal ID', function () {
       }, submodules)).to.equal(false);
     });
 
-    it('return false if config does not define configuration for any of the submodules', function() {
-      // no config objs for submodule configKey values
+    it('return true if config defines configurations for both submodules', function() {
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId'
+          }, {
+            name: 'openId'
+          }];
+        }
+      }, submodules)).to.equal(true);
+    });
+
+    it('return true if config defines a value configuration for one of the submodules', function() {
+      expect(validateConfig({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId'
+          }, {
+            name: 'foo'
+          }];
+        }
+      }, submodules)).to.equal(true);
+    });
+
+    it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
       expect(validateConfig({
         getConfig: function () {
           return [{
@@ -178,83 +200,86 @@ describe('Universal ID', function () {
           }];
         }
       }, submodules)).to.equal(false);
+    });
 
-      // config objs exist for configKey, but no sub obj exits
+    it('return false if config does not define a configuration for any submodule', function() {
       expect(validateConfig({
         getConfig: function () {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'openId'
-          }];
-        }
-      }, submodules)).to.equal(false);
-
-      // config objs exist for configKey, but no valid 'value' or 'storage' sub obj
-      expect(validateConfig({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId',
-            foo: {}
-          }, {
-            name: 'openId',
-            bar: {}
-          }];
+          return [];
         }
       }, submodules)).to.equal(false);
     });
+  });
 
-    it('return true if config defines value configurations for both of the submodules', function() {
-      // submodules contain valid 'value' objs
-      expect(validateConfig({
+  describe('initUniversalId', function() {
+    const submodules = [{
+      configKey: 'pubCommonId'
+    }, {
+      configKey: 'openId'
+    }];
+
+    it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
+      expect(initUniversalId({
         getConfig: function () {
           return [{
-            name: 'pubCommonId',
-            value: {}
+            name: 'foo'
           }, {
-            name: 'openId',
-            value: {}
+            name: 'bar'
           }];
         }
-      }, submodules)).to.equal(true);
-      // submodules contain valid 'storage' objs
-      expect(validateConfig({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId',
-            storage: {}
-          }, {
-            name: 'openId',
-            storage: {}
-          }];
+      }, submodules, {
+        cookieEnabled: false
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return ''
         }
-      }, submodules)).to.equal(true);
+      })).to.deep.equal([]);
     });
 
-    it('return true if config defines a value configuration for one of the submodules', function() {
-      // one submodule contains a valid 'value' obj
-      expect(validateConfig({
+    it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
+      expect(initUniversalId({
         getConfig: function () {
           return [{
             name: 'pubCommonId',
             value: {}
           }, {
-            name: 'foo'
+            name: 'openId',
+            value: {}
           }];
         }
-      }, submodules)).to.equal(true);
+      }, submodules, {
+        cookieEnabled: false
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return ''
+        }
+      }).length).to.equal(2);
+    });
 
-      // one submodule contains a valid 'storage' obj
-      expect(validateConfig({
+    it('returns array with both submodules enabled, if storage exists and both submodule configs contain valid configs', function() {
+      expect(initUniversalId({
         getConfig: function () {
           return [{
             name: 'pubCommonId',
-            storage: {}
+            value: {}
           }, {
-            name: 'foo'
+            name: 'openId',
+            value: {}
           }];
         }
-      }, submodules)).to.equal(true);
+      }, submodules, {
+        cookieEnabled: true
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
+      }).length).to.equal(2);
     });
   });
 });
