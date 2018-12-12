@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
+import {config} from 'src/config';
 const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
@@ -8,6 +9,7 @@ const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
+const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -275,6 +277,64 @@ function _createImpressionObject(bid, conf) {
   return impObj;
 }
 
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return digiTrustId;
+}
+
+function _handleDigitrustId(eids) {
+  let digiTrustId = _getDigiTrustObject(PUBMATIC_DIGITRUST_KEY);
+  if (digiTrustId !== null) {
+    eids.push({
+      'source': 'digitru.st',
+      'uids': [
+        {
+          'id': digiTrustId.id || '',
+          'atype': 1,
+          'ext': {
+            'keyv': parseInt(digiTrustId.keyv) || 0
+          }
+        }
+      ]
+    });
+  }
+}
+
+function _handleTTDId(eids) {
+  let adsrvrOrgId = config.getConfig('adsrvrOrgId');
+  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    eids.push({
+      'source': 'adserver.org',
+      'uids': [
+        {
+          'id': adsrvrOrgId.TDID,
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }
+      ]
+    });
+  }
+}
+
+function _handleEids(payload) {
+  let eids = [];
+  _handleDigitrustId(eids);
+  _handleTTDId(eids);
+  if (eids.length > 0) {
+    payload.user.eids = eids;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -319,7 +379,9 @@ export const spec = {
     var dctr = '';
     var dctrLen;
     var dctrArr = [];
-    validBidRequests.forEach(bid => {
+    var bid;
+    validBidRequests.forEach(originalBid => {
+      bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
@@ -387,30 +449,34 @@ export const spec = {
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-      dctr = validBidRequests[0].params.dctr;
-      if (utils.isStr(dctr) && dctr.length > 0) {
-        var arr = dctr.split('|');
-        dctr = '';
-        arr.forEach(val => {
-          dctr += (val.length > 0) ? (val.trim() + '|') : '';
-        });
-        dctrLen = dctr.length;
-        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-          dctr = dctr.substring(0, dctrLen - 1);
+    if (dctrArr.length > 0) {
+      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+        dctr = validBidRequests[0].params.dctr;
+        if (utils.isStr(dctr) && dctr.length > 0) {
+          var arr = dctr.split('|');
+          dctr = '';
+          arr.forEach(val => {
+            dctr += (val.length > 0) ? (val.trim() + '|') : '';
+          });
+          dctrLen = dctr.length;
+          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+            dctr = dctr.substring(0, dctrLen - 1);
+          }
+          payload.site.ext = {
+            key_val: dctr.trim()
+          }
+        } else {
+          utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
         }
-        payload.site.ext = {
-          key_val: dctr.trim()
+        if (dctrArr.length > 1) {
+          utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
         }
       } else {
-        utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+        utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
       }
-      if (dctrArr.length > 1) {
-        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-      }
-    } else {
-      utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
+
+    _handleEids(payload);
 
     return {
       method: 'POST',
@@ -494,6 +560,19 @@ export const spec = {
     } else {
       utils.logWarn('PubMatic: Please enable iframe based user sync.');
     }
+  },
+
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'publisherId': 'string',
+      'adSlot': 'string'
+    }, params);
   }
 };
 

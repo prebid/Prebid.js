@@ -1059,6 +1059,16 @@ describe('Yieldbot Adapter Unit Tests', function() {
       expect(edgeServerUrlPrefix).to.match(beginsRegex);
       expect(responses[0].ad).to.match(containsRegex);
     });
+
+    it('should not use document.open() in ad markup', function() {
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      const responses = YieldbotAdapter.interpretResponse(
+        FIXTURE_SERVER_RESPONSE,
+        FIXTURE_BID_REQUEST
+      );
+      expect(responses[0].ad).to.not.match(/var innerFrameDoc=innerFrame\.contentWindow\.document;innerFrameDoc\.open\(\);innerFrameDoc\.write\(iframeHtml\);innerFrameDoc\.close\(\);/);
+      expect(responses[0].ad).to.match(/var innerFrameDoc=innerFrame\.contentWindow\.document;innerFrameDoc\.write\(iframeHtml\);innerFrameDoc\.close\(\);/);
+    });
   });
 
   describe('getUserSyncs', function() {
