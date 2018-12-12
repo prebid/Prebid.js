@@ -156,57 +156,58 @@ describe('Universal ID', function () {
     });
   });
 
-  describe('Config function', function() {
-    describe('validateConfig', function() {
-      const submodules = [{
-        configKey: 'pubCommonId'
-      }, {
-        configKey: 'openId'
-      }];
+  describe('validateConfig', function() {
+    const submodules = [{
+      configKey: 'pubCommonId'
+    }, {
+      configKey: 'openId'
+    }];
 
-      it('return false if config does not define usersync.universalIds', function() {
-        sandbox.stub(config, 'getConfig').callsFake((key) => {
-          return undefined;
-        });
-        const result = validateConfig(config, submodules);
-        expect(result).to.equal(false);
-      });
+    it('return false if config does not define usersync.universalIds', function() {
+      const result = validateConfig({
+        getConfig: function () {}
+      }, submodules);
+      expect(result).to.equal(false);
+    });
 
-      it('return false if config does not define configuration for any of the submodules', function() {
-        sandbox.stub(config, 'getConfig').callsFake((key) => {
+    it('return false if config does not define configuration for any of the submodules', function() {
+      const result = validateConfig({
+        getConfig: function () {
           return [{
             name: 'foo'
           }, {
             name: 'bar'
           }];
-        });
-        const result = validateConfig(config, submodules);
-        expect(result).to.equal(false);
-      });
+        }
+      }, submodules);
+      expect(result).to.equal(false);
+    });
 
-      it('return true if config defines configurations for both of the submodules', function() {
-        sandbox.stub(config, 'getConfig').callsFake((key) => {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'openId'
-          }];
-        });
-        const result = validateConfig(config, submodules);
-        expect(result).to.equal(true);
+    it('return true if config defines value configurations for both of the submodules', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        return [{
+          name: 'pubCommonId',
+          value: {}
+        }, {
+          name: 'openId',
+          value: {}
+        }];
       });
+      const result = validateConfig(config, submodules);
+      expect(result).to.equal(true);
+    });
 
-      it('return true if config defines a configuration for one of the submodules', function() {
-        sandbox.stub(config, 'getConfig').callsFake((key) => {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'foo'
-          }];
-        });
-        const result = validateConfig(config, submodules);
-        expect(result).to.equal(true);
+    it('return true if config defines a value configuration for one of the submodules', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        return [{
+          name: 'pubCommonId',
+          value: {}
+        }, {
+          name: 'foo'
+        }];
       });
+      const result = validateConfig(config, submodules);
+      expect(result).to.equal(true);
     });
   });
 });
