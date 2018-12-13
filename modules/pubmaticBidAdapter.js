@@ -77,35 +77,22 @@ const NATIVE_ASSET_IMAGE_TYPE = {
 }
 
 const NATIVE_ASSET_DATA_TYPE = {
-  'sponsored': 1,
-  'desc': 2,
-  'rating': 3,
-  'likes': 4,
-  'downloads': 5,
-  'price': 6,
-  'saleprice': 7,
-  'phone': 8,
-  'address': 9,
-  'desc2': 10,
-  'displayurl': 11,
-  'ctatext': 12
+  'SPONSORED': 1,
+  'DESC': 2,
+  'RATING': 3,
+  'LIKES': 4,
+  'DOWNLOADS': 5,
+  'PRICE': 6,
+  'SALEPRICE': 7,
+  'PHONE': 8,
+  'ADDRESS': 9,
+  'DESC2': 10,
+  'DISPLAYURL': 11,
+  'CTATEXT': 12
 }
 
+// check if title, image can be added with mandatory field default values
 const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
-  {
-    id: NATIVE_ASSET_ID.TITLE,
-    required: 1,
-    title: {
-
-    }
-  },
-  {
-    id: NATIVE_ASSET_ID.IMAGE,
-    required: true,
-    img: {
-      type: 3
-    }
-  },
   {
     id: NATIVE_ASSET_ID.SPONSOREDBY,
     required: true,
@@ -294,207 +281,221 @@ function _createNativeRequest(params) {
     assets: []
   };
   for (var key in params) {
-    var assetObj = {};
-    if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
-      switch (key) {
-        case 'title':
-          assetObj = {
-            id: NATIVE_ASSET_ID.TITLE,
-            required: params[key].required ? 1 : 0,
-            title: {
-              len: params[key].length,
-              ext: params[key].ext
+    if (params.hasOwnProperty(key)) {
+      var assetObj = {};
+      if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
+        switch (key) {
+          case 'title':
+            if (params[key].length) {
+              assetObj = {
+                id: NATIVE_ASSET_ID.TITLE,
+                required: params[key].required ? 1 : 0,
+                title: {
+                  len: params[key].length,
+                  ext: params[key].ext
+                }
+              };
             }
-          };
-          break;
-        case 'image':
-          assetObj = {
-            id: NATIVE_ASSET_ID.IMAGE,
-            required: params[key].required ? 1 : 0,
-            img: {
-              type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
-              w: params[key].w || params[key].width || params[key].sizes[0],
-              h: params[key].h || params[key].height || params[key].sizes[1],
-              wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : undefined),
-              hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : undefined),
-              mimes: params[key].mimes,
-              ext: params[key].ext,
+            break;
+          case 'image':
+            if (params[key].sizes && params[key].sizes.length > 0) {
+              assetObj = {
+                id: NATIVE_ASSET_ID.IMAGE,
+                required: params[key].required ? 1 : 0,
+                img: {
+                  type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
+                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : undefined),
+                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : undefined),
+                  mimes: params[key].mimes,
+                  ext: params[key].ext,
+                }
+              };
             }
-          };
-          break;
-        case 'icon':
-          assetObj = {
-            id: NATIVE_ASSET_ID.ICON,
-            required: params[key].required ? 1 : 0,
-            img: {
-              type: NATIVE_ASSET_IMAGE_TYPE.ICON,
-              w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-              h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
-            }
-          };
-          break;
-        case 'sponsoredBy':
-          assetObj = {
-            id: NATIVE_ASSET_ID.SPONSOREDBY,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.sponsored
-            }
-          };
-          break;
-        case 'body':
-          assetObj = {
-            id: NATIVE_ASSET_ID.BODY,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.desc
-            }
-          };
-          break;
-        case 'video':
-          assetObj = {
-            id: NATIVE_ASSET_ID.VIDEO,
-            required: params[key].required ? 1 : 0,
-            video: {
-              minduration: params[key].minduration,
-              maxduration: params[key].maxduration,
-              protocols: params[key].protocols,
-              mimes: params[key].mimes,
-              ext: params[key].ext
-            }
-          };
-          break;
-        case 'ext':
-          assetObj = {
-            id: NATIVE_ASSET_ID.EXT,
-            required: params[key].required ? 1 : 0,
-          };
-          break;
-        case 'data':
-          assetObj = {
-            id: NATIVE_ASSET_ID.DATA,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: params[key].type,
-              len: params[key].length || params[key].len,
-              ext: params[key].ext
-            }
-          };
-          break;
-        case 'logo':
-          assetObj = {
-            id: NATIVE_ASSET_ID.LOGO,
-            required: params[key].required ? 1 : 0,
-            img: {
-              type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
-              w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-              h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
-            }
-          };
-          break;
-        case 'rating':
-          assetObj = {
-            id: NATIVE_ASSET_ID.RATING,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.rating,
-            }
-          };
-          break;
-        case 'likes':
-          assetObj = {
-            id: NATIVE_ASSET_ID.LIKES,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.likes,
-            }
-          };
-          break;
-        case 'downloads':
-          assetObj = {
-            id: NATIVE_ASSET_ID.DOWNLOADS,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.downloads,
-            }
-          };
-          break;
-        case 'price':
-          assetObj = {
-            id: NATIVE_ASSET_ID.PRICE,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.price,
-            }
-          };
-          break;
-        case 'saleprice':
-          assetObj = {
-            id: NATIVE_ASSET_ID.SALEPRICE,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.saleprice,
-            }
-          };
-          break;
-        case 'phone':
-          assetObj = {
-            id: NATIVE_ASSET_ID.PHONE,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.phone,
-            }
-          };
-          break;
-        case 'address':
-          assetObj = {
-            id: NATIVE_ASSET_ID.DATA,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.address,
-            }
-          };
-          break;
-        case 'desc2':
-          assetObj = {
-            id: NATIVE_ASSET_ID.DESC2,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.desc2,
-            }
-          };
-          break;
-        case 'displayurl':
-          assetObj = {
-            id: NATIVE_ASSET_ID.DISPLAYURL,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.displayurl,
-            }
-          };
-          break;
-        case 'ctatext':
-          assetObj = {
-            id: NATIVE_ASSET_ID.CTATEXT,
-            required: params[key].required ? 1 : 0,
-            data: {
-              type: NATIVE_ASSET_DATA_TYPE.ctatext,
-            }
-          };
-          break;
+            break;
+          case 'icon':
+            if (params[key].sizes && params[key].sizes.length > 0) {
+              assetObj = {
+                id: NATIVE_ASSET_ID.ICON,
+                required: params[key].required ? 1 : 0,
+                img: {
+                  type: NATIVE_ASSET_IMAGE_TYPE.ICON,
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
+                }
+              };
+            };
+            break;
+          case 'sponsoredBy':
+            assetObj = {
+              id: NATIVE_ASSET_ID.SPONSOREDBY,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.SPONSORED
+              }
+            };
+            break;
+          case 'body':
+            assetObj = {
+              id: NATIVE_ASSET_ID.BODY,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.DESC
+              }
+            };
+            break;
+          case 'video':
+            assetObj = {
+              id: NATIVE_ASSET_ID.VIDEO,
+              required: params[key].required ? 1 : 0,
+              video: {
+                minduration: params[key].minduration,
+                maxduration: params[key].maxduration,
+                protocols: params[key].protocols,
+                mimes: params[key].mimes,
+                ext: params[key].ext
+              }
+            };
+            break;
+          case 'ext':
+            assetObj = {
+              id: NATIVE_ASSET_ID.EXT,
+              required: params[key].required ? 1 : 0,
+            };
+            break;
+          case 'data':
+            assetObj = {
+              id: NATIVE_ASSET_ID.DATA,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: params[key].type,
+                len: params[key].length || params[key].len,
+                ext: params[key].ext
+              }
+            };
+            break;
+          case 'logo':
+            assetObj = {
+              id: NATIVE_ASSET_ID.LOGO,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
+              }
+            };
+            break;
+          case 'rating':
+            assetObj = {
+              id: NATIVE_ASSET_ID.RATING,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.RATING,
+              }
+            };
+            break;
+          case 'likes':
+            assetObj = {
+              id: NATIVE_ASSET_ID.LIKES,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.LIKES,
+              }
+            };
+            break;
+          case 'downloads':
+            assetObj = {
+              id: NATIVE_ASSET_ID.DOWNLOADS,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.DOWNLOADS,
+              }
+            };
+            break;
+          case 'price':
+            assetObj = {
+              id: NATIVE_ASSET_ID.PRICE,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.PRICE,
+              }
+            };
+            break;
+          case 'saleprice':
+            assetObj = {
+              id: NATIVE_ASSET_ID.SALEPRICE,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.SALEPRICE,
+              }
+            };
+            break;
+          case 'phone':
+            assetObj = {
+              id: NATIVE_ASSET_ID.PHONE,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.PHONE,
+              }
+            };
+            break;
+          case 'address':
+            assetObj = {
+              id: NATIVE_ASSET_ID.DATA,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.ADDRESS,
+              }
+            };
+            break;
+          case 'desc2':
+            assetObj = {
+              id: NATIVE_ASSET_ID.DESC2,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.DESC2,
+              }
+            };
+            break;
+          case 'displayurl':
+            assetObj = {
+              id: NATIVE_ASSET_ID.DISPLAYURL,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.DISPLAYURL,
+              }
+            };
+            break;
+          case 'ctatext':
+            assetObj = {
+              id: NATIVE_ASSET_ID.CTATEXT,
+              required: params[key].required ? 1 : 0,
+              data: {
+                type: NATIVE_ASSET_DATA_TYPE.CTATEXT,
+              }
+            };
+            break;
+        }
       }
     }
-    nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
+    if (assetObj && assetObj.id) {
+      nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
+    }
   };
+
+  // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
+  // if any of these are missing from the request then it will be added to the request
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    var isRequiredAsset = false;
-    for (var i = 0; i < nativeRequestObject.assets.length; i++) {
+    var isRequiredAssetPresent = false;
+    var lengthOfExistingAssets = nativeRequestObject.assets.length;
+    for (var i = 0; i < lengthOfExistingAssets; i++) {
       if (ele.id == nativeRequestObject.assets[i].id) {
-        isRequiredAsset = true;
+        isRequiredAssetPresent = true;
         break;
       }
     }
-    if (!isRequiredAsset) {
+    if (!isRequiredAssetPresent) {
       nativeRequestObject.assets.push(ele);
     }
   });
@@ -622,7 +623,6 @@ function _handleEids(payload) {
 }
 
 function _parseNativeResponse(bid, newBid) {
-  newBid.mediaType = 'native';
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
     var adm = '';
@@ -704,17 +704,17 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid.params.adSlot);
+        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid);
         return false;
       }
       if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid.params.adSlot);
+        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid);
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:');
+          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + bid);
           return false;
         }
       }
@@ -880,6 +880,7 @@ export const spec = {
                     newBid.vastXml = bid.adm;
                   }
                   if (bid.impid === req.id && req.hasOwnProperty('native')) {
+                    newBid.mediaType = 'native';
                     _parseNativeResponse(bid, newBid);
                   }
                 });
