@@ -308,9 +308,28 @@ function _handleDigitrustId(eids) {
   }
 }
 
+function _handleTTDId(eids) {
+  let adsrvrOrgId = config.getConfig('adsrvrOrgId');
+  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    eids.push({
+      'source': 'adserver.org',
+      'uids': [
+        {
+          'id': adsrvrOrgId.TDID,
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }
+      ]
+    });
+  }
+}
+
 function _handleEids(payload) {
   let eids = [];
   _handleDigitrustId(eids);
+  _handleTTDId(eids);
   if (eids.length > 0) {
     payload.user.eids = eids;
   }

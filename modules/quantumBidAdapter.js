@@ -106,7 +106,7 @@ export const spec = {
       if (serverBody.cobj) {
         bid.cobj = serverBody.cobj;
       }
-      if (bidRequest.sizes) {
+      if (!utils.isEmpty(bidRequest.sizes)) {
         bid.width = bidRequest.sizes[0][0];
         bid.height = bidRequest.sizes[0][1];
       }

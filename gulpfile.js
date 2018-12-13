@@ -4,7 +4,7 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
-var connect = require('gulp-connect');
+var webserver = require('gulp-webserver');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
@@ -56,11 +56,12 @@ function e2etestReport() {
   var reportPort = 9010;
   var targetDestinationDir = './e2etest-report';
   helpers.createEnd2EndTestReport(targetDestinationDir);
-  connect.server({
-    port: reportPort,
-    root: './',
-    livereload: true
-  });
+  gulp.src('./')
+    .pipe(webserver({
+      port: reportPort,
+      directoryListing: true,
+      livereload: true
+    }));
 
   setTimeout(function() {
     opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
@@ -90,13 +91,14 @@ function lint(done) {
 function viewCoverage(done) {
   var coveragePort = 1999;
 
-  connect.server({
-    port: coveragePort,
-    root: 'build/coverage/karma_html',
-    livereload: false
-  });
-  opens('http://localhost:' + coveragePort);
-  done();
+  var stream = gulp.src('./')
+    .pipe(webserver({
+      port: coveragePort,
+      directoryListing: true,
+      livereload: false,
+      open: 'build/coverage/karma_html/index.html'
+    }));
+  stream.on('finish', done);
 };
 viewCoverage.displayName = 'view-coverage';
 
@@ -113,16 +115,17 @@ function watch(done) {
     'test/spec/loaders/**/*.js'
   ]);
 
-  connect.server({
-    https: argv.https,
-    port: port,
-    root: './',
-    livereload: true
-  });
+  var stream = gulp.src('./')
+    .pipe(webserver({
+      https: argv.https,
+      port: port,
+      directoryListing: true,
+      livereload: true
+    }));
 
   mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
   loaderWatcher.on('all', gulp.series(lint));
-  done();
+  stream.on('finish', done);
 };
 
 function makeDevpackPkg() {
@@ -137,8 +140,7 @@ function makeDevpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(gulp.dest('build/dev'))
-    .pipe(connect.reload());
+    .pipe(gulp.dest('build/dev'));
 }
 
 function makeWebpackPkg() {
@@ -158,8 +160,7 @@ function makeWebpackPkg() {
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(optimizejs())
-    .pipe(gulp.dest('build/dist'))
-    .pipe(connect.reload());
+    .pipe(gulp.dest('build/dist'));
 }
 
 function gulpBundle(dev) {
@@ -227,12 +228,7 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      if (argv.browserstack) {
-        // process.exit(0);
-        done(); // test this with travis (or circleci)
-      } else {
-        done();
-      }
+      done();
     }
   }
 }
@@ -272,26 +268,6 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
-
-// Watch Task with Live Reload
-gulp.task('watch', function () {
-  gulp.watch([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'test/spec/**/*.js',
-    '!test/spec/loaders/**/*.js'
-  ], ['build-bundle-dev', 'test']);
-  gulp.watch([
-    'loaders/**/*.js',
-    'test/spec/loaders/**/*.js'
-  ], ['lint']);
-  connect.server({
-    https: argv.https,
-    port: port,
-    root: './',
-    livereload: true
-  });
-});
 
 function e2eTest() {
   var cmdQueue = [];
