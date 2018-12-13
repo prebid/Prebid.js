@@ -1,7 +1,8 @@
 import {
   enabledStorageTypes,
   validateConfig,
-  initSubmodules
+  initSubmodules,
+  requestBidHook
 } from 'modules/universalId';
 import { expect, assert } from 'chai'
 import sinon from 'sinon'
@@ -15,6 +16,7 @@ describe('Universal ID', function () {
 
   afterEach(function() {
     sandbox.restore();
+    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
   });
 
   describe('enabledStorageTypes', function() {
