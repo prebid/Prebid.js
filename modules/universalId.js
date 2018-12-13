@@ -159,19 +159,34 @@ export function validateConfig (config, submodules) {
 /**
  * Decorate ad units with universal id properties. This hook function is called before the
  * real pbjs.requestBids is invoked, and can modify its parameter
+ * @callback requestBidHookCallback
  * @param {PrebidConfig} config
  * @param next
  * @returns {*}
  */
-export function requestBidHook (config, next, extendBidRequestCallback) {
-  // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
-  // pass id data to adapters if bidRequestData list is not empty
-  if (extendedBidRequestData.length) {
-  }
 
-  // advance to next process when calling next.apply
-  return next.apply(this, arguments)
+/**
+ * Decorate ad units with universal id properties. This hook function is called before the
+ * real pbjs.requestBids is invoked, and can modify its parameter
+ * @param extendedBidRequestData
+ * @returns {{requestBidHook: requestBidHookCallback, extendedBidRequestData: *}}
+ */
+export function requestBidHookContainer (extendedBidRequestData) {
+  return {
+    extendedBidRequestData: extendedBidRequestData,
+    requestBidHook: function requestBidHook (config, next) {
+      // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
+      // pass id data to adapters if bidRequestData list is not empty
+      if (extendedBidRequestData.length) {
+      }
+
+      // advance to next process when calling next.apply
+      return next.apply(this, arguments);
+    }
+  }
 }
+
+const bidHookContainer = requestBidHookContainer([]);
 
 /**
  * init submodules if config values are set correctly
@@ -222,7 +237,7 @@ export function initSubmodules (config, submodules, navigator, document) {
   }, []);
 
   if (enabledSubmodules.length) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook)
+    $$PREBID_GLOBAL$$.requestBids.addHook(bidHookContainer.requestBidHook)
   }
   return enabledSubmodules;
 }
