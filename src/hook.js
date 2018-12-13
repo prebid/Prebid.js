@@ -1,4 +1,8 @@
 
+import create from 'fun-hooks';
+import { logError } from 'src/utils';
+
+let hook = create();
 /**
  * @typedef {function} HookedFunction
  * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
@@ -10,10 +14,10 @@
  * A map of global hook methods to allow easy extension of hooked functions that are intended to be extended globally
  * @type {{}}
  */
-export const hooks = {};
+export const hooks = hook.hooks;
 
 /**
- * A utility function for allowing a regular function to be extensible with additional hook functions
+ * An adapter for fun-hooks API
  * @param {string} type The method for applying all attached hooks when this hooked function is called
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
@@ -21,61 +25,37 @@ export const hooks = {};
  * @returns {HookedFunction} A new function that implements the HookedFunction interface
  */
 export function createHook(type, fn, hookName) {
-  let _hooks = [{fn, priority: 0}];
-
-  let types = {
-    sync: function(...args) {
-      _hooks.forEach(hook => {
-        hook.fn.apply(this, args);
-      });
-    },
-    asyncSeries: function(...args) {
-      let curr = 0;
-
-      const asyncSeriesNext = (...args) => {
-        let hook = _hooks[++curr];
-        if (typeof hook === 'object' && typeof hook.fn === 'function') {
-          return hook.fn.apply(this, args.concat(asyncSeriesNext))
-        }
-      };
-
-      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
-    }
-  };
-
-  if (!types[type]) {
-    throw 'invalid hook type';
+  if (type !== 'asyncSeries') {
+    return logError('unsupported hook');
   }
-
-  let methods = {
-    addHook: function(fn, priority = 10) {
-      if (typeof fn === 'function') {
-        _hooks.push({
-          fn,
-          priority: priority
-        });
-
-        _hooks.sort((a, b) => b.priority - a.priority);
+  let removeMap = new Map();
+  return Object.assign(hook('async', fn, hookName), {
+    addHook(fn, priority = 10) {
+      let removes;
+      if (removeMap.has(fn)) {
+        removes = removeMap.get(fn);
+      } else {
+        removes = [];
+        removeMap.set(fn, removes);
+      }
+      removes.push(this[priority >= 0 ? 'before' : 'after'](
+        function partial(...args) {
+          args.push(args.shift());
+          fn.apply(this, args);
+        },
+        priority
+      ));
+    },
+    removeHook(fn) {
+      let removes = removeMap.get(fn);
+      if (Array.isArray(removes)) {
+        removes.forEach(rm => rm());
+        removeMap.set(fn, []);
       }
     },
-    removeHook: function(removeFn) {
-      _hooks = _hooks.filter(hook => hook.fn === fn || hook.fn !== removeFn);
-    },
-    hasHook: function(fn) {
-      return _hooks.some(hook => hook.fn === fn);
+    hasHook(fn) {
+      let removes = removeMap.get(fn);
+      return Array.isArray(removes) && removes.length > 0;
     }
-  };
-
-  if (typeof hookName === 'string') {
-    hooks[hookName] = methods;
-  }
-
-  function hookedFn(...args) {
-    if (_hooks.length === 1 && _hooks[0].fn === fn) {
-      return fn.apply(this, args);
-    }
-    return types[type].apply(this, args);
-  }
-
-  return Object.assign(hookedFn, methods);
+  });
 }
