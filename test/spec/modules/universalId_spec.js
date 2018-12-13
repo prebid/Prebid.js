@@ -259,7 +259,7 @@ describe('Universal ID', function () {
       }).length).to.equal(2);
     });
 
-    it('returns array with both submodules enabled, if storage exists and both submodule configs contain valid configs', function() {
+    it('returns array with both submodules enabled, if storage is enabled and both submodule configs contain valid configs', function() {
       expect(initSubmodules({
         getConfig: function () {
           return [{
@@ -273,12 +273,47 @@ describe('Universal ID', function () {
       }, submodules, {
         cookieEnabled: true
       }, {
-        localStorage: undefined,
+        localStorage: {
+          setItem: function (key, value) {},
+          getItem: function (key) {
+            if (key === 'prebid.cookieTest') {
+              return '1'
+            }
+          }
+        },
         set cookie(v) {},
         get cookie() {
           return 'prebid.cookieTest'
         }
       }).length).to.equal(2);
+    });
+
+    it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
+      expect(initSubmodules({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId',
+            storage: {
+              type: 'cookie',
+              name: 'pubcid'
+            }
+          }, {
+            name: 'openId',
+            storage: {
+              type: 'html5',
+              name: 'openid'
+            }
+          }];
+        }
+      }, submodules, {
+        cookieEnabled: true
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return 'prebid.cookieTest'
+        }
+      }).length).to.equal(1);
     });
   });
 });

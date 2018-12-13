@@ -157,6 +157,23 @@ export function validateConfig (config, submodules) {
 }
 
 /**
+ * Decorate ad units with universal id properties. This hook function is called before the
+ * real pbjs.requestBids is invoked, and can modify its parameter
+ * @param {PrebidConfig} config
+ * @param next
+ * @returns {*}
+ */
+export function requestBidHook (config, next, extendBidRequestCallback) {
+  // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
+  // pass id data to adapters if bidRequestData list is not empty
+  if (extendedBidRequestData.length) {
+  }
+
+  // advance to next process when calling next.apply
+  return next.apply(this, arguments)
+}
+
+/**
  * init submodules if config values are set correctly
  * @param {PrebidConfig} config
  * @param {Array.<IdSubmodule>} submodules
@@ -205,7 +222,7 @@ export function initSubmodules (config, submodules, navigator, document) {
   }, []);
 
   if (enabledSubmodules.length) {
-  //   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook)
+    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook)
   }
   return enabledSubmodules;
 }
