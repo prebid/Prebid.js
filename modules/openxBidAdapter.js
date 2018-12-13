@@ -8,7 +8,7 @@ import {parse} from 'src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.5';
+const BIDDER_VERSION = '2.1.6';
 
 let shouldSendBoPixel = true;
 
@@ -55,12 +55,13 @@ export const spec = {
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
   getUserSyncs: function (syncOptions, responses) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
         utils.deepAccess(responses, '0.body.pixels') ||
         '//u.openx.net/w/1.0/pd';
       return [{
-        type: 'iframe',
+        type: pixelType,
         url: url
       }];
     }
