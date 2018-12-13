@@ -100,6 +100,11 @@ function queueSync(bidderCodes, gdprConsent) {
     account: _s2sConfig.accountId
   };
 
+  let userSyncLimit = _s2sConfig.userSyncLimit;
+  if (utils.isNumber(userSyncLimit) && userSyncLimit > 0) {
+    payload['limit'] = userSyncLimit;
+  }
+
   if (gdprConsent) {
     // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
     if (typeof gdprConsent.consentString !== 'undefined') {
