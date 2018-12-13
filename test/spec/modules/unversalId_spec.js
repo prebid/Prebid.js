@@ -3,9 +3,8 @@ import {
   validateConfig,
   initSubmodules
 } from 'modules/universalId';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import {expect, assert} from 'chai'
+import { expect, assert } from 'chai'
+import sinon from 'sinon'
 
 describe('Universal ID', function () {
   let sandbox;

@@ -2,7 +2,7 @@
  * This modules adds Universal ID support to prebid.js
  */
 // import * as utils from 'src/utils'
-import { config } from 'src/config';
+import {config} from 'src/config';
 
 /**
  * @callback getIdCallback
@@ -29,6 +29,13 @@ import { config } from 'src/config';
  * @property {number} expires
  * @property {decode} decode
  * @property {getId} getId
+ */
+
+/**
+ * @typedef {Object} SubmoduleConfig
+ * @property {Object} storage
+ * @property {Object} value
+ * @property {Object} params
  */
 
 const STORAGE_TYPE_COOKIE = 'cookie';
@@ -96,7 +103,7 @@ function browserSupportsCookie (navigator, document) {
  * @param localStorage - localStorage passed for easier testing through dependency injection
  * @returns {boolean}
  */
-function browserSupportsLocaStorage (localStorage) {
+function browserSupportsLocalStorage (localStorage) {
   try {
     if (typeof localStorage !== 'object' || typeof localStorage.setItem !== 'function') {
       return false;
@@ -116,7 +123,7 @@ function browserSupportsLocaStorage (localStorage) {
  */
 export function enabledStorageTypes (navigator, document) {
   const enabledStorageTypes = []
-  if (browserSupportsLocaStorage(document.localStorage)) {
+  if (browserSupportsLocalStorage(document.localStorage)) {
     enabledStorageTypes.push(STORAGE_TYPE_LOCALSTORAGE);
   }
   if (browserSupportsCookie(navigator, document)) {
@@ -167,22 +174,23 @@ export function initSubmodules (config, submodules, navigator, document) {
   const storageTypes = enabledStorageTypes(navigator, document);
 
   // process and return list of enabled submodules
-  return submodules.reduce((carry, submodule) => {
+  const enabledSubmodules = submodules.reduce((carry, submodule) => {
     const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
       return carry;
     }
 
-    // There are two paths for a submodule, if config sets 'value' or 'storage' properties
-    //  1. sudmodule either passes a value set in config
-    //  2. submodule uses local storage to get value (or if local storage is empty calls submodule getId)
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
+      //  1.
+      //  submodule either passes a value set in config
       carry.push('found value config, add directly to bidAdapters');
       // add obj to list to pass to adapters
       extendedBidRequestData.push(submoduleConfig.value);
     } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
+      //  2.
+      //  submodule uses local storage to get value (or if local storage is empty calls submodule getId)
       carry.push('found storage config, try to load from local storage');
 
       // TODO: try to load storage value
@@ -195,9 +203,11 @@ export function initSubmodules (config, submodules, navigator, document) {
     }
     return carry;
   }, []);
+
+  if (enabledSubmodules.length) {
+  //   $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook)
+  }
+  return enabledSubmodules;
 }
 
-const enabledSubmodules = initSubmodules(config, submodules, window.navigator, window.document);
-if (enabledSubmodules.length) {
-  // TODO: add requestBidsHook
-}
+initSubmodules(config, submodules, window.navigator, window.document);
