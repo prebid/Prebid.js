@@ -6,6 +6,7 @@ import { addBidResponse } from './auction';
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
 export let boundHook;
+let removeHook;
 
 function logMessage(msg) {
   utilsLogMessage('DEBUG: ' + msg);
@@ -19,22 +20,23 @@ function enableOverrides(overrides, fromSession = false) {
   config.setConfig({'debug': true});
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
 
-  if (boundHook) {
-    addBidResponse.removeHook(boundHook);
+  if (removeHook) {
+    removeHook();
   }
 
-  boundHook = addBidResponseHook.bind(null, overrides);
-  addBidResponse.addHook(boundHook, 5);
+  boundHook = addBidResponseHook.bind(overrides);
+  removeHook = addBidResponse.before(boundHook, 5);
 }
 
 export function disableOverrides() {
-  if (boundHook) {
-    addBidResponse.removeHook(boundHook);
+  if (removeHook) {
+    removeHook();
     logMessage('bidder overrides disabled');
   }
 }
 
-export function addBidResponseHook(overrides, adUnitCode, bid, next) {
+export function addBidResponseHook(next, adUnitCode, bid) {
+  let overrides = this;
   if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bid.bidderCode) === -1) {
     logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
     return;

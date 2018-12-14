@@ -116,13 +116,15 @@ function errorSettingsRates(msg) {
   }
 }
 
+let removeHook;
+
 function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].addHook(addBidResponseHook, 100);
+  removeHook = hooks['addBidResponse'].before(addBidResponseHook, 100);
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
@@ -148,7 +150,9 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].removeHook(addBidResponseHook, 100);
+  if (removeHook) {
+    removeHook();
+  }
 
   adServerCurrency = 'USD';
   conversionCache = {};
@@ -159,9 +163,9 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseHook(adUnitCode, bid, fn) {
+export function addBidResponseHook(fn, adUnitCode, bid) {
   if (!bid) {
-    return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+    return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
 
   let bidder = bid.bidderCode || bid.bidder;
@@ -190,10 +194,10 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
 
   // execute immediately if the bid is already in the desired currency
   if (bid.currency === adServerCurrency) {
-    return fn.apply(this, arguments);
+    return fn.call(this, adUnitCode, bid);
   }
 
-  bidResponseQueue.push(wrapFunction(fn, this, arguments));
+  bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
   }

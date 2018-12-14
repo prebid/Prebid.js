@@ -2,7 +2,7 @@
 import create from 'fun-hooks';
 import { logError } from 'src/utils';
 
-let hook = create();
+export let hook = create();
 /**
  * @typedef {function} HookedFunction
  * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
@@ -17,7 +17,7 @@ let hook = create();
 export const hooks = hook.hooks;
 
 /**
- * An adapter for fun-hooks API
+ * An adapter from old API to new fun-hooks API
  * @param {string} type The method for applying all attached hooks when this hooked function is called
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to

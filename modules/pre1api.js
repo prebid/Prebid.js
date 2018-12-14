@@ -102,7 +102,7 @@ config.setConfig.addHook((config, next) => {
 /**
  * Hook to queue and disallow concurrent auctions (as Prebid would function pre 1.0)
  */
-pbjs.requestBids.addHook((config, next = config) => {
+pbjs.requestBids.before((next, config) => {
   auctionQueue.push(() => {
     let oldHandler = config.bidsBackHandler;
     config.bidsBackHandler = (...args) => {
