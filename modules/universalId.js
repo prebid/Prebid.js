@@ -129,6 +129,20 @@ function browserSupportsLocalStorage (localStorage) {
   }
 }
 
+// Helper to set a cookie
+export function setCookie(name, value, expires) {
+  let expTime = new Date();
+  expTime.setTime(expTime.getTime() + expires * 1000 * 60);
+  window.document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' +
+    expTime.toGMTString();
+}
+
+// Helper to read a cookie
+export function getCookie(name) {
+  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+  return m ? decodeURIComponent(m[2]) : null;
+}
+
 /**
  * helper to check if local storage or cookies are enabled
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
@@ -223,10 +237,26 @@ export function initSubmodules (config, submodules, navigator, document) {
       // TODO: try to load storage value
       // 1. if it exists, call submodule decode and pass value to adapters
       // 2. else, call submodule getId
+      let storageValue;
+      if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
+        storageValue = getCookie(submoduleConfig.storage.name);
+      } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
+        storageValue = localStorage.getItem(submoduleConfig.storage.name);
+      } else {
+        // ERROR STORAGE TYPE NOT DEFINED
+      }
 
       // TODO: review impact on event loop from try/catch around cookie/localStorage access
       // 1. if no large impact, ignore using setTimer
       // 2. else surround with setTimeout
+      if (storageValue) {
+        extendedBidRequestData.addData(submodule.decode(storageValue));
+      } else {
+        // TODO: storage value does not exist, call submodule.getId to retrieve
+        submodule.getId(submoduleConfig, function (response) {
+          // TODO: handle response
+        });
+      }
     }
     return carry;
   }, []);
