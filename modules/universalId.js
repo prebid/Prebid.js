@@ -262,19 +262,19 @@ export function initSubmodules (config, submodules, navigator, document) {
   return submodules.reduce((carry, submodule) => {
     const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
 
-    // check if submodule has an override for obtaining ID
+    // skip, config with name matching submodule.configKey does not exist
+    if (!submoduleConfig) {
+      return carry;
+    }
+
+    // check if submodule has an override id method, this takes precedence over loading from local storage
     if (typeof submodule.overrideId === 'function') {
       const overrideResult = submodule.overrideId();
-      // if override returns a result, this takes precedence, so submodule skips checking for a config and is completed
+      // skip, override returned a valid result
       if (overrideResult) {
         carry.push('submodule override result is valid, skip processing config');
         return carry;
       }
-    }
-
-    // skip, config with name matching submodule.configKey does not exist
-    if (!submoduleConfig) {
-      return carry;
     }
 
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
