@@ -2,8 +2,12 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.3'
 const pixels = []
+const TRACK_START_TIME = Date.now()
+let LAST_PAYLOAD = {}
+let AD_UNIT_IDS = []
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,6 +20,11 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
+    AD_UNIT_IDS = validBidRequests.map(b => {
+      return b.adUnitCode
+    }).filter((value, index, self) => {
+      return self.indexOf(value) === index
+    })
     const payload = {
       zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
@@ -43,10 +52,17 @@ export const spec = {
       payload.gdpr_consent = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-      };
+      }
+    }
+
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
     }
 
     const payloadString = JSON.stringify(payload)
+
+    LAST_PAYLOAD = payload
 
     return {
       method: 'POST',
@@ -91,10 +107,57 @@ export const spec = {
       pixels.push({
         type: 'iframe',
         url: url
-      });
+      })
     }
     return pixels
+  },
+
+  onTimeout: (timeoutData) => {
+    timeoutData.forEach((data) => {
+      if (AD_UNIT_IDS.indexOf(data.adUnitCode) != -1) {
+        track(data, LAST_PAYLOAD, 'btm')
+      }
+    })
+  },
+
+}
+
+export let pixel = {
+  fire(url) {
+    let img = document.createElement('img')
+    img.src = url
+    img.id = 'jp-pixel-track'
+    img.style.cssText = 'display:none !important;'
+    document.body.appendChild(img)
   }
+};
+
+function track (data, payload, type) {
+  let pubUrl = ''
+
+  let jp = {
+    auc: data.adUnitCode,
+    to: data.timeout
+  }
+
+  if (window.top == window) {
+    pubUrl = window.location.href
+  } else {
+    try {
+      pubUrl = window.top.location.href
+    } catch (e) {
+      pubUrl = document.referrer
+    }
+  }
+
+  let duration = Date.now() - TRACK_START_TIME
+
+  const pixelUrl = `//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
+ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=${payload.wh}&ww=${payload.ww}&an=&vn=&
+sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
+cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`
+
+  pixel.fire(pixelUrl);
 }
 
 function findBid (params, bids) {

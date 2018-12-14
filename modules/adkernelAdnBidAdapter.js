@@ -55,15 +55,10 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
-  let loc = utils.getTopWindowLocation();
   let req = {
     id: auctionId,
     tid: transactionId,
-    site: {
-      page: loc.href,
-      ref: utils.getTopWindowReferrer(),
-      secure: ~~(loc.protocol === 'https:')
-    },
+    site: buildSite(),
     imp: tags
   };
 
@@ -77,6 +72,20 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
     }
   }
   return req;
+}
+
+function buildSite() {
+  let loc = utils.getTopWindowLocation();
+  let result = {
+    page: loc.href,
+    ref: utils.getTopWindowReferrer(),
+    secure: ~~(loc.protocol === 'https:')
+  };
+  let keywords = document.getElementsByTagName('meta')['keywords'];
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+  return result;
 }
 
 function buildBid(tag) {
@@ -104,6 +113,7 @@ function buildBid(tag) {
 export const spec = {
   code: 'adkernelAdn',
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
@@ -156,7 +166,7 @@ export const spec = {
     return serverResponses.filter(rps => rps.body && rps.body.syncpages)
       .map(rsp => rsp.body.syncpages)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
   }
 };
 

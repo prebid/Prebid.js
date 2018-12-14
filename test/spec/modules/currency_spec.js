@@ -21,21 +21,21 @@ describe('currency', function () {
   let fn = sinon.spy();
   let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
 
-  beforeEach(() => {
+  beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     fakeCurrencyFileServer.restore();
   });
 
-  describe('setConfig', () => {
-    it('results in currencySupportEnabled = false when currency not configured', () => {
+  describe('setConfig', function () {
+    it('results in currencySupportEnabled = false when currency not configured', function () {
       setConfig({});
       expect(currencySupportEnabled).to.equal(false);
     });
 
-    it('results in currencySupportEnabled = true and currencyRates being loaded when configured', () => {
+    it('results in currencySupportEnabled = true and currencyRates being loaded when configured', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -44,8 +44,8 @@ describe('currency', function () {
     });
   });
 
-  describe('bidder override', () => {
-    it('allows setConfig to set bidder currency', () => {
+  describe('bidder override', function () {
+    it('allows setConfig to set bidder currency', function () {
       setConfig({});
 
       var bid = { cpm: 1, bidder: 'rubicon' };
@@ -62,10 +62,12 @@ describe('currency', function () {
       	innerBid = bid;
       });
 
-      expect(innerBid.currency).to.equal('GBP')
+      expect(innerBid.currency).to.equal('GBP');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('GBP')).to.equal('1.000');
     });
 
-    it('uses adapter currency over currency override if specified', () => {
+    it('uses adapter currency over currency override if specified', function () {
       setConfig({});
 
       var bid = { cpm: 1, currency: 'JPY', bidder: 'rubicon' };
@@ -82,10 +84,12 @@ describe('currency', function () {
       	innerBid = bid;
       });
 
-      expect(innerBid.currency).to.equal('JPY')
+      expect(innerBid.currency).to.equal('JPY');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('1.000');
     });
 
-    it('uses rates specified in json when provided', () => {
+    it('uses rates specified in json when provided', function () {
       setConfig({
         adServerCurrency: 'USD',
         rates: {
@@ -103,9 +107,11 @@ describe('currency', function () {
       });
 
       expect(innerBid.cpm).to.equal('1.0000');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
-    it('uses default rates when currency file fails to load', () => {
+    it('uses default rates when currency file fails to load', function () {
       setConfig({});
 
       setConfig({
@@ -128,11 +134,13 @@ describe('currency', function () {
       });
 
       expect(innerBid.cpm).to.equal('1.0000');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
   });
 
-  describe('currency.addBidResponseDecorator bidResponseQueue', () => {
-    it('not run until currency rates file is loaded', () => {
+  describe('currency.addBidResponseDecorator bidResponseQueue', function () {
+    it('not run until currency rates file is loaded', function () {
       setConfig({});
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
@@ -153,8 +161,8 @@ describe('currency', function () {
     });
   });
 
-  describe('currency.addBidResponseDecorator', () => {
-    it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', () => {
+  describe('currency.addBidResponseDecorator', function () {
+    it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
@@ -164,7 +172,7 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal(1);
     });
 
-    it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', () => {
+    it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
@@ -174,7 +182,7 @@ describe('currency', function () {
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
-    it('should not buffer bid when currency is already in desired currency', () => {
+    it('should not buffer bid when currency is already in desired currency', function () {
       setConfig({
         'adServerCurrency': 'USD'
       });
@@ -186,7 +194,7 @@ describe('currency', function () {
       expect(bid).to.equal(innerBid);
     });
 
-    it('should result in NO_BID when fromCurrency is not supported in file', () => {
+    it('should result in NO_BID when fromCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -198,7 +206,7 @@ describe('currency', function () {
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
-    it('should result in NO_BID when adServerCurrency is not supported in file', () => {
+    it('should result in NO_BID when adServerCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
@@ -210,7 +218,7 @@ describe('currency', function () {
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
-    it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', () => {
+    it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -223,7 +231,7 @@ describe('currency', function () {
       expect(innerBid.currency).to.equal('JPY');
     });
 
-    it('should return direct conversion rate when fromCurrency is one of the configured bases', () => {
+    it('should return direct conversion rate when fromCurrency is one of the configured bases', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
@@ -236,7 +244,7 @@ describe('currency', function () {
       expect(innerBid.currency).to.equal('GBP');
     });
 
-    it('should return reciprocal conversion rate when adServerCurrency is one of the configured bases, but fromCurrency is not', () => {
+    it('should return reciprocal conversion rate when adServerCurrency is one of the configured bases, but fromCurrency is not', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
@@ -249,7 +257,7 @@ describe('currency', function () {
       expect(innerBid.currency).to.equal('GBP');
     });
 
-    it('should return intermediate conversion rate when neither fromCurrency nor adServerCurrency is one of the configured bases', () => {
+    it('should return intermediate conversion rate when neither fromCurrency nor adServerCurrency is one of the configured bases', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'CNY' });
       fakeCurrencyFileServer.respond();
