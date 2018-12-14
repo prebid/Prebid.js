@@ -201,7 +201,7 @@ export function initSubmodules (config, submodules, navigator, document) {
   const storageTypes = enabledStorageTypes(navigator, document);
 
   // process and return list of enabled submodules
-  const enabledSubmodules = submodules.reduce((carry, submodule) => {
+  return submodules.reduce((carry, submodule) => {
     const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
@@ -230,8 +230,6 @@ export function initSubmodules (config, submodules, navigator, document) {
     }
     return carry;
   }, []);
-
-  return enabledSubmodules;
 }
 
 initSubmodules(config, submodules, window.navigator, window.document);
