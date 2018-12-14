@@ -530,6 +530,9 @@ export const spec = {
             if (bid.ext && bid.ext.advid) {
               newBid['advertiserId'] = bid.ext.advid;
             }
+            if (bid.ext && bid.ext.dspid) {
+              newBid['dspId'] = bid.ext.dspid;
+            }
 
             bidResponses.push(newBid);
           });
