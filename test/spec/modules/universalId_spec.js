@@ -215,9 +215,33 @@ describe('Universal ID', function () {
 
   describe('initSubmodules', function() {
     const submodules = [{
-      configKey: 'pubCommonId'
+      configKey: 'pubCommonId',
+      expires: Number.MAX_VALUE,
+      decode: function(value) {
+        return {
+          'pubcid': value
+        }
+      },
+      getId: function (data, callback) {
+        // callback({
+        //   expires: Number.MAX_VALUE,
+        //   data: '1111'
+        // });
+      }
     }, {
-      configKey: 'openId'
+      configKey: 'openId',
+      expires: Number.MAX_VALUE - 1,
+      decode: function(value) {
+        return {
+          'openid': value
+        }
+      },
+      getId: function (data, callback) {
+        // callback({
+        //   expires: Number.MAX_VALUE - 10,
+        //   data: '2222'
+        // });
+      }
     }];
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
