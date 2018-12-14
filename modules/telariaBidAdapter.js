@@ -116,25 +116,32 @@ export const spec = {
  * @returns {string}
  */
 function generateUrl(bid, bidderRequest) {
-  let width, height;
   let playerSize = (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize);
   if (!playerSize) {
-    return '';
+    utils.logWarn('Although player size isn\'t required it is highly recommended');
   }
 
-  if (utils.isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
-    width = playerSize[0];
-    height = playerSize[1];
-  } else if (typeof playerSize === 'object') {
-    width = playerSize[0][0];
-    height = playerSize[0][1];
+  let width, height;
+  if (playerSize) {
+    if (utils.isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
+      width = playerSize[0];
+      height = playerSize[1];
+    } else if (typeof playerSize === 'object') {
+      width = playerSize[0][0];
+      height = playerSize[0][1];
+    }
   }
-  if (width && height && bid.params.supplyCode && bid.params.adCode) {
+
+  if (bid.params.supplyCode && bid.params.adCode) {
     let scheme = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
     let url = scheme + bid.params.supplyCode + ENDPOINT + '?adCode=' + bid.params.adCode;
 
-    url += ('&playerWidth=' + width);
-    url += ('&playerHeight=' + height);
+    if (width) {
+      url += ('&playerWidth=' + width);
+    }
+    if (height) {
+      url += ('&playerHeight=' + height);
+    }
 
     for (let key in bid.params) {
       if (bid.params.hasOwnProperty(key) && bid.params[key]) {

@@ -102,7 +102,7 @@ describe('TelariaAdapter', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('requires supply code, ad code and sizes to make a request', () => {
+    it('requires supply code & ad code to make a request', () => {
       const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
       expect(tempRequest.length).to.equal(1);
     });
@@ -117,12 +117,12 @@ describe('TelariaAdapter', () => {
       expect(tempRequest[0].vastUrl).to.exist;
     });
 
-    it('requires sizes to make a request', () => {
+    it('doesn\'t require player size but is highly recommended', () => {
       let tempBid = stub;
       tempBid[0].mediaTypes.video.playerSize = null;
       const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
-      expect(tempRequest.length).to.equal(0);
+      expect(tempRequest.length).to.equal(1);
     });
 
     it('generates a valid request with sizes as an array of two elements', () => {
