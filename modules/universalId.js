@@ -10,6 +10,11 @@ import {config} from 'src/config';
  */
 
 /**
+ * @callback overrideId
+ * @returns {*}
+ */
+
+/**
  * @callback getId
  * @summary submodule interface for getId function
  * @param {Object} data
@@ -27,6 +32,7 @@ import {config} from 'src/config';
  * @typedef {Object} IdSubmodule
  * @property {string} configKey
  * @property {number} expires
+ * @property {?overrideId} overrideId
  * @property {decode} decode
  * @property {getId} getId
  */
@@ -36,6 +42,7 @@ import {config} from 'src/config';
  * @property {Object} storage
  * @property {Object} value
  * @property {Object} params
+ * @property {number} syncDelay
  */
 
 const STORAGE_TYPE_COOKIE = 'cookie';
@@ -68,6 +75,14 @@ const submodules = [
   {
     configKey: 'pubCommonId',
     expires: 2628000,
+    overrideId: function() {
+      if (typeof window['pubCommonId'] === 'object') {
+        // If the page includes its own pubcid object, then use that instead.
+        const pubcid = window['pubCommonId'].getId();
+        utils.logMessage('pubCommonId' + ': pubcid = ' + pubcid);
+        return pubcid;
+      }
+    },
     decode: function(idData) {
       return {
         'ext.pubcommonid': idData
@@ -246,6 +261,17 @@ export function initSubmodules (config, submodules, navigator, document) {
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
     const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
+
+    // check if submodule has an override for obtaining ID
+    if (typeof submodule.overrideId === 'function') {
+      const overrideResult = submodule.overrideId();
+      // if override returns a result, this takes precedence, so submodule skips checking for a config and is completed
+      if (overrideResult) {
+        carry.push('submodule override result is valid, skip processing config');
+        return carry;
+      }
+    }
+
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
       return carry;
