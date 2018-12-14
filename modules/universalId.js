@@ -43,9 +43,23 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
  * ID data for appending to bid requests from the requestBidHook
- * @type {Array.<Object>}
+ * @type {{addData}}
  */
-const extendedBidRequestData = []
+export const extendedBidRequestData = (function () {
+  // @type {Array.<Object>}
+  const dataItems = [];
+  return {
+    addData: function (data) {
+      if (dataItems.length === 0) {
+        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+      }
+      dataItems.push(data);
+    },
+    getData: function () {
+      return dataItems;
+    }
+  }
+})();
 
 /**
  * @type {IdSubmodule[]}
@@ -163,7 +177,7 @@ export function validateConfig (config, submodules) {
  * @param next
  * @returns {*}
  */
-function requestBidHook (config, next) {
+export function requestBidHook (config, next) {
   // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
   // pass id data to adapters if bidRequestData list is not empty
   return next.apply(this, arguments)
@@ -199,7 +213,7 @@ export function initSubmodules (config, submodules, navigator, document) {
       //  submodule either passes a value set in config
       carry.push('found value config, add directly to bidAdapters');
       // add obj to list to pass to adapters
-      extendedBidRequestData.push(submoduleConfig.value);
+      extendedBidRequestData.addData(submoduleConfig.value);
     } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
       //  2.
@@ -217,9 +231,6 @@ export function initSubmodules (config, submodules, navigator, document) {
     return carry;
   }, []);
 
-  if (enabledSubmodules.length) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook)
-  }
   return enabledSubmodules;
 }
 
