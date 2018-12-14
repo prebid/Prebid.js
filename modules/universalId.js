@@ -1,5 +1,5 @@
 /**
- * This modules adds Universal ID support to prebid.js
+ * This module adds Universal ID support to prebid.js
  */
 import * as utils from 'src/utils'
 import {config} from 'src/config';
