@@ -2,7 +2,8 @@ import {
   enabledStorageTypes,
   validateConfig,
   initSubmodules,
-  requestBidHook
+  requestBidHook,
+  extendedBidRequestData
 } from 'modules/universalId';
 import { expect, assert } from 'chai'
 import sinon from 'sinon'
