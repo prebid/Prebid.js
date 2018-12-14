@@ -97,9 +97,22 @@ const submodules = [
 /**
  * @param {IdSubmodule} submodule
  * @param {SubmoduleConfig} submoduleConfig
- * @param response
+ * @param {{data: string, expires: number}} response
  */
 export function submoduleGetIdCallback(submodule, submoduleConfig, response) {
+  if (response && typeof response.data === 'string' && response.data !== '') {
+    if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
+      const expires = response.expires || submoduleConfig.storage.expires || submodule.expires;
+      setCookie(submoduleConfig.storage.name, response.data, expires);
+    } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
+      localStorage.setItem(submoduleConfig.storage.name, response.data);
+    } else {
+      utils.logError('Universal ID Module: Invalid configuration storage type');
+    }
+    extendedBidRequestData.addData(submodule.decode(response.data));
+  } else {
+    utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
+  }
 }
 
 /**
@@ -145,7 +158,7 @@ export function setCookie(name, value, expires) {
 
 // Helper to read a cookie
 export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+  const m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
   return m ? decodeURIComponent(m[2]) : null;
 }
 
