@@ -217,6 +217,11 @@ describe('Universal ID', function () {
     const submodules = [{
       configKey: 'pubCommonId',
       expires: Number.MAX_VALUE,
+      overrideId: function() {
+        if (typeof window['pubCommonId'] === 'object') {
+          return 'window.pubCommonId.getId is valid';
+        }
+      },
       decode: function(value) {
         return {
           'pubcid': value
@@ -313,6 +318,32 @@ describe('Universal ID', function () {
           return 'prebid.cookieTest'
         }
       }).length).to.equal(2);
+    });
+
+    it('returns array with one submodule enabled (pubCommonId), if a configKey exists and the overrideId returns a valid result', function() {
+      // Create the window object that the overrideId method will check for, this should allow the test to pass
+      window.pubCommonId = {};
+
+      expect(initSubmodules({
+        getConfig: function () {
+          return [{
+            name: 'pubCommonId'
+          }, {
+            name: 'openId'
+          }];
+        }
+      }, submodules, {
+        cookieEnabled: false
+      }, {
+        localStorage: undefined,
+        set cookie(v) {},
+        get cookie() {
+          return ''
+        }
+      }).length).to.equal(1);
+
+      // clean-up mock object used for test
+      delete window.pubCommonId;
     });
 
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
