@@ -527,6 +527,9 @@ export const spec = {
             if (bid.ext && bid.ext.deal_channel) {
               newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
             }
+            if (bid.ext && bid.ext.advid) {
+              newBid['advertiserId'] = bid.ext.advid;
+            }
 
             bidResponses.push(newBid);
           });
