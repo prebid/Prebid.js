@@ -46,7 +46,7 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
  * @type {{addData}}
  */
 export const extendedBidRequestData = (function () {
-  // @type {Array.<Object>}
+  // @type {Object[]}
   const dataItems = [];
   return {
     addData: function (data) {
@@ -183,7 +183,7 @@ export function enabledStorageTypes (navigator, document) {
  * check if any universal id types are set in configuration (must opt-in to enable)
  *
  * @param {PrebidConfig} config
- * @param {Array.<IdSubmodule>} submodules
+ * @param {IdSubmodule[]} submodules
  */
 export function validateConfig (config, submodules) {
   const submoduleConfigs = config.getConfig('usersync.universalIds');
@@ -229,7 +229,7 @@ export function requestBidHook (config, next) {
 /**
  * init submodules if config values are set correctly
  * @param {PrebidConfig} config
- * @param {Array.<IdSubmodule>} submodules
+ * @param {IdSubmodule[]} submodules
  * @param {Navigator} navigator
  * @param {Document} document
  * @returns {Array} - returns list of enabled submodules
