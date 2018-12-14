@@ -92,9 +92,15 @@ const submodules = [
     },
     getId: function(url, syncDelay, callback) {
     }
-  }
+  }];
 
-]
+/**
+ * @param {IdSubmodule} submodule
+ * @param {SubmoduleConfig} submoduleConfig
+ * @param response
+ */
+export function submoduleGetIdCallback(submodule, submoduleConfig, response) {
+}
 
 /**
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
@@ -131,7 +137,7 @@ function browserSupportsLocalStorage (localStorage) {
 
 // Helper to set a cookie
 export function setCookie(name, value, expires) {
-  let expTime = new Date();
+  const expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
   window.document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' +
     expTime.toGMTString();
@@ -194,6 +200,9 @@ export function validateConfig (config, submodules) {
 export function requestBidHook (config, next) {
   // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
   // pass id data to adapters if bidRequestData list is not empty
+  extendedBidRequestData.getData().forEach(dataItem => {
+    console.log('extendedBidRequestData', dataItem);
+  });
   return next.apply(this, arguments)
 }
 
@@ -223,17 +232,16 @@ export function initSubmodules (config, submodules, navigator, document) {
     }
 
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
-      //  1.
-      //  submodule either passes a value set in config
+      //  submodule just passes a value set in config
       carry.push('found value config, add directly to bidAdapters');
       // add obj to list to pass to adapters
       extendedBidRequestData.addData(submoduleConfig.value);
     } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
-      //  2.
-      //  submodule uses local storage to get value (or if local storage is empty calls submodule getId)
+      //  submodule uses local storage to get value
       carry.push('found storage config, try to load from local storage');
 
+      // TODO: revise item pushed to carry
       // TODO: try to load storage value
       // 1. if it exists, call submodule decode and pass value to adapters
       // 2. else, call submodule getId
@@ -252,10 +260,18 @@ export function initSubmodules (config, submodules, navigator, document) {
       if (storageValue) {
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
-        // TODO: storage value does not exist, call submodule.getId to retrieve
-        submodule.getId(submoduleConfig, function (response) {
-          // TODO: handle response
-        });
+        const syncDelay = submoduleConfig.syncDelay || 0;
+        if (syncDelay) {
+          setTimeout(function () {
+            submodule.getId(submoduleConfig, function (response) {
+              submoduleGetIdCallback(submodule, submoduleConfig, response);
+            });
+          })
+        } else {
+          submodule.getId(submoduleConfig, function (response) {
+            submoduleGetIdCallback(submodule, submoduleConfig, response);
+          });
+        }
       }
     }
     return carry;
