@@ -1,7 +1,7 @@
 /**
  * This modules adds Universal ID support to prebid.js
  */
-// import * as utils from 'src/utils'
+import * as utils from 'src/utils'
 import {config} from 'src/config';
 
 /**
@@ -198,12 +198,19 @@ export function validateConfig (config, submodules) {
  * @returns {*}
  */
 export function requestBidHook (config, next) {
-  // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
   // pass id data to adapters if bidRequestData list is not empty
   extendedBidRequestData.getData().forEach(dataItem => {
-    console.log('extendedBidRequestData', dataItem);
+    const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits
+    if (adUnits) {
+      adUnits.forEach((adUnit) => {
+        adUnit.bids.forEach((bid) => {
+          Object.assign(bid, dataItem);
+        });
+      });
+    }
   });
-  return next.apply(this, arguments)
+  // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
+  return next.apply(this, arguments);
 }
 
 /**
@@ -241,10 +248,6 @@ export function initSubmodules (config, submodules, navigator, document) {
       //  submodule uses local storage to get value
       carry.push('found storage config, try to load from local storage');
 
-      // TODO: revise item pushed to carry
-      // TODO: try to load storage value
-      // 1. if it exists, call submodule decode and pass value to adapters
-      // 2. else, call submodule getId
       let storageValue;
       if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
         storageValue = getCookie(submoduleConfig.storage.name);
@@ -252,22 +255,28 @@ export function initSubmodules (config, submodules, navigator, document) {
         storageValue = localStorage.getItem(submoduleConfig.storage.name);
       } else {
         // ERROR STORAGE TYPE NOT DEFINED
+        utils.logMessage('Universal ID configuration error, storage type configuration invalid');
       }
 
-      // TODO: review impact on event loop from try/catch around cookie/localStorage access
-      // 1. if no large impact, ignore using setTimer
-      // 2. else surround with setTimeout
       if (storageValue) {
+        // TODO: review impact on event loop from try/catch around cookie/localStorage access
+        // 1. if no large impact, ignore using setTimer
+        // 2. else surround with setTimeout
+
+        // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
+        // stored value does not exist, call submodule getId
         const syncDelay = submoduleConfig.syncDelay || 0;
         if (syncDelay) {
+          // if syncDelay exists, wrap submodule.getId call with a setTimeout
           setTimeout(function () {
             submodule.getId(submoduleConfig, function (response) {
               submoduleGetIdCallback(submodule, submoduleConfig, response);
             });
           })
         } else {
+          // no syncDelay, call submodule.getId without setTimeout
           submodule.getId(submoduleConfig, function (response) {
             submoduleGetIdCallback(submodule, submoduleConfig, response);
           });
