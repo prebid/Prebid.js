@@ -364,17 +364,6 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
             };
             break;
-          case 'data':
-            assetObj = {
-              id: NATIVE_ASSET_ID.DATA,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: params[key].type,
-                len: params[key].length || params[key].len,
-                ext: params[key].ext
-              }
-            };
-            break;
           case 'logo':
             assetObj = {
               id: NATIVE_ASSET_ID.LOGO,
