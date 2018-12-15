@@ -10,7 +10,7 @@ import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
 import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage } from 'src/utils';
-import { isAdUnitCodeMatchingSlot } from '../utils';
+//import { isAdUnitCodeMatchingSlot } from '../utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
