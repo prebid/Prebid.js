@@ -11,7 +11,8 @@ import {config} from 'src/config';
 
 /**
  * @callback overrideId
- * @returns {*}
+ * @returns {*} - returns either an object or undefined,
+ * if undefined an id value will be obtained from browser local storage/cookies or with the submodule getId function
  */
 
 /**
@@ -39,7 +40,7 @@ import {config} from 'src/config';
  */
 
 /**
- * @typedef {Object} SubmoduleConfig
+ * @typedef {Object} SubmoduleConfig - IdSubmodule config obj contained in the config 'usersync.universalIds' array
  * @property {Object} storage
  * @property {Object} value
  * @property {Object} params
