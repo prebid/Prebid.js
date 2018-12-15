@@ -3,6 +3,10 @@ import { cryptoVerify, spec, FAST_BID_PUBKEY } from 'modules/criteoBidAdapter';
 import * as utils from 'src/utils';
 
 describe('The Criteo bidding adapter', function () {
+  beforeEach(function () {
+    // Remove FastBid to avoid side effects.
+    localStorage.removeItem('criteo_fast_bid');
+  });
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {

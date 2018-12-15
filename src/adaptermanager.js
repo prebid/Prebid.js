@@ -564,3 +564,7 @@ exports.callBidWonBidder = function(bidder, bid, adUnits) {
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
+
+exports.callSetTargetingBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onSetTargeting', bid);
+};

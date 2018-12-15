@@ -196,6 +196,15 @@ function _appendSiteAppDevice(request) {
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
   }
+  if (!request.device) {
+    request.device = {};
+  }
+  if (!request.device.w) {
+    request.device.w = window.innerWidth;
+  }
+  if (!request.device.h) {
+    request.device.h = window.innerHeight;
+  }
 }
 
 function transformHeightWidth(adUnit) {

@@ -141,7 +141,7 @@ exports.transformAdServerTargetingObj = function (targeting) {
  * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
  * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
  * @param {object} adUnit one adUnit object from the normal list of adUnits
- * @returns {array[array[number]]} array of arrays containing numeric sizes
+ * @returns {Array.<number[]>} array of arrays containing numeric sizes
  */
 export function getAdUnitSizes(adUnit) {
   if (!adUnit) {
@@ -168,8 +168,8 @@ export function getAdUnitSizes(adUnit) {
 
 /**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
- * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
- * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
+ * @param  {(Array.<number[]>|Array.<number>)} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
+ * @return {Array.<string>}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
 export function parseSizesInput(sizeObj) {
   var parsedSizes = [];
@@ -207,7 +207,7 @@ export function parseSizesInput(sizeObj) {
   }
 
   return parsedSizes;
-};
+}
 
 // parse a GPT style sigle size array, (i.e [300,250])
 // into an AppNexus style string, (i.e. 300x250)
@@ -216,10 +216,10 @@ export function parseGPTSingleSizeArray(singleSize) {
   if (exports.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
-};
+}
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getTopWindowLocation = function() {
   if (exports.inIframe()) {
@@ -232,10 +232,10 @@ exports.getTopWindowLocation = function() {
     if (loc) return parse(loc, {'decodeSearchAsString': true});
   }
   return exports.getWindowLocation();
-}
+};
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getTopFrameReferrer = function () {
   try {
@@ -257,7 +257,7 @@ exports.getTopFrameReferrer = function () {
 };
 
 /**
- * @deprecated This function will be removed soon
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
 exports.getAncestorOrigins = function () {
   if (window.document.location && window.document.location.ancestorOrigins &&
@@ -278,6 +278,9 @@ exports.getWindowLocation = function () {
   return window.location;
 };
 
+/**
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
+ */
 exports.getTopWindowUrl = function () {
   let href;
   try {
@@ -288,6 +291,9 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+/**
+ * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
+ */
 exports.getTopWindowReferrer = function() {
   try {
     return window.top.document.referrer;
@@ -386,9 +392,9 @@ exports.getParameterByName = getParameterByName;
 
 /**
  * This function validates paramaters.
- * @param  {object[string]} paramObj          [description]
+ * @param  {Object} paramObj          [description]
  * @param  {string[]} requiredParamsArr [description]
- * @return {bool}                   Bool if paramaters are valid
+ * @return {boolean}                   Bool if paramaters are valid
  */
 exports.hasValidBidRequest = function (paramObj, requiredParamsArr, adapter) {
   var found = false;
@@ -450,11 +456,11 @@ exports.isNumber = function(object) {
 
 exports.isPlainObject = function(object) {
   return exports.isA(object, tObject);
-}
+};
 
 exports.isBoolean = function(object) {
   return exports.isA(object, tBoolean);
-}
+};
 
 /**
  * Return if the object is "empty";
@@ -570,12 +576,13 @@ exports.insertElement = function(elm, doc, target) {
       elToAppend = doc.getElementsByTagName('head');
     }
     try {
-      elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-      if (elToAppend.length) {
-        elToAppend = elToAppend[0];
-        elToAppend.insertBefore(elm, elToAppend.firstChild);
-      }
-    } catch (e) {}
+	    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
+	    if (elToAppend.length) {
+	      elToAppend = elToAppend[0];
+	      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
+	      return elToAppend.insertBefore(elm, refChild);
+	    }
+	 } catch (e) {}
   }
 };
 
@@ -682,8 +689,8 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = 
 
 /**
  * Returns iframe document in a browser agnostic way
- * @param  {object} iframe reference
- * @return {object}        iframe `document` reference
+ * @param  {Object} iframe reference
+ * @return {Object}        iframe `document` reference
  */
 exports.getIframeDocument = function (iframe) {
   if (!iframe) {
@@ -857,6 +864,11 @@ export function cookiesAreEnabled() {
   return window.document.cookie.indexOf('prebid.cookieTest') != -1;
 }
 
+export function getCookie(name) {
+  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+  return m ? decodeURIComponent(m[2]) : null;
+}
+
 /**
  * Given a function, return a function which only executes the original after
  * it's been called numRequiredCalls times.
@@ -887,7 +899,7 @@ export function delayExecution(func, numRequiredCalls) {
  * @export
  * @param {array} xs
  * @param {string} key
- * @returns {${key_value}: ${groupByArray}, key_value: {groupByArray}}
+ * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */
 export function groupBy(xs, key) {
   return xs.reduce(function(rv, x) {
@@ -898,7 +910,7 @@ export function groupBy(xs, key) {
 
 /**
  * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
- * @param {object} obj The object containing the values you would like to access.
+ * @param {Object} obj The object containing the values you would like to access.
  * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
@@ -918,7 +930,7 @@ export function deepAccess(obj, path) {
 
 /**
  * Returns content for a friendly iframe to execute a URL in script tag
- * @param {url} URL to be executed in a script tag in a friendly iframe
+ * @param {string} url URL to be executed in a script tag in a friendly iframe
  * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
  */
 export function createContentToExecuteExtScriptInFriendlyFrame(url) {
@@ -932,9 +944,9 @@ export function createContentToExecuteExtScriptInFriendlyFrame(url) {
 /**
  * Build an object consisting of only defined parameters to avoid creating an
  * object with defined keys and undefined values.
- * @param {object} object The object to pick defined params out of
+ * @param {Object} object The object to pick defined params out of
  * @param {string[]} params An array of strings representing properties to look for in the object
- * @returns {object} An object containing all the specified values that are defined
+ * @returns {Object} An object containing all the specified values that are defined
  */
 export function getDefinedParams(object, params) {
   return params
@@ -979,8 +991,8 @@ export function getBidderRequest(bidRequests, bidder, adUnitCode) {
 }
 /**
  * Returns user configured bidder params from adunit
- * @param {object} adunits
- * @param {string} adunit code
+ * @param {Object} adUnits
+ * @param {string} adUnitCode code
  * @param {string} bidder code
  * @return {Array} user configured param for the given bidder adunit configuration
  */
@@ -1015,7 +1027,7 @@ const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnit
 
 /**
  * Returns filter function to match adUnitCode in slot
- * @param {object} slot GoogleTag slot
+ * @param {Object} slot GoogleTag slot
  * @return {function} filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
@@ -1054,9 +1066,9 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * @return {Object} object
  */
 export function deletePropertyFromObject(object, prop) {
-  let result = Object.assign({}, object)
+  let result = Object.assign({}, object);
   delete result[prop];
-  return result
+  return result;
 }
 
 /**
@@ -1094,7 +1106,7 @@ export function convertCamelToUnderscore(value) {
  * normally read from bidder params
  * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
  * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
- * @param {Object{Arrays}} keywords object of arrays representing keyvalue pairs
+ * @param {Object} keywords object of arrays representing keyvalue pairs
  * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
  */
 export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
@@ -1105,7 +1117,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
       let values = [];
       exports._each(v, (val) => {
         val = exports.getValueString(paramName + '.' + k, val);
-        if (val) { values.push(val); }
+        if (val || val === '') { values.push(val); }
       });
       v = values;
     } else {
