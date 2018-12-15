@@ -72,37 +72,37 @@ export const extendedBidRequestData = (function () {
  * @type {IdSubmodule[]}
  */
 const submodules = [{
-    configKey: 'pubCommonId',
-    expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
-    overrideId: function() {
-      if (typeof window['pubCommonId'] === 'object') {
-        // If the page includes its own pubcid object, then use that instead.
-        const pubcid = window['pubCommonId'].getId();
-        utils.logMessage('pubCommonId' + ': pubcid = ' + pubcid);
-        return pubcid;
-      }
-    },
-    decode: function(idData) {
-      return {
-        crumbs: idData
-      }
-    },
-    getId: function(data, callback) {
-      const response = {
-        data: utils.generateUUID()
-      };
-      callback(response);
+  configKey: 'pubCommonId',
+  expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
+  overrideId: function() {
+    if (typeof window['pubCommonId'] === 'object') {
+      // If the page includes its own pubcid object, then use that instead.
+      const pubcid = window['pubCommonId'].getId();
+      utils.logMessage('pubCommonId' + ': pubcid = ' + pubcid);
+      return pubcid;
     }
-  }, {
-    configKey: 'openId',
-    expires:  (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
-    decode: function(idData) {
-      // TODO: complete openId decode implementation
-    },
-    getId: function(url, syncDelay, callback) {
-      // TODO: complete openId getId implementation
+  },
+  decode: function(idData) {
+    return {
+      crumbs: idData
     }
-  }];
+  },
+  getId: function(data, callback) {
+    const response = {
+      data: utils.generateUUID()
+    };
+    callback(response);
+  }
+}, {
+  configKey: 'openId',
+  expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
+  decode: function(idData) {
+    // TODO: complete openId decode implementation
+  },
+  getId: function(url, syncDelay, callback) {
+    // TODO: complete openId getId implementation
+  }
+}];
 
 /**
  * @param {IdSubmodule} submodule
