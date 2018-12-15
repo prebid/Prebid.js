@@ -95,14 +95,12 @@ const submodules = [{
     }
   }, {
     configKey: 'openId',
-    expires: 20000,
+    expires:  (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
     decode: function(idData) {
-      return {
-        'ext.openid': idData
-      }
+      // TODO: complete openId decode implementation
     },
     getId: function(url, syncDelay, callback) {
-
+      // TODO: complete openId getId implementation
     }
   }];
 
