@@ -114,7 +114,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (syncOptions.pixelEnabled) {
       const syncs = [];
       serverResponses.forEach(response => {
@@ -207,7 +207,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     }
   };
 
-  this.getErrorReturn = function(errorCode) {
+  this.getErrorReturn = function (errorCode) {
     return {
       idMappings: {},
       requests: {},
@@ -215,7 +215,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     };
   };
 
-  this.createRequest = function(requestObject, requestParameters, extraRequestParameters) {
+  this.createRequest = function (requestObject, requestParameters, extraRequestParameters) {
     if (!requestParameters.libVersion) {
       return this.getErrorReturn(this.CONSTANTS.ERROR_CODES.LIB_VERSION_MISSING);
     }
@@ -285,8 +285,8 @@ function ImproveDigitalAdServerJSClient(endPoint) {
         }
 
         if (writeLongRequest ||
-            !requestParameters.singleRequestMode ||
-            counter === impressionObjects.length - 1) {
+          !requestParameters.singleRequestMode ||
+          counter === impressionObjects.length - 1) {
           returnObject.requests.push(this.formatRequest(requestParameters, bidRequestObject));
           bidRequestObject = {
             bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
@@ -302,9 +302,9 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     return returnObject;
   };
 
-  this.formatRequest = function(requestParameters, bidRequestObject) {
+  this.formatRequest = function (requestParameters, bidRequestObject) {
     let bidId = null;
-    if(bidRequestObject && bidRequestObject.bid_request && bidRequestObject.bid_request.imp &&  bidRequestObject.bid_request.imp.length>0 && bidRequestObject.bid_request.imp[0].id){
+    if (bidRequestObject && bidRequestObject.bid_request && bidRequestObject.bid_request.imp && bidRequestObject.bid_request.imp.length > 0 && bidRequestObject.bid_request.imp[0].id) {
       bidId = bidRequestObject.bid_request.imp[0].id;
     }
     switch (requestParameters.returnObjType) {
@@ -313,7 +313,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
           method: 'GET',
           url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
           data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${JSON.stringify(bidRequestObject)}`,
-          bidId:bidId,
+          bidId: bidId,
         };
       default:
         const baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://` +
@@ -321,12 +321,12 @@ function ImproveDigitalAdServerJSClient(endPoint) {
           `${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
         return {
           url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject)),
-          bidId:bidId,
+          bidId: bidId,
         }
     }
   };
 
-  this.createBasicBidRequestObject = function(requestParameters, extraRequestParameters) {
+  this.createBasicBidRequestObject = function (requestParameters, extraRequestParameters) {
     let impressionBidRequestObject = {};
     if (requestParameters.requestId) {
       impressionBidRequestObject.id = requestParameters.requestId;
@@ -366,7 +366,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     return impressionBidRequestObject;
   };
 
-  this.createImpressionObject = function(placementObject) {
+  this.createImpressionObject = function (placementObject) {
     let outputObject = {};
     let impressionObject = {};
     outputObject.impressionObject = impressionObject;
@@ -412,9 +412,9 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     }
 
     if (!impressionObject.pid &&
-    !impressionObject.pubid &&
-    !impressionObject.pkey &&
-    !(impressionObject.banner && impressionObject.banner.w && impressionObject.banner.h)) {
+      !impressionObject.pubid &&
+      !impressionObject.pkey &&
+      !(impressionObject.banner && impressionObject.banner.w && impressionObject.banner.h)) {
       outputObject.impressionObject = null;
       outputObject.errorCode = this.CONSTANTS.ERROR_CODES.MISSING_PLACEMENT_PARAMS;
     }

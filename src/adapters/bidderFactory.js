@@ -157,16 +157,16 @@ export function registerBidder(spec) {
  */
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    getSpec: function() {
+    getSpec: function () {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax, requestDone) {
+    callBids: function (bidderRequest, addBidResponse, done, ajax, requestDone) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
 
-      const _requestDone = function(){logMessage("calling request DONE "+bidderRequest.bidderCode+" "+(timestamp() - bidderRequest.start)+'ms '+(timestamp() - bidderRequest.auctionStart)+'ms');if(requestDone) requestDone();};
+      const _requestDone = function () { logMessage("calling request DONE " + bidderRequest.bidderCode + " " + (timestamp() - bidderRequest.start) + 'ms ' + (timestamp() - bidderRequest.auctionStart) + 'ms'); if (requestDone) requestDone(); };
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid, last) {
@@ -175,31 +175,31 @@ export function newBidder(spec) {
         if (isValid(adUnitCode, bid, [bidderRequest])) {
           addBidResponse(adUnitCode, bid, last);
         }
-        if(last){
+        if (last) {
           _requestDone();
         }
       }
 
-      function setRequestPropsFilter(requestObj, props){
-        for(let i in props){
-          switch(i){
+      function setRequestPropsFilter(requestObj, props) {
+        for (let i in props) {
+          switch (i) {
             case 'doneTime':
-              if(!requestObj[i]){
+              if (!requestObj[i]) {
                 requestObj[i] = props[i];
               }
-            break;
+              break;
             default:
               requestObj[i] = props[i];
           }
         }
       }
-      function setRequestProps(request, props){       
+      function setRequestProps(request, props) {
         //two possible options here? 
-        if(request.bidRequest){
+        if (request.bidRequest) {
           setRequestPropsFilter(request.bidRequest, props);
-        }else if(request.bidderRequest){
+        } else if (request.bidderRequest) {
           setRequestPropsFilter(request.bidderRequest, props);
-        }else if(bidderRequest){
+        } else if (bidderRequest) {
           /*debugger;
           setRequestPropsFilter(bidderRequest, props);
           if(bidderRequest.bids){
@@ -210,7 +210,7 @@ export function newBidder(spec) {
         }
       }
 
-      function markRequestDoneWithNoBids(request){
+      function markRequestDoneWithNoBids(request) {
         setRequestProps(request, {
           doneTime: timestamp(),
           noBids: true,
@@ -225,9 +225,9 @@ export function newBidder(spec) {
           debugger;
         }*/
         logMessage("handleResponse Done ", request, bids);
-        if(!bids || bids.length==0){
+        if (!bids || bids.length == 0) {
           markRequestDoneWithNoBids(request);
-          _requestDone();        
+          _requestDone();
         }
       }
 
@@ -241,17 +241,17 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
-      const invalidBidRequests =  bidderRequest.bids.filter((bid)=>{
-        if(validBidRequests.indexOf(bid) === -1){
+      const invalidBidRequests = bidderRequest.bids.filter((bid) => {
+        if (validBidRequests.indexOf(bid) === -1) {
           return true;
         }
         return false;
       });
-      invalidBidRequests.forEach(bid=>{
-        markRequestDoneWithNoBids({bidRequest:bid});
+      invalidBidRequests.forEach(bid => {
+        markRequestDoneWithNoBids({ bidRequest: bid });
       });
       if (validBidRequests.length === 0) {
-        handleResponse([], {bidderRequest:bidderRequest});
+        handleResponse([], { bidderRequest: bidderRequest });
         afterAllResponses();
         return;
       }
@@ -266,7 +266,7 @@ export function newBidder(spec) {
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
-        handleResponse([], {bidderRequest:bidderRequest});
+        handleResponse([], { bidderRequest: bidderRequest });
         afterAllResponses();
         return;
       }
@@ -289,8 +289,8 @@ export function newBidder(spec) {
       }
 
       function processRequest(request) {
-        if(!request.bidRequest && !request.bidderRequest && request.bidId){
-          if(bidRequestMap[request.bidId]){
+        if (!request.bidRequest && !request.bidderRequest && request.bidId) {
+          if (bidRequestMap[request.bidId]) {
             request.bidRequest = bidRequestMap[request.bidId];
           }
         }
@@ -354,18 +354,18 @@ export function newBidder(spec) {
           } catch (err) {
             logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
             handleResponse([], request);
-            onResponse();            
+            onResponse();
             return;
           }
 
           if (bids) {
             let bidIds;
-            if(bids.reduce){
-              bidIds = bids.reduce((ids, bid)=>{
+            if (bids.reduce) {
+              bidIds = bids.reduce((ids, bid) => {
                 ids.push(bid.requestId);
                 return ids;
-              },[]);
-            }else{
+              }, []);
+            } else {
               bidIds = [bids.requestId];
             }
             markNoBidsUsingRequestMap(bidIds);
@@ -378,11 +378,11 @@ export function newBidder(spec) {
           }
           handleResponse(bids, request);
           onResponse(bids);
-          
+
           function markNoBidsUsingRequestMap(bidResponseIds) {
-            for(var id in bidRequestMap){
-              if(!includes(bidResponseIds, id)){
-                markRequestDoneWithNoBids({bidRequest:bidRequestMap[id]});//could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
+            for (var id in bidRequestMap) {
+              if (!includes(bidResponseIds, id)) {
+                markRequestDoneWithNoBids({ bidRequest: bidRequestMap[id] });//could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
               }
             }
           }
@@ -455,7 +455,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [ width, height ] = parsedSizes[0].split('x');
+    const [width, height] = parsedSizes[0].split('x');
     bid.width = width;
     bid.height = height;
     return true;

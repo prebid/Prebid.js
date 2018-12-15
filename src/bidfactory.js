@@ -44,8 +44,8 @@ function Bid(statusCode, bidRequest) {
     return _statusCode;
   };
 
-  this.adjustCPM = function (cpm) {    
-    if(this.origCPM == null && this.cpm && this.cpm != cpm){
+  this.adjustCPM = function (cpm) {
+    if (this.origCPM == null && this.cpm && this.cpm != cpm) {
       this.origCPM = this.cpm;
     }
     this.cpm = cpm;

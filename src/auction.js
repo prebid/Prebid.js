@@ -90,7 +90,7 @@ const queuedCalls = [];
   *
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) {
+export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -132,11 +132,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     _timer = timer;
   }
 
-  function getBidRequestsByAdUnit(adUnits) { 
-    return _bidderRequests.map(bid => (bid.bids && bid.bids.filter(adUnitsFilter.bind(this, adUnits)) || [])).reduce(flatten,[]); 
+  function getBidRequestsByAdUnit(adUnits) {
+    return _bidderRequests.map(bid => (bid.bids && bid.bids.filter(adUnitsFilter.bind(this, adUnits)) || [])).reduce(flatten, []);
   }
-  function getBidResponsesByAdUnit(adUnits) { 
-    return _bidsReceived.filter(adUnitsFilter.bind(this, adUnits)); 
+  function getBidResponsesByAdUnit(adUnits) {
+    return _bidsReceived.filter(adUnitsFilter.bind(this, adUnits));
   }
 
   function executeCallback(timedOut, cleartimer) {
@@ -208,73 +208,73 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     executeCallback(false, true);
   }
 
-  function bidsBackAdUnit(auctionTimedOut){
+  function bidsBackAdUnit(auctionTimedOut) {
     const bidReq = _bidderRequests;
     const bidRes = _bidsReceived;
 
-    function normalizeResponse(response, request, bidder){
-      if(!response.cpm){
+    function normalizeResponse(response, request, bidder) {
+      if (!response.cpm) {
         response.cpm = 0;
       }
-      if(!response.timeToRespond){   
-        if(request.startTime){
-          if(!request.doneTime){
+      if (!response.timeToRespond) {
+        if (request.startTime) {
+          if (!request.doneTime) {
             request.doneTime = timestamp();
           }
-          response.timeToRespond = Math.max(0,request.doneTime - request.startTime);
-        }else if(bidder && bidder.start){
-          if(!request.doneTime){
+          response.timeToRespond = Math.max(0, request.doneTime - request.startTime);
+        } else if (bidder && bidder.start) {
+          if (!request.doneTime) {
             request.doneTime = bidder.doneTime || timestamp();
           }
-          response.timeToRespond = Math.max(0,request.doneTime - bidder.start);
+          response.timeToRespond = Math.max(0, request.doneTime - bidder.start);
           //debugger;
         }
-        
+
       }
       return response;
     }
 
-    function getResponse(request, bidder, adUnitCode, requestId){
-      if(responseMap && responseMap[adUnitCode] && responseMap[adUnitCode][requestId]){
+    function getResponse(request, bidder, adUnitCode, requestId) {
+      if (responseMap && responseMap[adUnitCode] && responseMap[adUnitCode][requestId]) {
         return responseMap[adUnitCode][requestId];
-      }else if(request && request.doneTime && request.noBids){
+      } else if (request && request.doneTime && request.noBids) {
         return normalizeResponse(bidfactory.createBid(CONSTANTS.STATUS.NO_BID, request), request, bidder);
-      }else if(bidder && bidder.doneTime && bidder.noBids){//parent of request?
-        if(bidder.bids && bidder.bids.length>0){
+      } else if (bidder && bidder.doneTime && bidder.noBids) {//parent of request?
+        if (bidder.bids && bidder.bids.length > 0) {
           return normalizeResponse(bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidder.bids[0]), bidder.bids[0], bidder);
-        }else{
+        } else {
           debugger;
         }
-      }else if(auctionTimedOut){
+      } else if (auctionTimedOut) {
         //debugger;
         return normalizeResponse(bidfactory.createBid(CONSTANTS.STATUS.TIMEOUT, request), request, bidder);
       }
-      utils.logInfo('could not resolve response for: '+bidder.bidderCode+' timeout: '+auctionTimedOut, bidRes, responseMap, request, bidder, adUnitCode, requestId)
+      utils.logInfo('could not resolve response for: ' + bidder.bidderCode + ' timeout: ' + auctionTimedOut, bidRes, responseMap, request, bidder, adUnitCode, requestId)
       //debugger;
     }
 
-    const responseMap = bidRes.reduce((placements, bid) =>{
-      if(!placements[bid.adUnitCode]){
+    const responseMap = bidRes.reduce((placements, bid) => {
+      if (!placements[bid.adUnitCode]) {
         placements[bid.adUnitCode] = {}
       }
-      if(!placements[bid.adUnitCode][bid.requestId]){
+      if (!placements[bid.adUnitCode][bid.requestId]) {
         placements[bid.adUnitCode][bid.requestId] = bid;
       }
       return placements;
     }, {});
 
     const requestMap = bidReq.reduce((placements, bidder) => {
-      if(bidder.bids && bidder.bids.length){
-        bidder.bids.reduce((placements,bid) =>{
-          if(!placements[bid.adUnitCode]){
-            placements[bid.adUnitCode] = {bids:{}}
+      if (bidder.bids && bidder.bids.length) {
+        bidder.bids.reduce((placements, bid) => {
+          if (!placements[bid.adUnitCode]) {
+            placements[bid.adUnitCode] = { bids: {} }
           }
-          if(!placements[bid.adUnitCode].bids[bid.bidId]){
+          if (!placements[bid.adUnitCode].bids[bid.bidId]) {
             placements[bid.adUnitCode].bids[bid.bidId] = {
               request: bid,
               response: getResponse(bid, bidder, bid.adUnitCode, bid.bidId)
             }
-          }else{
+          } else {
             debugger;
             //something went wrong, shouldn't have duplicate id's
           }
@@ -282,39 +282,39 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         }, placements);
       }
       return placements;
-    },{});
+    }, {});
 
     logMessage("made this requestMap: ", requestMap);
 
-    (function processRequestMap(map){
+    (function processRequestMap(map) {
       let updateMap = {};
-      for(let adUnit in map){
+      for (let adUnit in map) {
         let requests = 0;
         let respones = [];
-        for(let requestId in map[adUnit].bids){
+        for (let requestId in map[adUnit].bids) {
           requests++;
-          if(map[adUnit].bids[requestId].response){
+          if (map[adUnit].bids[requestId].response) {
             respones.push(map[adUnit].bids[requestId].response);
           }
-          if(auctionTimedOut){
-            if(!map[adUnit].bids[requestId].response){
+          if (auctionTimedOut) {
+            if (!map[adUnit].bids[requestId].response) {
               debugger;
             }
           }
         }
-        if(requests == respones.length){
-          updateMap[adUnit] = {bids:respones};
-          if(!_adUnitsDone[adUnit]){
-            logMessage("adunit IS ready: "+adUnit+" "+requests+"/"+respones.length+" "+(timestamp() - _auctionStart)+'ms');
+        if (requests == respones.length) {
+          updateMap[adUnit] = { bids: respones };
+          if (!_adUnitsDone[adUnit]) {
+            logMessage("adunit IS ready: " + adUnit + " " + requests + "/" + respones.length + " " + (timestamp() - _auctionStart) + 'ms');
             events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, updateMap, [adUnit]);
-          }else if(_adUnitsDone[adUnit] && _adUnitsDone[adUnit]!=respones.length){
+          } else if (_adUnitsDone[adUnit] && _adUnitsDone[adUnit] != respones.length) {
             debugger;
             events.emit(CONSTANTS.EVENTS.AD_UNIT_UPDATED, updateMap, [adUnit]);
           }
           _adUnitsDone[adUnit] = respones.length;
-        }else{
-          logMessage("adunit not ready: "+adUnit+" "+requests+"/"+respones.length+" "+(timestamp() - _auctionStart)+'ms');
-        }        
+        } else {
+          logMessage("adunit not ready: " + adUnit + " " + requests + "/" + respones.length + " " + (timestamp() - _auctionStart) + 'ms');
+        }
 
       }
     })(requestMap);
@@ -572,13 +572,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
-    getBidRequestsByAdUnit: getBidRequestsByAdUnit, 
+    getBidRequestsByAdUnit: getBidRequestsByAdUnit,
     getBidResponsesByAdUnit: getBidResponsesByAdUnit,
     bidsBackAdUnit: bidsBackAdUnit,
   }
 }
 
-export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
+export const addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
   this.auctionAddBidResponse(adUnitCode, bid);
 }, 'addBidResponse');
 
@@ -603,13 +603,13 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
     let auctionId = auctionInstance.getAuctionId();
 
     let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
-    let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
+    let bidResponse = getPreparedBidForAuction({ adUnitCode, bid, bidRequest, auctionId });
 
     if (bidResponse.mediaType === 'video') {
       tryAddVideoBid(auctionInstance, bidResponse, bidRequest, afterBidAdded);
     } else {
       addBidToAuction(auctionInstance, bidResponse);
-      afterBidAdded();      
+      afterBidAdded();
     }
   }
 
@@ -622,7 +622,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
   let lastCall = null;
   let onRespTimeoutId = null;
-  function onResponseDone(){
+  function onResponseDone() {
     lastCall = timestamp();
     clearTimeout(onRespTimeoutId);
     onRespTimeoutId = null;
@@ -630,11 +630,11 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
 
-  
+
   return {
     addBidResponse,
     adapterDone,
-    onResponseDone:function(){
+    onResponseDone: function () {
       return onResponseDone();
       //debouncing
       //not worth it for now
@@ -665,7 +665,7 @@ function addBidToAuction(auctionInstance, bidResponse, last) {
   auctionInstance.addBidReceived(bidResponse);
 
   doCallbacksIfTimedout(auctionInstance, bidResponse, last);
-  
+
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -722,7 +722,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
-function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
+function getPreparedBidForAuction({ adUnitCode, bid, bidRequest, auctionId }) {
   const start = bidRequest.start;
 
   let bidObject = Object.assign({}, bid, {
@@ -895,7 +895,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
+        key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||

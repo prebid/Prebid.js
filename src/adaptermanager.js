@@ -34,7 +34,7 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
+function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     let {
       active,
@@ -112,8 +112,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
-  let adUnitsCopy = utils.deepClone(adUnits,(obj, result, key, clone) =>{
-    if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
+  let adUnitsCopy = utils.deepClone(adUnits, (obj, result, key, clone) => {
+    if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
       result[key] = obj[key];
       return true;
     }
@@ -138,8 +138,8 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
-  let adUnitsClientCopy = utils.deepClone(adUnits,(obj, result, key, clone) =>{
-    if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
+  let adUnitsClientCopy = utils.deepClone(adUnits, (obj, result, key, clone) => {
+    if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
       result[key] = obj[key];
       return true;
     }
@@ -162,15 +162,15 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 exports.gdprDataHandler = {
   consentData: null,
-  setConsentData: function(consentInfo) {
+  setConsentData: function (consentInfo) {
     this.consentData = consentInfo;
   },
-  getConsentData: function() {
+  getConsentData: function () {
     return this.consentData;
   }
 };
 
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+exports.makeBidRequests = function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
   adUnits = exports.checkBidRequestSizes(adUnits);
@@ -207,13 +207,15 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy,(obj, result, key, clone) =>{
-          if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
-            result[key] = obj[key];
-            return true;
-          }
-          return false;//normal clone
-        }), labels, src: CONSTANTS.S2S.SRC}),
+        bids: getBids({
+          bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy, (obj, result, key, clone) => {
+            if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
+              result[key] = obj[key];
+              return true;
+            }
+            return false;//normal clone
+          }), labels, src: CONSTANTS.S2S.SRC
+        }),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
@@ -248,13 +250,15 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy,(obj, result, key, clone) =>{
-        if(key[0] == '_'){//props prefixed an underscore, will not be cloned!
-          result[key] = obj[key];
-          return true;
-        }
-        return false;//normal clone
-      }), labels, src: 'client'}),
+      bids: getBids({
+        bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy, (obj, result, key, clone) => {
+          if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
+            result[key] = obj[key];
+            return true;
+          }
+          return false;//normal clone
+        }), labels, src: 'client'
+      }),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -360,7 +364,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
 
     if (s2sAdapter) {
-      let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
+      let s2sBidRequest = { tid, 'ad_units': adUnitsS2SCopy };
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
           bidRequest.start = timestamp();
@@ -432,7 +436,7 @@ function getSupportedMediaTypes(bidderCode) {
 
 exports.videoAdapters = []; // added by adapterLoader for now
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
+exports.registerBidAdapter = function (bidAdaptor, bidderCode, { supportedMediaTypes = [] } = {}) {
   if (bidAdaptor && bidderCode) {
     if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
@@ -492,7 +496,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({adapter, code}) {
+exports.registerAnalyticsAdapter = function ({ adapter, code }) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
@@ -522,7 +526,7 @@ exports.enableAnalytics = function (config) {
   });
 };
 
-exports.getBidAdapter = function(bidder) {
+exports.getBidAdapter = function (bidder) {
   return _bidderRegistry[bidder];
 };
 
@@ -545,7 +549,7 @@ function tryCallBidderMethod(bidder, method, param) {
   }
 }
 
-exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
+exports.callTimedOutBidders = function (adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = timedOutBidders.map((timedOutBidder) => {
     // Adding user configured params & timeout to timeout event data
     timedOutBidder.params = utils.getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
@@ -559,12 +563,12 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid, adUnits) {
+exports.callBidWonBidder = function (bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
-exports.callSetTargetingBidder = function(bidder, bid) {
+exports.callSetTargetingBidder = function (bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
 };

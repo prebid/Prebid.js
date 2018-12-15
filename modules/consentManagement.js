@@ -52,30 +52,30 @@ function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
 function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
     const cmpResponse = {};
-    
+
 
     function afterEach() {
-      utils.logInfo(`CMP framework completecheck: `,!!(cmpResponse.getConsentData && cmpResponse.getVendorConsents));
+      utils.logInfo(`CMP framework completecheck: `, !!(cmpResponse.getConsentData && cmpResponse.getVendorConsents));
       if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
         cmpSuccess(cmpResponse, hookConfig);
       }
     }
 
     return {
-      consentDataCallback: function(consentResponse) {
-        utils.logInfo(`CMP framework received consentCallback: `,consentResponse);
+      consentDataCallback: function (consentResponse) {
+        utils.logInfo(`CMP framework received consentCallback: `, consentResponse);
         cmpResponse.getConsentData = consentResponse;
         afterEach();
       },
-      vendorConsentsCallback: function(consentResponse) {
-        utils.logInfo(`CMP framework received vendorCallback: `,consentResponse);
+      vendorConsentsCallback: function (consentResponse) {
+        utils.logInfo(`CMP framework received vendorCallback: `, consentResponse);
         cmpResponse.getVendorConsents = consentResponse;
         afterEach();
       },
-      hasConsentData:function(){
+      hasConsentData: function () {
         return !!cmpResponse.getConsentData;
       },
-      hasVendorConsentData:function(){
+      hasVendorConsentData: function () {
         return !!cmpResponse.getVendorConsents;
       }
     }
@@ -96,25 +96,25 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
   try {
     cmpFunction = window.__cmp || utils.getWindowTop().__cmp;
-  } catch (e) {}
+  } catch (e) { }
 
-  if (utils.isFn(cmpFunction)) {       
-    let tryDelegate = function(){
+  if (utils.isFn(cmpFunction)) {
+    let tryDelegate = function () {
       let didCall = false;
-      if(!callbackHandler.hasConsentData()) {
+      if (!callbackHandler.hasConsentData()) {
         cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
         didCall = true;
       }
-      if(!callbackHandler.hasVendorConsentData()) {
+      if (!callbackHandler.hasVendorConsentData()) {
         cmpFunction('getVendorConsents', null, callbackHandler.vendorConsentsCallback);
         didCall = true;
       }
-      utils.logInfo(`CMP framework calling directly for consent data didCalls: `+didCall +' hookConfig.exit: '+hookConfig.haveExited);      
-      if(didCall && !hookConfig.haveExited){
-        setTimeout(tryDelegate,40);
+      utils.logInfo(`CMP framework calling directly for consent data didCalls: ` + didCall + ' hookConfig.exit: ' + hookConfig.haveExited);
+      if (didCall && !hookConfig.haveExited) {
+        setTimeout(tryDelegate, 40);
       }
     }
-    tryDelegate();    
+    tryDelegate();
   } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
     callCmpWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', callbackHandler.vendorConsentsCallback);
@@ -125,7 +125,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     while (!cmpFrame) {
       try {
         if (f.frames['__cmpLocator']) cmpFrame = f;
-      } catch (e) {}
+      } catch (e) { }
       if (f === window.top) break;
       f = f.parent;
     }
@@ -168,13 +168,15 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     //TODO: improve lookup by first walking the parent tree, to see if a friendly __cmp exists before checking for the __cmpLocator
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window.__cmp = function(cmd, arg, callback) {
+    window.__cmp = function (cmd, arg, callback) {
       let callId = Math.random() + '';
-      let msg = {__cmpCall: {
-        command: cmd,
-        parameter: arg,
-        callId: callId
-      }};
+      let msg = {
+        __cmpCall: {
+          command: cmd,
+          parameter: arg,
+          callId: callId
+        }
+      };
       cmpCallbacks[callId] = callback;
       cmpFrame.postMessage(msg, '*');
     }
@@ -339,7 +341,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
-      events.emit(CONSTANTS.EVENTS.CMP_FAILED, {errMsg:errMsg});
+      events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg });
       if (allowAuction) {
         utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
         nextFn.apply(context, args);
@@ -402,7 +404,7 @@ export function setConfig(config) {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
-  if(!addedConsentHook){
+  if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
   }
   addedConsentHook = true;

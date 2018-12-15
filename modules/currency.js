@@ -134,7 +134,7 @@ function resetCurrency() {
 }
 
 export function addBidResponseHook(adUnitCode, bid, fn) {
-  if(arguments.length >= 4 && utils.isBoolean(arguments[2])){
+  if (arguments.length >= 4 && utils.isBoolean(arguments[2])) {
     fn = arguments[3];
   }
   if (!bid) {
@@ -161,7 +161,7 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
   let cpm = bid.cpm;
 
   // used for analytics
-  bid.getCpmInNewCurrency = function(toCurrency) {
+  bid.getCpmInNewCurrency = function (toCurrency) {
     return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
   };
 
@@ -183,7 +183,7 @@ function processBidResponseQueue() {
 }
 
 function wrapFunction(fn, context, params) {
-  return function() {
+  return function () {
     let bid = params[1];
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
       let fromCurrency = bid.currency;

@@ -221,7 +221,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 /**
  * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
-exports.getTopWindowLocation = function() {
+exports.getTopWindowLocation = function () {
   if (exports.inIframe()) {
     let loc;
     try {
@@ -229,7 +229,7 @@ exports.getTopWindowLocation = function() {
     } catch (e) {
       logInfo('could not obtain top window location', e);
     }
-    if (loc) return parse(loc, {'decodeSearchAsString': true});
+    if (loc) return parse(loc, { 'decodeSearchAsString': true });
   }
   return exports.getWindowLocation();
 };
@@ -294,7 +294,7 @@ exports.getTopWindowUrl = function () {
 /**
  * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
-exports.getTopWindowReferrer = function() {
+exports.getTopWindowReferrer = function () {
   try {
     return window.top.document.referrer;
   } catch (e) {
@@ -450,15 +450,15 @@ exports.isArray = function (object) {
   return exports.isA(object, tArr);
 };
 
-exports.isNumber = function(object) {
+exports.isNumber = function (object) {
   return exports.isA(object, tNumb);
 };
 
-exports.isPlainObject = function(object) {
+exports.isPlainObject = function (object) {
   return exports.isA(object, tObject);
 };
 
-exports.isBoolean = function(object) {
+exports.isBoolean = function (object) {
   return exports.isA(object, tBoolean);
 };
 
@@ -486,7 +486,7 @@ exports.isEmpty = function (object) {
  * @param str string to test
  * @returns {boolean} if string is empty
  */
-exports.isEmptyStr = function(str) {
+exports.isEmptyStr = function (str) {
   return exports.isStr(str) && (!str || str.length === 0);
 };
 
@@ -566,23 +566,23 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-exports.insertElement = function(elm, doc, target) {
+exports.insertElement = function (elm, doc, target) {
   doc = doc || document;
   let elToAppend;
-  if(doc.getElementsByTagName){//in case an mocked document is passed without getElementsByTagName
+  if (doc.getElementsByTagName) {//in case an mocked document is passed without getElementsByTagName
     if (target) {
       elToAppend = doc.getElementsByTagName(target);
     } else {
       elToAppend = doc.getElementsByTagName('head');
     }
     try {
-	    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-	    if (elToAppend.length) {
-	      elToAppend = elToAppend[0];
-	      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
-	      return elToAppend.insertBefore(elm, refChild);
-	    }
-	 } catch (e) {}
+      elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
+      if (elToAppend.length) {
+        elToAppend = elToAppend[0];
+        const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
+        return elToAppend.insertBefore(elm, refChild);
+      }
+    } catch (e) { }
   }
 };
 
@@ -591,7 +591,7 @@ exports.triggerPixel = function (url) {
   img.src = url;
 };
 
-exports.callBurl = function({ source, burl }) {
+exports.callBurl = function ({ source, burl }) {
   if (source === CONSTANTS.S2S.SRC && burl) {
     exports.triggerPixel(burl);
   }
@@ -602,7 +602,7 @@ exports.callBurl = function({ source, burl }) {
  * (though could be for other purposes)
  * @param {string} htmlCode snippet of HTML code used for tracking purposes
  */
-exports.insertHtmlIntoIframe = function(htmlCode) {
+exports.insertHtmlIntoIframe = function (htmlCode) {
   if (!htmlCode) {
     return;
   }
@@ -634,7 +634,7 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertUserSyncIframe = function(url) {
+exports.insertUserSyncIframe = function (url) {
   let iframeHtml = exports.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
@@ -713,7 +713,7 @@ exports.getIframeDocument = function (iframe) {
   return doc;
 };
 
-exports.getValueString = function(param, val, defaultValue) {
+exports.getValueString = function (param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
@@ -902,7 +902,7 @@ export function delayExecution(func, numRequiredCalls) {
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */
 export function groupBy(xs, key) {
-  return xs.reduce(function(rv, x) {
+  return xs.reduce(function (rv, x) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
@@ -1050,7 +1050,7 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -1128,7 +1128,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
         return;
       } // unsuported types - don't send a key
     }
-    arrs.push({key: k, value: v});
+    arrs.push({ key: k, value: v });
   });
 
   return arrs;
