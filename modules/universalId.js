@@ -30,11 +30,12 @@ import {config} from 'src/config';
 
 /**
  * @typedef {Object} IdSubmodule
- * @property {string} configKey
- * @property {number} expires
- * @property {?overrideId} overrideId
- * @property {decode} decode
- * @property {getId} getId
+ * @property {string} configKey - property name within the config universal id object
+ * @property {number} expires - cookie expires time
+ * @property {?overrideId} overrideId - optional method, if defined function will be called before trying to load cookie/local storage value.
+ * note: if function returns an object, it replaces using a stored value and the result will be passed to bid requests
+ * @property {decode} decode - decode a stored value for passing to bid requests
+ * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
  */
 
 /**
@@ -49,14 +50,15 @@ const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
- * ID data for appending to bid requests from the requestBidHook
- * @type {{addData}}
+ * id data to be added to bid requests
+ * @type {{addData: function, getData: function}}
  */
 export const extendedBidRequestData = (function () {
   // @type {Object[]}
   const dataItems = [];
   return {
     addData: function (data) {
+      // activate requestBids hook when adding first item, this prevents unnecessary processing
       if (dataItems.length === 0) {
         $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
       }
