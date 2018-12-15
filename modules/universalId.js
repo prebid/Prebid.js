@@ -71,10 +71,9 @@ export const extendedBidRequestData = (function () {
 /**
  * @type {IdSubmodule[]}
  */
-const submodules = [
-  {
+const submodules = [{
     configKey: 'pubCommonId',
-    expires: 2628000,
+    expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
     overrideId: function() {
       if (typeof window['pubCommonId'] === 'object') {
         // If the page includes its own pubcid object, then use that instead.
@@ -85,17 +84,14 @@ const submodules = [
     },
     decode: function(idData) {
       return {
-        'ext.pubcommonid': idData
+        crumbs: idData
       }
     },
     getId: function(data, callback) {
-      if (data.params.url) {
-        ajax(data.params.url, function(response) {
-          callback(response)
-        })
-      } else {
-        // log error, missing required param
-      }
+      const response = {
+        data: utils.generateUUID()
+      };
+      callback(response);
     }
   }, {
     configKey: 'openId',
@@ -106,6 +102,7 @@ const submodules = [
       }
     },
     getId: function(url, syncDelay, callback) {
+
     }
   }];
 
@@ -270,9 +267,11 @@ export function initSubmodules (config, submodules, navigator, document) {
     // check if submodule has an override id method, this takes precedence over loading from local storage
     if (typeof submodule.overrideId === 'function') {
       const overrideResult = submodule.overrideId();
-      // skip, override returned a valid result
+      // skip, override returned a valid result, pass value to bidAdapters
+      // TODO: check if overrideResult will need to be decoded using the submodule interface.
       if (overrideResult) {
         carry.push('submodule override result is valid, skip processing config');
+        extendedBidRequestData.addData(overrideResult);
         return carry;
       }
     }
@@ -298,10 +297,8 @@ export function initSubmodules (config, submodules, navigator, document) {
       }
 
       if (storageValue) {
-        // TODO: review impact on event loop from try/catch around cookie/localStorage access
-        // 1. if no large impact, ignore using setTimer
-        // 2. else surround with setTimeout
-
+        // TODO: review impact on event loop from try/catch around cookie/localStorage access,
+        //  if no large impact leave as is, else wrap with setTimeout using syncDelay value
         // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
