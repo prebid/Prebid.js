@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess, delayExecution, getBidRequest, groupBy, logMessage } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess, delayExecution, getBidRequest, logMessage } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -287,7 +287,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     logMessage("made this requestMap: ", requestMap);
 
     (function processRequestMap(map){
-      let updateMap = {},i=0;
+      let updateMap = {};
       for(let adUnit in map){
         let requests = 0;
         let respones = [];
@@ -320,7 +320,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     })(requestMap);
 
   }
-  function bidsBackAdUnitOld(timedOutBidders){
+  /*function bidsBackAdUnitOld(timedOutBidders){
     //debugger;
     const bidReq = _bidderRequests;
     const bidRes = _bidsReceived;
@@ -348,7 +348,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
         bidder.bids.reduce((placements,bid) =>{
           /*if(_adUnitsDone[bid.adUnitCode]){
             return placements;//this placement has been flagged as done earlier..it's possible bids arrived late in thise case. TODO: deal with late arrivals
-          }*/
+          }* /
           if(!placements[bid.adUnitCode]){
             placements[bid.adUnitCode] = {
               requests:0,
@@ -431,8 +431,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       .reduce(groupByPlacement, {});
       bidsRespObj[bidResponse.adUnitCode] = {bids: bidsResps};
       events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, [bidsRespObj], [bidResponse.adUnitCode]);
-    }*/
-  }
+    }* /
+  }*/
 
   /**
    * Execute bidBackHandler if all bidders have called done.
