@@ -265,14 +265,14 @@ export function requestBidHook (config, next) {
 
 /**
  * init submodules if config values are set correctly
- * @param {PrebidConfig} config
+ * @param submoduleConfigs
+ * @param syncDelay
  * @param {IdSubmodule[]} submodules
  * @param {Navigator} navigator
  * @param {Document} document
  * @returns {Array} - returns list of enabled submodules
  */
-export function initSubmodules (config, submodules, navigator, document) {
-  const submoduleConfigs = config.getConfig('usersync.universalIds');
+export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document) {
   // valid if at least one configuration is valid
   if (!validateConfig(submoduleConfigs, submodules)) {
     utils.logInfo('Failed to validate configuration for Universal ID module');
@@ -287,7 +287,6 @@ export function initSubmodules (config, submodules, navigator, document) {
     const submoduleConfig = find(submoduleConfigs, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
-    const syncDelay = config.getConfig('usersync.syncDelay') || 0;
 
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
@@ -351,5 +350,5 @@ export function initSubmodules (config, submodules, navigator, document) {
   }, []);
 }
 
-const enabledModules = initSubmodules(config, submodules, window.navigator, window.document);
+const enabledModules = initSubmodules(config.getConfig('usersync.universalIds'), config.getConfig('usersync.syncDelay') || 0, submodules, window.navigator, window.document);
 console.log('Universal ID Module Init: ', enabledModules);
