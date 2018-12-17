@@ -184,7 +184,15 @@ describe('AppNexusAdapter', function () {
             cta: {required: false},
             rating: {required: true},
             sponsoredBy: {required: true},
-            privacyLink: {required: true}
+            privacyLink: {required: true},
+            clickLabel: {required: true},
+            address: {required: true},
+            downloads: {required: true},
+            likes: {required: true},
+            phone: {required: true},
+            price: {required: true},
+            sale: {required: true},
+            video: {required: true}
           }
         }
       );
@@ -200,7 +208,15 @@ describe('AppNexusAdapter', function () {
         ctatext: {required: false},
         rating: {required: true},
         sponsored_by: {required: true},
-        privacy_link: {required: true}
+        privacy_link: {required: true},
+        displayurl: {required: true},
+        address: {required: true},
+        downloads: {required: true},
+        likes: {required: true},
+        phone: {required: true},
+        price: {required: true},
+        saleprice: {required: true},
+        video: {required: true}
       });
     });
 
@@ -536,6 +552,7 @@ describe('AppNexusAdapter', function () {
       response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
         'desc': 'Cool description great stuff',
+        'desc2': 'Additional body text',
         'ctatext': 'Do it',
         'sponsored': 'AppNexus',
         'icon': {
@@ -554,6 +571,18 @@ describe('AppNexusAdapter', function () {
           'click_trackers': ['http://nym1-ib.adnxs.com/click']
         },
         'impression_trackers': ['http://example.com'],
+        'rating': '5',
+        'displayurl': 'http://AppNexus.com/?url=display_url',
+        'likes': '38908320',
+        'downloads': '874983',
+        'price': '9.99',
+        'saleprice': 'FREE',
+        'phone': '1234567890',
+        'address': '28 W 23rd St, New York, NY 10010',
+        'video': {
+          'content': '<!-- VAST Creative -->'
+        },
+        'privacy_link': 'http://appnexus.com/?url=privacy_url'
       };
       let bidderRequest = {
         bids: [{
