@@ -11,7 +11,7 @@
   <head>
       <script>
         var PREBID_TIMEOUT = 3300;
-  
+
         var adUnits = [{
           code: 'div-gpt-ad-1460505748561-0',
           mediaTypes: {
@@ -21,7 +21,7 @@
           },
 
           // Replace this object to test a new Adapter!
-          bids: [{
+          bids: [
               {
                   bidder: "trustx",
                   params: {
@@ -34,7 +34,14 @@
                   params: {
                       placementId: 1053688
                   }
-              }
+              },
+              {
+                  bidder: 'pubmatic',
+                  params: {
+                      publisherId: '156209',
+                      adSlot: 'pubmatic_test2@300x250'
+                  },
+              },
           ]
         }];
   
