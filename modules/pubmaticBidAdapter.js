@@ -144,6 +144,14 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
     data: {
       type: 1
     }
+  },
+  {
+    id: NATIVE_ASSET_ID.TITLE,
+    required: true,
+  },
+  {
+    id: NATIVE_ASSET_ID.IMAGE,
+    required: true,
   }
 ]
 
@@ -155,6 +163,7 @@ const dealChannelValues = {
 };
 
 let publisherId = 0;
+let isInvalidNativeRequest = false;
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -331,12 +340,12 @@ function _createNativeRequest(params) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
         switch (key) {
           case NATIVE_ASSET_KEY.TITLE:
-            if (params[key].length) {
+            if (params[key].len || params[key].length) {
               assetObj = {
                 id: NATIVE_ASSET_ID.TITLE,
                 required: params[key].required ? 1 : 0,
                 title: {
-                  len: params[key].length,
+                  len: params[key].len || params[key].length,
                   ext: params[key].ext
                 }
               };
@@ -527,7 +536,7 @@ function _createNativeRequest(params) {
   };
 
   // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
-  // if any of these are missing from the request then it will be added to the request
+  // if any of these are missing from the request then request will not be sent
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
     var isRequiredAssetPresent = false;
     var lengthOfExistingAssets = nativeRequestObject.assets.length;
@@ -538,7 +547,8 @@ function _createNativeRequest(params) {
       }
     }
     if (!isRequiredAssetPresent) {
-      nativeRequestObject.assets.push(ele);
+      // nativeRequestObject.assets.push(ele);
+      isInvalidNativeRequest = true;
     }
   });
   return nativeRequestObject;
@@ -858,7 +868,13 @@ export const spec = {
 
     _handleEids(payload);
 
-    // TODO : Make ENDPOINT NULL and Log Proper message in case of native invalid request
+    //   Make ENDPOINT NULL and Log Proper message in case of native invalid request
+    if (isInvalidNativeRequest) {
+      utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params.');
+      return {
+        data: JSON.stringify(payload)
+      };
+    }
 
     return {
       method: 'POST',
