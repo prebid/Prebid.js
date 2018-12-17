@@ -350,5 +350,13 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
   }, []);
 }
 
-const enabledModules = initSubmodules(config.getConfig('usersync.universalIds'), config.getConfig('usersync.syncDelay') || 0, submodules, window.navigator, window.document);
-console.log('Universal ID Module Init: ', enabledModules);
+function init() {
+  const usersync = config.getConfig('usersync');
+  if (usersync) {
+    const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, submodules, window.navigator, window.document);
+    console.log('Universal ID Module initialized submodules: ', enabledModules);
+  } else {
+    console.log('Universal ID Module not initialized: config usersync not defined');
+  }
+}
+init();
