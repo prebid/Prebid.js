@@ -46,7 +46,7 @@ export const spec = {
     let account = this.getAccount(validBidRequests);
     let targets = validBidRequests.map(bid => bid.params.data).reduce(this.mergeTargets, {});
     let gdprParams = (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? [ 'xt' + bidderRequest.gdprConsent.consentString ] : [];
-    let targetsParams = Object.entries(targets).map(param => param[0] + param[1].join(';'));
+    let targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     let slotsParams = validBidRequests.map(bid => 'sl' + this.bidToSlotName(bid));
     let params = [...slotsParams, ...targetsParams, ...gdprParams].map(s => '/' + s).join('');
     let cacheBuster = '?t=' + new Date().getTime();
