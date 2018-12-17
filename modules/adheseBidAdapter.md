@@ -6,11 +6,9 @@ Module Type: Bidder Adapter
 Maintainer: info@adhese.com 
 ```
 
-//TODO:
-
 # Description
 
-Module that connects to Example's demand sources
+Module that connects with Adhese Adserver and Adhese Gateway. Banner and Video are supported.
 
 # Test Parameters
 ```
