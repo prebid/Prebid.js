@@ -170,44 +170,52 @@ describe('Universal ID', function () {
 
     it('return true if config defines configurations for both submodules', function() {
       expect(validateConfig({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'openId'
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId'
+            }, {
+              name: 'openId'
+            }];
+          }
         }
       }, submodules)).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
       expect(validateConfig({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'foo'
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId'
+            }, {
+              name: 'foo'
+            }];
+          }
         }
       }, submodules)).to.equal(true);
     });
 
     it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
       expect(validateConfig({
-        getConfig: function () {
-          return [{
-            name: 'foo'
-          }, {
-            name: 'bar'
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'foo'
+            }, {
+              name: 'bar'
+            }];
+          }
         }
       }, submodules)).to.equal(false);
     });
 
     it('return false if config does not define a configuration for any submodule', function() {
       expect(validateConfig({
-        getConfig: function () {
-          return [];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [];
+          }
         }
       }, submodules)).to.equal(false);
     });
@@ -218,8 +226,8 @@ describe('Universal ID', function () {
       configKey: 'pubCommonId',
       expires: Number.MAX_VALUE,
       overrideId: function() {
-        if (typeof window['pubCommonId'] === 'object') {
-          return 'window.pubCommonId.getId is valid';
+        if (typeof window['pubCommonId'] === 'object' && typeof window['pubCommonId'].getId === 'function') {
+          return window['pubCommonId'].getId();
         }
       },
       decode: function(value) {
@@ -251,12 +259,14 @@ describe('Universal ID', function () {
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
       expect(initSubmodules({
-        getConfig: function () {
-          return [{
-            name: 'foo'
-          }, {
-            name: 'bar'
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'foo'
+            }, {
+              name: 'bar'
+            }];
+          }
         }
       }, submodules, {
         cookieEnabled: false
@@ -271,14 +281,16 @@ describe('Universal ID', function () {
 
     it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
       expect(initSubmodules({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId',
-            value: {}
-          }, {
-            name: 'openId',
-            value: {}
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId',
+              value: {}
+            }, {
+              name: 'openId',
+              value: {}
+            }];
+          }
         }
       }, submodules, {
         cookieEnabled: false
@@ -293,14 +305,16 @@ describe('Universal ID', function () {
 
     it('returns array with both submodules enabled, if storage is enabled and both submodule configs contain valid configs', function() {
       expect(initSubmodules({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId',
-            value: {}
-          }, {
-            name: 'openId',
-            value: {}
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId',
+              value: {}
+            }, {
+              name: 'openId',
+              value: {}
+            }];
+          }
         }
       }, submodules, {
         cookieEnabled: true
@@ -322,15 +336,25 @@ describe('Universal ID', function () {
 
     it('returns array with one submodule enabled (pubCommonId), if a configKey exists and the overrideId returns a valid result', function() {
       // Create the window object that the overrideId method will check for, this should allow the test to pass
-      window.pubCommonId = {};
+      window.pubCommonId = {
+        getId: function() {
+          return {
+            pubcid: {
+              foo: 'bar'
+            }
+          }
+        }
+      };
 
       expect(initSubmodules({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId'
-          }, {
-            name: 'openId'
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId'
+            }, {
+              name: 'openId'
+            }];
+          }
         }
       }, submodules, {
         cookieEnabled: false
@@ -348,20 +372,22 @@ describe('Universal ID', function () {
 
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
       expect(initSubmodules({
-        getConfig: function () {
-          return [{
-            name: 'pubCommonId',
-            storage: {
-              type: 'cookie',
-              name: 'pubcid'
-            }
-          }, {
-            name: 'openId',
-            storage: {
-              type: 'html5',
-              name: 'openid'
-            }
-          }];
+        getConfig: function (key) {
+          if (key === 'usersync.universalIds') {
+            return [{
+              name: 'pubCommonId',
+              storage: {
+                type: 'cookie',
+                name: 'pubcid'
+              }
+            }, {
+              name: 'openId',
+              storage: {
+                type: 'html5',
+                name: 'openid'
+              }
+            }];
+          }
         }
       }, submodules, {
         cookieEnabled: true

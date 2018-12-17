@@ -109,18 +109,16 @@ const submodules = [{
     const url = data.params.url;
     if (typeof partner === 'string' && typeof url === 'string') {
       ajax(url, response => {
-          try {
-            callback(response);
-          } catch (e) {
-            utils.logError(e);
-            callback(undefined);
-          }
-        },
-        JSON.stringify({ partner: partner }),
-        {
-          contentType: 'text/json',
-          withCredentials: true
-        });
+        try {
+          callback(response);
+        } catch (e) {
+          utils.logError(e);
+          callback(undefined);
+        }
+      }, JSON.stringify({ partner: partner }), {
+        contentType: 'text/json',
+        withCredentials: true
+      });
     } else {
       utils.logError('Invalid configuration set for the UniversalId openId sub-module: endpoint =', url, ' partner =', partner);
       callback(undefined);
@@ -300,7 +298,7 @@ export function initSubmodules (config, submodules, navigator, document) {
     }
 
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
-      //  submodule just passes a value set in config
+      // submodule just passes a value set in config
       carry.push('found value config, add directly to bidAdapters');
       // add obj to list to pass to adapters
       extendedBidRequestData.addData(submoduleConfig.value);
