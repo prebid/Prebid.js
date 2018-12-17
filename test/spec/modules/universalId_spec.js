@@ -232,17 +232,11 @@ describe('Universal ID', function () {
     }];
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
-      expect(initSubmodules({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'foo'
-            }, {
-              name: 'bar'
-            }];
-          }
-        }
-      }, submodules, {
+      expect(initSubmodules([{
+        name: 'foo'
+      }, {
+        name: 'bar'
+      }], 0, submodules, {
         cookieEnabled: false
       }, {
         localStorage: undefined,
@@ -254,19 +248,13 @@ describe('Universal ID', function () {
     });
 
     it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
-      expect(initSubmodules({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId',
-              value: {}
-            }, {
-              name: 'openId',
-              value: {}
-            }];
-          }
-        }
-      }, submodules, {
+      expect(initSubmodules([{
+        name: 'pubCommonId',
+        value: {}
+      }, {
+        name: 'openId',
+        value: {}
+      }], 0, submodules, {
         cookieEnabled: false
       }, {
         localStorage: undefined,
@@ -278,19 +266,13 @@ describe('Universal ID', function () {
     });
 
     it('returns array with both submodules enabled, if storage is enabled and both submodule configs contain valid configs', function() {
-      expect(initSubmodules({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId',
-              value: {}
-            }, {
-              name: 'openId',
-              value: {}
-            }];
-          }
-        }
-      }, submodules, {
+      expect(initSubmodules([{
+        name: 'pubCommonId',
+        value: {}
+      }, {
+        name: 'openId',
+        value: {}
+      }], 0, submodules, {
         cookieEnabled: true
       }, {
         localStorage: {
@@ -320,17 +302,11 @@ describe('Universal ID', function () {
         }
       };
 
-      expect(initSubmodules({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId'
-            }, {
-              name: 'openId'
-            }];
-          }
-        }
-      }, submodules, {
+      expect(initSubmodules([{
+        name: 'pubCommonId'
+      }, {
+        name: 'openId'
+      }], 0, submodules, {
         cookieEnabled: false
       }, {
         localStorage: undefined,
@@ -345,25 +321,19 @@ describe('Universal ID', function () {
     });
 
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
-      expect(initSubmodules({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId',
-              storage: {
-                type: 'cookie',
-                name: 'pubcid'
-              }
-            }, {
-              name: 'openId',
-              storage: {
-                type: 'html5',
-                name: 'openid'
-              }
-            }];
-          }
+      expect(initSubmodules([{
+        name: 'pubCommonId',
+        storage: {
+          type: 'cookie',
+          name: 'pubcid'
         }
-      }, submodules, {
+      }, {
+        name: 'openId',
+        storage: {
+          type: 'html5',
+          name: 'openid'
+        }
+      }], 0, submodules, {
         cookieEnabled: true
       }, {
         localStorage: undefined,
