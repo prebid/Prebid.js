@@ -9,8 +9,8 @@ node {
     }
     
     stage('Build'){
-        //sh('npm install')
-        //sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
+        sh('npm install')
+        sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
        
     }
     
@@ -24,17 +24,13 @@ node {
             try{
                 sh('git branch | grep -v "master" | git branch -D xargs')
             } catch (Exception e) {
+                echo "A priori pas de cache des branches..."
             }
+            
             sh('git fetch -p')
             sh('git checkout ' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ' +env.BRANCH_NAME)
             sh('git branch -r')
-            
-            sh('ls')
-            sh('cd src')
-            sh('ls')
-            
-            //sh('cp ../build/dist/prebid.js app/library/dtkplayer/addons/PrebidLibrary.js')
-            sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
+            sh('cp ../build/dist/prebid.js app/library/dtkplayer/addons/PrebidLibrary.js')
             
             withCredentials([usernamePassword(credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                 sh('git config --global user.email "jenkins@jenkins.com"')
