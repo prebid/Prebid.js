@@ -22,7 +22,7 @@ node {
             
             // The rest of your Groovy here...
             try{
-                sh('git branch | grep -v "master" | xargs git branch -D')
+                sh('git branch | grep -v "master" | git branch -D xargs')
             } catch (Exception e) {
             }
             sh('git fetch -p')
