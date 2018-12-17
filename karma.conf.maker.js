@@ -34,7 +34,6 @@ function newPluginsArray(browserstack) {
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',

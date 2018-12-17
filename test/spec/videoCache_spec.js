@@ -1,4 +1,4 @@
-import 'mocha';
+import 'mocha/mocha';
 import chai from 'chai';
 import { getCacheUrl, store } from 'src/videoCache';
 import { config } from 'src/config';
