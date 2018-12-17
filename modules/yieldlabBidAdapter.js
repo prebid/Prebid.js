@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from 'src/mediaTypes'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
-const BID_RESPONSE_TTL_SEC = 600
+const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
 
 export const spec = {
@@ -13,7 +13,7 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
-    if (bid && bid.params && bid.params.placementId && bid.params.adSize) {
+    if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
       return true
     }
     return false
@@ -24,19 +24,34 @@ export const spec = {
    * @param validBidRequests
    * @returns {{method: string, url: string}}
    */
-  buildRequests: function (validBidRequests) {
-    const placementIds = []
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const adslotIds = []
     const timestamp = Date.now()
+    const query = {
+      ts: timestamp,
+      json: true
+    }
 
     utils._each(validBidRequests, function (bid) {
-      placementIds.push(bid.params.placementId)
+      adslotIds.push(bid.params.adslotId)
+      if (bid.params.targeting) {
+        query.t = createQueryString(bid.params.targeting)
+      }
     })
 
-    const placements = placementIds.join(',')
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      if (query.gdpr) {
+        query.consent = bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    const adslots = adslotIds.join(',')
+    const queryString = createQueryString(query)
 
     return {
       method: 'GET',
-      url: `${ENDPOINT}/yp/${placements}?ts=${timestamp}&json=true`,
+      url: `${ENDPOINT}/yp/${adslots}?${queryString}`,
       validBidRequests: validBidRequests
     }
   },
@@ -56,27 +71,28 @@ export const spec = {
       }
 
       let matchedBid = find(serverResponse.body, function (bidResponse) {
-        return bidRequest.params.placementId == bidResponse.id
+        return bidRequest.params.adslotId == bidResponse.id
       })
 
       if (matchedBid) {
-        const sizes = parseSize(bidRequest.params.adSize)
+        const primarysize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
+        const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
-          width: sizes[0],
-          height: sizes[1],
+          width: customsize[0],
+          height: customsize[1],
           creativeId: '' + matchedBid.id,
-          dealId: matchedBid.did,
+          dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: true,
+          netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}"></script>`
         }
         if (isVideo(bidRequest)) {
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.accountId}/1x1?ts=${timestamp}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}`
         }
 
         bidResponses.push(bidResponse)
@@ -102,6 +118,21 @@ function isVideo (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a querystring out of an object with key-values
+ * @param {Object} obj
+ * @returns {String}
+ */
+function createQueryString (obj) {
+  let str = []
+  for (var p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+    }
+  }
+  return str.join('&')
 }
 
 registerBidder(spec)
