@@ -61,7 +61,7 @@ describe('rhythmone adapter tests', function () {
       assert.equal(mangoRequest.length, 1);
     });
 
-    it('should send GDPR Consent data to RhythmOne tag', () => {
+    it('should send GDPR Consent data to RhythmOne tag', function () {
 	  let _consentString = 'testConsentString';
 	  var request = z.buildRequests(
         [

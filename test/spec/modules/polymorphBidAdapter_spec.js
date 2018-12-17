@@ -5,6 +5,9 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'polymorph';
 const ENDPOINT_URL = '//api.adsnative.com/v1/ad-template.json';
 const PLACEMENT_ID = 'ping';
+const NETWORK_KEY = 'abcd1234';
+const WIDGET_ID = 'xyz';
+const CATEGORIES = 'IAB1,IAB2';
 
 const spec = newBidder(polymorphAdapterSpec).getSpec();
 
@@ -31,21 +34,38 @@ const bidRequests = [{
   'bidId': '30b31c1838de1d',
   'bidderRequestId': '22edbae2733bf7',
   'auctionId': '1d1a030790a476',
+},
+{
+  'bidder': BIDDER_CODE,
+  'params': {
+    'network_key': NETWORK_KEY,
+    'widget_id': WIDGET_ID,
+    'cat': CATEGORIES
+  },
+  'adUnitCode': 'adunit-code',
+  'sizes': [[700, 250], [300, 600]],
+  'bidId': '30b31c1838de1f',
+  'bidderRequestId': '22edbae2733bf7',
+  'auctionId': '1d1a030790a476',
 }];
 
-describe('Polymorph adapter test', () => {
-  describe('.code', () => {
-    it('should return a bidder code of polymorph', () => {
+describe('Polymorph adapter test', function () {
+  describe('.code', function () {
+    it('should return a bidder code of polymorph', function () {
       expect(spec.code).to.eql(BIDDER_CODE);
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
 
-    it('should return false if req has no placementId', () => {
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(true);
+    });
+
+    it('should return false if req has no placementId', function () {
       const invalidBidRequest = {
         bidder: BIDDER_CODE,
         params: {
@@ -55,7 +75,7 @@ describe('Polymorph adapter test', () => {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return false if req has wrong bidder code', () => {
+    it('should return false if req has wrong bidder code', function () {
       const invalidBidRequest = {
         bidder: 'something',
         params: {
@@ -66,8 +86,8 @@ describe('Polymorph adapter test', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    it('payload test', () => {
+  describe('buildRequests', function () {
+    it('payload test', function () {
       const requests = spec.buildRequests(bidRequests);
       var payload1 = {};
       requests[0].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -79,6 +99,7 @@ describe('Polymorph adapter test', () => {
       expect(payload1.hb_source).to.equal('prebid');
       expect(payload1.zid).to.equal(PLACEMENT_ID);
       expect(payload1.sizes).to.equal('300,250,300,600');
+      expect(payload1.bid_id).to.equal('30b31c1838de1e');
 
       var payload2 = {};
       requests[1].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
@@ -90,16 +111,31 @@ describe('Polymorph adapter test', () => {
       expect(payload2.hb_source).to.equal('prebid');
       expect(payload2.zid).to.equal(PLACEMENT_ID);
       expect(payload2.sizes).to.equal('700,250,300,600');
+      expect(payload2.bid_id).to.equal('30b31c1838de1d');
+
+      var payload3 = {};
+      requests[2].data.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+        payload3[decodeURIComponent(key)] = decodeURIComponent(value);
+      });
+      expect(payload3.ref).to.not.be.undefined;
+      expect(payload3.url).to.not.be.undefined;
+      expect(payload3.hb).to.equal('1');
+      expect(payload3.hb_source).to.equal('prebid');
+      expect(payload3.network_key).to.equal(NETWORK_KEY);
+      expect(payload3.widget_id).to.equal(WIDGET_ID);
+      expect(payload3.cat).to.equal(CATEGORIES);
+      expect(payload3.sizes).to.equal('700,250,300,600');
+      expect(payload3.bid_id).to.equal('30b31c1838de1f');
     });
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].url).to.equal(ENDPOINT_URL);
       expect(requests[0].method).to.equal('GET');
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       body: {
         'status': 'OK',
@@ -133,7 +169,7 @@ describe('Polymorph adapter test', () => {
       }
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const body = response.body;
       const expectedResponse = [{
         requestId: bidRequests[0].bidId,
@@ -152,7 +188,7 @@ describe('Polymorph adapter test', () => {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('widget use case', () => {
+    it('widget use case', function () {
       const body = response2.body;
       const expectedResponse = [
         {
@@ -173,7 +209,7 @@ describe('Polymorph adapter test', () => {
       expect(result).to.deep.equal(expectedResponse);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = [];
 
       let result = spec.interpretResponse(response, { 'bidderRequest': bidRequests[0] });

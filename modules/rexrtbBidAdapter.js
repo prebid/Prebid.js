@@ -3,8 +3,8 @@ import {BANNER} from 'src/mediaTypes';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 
-const BIDDER_CODE = 'rxrtb';
-const DEFAULT_HOST = 'bid.rxrtb.bid';
+const BIDDER_CODE = 'rexrtb';
+const DEFAULT_HOST = 'bid.rxrtb.com';
 const AUCTION_TYPE = 2;
 const RESPONSE_TTL = 900;
 
@@ -12,7 +12,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bidRequest) {
-    return 'params' in bidRequest && bidRequest.params.source !== undefined && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
+    return 'params' in bidRequest && bidRequest.params.id !== undefined && utils.isInteger(bidRequest.params.id) && bidRequest.params.token !== undefined;
   },
   buildRequests: function (validBidRequests) {
     var requests = [];
@@ -62,7 +62,6 @@ registerBidder(spec);
 function getDomain(url) {
   var a = document.createElement('a');
   a.href = url;
-
   return a.host;
 }
 
@@ -99,11 +98,9 @@ function makeImp(req) {
     'tagid': req.adUnitCode,
     'banner': makeBanner(req)
   };
-
   if (req.params.bidfloor && isFinite(req.params.bidfloor)) {
     imp.bidfloor = req.params.bidfloor
   }
-
   return imp;
 }
 
@@ -124,9 +121,10 @@ function makeBanner(req) {
 }
 
 function makeSite(req) {
+  let domain = getDomain(config.getConfig('publisherDomain'));
   return {
-    'id': req.params.source,
-    'domain': getDomain(config.getConfig('publisherDomain')),
+    'id': req.params.source || domain,
+    'domain': domain,
     'page': utils.getTopWindowUrl(),
     'ref': utils.getTopWindowReferrer()
   };

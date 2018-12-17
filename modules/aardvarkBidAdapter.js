@@ -28,9 +28,12 @@ export const spec = {
     var referer = utils.getTopWindowUrl();
     var pageCategories = [];
 
-    if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
-      pageCategories = window.top.rtkcategories;
-    }
+    // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
+    try {
+      if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
+        pageCategories = window.top.rtkcategories;
+      }
+    } catch (e) {}
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];

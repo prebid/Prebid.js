@@ -3,17 +3,17 @@ import { BIDDER_CODE, PUBLISHER_PLACEHOLDER, ENDPOINT_URL, ENDPOINT_METHOD, spec
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-describe('AduptechBidAdapter', () => {
+describe('AduptechBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when necessary information is given', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when necessary information is given', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
         params: {
@@ -23,11 +23,11 @@ describe('AduptechBidAdapter', () => {
       })).to.be.true;
     });
 
-    it('should return false on empty bid', () => {
+    it('should return false on empty bid', function () {
       expect(spec.isBidRequestValid({})).to.be.false;
     });
 
-    it('should return false on missing sizes', () => {
+    it('should return false on missing sizes', function () {
       expect(spec.isBidRequestValid({
         params: {
           publisher: 'test',
@@ -36,7 +36,7 @@ describe('AduptechBidAdapter', () => {
       })).to.be.false;
     });
 
-    it('should return false on empty sizes', () => {
+    it('should return false on empty sizes', function () {
       expect(spec.isBidRequestValid({
         sizes: [],
         params: {
@@ -46,27 +46,27 @@ describe('AduptechBidAdapter', () => {
       })).to.be.false;
     });
 
-    it('should return false on missing params', () => {
+    it('should return false on missing params', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
       })).to.be.false;
     });
 
-    it('should return false on invalid params', () => {
+    it('should return false on invalid params', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
         params: 'bar'
       })).to.be.false;
     });
 
-    it('should return false on empty params', () => {
+    it('should return false on empty params', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
         params: {}
       })).to.be.false;
     });
 
-    it('should return false on missing publisher', () => {
+    it('should return false on missing publisher', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
         params: {
@@ -75,7 +75,7 @@ describe('AduptechBidAdapter', () => {
       })).to.be.false;
     });
 
-    it('should return false on missing placement', () => {
+    it('should return false on missing placement', function () {
       expect(spec.isBidRequestValid({
         sizes: [[100, 200]],
         params: {
@@ -85,8 +85,8 @@ describe('AduptechBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    it('should send one bid request per ad unit to the endpoint via POST', () => {
+  describe('buildRequests', function () {
+    it('should send one bid request per ad unit to the endpoint via POST', function () {
       const bidRequests = [
         {
           bidder: BIDDER_CODE,
@@ -146,7 +146,7 @@ describe('AduptechBidAdapter', () => {
       });
     });
 
-    it('should pass gdpr informations', () => {
+    it('should pass gdpr informations', function () {
       const bidderRequest = {
         gdprConsent: {
           consentString: 'consentString',
@@ -175,7 +175,7 @@ describe('AduptechBidAdapter', () => {
       expect(result[0].data.gdpr.consentString).to.exist.and.to.equal(bidderRequest.gdprConsent.consentString);
     });
 
-    it('should encode publisher param in endpoint url', () => {
+    it('should encode publisher param in endpoint url', function () {
       const bidRequests = [
         {
           bidder: BIDDER_CODE,
@@ -196,13 +196,13 @@ describe('AduptechBidAdapter', () => {
       expect(result[0].url).to.equal(ENDPOINT_URL.replace(PUBLISHER_PLACEHOLDER, encodeURIComponent(bidRequests[0].params.publisher)));
     });
 
-    it('should handle empty bidRequests', () => {
+    it('should handle empty bidRequests', function () {
       expect(spec.buildRequests([])).to.deep.equal([]);
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should correctly interpret the server response', () => {
+  describe('interpretResponse', function () {
+    it('should correctly interpret the server response', function () {
       const serverResponse = {
         body: {
           bid: {
@@ -238,11 +238,11 @@ describe('AduptechBidAdapter', () => {
       ]);
     });
 
-    it('should handle empty serverResponse', () => {
+    it('should handle empty serverResponse', function () {
       expect(spec.interpretResponse({})).to.deep.equal([]);
     });
 
-    it('should handle missing bid', () => {
+    it('should handle missing bid', function () {
       expect(spec.interpretResponse({
         body: {
           creative: {}
@@ -250,7 +250,7 @@ describe('AduptechBidAdapter', () => {
       })).to.deep.equal([]);
     });
 
-    it('should handle missing creative', () => {
+    it('should handle missing creative', function () {
       expect(spec.interpretResponse({
         body: {
           bid: {}

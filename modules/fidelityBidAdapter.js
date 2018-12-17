@@ -3,6 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'fidelity';
 const BIDDER_SERVER = 'x.fidelity-media.com';
+const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -20,15 +21,13 @@ export const spec = {
         zoneid: bidRequest.params.zoneid,
         floor: parseFloat(bidRequest.params.floor) > 0 ? bidRequest.params.floor : 0,
         charset: document.charSet || document.characterSet,
-        defloc: utils.getTopWindowUrl(),
-        altloc: window.location.href,
         subid: 'hb',
         flashver: getFlashVersion(),
         tmax: bidderRequest.timeout,
+        defloc: utils.getTopWindowUrl(),
+        referrer: utils.getTopWindowReferrer(),
       };
-      if (document.referrer) {
-        payload.referrer = document.referrer;
-      }
+      setConsentParams(bidderRequest.gdprConsent, payload);
 
       return {
         method: 'GET',
@@ -59,11 +58,17 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function getUserSyncs(syncOptions) {
+  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled) {
+      var url = '//' + BIDDER_SERVER + '/delivery/matches.php';
+      var payload = {
+        type: 'iframe'
+      };
+      setConsentParams(gdprConsent, payload);
+
       return [{
         type: 'iframe',
-        url: '//' + BIDDER_SERVER + '/delivery/matches.php?type=iframe',
+        url: url + '?' + utils.parseQueryStringParameters(payload).replace(/\&$/, '')
       }];
     }
   }
@@ -82,6 +87,23 @@ function getFlashVersion() {
     }
   }
   return result || '';
+}
+
+function setConsentParams(gdprConsent, payload) {
+  if (gdprConsent) {
+    payload.gdpr = 0;
+    payload.consent_str = '';
+    payload.consent_given = 0;
+    if (typeof gdprConsent.gdprApplies !== 'undefined') {
+      payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (typeof gdprConsent.consentString !== 'undefined') {
+      payload.consent_str = gdprConsent.consentString;
+    }
+    if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.consent_given = gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
+    }
+  }
 }
 
 registerBidder(spec);
