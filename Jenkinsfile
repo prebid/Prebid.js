@@ -35,7 +35,7 @@ node {
             withCredentials([usernamePassword(credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                 sh('git config --global user.email "jenkins@jenkins.com"')
                 sh('git config --global user.name "$USERNAME"')
-                sh('git commit src/app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
+                sh('git commit app/library/dtkplayer/addons/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
                 
                 //sh 'echo $PASSWORD'
                 // also available as a Groovy variable
