@@ -9,8 +9,8 @@ node {
     }
     
     stage('Build'){
-        sh('npm install')
-        sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
+        //sh('npm install')
+        //sh('node ./node_modules/gulp/bin/gulp.js build --modules=modules.json')
        
     }
     
@@ -28,6 +28,11 @@ node {
             sh('git fetch -p')
             sh('git checkout ' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ' +env.BRANCH_NAME)
             sh('git branch -r')
+            
+            sh('ls')
+            sh('cd src')
+            sh('ls')
+            
             //sh('cp ../build/dist/prebid.js app/library/dtkplayer/addons/PrebidLibrary.js')
             sh('cp ../build/dist/prebid.js src/app/library/dtkplayer/addons/PrebidLibrary.js')
             
