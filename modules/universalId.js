@@ -280,6 +280,7 @@ export function initSubmodules (config, submodules, navigator, document) {
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
     const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
+    const syncDelay = config.getConfig('usersync.syncDelay') || 0;
 
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
@@ -324,7 +325,6 @@ export function initSubmodules (config, submodules, navigator, document) {
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
         // stored value does not exist, call submodule getId
-        const syncDelay = submoduleConfig.syncDelay || 0;
         if (syncDelay) {
           // if syncDelay exists, wrap submodule.getId call with a setTimeout
           setTimeout(function () {
