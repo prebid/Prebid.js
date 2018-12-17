@@ -4,6 +4,7 @@
 import {ajax} from 'src/ajax';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
+import find from 'core-js/library/fn/array/find';
 
 /**
  * @callback getIdCallback
@@ -214,18 +215,22 @@ export function enabledStorageTypes (navigator, document) {
 /**
  * check if any universal id types are set in configuration (must opt-in to enable)
  *
- * @param {PrebidConfig} config
+ * @param {Object[]} submoduleConfigs
  * @param {IdSubmodule[]} submodules
  */
-export function validateConfig (config, submodules) {
-  const submoduleConfigs = config.getConfig('usersync.universalIds');
+export function validateConfig (submoduleConfigs, submodules) {
+  // const submoduleConfigs = config.getConfig('usersync.universalIds');
+  // console.log('validateConfig: submoduleConfigs:', submoduleConfigs);
   // exit if no configurations are set
   if (!Array.isArray(submoduleConfigs)) {
+    console.log('validateConfig: submoduleConfigs is NOT ARRAY');
     return false;
   }
   // check that at least one config exists
   return submodules.some(submodule => {
-    const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey)
+    const submoduleConfig = find(submoduleConfigs, universalIdConfig => {
+      return universalIdConfig.name === submodule.configKey;
+    });
     // return true if a valid config exists for submodule
     if (submoduleConfig && typeof submoduleConfig === 'object') {
       return true;
@@ -267,9 +272,11 @@ export function requestBidHook (config, next) {
  * @returns {Array} - returns list of enabled submodules
  */
 export function initSubmodules (config, submodules, navigator, document) {
+  const submoduleConfigs = config.getConfig('usersync.universalIds');
   // valid if at least one configuration is valid
-  if (!validateConfig(config, submodules)) {
-    return []
+  if (!validateConfig(submoduleConfigs, submodules)) {
+    utils.logInfo('Failed to validate configuration for Universal ID module');
+    return [];
   }
 
   // storage enabled storage types, use to check if submodule has a valid configuration
@@ -277,7 +284,9 @@ export function initSubmodules (config, submodules, navigator, document) {
 
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
-    const submoduleConfig = config.getConfig('usersync.universalIds').find(universalIdConfig => universalIdConfig.name === submodule.configKey);
+    const submoduleConfig = find(submoduleConfigs, universalIdConfig => {
+      return universalIdConfig.name === submodule.configKey;
+    });
     const syncDelay = config.getConfig('usersync.syncDelay') || 0;
 
     // skip, config with name matching submodule.configKey does not exist
@@ -342,4 +351,5 @@ export function initSubmodules (config, submodules, navigator, document) {
   }, []);
 }
 
-initSubmodules(config, submodules, window.navigator, window.document);
+const enabledModules = initSubmodules(config, submodules, window.navigator, window.document);
+console.log('Universal ID Module Init: ', enabledModules);

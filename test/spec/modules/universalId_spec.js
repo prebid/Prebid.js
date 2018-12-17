@@ -163,61 +163,35 @@ describe('Universal ID', function () {
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
-      expect(validateConfig({
-        getConfig: function () {}
-      }, submodules)).to.equal(false);
+      expect(validateConfig(undefined, submodules)).to.equal(false);
     });
 
     it('return true if config defines configurations for both submodules', function() {
-      expect(validateConfig({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId'
-            }, {
-              name: 'openId'
-            }];
-          }
-        }
-      }, submodules)).to.equal(true);
+      expect(validateConfig([{
+        name: 'pubCommonId'
+      }, {
+        name: 'openId'
+      }], submodules)).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
-      expect(validateConfig({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'pubCommonId'
-            }, {
-              name: 'foo'
-            }];
-          }
-        }
-      }, submodules)).to.equal(true);
+      expect(validateConfig([{
+        name: 'pubCommonId'
+      }, {
+        name: 'foo'
+      }], submodules)).to.equal(true);
     });
 
     it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
-      expect(validateConfig({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [{
-              name: 'foo'
-            }, {
-              name: 'bar'
-            }];
-          }
-        }
-      }, submodules)).to.equal(false);
+      expect(validateConfig([{
+        name: 'foo'
+      }, {
+        name: 'bar'
+      }], submodules)).to.equal(false);
     });
 
     it('return false if config does not define a configuration for any submodule', function() {
-      expect(validateConfig({
-        getConfig: function (key) {
-          if (key === 'usersync.universalIds') {
-            return [];
-          }
-        }
-      }, submodules)).to.equal(false);
+      expect(validateConfig([], submodules)).to.equal(false);
     });
   });
 
