@@ -351,12 +351,13 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
 }
 
 function init() {
-  const usersync = config.getConfig('usersync');
-  if (usersync) {
-    const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, submodules, window.navigator, window.document);
-    console.log('Universal ID Module initialized submodules: ', enabledModules);
-  } else {
-    console.log('Universal ID Module not initialized: config usersync not defined');
-  }
+  config.getConfig('usersync', ({usersync}) => {
+    if (usersync) {
+      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, submodules, window.navigator, window.document);
+      console.log('Universal ID Module initialized submodules: ', enabledModules);
+    } else {
+      console.log('Universal ID Module not initialized: config usersync not defined');
+    }
+  });
 }
 init();
