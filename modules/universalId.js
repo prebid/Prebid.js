@@ -106,25 +106,24 @@ const submodules = [{
   getId: function(data, callback) {
     // validate config values: params.partner and params.endpoint
     const partner = data.params.partner;
-    const endpoint = data.params.endpoint;
-    if (typeof partner === 'string' && typeof endpoint === 'string') {
-      ajax(endpoint, response => {
+    const url = data.params.url;
+    if (typeof partner === 'string' && typeof url === 'string') {
+      ajax(url, response => {
           try {
-            response = JSON.parse(response);
             callback(response);
           } catch (e) {
             utils.logError(e);
+            callback(undefined);
           }
         },
         JSON.stringify({ partner: partner }),
         {
-          contentType: 'text/plain',
+          contentType: 'text/json',
           withCredentials: true
         });
     } else {
-      utils.logError('Invalid configuration set for the UniversalId openId sub-module: endpoint =', endpoint, ' partner =', partner);
-      const response = {};
-      callback(response);
+      utils.logError('Invalid configuration set for the UniversalId openId sub-module: endpoint =', url, ' partner =', partner);
+      callback(undefined);
     }
   }
 }];
