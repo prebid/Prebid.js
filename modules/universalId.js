@@ -1,8 +1,9 @@
 /**
  * This module adds Universal ID support to prebid.js
  */
-import * as utils from 'src/utils'
+import {ajax} from 'src/ajax';
 import {config} from 'src/config';
+import * as utils from 'src/utils';
 
 /**
  * @callback getIdCallback
@@ -102,8 +103,29 @@ const submodules = [{
   decode: function(idData) {
     // TODO: complete openId decode implementation
   },
-  getId: function(url, syncDelay, callback) {
-    // TODO: complete openId getId implementation
+  getId: function(data, callback) {
+    // validate config values: params.partner and params.endpoint
+    const partner = data.params.partner;
+    const endpoint = data.params.endpoint;
+    if (typeof partner === 'string' && typeof endpoint === 'string') {
+      ajax(endpoint, response => {
+          try {
+            response = JSON.parse(response);
+            callback(response);
+          } catch (e) {
+            utils.logError(e);
+          }
+        },
+        JSON.stringify({ partner: partner }),
+        {
+          contentType: 'text/plain',
+          withCredentials: true
+        });
+    } else {
+      utils.logError('Invalid configuration set for the UniversalId openId sub-module: endpoint =', endpoint, ' partner =', partner);
+      const response = {};
+      callback(response);
+    }
   }
 }];
 
@@ -226,7 +248,7 @@ export function validateConfig (config, submodules) {
 export function requestBidHook (config, next) {
   // pass id data to adapters if bidRequestData list is not empty
   extendedBidRequestData.getData().forEach(dataItem => {
-    const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits
+    const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
     if (adUnits) {
       adUnits.forEach((adUnit) => {
         adUnit.bids.forEach((bid) => {
@@ -298,15 +320,13 @@ export function initSubmodules (config, submodules, navigator, document) {
       }
 
       if (storageValue) {
-        // TODO: review impact on event loop from try/catch around cookie/localStorage access,
-        //  if no large impact leave as is, else wrap with setTimeout using syncDelay value
+        // TODO: review impact on event loop from try/catch around cookie/localStorage access
         // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
         // stored value does not exist, call submodule getId
         const syncDelay = submoduleConfig.syncDelay || 0;
         if (syncDelay) {
-          // TODO: investigate new instances for each timer so that each can have it's own syncDelay value
           // if syncDelay exists, wrap submodule.getId call with a setTimeout
           setTimeout(function () {
             submodule.getId(submoduleConfig, function (response) {
