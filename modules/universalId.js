@@ -270,7 +270,7 @@ export function initSubmodules (config, submodules, navigator, document) {
       const overrideResult = submodule.overrideId();
       // skip, override returned a valid result, pass value to bidAdapters
       // TODO: check if overrideResult will need to be decoded using the submodule interface.
-      if (overrideResult) {
+      if (overrideResult && typeof overrideResult === 'object') {
         carry.push('submodule override result is valid, skip processing config');
         extendedBidRequestData.addData(overrideResult);
         return carry;
@@ -306,6 +306,7 @@ export function initSubmodules (config, submodules, navigator, document) {
         // stored value does not exist, call submodule getId
         const syncDelay = submoduleConfig.syncDelay || 0;
         if (syncDelay) {
+          // TODO: investigate new instances for each timer so that each can have it's own syncDelay value
           // if syncDelay exists, wrap submodule.getId call with a setTimeout
           setTimeout(function () {
             submodule.getId(submoduleConfig, function (response) {
