@@ -127,7 +127,8 @@ export const spec = {
     if (bidResponse.mediaType === VIDEO) {
       bidResponse.vastXml = markup;
     } else {
-      bidResponse.ad = markup + "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>";
+      const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
+      bidResponse.ad = markup + counter;
     }
     return bidResponse;
   },
