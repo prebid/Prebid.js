@@ -22,7 +22,7 @@ node {
             
             // The rest of your Groovy here...
             try{
-                sh('git branch | grep -v "master" | git branch -D xargs')
+                sh('git branch | grep -v "master" | xargs git branch -D')
             } catch (Exception e) {
                 echo "A priori pas de cache des branches..."
             }
