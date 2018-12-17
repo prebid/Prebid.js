@@ -160,8 +160,6 @@ export const spec = {
       }
       return [{ type: 'iframe', url: syncurl }];
     }
-  },
-
-  onTimeout: function(timeoutData) {},
+  }
 };
 registerBidder(spec);
