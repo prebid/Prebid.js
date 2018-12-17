@@ -21,7 +21,11 @@ node {
                 credentialsId: '54c5b16a-e2aa-41f1-aff7-169154fd52f5'
             
             // The rest of your Groovy here...
-            sh('git branch | grep -v "master" | xargs git branch -D')
+            try{
+                sh('git branch | grep -v "master" | xargs git branch -D')
+            } catch (Exception ex) {
+                echo $ex
+            }
             sh('git fetch -p')
             sh('git checkout ' +env.BRANCH_NAME+' 2>/dev/null || git checkout -b ' +env.BRANCH_NAME)
             sh('git branch -r')
