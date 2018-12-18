@@ -21,6 +21,7 @@ import find from 'core-js/library/fn/array/find';
  * @callback getId
  * @summary submodule interface for getId function
  * @param {Object} data
+ * @param {number} syncDelay
  * @param {getIdCallback} callback - optional callback to execute on id retrieval
  */
 
@@ -44,7 +45,6 @@ import find from 'core-js/library/fn/array/find';
  * @property {Object} storage
  * @property {Object} value
  * @property {Object} params
- * @property {number} syncDelay
  */
 
 const STORAGE_TYPE_COOKIE = 'cookie';
@@ -76,43 +76,54 @@ export const extendedBidRequestData = (function () {
  */
 const submodules = [{
   configKey: 'pubCommonId',
-  expires: 60,
   decode: function(idData) {
-    return { 'crumbs': idData }
+    return { 'pubcid': idData }
   },
-  getId: function(data, callback) {
+  getId: function(data, syncDelay, callback) {
     const responseObj = {
-      data: utils.generateUUID()
+      data: utils.generateUUID(),
+      expires: data.storage.expires || 60
     };
     callback(responseObj);
   }
 }, {
   configKey: 'unifiedId',
-  expires: 60,
   decode: function(idData) {
     try {
-      return { 'unifiedId': idData };
+      return { 'tdid': idData };
     } catch (e) {
       utils.logError('Universal ID submodule decode error');
     }
   },
-  getId: function(data, callback) {
-    // validate config values: params.partner and params.endpoint
-    const partner = data.params.partner || 'prebid';
-    const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
-    ajax(url, response => {
-      try {
-        const responseObj = {
-          data: response
-        };
-        callback(responseObj);
-      } catch (e) {
-        utils.logError(e);
-        callback();
-      }
-    }, undefined, {
-      method: 'GET'
-    });
+  getId: function(data, syncDelay, callback) {
+    function callEndpoint() {
+      console.log(data, 'Universal ID Module: callEndpoint');
+      // validate config values: params.partner and params.endpoint
+      const partner = data.params.partner || 'prebid';
+      const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+      ajax(url, response => {
+        try {
+          const parsedResponse = (response && typeof response !== 'object') ? JSON.parse(response) : response;
+          const responseObj = {
+            data: parsedResponse.TDID,
+            expires: parsedResponse.expires || data.storage.expires || 60
+          };
+          callback(responseObj);
+        } catch (e) {
+          utils.logError(e);
+          callback();
+        }
+      }, undefined, {
+        method: 'GET'
+      });
+    }
+
+    if (!syncDelay) {
+      callEndpoint();
+    } else {
+      console.log(data, 'Universal ID Module: setTimeout syncDelay = ', syncDelay);
+      setTimeout(callEndpoint, syncDelay);
+    }
   }
 }];
 
@@ -124,10 +135,8 @@ const submodules = [{
 export function submoduleGetIdCallback(submodule, submoduleConfig, response) {
   if (response && typeof response === 'object') {
     const responseStr = (response.data && typeof response.data !== 'string') ? JSON.stringify(response.data) : response.data;
-    const expires = response.expires || submoduleConfig.storage.expires || submodule.expires;
-
     if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
-      setCookie(submoduleConfig.storage.name, responseStr, expires);
+      setCookie(submoduleConfig.storage.name, responseStr, response.expires);
     } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
       localStorage.setItem(submoduleConfig.storage.name, responseStr);
     } else {
@@ -175,7 +184,7 @@ function browserSupportsLocalStorage (localStorage) {
 // Helper to set a cookie
 export function setCookie(name, value, expires) {
   const expTime = new Date();
-  expTime.setTime(expTime.getTime() + expires * 1000 * 60);
+  expTime.setTime(expTime.getTime() + (expires || 60) * 1000 * 60);
   window.document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' +
     expTime.toGMTString();
 }
@@ -236,17 +245,20 @@ export function validateConfig (submoduleConfigs, submodules) {
  * @returns {*}
  */
 export function requestBidHook (config, next) {
+  const universalID = {};
   // pass id data to adapters if bidRequestData list is not empty
   extendedBidRequestData.getData().forEach(dataItem => {
-    const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
-    if (adUnits) {
-      adUnits.forEach((adUnit) => {
-        adUnit.bids.forEach((bid) => {
-          Object.assign(bid, dataItem);
-        });
-      });
-    }
+    Object.assign(dataItem, universalID);
   });
+
+  const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
+  if (adUnits) {
+    adUnits.forEach((adUnit) => {
+      adUnit.bids.forEach((bid) => {
+        bid.universalID = universalID;
+      });
+    });
+  }
   // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
   return next.apply(this, arguments);
 }
@@ -308,19 +320,9 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
       } else {
         utils.logInfo('Universal ID module did not find storageValue, call getId syncDelay:', syncDelay);
         // stored value does not exist, call submodule getId
-        if (syncDelay) {
-          // if syncDelay exists, wrap submodule.getId call with a setTimeout
-          setTimeout(function () {
-            submodule.getId(submoduleConfig, function (response) {
-              submoduleGetIdCallback(submodule, submoduleConfig, response);
-            });
-          })
-        } else {
-          // no syncDelay, call submodule.getId without setTimeout
-          submodule.getId(submoduleConfig, function (response) {
-            submoduleGetIdCallback(submodule, submoduleConfig, response);
-          });
-        }
+        submodule.getId(submoduleConfig, syncDelay, function (response) {
+          submoduleGetIdCallback(submodule, submoduleConfig, response);
+        });
       }
     }
     return carry;
