@@ -11,6 +11,8 @@ const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
+const DEFAULT_WIDTH = 0;
+const DEFAULT_HEIGHT = 0;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -594,9 +596,6 @@ function _createImpressionObject(bid, conf) {
     }
 
     impObj.video = videoObj;
-  } else if (bid.nativeParams) {
-    impObj.native = {};
-    impObj.native['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
   } else {
     bannerObj = {
       pos: 0,
@@ -616,6 +615,10 @@ function _createImpressionObject(bid, conf) {
       bannerObj.format = format;
     }
     impObj.banner = bannerObj;
+  }
+  if (bid.nativeParams) {
+    impObj.native = {};
+    impObj.native['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
   }
   return impObj;
 }
@@ -685,6 +688,7 @@ function _parseNativeResponse(bid, newBid) {
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+      newBid.mediaType = 'native';
       for (let i = 0, len = adm.native.assets.length; i < len; i++) {
         switch (adm.native.assets[i].id) {
           case NATIVE_ASSET_ID.TITLE:
@@ -723,6 +727,12 @@ function _parseNativeResponse(bid, newBid) {
       newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
       newBid.native.impressionTrackers = adm.native.imptrackers || [];
       newBid.native.jstracker = adm.native.jstracker || [];
+      if (!newBid.width) {
+        newBid.width = DEFAULT_WIDTH;
+      }
+      if (!newBid.height) {
+        newBid.height = DEFAULT_HEIGHT;
+      }
     }
   }
 }
@@ -923,7 +933,6 @@ export const spec = {
                     newBid.vastXml = bid.adm;
                   }
                   if (bid.impid === req.id && req.hasOwnProperty('native')) {
-                    newBid.mediaType = 'native';
                     _parseNativeResponse(bid, newBid);
                   }
                 });
