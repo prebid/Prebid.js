@@ -90,31 +90,49 @@ function isValid(events) {
 }
 
 function trackBidWon(args) {
-  const event = createHbEvent(undefined, // bidderCode
-    'bidwon',
-    undefined, // adunit code
-    args.auctionId,
-    undefined, // timeToRespond
-    undefined, // startTime
-    args.requestId
-  );
+  const event = {ev: 'bidwon'};
+  setSafely(event, 'aid', args.auctionId);
+  setSafely(event, 'bid', args.requestId);
   return [event];
 }
 
 function trackAuctionInit(args) {
   analyticsAdapter.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, 'init', undefined, args.auctionId, undefined, analyticsAdapter.context.auctionTimeStart);
+  const event = {ev: 'init'};
+  setSafely(event, 'aid', args.auctionId);
+  setSafely(event, 'st', analyticsAdapter.context.auctionTimeStart);
   return [event];
 }
 
 function trackBidRequest(args) {
-  return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, 'request', bid.adUnitCode, undefined, undefined, args.start, bid.bidId));
+  return args.bids.map(bid => {
+    const event = {ev: 'request'};
+    setSafely(event, 'n', args.bidderCode);
+    setSafely(event, 'sid', bid.adUnitCode);
+    setSafely(event, 'bid', bid.bidId);
+    setSafely(event, 'st', args.start);
+    return event;
+  });
 }
 
 function trackBidResponse(args) {
   if (args.statusMessage === 'Bid available') {
-    const event = createHbEvent(args.bidderCode, 'response', args.adUnitCode, undefined, args.timeToRespond, undefined, args.requestId, args.cpm, args.currency, args.netRevenue, args.adId, args.creativeId, args.size, args.dealId, args.pbCg);
+    const event = {ev: 'response'};
+    setSafely(event, 'n', args.bidderCode);
+    setSafely(event, 'bid', args.requestId);
+    setSafely(event, 'sid', args.adUnitCode);
+    setSafely(event, 'cpm', args.cpm);
+    setSafely(event, 'pb', args.pbCg);
+    setSafely(event, 'cry', args.currency);
+    setSafely(event, 'net', args.netRevenue);
+    setSafely(event, 'did', args.adId);
+    setSafely(event, 'cid', args.creativeId);
+    setSafely(event, 'sz', args.size);
+    setSafely(event, 'ttr', args.timeToRespond);
+    setSafely(event, 'lid', args.dealId);
+    setSafely(event, 'dsp', args.dspId);
+    setSafely(event, 'adv', args.advertiserId);
+    setSafely(event, 'add', args.advertiserDomain);
     return [event];
   }
   return null;
@@ -122,55 +140,16 @@ function trackBidResponse(args) {
 
 function trackAuctionEnd(args) {
   const duration = Date.now() - analyticsAdapter.context.auctionTimeStart;
-  const event = createHbEvent(undefined, 'end', undefined, args.auctionId, duration);
+  const event = {ev: 'end'};
+  setSafely(event, 'aid', args.auctionId);
+  setSafely(event, 'ttr', duration);
   return [event];
 }
 
-function createHbEvent(bidder, event, slotId, auctionId, timeToRespond, startTime, bidId, cpm, currency, netRevenue, adId, creativeId, adSize, dealId, priceBucket) {
-  let ev = {ev: event};
-  if (bidder) {
-    ev.n = bidder
+function setSafely(obj, key, value) {
+  if (value) {
+    Object.assign(obj, {[key]: value});
   }
-  if (slotId) {
-    ev.sid = slotId;
-  }
-  if (auctionId) {
-    ev.aid = auctionId;
-  }
-  if (bidId) {
-    ev.bid = bidId
-  }
-  if (cpm) {
-    ev.cpm = cpm;
-  }
-  if (currency) {
-    ev.cry = currency;
-  }
-  if (netRevenue) {
-    ev.net = netRevenue;
-  }
-  if (adId) {
-    ev.did = adId;
-  }
-  if (creativeId) {
-    ev.cid = creativeId;
-  }
-  if (adSize) {
-    ev.sz = adSize;
-  }
-  if (dealId) {
-    ev.lid = dealId;
-  }
-  if (startTime) {
-    ev.st = startTime;
-  }
-  if (timeToRespond) {
-    ev.ttr = timeToRespond;
-  }
-  if (priceBucket) {
-    ev.pb = priceBucket;
-  }
-  return ev;
 }
 
 export function AnalyticsQueue() {
