@@ -36,14 +36,14 @@
             pbjs.setConfig({
                 usersync: {
                     universalIds: [{
-                        name: "openId",
+                        name: "unifiedId",
                         params: {
                             partner: "prebid",
                             url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
                         },
                         storage: {
                             type: "cookie",
-                            name: "pbjs-openid",
+                            name: "pbjs-unifiedid",
                             expires: 60
                         }
                     }, {
