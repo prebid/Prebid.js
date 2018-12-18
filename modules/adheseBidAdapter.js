@@ -17,10 +17,10 @@ export const spec = {
   mergeTargets: function(targets, target) {
     if (target) {
       Object.keys(target).forEach(function (key) {
-        let val = target[key];
-        let values = Array.isArray(val) ? val : [val];
+        const val = target[key];
+        const values = Array.isArray(val) ? val : [val];
         if (targets[key]) {
-          let distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
+          const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
           targets[key].push.apply(targets[key], distinctValues);
         } else {
           targets[key] = values;
@@ -43,14 +43,14 @@ export const spec = {
       return null;
     }
 
-    let account = this.getAccount(validBidRequests);
-    let targets = validBidRequests.map(bid => bid.params.data).reduce(this.mergeTargets, {});
-    let gdprParams = (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? [ 'xt' + bidderRequest.gdprConsent.consentString ] : [];
-    let targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
-    let slotsParams = validBidRequests.map(bid => 'sl' + this.bidToSlotName(bid));
-    let params = [...slotsParams, ...targetsParams, ...gdprParams].map(s => '/' + s).join('');
-    let cacheBuster = '?t=' + new Date().getTime();
-    let uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
+    const account = this.getAccount(validBidRequests);
+    const targets = validBidRequests.map(bid => bid.params.data).reduce(this.mergeTargets, {});
+    const gdprParams = (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? [ 'xt' + bidderRequest.gdprConsent.consentString ] : [];
+    const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
+    const slotsParams = validBidRequests.map(bid => 'sl' + this.bidToSlotName(bid));
+    const params = [...slotsParams, ...targetsParams, ...gdprParams].map(s => '/' + s).join('');
+    const cacheBuster = '?t=' + new Date().getTime();
+    const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
 
     return {
       method: 'GET',
@@ -68,7 +68,7 @@ export const spec = {
   },
 
   getMediaType: function(markup) {
-    let isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
+    const isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
     return isVideo ? VIDEO : BANNER;
   },
 
@@ -109,9 +109,9 @@ export const spec = {
   },
 
   adResponse: function(bid, ad) {
-    let price = this.getPrice(ad);
-    let adDetails = this.getAdDetails(ad);
-    let markup = this.getAdMarkup(ad);
+    const price = this.getPrice(ad);
+    const adDetails = this.getAdDetails(ad);
+    const markup = this.getAdMarkup(ad);
 
     const bidResponse = this.baseAdResponse({
       requestId: bid.bidId,
@@ -134,7 +134,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, request) {
-    let serverAds = serverResponse.body.reduce(function(map, ad) {
+    const serverAds = serverResponse.body.reduce(function(map, ad) {
       map[ad.slotName] = ad;
       return map;
     }, {});
