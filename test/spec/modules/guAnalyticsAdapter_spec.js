@@ -91,6 +91,30 @@ describe('Gu analytics adapter', () => {
     start: 1509369418391
   };
 
+  const RESPONSE_WITHOUT_BUYER_DATA = {
+    requestId: '208750227436c1',
+    bidderCode: 'b1',
+    width: 300,
+    height: 250,
+    statusMessage: 'Bid available',
+    adId: '208750227436c1',
+    creativeId: '123',
+    mediaType: 'banner',
+    cpm: 0.015,
+    pbCg: '0.01',
+    currency: 'USD',
+    netRevenue: true,
+    ad: '<!-- tag goes here -->',
+    auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    responseTimestamp: 1509369418832,
+    requestTimestamp: 1509369418389,
+    bidder: 'adapter',
+    adUnitCode: 'slot-1',
+    timeToRespond: 443,
+    size: '300x250',
+    dealId: 'd12345',
+  };
+
   const RESPONSE = {
     requestId: '208750227436c1',
     bidderCode: 'b1',
@@ -112,7 +136,10 @@ describe('Gu analytics adapter', () => {
     adUnitCode: 'slot-1',
     timeToRespond: 443,
     size: '300x250',
-    dealId: 'd12345'
+    dealId: 'd12345',
+    dspId: 57,
+    advertiserId: 36069,
+    advertiserDomain: 'blackrock.com',
   };
 
   before(() => {
@@ -207,7 +234,38 @@ describe('Gu analytics adapter', () => {
       cid: '123',
       sz: '300x250',
       lid: 'd12345',
-      ttr: 443
+      ttr: 443,
+      adv: 36069,
+      dsp: 57,
+      add: 'blackrock.com',
+    });
+  });
+
+  it('should handle bid response event when buyer data absent', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE_WITHOUT_BUYER_DATA);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(4);
+    expect(ev[3]).to.be.eql({
+      ev: 'response',
+      n: 'b1',
+      sid: 'slot-1',
+      bid: '208750227436c1',
+      cpm: 0.015,
+      pb: '0.01',
+      cry: 'USD',
+      net: true,
+      did: '208750227436c1',
+      cid: '123',
+      sz: '300x250',
+      lid: 'd12345',
+      ttr: 443,
     });
   });
 

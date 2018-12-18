@@ -130,6 +130,9 @@ function trackBidResponse(args) {
     setSafely(event, 'sz', args.size);
     setSafely(event, 'ttr', args.timeToRespond);
     setSafely(event, 'lid', args.dealId);
+    setSafely(event, 'dsp', args.dspId);
+    setSafely(event, 'adv', args.advertiserId);
+    setSafely(event, 'add', args.advertiserDomain);
     return [event];
   }
   return null;
