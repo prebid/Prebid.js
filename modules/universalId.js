@@ -76,23 +76,25 @@ export const extendedBidRequestData = (function () {
  */
 const submodules = [{
   configKey: 'pubCommonId',
-  expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
+  expires: 60,
   decode: function(idData) {
-    return {
-      crumbs: idData
-    }
+    return { 'crumbs': idData }
   },
   getId: function(data, callback) {
-    const response = {
+    const responseObj = {
       data: utils.generateUUID()
     };
-    callback(response);
+    callback(responseObj);
   }
 }, {
   configKey: 'unifiedId',
-  expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
+  expires: 60,
   decode: function(idData) {
-    // TODO: complete openId decode implementation
+    try {
+      return { 'unifiedId': idData };
+    } catch (e) {
+      utils.logError('Universal ID submodule decode error');
+    }
   },
   getId: function(data, callback) {
     // validate config values: params.partner and params.endpoint
@@ -100,10 +102,13 @@ const submodules = [{
     const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
     ajax(url, response => {
       try {
-        callback(response);
+        const responseObj = {
+          data: response
+        };
+        callback(responseObj);
       } catch (e) {
         utils.logError(e);
-        callback(undefined);
+        callback();
       }
     }, undefined, {
       method: 'GET'
@@ -117,12 +122,14 @@ const submodules = [{
  * @param {{data: string, expires: number}} response
  */
 export function submoduleGetIdCallback(submodule, submoduleConfig, response) {
-  if (response && typeof response.data === 'string' && response.data !== '') {
+  if (response && typeof response === 'object') {
+    const responseStr = (response.data && typeof response.data !== 'string') ? JSON.stringify(response.data) : response.data;
+    const expires = response.expires || submoduleConfig.storage.expires || submodule.expires;
+
     if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
-      const expires = response.expires || submoduleConfig.storage.expires || submodule.expires;
-      setCookie(submoduleConfig.storage.name, response.data, expires);
+      setCookie(submoduleConfig.storage.name, responseStr, expires);
     } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-      localStorage.setItem(submoduleConfig.storage.name, response.data);
+      localStorage.setItem(submoduleConfig.storage.name, responseStr);
     } else {
       utils.logError('Universal ID Module: Invalid configuration storage type');
     }
@@ -295,10 +302,11 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
       }
 
       if (storageValue) {
-        // TODO: review impact on event loop from try/catch around cookie/localStorage access
+        utils.logInfo('Universal ID module found storageValue:', storageValue);
         // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
+        utils.logInfo('Universal ID module did not find storageValue, call getId syncDelay:', syncDelay);
         // stored value does not exist, call submodule getId
         if (syncDelay) {
           // if syncDelay exists, wrap submodule.getId call with a setTimeout

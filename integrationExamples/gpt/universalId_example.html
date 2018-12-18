@@ -34,6 +34,7 @@
 
         pbjs.que.push(function() {
             pbjs.setConfig({
+                debug: true,
                 usersync: {
                     universalIds: [{
                         name: "unifiedId",
@@ -43,14 +44,15 @@
                         },
                         storage: {
                             type: "cookie",
-                            name: "pbjs-unifiedid",
+                            name: "unifiedid",
                             expires: 60
                         }
                     }, {
                         name: "pubCommonId",
                         storage: {
                             type: "cookie",
-                            name: "pubcid"
+                            name: "pubcid",
+                            expires: 60
                         }
                     }],
                     syncDelay: 5000
