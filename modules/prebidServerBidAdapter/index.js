@@ -116,7 +116,7 @@ function queueSync(bidderCodes, gdprConsent) {
     (response) => {
       try {
         response = JSON.parse(response);
-        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
+        doAllSyncs(response.bidder_status);
       } catch (e) {
         utils.logError(e);
       }
@@ -128,6 +128,19 @@ function queueSync(bidderCodes, gdprConsent) {
     });
 }
 
+function doAllSyncs(bidders) {
+  if (bidders.length === 0) {
+    return;
+  }
+
+  const thisSync = bidders.pop();
+  if (thisSync.no_cookie) {
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+  } else {
+    doAllSyncs(bidders);
+  }
+}
+
 /**
  * Run a cookie sync for the given type, url, and bidder
  *
@@ -135,17 +148,19 @@ function queueSync(bidderCodes, gdprConsent) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  */
-function doBidderSync(type, url, bidder) {
+function doBidderSync(type, url, bidder, done) {
   if (!url) {
     utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+    done();
   } else if (type === 'image' || type === 'redirect') {
     utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
-    utils.triggerPixel(url);
+    utils.triggerPixel(url, done);
   } else if (type == 'iframe') {
     utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
-    utils.insertUserSyncIframe(url);
+    utils.insertUserSyncIframe(url, done);
   } else {
     utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+    done();
   }
 }
 

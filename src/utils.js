@@ -568,8 +568,12 @@ exports.insertElement = function(elm, doc, target) {
   } catch (e) {}
 };
 
-exports.triggerPixel = function (url) {
+exports.triggerPixel = function (url, done) {
   const img = new Image();
+  if (done && exports.isFn(done)) {
+    img.addEventListener('load', done);
+    img.addEventListener('error', done);
+  }
   img.src = url;
 };
 
@@ -616,11 +620,15 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertUserSyncIframe = function(url) {
+exports.insertUserSyncIframe = function(url, done) {
   let iframeHtml = exports.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
+  if (done && exports.isFn(done)) {
+    iframe.addEventListener('load', done);
+    iframe.addEventListener('error', done);
+  }
   exports.insertElement(iframe);
 };
 
