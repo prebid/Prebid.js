@@ -148,7 +148,7 @@ function trackAuctionEnd(args) {
 
 function setSafely(obj, key, value) {
   if (value) {
-    Object.assign(obj, {[key]: value})
+    Object.assign(obj, {[key]: value});
   }
 }
 
