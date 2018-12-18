@@ -124,6 +124,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use
