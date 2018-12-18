@@ -35,8 +35,6 @@ import find from 'core-js/library/fn/array/find';
  * @typedef {Object} IdSubmodule
  * @property {string} configKey - property name within the config universal id object
  * @property {number} expires - cookie expires time
- * @property {?overrideId} overrideId - optional method, if defined function will be called before trying to load cookie/local storage value.
- * note: if function returns an object, it replaces using a stored value and the result will be passed to bid requests
  * @property {decode} decode - decode a stored value for passing to bid requests
  * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
  */
@@ -79,14 +77,6 @@ export const extendedBidRequestData = (function () {
 const submodules = [{
   configKey: 'pubCommonId',
   expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
-  overrideId: function() {
-    if (typeof window['pubCommonId'] === 'object') {
-      // If the page includes its own pubcid object, then use that instead.
-      const pubcid = window['pubCommonId'].getId();
-      utils.logMessage('pubCommonId' + ': pubcid = ' + pubcid);
-      return pubcid;
-    }
-  },
   decode: function(idData) {
     return {
       crumbs: idData
@@ -99,31 +89,25 @@ const submodules = [{
     callback(response);
   }
 }, {
-  configKey: 'openId',
+  configKey: 'unifiedId',
   expires: (new Date()).getTime() + (365 * 24 * 60 * 60 * 1000 * 8),
   decode: function(idData) {
     // TODO: complete openId decode implementation
   },
   getId: function(data, callback) {
     // validate config values: params.partner and params.endpoint
-    const partner = data.params.partner;
-    const url = data.params.url;
-    if (typeof partner === 'string' && typeof url === 'string') {
-      ajax(url, response => {
-        try {
-          callback(response);
-        } catch (e) {
-          utils.logError(e);
-          callback(undefined);
-        }
-      }, JSON.stringify({ partner: partner }), {
-        contentType: 'text/json',
-        withCredentials: true
-      });
-    } else {
-      utils.logError('Invalid configuration set for the UniversalId openId sub-module: endpoint =', url, ' partner =', partner);
-      callback(undefined);
-    }
+    const partner = data.params.partner || 'prebid';
+    const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+    ajax(url, response => {
+      try {
+        callback(response);
+      } catch (e) {
+        utils.logError(e);
+        callback(undefined);
+      }
+    }, undefined, {
+      method: 'GET'
+    });
   }
 }];
 
@@ -214,13 +198,10 @@ export function enabledStorageTypes (navigator, document) {
 
 /**
  * check if any universal id types are set in configuration (must opt-in to enable)
- *
  * @param {Object[]} submoduleConfigs
  * @param {IdSubmodule[]} submodules
  */
 export function validateConfig (submoduleConfigs, submodules) {
-  // const submoduleConfigs = config.getConfig('usersync.universalIds');
-  // console.log('validateConfig: submoduleConfigs:', submoduleConfigs);
   // exit if no configurations are set
   if (!Array.isArray(submoduleConfigs)) {
     console.log('validateConfig: submoduleConfigs is NOT ARRAY');
@@ -291,18 +272,6 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
     // skip, config with name matching submodule.configKey does not exist
     if (!submoduleConfig) {
       return carry;
-    }
-
-    // check if submodule has an override id method, this takes precedence over loading from local storage
-    if (typeof submodule.overrideId === 'function') {
-      const overrideResult = submodule.overrideId();
-      // skip, override returned a valid result, pass value to bidAdapters
-      // TODO: check if overrideResult will need to be decoded using the submodule interface.
-      if (overrideResult && typeof overrideResult === 'object') {
-        carry.push('submodule override result is valid, skip processing config');
-        extendedBidRequestData.addData(overrideResult);
-        return carry;
-      }
     }
 
     if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {

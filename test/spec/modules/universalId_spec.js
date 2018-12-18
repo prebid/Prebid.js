@@ -159,7 +159,7 @@ describe('Universal ID', function () {
     const submodules = [{
       configKey: 'pubCommonId'
     }, {
-      configKey: 'openId'
+      configKey: 'unifiedId'
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
@@ -170,7 +170,7 @@ describe('Universal ID', function () {
       expect(validateConfig([{
         name: 'pubCommonId'
       }, {
-        name: 'openId'
+        name: 'unifiedId'
       }], submodules)).to.equal(true);
     });
 
@@ -199,11 +199,6 @@ describe('Universal ID', function () {
     const submodules = [{
       configKey: 'pubCommonId',
       expires: Number.MAX_VALUE,
-      overrideId: function() {
-        if (typeof window['pubCommonId'] === 'object' && typeof window['pubCommonId'].getId === 'function') {
-          return window['pubCommonId'].getId();
-        }
-      },
       decode: function(value) {
         return {
           'pubcid': value
@@ -216,11 +211,11 @@ describe('Universal ID', function () {
         // });
       }
     }, {
-      configKey: 'openId',
+      configKey: 'unifiedId',
       expires: Number.MAX_VALUE - 1,
       decode: function(value) {
         return {
-          'openid': value
+          'unifiedId': value
         }
       },
       getId: function (data, callback) {
@@ -252,7 +247,7 @@ describe('Universal ID', function () {
         name: 'pubCommonId',
         value: {}
       }, {
-        name: 'openId',
+        name: 'unifiedId',
         value: {}
       }], 0, submodules, {
         cookieEnabled: false
@@ -270,7 +265,7 @@ describe('Universal ID', function () {
         name: 'pubCommonId',
         value: {}
       }, {
-        name: 'openId',
+        name: 'unifiedId',
         value: {}
       }], 0, submodules, {
         cookieEnabled: true
@@ -290,36 +285,6 @@ describe('Universal ID', function () {
       }).length).to.equal(2);
     });
 
-    it('returns array with one submodule enabled (pubCommonId), if a configKey exists and the overrideId returns a valid result', function() {
-      // Create the window object that the overrideId method will check for, this should allow the test to pass
-      window.pubCommonId = {
-        getId: function() {
-          return {
-            pubcid: {
-              foo: 'bar'
-            }
-          }
-        }
-      };
-
-      expect(initSubmodules([{
-        name: 'pubCommonId'
-      }, {
-        name: 'openId'
-      }], 0, submodules, {
-        cookieEnabled: false
-      }, {
-        localStorage: undefined,
-        set cookie(v) {},
-        get cookie() {
-          return ''
-        }
-      }).length).to.equal(1);
-
-      // clean-up mock object used for test
-      delete window.pubCommonId;
-    });
-
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
       expect(initSubmodules([{
         name: 'pubCommonId',
@@ -328,10 +293,10 @@ describe('Universal ID', function () {
           name: 'pubcid'
         }
       }, {
-        name: 'openId',
+        name: 'unifiedId',
         storage: {
           type: 'html5',
-          name: 'openid'
+          name: 'unifiedId'
         }
       }], 0, submodules, {
         cookieEnabled: true
