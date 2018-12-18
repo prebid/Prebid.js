@@ -153,7 +153,7 @@ function generateUrl(bid, bidderRequest) {
       url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
     }
 
-    url += ('&transactionId=' + bid.transactionId);
+    url += ('&transactionId=' + bid.transactionId + '&hb=1');
     url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
 
     return (url + '&fmt=json');
