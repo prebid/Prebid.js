@@ -19,6 +19,7 @@ const CONSTANTS = require('../src/constants.json');
  * @callback getId
  * @summary submodule interface for getId function
  * @param {Object} data
+ * @param {Object} consentData
  * @param {number} syncDelay
  * @param {getIdCallback} callback - optional callback to execute on id retrieval
  */
@@ -77,7 +78,7 @@ const submodules = [{
   decode: function(idData) {
     return { 'pubcid': idData }
   },
-  getId: function(data, syncDelay, callback) {
+  getId: function(data, consentData, syncDelay, callback) {
     const responseObj = {
       data: utils.generateUUID(),
       expires: data.storage.expires || 60
@@ -93,7 +94,7 @@ const submodules = [{
       utils.logError('Universal ID submodule decode error');
     }
   },
-  getId: function(data, syncDelay, callback) {
+  getId: function(data, consentData, syncDelay, callback) {
     function callEndpoint() {
       // validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
@@ -102,16 +103,17 @@ const submodules = [{
       utils.logInfo('Universal ID Module, call sync endpoint', url);
 
       ajax(url, response => {
-        try {
-          const parsedResponse = (response && typeof response !== 'object') ? JSON.parse(response) : response;
-          const responseObj = {
-            data: parsedResponse.TDID,
-            expires: parsedResponse.expires || data.storage.expires || 60
-          };
-          callback(responseObj);
-        } catch (e) {
-          callback();
+        if (response) {
+          try {
+            const parsedResponse = (typeof response !== 'object') ? JSON.parse(response) : response;
+            const responseObj = {
+              data: parsedResponse.TDID,
+              expires: parsedResponse.expires || data.storage.expires || 60
+            };
+            callback(responseObj);
+          } catch (e) {}
         }
+        callback();
       }, undefined, { method: 'GET' });
     }
     // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
@@ -362,7 +364,7 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
       } else {
         utils.logInfo('Universal ID module did not find storageValue, call getId syncDelay:', syncDelay);
         // stored value does not exist, call submodule getId
-        submodule.getId(submoduleConfig, syncDelay, function (response) {
+        submodule.getId(submoduleConfig, consentData, syncDelay, function (response) {
           submoduleGetIdCallback(submodule, submoduleConfig, response);
         });
       }
