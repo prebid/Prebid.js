@@ -253,7 +253,29 @@ export function validateConfig (submoduleConfigs, submodules) {
  * @returns {boolean}
  */
 export function gdprLocalStorageConsent(consentString) {
-  return (atob(consentString).charCodeAt(16) | 247) === 255;
+  try {
+    return (atob(consentString).charCodeAt(16) | 247) === 255;
+  } catch (e) {
+    utils.logError('Universal ID Module error decoding gdpr consent string');
+    return false;
+  }
+}
+
+/**
+ * test if consent module is present, applies, and is valid for local storage (purpose 1)
+ * @returns {boolean}
+ */
+export function hasGDPRConsent(consentData) {
+  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+    if (!consentData.consentString) {
+      utils.logWarn('Universal ID Module exiting on no GDPR consent string');
+      return false;
+    } else if (!gdprLocalStorageConsent(consentData.consentString)) {
+      utils.logWarn('Universal ID Module exiting on no GDPR consent to local storage (purpose #1)');
+      return false;
+    }
+    return true;
+  }
 }
 
 /**
@@ -265,21 +287,7 @@ export function gdprLocalStorageConsent(consentString) {
  */
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
-  if (adUnits) {
-    // if consent module is present, applies, and is valid for local storage (purpose 1)
-    const consentData = gdprDataHandler.getConsentData();
-
-    if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      if (!consentData.consentString) {
-        // must have a consent string that specifically allows Purpose 1 (store local state)
-        utils.logWarn('Universal ID Module exiting on no GDPR consent string');
-        next.apply(this, arguments);
-      } else if (!gdprLocalStorageConsent(consentData.consentString)) {
-        utils.logWarn('Universal ID Module exiting on no GDPR consent to local storage (purpose #1)');
-        next.apply(this, arguments);
-      }
-    }
-
+  if (adUnits && hasGDPRConsent(gdprDataHandler.getConsentData())) {
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
       Object.keys(item).forEach(key => {
         carry[key] = item[key];
@@ -365,7 +373,7 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
 function init(dependencyContainer) {
   dependencyContainer.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document);
+      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document, );
       dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     } else {
       dependencyContainer.utils.logInfo('Universal ID Module not initialized: config usersync not defined');
@@ -377,5 +385,6 @@ init({
   submodules: submodules,
   navigator: window.navigator,
   document: window.document,
-  utils: utils
+  utils: utils,
+  consentData: gdprDataHandler.getConsentData()
 });
