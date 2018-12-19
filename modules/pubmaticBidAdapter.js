@@ -528,10 +528,13 @@ export const spec = {
               newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
             }
             if (bid.ext && bid.ext.advid) {
-              newBid['advertiserId'] = bid.ext.advid;
+              newBid.advertiserId = bid.ext.advid;
             }
             if (bid.ext && bid.ext.dspid) {
-              newBid['dspId'] = bid.ext.dspid;
+              newBid.dspId = bid.ext.dspid;
+            }
+            if (bid.adomain && bid.adomain.length > 0) {
+              newBid.advertiserDomain = bid.adomain[0];
             }
 
             bidResponses.push(newBid);
