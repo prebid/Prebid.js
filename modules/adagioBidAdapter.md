@@ -19,10 +19,21 @@ Connects to Adagio demand source to fetch bids.
             {
               bidder: 'adagio', // Required
               params: {
-                siteId: '0', // Required - Site ID from Adagio.
-                placementId: '4', // Required - Placement ID from Adagio. Refers to the placement of an ad unit in a page.
-                pagetypeId: '343', // Required - Page type ID from Adagio.
-                categories: ['IAB12', 'IAB12-2'], // IAB categories of the page.
+                organizationId: '0', // Required - Organization ID from Adagio.
+                site: 'SITE-NAME', // Required - Site Name from Adagio.
+                adUnitElementId: 'dfp_banniere-atf', // Required - AdUnit element id. Refers to the adunit id in a page (ex: document.getElementById(adUnitElementId))
+
+                // The following params are limited to 30 characters,
+                // and can only contain the following characters:
+                // - alphanumeric (A-Z+a-z+0-9, case-insensitive)
+                // - dashes `-`
+                // - underscores `_`
+                // Also, each param can have at most 50 unique active values (case-insensitive).
+                placement: 'ATF', // Required - Placement from Adagio. Refers to the placement of an ad unit in a page.
+                pagetype: 'ARTICLE', // Required - Page type from Adagio.
+                category: 'NEWS', // Recommended - Category from Adagio.
+                subcategory: 'SPORT', // Optional - Sub-Category from Adagio.
+                environment: 'SITE-MOBILE', // Optional - Environment from Adagio.
               }
             }
           ]
@@ -36,21 +47,38 @@ Connects to Adagio demand source to fetch bids.
         alwaysUseBid: true,
         adserverTargeting: [
           {
+            key: "site",
+            val: function (bidResponse) {
+              return bidResponse.site;
+            }
+          },{
             key: "placement",
             val: function (bidResponse) {
-              return bidResponse.placementId;
+              return bidResponse.placement;
             }
           },
           {
             key: "pagetype",
             val: function (bidResponse) {
-              return bidResponse.pagetypeId;
+              return bidResponse.pagetype;
             }
           },
           {
-            key: "categories",
+            key: "category",
             val: function (bidResponse) {
-              return bidResponse.categories.join(",");
+              return bidResponse.category;
+            }
+          },
+          {
+            key: "subcategory",
+            val: function (bidResponse) {
+              return bidResponse.subcategory;
+            }
+          },
+          {
+            key: "environment",
+            val: function (bidResponse) {
+              return bidResponse.environment;
             }
           }
         ]
