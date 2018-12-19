@@ -308,17 +308,13 @@ export function requestBidHook (config, next) {
 
 /**
  * init submodules if config values are set correctly
- * @param submoduleConfigs
- * @param syncDelay
- * @param {IdSubmodule[]} submodules
- * @param {Navigator} navigator
- * @param {Document} document
- * @param {Object} consentData
+ * @param {Object} dependencyContainer
  * @returns {Array} - returns list of enabled submodules
  */
-export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document, consentData) {
+// export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document, consentData) {
+export function initSubmodules (dependencyContainer) {
   // valid if at least one configuration is valid
-  if (!validateConfig(submoduleConfigs, submodules)) {
+  if (!validateConfig(dependencyContainer.universalIds, dependencyContainer.submodules)) {
     utils.logInfo('Failed to validate configuration for Universal ID module');
     return [];
   }
@@ -328,7 +324,7 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
 
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
-    const submoduleConfig = find(submoduleConfigs, universalIdConfig => {
+    const submoduleConfig = find(dependencyContainer.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
 
@@ -354,17 +350,14 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
         storageValue = localStorage.getItem(submoduleConfig.storage.name);
       } else {
         // ERROR STORAGE TYPE NOT DEFINED
-        utils.logMessage('Universal ID configuration error, storage type configuration invalid');
       }
 
       if (storageValue) {
-        utils.logInfo('Universal ID module found storageValue:', storageValue);
         // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
-        utils.logInfo('Universal ID module did not find storageValue, call getId syncDelay:', syncDelay);
         // stored value does not exist, call submodule getId
-        submodule.getId(submoduleConfig, consentData, syncDelay, function (response) {
+        submodule.getId(submoduleConfig, dependencyContainer.consentData, dependencyContainer.syncDelay, function (response) {
           submoduleGetIdCallback(submodule, submoduleConfig, response);
         });
       }
@@ -376,10 +369,16 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
 function init(dependencyContainer) {
   dependencyContainer.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document, consentData);
+      const enabledModules = initSubmodules({
+        universalIds: usersync.universalIds,
+        syncDelay: usersync.syncDelay || 0,
+        submodules: dependencyContainer.submodules,
+        navigator: dependencyContainer.navigator,
+        document: dependencyContainer.document,
+        consentData: dependencyContainer.consentData,
+        utils: dependencyContainer.utils
+      });
       dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
-    } else {
-      dependencyContainer.utils.logInfo('Universal ID Module not initialized: config usersync not defined');
     }
   });
 }
