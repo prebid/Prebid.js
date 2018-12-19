@@ -53,7 +53,16 @@ describe('coinzillaBidAdapter', function () {
       }
     ];
 
-    const request = spec.buildRequests(bidRequests);
+    let bidderRequests = {
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://example.com',
+        'stack': ['http://example.com']
+      }
+    };
+
+    const request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request to our endpoint via POST', function () {
       expect(request[0].method).to.equal('POST');
       expect(request[1].method).to.equal('POST');

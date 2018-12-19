@@ -39,7 +39,7 @@ export const spec = {
         width: width,
         height: height,
         bidId: bidRequest.bidId,
-        referer: utils.getTopWindowUrl(),
+        referer: bidderRequest.refererInfo.referer,
       };
       return {
         method: 'POST',
@@ -67,7 +67,7 @@ export const spec = {
       const dealId = response.dealid || '';
       const currency = response.currency || 'EUR';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.getTopWindowUrl();
+      const referrer = bidRequest.data.referer;
       const bidResponse = {
         requestId: response.requestId,
         cpm: cpm,
