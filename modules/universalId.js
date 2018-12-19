@@ -311,9 +311,10 @@ export function requestBidHook (config, next) {
  * @param {IdSubmodule[]} submodules
  * @param {Navigator} navigator
  * @param {Document} document
+ * @param {Object} consentData
  * @returns {Array} - returns list of enabled submodules
  */
-export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document) {
+export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document, consentData) {
   // valid if at least one configuration is valid
   if (!validateConfig(submoduleConfigs, submodules)) {
     utils.logInfo('Failed to validate configuration for Universal ID module');
@@ -373,7 +374,7 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
 function init(dependencyContainer) {
   dependencyContainer.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document, );
+      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document, consentData);
       dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     } else {
       dependencyContainer.utils.logInfo('Universal ID Module not initialized: config usersync not defined');
