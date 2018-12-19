@@ -249,6 +249,14 @@ export function validateConfig (submoduleConfigs, submodules) {
 }
 
 /**
+ * @param {string} consentString
+ * @returns {boolean}
+ */
+export function gdprLocalStorageConsent(consentString) {
+  return (atob(consentString).charCodeAt(16) | 247) === 255;
+}
+
+/**
  * Decorate ad units with universal id properties. This hook function is called before the
  * real pbjs.requestBids is invoked, and can modify its parameter
  * @param {PrebidConfig} config
@@ -258,15 +266,17 @@ export function validateConfig (submoduleConfigs, submodules) {
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
-    // if consent module is present and applies, consent must allow condition 1 to store data locally
+    // if consent module is present, applies, and is valid for local storage (purpose 1)
     const consentData = gdprDataHandler.getConsentData();
+
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       if (!consentData.consentString) {
         // must have a consent string that specifically allows Purpose 1 (store local state)
-        utils.logWarn('Universal ID Module exiting on no GDPR consent');
+        utils.logWarn('Universal ID Module exiting on no GDPR consent string');
         next.apply(this, arguments);
-      } else {
-        // TODO check if consent string allows condition 1 to store data locally
+      } else if (!gdprLocalStorageConsent(consentData.consentString)) {
+        utils.logWarn('Universal ID Module exiting on no GDPR consent to local storage (purpose #1)');
+        next.apply(this, arguments);
       }
     }
 
