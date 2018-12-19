@@ -6,6 +6,9 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 
+const events = require('../src/events');
+const CONSTANTS = require('../src/constants.json');
+
 /**
  * @callback getIdCallback
  * @param {Object} response - assumed to be a json object
@@ -97,10 +100,10 @@ const submodules = [{
   },
   getId: function(data, syncDelay, callback) {
     function callEndpoint() {
-      console.log(data, 'Universal ID Module: callEndpoint');
       // validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+      utils.logInfo('Universal ID Module, call sync endpoint', url);
       ajax(url, response => {
         try {
           const parsedResponse = (response && typeof response !== 'object') ? JSON.parse(response) : response;
@@ -117,12 +120,20 @@ const submodules = [{
         method: 'GET'
       });
     }
-
+    // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
     if (!syncDelay) {
+      utils.logInfo('Universal ID Module, call endpoint to sync without delay');
       callEndpoint();
     } else {
-      console.log(data, 'Universal ID Module: setTimeout syncDelay = ', syncDelay);
-      setTimeout(callEndpoint, syncDelay);
+      utils.logInfo('Universal ID Module, sync delay exists, set auction end event listener and call with timer on evocation');
+      // wrap auction end event handler in function so that it can be removed
+      const auctionEndHandler = function auctionEndHandler() {
+        utils.logInfo('Universal ID Module, auction end event listener evoked, set timer for', syncDelay);
+        // remove event handler immediately since we only need to listen for the first auction ending
+        events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        setTimeout(callEndpoint, syncDelay);
+      };
+      events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
     }
   }
 }];
@@ -181,7 +192,11 @@ function browserSupportsLocalStorage (localStorage) {
   }
 }
 
-// Helper to set a cookie
+/**
+ * @param {string} name
+ * @param {string} value
+ * @param {?number} expires
+ */
 export function setCookie(name, value, expires) {
   const expTime = new Date();
   expTime.setTime(expTime.getTime() + (expires || 60) * 1000 * 60);
@@ -189,7 +204,10 @@ export function setCookie(name, value, expires) {
     expTime.toGMTString();
 }
 
-// Helper to read a cookie
+/**
+ * @param {string} name
+ * @returns {any}
+ */
 export function getCookie(name) {
   const m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
   return m ? decodeURIComponent(m[2]) : null;
@@ -248,7 +266,9 @@ export function requestBidHook (config, next) {
   const universalID = {};
   // pass id data to adapters if bidRequestData list is not empty
   extendedBidRequestData.getData().forEach(dataItem => {
-    Object.assign(dataItem, universalID);
+    Object.keys(dataItem).forEach(key => {
+      universalID[key] = dataItem[key];
+    })
   });
 
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
