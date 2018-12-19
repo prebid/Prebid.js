@@ -59,6 +59,7 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       data.consent = {
+        gdprVendorId: 150,
         gdprConsentString: bidderRequest.gdprConsent.consentString,
         // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
         gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
