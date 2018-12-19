@@ -16,12 +16,6 @@ const CONSTANTS = require('../src/constants.json');
  */
 
 /**
- * @callback overrideId
- * @returns {*} - returns either an object or undefined,
- * if undefined an id value will be obtained from browser local storage/cookies or with the submodule getId function
- */
-
-/**
  * @callback getId
  * @summary submodule interface for getId function
  * @param {Object} data
@@ -71,13 +65,6 @@ export const extendedBidRequestData = (function () {
     },
     getData: function () {
       return dataItems;
-    },
-    destroy: function () {
-      // remove all data and request bids hook
-      while (dataItems.length) {
-        dataItems.pop();
-      }
-      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
     }
   }
 })();
@@ -111,7 +98,9 @@ const submodules = [{
       // validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+
       utils.logInfo('Universal ID Module, call sync endpoint', url);
+
       ajax(url, response => {
         try {
           const parsedResponse = (response && typeof response !== 'object') ? JSON.parse(response) : response;
@@ -121,22 +110,19 @@ const submodules = [{
           };
           callback(responseObj);
         } catch (e) {
-          utils.logError(e);
           callback();
         }
-      }, undefined, {
-        method: 'GET'
-      });
+      }, undefined, { method: 'GET' });
     }
     // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
     if (!syncDelay) {
       utils.logInfo('Universal ID Module, call endpoint to sync without delay');
       callEndpoint();
     } else {
-      utils.logInfo('Universal ID Module, sync delay exists, set auction end event listener and call with timer on evocation');
+      utils.logInfo('Universal ID Module, sync delay exists, set auction end event listener and call with timer');
       // wrap auction end event handler in function so that it can be removed
       const auctionEndHandler = function auctionEndHandler() {
-        utils.logInfo('Universal ID Module, auction end event listener evoked, set timer for', syncDelay);
+        utils.logInfo('Universal ID Module, auction end event listener called, set timer for', syncDelay);
         // remove event handler immediately since we only need to listen for the first auction ending
         events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
         setTimeout(callEndpoint, syncDelay);
@@ -272,11 +258,16 @@ export function validateConfig (submoduleConfigs, submodules) {
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
-    // if consent module is present, consent string must be valid
+    // if consent module is present and applies, consent must allow condition 1 to store data locally
     const consentData = gdprDataHandler.getConsentData();
-    if (consentData && !consentData.consentString) {
-      utils.logWarn('Universal ID Module exiting on no GDPR consent');
-      next.apply(this, arguments);
+    if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+      if (!consentData.consentString) {
+        // must have a consent string that specifically allows Purpose 1 (store local state)
+        utils.logWarn('Universal ID Module exiting on no GDPR consent');
+        next.apply(this, arguments);
+      } else {
+        // TODO check if consent string allows condition 1 to store data locally
+      }
     }
 
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
@@ -361,14 +352,20 @@ export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigat
   }, []);
 }
 
-function init() {
-  config.getConfig('usersync', ({usersync}) => {
+function init(dependencyContainer) {
+  dependencyContainer.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, submodules, window.navigator, window.document);
-      utils.logInfo('Universal ID Module initialized ' + enabledModules);
+      const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, dependencyContainer.submodules, dependencyContainer.navigator, dependencyContainer.document);
+      dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     } else {
-      utils.logInfo('Universal ID Module not initialized: config usersync not defined');
+      dependencyContainer.utils.logInfo('Universal ID Module not initialized: config usersync not defined');
     }
   });
 }
-init();
+init({
+  config: config,
+  submodules: submodules,
+  navigator: window.navigator,
+  document: window.document,
+  utils: utils
+});
