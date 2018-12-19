@@ -27,8 +27,8 @@ function _createBidResponse(response) {
   }
 }
 
-function _isViewabilityMeasurable() {
-  return !_isIframe();
+function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
@@ -46,11 +46,15 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
 
-  const viewabilityAmount = _isViewabilityMeasurable()
+  const viewabilityAmount = _isViewabilityMeasurable(element)
     ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
+
+  if (element === null) {
+    utils.logWarn(`Unable to locate element with id: '${bidRequest.adUnitCode}'`);
+  }
 
   /*
    * Infer data for the request payload
@@ -90,7 +94,7 @@ function _createServerRequest(bidRequest, gdprConsent) {
         'version': '$prebid.version$'
       }]
     }
-  }
+  };
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
