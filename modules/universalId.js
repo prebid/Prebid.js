@@ -272,14 +272,13 @@ export function validateConfig (submoduleConfigs, submodules) {
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
+    // if consent module is present, consent string must be valid
     const consentData = gdprDataHandler.getConsentData();
-    if (!consentData) {
-      utils.logWarn('Universal ID Module exiting on no GDPR consent data');
-      // no consentData exit immediately
+    if (consentData && !consentData.consentString) {
+      utils.logWarn('Universal ID Module exiting on no GDPR consent');
       next.apply(this, arguments);
-    } else {
-      utils.logMessage('Universal ID Module retrieved GDPR consent object');
     }
+
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
       Object.keys(item).forEach(key => {
         carry[key] = item[key];
