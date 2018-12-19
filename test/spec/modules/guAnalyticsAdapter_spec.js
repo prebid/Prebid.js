@@ -319,7 +319,7 @@ describe('Gu analytics adapter', () => {
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args[2]);
-    expect(payload.v).to.be.eql(3);
+    expect(payload.v).to.be.equal(4);
   });
 
   it('should ignore responses sent with bid won event', () => {
