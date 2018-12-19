@@ -54,7 +54,7 @@ const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
- * id data to be added to bid requests
+ * data to be added to bid requests
  * @type {{addData: function, getData: function}}
  */
 export const extendedBidRequestData = (function () {
@@ -70,6 +70,13 @@ export const extendedBidRequestData = (function () {
     },
     getData: function () {
       return dataItems;
+    },
+    destroy: function () {
+      // remove all data and request bids hook
+      while (dataItems.length) {
+        dataItems.pop();
+      }
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
     }
   }
 })();
@@ -238,7 +245,6 @@ export function enabledStorageTypes (navigator, document) {
 export function validateConfig (submoduleConfigs, submodules) {
   // exit if no configurations are set
   if (!Array.isArray(submoduleConfigs)) {
-    console.log('validateConfig: submoduleConfigs is NOT ARRAY');
     return false;
   }
   // check that at least one config exists
@@ -263,16 +269,14 @@ export function validateConfig (submoduleConfigs, submodules) {
  * @returns {*}
  */
 export function requestBidHook (config, next) {
-  const universalID = {};
-  // pass id data to adapters if bidRequestData list is not empty
-  extendedBidRequestData.getData().forEach(dataItem => {
-    Object.keys(dataItem).forEach(key => {
-      universalID[key] = dataItem[key];
-    })
-  });
-
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
+    const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
+      Object.keys(item).forEach(key => {
+        carry[key] = item[key];
+      });
+      return carry;
+    }, {});
     adUnits.forEach((adUnit) => {
       adUnit.bids.forEach((bid) => {
         bid.universalID = universalID;
@@ -353,9 +357,9 @@ function init() {
   config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
       const enabledModules = initSubmodules(usersync.universalIds, usersync.syncDelay || 0, submodules, window.navigator, window.document);
-      console.log('Universal ID Module initialized submodules: ', enabledModules);
+      utils.logInfo('Universal ID Module initialized ' + enabledModules);
     } else {
-      console.log('Universal ID Module not initialized: config usersync not defined');
+      utils.logInfo('Universal ID Module not initialized: config usersync not defined');
     }
   });
 }
