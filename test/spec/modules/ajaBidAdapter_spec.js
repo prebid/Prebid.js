@@ -141,4 +141,73 @@ describe('AjaAdapter', function () {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs', function () {
+    const bidResponse1 = {
+      body: {
+        'is_ad_return': true,
+        'ad': { /* ad body */ },
+        'syncs': [
+          'https://example.test/pixel/1'
+        ],
+        'sync_htmls': [
+          'https://example.test/iframe/1'
+        ]
+      }
+    };
+
+    const bidResponse2 = {
+      body: {
+        'is_ad_return': true,
+        'ad': { /* ad body */ },
+        'syncs': [
+          'https://example.test/pixel/2'
+        ]
+      }
+    };
+
+    it('should use a sync url from first response (pixel and iframe)', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse1, bidResponse2]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://example.test/pixel/1'
+        },
+        {
+          type: 'iframe',
+          url: 'https://example.test/iframe/1'
+        }
+      ]);
+    });
+
+    it('handle empty response (e.g. timeout)', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns empty syncs when not pixel enabled and not iframe enabled', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns pixel syncs when pixel enabled and not iframe enabled', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://example.test/pixel/1'
+        }
+      ]);
+    });
+
+    it('returns iframe syncs when not pixel enabled and iframe enabled', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://example.test/iframe/1'
+        }
+      ]);
+    });
+  });
 });

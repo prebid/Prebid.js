@@ -13,8 +13,8 @@ Connect to YIELDONE for bids.
 THE YIELDONE adapter requires setup and approval from the YIELDONE team.
 Please reach out to your account team or y1s@platform-one.co.jp for more information.
 
-Note: THE YIELDONE adapter do not support "multi-format" scenario.
-you should prepare adUnit different from banner before put video ad.
+Note: THE YIELDONE adapter do not support "multi-format" scenario... if both
+banner and video are specified as mediatypes, YIELDONE will treat it as a video unit.
 
 # Test Parameters
 ```javascript
