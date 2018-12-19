@@ -5,6 +5,7 @@ import {ajax} from 'src/ajax';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
+import { gdprDataHandler } from 'src/adaptermanager';
 
 const events = require('../src/events');
 const CONSTANTS = require('../src/constants.json');
@@ -271,6 +272,14 @@ export function validateConfig (submoduleConfigs, submodules) {
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
+    const consentData = gdprDataHandler.getConsentData();
+    if (!consentData) {
+      utils.logWarn('Universal ID Module exiting on no GDPR consent data');
+      // no consentData exit immediately
+      next.apply(this, arguments);
+    } else {
+      utils.logMessage('Universal ID Module retrieved GDPR consent object');
+    }
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
       Object.keys(item).forEach(key => {
         carry[key] = item[key];
