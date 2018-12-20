@@ -40,6 +40,7 @@ const CONSTANTS = require('../src/constants.json');
 
 const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+const OPT_OUT_COOKIE = '_pbjs_id_optout';
 
 /**
  * data to be added to bid requests
@@ -376,6 +377,12 @@ export function initSubmodules (dependencies) {
  * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}, consentData: {}}} dependencies
  */
 export function init(dependencies) {
+  // check for opt out cookie
+  if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
+    dependencies.utils.logInfo('Universal ID Module disabled: opt out cookie exists');
+    return;
+  }
+  // listen for usersync config change
   dependencies.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
       dependencies['syncDelay'] = usersync.syncDelay || 0;
