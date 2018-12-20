@@ -135,27 +135,6 @@ const submodules = [{
 }];
 
 /**
- * @param {IdSubmodule} submodule
- * @param {SubmoduleConfig} submoduleConfig
- * @param {{data: string, expires: number}} response
- */
-export function submoduleGetIdCallback(submodule, submoduleConfig, response) {
-  if (response && typeof response === 'object') {
-    const responseStr = (response.data && typeof response.data !== 'string') ? JSON.stringify(response.data) : response.data;
-    if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
-      setCookie(submoduleConfig.storage.name, responseStr, response.expires);
-    } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-      localStorage.setItem(submoduleConfig.storage.name, responseStr);
-    } else {
-      utils.logError('Universal ID Module: Invalid configuration storage type');
-    }
-    extendedBidRequestData.addData(submodule.decode(response.data));
-  } else {
-    utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
-  }
-}
-
-/**
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
  * @param {Document} document - document passed for easier testing through dependency injection
  * @returns {boolean}
@@ -211,15 +190,15 @@ export function getCookie(name) {
 
 /**
  * helper to check if local storage or cookies are enabled
- * @param {{document: Document, navigator: Navigator}} dependencyContainer
+ * @param {{document: Document, navigator: Navigator}} dependencies
  * @returns {[]}
  */
-export function enabledStorageTypes (dependencyContainer) {
+export function enabledStorageTypes (dependencies) {
   const enabledStorageTypes = [];
-  if (browserSupportsLocalStorage(dependencyContainer.document.localStorage)) {
+  if (browserSupportsLocalStorage(dependencies.document.localStorage)) {
     enabledStorageTypes.push(STORAGE_TYPE_LOCALSTORAGE);
   }
-  if (browserSupportsCookie(dependencyContainer.navigator, dependencyContainer.document)) {
+  if (browserSupportsCookie(dependencies.navigator, dependencies.document)) {
     enabledStorageTypes.push(STORAGE_TYPE_COOKIE)
   }
   return enabledStorageTypes;
@@ -227,16 +206,16 @@ export function enabledStorageTypes (dependencyContainer) {
 
 /**
  * check if any universal id types are set in configuration (must opt-in to enable)
- * @param {{universalIds: [], submodules: []}} dependencyContainer
+ * @param {{universalIds: [], submodules: []}} dependencies
  */
-export function validateConfig (dependencyContainer) {
+export function validateConfig (dependencies) {
   // exit if no configurations are set
-  if (!Array.isArray(dependencyContainer.universalIds)) {
+  if (!Array.isArray(dependencies.universalIds)) {
     return false;
   }
   // check that at least one config exists
-  return dependencyContainer.submodules.some(submodule => {
-    const submoduleConfig = find(dependencyContainer.universalIds, universalIdConfig => {
+  return dependencies.submodules.some(submodule => {
+    const submoduleConfig = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
     // return true if a valid config exists for submodule
@@ -306,20 +285,20 @@ export function requestBidHook (config, next) {
 
 /**
  * init submodules if config values are set correctly
- * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, consentData: {}, utils: {} }} dependencyContainer
+ * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, consentData: {}, utils: {} }} dependencies
  * @returns {Array} - returns list of enabled submodules
  */
-export function initSubmodules (dependencyContainer) {
+export function initSubmodules (dependencies) {
   // valid if at least one configuration is valid
-  if (!validateConfig(dependencyContainer)) {
-    dependencyContainer.utils.logInfo('Failed to validate configuration for Universal ID module');
+  if (!validateConfig(dependencies)) {
+    dependencies.utils.logInfo('Failed to validate configuration for Universal ID module');
     return [];
   }
   // storage enabled storage types, use to check if submodule has a valid configuration
-  const storageTypes = enabledStorageTypes(dependencyContainer);
+  const storageTypes = enabledStorageTypes(dependencies);
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
-    const universalId = find(dependencyContainer.universalIds, universalIdConfig => {
+    const universalId = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
     // skip, config with name matching submodule.configKey does not exist
@@ -341,27 +320,27 @@ export function initSubmodules (dependencyContainer) {
       if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
         storageValue = getCookie(universalId.storage.name);
       } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-        storageValue = dependencyContainer.document.localStorage.getItem(universalId.storage.name);
+        storageValue = dependencies.document.localStorage.getItem(universalId.storage.name);
       } else {
-        dependencyContainer.utils.logError(`Universal ID Module ${universalId.name} has invalid storage type: ${universalId.storage.type}`);
+        dependencies.utils.logError(`Universal ID Module ${universalId.name} has invalid storage type: ${universalId.storage.type}`);
       }
 
       if (storageValue) {
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
         // stored value does not exist, call submodule getId
-        submodule.getId(universalId, dependencyContainer.consentData, dependencyContainer.syncDelay, function (response) {
+        submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, function (response) {
           if (response && response.data) {
             if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
               setCookie(universalId.storage.name, JSON.stringify(response.data), response.expires);
             } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-              dependencyContainer.document.localStorage.setItem(universalId.storage.name, JSON.stringify(response.data));
+              dependencies.document.localStorage.setItem(universalId.storage.name, JSON.stringify(response.data));
             } else {
               utils.logError('Universal ID Module: Invalid configuration storage type');
             }
             extendedBidRequestData.addData(submodule.decode(response.data));
           } else {
-            dependencyContainer.utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
+            dependencies.utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
           }
         });
       }
@@ -371,15 +350,15 @@ export function initSubmodules (dependencyContainer) {
 }
 
 /**
- * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}, consentData: {}}} dependencyContainer
+ * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}, consentData: {}}} dependencies
  */
-export function init(dependencyContainer) {
-  dependencyContainer.config.getConfig('usersync', ({usersync}) => {
+export function init(dependencies) {
+  dependencies.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      dependencyContainer['syncDelay'] = usersync.syncDelay || 0;
-      dependencyContainer['universalIds'] = usersync.universalIds;
-      const enabledModules = initSubmodules(dependencyContainer);
-      dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
+      dependencies['syncDelay'] = usersync.syncDelay || 0;
+      dependencies['universalIds'] = usersync.universalIds;
+      const enabledModules = initSubmodules(dependencies);
+      dependencies.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     }
   });
 }

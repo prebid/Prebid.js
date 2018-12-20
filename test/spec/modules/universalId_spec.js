@@ -3,9 +3,8 @@ import {
   validateConfig,
   initSubmodules,
   requestBidHook,
-  extendedBidRequestData
 } from 'modules/universalId';
-import { expect, assert } from 'chai'
+import { expect } from 'chai'
 import sinon from 'sinon'
 
 describe('Universal ID', function () {
@@ -22,7 +21,7 @@ describe('Universal ID', function () {
 
   describe('enabledStorageTypes', function() {
     it('returns array with \'localStorage\' and \'cookie\' items, if both local storage and cookies are enabled', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -34,11 +33,11 @@ describe('Universal ID', function () {
           cookie: ''
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['html5', 'cookie']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5', 'cookie']);
     });
 
     it('returns array with \'localStorage\' item, if only localStorage is enabled', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: false
         },
@@ -53,11 +52,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['html5']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
     });
 
     it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred setting test cookie', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -75,11 +74,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['html5']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
     });
 
     it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred getting test cookie', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -95,11 +94,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['html5']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
     });
 
     it('returns array with \'cookie\' item, if only cookie storage is enabled', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -111,11 +110,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['cookie']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
     });
 
     it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred getting local storage test data', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -133,11 +132,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['cookie']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
     });
 
     it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred setting local storage test data', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: true
         },
@@ -159,11 +158,11 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal(['cookie']);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
     });
 
     it('returns empty array if neither local storage or cookies are not enabled', function() {
-      const dependencyContainer = {
+      const dependencies = {
         navigator: {
           cookieEnabled: false
         },
@@ -175,7 +174,7 @@ describe('Universal ID', function () {
           }
         }
       };
-      expect(enabledStorageTypes(dependencyContainer)).to.deep.equal([]);
+      expect(enabledStorageTypes(dependencies)).to.deep.equal([]);
     });
   });
 
@@ -187,15 +186,15 @@ describe('Universal ID', function () {
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: undefined,
         submodules: submodules
       };
-      expect(validateConfig(dependencyContainer)).to.equal(false);
+      expect(validateConfig(dependencies)).to.equal(false);
     });
 
     it('return true if config defines configurations for both submodules', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'pubCommonId'
         }, {
@@ -203,11 +202,11 @@ describe('Universal ID', function () {
         }],
         submodules: submodules
       };
-      expect(validateConfig(dependencyContainer)).to.equal(true);
+      expect(validateConfig(dependencies)).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'pubCommonId'
         }, {
@@ -215,11 +214,11 @@ describe('Universal ID', function () {
         }],
         submodules: submodules
       };
-      expect(validateConfig(dependencyContainer)).to.equal(true);
+      expect(validateConfig(dependencies)).to.equal(true);
     });
 
     it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'foo'
         }, {
@@ -227,15 +226,15 @@ describe('Universal ID', function () {
         }],
         submodules: submodules
       };
-      expect(validateConfig(dependencyContainer)).to.equal(false);
+      expect(validateConfig(dependencies)).to.equal(false);
     });
 
     it('return false if config does not define a configuration for any submodule', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [],
         submodules: submodules
       };
-      expect(validateConfig(dependencyContainer)).to.equal(false);
+      expect(validateConfig(dependencies)).to.equal(false);
     });
   });
 
@@ -248,12 +247,7 @@ describe('Universal ID', function () {
           'pubcid': value
         }
       },
-      getId: function (data, callback) {
-        // callback({
-        //   expires: Number.MAX_VALUE,
-        //   data: '1111'
-        // });
-      }
+      getId: function (data, callback) {}
     }, {
       configKey: 'unifiedId',
       expires: Number.MAX_VALUE - 1,
@@ -262,16 +256,11 @@ describe('Universal ID', function () {
           'unifiedId': value
         }
       },
-      getId: function (data, callback) {
-        // callback({
-        //   expires: Number.MAX_VALUE - 10,
-        //   data: '2222'
-        // });
-      }
+      getId: function (data, callback) {}
     }];
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
-      const dependencyContainer = {
+      const dependencies = {
         utils: {
           logInfo: function () {
 
@@ -296,11 +285,11 @@ describe('Universal ID', function () {
         },
         consentData: {}
       };
-      expect(initSubmodules(dependencyContainer)).to.deep.equal([]);
+      expect(initSubmodules(dependencies)).to.deep.equal([]);
     });
 
     it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'pubCommonId',
           value: {}
@@ -322,11 +311,11 @@ describe('Universal ID', function () {
         },
         consentData: {}
       };
-      expect(initSubmodules(dependencyContainer).length).to.equal(2);
+      expect(initSubmodules(dependencies).length).to.equal(2);
     });
 
     it('returns array with both submodules enabled, if storage is enabled and both submodule configs contain valid configs', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'pubCommonId',
           value: {}
@@ -355,11 +344,11 @@ describe('Universal ID', function () {
         },
         consentData: {}
       };
-      expect(initSubmodules(dependencyContainer).length).to.equal(2);
+      expect(initSubmodules(dependencies).length).to.equal(2);
     });
 
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
-      const dependencyContainer = {
+      const dependencies = {
         universalIds: [{
           name: 'pubCommonId',
           storage: {
@@ -387,7 +376,7 @@ describe('Universal ID', function () {
         },
         consentData: {}
       };
-      expect(initSubmodules(dependencyContainer).length).to.equal(1);
+      expect(initSubmodules(dependencies).length).to.equal(1);
     });
   });
 });
