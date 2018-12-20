@@ -247,8 +247,7 @@ describe('Universal ID', function () {
         },
         consentData: {}
       };
-      console.log(initSubmodules(dependencyContainer))
-      // expect(initSubmodules(dependencyContainer).to.deep.equal([]));
+      expect(initSubmodules(dependencyContainer)).to.deep.equal([]);
     });
 
     it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
