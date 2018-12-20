@@ -71,6 +71,11 @@ const submodules = [{
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
+    // TODO: implement hasGDPRConsent here
+    // if (!hasGDPRConsent(gdprDataHandler.getConsentData())) {
+    //   callback();
+    //   return;
+    // }
     const responseObj = {
       data: utils.generateUUID(),
       expires: data.storage.expires || 60
@@ -91,7 +96,6 @@ const submodules = [{
       // validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
-
       utils.logInfo('Universal ID Module, call sync endpoint', url);
 
       ajax(url, response => {
@@ -103,11 +107,21 @@ const submodules = [{
               expires: parsedResponse.expires || data.storage.expires || 60
             };
             callback(responseObj);
-          } catch (e) {}
+          } catch (e) {
+            callback();
+          }
+        } else {
+          callback();
         }
-        callback();
       }, undefined, { method: 'GET' });
     }
+
+    // TODO: implement hasGDPRConsent here
+    // if (!hasGDPRConsent(gdprDataHandler.getConsentData())) {
+    //   callback();
+    //   return;
+    // }
+
     // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
     if (!syncDelay) {
       utils.logInfo('Universal ID Module, call endpoint to sync without delay');
@@ -242,12 +256,13 @@ export function hasGDPRConsent(consentData) {
     if (!consentData.consentString) {
       utils.logWarn('Universal ID Module exiting on no GDPR consent string');
       return false;
-    } else if (!gdprLocalStorageConsent(consentData.consentString)) {
+    }
+    if (!gdprLocalStorageConsent(consentData.consentString)) {
       utils.logWarn('Universal ID Module exiting on no GDPR consent to local storage (purpose #1)');
       return false;
     }
-    return true;
   }
+  return true;
 }
 
 /**
@@ -260,7 +275,6 @@ export function hasGDPRConsent(consentData) {
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   if (adUnits) {
-    // hasGDPRConsent(gdprDataHandler.getConsentData())
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
       Object.keys(item).forEach(key => {
         carry[key] = item[key];
@@ -288,57 +302,68 @@ export function initSubmodules (dependencies) {
     dependencies.utils.logInfo('Failed to validate configuration for Universal ID module');
     return [];
   }
-  // storage enabled storage types, use to check if submodule has a valid configuration
+
+  // list of storage types defined submodules that are also enabled in users browser
   const storageTypes = enabledStorageTypes(dependencies);
 
-  // process and return list of enabled submodules
+  // process and return list of enabled submodules (used for test validation)
   return submodules.reduce((carry, submodule) => {
     const universalId = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
+    const logPrefix = `Universal ID Module - ${universalId.name}:`;
 
-    // skip, config with name matching submodule.configKey does not exist
+    // skip when config with name matching submodule.configKey does not exist
     if (!universalId) {
       return carry;
     }
 
     if (universalId.value && typeof universalId.value === 'object') {
-      // submodule just passes a value set in config
-      carry.push(`${universalId.name} has valid value configuration, pass directly to bid requests`);
-
-      // add obj to list to pass to adapters
+      // submodule passes "value" object if found in configuration
+      carry.push(`${logPrefix} has valid value configuration, pass directly to bid requests`);
       extendedBidRequestData.addData(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
       typeof universalId.storage.type === 'string' && storageTypes.indexOf(universalId.storage.type) !== -1) {
       // submodule uses local storage to get value
-      carry.push(`${universalId.name} has valid configuration, pass decoded storage value to bid requests`);
+      const storageKey = universalId.storage.name;
+      const storageType = universalId.storage.type;
 
+      carry.push(`${logPrefix} has valid ${storageType} storage configuration, pass decoded value to bid requests`);
+
+      // value retrieved from cookies or local storage
       let storageValue;
-      if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
-        storageValue = getCookie(universalId.storage.name);
-      } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-        storageValue = dependencies.localStorage.getItem(universalId.storage.name);
+      if (storageType === STORAGE_TYPE_COOKIE) {
+        storageValue = getCookie(storageKey);
+      } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+        storageValue = dependencies.localStorage.getItem(storageKey);
       } else {
-        dependencies.utils.logError(`Universal ID Module ${universalId.name} has invalid storage type: ${universalId.storage.type}`);
+        dependencies.utils.logError(`${logPrefix} has invalid storage configuration type "${storageType}"`);
       }
 
+      // if local value exists pass decoded value to bid requests
       if (storageValue) {
-        // stored value exists, add data to be passed to bid requests
+        dependencies.utils.logInfo(`${logPrefix} found valid "${storageType}" value ${storageKey}=${storageValue}`);
+
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
-        // stored value does not exist, call submodule getId
-        submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, response => {
+        // local value does not exist and submodule getId should be called
+        submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, function (response) {
           if (response && response.data) {
-            if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
-              setCookie(universalId.storage.name, (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data, response.expires);
-            } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-              dependencies.localStorage.setItem(universalId.storage.name, (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data);
+            const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
+
+            if (storageType === STORAGE_TYPE_COOKIE) {
+              setCookie(storageKey, responseData, response.expires);
+              dependencies.utils.logInfo(`${logPrefix} set "cookie" value ${storageKey}=${responseData}`);
+            } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+              dependencies.localStorage.setItem(storageKey, responseData);
+              dependencies.utils.logInfo(`${logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
             } else {
-              dependencies.utils.logError('Universal ID Module: Invalid configuration storage type');
+              dependencies.utils.logError(`${logPrefix} invalid configuration storage type`);
             }
+
             extendedBidRequestData.addData(submodule.decode(response.data));
           } else {
-            dependencies.utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
+            dependencies.utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
           }
         });
       }
