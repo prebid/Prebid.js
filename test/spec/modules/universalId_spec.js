@@ -262,9 +262,8 @@ describe('Universal ID', function () {
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
       const dependencies = {
         utils: {
-          logInfo: function () {
-
-          }
+          logInfo: function () {},
+          logError: function () {}
         },
         universalIds: [{
           name: 'foo'
@@ -349,6 +348,10 @@ describe('Universal ID', function () {
 
     it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
       const dependencies = {
+        utils: {
+          logInfo: function () {},
+          logError: function () {}
+        },
         universalIds: [{
           name: 'pubCommonId',
           storage: {
@@ -377,6 +380,49 @@ describe('Universal ID', function () {
         consentData: {}
       };
       expect(initSubmodules(dependencies).length).to.equal(1);
+    });
+
+    it('returns empty array when both cookie and local storage are enabled, but the config storage \'type\' is invalid (not cookie or html5)', function() {
+      const dependencies = {
+        utils: {
+          logInfo: function () {},
+          logError: function () {}
+        },
+        universalIds: [{
+          name: 'pubCommonId',
+          storage: {
+            type: 'nonexistantstoragetype',
+            name: 'pubcid'
+          }
+        }, {
+          name: 'unifiedId',
+          storage: {
+            type: 'nonexistantstoragetype',
+            name: 'unifiedId'
+          }
+        }],
+        syncDelay: 0,
+        submodules: submodules,
+        navigator: {
+          cookieEnabled: true
+        },
+        document: {
+          localStorage: {
+            setItem: function (key, value) {},
+            getItem: function (key) {
+              if (key === 'prebid.cookieTest') {
+                return '1'
+              }
+            }
+          },
+          set cookie(v) {},
+          get cookie() {
+            return 'prebid.cookieTest'
+          }
+        },
+        consentData: {}
+      };
+      expect(initSubmodules(dependencies).length).to.equal(0);
     });
   });
 });
