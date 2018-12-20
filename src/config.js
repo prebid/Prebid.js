@@ -138,7 +138,7 @@ export function newConfig() {
       get useBidCache() {
         return this._useBidCache;
       },
-      set useBidderCache(val) {
+      set useBidCache(val) {
         this._useBidCache = val;
       },
 
