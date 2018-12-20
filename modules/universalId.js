@@ -34,16 +34,8 @@ const CONSTANTS = require('../src/constants.json');
 /**
  * @typedef {Object} IdSubmodule
  * @property {string} configKey - property name within the config universal id object
- * @property {number} expires - cookie expires time
  * @property {decode} decode - decode a stored value for passing to bid requests
  * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
- */
-
-/**
- * @typedef {Object} SubmoduleConfig - IdSubmodule config obj contained in the config 'usersync.universalIds' array
- * @property {Object} storage
- * @property {Object} value
- * @property {Object} params
  */
 
 const STORAGE_TYPE_COOKIE = 'cookie';
@@ -228,6 +220,7 @@ export function validateConfig (dependencies) {
 }
 
 /**
+ * decode base64 encoded consent string to check position for user consents to local storage (purpose 1)
  * @param {string} consentString
  * @returns {boolean}
  */
@@ -258,9 +251,9 @@ export function hasGDPRConsent(consentData) {
 }
 
 /**
- * Decorate ad units with universal id properties. This hook function is called before the
- * real pbjs.requestBids is invoked, and can modify its parameter
- * @param {PrebidConfig} config
+ * decorate bid requests with universal id data if it exists
+ * hook function is called before the real pbjs.requestBids is invoked, and can modify its parameter
+ * @param {{}} config
  * @param next
  * @returns {*}
  */
@@ -279,7 +272,7 @@ export function requestBidHook (config, next) {
       });
     });
   }
-  // Note: calling next() allows Prebid to continue processing an auction, if not called, the auction will be stalled.
+  // calling next() allows prebid to continue processing
   return next.apply(this, arguments);
 }
 
@@ -296,11 +289,13 @@ export function initSubmodules (dependencies) {
   }
   // storage enabled storage types, use to check if submodule has a valid configuration
   const storageTypes = enabledStorageTypes(dependencies);
+
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
     const universalId = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
+
     // skip, config with name matching submodule.configKey does not exist
     if (!universalId) {
       return carry;
@@ -309,6 +304,7 @@ export function initSubmodules (dependencies) {
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule just passes a value set in config
       carry.push(`${universalId.name} has valid value configuration, pass directly to bid requests`);
+
       // add obj to list to pass to adapters
       extendedBidRequestData.addData(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
@@ -326,17 +322,18 @@ export function initSubmodules (dependencies) {
       }
 
       if (storageValue) {
+        // stored value exists, add data to be passed to bid requests
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
         // stored value does not exist, call submodule getId
-        submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, function (response) {
+        submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, response => {
           if (response && response.data) {
             if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
               setCookie(universalId.storage.name, JSON.stringify(response.data), response.expires);
             } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
               dependencies.document.localStorage.setItem(universalId.storage.name, JSON.stringify(response.data));
             } else {
-              utils.logError('Universal ID Module: Invalid configuration storage type');
+              dependencies.utils.logError('Universal ID Module: Invalid configuration storage type');
             }
             extendedBidRequestData.addData(submodule.decode(response.data));
           } else {
