@@ -12,9 +12,6 @@ export const S2S_VENDORS = {
     enabled: true,
     endpoint: '//prebid-server.rubiconproject.com/openrtb2/auction',
     syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
-    timeout: 500,
-    adapterOptions: {
-      rubicon: { singleRequest: false }
-    }
+    timeout: 500
   }
 }

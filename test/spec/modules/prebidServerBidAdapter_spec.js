@@ -1165,11 +1165,6 @@ describe('S2S Adapter', function () {
       expect(config.getConfig('s2sConfig')).to.deep.equal({
         'accountId': 'abc',
         'adapter': 'prebidServer',
-        'adapterOptions': {
-          'rubicon': {
-            'singleRequest': false
-          }
-        },
         'bidders': ['rubicon'],
         'defaultVendor': 'rubicon',
         'enabled': true,
@@ -1192,11 +1187,6 @@ describe('S2S Adapter', function () {
         enabled: true,
         timeout: 750,
         adapter: 'prebidServer',
-        adapterOptions: {
-          rubicon: {
-            singleRequest: false
-          }
-        },
         accountId: 'abc',
         bidders: ['rubicon'],
         defaultVendor: 'rubicon',
