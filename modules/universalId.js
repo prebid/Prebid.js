@@ -3,11 +3,11 @@
  */
 import {ajax} from 'src/ajax';
 import {config} from 'src/config';
+import events from 'src/events';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 import { gdprDataHandler } from 'src/adaptermanager';
 
-const events = require('../src/events');
 const CONSTANTS = require('../src/constants.json');
 
 /**
@@ -182,12 +182,12 @@ export function getCookie(name) {
 
 /**
  * helper to check if local storage or cookies are enabled
- * @param {{document: Document, navigator: Navigator}} dependencies
+ * @param {{document: Document, localStorage: {}, navigator: Navigator}} dependencies
  * @returns {[]}
  */
 export function enabledStorageTypes (dependencies) {
   const enabledStorageTypes = [];
-  if (browserSupportsLocalStorage(dependencies.document.localStorage)) {
+  if (browserSupportsLocalStorage(dependencies.localStorage)) {
     enabledStorageTypes.push(STORAGE_TYPE_LOCALSTORAGE);
   }
   if (browserSupportsCookie(dependencies.navigator, dependencies.document)) {
@@ -259,7 +259,8 @@ export function hasGDPRConsent(consentData) {
  */
 export function requestBidHook (config, next) {
   const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
-  if (adUnits && hasGDPRConsent(gdprDataHandler.getConsentData())) {
+  if (adUnits) {
+    // hasGDPRConsent(gdprDataHandler.getConsentData())
     const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
       Object.keys(item).forEach(key => {
         carry[key] = item[key];
@@ -278,7 +279,7 @@ export function requestBidHook (config, next) {
 
 /**
  * init submodules if config values are set correctly
- * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, consentData: {}, utils: {} }} dependencies
+ * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, localStorage: {}, consentData: {}, utils: {} }} dependencies
  * @returns {Array} - returns list of enabled submodules
  */
 export function initSubmodules (dependencies) {
@@ -316,7 +317,7 @@ export function initSubmodules (dependencies) {
       if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
         storageValue = getCookie(universalId.storage.name);
       } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-        storageValue = dependencies.document.localStorage.getItem(universalId.storage.name);
+        storageValue = dependencies.localStorage.getItem(universalId.storage.name);
       } else {
         dependencies.utils.logError(`Universal ID Module ${universalId.name} has invalid storage type: ${universalId.storage.type}`);
       }
@@ -329,9 +330,9 @@ export function initSubmodules (dependencies) {
         submodule.getId(universalId, dependencies.consentData, dependencies.syncDelay, response => {
           if (response && response.data) {
             if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
-              setCookie(universalId.storage.name, JSON.stringify(response.data), response.expires);
+              setCookie(universalId.storage.name, (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data, response.expires);
             } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-              dependencies.document.localStorage.setItem(universalId.storage.name, JSON.stringify(response.data));
+              dependencies.localStorage.setItem(universalId.storage.name, (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data);
             } else {
               dependencies.utils.logError('Universal ID Module: Invalid configuration storage type');
             }
@@ -364,6 +365,7 @@ init({
   submodules: submodules,
   navigator: window.navigator,
   document: window.document,
+  localStorage: window.localStorage,
   utils: utils,
   consentData: gdprDataHandler.getConsentData()
 });

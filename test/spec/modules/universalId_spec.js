@@ -25,11 +25,11 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
         document: {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
           cookie: ''
         }
       };
@@ -41,11 +41,11 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: false
         },
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
         document: {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
           set cookie(v) {},
           get cookie() {
             return ''
@@ -60,11 +60,11 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
         document: {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
           set cookie(v) {
             // simulate error setting cookie!!!!
             throw new Error('error setting test cookie' + v);
@@ -82,11 +82,11 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
+        },
         document: {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-          },
           set cookie(v) {},
           get cookie() {
             // simulate error getting cookie!!!!
@@ -102,8 +102,8 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: undefined,
         document: {
-          localStorage: undefined,
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
@@ -118,14 +118,14 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: {
+          setItem: function(key, value) {},
+          getItem: function(key) {
+            // simulate error calling localStorage.getItem(key)
+            throw new Error('error getting local storage key: ' + key);
+          }
+        },
         document: {
-          localStorage: {
-            setItem: function(key, value) {},
-            getItem: function(key) {
-              // simulate error calling localStorage.getItem(key)
-              throw new Error('error getting local storage key: ' + key);
-            }
-          },
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
@@ -140,18 +140,18 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
-        document: {
-          localStorage: {
-            setItem: function(key, value) {
-              // simulate error calling localStorage.getItem(key)
-              throw new Error('error setting local storage key: ' + key + ' = ' + value);
-            },
-            getItem: function(key) {
-              if (key === 'prebid.cookieTest') {
-                return '1';
-              }
-            }
+        localStorage: {
+          setItem: function(key, value) {
+            // simulate error calling localStorage.getItem(key)
+            throw new Error('error setting local storage key: ' + key + ' = ' + value);
           },
+          getItem: function(key) {
+            if (key === 'prebid.cookieTest') {
+              return '1';
+            }
+          }
+        },
+        document: {
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
@@ -166,8 +166,8 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: false
         },
+        localStorage: undefined,
         document: {
-          localStorage: undefined,
           set cookie(v) {},
           get cookie() {
             return ''
@@ -275,8 +275,8 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: false
         },
+        localStorage: undefined,
         document: {
-          localStorage: undefined,
           set cookie(v) {},
           get cookie() {
             return ''
@@ -301,8 +301,8 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: false
         },
+        localStorage: undefined,
         document: {
-          localStorage: undefined,
           set cookie(v) {},
           get cookie() {
             return ''
@@ -327,15 +327,15 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
-        document: {
-          localStorage: {
-            setItem: function (key, value) {},
-            getItem: function (key) {
-              if (key === 'prebid.cookieTest') {
-                return '1'
-              }
+        localStorage: {
+          setItem: function (key, value) {},
+          getItem: function (key) {
+            if (key === 'prebid.cookieTest') {
+              return '1'
             }
-          },
+          }
+        },
+        document: {
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
@@ -370,8 +370,8 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
+        localStorage: undefined,
         document: {
-          localStorage: undefined,
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
@@ -406,15 +406,15 @@ describe('Universal ID', function () {
         navigator: {
           cookieEnabled: true
         },
-        document: {
-          localStorage: {
-            setItem: function (key, value) {},
-            getItem: function (key) {
-              if (key === 'prebid.cookieTest') {
-                return '1'
-              }
+        localStorage: {
+          setItem: function (key, value) {},
+          getItem: function (key) {
+            if (key === 'prebid.cookieTest') {
+              return '1'
             }
-          },
+          }
+        },
+        document: {
           set cookie(v) {},
           get cookie() {
             return 'prebid.cookieTest'
