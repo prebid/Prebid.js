@@ -211,16 +211,15 @@ export function getCookie(name) {
 
 /**
  * helper to check if local storage or cookies are enabled
- * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
- * @param {Document} document - document passed for easier testing through dependency injection
- * @returns {boolean|*}
+ * @param {{document: Document, navigator: Navigator}} dependencyContainer
+ * @returns {[]}
  */
-export function enabledStorageTypes (navigator, document) {
-  const enabledStorageTypes = []
-  if (browserSupportsLocalStorage(document.localStorage)) {
+export function enabledStorageTypes (dependencyContainer) {
+  const enabledStorageTypes = [];
+  if (browserSupportsLocalStorage(dependencyContainer.document.localStorage)) {
     enabledStorageTypes.push(STORAGE_TYPE_LOCALSTORAGE);
   }
-  if (browserSupportsCookie(navigator, document)) {
+  if (browserSupportsCookie(dependencyContainer.navigator, dependencyContainer.document)) {
     enabledStorageTypes.push(STORAGE_TYPE_COOKIE)
   }
   return enabledStorageTypes;
@@ -228,17 +227,16 @@ export function enabledStorageTypes (navigator, document) {
 
 /**
  * check if any universal id types are set in configuration (must opt-in to enable)
- * @param {Object[]} submoduleConfigs
- * @param {IdSubmodule[]} submodules
+ * @param {{universalIds: [], submodules: []}} dependencyContainer
  */
-export function validateConfig (submoduleConfigs, submodules) {
+export function validateConfig (dependencyContainer) {
   // exit if no configurations are set
-  if (!Array.isArray(submoduleConfigs)) {
+  if (!Array.isArray(dependencyContainer.universalIds)) {
     return false;
   }
   // check that at least one config exists
-  return submodules.some(submodule => {
-    const submoduleConfig = find(submoduleConfigs, universalIdConfig => {
+  return dependencyContainer.submodules.some(submodule => {
+    const submoduleConfig = find(dependencyContainer.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
     // return true if a valid config exists for submodule
@@ -308,57 +306,63 @@ export function requestBidHook (config, next) {
 
 /**
  * init submodules if config values are set correctly
- * @param {Object} dependencyContainer
+ * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, consentData: {}, utils: {} }} dependencyContainer
  * @returns {Array} - returns list of enabled submodules
  */
-// export function initSubmodules (submoduleConfigs, syncDelay, submodules, navigator, document, consentData) {
 export function initSubmodules (dependencyContainer) {
   // valid if at least one configuration is valid
-  if (!validateConfig(dependencyContainer.universalIds, dependencyContainer.submodules)) {
-    utils.logInfo('Failed to validate configuration for Universal ID module');
+  if (!validateConfig(dependencyContainer)) {
+    dependencyContainer.utils.logInfo('Failed to validate configuration for Universal ID module');
     return [];
   }
-
   // storage enabled storage types, use to check if submodule has a valid configuration
-  const storageTypes = enabledStorageTypes(navigator, document);
-
+  const storageTypes = enabledStorageTypes(dependencyContainer);
   // process and return list of enabled submodules
   return submodules.reduce((carry, submodule) => {
-    const submoduleConfig = find(dependencyContainer.universalIds, universalIdConfig => {
+    const universalId = find(dependencyContainer.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
-
     // skip, config with name matching submodule.configKey does not exist
-    if (!submoduleConfig) {
+    if (!universalId) {
       return carry;
     }
 
-    if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
+    if (universalId.value && typeof universalId.value === 'object') {
       // submodule just passes a value set in config
-      carry.push('found value config, add directly to bidAdapters');
+      carry.push(`${universalId.name} has valid value configuration, pass directly to bid requests`);
       // add obj to list to pass to adapters
-      extendedBidRequestData.addData(submoduleConfig.value);
-    } else if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
-      typeof submoduleConfig.storage.type === 'string' && storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
-      //  submodule uses local storage to get value
-      carry.push('found storage config, try to load from local storage');
+      extendedBidRequestData.addData(universalId.value);
+    } else if (universalId.storage && typeof universalId.storage === 'object' &&
+      typeof universalId.storage.type === 'string' && storageTypes.indexOf(universalId.storage.type) !== -1) {
+      // submodule uses local storage to get value
+      carry.push(`${universalId.name} has valid configuration, pass decoded storage value to bid requests`);
 
       let storageValue;
-      if (submoduleConfig.storage.type === STORAGE_TYPE_COOKIE) {
-        storageValue = getCookie(submoduleConfig.storage.name);
-      } else if (submoduleConfig.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
-        storageValue = localStorage.getItem(submoduleConfig.storage.name);
+      if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
+        storageValue = getCookie(universalId.storage.name);
+      } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
+        storageValue = dependencyContainer.document.localStorage.getItem(universalId.storage.name);
       } else {
-        // ERROR STORAGE TYPE NOT DEFINED
+        dependencyContainer.utils.logError(`Universal ID Module ${universalId.name} has invalid storage type: ${universalId.storage.type}`);
       }
 
       if (storageValue) {
-        // stored value exists, call submodule decode and pass value to adapters
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
         // stored value does not exist, call submodule getId
-        submodule.getId(submoduleConfig, dependencyContainer.consentData, dependencyContainer.syncDelay, function (response) {
-          submoduleGetIdCallback(submodule, submoduleConfig, response);
+        submodule.getId(universalId, dependencyContainer.consentData, dependencyContainer.syncDelay, function (response) {
+          if (response && response.data) {
+            if (universalId.storage.type === STORAGE_TYPE_COOKIE) {
+              setCookie(universalId.storage.name, JSON.stringify(response.data), response.expires);
+            } else if (universalId.storage.type === STORAGE_TYPE_LOCALSTORAGE) {
+              dependencyContainer.document.localStorage.setItem(universalId.storage.name, JSON.stringify(response.data));
+            } else {
+              utils.logError('Universal ID Module: Invalid configuration storage type');
+            }
+            extendedBidRequestData.addData(submodule.decode(response.data));
+          } else {
+            dependencyContainer.utils.logError('Universal ID Module: Submodule getId callback returned empty or invalid response');
+          }
         });
       }
     }
@@ -366,18 +370,15 @@ export function initSubmodules (dependencyContainer) {
   }, []);
 }
 
-function init(dependencyContainer) {
+/**
+ * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}, consentData: {}}} dependencyContainer
+ */
+export function init(dependencyContainer) {
   dependencyContainer.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      const enabledModules = initSubmodules({
-        universalIds: usersync.universalIds,
-        syncDelay: usersync.syncDelay || 0,
-        submodules: dependencyContainer.submodules,
-        navigator: dependencyContainer.navigator,
-        document: dependencyContainer.document,
-        consentData: dependencyContainer.consentData,
-        utils: dependencyContainer.utils
-      });
+      dependencyContainer['syncDelay'] = usersync.syncDelay || 0;
+      dependencyContainer['universalIds'] = usersync.universalIds;
+      const enabledModules = initSubmodules(dependencyContainer);
       dependencyContainer.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     }
   });
