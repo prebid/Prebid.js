@@ -801,6 +801,7 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+    });
   });
 
   describe('response handler', function () {
