@@ -163,35 +163,55 @@ describe('Universal ID', function () {
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
-      expect(validateConfig(undefined, submodules)).to.equal(false);
+      const dependencyContainer = {
+        universalIds: undefined,
+        submodules: submodules
+      };
+      expect(validateConfig(dependencyContainer)).to.equal(false);
     });
 
     it('return true if config defines configurations for both submodules', function() {
-      expect(validateConfig([{
-        name: 'pubCommonId'
-      }, {
-        name: 'unifiedId'
-      }], submodules)).to.equal(true);
+      const dependencyContainer = {
+        universalIds: [{
+          name: 'pubCommonId'
+        }, {
+          name: 'unifiedId'
+        }],
+        submodules: submodules
+      };
+      expect(validateConfig(dependencyContainer)).to.equal(true);
     });
 
     it('return true if config defines a value configuration for one of the submodules', function() {
-      expect(validateConfig([{
-        name: 'pubCommonId'
-      }, {
-        name: 'foo'
-      }], submodules)).to.equal(true);
+      const dependencyContainer = {
+        universalIds: [{
+          name: 'pubCommonId'
+        }, {
+          name: 'foo'
+        }],
+        submodules: submodules
+      };
+      expect(validateConfig(dependencyContainer)).to.equal(true);
     });
 
     it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
-      expect(validateConfig([{
-        name: 'foo'
-      }, {
-        name: 'bar'
-      }], submodules)).to.equal(false);
+      const dependencyContainer = {
+        universalIds: [{
+          name: 'foo'
+        }, {
+          name: 'bar'
+        }],
+        submodules: submodules
+      };
+      expect(validateConfig(dependencyContainer)).to.equal(false);
     });
 
     it('return false if config does not define a configuration for any submodule', function() {
-      expect(validateConfig([], submodules)).to.equal(false);
+      const dependencyContainer = {
+        universalIds: [],
+        submodules: submodules
+      };
+      expect(validateConfig(dependencyContainer)).to.equal(false);
     });
   });
 
