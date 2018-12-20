@@ -738,7 +738,7 @@ describe('S2S Adapter', function () {
         value: ['buzz']
       }]);
     });
-    
+
     it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
       let cookieSyncConfig = utils.deepClone(CONFIG);
       cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
@@ -1171,10 +1171,9 @@ describe('S2S Adapter', function () {
           }
         },
         'bidders': ['rubicon'],
-        'cookieSet': false,
         'defaultVendor': 'rubicon',
         'enabled': true,
-        'endpoint': '//prebid-server.rubiconproject.com/auction',
+        'endpoint': '//prebid-server.rubiconproject.com/openrtb2/auction',
         'syncEndpoint': '//prebid-server.rubiconproject.com/cookie_sync',
         'timeout': 750
       })
@@ -1201,8 +1200,7 @@ describe('S2S Adapter', function () {
         accountId: 'abc',
         bidders: ['rubicon'],
         defaultVendor: 'rubicon',
-        cookieSet: false,
-        endpoint: '//prebid-server.rubiconproject.com/auction',
+        endpoint: '//prebid-server.rubiconproject.com/openrtb2/auction',
         syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync'
       })
     });
