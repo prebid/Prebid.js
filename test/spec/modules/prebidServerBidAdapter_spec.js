@@ -739,7 +739,7 @@ describe('S2S Adapter', function () {
       }]);
     });
 
-    it('adds s2sConfig adapterOptions to request for ORTB', () => {
+    it('adds s2sConfig adapterOptions to request for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         adapterOptions: {
@@ -1119,7 +1119,7 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
-    it('should return proper defaults', () => {
+    it('should return proper defaults', function () {
       expect(config.getConfig('s2sConfig')).to.deep.equal({
         'accountId': 'abc',
         'adapter': 'prebidServer',
@@ -1138,7 +1138,7 @@ describe('S2S Adapter', function () {
       })
     });
 
-    it('should return default adapterOptions if not set', () => {
+    it('should return default adapterOptions if not set', function () {
       config.setConfig({
         s2sConfig: {
           accountId: 'abc',
@@ -1165,7 +1165,7 @@ describe('S2S Adapter', function () {
       })
     });
 
-    it('should overwrite default adapterOptions if set', () => {
+    it('should overwrite default adapterOptions if set', function () {
       config.setConfig({
         s2sConfig: {
           adapterOptions: {
@@ -1185,7 +1185,7 @@ describe('S2S Adapter', function () {
       })
     });
 
-    it('should set adapterOptions that do not exist as default', () => {
+    it('should set adapterOptions that do not exist as default', function () {
       config.setConfig({
         s2sConfig: {
           adapterOptions: {
