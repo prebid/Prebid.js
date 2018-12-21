@@ -741,6 +741,8 @@ function _parseNativeResponse(bid, newBid) {
           case NATIVE_ASSET_ID.ADDRESS:
           case NATIVE_ASSET_ID.DESC2:
           case NATIVE_ASSET_ID.CTA:
+          case NATIVE_ASSET_ID.RATING:
+          case NATIVE_ASSET_ID.DISPLAYURL:
             //  Remove Redundant code
             newBid.native[NATIVE_ASSET_REVERSE_ID[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
             break;
