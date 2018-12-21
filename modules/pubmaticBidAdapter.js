@@ -13,6 +13,7 @@ const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -905,7 +906,7 @@ export const spec = {
 
     //   Make ENDPOINT NULL and Log Proper message in case of native invalid request
     if (isInvalidNativeRequest) {
-      utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params.');
+      utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params. Refer:' + PREBID_NATIVE_HELP_LINK);
       return {
         data: JSON.stringify(payload)
       };
