@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -340,7 +340,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
       if (s2sBidRequest.ad_units.length) {
         let doneCbs = serverBidRequests.map(bidRequest => {
           bidRequest.start = timestamp();
-          return doneCb;
+          return doneCb.bind(bidRequest);
         });
 
         // only log adapters that actually have adUnit bids
@@ -360,7 +360,12 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
         s2sAdapter.callBids(
           s2sBidRequest,
           serverBidRequests,
-          addBidResponse,
+          function(adUnitCode, bid) {
+            let bidderRequest = getBidderRequest(serverBidRequests, bid.bidderCode, adUnitCode);
+            if (bidderRequest) {
+              addBidResponse.call(bidderRequest, adUnitCode, bid)
+            }
+          },
           () => doneCbs.forEach(done => done()),
           s2sAjax
         );
@@ -375,12 +380,11 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbac
     const adapter = _bidderRegistry[bidRequest.bidderCode];
     utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-    bidRequest.doneCbCallCount = 0;
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse, doneCb, ajax);
+    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax);
   });
 }
 

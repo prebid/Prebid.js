@@ -449,29 +449,31 @@ export const spec = {
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-      dctr = validBidRequests[0].params.dctr;
-      if (utils.isStr(dctr) && dctr.length > 0) {
-        var arr = dctr.split('|');
-        dctr = '';
-        arr.forEach(val => {
-          dctr += (val.length > 0) ? (val.trim() + '|') : '';
-        });
-        dctrLen = dctr.length;
-        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-          dctr = dctr.substring(0, dctrLen - 1);
+    if (dctrArr.length > 0) {
+      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+        dctr = validBidRequests[0].params.dctr;
+        if (utils.isStr(dctr) && dctr.length > 0) {
+          var arr = dctr.split('|');
+          dctr = '';
+          arr.forEach(val => {
+            dctr += (val.length > 0) ? (val.trim() + '|') : '';
+          });
+          dctrLen = dctr.length;
+          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+            dctr = dctr.substring(0, dctrLen - 1);
+          }
+          payload.site.ext = {
+            key_val: dctr.trim()
+          }
+        } else {
+          utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
         }
-        payload.site.ext = {
-          key_val: dctr.trim()
+        if (dctrArr.length > 1) {
+          utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
         }
       } else {
-        utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+        utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
       }
-      if (dctrArr.length > 1) {
-        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-      }
-    } else {
-      utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
 
     _handleEids(payload);
