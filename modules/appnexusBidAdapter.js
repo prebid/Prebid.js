@@ -11,8 +11,10 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const NATIVE_MAPPING = {
   body: 'description',
+  body2: 'desc2',
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
@@ -25,6 +27,7 @@ const NATIVE_MAPPING = {
     minimumParams: { sizes: [{}] },
   },
   sponsoredBy: 'sponsored_by',
+  privacyLink: 'privacy_link'
 };
 const SOURCE = 'pbjs';
 
@@ -77,6 +80,32 @@ export const spec = {
       };
     }
 
+    let debugObj = {};
+    let debugObjParams = {};
+    const debugCookieName = 'apn_prebid_debug';
+    const debugCookie = utils.getCookie(debugCookieName) || null;
+
+    if (debugCookie) {
+      try {
+        debugObj = JSON.parse(debugCookie);
+      } catch (e) {
+        utils.logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
+      }
+    } else {
+      const debugBidRequest = find(bidRequests, hasDebug);
+      if (debugBidRequest && debugBidRequest.debug) {
+        debugObj = debugBidRequest.debug;
+      }
+    }
+
+    if (debugObj && debugObj.enabled) {
+      Object.keys(debugObj)
+        .filter(param => includes(DEBUG_PARAMS, param))
+        .forEach(param => {
+          debugObjParams[param] = debugObj[param];
+        });
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -97,6 +126,11 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    if (debugObjParams.enabled) {
+      payload.debug = debugObjParams;
+      utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -154,6 +188,22 @@ export const spec = {
         }
       });
     }
+
+    if (serverResponse.debug && serverResponse.debug.debug_info) {
+      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
+      let debugText = debugHeader + serverResponse.debug.debug_info
+      debugText = debugText
+        .replace(/(<td>|<th>)/gm, '\t') // Tables
+        .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
+        .replace(/^<br>/gm, '') // Remove leading <br>
+        .replace(/(<br>\n|<br>)/gm, '\n') // <br>
+        .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
+        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
+        .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
+      utils.logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
+      utils.logMessage(debugText);
+    }
+
     return bids;
   },
 
@@ -283,8 +333,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
+      body2: nativeAd.desc2,
       cta: nativeAd.ctatext,
+      rating: nativeAd.rating,
       sponsoredBy: nativeAd.sponsored,
+      privacyLink: nativeAd.privacy_link,
       clickUrl: nativeAd.link.url,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
@@ -451,6 +504,10 @@ function hasAppId(bid) {
     return !!bid.params.app.id
   }
   return !!bid.params.app
+}
+
+function hasDebug(bid) {
+  return !!bid.debug
 }
 
 function getRtbBid(tag) {
