@@ -512,7 +512,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSET_KEY.ADDRESS:
             assetObj = {
-              id: NATIVE_ASSET_ID.DATA,
+              id: NATIVE_ASSET_ID.ADDRESS,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.ADDRESS,
