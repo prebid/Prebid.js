@@ -69,7 +69,7 @@ const NATIVE_ASSET_ID = {
   'ADDRESS': 19,
   'DESC2': 20,
   'DISPLAYURL': 21,
-  'CTATEXT': 22
+  'CTA': 22
 }
 
 const NATIVE_ASSET_REVERSE_ID = {
@@ -91,7 +91,7 @@ const NATIVE_ASSET_REVERSE_ID = {
   19: 'address',
   20: 'desc2',
   21: 'displayurl',
-  22: 'ctatext'
+  22: 'cta'
 }
 
 const NATIVE_ASSET_KEY = {
@@ -114,7 +114,7 @@ const NATIVE_ASSET_KEY = {
   'ADDRESS': 'address',
   'DESC2': 'desc2',
   'DISPLAYURL': 'displayurl',
-  'CTATEXT': 'ctatext'
+  'CTA': 'cta'
 }
 
 const NATIVE_ASSET_IMAGE_TYPE = {
@@ -135,7 +135,7 @@ const NATIVE_ASSET_DATA_TYPE = {
   'ADDRESS': 9,
   'DESC2': 10,
   'DISPLAYURL': 11,
-  'CTATEXT': 12
+  'CTA': 12
 }
 
 // check if title, image can be added with mandatory field default values
@@ -396,7 +396,9 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSET_ID.SPONSOREDBY,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.SPONSORED
+                type: NATIVE_ASSET_DATA_TYPE.SPONSORED,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -405,7 +407,9 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSET_ID.BODY,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.DESC
+                type: NATIVE_ASSET_DATA_TYPE.DESC,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -445,6 +449,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.RATING,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -454,6 +460,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.LIKES,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -463,6 +471,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DOWNLOADS,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -472,6 +482,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.PRICE,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -481,6 +493,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.SALEPRICE,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -490,6 +504,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.PHONE,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -499,6 +515,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.ADDRESS,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -508,6 +526,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DESC2,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -517,15 +537,19 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DISPLAYURL,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
-          case NATIVE_ASSET_KEY.CTATEXT:
+          case NATIVE_ASSET_KEY.CTA:
             assetObj = {
-              id: NATIVE_ASSET_ID.CTATEXT,
+              id: NATIVE_ASSET_ID.CTA,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.CTATEXT,
+                type: NATIVE_ASSET_DATA_TYPE.CTA,
+                len: params[key].len,
+                ext: params[key].ext
               }
             };
             break;
@@ -596,6 +620,9 @@ function _createImpressionObject(bid, conf) {
     }
 
     impObj.video = videoObj;
+  } else if (bid.nativeParams) {
+    impObj.native = {};
+    impObj.native['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
   } else {
     bannerObj = {
       pos: 0,
@@ -615,10 +642,6 @@ function _createImpressionObject(bid, conf) {
       bannerObj.format = format;
     }
     impObj.banner = bannerObj;
-  }
-  if (bid.nativeParams) {
-    impObj.native = {};
-    impObj.native['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
   }
   return impObj;
 }
@@ -717,7 +740,7 @@ function _parseNativeResponse(bid, newBid) {
           case NATIVE_ASSET_ID.PHONE:
           case NATIVE_ASSET_ID.ADDRESS:
           case NATIVE_ASSET_ID.DESC2:
-          case NATIVE_ASSET_ID.CTATEXT:
+          case NATIVE_ASSET_ID.CTA:
             //  Remove Redundant code
             newBid.native[NATIVE_ASSET_REVERSE_ID[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
             break;
