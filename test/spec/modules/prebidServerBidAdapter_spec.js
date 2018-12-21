@@ -1195,27 +1195,7 @@ describe('S2S Adapter', function () {
       })
     });
 
-    it('should overwrite default adapterOptions if set', function () {
-      config.setConfig({
-        s2sConfig: {
-          adapterOptions: {
-            rubicon: {
-              singleRequest: true
-            }
-          }
-        }
-      });
-      const configResult = config.getConfig('s2sConfig');
-      expect(configResult).to.deep.equal({
-        adapterOptions: {
-          rubicon: {
-            singleRequest: true
-          }
-        }
-      })
-    });
-
-    it('should set adapterOptions that do not exist as default', function () {
+    it('should set adapterOptions', function () {
       config.setConfig({
         s2sConfig: {
           adapterOptions: {
