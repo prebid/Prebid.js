@@ -644,6 +644,10 @@ function _createImpressionObject(bid, conf) {
     }
     impObj.banner = bannerObj;
   }
+  if (isInvalidNativeRequest && impObj.hasOwnProperty('native')) {
+    utils.logWarn(BIDDER_CODE + ': Call to OpenBid will not be sent for  native ad unit as it does not contain required valid native params.' + bid + ' Refer:' + PREBID_NATIVE_HELP_LINK);
+    return;
+  }
   return impObj;
 }
 
@@ -835,7 +839,10 @@ export const spec = {
       if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
         dctrArr.push(bid.params.dctr);
       }
-      payload.imp.push(_createImpressionObject(bid, conf));
+      var impObj = _createImpressionObject(bid, conf);
+      if (impObj) {
+        payload.imp.push(impObj);
+      }
     });
 
     if (payload.imp.length == 0) {
@@ -907,12 +914,13 @@ export const spec = {
     _handleEids(payload);
 
     //   Make ENDPOINT NULL and Log Proper message in case of native invalid request
-    if (isInvalidNativeRequest) {
-      utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params. Refer:' + PREBID_NATIVE_HELP_LINK);
-      return {
-        data: JSON.stringify(payload)
-      };
-    }
+    // Below Code is not necessary now as we are not attaching invalid native impression so only valid bid requests will come here
+    // if (isInvalidNativeRequest && payload.imp.length == 1) {
+    //   utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params. Refer:' + PREBID_NATIVE_HELP_LINK);
+    //   return {
+    //     data: JSON.stringify(payload)
+    //   };
+    // }
 
     return {
       method: 'POST',
