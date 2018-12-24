@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
 import * as url from 'src/url';
-import {spec} from 'modules/adformOpenRTBAdapter';
+import {spec} from 'modules/adformOpenRTBBidAdapter';
 import { NATIVE } from 'src/mediaTypes';
 
 describe('AdformOpenRTB adapter', function () {
