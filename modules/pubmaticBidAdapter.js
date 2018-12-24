@@ -571,11 +571,15 @@ function _createNativeRequest(params) {
       if (ele.id == nativeRequestObject.assets[i].id) {
         isRequiredAssetPresent = true;
         break;
+      } else {
+        isRequiredAssetPresent = false;
       }
     }
     if (!isRequiredAssetPresent) {
       // nativeRequestObject.assets.push(ele);
       isInvalidNativeRequest = true;
+    } else {
+      isInvalidNativeRequest = false;
     }
   });
   return nativeRequestObject;

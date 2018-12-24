@@ -1123,11 +1123,8 @@ describe('PubMatic adapter', function () {
       });
 
       it('Request params should have valid native bid request for all valid params', function () {
-        // console.log(nativeBidRequests);
-
         let request = spec.buildRequests(nativeBidRequests);
         let data = JSON.parse(request.data);
-        console.log(data);
         expect(data.imp[0].native).to.exist;
         expect(data.imp[0].native['request']).to.exist;
         expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
@@ -1297,36 +1294,23 @@ describe('PubMatic adapter', function () {
         expect(response[0].dealChannel).to.equal(null);
       });
 
-      it('should have valid native response', function() {
-        console.log(nativeBidRequests);
-        let nativerequest = spec.buildRequests(nativeBidRequests);
-        console.log('Valid Resposne Log' + nativerequest);
-        // let nativeData = JSON.parse(nativerequest);
-        // console.log(nativeData);
+      it('should have a valid native bid response', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        data.imp[0].id = '2a5571261281d4';
+        request.data = JSON.stringify(data);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].native).to.exist.and.to.be.an('object');
+        expect(response[0].mediaType).to.exist.and.to.equal('native');
+        expect(response[0].native.title).to.exist.and.to.be.an('string');
+        expect(response[0].native.image).to.exist.and.to.be.an('object');
+        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
+        expect(response[0].native.image.height).to.exist;
+        expect(response[0].native.image.width).to.exist;
+        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
+        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
       })
-
-      // it('should have a valid native bid response', function() {
-      //   let request = spec.buildRequests(nativeBidRequests);
-      //   let data = JSON.parse(request.data);
-      //   console.log(data);
-      //   // expect(data.imp[0].native).to.exist;
-      //   // let request = spec.buildRequests(nativeBidRequests);
-      //   // let data = JSON.parse(request.data);
-      //   // console.log(data);
-      //   // data.imp[0].id = '2a5571261281d4';
-      //   // request.data = JSON.stringify(data);
-      //   // let response = spec.interpretResponse(nativeBidResponse, request);
-      //   // expect(response).to.be.an('array').with.length.above(0);
-      //   // expect(response[0].native).to.exist.and.to.be.an('object');
-      //   // expect(response[0].mediaType).to.exist.and.to.equal('native');
-      //   // expect(response[0].native.title).to.exist.and.to.be.an('string');
-      //   // expect(response[0].native.image).to.exist.and.to.be.an('object');
-      //   // expect(response[0].native.image.url).to.exist.and.to.be.an('string');
-      //   // expect(response[0].native.image.height).to.exist;
-      //   // expect(response[0].native.image.width).to.exist;
-      //   // expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
-      //   // expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
-      // })
     });
   });
 });
