@@ -564,24 +564,22 @@ function _createNativeRequest(params) {
 
   // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
   // if any of these are missing from the request then request will not be sent
+  var requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
+  var presentrequiredAssetCount = 0;
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    var isRequiredAssetPresent = false;
     var lengthOfExistingAssets = nativeRequestObject.assets.length;
     for (var i = 0; i < lengthOfExistingAssets; i++) {
       if (ele.id == nativeRequestObject.assets[i].id) {
-        isRequiredAssetPresent = true;
+        presentrequiredAssetCount++;
         break;
-      } else {
-        isRequiredAssetPresent = false;
       }
     }
-    if (!isRequiredAssetPresent) {
-      // nativeRequestObject.assets.push(ele);
-      isInvalidNativeRequest = true;
-    } else {
-      isInvalidNativeRequest = false;
-    }
   });
+  if (requiredAssetCount == presentrequiredAssetCount) {
+    isInvalidNativeRequest = false;
+  } else {
+    isInvalidNativeRequest = true;
+  }
   return nativeRequestObject;
 }
 
