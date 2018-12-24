@@ -353,7 +353,7 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              utils.logWarn(BIDDER_CODE + ' Error: Title Length is required for native ad: ' + params);
+              utils.logWarn(BIDDER_CODE + ' Error: Title Length is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSET_KEY.IMAGE:
@@ -373,7 +373,7 @@ function _createNativeRequest(params) {
               };
             } else {
               // Log Warn
-              utils.logWarn(BIDDER_CODE + ' Error: Image sizes is required for native ad: ' + params);
+              utils.logWarn(BIDDER_CODE + ' Error: Image sizes is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSET_KEY.ICON:
@@ -389,7 +389,7 @@ function _createNativeRequest(params) {
               };
             } else {
               // Log Warn
-              utils.logWarn(BIDDER_CODE + ' Error: Icon sizes is required for native ad: ' + params);
+              utils.logWarn(BIDDER_CODE + ' Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
           case NATIVE_ASSET_KEY.SPONSOREDBY:
@@ -649,7 +649,7 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
   if (isInvalidNativeRequest && impObj.hasOwnProperty('native')) {
-    utils.logWarn(BIDDER_CODE + ': Call to OpenBid will not be sent for  native ad unit as it does not contain required valid native params.' + bid + ' Refer:' + PREBID_NATIVE_HELP_LINK);
+    utils.logWarn(BIDDER_CODE + ': Call to OpenBid will not be sent for  native ad unit as it does not contain required valid native params.' + JSON.stringify(bid) + ' Refer:' + PREBID_NATIVE_HELP_LINK);
     return;
   }
   return impObj;
@@ -783,17 +783,17 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid);
+        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + bid);
+        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + bid);
+          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
       }
@@ -821,12 +821,12 @@ export const spec = {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stingify(bid));
           return;
         }
       } else {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
-          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, bid);
+          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stingify(bid));
           return;
         }
       }
@@ -916,16 +916,6 @@ export const spec = {
     }
 
     _handleEids(payload);
-
-    //   Make ENDPOINT NULL and Log Proper message in case of native invalid request
-    // Below Code is not necessary now as we are not attaching invalid native impression so only valid bid requests will come here
-    // if (isInvalidNativeRequest && payload.imp.length == 1) {
-    //   utils.logWarn(BIDDER_CODE + ': Request will not be sent for native bid as it does not contain required valid native params. Refer:' + PREBID_NATIVE_HELP_LINK);
-    //   return {
-    //     data: JSON.stringify(payload)
-    //   };
-    // }
-
     return {
       method: 'POST',
       url: ENDPOINT,
