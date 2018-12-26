@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Buyer Bidder Adapter
+Module Name: Dspx Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: avj83@list.ru
+Maintainer: prebid@dspx.tv
 ```
 
 # Description
 
-Buyer adapter for Prebid.js 1.0
+Dspx adapter for Prebid.js 1.0
 
 # Test Parameters
 ```
@@ -25,9 +25,9 @@ Buyer adapter for Prebid.js 1.0
             },
             bids: [
                 {
-                    bidder: "buyer",
+                    bidder: "dspx",
                     params: {
-                        placement: '12345',
+                        placement: '101',
                         pfilter: {
                             floorprice: 1000000, // EUR * 1,000,000
                             private_auction: 1, // Is private auction?  0  - no, 1 - yes
@@ -60,9 +60,9 @@ Buyer adapter for Prebid.js 1.0
             },
             bids: [
                 {
-                    bidder: "buyer",
+                    bidder: "dspx",
                     params: {
-                        placement: 67890
+                        placement: 101
                     }
                 }
             ]
