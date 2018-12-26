@@ -9,6 +9,13 @@ describe('PubMatic adapter', function () {
   let videoBidRequests;
   let multipleMediaRequests;
   let bidResponses;
+  let nativeBidRequests;
+  let nativeBidRequestsWithoutAsset;
+  let nativeBidRequestsWithRequiredParam;
+  let nativeBidResponse;
+  let validnativeBidImpression;
+  let validnativeBidImpressionWithRequiredParam;
+  let nativeBidImpressionWithoutRequiredParams;
 
   beforeEach(function () {
     bidRequests = [
@@ -124,6 +131,96 @@ describe('PubMatic adapter', function () {
       }
     ];
 
+    nativeBidRequests = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: true,
+            length: 80
+          },
+          image: {
+            required: true,
+            sizes: [300, 250]
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      nativeParams: {
+        title: { required: true, length: 80 },
+        image: { required: true, sizes: [300, 250] },
+        sponsoredBy: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      },
+      bidId: '2a5571261281d4',
+      requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
+      bidderRequestId: '1c56ad30b9b8ca8',
+    }];
+
+    nativeBidRequestsWithoutAsset = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          type: 'image'
+        }
+      },
+      nativeParams: {
+        title: { required: true },
+        image: { required: true },
+        sponsoredBy: { required: true },
+        clickUrl: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      }
+    }];
+
+    nativeBidRequestsWithRequiredParam = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: false,
+            length: 80
+          },
+          image: {
+            required: false,
+            sizes: [300, 250]
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      nativeParams: {
+        title: { required: false, length: 80 },
+        image: { required: false, sizes: [300, 250] },
+        sponsoredBy: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      }
+    }];
+
     bidResponses = {
       'body': {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
@@ -154,6 +251,46 @@ describe('PubMatic adapter', function () {
         }]
       }
     };
+
+    nativeBidResponse = {
+      'body': {
+        'id': '1544691825939',
+        'seatbid': [{
+          'bid': [{
+            'id': 'B68287E1-DC39-4B38-9790-FE4F179739D6',
+            'impid': '2a5571261281d4',
+            'price': 0.01,
+            'adm': "{\"native\":{\"assets\":[{\"id\":1,\"title\":{\"text\":\"Native Test Title\"}},{\"id\":2,\"img\":{\"h\":627,\"url\":\"http://stagingpub.net/native_ads/PM-Native-Ad-1200x627.png\",\"w\":1200}},{\"data\":{\"value\":\"Sponsored By PubMatic\"},\"id\":4}],\"imptrackers\":[\"http://imptracker.com/main/9bde02d0-6017-11e4-9df7-005056967c35\",\"http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1&pubId=5890&siteId=5892&adId=6016&adType=12&adServerId=243&kefact=0.010000&kaxefact=0.010000&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=7&kltstamp=1544692761&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=1.000000&dcId=1&tldId=0&passback=0&svr=MADS1107&ekefact=GSQSXOLKDgBAvRnoiNj0LxtpAnNEO30u1ZI5sITloOsP7gzh&ekaxefact=GSQSXAXLDgD0fOZLCjgbnVJiyS3D65dqDkxfs2ArpC3iugXw&ekpbmtpfact=GSQSXCDLDgB5mcooOvXtCKmx7TnNDJDY2YuHFOL3o9ceoU4H&crID=campaign111&lpu=advertiserdomain.com&ucrid=273354366805642829&campaignId=16981&creativeId=0&pctr=0.000000&wDSPByrId=511&wDspId=6&wbId=0&wrId=0&wAdvID=1&isRTB=1&rtbId=C09BB577-B8C1-4C3E-A0FF-73F6F631C80A&imprId=B68287E1-DC39-4B38-9790-FE4F179739D6&oid=B68287E1-DC39-4B38-9790-FE4F179739D6&pageURL=http%3A%2F%2Ftest.com%2FTestPages%2Fnativead.html\"],\"jstracker\":\"<script src='http:\\\\/\\\\/stagingpub.net\\\\/native\\\\/tempReseponse.js'><script src='http:\\\\/\\\\/stagingpub.net\\\\/native\\\\/tempReseponse.js'>\",\"link\":{\"clicktrackers\":[\"http://clicktracker.com/main/9bde02d0-6017-11e4-9df7-005056967c35\",\"&pubId=5890&siteId=5892&adId=6016&kadsizeid=7&tldId=0&passback=0&campaignId=16981&creativeId=0&adServerId=243&impid=B68287E1-DC39-4B38-9790-FE4F179739D6\"],\"fallback\":\"http://www.pubmatic.com\",\"url\":\"http://www.pubmatic.com\"}}}",
+            'adomain': ['advertiserdomain.com'],
+            'cid': '16981',
+            'crid': 'campaign111',
+            'ext': {
+              'dspid': 6
+            }
+          }],
+          'seat': '527'
+        }],
+        'cur': 'USD'
+      }
+    }
+
+    validnativeBidImpression = {
+      'native': {
+        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    }
+
+    nativeBidImpressionWithoutRequiredParams = {
+      'native': {
+        'request': '{"assets":[{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    }
+
+    validnativeBidImpressionWithRequiredParam = {
+      'native': {
+        'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    }
   });
 
   describe('implementation', function () {
@@ -222,6 +359,12 @@ describe('PubMatic adapter', function () {
         let originalBidRequests = utils.deepClone(bidRequests);
         let request = spec.buildRequests(bidRequests);
         expect(bidRequests).to.deep.equal(originalBidRequests);
+      });
+
+      it('buildRequests function should not modify original nativebidRequests object', function () {
+        let originalBidRequests = utils.deepClone(nativeBidRequests);
+        let request = spec.buildRequests(nativeBidRequests);
+        expect(nativeBidRequests).to.deep.equal(originalBidRequests);
       });
 
       it('Endpoint checking', function () {
@@ -978,6 +1121,37 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
+
+      it('Request params should have valid native bid request for all valid params', function () {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
+        expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpression.native.request);
+      });
+
+      it('Request params should not have valid native bid request for non native request', function () {
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.not.exist;
+      });
+
+      it('Request params should have valid native bid request with valid required param values for all valid params', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithRequiredParam);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
+        expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithRequiredParam.native.request);
+      });
+
+      it('should not have valid native request if assets are not defined with minimum required params and only native is the slot', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithoutAsset);
+        expect(request).to.deep.equal(undefined);
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -1119,6 +1293,24 @@ describe('PubMatic adapter', function () {
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].dealChannel).to.equal(null);
       });
+
+      it('should have a valid native bid response', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        data.imp[0].id = '2a5571261281d4';
+        request.data = JSON.stringify(data);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].native).to.exist.and.to.be.an('object');
+        expect(response[0].mediaType).to.exist.and.to.equal('native');
+        expect(response[0].native.title).to.exist.and.to.be.an('string');
+        expect(response[0].native.image).to.exist.and.to.be.an('object');
+        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
+        expect(response[0].native.image.height).to.exist;
+        expect(response[0].native.image.width).to.exist;
+        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
+        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
+      })
     });
   });
 });
