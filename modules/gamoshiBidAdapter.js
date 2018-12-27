@@ -3,7 +3,6 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 import {Renderer} from '../src/Renderer';
 
-
 export const helper = {
 
   getTopFrame: function () {
