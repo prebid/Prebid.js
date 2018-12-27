@@ -6,32 +6,28 @@ import {newBidder} from '../../../src/adapters/bidderFactory';
 import {deepClone} from 'src/utils';
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);
-
 describe('GamoshiAdapter', function () {
-
   describe('Get top Frame', function () {
-
     it('check if you are in the top frame', function () {
       expect(helper.getTopFrame()).to.equal(0);
     });
+    it('verify domain parsing', function () {
+      expect(helper.getTopWindowDomain('http://www.domain.com')).to.equal('www.domain.com');
+    });
   });
-
   describe('Is String start with search ', function () {
-
     it('check if a string started with', function () {
       expect(helper.startsWith('gamoshi.com', 'gamo')).to.equal(true);
     });
   });
 
   describe('inherited functions', function () {
-
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
   describe('isBidRequestValid', function () {
-
     it('should validate supply-partner ID', function () {
       expect(spec.isBidRequestValid({params: {}})).to.equal(false);
       expect(spec.isBidRequestValid({params: {supplyPartnerId: 123}})).to.equal(false);
@@ -82,7 +78,8 @@ describe('GamoshiAdapter', function () {
         'supplyPartnerId': supplyPartnerId
       },
       'sizes': [[300, 250], [300, 600]],
-      'transactionId': 'a123456789'
+      'transactionId': 'a123456789',
+      refererInfo: {referer: 'http://examplereferer.com'}
     };
     it('returns an array', function () {
       let response;
@@ -190,7 +187,8 @@ describe('GamoshiAdapter', function () {
       },
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
-      'bidId': '111'
+      'bidId': '111',
+      refererInfo: { referer: 'http://examplereferer.com' }
     };
 
     const videoBidRequest = {
@@ -204,7 +202,8 @@ describe('GamoshiAdapter', function () {
       },
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
-      'bidId': '111'
+      'bidId': '111',
+      refererInfo: { referer: 'http://examplereferer.com' }
     };
 
     const rtbResponse = {
@@ -373,9 +372,9 @@ describe('GamoshiAdapter', function () {
                 'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
                 'price': 5.0,
                 'adid': '1274',
-                'nurl': 'https://rtb.gambid.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
                 'adomain': [],
-                'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gambid.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gambid.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gambid.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gambid.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gambid.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gambid.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gambid.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
+                'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gamoshi.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gamoshi.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gamoshi.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gamoshi.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gamoshi.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
                 'cid': '3668',
                 'crid': '1274',
                 'cat': [],
@@ -383,9 +382,9 @@ describe('GamoshiAdapter', function () {
                 'h': 250,
                 'w': 300,
                 'ext': {
-                  'vast_url': 'https://rtb.gambid.io/pix/1275/vast_o/imp_5c24924de4b0d106447af333/im.xml?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&w=300&h=250&vatu=aHR0cHM6Ly9zdGF0aWMuZ2FtYmlkLmlvL2RlbW8vdmFzdC54bWw&vwarv',
+                  'vast_url': 'https://rtb.gamoshi.io/pix/1275/vast_o/imp_5c24924de4b0d106447af333/im.xml?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&w=300&h=250&vatu=aHR0cHM6Ly9zdGF0aWMuZ2FtYmlkLmlvL2RlbW8vdmFzdC54bWw&vwarv',
                   'imptrackers': [
-                    'https://rtb.gambid.io/pix/1275/imp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1']
+                    'https://rtb.gamoshi.io/pix/1275/imp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1']
                 }
               }
             ]
@@ -394,7 +393,7 @@ describe('GamoshiAdapter', function () {
         'ext': {
           'utrk': [{
             'type': 'image',
-            'url': 'https://rtb.gambid.io/pix/1275/scm?cb=1545900621675'
+            'url': 'https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675'
           }]
         }
       };

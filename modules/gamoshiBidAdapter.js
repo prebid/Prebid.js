@@ -17,8 +17,7 @@ export const helper = {
     return str.substr(0, search.length) === search;
   },
 
-  getTopWindowDomain: function () {
-    const url = utils.getTopWindowUrl();
+  getTopWindowDomain: function (url) {
     const domainStart = url.indexOf('://') + '://'.length;
     return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
   },
@@ -40,7 +39,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'selectmedia'],
+  aliases: ['gambid', 'cleanmedia'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -57,11 +56,17 @@ export const spec = {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || 'https://rtb.gamoshi.io';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
+      let url = config.getConfig('pageUrl');
+      if (!url && bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        url = bidderRequest.refererInfo.referer;
+      } else {
+        url = utils.getTopWindowUrl();
+      }
       const rtbBidRequest = {
         'id': auctionId,
         'site': {
-          'domain': helper.getTopWindowDomain(),
-          'page': config.getConfig('pageUrl') || utils.getTopWindowUrl(),
+          'domain': helper.getTopWindowDomain(url),
+          'page': url,
           'ref': helper.getTopWindowReferer()
         },
         'device': {
