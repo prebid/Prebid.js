@@ -17,7 +17,7 @@
     "header bidding",
     "prebid"
   ],
-  "globalVarName": "pbjs",
+  "globalVarName": "owpbjs",
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
@@ -88,6 +88,7 @@
     "mocha": "2.2.5",
     "mock-fs": "^3.11.0",
     "nightwatch": "^1.0.6",
+    "number-is-nan": "1.0.1",
     "open": "0.0.5",
     "proxyquire": "^1.7.10",
     "querystringify": "0.0.3",

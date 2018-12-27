@@ -18,9 +18,7 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
-
 const DEFAULT_TIMEOUTBUFFER = 400;
-
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 
@@ -161,7 +159,6 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
-
     };
 
     function hasGranularity(val) {

@@ -274,9 +274,16 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
+exports.getTopWindowHostName = function () {
+  let hostname;
+  try {
+    hostname = this.getTopWindowLocation().hostname;
+  } catch (e) {
+    hostname = '';
+  }
+  return hostname;
+};
+
 exports.getTopWindowReferrer = function() {
   try {
     return window.top.document.referrer;
