@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
+import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 const bid = {
@@ -15,42 +16,65 @@ const bid = {
   }
 };
 
-describe('native.js', () => {
+const bidWithUndefinedFields = {
+  native: {
+    title: 'Native Creative',
+    body: undefined,
+    cta: undefined,
+    sponsoredBy: 'AppNexus',
+    clickUrl: 'https://www.link.example',
+    clickTrackers: ['https://tracker.example'],
+    impressionTrackers: ['https://impression.example'],
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+  }
+};
+
+describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utils.triggerPixel.restore();
     utils.insertHtmlIntoIframe.restore();
   });
 
-  it('gets native targeting keys', () => {
+  it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
-    expect(targeting.hb_native_title).to.equal(bid.native.title);
-    expect(targeting.hb_native_body).to.equal(bid.native.body);
-    expect(targeting.hb_native_linkurl).to.equal(bid.native.clickUrl);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
   });
 
-  it('fires impression trackers', () => {
+  it('should only include native targeting keys with values', function () {
+    const targeting = getNativeTargeting(bidWithUndefinedFields);
+
+    expect(Object.keys(targeting)).to.deep.equal([
+      CONSTANTS.NATIVE_KEYS.title,
+      CONSTANTS.NATIVE_KEYS.sponsoredBy,
+      CONSTANTS.NATIVE_KEYS.clickUrl
+    ]);
+  });
+
+  it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
     sinon.assert.calledWith(insertHtmlIntoIframeStub, bid.native.javascriptTrackers);
   });
 
-  it('fires click trackers', () => {
+  it('fires click trackers', function () {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
   });
 });
 
-describe('validate native', () => {
+describe('validate native', function () {
   let bidReq = [{
     bids: [{
       bidderCode: 'test_bidder',
@@ -149,11 +173,11 @@ describe('validate native', () => {
     }
   };
 
-  beforeEach(() => {});
+  beforeEach(function () {});
 
-  afterEach(() => {});
+  afterEach(function () {});
 
-  it('should reject bid if no image sizes are defined', () => {
+  it('should reject bid if no image sizes are defined', function () {
     let result = nativeBidIsValid(validBid, bidReq);
     expect(result).to.be.true;
     result = nativeBidIsValid(noIconDimBid, bidReq);

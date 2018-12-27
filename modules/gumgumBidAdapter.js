@@ -19,6 +19,12 @@ function _getBrowserParams() {
   let topScreen
   let topUrl
   let ggad
+  let ns
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    const Mbps = connection && (connection.downlink || connection.bandwidth)
+    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+  }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -40,8 +46,15 @@ function _getBrowserParams() {
     sh: topScreen.height,
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1
+    dpr: topWindow.devicePixelRatio || 1,
+    jcsi: JSON.stringify({ t: 0, rq: 7 })
   }
+
+  ns = getNetworkSpeed()
+  if (ns) {
+    browserParams.ns = ns
+  }
+
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {
     browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad

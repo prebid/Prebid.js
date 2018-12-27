@@ -25,7 +25,8 @@ var adUnits = [
         sizes: [640, 480],
         mediaTypes: {
             video: {
-                context: 'instream'
+                context: 'instream',
+                playerSize: [640, 480]
             }
         },
         bids: [{

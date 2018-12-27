@@ -2,10 +2,12 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
+import { Renderer } from 'src/Renderer';
+import * as url from 'src/url';
 
 const BIDDER_CODE = 'zedo';
-const URL = '//z2.zedo.com/asw/fmb.json';
-const SECURE_URL = '//z2.zedo.com/asw/fmb.json';
+const URL = '//z2.zedo.com/asw/fmh.json';
+const SECURE_URL = '//saxp.zedo.com/asw/fmh.json';
 const DIM_TYPE = {
   '7': 'display',
   '9': 'display',
@@ -15,8 +17,14 @@ const DIM_TYPE = {
   '85': 'Inarticle',
   '86': 'pswipeup',
   '88': 'Inview',
+  '100': 'display',
+  '101': 'display',
+  '102': 'display',
+  '103': 'display'
   // '85': 'pre-mid-post-roll',
 };
+const EVENT_PIXEL_URL = 'm1.zedo.com/log/p.gif';
+const SECURE_EVENT_PIXEL_URL = 'tt1.zedo.com/log/p.gif';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -132,7 +140,23 @@ export const spec = {
         url: url
       }];
     }
-  }
+  },
+
+  onTimeout: function (timeoutData) {
+    try {
+      logEvent('117', timeoutData);
+    } catch (e) {
+      utils.logError(e);
+    }
+  },
+
+  onBidWon: function (bid) {
+    try {
+      logEvent('116', [bid]);
+    } catch (e) {
+      utils.logError(e);
+    }
+  },
 };
 
 function getCreative(ad) {
@@ -149,6 +173,8 @@ function newBid(serverBid, creativeBid, bidderRequest) {
   const bid = {
     requestId: serverBid.slotId,
     creativeId: creativeBid.adId,
+    network: serverBid.network,
+    adType: creativeBid.creativeDetails.type,
     dealId: 99999999,
     currency: 'USD',
     netRevenue: true,
@@ -163,12 +189,21 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       cpm: (parseInt(creativeBid.cpm) * 0.65) / 1000000,
       ttl: 3600
     });
+    const rendererOptions = utils.deepAccess(
+      bidderRequest,
+      'renderer.options'
+    );
+    let rendererUrl = utils.getTopWindowLocation().protocol === 'http:' ? 'http://c14.zedo.com/gecko/beta/fmpbgt.min.js' : 'https://ss3.zedo.com/gecko/beta/fmpbgt.min.js';
+    Object.assign(bid, {
+      adResponse: serverBid,
+      renderer: getRenderer(bid.adUnitCode, serverBid.slotId, rendererUrl, rendererOptions)
+    });
   } else {
     Object.assign(bid, {
       width: creativeBid.width,
       height: creativeBid.height,
       cpm: (parseInt(creativeBid.cpm) * 0.6) / 1000000,
-      ad: creativeBid.creativeDetails.adContent
+      ad: creativeBid.creativeDetails.adContent,
     });
   }
 
@@ -193,6 +228,44 @@ function getSizes(requestSizes) {
   return [width, height];
 }
 
+function getRenderer(adUnitCode, rendererId, rendererUrl, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: rendererId,
+    url: rendererUrl,
+    config: rendererOptions,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(videoRenderer);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  renderer.setEventHandlers({
+    impression: () => utils.logMessage('ZEDO video impression'),
+    loaded: () => utils.logMessage('ZEDO video loaded'),
+    ended: () => {
+      utils.logMessage('ZEDO renderer video ended');
+      document.querySelector(`#${adUnitCode}`).style.display = 'none';
+    }
+  });
+  return renderer;
+}
+
+function videoRenderer(bid) {
+  // push to render queue
+  bid.renderer.push(() => {
+    let channelCode = utils.deepAccess(bid, 'params.0.channelCode') || 0;
+    let dimId = utils.deepAccess(bid, 'params.0.dimId') || 0;
+    let options = utils.deepAccess(bid, 'params.0.options') || {};
+    let channel = (channelCode > 0) ? (channelCode - (bid.network * 1000000)) : 0;
+    var rndr = new ZdPBTag(bid.adUnitCode, bid.network, bid.width, bid.height, bid.adType, bid.vastXml, channel, dimId,
+      (encodeURI(utils.getTopWindowUrl()) || ''), options);
+    rndr.renderAd();
+  });
+}
+
 function parseMediaType(creativeBid) {
   const adType = creativeBid.creativeDetails.type;
   if (adType === 'VAST') {
@@ -200,6 +273,41 @@ function parseMediaType(creativeBid) {
   } else {
     return BANNER;
   }
+}
+
+function logEvent(eid, data) {
+  let getParams = {
+    protocol: utils.getTopWindowLocation().protocol === 'http:' ? 'http' : 'https',
+    hostname: utils.getTopWindowLocation().protocol === 'http:' ? EVENT_PIXEL_URL : SECURE_EVENT_PIXEL_URL,
+    search: getLoggingData(eid, data)
+  };
+  utils.triggerPixel(url.format(getParams).replace(/&/g, ';'));
+}
+
+function getLoggingData(eid, data) {
+  data = (utils.isArray(data) && data) || [];
+
+  let params = {};
+  let channel, network, dim, adunitCode, timeToRespond, cpm;
+  data.map((adunit) => {
+    adunitCode = adunit.adUnitCode;
+    channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
+    network = channel > 0 ? parseInt(channel / 1000000) : 0;
+    dim = utils.deepAccess(adunit, 'params.0.dimId') * 256 || 0;
+    timeToRespond = adunit.timeout ? adunit.timeout : adunit.timeToRespond;
+    cpm = adunit.cpm;
+  });
+  params.n = network;
+  params.c = channel;
+  params.s = '0';
+  params.x = dim;
+  params.ai = encodeURI('Prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
+  params.pu = encodeURI(utils.getTopWindowUrl()) || '';
+  params.eid = eid;
+  params.e = 'e';
+  params.z = Math.random();
+
+  return params;
 }
 
 registerBidder(spec);
