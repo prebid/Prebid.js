@@ -179,9 +179,12 @@ describe('AppNexusAdapter', function () {
           nativeParams: {
             title: {required: true},
             body: {required: true},
+            body2: {required: true},
             image: {required: true, sizes: [{ width: 100, height: 100 }]},
             cta: {required: false},
-            sponsoredBy: {required: true}
+            rating: {required: true},
+            sponsoredBy: {required: true},
+            privacyLink: {required: true}
           }
         }
       );
@@ -192,9 +195,12 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
         description: {required: true},
+        desc2: {required: true},
         main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
         ctatext: {required: false},
-        sponsored_by: {required: true}
+        rating: {required: true},
+        sponsored_by: {required: true},
+        privacy_link: {required: true}
       });
     });
 

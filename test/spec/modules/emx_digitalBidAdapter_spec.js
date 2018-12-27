@@ -18,6 +18,14 @@ describe('emx_digital Adapter', function () {
       'params': {
         'tagid': '25251'
       },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [300, 250],
+            [300, 600]
+          ]
+        }
+      },
       'adUnitCode': 'adunit-code',
       'sizes': [
         [300, 250],
@@ -34,16 +42,69 @@ describe('emx_digital Adapter', function () {
 
     it('should contain tagid param', function () {
       expect(spec.isBidRequestValid({
-        params: {}
-      })).to.equal(false);
-      expect(spec.isBidRequestValid({
-        params: {
-          tagid: ''
+        bidder: 'emx_digital',
+        params: {},
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+              [300, 600]
+            ]
+          }
         }
       })).to.equal(false);
       expect(spec.isBidRequestValid({
+        bidder: 'emx_digital',
+        params: {
+          tagid: ''
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+              [300, 600]
+            ]
+          }
+        }
+      })).to.equal(false);
+      expect(spec.isBidRequestValid({
+        bidder: 'emx_digital',
         params: {
           tagid: '123'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [
+            ]
+          }
+        }
+      })).to.equal(false);
+      expect(spec.isBidRequestValid({
+        bidder: 'emxdigital',
+        params: {
+          tagid: '123'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+              [300, 600]
+            ]
+          }
+        }
+      })).to.equal(false);
+      expect(spec.isBidRequestValid({
+        bidder: 'emx_digital',
+        params: {
+          tagid: '123'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+              [300, 600]
+            ]
+          }
         }
       })).to.equal(true);
     });
