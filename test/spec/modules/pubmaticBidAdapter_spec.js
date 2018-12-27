@@ -13,35 +13,35 @@ describe('PubMatic adapter', function () {
   let firstResponse, secoundResponse;
   let firstBid, secoundBid;
 
-
-  beforeEach(function () {
-    bidRequests = [
-      {
-        bidder: 'pubmatic',
-        params: {
-          publisherId: '301',
-          adSlot: '/15671365/DMDemo@300x250:0',
-          kadfloor: '1.2',
-    		  pmzoneid: 'aabc, ddef',
-    		  kadpageurl: 'www.publisher.com',
-    		  yob: '1986',
-    		  gender: 'M',
-    		  lat: '12.3',
-    		  lon: '23.7',
-    		  wiid: '1234567890',
-    		  profId: '100',
-    		  verId: '200',
-          currency: 'AUD',
-          dctr: 'key1:val1,val2|key2:val1'
-        },
-        placementCode: '/19968336/header-bid-tag-1',
-        sizes: [[300, 250], [300, 600]],
-        bidId: '23acc48ad47af5',
-        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-        bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-      }
-    ];
+  beforeEach(() => {
+    firstBid = {
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '301',
+        adSlot: '/15671365/DMDemo@300x250:0',
+        kadfloor: '1.2',
+        pmzoneid: 'aabc, ddef',
+        kadpageurl: 'www.publisher.com',
+        yob: '1986',
+        gender: 'M',
+        lat: '12.3',
+        lon: '23.7',
+        wiid: '1234567890',
+        profId: '100',
+        verId: '200',
+        currency: 'AUD',
+        dctr: 'key1:val1,val2|key2:val1'
+      },
+      placementCode: '/19968336/header-bid-tag-1',
+      sizes: [
+        [300, 250],
+        [300, 600]
+      ],
+      bidId: '23acc48ad47af5',
+      requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+      bidderRequestId: '1c56ad30b9b8ca8',
+      transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+    };
 
     secoundBid = JSON.parse(JSON.stringify(firstBid));
     secoundBid.bidId = '22bddb28db77e';
