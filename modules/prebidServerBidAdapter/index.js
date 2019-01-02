@@ -21,11 +21,39 @@ const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
 
+/**
+ * @typedef {Object} AdapterOptions
+ * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
+ * @example
+ * // example of multiple bidder configuration
+ * pbjs.setConfig({
+ *    s2sConfig: {
+ *       adapterOptions: {
+ *          rubicon: {singleRequest: false}
+ *          appnexus: {key: "value"}
+ *       }
+ *    }
+ * });
+ */
+
+/**
+ * @typedef {Object} S2SDefaultConfig
+ * @property {boolean} enabled
+ * @property {number} timeout
+ * @property {number} maxBids
+ * @property {string} adapter
+ * @property {AdapterOptions} adapterOptions
+ */
+
+/**
+ * @type {S2SDefaultConfig}
+ */
 const s2sDefaultConfig = {
   enabled: false,
   timeout: 1000,
   maxBids: 1,
-  adapter: 'prebidServer'
+  adapter: 'prebidServer',
+  adapterOptions: {}
 };
 
 config.setDefaults({
@@ -43,6 +71,7 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
@@ -420,7 +449,7 @@ const OPEN_RTB_PROTOCOL = {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
-        acc[bid.bidder] = bid.params;
+        acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
       }, {});
 
