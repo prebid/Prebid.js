@@ -268,25 +268,6 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
 
-gulp.task('watch', function () {
-  gulp.watch([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'test/spec/**/*.js',
-    '!test/spec/loaders/**/*.js'
-  ], ['build-bundle-dev', 'test']);
-  gulp.watch([
-    'loaders/**/*.js',
-    'test/spec/loaders/**/*.js'
-  ], ['lint']);
-  connect.server({
-    https: argv.https,
-    port: port,
-    root: './',
-    livereload: true
-  });
-});
-
 function e2eTest() {
   var cmdQueue = [];
   if (argv.browserstack) {
