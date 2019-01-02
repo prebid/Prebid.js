@@ -60,6 +60,10 @@ export function setConfig(config) {
 
   if (typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
+
+    // set up the default rates to be used if the rate file doesn't get loaded in time
+    currencyRates.conversions = defaultRates;
+    currencyRatesLoaded = true;
   }
 
   if (typeof config.adServerCurrency === 'string') {
@@ -84,8 +88,6 @@ config.getConfig('currency', config => setConfig(config.currency));
 
 function errorSettingsRates(msg) {
   if (defaultRates) {
-    currencyRates.conversions = defaultRates;
-    currencyRatesLoaded = true;
     utils.logWarn(msg);
     utils.logWarn('Currency failed loading rates, falling back to currency.defaultRates');
   } else {
