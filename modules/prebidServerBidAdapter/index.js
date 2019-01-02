@@ -71,7 +71,6 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
- * @property {string} [cookieSetUrl] url for cookie set library, if passed then cookieSet is enabled
  * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  */
 function setS2sConfig(options) {
