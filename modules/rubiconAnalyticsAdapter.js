@@ -408,7 +408,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       case BID_RESPONSE:
         let bid = cache.auctions[args.auctionId].bids[args.requestId];
         if (!bid) {
-          utils.logError("Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ", args.requestId);
+          utils.logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);
           break;
         }
         bid.source = formatSource(bid.source || args.source);
