@@ -406,7 +406,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }, {}));
         break;
       case BID_RESPONSE:
-        let bid = cache.auctions[args.auctionId].bids[args.adId];
+        let bid = cache.auctions[args.auctionId].bids[args.requestId];
         bid.source = formatSource(bid.source || args.source);
         switch (args.getStatusCode()) {
           case GOOD:
