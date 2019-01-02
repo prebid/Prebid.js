@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { hooks } from 'src/hook.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'https://currency.prebid.org/latest.json';
+const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
@@ -34,7 +34,7 @@ var defaultRates;
  *  {
  *    rubicon: 'USD'
  *  }
- * @param  {string} [config.conversionRateFile = 'http://currency.prebid.org/latest.json']
+ * @param  {string} [config.conversionRateFile = 'URL pointing to conversion file']
  *  Optional path to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
  *  if not specified.
  * @param  {object} [config.rates]
