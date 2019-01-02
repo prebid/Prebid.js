@@ -11,6 +11,7 @@
     "conversantBidAdapter",
     "criteoBidAdapter",
     "districtmDMXBidAdapter",
+    "emx_digitalBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
     "ffaBidAdapter",
