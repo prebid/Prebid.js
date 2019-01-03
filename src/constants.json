@@ -9,7 +9,6 @@
     "ADSERVER_TARGETING": "adserverTargeting",
     "BD_SETTING_STANDARD": "standard"
   },
-  "REPO_AND_VERSION": "%%REPO_AND_VERSION%%",
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
     "GOOD": 1,

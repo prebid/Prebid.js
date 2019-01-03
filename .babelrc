@@ -1,19 +1,23 @@
 {
-	"presets": [
-		["env", {
-			"targets": {
-				"browsers": [
-					"chrome >= 61", 
-					"safari >=8", 
-					"edge >= 14", 
-					"ff >= 57", 
-					"ie >= 10",
-					"ios >= 8"
-				]
-			}
-		}]
-	],
-	"plugins": [
-		"transform-object-assign"
-	]
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "browsers": [
+            "chrome >= 61",
+            "safari >=8",
+            "edge >= 14",
+            "ff >= 57",
+            "ie >= 10",
+            "ios >= 8"
+          ]
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    "./plugins/pbjsGlobals.js",
+    "transform-object-assign"
+  ]
 }
