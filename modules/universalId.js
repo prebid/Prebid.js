@@ -250,7 +250,7 @@ export function gdprLocalStorageConsent(consentString) {
  * @returns {boolean}
  */
 export function hasGDPRConsent(consentData) {
-  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+  if (typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
     if (!consentData.consentString) {
       utils.logWarn('Universal ID Module exiting on no GDPR consent string');
       return false;
@@ -351,7 +351,7 @@ const getIdQue = [];
 export function initSubmodules (dependencies) {
   // valid if at least one configuration is valid
   if (!validateConfig(dependencies)) {
-    dependencies.utils.logInfo('Failed to validate configuration for Universal ID module');
+    utils.logInfo('Failed to validate configuration for Universal ID module');
     return [];
   }
 
@@ -389,12 +389,12 @@ export function initSubmodules (dependencies) {
       } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
         storageValue = dependencies.localStorage.getItem(storageKey);
       } else {
-        dependencies.utils.logError(`${logPrefix} has invalid storage configuration type "${storageType}"`);
+        utils.logError(`${logPrefix} has invalid storage configuration type "${storageType}"`);
       }
 
       // if local value exists pass decoded value to bid requests
       if (storageValue) {
-        dependencies.utils.logInfo(`${logPrefix} found valid "${storageType}" value ${storageKey}=${storageValue}`);
+        utils.logInfo(`${logPrefix} found valid "${storageType}" value ${storageKey}=${storageValue}`);
 
         extendedBidRequestData.addData(submodule.decode(storageValue));
       } else {
@@ -417,7 +417,7 @@ export function initSubmodules (dependencies) {
 export function init(dependencies) {
   // check for opt out cookie
   if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
-    dependencies.utils.logInfo('Universal ID Module disabled: opt out cookie exists');
+    utils.logInfo('Universal ID Module disabled: opt out cookie exists');
     return;
   }
   // listen for usersync config change
@@ -426,7 +426,7 @@ export function init(dependencies) {
       dependencies['syncDelay'] = usersync.syncDelay || 0;
       dependencies['universalIds'] = usersync.universalIds;
       const enabledModules = initSubmodules(dependencies);
-      dependencies.utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
+      utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
     }
   });
 
@@ -442,6 +442,5 @@ init({
   navigator: window.navigator,
   document: window.document,
   localStorage: window.localStorage,
-  utils: utils,
   consentData: gdprDataHandler.getConsentData()
 });
