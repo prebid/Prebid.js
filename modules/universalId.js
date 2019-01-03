@@ -437,7 +437,7 @@ export function init(dependencies) {
   // check if getIdQue contains items
   //   if true, call submodule.getId passing consentData
   if (getIdQue.length) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 60);
+    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 51);
   }
 }
 
