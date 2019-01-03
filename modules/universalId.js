@@ -38,9 +38,9 @@ const CONSTANTS = require('../src/constants.json');
  * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
  */
 
+const OPT_OUT_COOKIE = '_pbjs_id_optout';
 const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
-const OPT_OUT_COOKIE = '_pbjs_id_optout';
 
 /**
  * data to be added to bid requests
@@ -72,11 +72,10 @@ const submodules = [{
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
-    // TODO: implement hasGDPRConsent here
-    // if (!hasGDPRConsent(gdprDataHandler.getConsentData())) {
-    //   callback();
-    //   return;
-    // }
+    if (consentData && !hasGDPRConsent(consentData)) {
+      callback();
+      return;
+    }
     const responseObj = {
       data: utils.generateUUID(),
       expires: data.storage.expires || 60
@@ -94,6 +93,10 @@ const submodules = [{
   },
   getId: function(data, consentData, syncDelay, callback) {
     function callEndpoint() {
+      if (consentData && !hasGDPRConsent(consentData)) {
+        callback();
+        return;
+      }
       // validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
@@ -116,12 +119,6 @@ const submodules = [{
         }
       }, undefined, { method: 'GET' });
     }
-
-    // TODO: implement hasGDPRConsent here
-    // if (!hasGDPRConsent(gdprDataHandler.getConsentData())) {
-    //   callback();
-    //   return;
-    // }
 
     // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
     if (!syncDelay) {
@@ -433,9 +430,7 @@ export function init(dependencies) {
     }
   });
 
-  // Add requestBidHook
-  // check if getIdQue contains items
-  //   if true, call submodule.getId passing consentData
+  // add requestBidHook if getIdQue contains items
   if (getIdQue.length) {
     $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 51);
   }
