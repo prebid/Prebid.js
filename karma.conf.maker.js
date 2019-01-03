@@ -43,12 +43,12 @@ function newPluginsArray(browserstack) {
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
-    plugins.push('karma-firefox-launcher');
-    plugins.push('karma-opera-launcher');
-    plugins.push('karma-safari-launcher');
-    plugins.push('karma-script-launcher');
-    plugins.push('karma-ie-launcher');
   }
+  plugins.push('karma-firefox-launcher');
+  plugins.push('karma-opera-launcher');
+  plugins.push('karma-safari-launcher');
+  plugins.push('karma-script-launcher');
+  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -92,7 +92,19 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.customLaunchers = require('./browsers.json')
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
-    karmaConf.browsers = ['ChromeHeadless'];
+    var isDocker = require('is-docker')();
+    if (isDocker) {
+      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+      karmaConf.customLaunchers.ChromeCustom = {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: ['--no-sandbox']
+      }
+      karmaConf.browsers = ['ChromeCustom'];
+    } else {
+      karmaConf.browsers = ['ChromeHeadless'];
+    }
   }
 }
 

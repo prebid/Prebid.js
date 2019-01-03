@@ -257,8 +257,7 @@ describe('aardvarkAdapterTest', () => {
       }];
 
       var result = spec.interpretResponse({ body: emptyResponse }, {});
-      expect(result.length).to.equal(1);
-      expect(result[0].cpm).to.equal(0.0);
+      expect(result.length).to.equal(0);
     });
   });
 });

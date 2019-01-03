@@ -169,7 +169,34 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.gdpr).to.equal('false')
       expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
-
+    it('should return a properly formatted request with GDPR applies set to false with no consent_string param', () => {
+      let bidderRequests = {
+        'gdprConsent': {
+          'consentString': undefined,
+          'vendorData': {},
+          'gdprApplies': false
+        },
+      };
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('false')
+      expect(bidRequests.data).to.not.include.keys('consent_string')
+    })
+    it('should return a properly formatted request with GDPR applies set to true with no consent_string param', () => {
+      let bidderRequests = {
+        'gdprConsent': {
+          'consentString': undefined,
+          'vendorData': {},
+          'gdprApplies': true
+        },
+      };
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.gdpr).to.equal('true')
+      expect(bidRequests.data).to.not.include.keys('consent_string')
+    })
     it('should return a properly formatted request with hfa', () => {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'
@@ -179,6 +206,11 @@ describe('SonobiBidAdapter', () => {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
+    })
+    it('should return a properly formatted request with render', () => {
+      bidRequest[0].params.render = 'safeframe'
+      const bidRequests = spec.buildRequests(bidRequest)
+      expect(bidRequests.data.render).to.equal('safeframe')
     })
 
     it('should return null if there is nothing to bid on', () => {
@@ -193,7 +225,7 @@ describe('SonobiBidAdapter', () => {
       'url': 'https://apex.go.sonobi.com/trinity.json',
       'withCredentials': true,
       'data': {
-        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'localhost:9876', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
+        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'http://localhost/', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
       },
       'bidderRequests': [
         {
@@ -267,7 +299,7 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=localhost:9876"></script>',
+        'ad': '<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=http://localhost/"></script>',
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
@@ -279,7 +311,7 @@ describe('SonobiBidAdapter', () => {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=localhost:9876',
+        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http://localhost/',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
@@ -291,6 +323,10 @@ describe('SonobiBidAdapter', () => {
 
     it('should map bidResponse to prebidResponse', () => {
       const response = spec.interpretResponse(bidResponse, bidRequests);
+      response.forEach(resp => {
+        let regx = /http:\/\/localhost:9876\/.*?(?="|$)/
+        resp.ad = resp.ad.replace(regx, 'http://localhost/');
+      });
       expect(response).to.deep.equal(prebidResponse);
     })
   })
@@ -325,7 +361,8 @@ describe('SonobiBidAdapter', () => {
 
     it('should return an empty array', () => {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
-    })
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+    });
   })
   describe('_getPlatform', () => {
     it('should return mobile', () => {

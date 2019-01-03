@@ -11,6 +11,7 @@ import {
   config
 } from 'src/config';
 import * as utils from 'src/utils';
+import { requestBidsHook } from 'modules/consentManagement';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', () => {
@@ -99,49 +100,56 @@ describe('Smart bid adapter tests', () => {
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
-  it('Verify build request with GDPR', () => {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'EUR'
-      },
-      consentManagement: {
-        cmp: 'iab',
-        consentRequired: true,
-        timeout: 1000,
-        allowAuctionWithoutConsent: true
-      }
+  describe('gdpr tests', () => {
+    afterEach(() => {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
     });
-    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
-      gdprConsent: {
-        consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
-        gdprApplies: true
-      }
-    });
-    const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('gdpr').and.to.equal(true);
-    expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
-  });
 
-  it('Verify build request with GDPR without gdprApplies', () => {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'EUR'
-      },
-      consentManagement: {
-        cmp: 'iab',
-        consentRequired: true,
-        timeout: 1000,
-        allowAuctionWithoutConsent: true
-      }
+    it('Verify build request with GDPR', () => {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
+          gdprApplies: true
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('gdpr').and.to.equal(true);
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
     });
-    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
-      gdprConsent: {
-        consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
-      }
+
+    it('Verify build request with GDPR without gdprApplies', () => {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.not.have.property('gdpr');
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
     });
-    const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.not.have.property('gdpr');
-    expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
   });
 
   it('Verify parse response', () => {

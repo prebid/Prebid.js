@@ -128,15 +128,17 @@ function _createImpressionObject(bid, conf) {
     banner: {
       pos: 0,
       topframe: utils.inIframe() ? 0 : 1,
+      w: bid.sizes[0][0],
+      h: bid.sizes[0][1],
       format: (function() {
         let arr = [];
-        for (let i = 0, l = bid.sizes.length; i < l; i++) {
+        for (let i = 1, l = bid.sizes.length; i < l; i++) {
           arr.push({
             w: bid.sizes[i][0],
             h: bid.sizes[i][1]
           });
         }
-        return arr;
+        return arr.length > 0 ? arr : UNDEFINED;
       })()
     },
     ext: {
@@ -198,6 +200,48 @@ function logAllErrors(errors) {
   });
 }
 
+function _getDataFromImpArray (impData, id, key) {
+  for (var index in impData) {
+    if (impData[index].ext.wrapper.div === id) {
+      switch (key) {
+        case 'requestId':
+          return impData[index].id;
+        case 'width':
+          return impData[index].banner.w;
+        case 'height':
+          return impData[index].banner.h;
+      }
+    }
+  }
+}
+
+function _createDummyBids (impData, bidResponses, errorCode) {
+  let bidMap = window.PWT.bidMap;
+  for (var id in bidMap) {
+    for (var adapterID in bidMap[id].adapters) {
+      if (adapterID !== 'prebid') {
+        bidResponses.push({
+          requestId: _getDataFromImpArray(impData, id, 'requestId'),
+          bidderCode: BIDDER_CODE,
+          originalBidder: adapterID,
+          pubmaticServerErrorCode: errorCode,
+          width: _getDataFromImpArray(impData, id, 'width'),
+          height: _getDataFromImpArray(impData, id, 'height'),
+          creativeId: 0,
+          dealId: '',
+          currency: CURRENCY,
+          netRevenue: true,
+          ttl: 300,
+          referrer: utils.getTopWindowUrl(),
+          ad: '',
+          cpm: 0,
+          serverSideResponseTime: (errorCode === 3) ? 0 : -1
+        });
+      }
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -224,8 +268,10 @@ export const spec = {
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: (validBidRequests, bidderRequest) => {
+    var startTime = utils.timestamp();
     let conf = _initConf();
     let payload = _createOrtbTemplate(conf);
+    window.PWT.owLatency = window.PWT.owLatency || {};
 
     if (utils.isEmpty(validBidRequests)) {
       utils.logWarn('No Valid Bid Request found for given adUnits');
@@ -279,6 +325,14 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
+
+    if (window.PWT.owLatency.hasOwnProperty(conf.wiid)) {
+      window.PWT.owLatency[conf.wiid].startTime = startTime;
+    } else {
+      window.PWT.owLatency[conf.wiid] = {
+        startTime: startTime
+      }
+    }
     return {
       method: 'POST',
       url: utils.getParameterByName('pwtvc') ? ENDPOINT + '?debug=1' : ENDPOINT,
@@ -293,6 +347,15 @@ export const spec = {
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: (response, request) => {
+    var endTime = utils.timestamp();
+    var wiid = JSON.parse(request.data).ext.wrapper.wiid;
+    if (window.PWT.owLatency.hasOwnProperty(wiid)) {
+      window.PWT.owLatency[wiid].endTime = endTime;
+    } else {
+      window.PWT.owLatency[wiid] = {
+        endTime: endTime
+      }
+    }
     const bidResponses = [];
     try {
       if (response.body && response.body.seatbid) {
@@ -303,36 +366,80 @@ export const spec = {
         // Supporting multiple bid responses for same adSize
         const referrer = utils.getTopWindowUrl();
         const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
-        response.body.seatbid.forEach(seatbidder => {
-          seatbidder.bid &&
-          seatbidder.bid.forEach(bid => {
-            if (bid.id !== null && bid.ext.summary) {
-              bid.ext.summary.forEach((summary, index) => {
-                if (summary.bidder) {
-                  const firstSummary = index === 0;
-                  const newBid = {
-                    requestId: bid.impid,
-                    bidderCode: BIDDER_CODE,
-                    originalBidder: summary.bidder,
-                    pubmaticServerErrorCode: summary.errorCode,
-                    cpm: (parseFloat(summary.bid) || 0).toFixed(2),
-                    width: summary.width,
-                    height: summary.height,
-                    creativeId: firstSummary ? (bid.crid || bid.id) : bid.id,
-                    dealId: firstSummary ? (bid.dealid || UNDEFINED) : UNDEFINED,
-                    currency: CURRENCY,
-                    netRevenue: true,
-                    ttl: 300,
-                    referrer: referrer,
-                    ad: firstSummary ? bid.adm : '',
-                    serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0
-                    /* setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
-                       probable causes for this happening will be, pubmaticServerErrorCode is one of the following:
-                       1 = GADS_UNMAPPED_SLOT_ERROR
-                       2 = GADS_MISSING_CONF_ERROR
-                       6 = INVALID_CONFIGURATION_ERROR
-                    */
-                  };
+
+        const miObj = (response.body.ext && response.body.ext.matchedimpression) || {};
+        let requestData = JSON.parse(request.data);
+
+        response.body.seatbid.forEach(function (seatbidder) {
+          seatbidder.bid && seatbidder.bid.forEach(function (bid) {
+            if (/* bid.id !== null && */bid.ext.summary) {
+              bid.ext.summary.forEach(function (summary, index) {
+                var firstSummary = index === 0;
+                let newBid = {};
+                if (summary.errorCode === 6 || summary.errorCode === 3) {
+                  // special handling for error code 6. Create all dummy bids from request data.
+                  bidResponses.length === 0 && _createDummyBids(requestData.imp, bidResponses, summary.errorCode);
+                } else {
+                  switch (summary.errorCode) {
+                    case undefined:
+                      newBid = {
+                        requestId: bid.impid,
+                        bidderCode: BIDDER_CODE,
+                        originalBidder: summary.bidder,
+                        pubmaticServerErrorCode: undefined,
+                        width: summary.width,
+                        height: summary.height,
+                        creativeId: firstSummary ? (bid.crid || bid.id) : bid.id,
+                        dealId: firstSummary ? (bid.dealid || UNDEFINED) : UNDEFINED,
+                        currency: CURRENCY,
+                        netRevenue: true,
+                        ttl: 300,
+                        referrer: referrer,
+                        ad: firstSummary ? bid.adm : '',
+                        cpm: (parseFloat(summary.bid) || 0).toFixed(2),
+                        serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0,
+                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED
+                      }
+                      break;
+                    default:
+                      requestData.imp.forEach(function(impObj) {
+                        if (impObj.id === bid.impid) {
+                          newBid = {
+                            requestId: impObj.id,
+                            bidderCode: BIDDER_CODE,
+                            originalBidder: summary.bidder,
+                            pubmaticServerErrorCode: summary.errorCode,
+                            width: impObj.banner.w,
+                            height: impObj.banner.h,
+                            creativeId: 0,
+                            dealId: '',
+                            currency: CURRENCY,
+                            netRevenue: true,
+                            ttl: 300,
+                            referrer: referrer,
+                            ad: '',
+                            cpm: 0,
+                            serverSideResponseTime: (summary.errorCode === 1 || summary.errorCode === 2 || summary.errorCode === 6) ? -1
+                              : summary.errorCode === 5 ? 0 : partnerResponseTimeObj[summary.bidder] || 0,
+                            /* errorCodes meaning:
+                                1 = GADS_UNMAPPED_SLOT_ERROR
+                                2 = GADS_MISSING_CONF_ERROR
+                                3 = TIMEOUT_ERROR
+                                4 = NO_BID_PREBID_ERROR
+                                5 = PARTNER_TIMEDOUT_ERROR
+                                6 = INVALID_CONFIGURATION_ERROR
+                                7 = NO_GDPR_CONSENT_ERROR
+                                500 = API_RESPONSE_ERROR
+                                - setting serverSideResponseTime as 0, in cases where partnerResponseTimeObj[summary.bidder] is not available.
+                                - setting serverSideResponseTime as -1, in cases where errorCode is 1,2 or 6. In these cases we do not log this bid in logger
+                                - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
+                            */
+                            mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                          }
+                        }
+                      });
+                      break;
+                  }
                   bidResponses.push(newBid);
                 }
               });

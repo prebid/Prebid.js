@@ -10,6 +10,7 @@ const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const NATIVE_MAPPING = {
   body: 'description',
   cta: 'ctatext',
@@ -29,7 +30,7 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -59,6 +60,23 @@ export const spec = {
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
+    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    let appDeviceObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    }
+
+    const appIdObjBid = find(bidRequests, hasAppId);
+    let appIdObj;
+    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {
+        appid: appIdObjBid.params.app.id
+      };
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -72,6 +90,13 @@ export const spec = {
     };
     if (member > 0) {
       payload.member_id = member;
+    }
+
+    if (appDeviceObjBid) {
+      payload.device = appDeviceObj
+    }
+    if (appIdObjBid) {
+      payload.app = appIdObj;
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -129,6 +154,30 @@ export const spec = {
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
+  },
+
+  transformBidParams: function(params, isOpenRtb) {
+    params = utils.convertTypes({
+      'member': 'string',
+      'invCode': 'string',
+      'placementId': 'number',
+      'keywords': utils.transformBidderParamKeywords
+    }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 }
 
@@ -155,32 +204,6 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
     }
   });
   return renderer;
-}
-
-/* Turn keywords parameter into ut-compatible format */
-function getKeywords(keywords) {
-  let arrs = [];
-
-  utils._each(keywords, (v, k) => {
-    if (utils.isArray(v)) {
-      let values = [];
-      utils._each(v, (val) => {
-        val = utils.getValueString('keywords.' + k, val);
-        if (val) { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = utils.getValueString('keywords.' + k, v);
-      if (utils.isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
 }
 
 /**
@@ -310,7 +333,7 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = getKeywords(bid.params.keywords);
+    tag.keywords = utils.transformBidderParamKeywords(bid.params.keywords);
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
@@ -381,6 +404,19 @@ function hasUserInfo(bid) {
 
 function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
+}
+
+function hasAppDeviceInfo(bid) {
+  if (bid.params) {
+    return !!bid.params.app
+  }
+}
+
+function hasAppId(bid) {
+  if (bid.params && bid.params.app) {
+    return !!bid.params.app.id
+  }
+  return !!bid.params.app
 }
 
 function getRtbBid(tag) {
