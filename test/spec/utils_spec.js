@@ -922,6 +922,12 @@ describe('Utils', function () {
         const inserted = utils.insertElement(toInsert);
         expect(inserted).to.equal(head.lastChild);
       });
+      it('returns a node at bottom of body if target is given as body', function () {
+        const toInsert = document.createElement('div');
+        const body = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(body.lastChild);
+      });
     });
   });
 });

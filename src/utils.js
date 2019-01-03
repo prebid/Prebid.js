@@ -570,7 +570,6 @@ exports.insertElement = function(elm, doc, target, asFirstChild) {
     if (parentEl.length) {
       parentEl = parentEl[0];
       let insertBeforeEl = asFirstChild ? parentEl.firstChild : null;
-      console.log(insertBeforeEl, elm, 'ine');
       return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
