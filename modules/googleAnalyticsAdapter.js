@@ -5,7 +5,7 @@
 var events = require('src/events');
 var utils = require('src/utils');
 var CONSTANTS = require('src/constants.json');
-var adaptermanager = require('src/adaptermanager');
+var adapterManager = require('src/adapterManager');
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -253,7 +253,7 @@ function sendBidWonToGa(bid) {
   checkAnalytics();
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: exports,
   code: 'ga'
 });

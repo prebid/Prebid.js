@@ -3,7 +3,7 @@
  */
 
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 
 // This config makes Prebid.js call this function on each event:
 //   `window['AdagioPrebidAnalytics']('on', eventType, args)`
@@ -15,7 +15,7 @@ var adagioAdapter = adapter({
   analyticsType: 'bundle'
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: adagioAdapter,
   code: 'adagio'
 });

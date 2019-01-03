@@ -1,4 +1,4 @@
-import { videoAdapters } from './adaptermanager';
+import { videoAdapters } from './adapterManager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';

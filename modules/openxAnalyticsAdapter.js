@@ -1,6 +1,6 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import { config } from 'src/config';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
@@ -245,7 +245,7 @@ openxAdapter.reset = function() {
   auctionMap = {};
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: openxAdapter,
   code: 'openx'
 });

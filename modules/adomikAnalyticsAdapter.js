@@ -1,6 +1,6 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import { logInfo } from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 import findIndex from 'core-js/library/fn/array/find-index';
@@ -207,7 +207,7 @@ adomikAdapter.enableAnalytics = function (config) {
   }
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: adomikAdapter,
   code: 'adomik'
 });

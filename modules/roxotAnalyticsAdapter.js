@@ -1,6 +1,6 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import {ajaxBuilder} from 'src/ajax';
 
@@ -499,7 +499,7 @@ function buildLogMessage(message) {
   return 'Roxot Prebid Analytics: ' + message;
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
   code: 'roxot'
 });

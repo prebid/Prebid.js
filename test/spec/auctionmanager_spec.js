@@ -16,7 +16,7 @@ var assert = require('assert');
 var utils = require('../../src/utils');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
-var adaptermanager = require('src/adaptermanager');
+var adapterManager = require('src/adapterManager');
 var events = require('src/events');
 
 const BIDDER_CODE = 'sampleBidder';
@@ -534,14 +534,14 @@ describe('auctionmanager.js', function () {
     let makeRequestsStub;
 
     before(function () {
-      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
     after(function () {
       ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     });
 
     describe('when auction timeout is 3000', function () {
@@ -729,7 +729,7 @@ describe('auctionmanager.js', function () {
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
       ];
-      let makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
@@ -737,7 +737,7 @@ describe('auctionmanager.js', function () {
 
     after(function () {
       ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     });
 
     beforeEach(function () {

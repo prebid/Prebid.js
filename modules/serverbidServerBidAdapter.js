@@ -1,7 +1,7 @@
 import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import { STATUS, S2S } from 'src/constants';
 import { config } from 'src/config';
 
@@ -228,6 +228,6 @@ ServerBidServerAdapter.createNew = function() {
   return new ServerBidServerAdapter();
 };
 
-adaptermanager.registerBidAdapter(new ServerBidServerAdapter(), bidder);
+adapterManager.registerBidAdapter(new ServerBidServerAdapter(), bidder);
 
 module.exports = ServerBidServerAdapter;

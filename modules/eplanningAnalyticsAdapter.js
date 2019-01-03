@@ -1,6 +1,6 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as utils from 'src/utils';
 
 const CONSTANTS = require('src/constants.json');
@@ -123,7 +123,7 @@ eplAnalyticsAdapter.enableAnalytics = function (config) {
   eplAnalyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: eplAnalyticsAdapter,
   code: 'eplanning'
 });

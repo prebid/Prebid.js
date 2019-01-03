@@ -3,7 +3,7 @@
  */
 
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 
 var appnexusAdapter = adapter({
   global: 'AppNexusPrebidAnalytics',
@@ -11,7 +11,7 @@ var appnexusAdapter = adapter({
   analyticsType: 'bundle'
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: appnexusAdapter,
   code: 'appnexus'
 });

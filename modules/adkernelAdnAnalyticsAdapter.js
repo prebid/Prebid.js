@@ -1,6 +1,6 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import {parse} from 'src/url';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
@@ -99,7 +99,7 @@ analyticsAdapter.enableAnalytics = (config) => {
   analyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: 'adkernelAdn'
 });

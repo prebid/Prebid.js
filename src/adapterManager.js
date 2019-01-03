@@ -431,7 +431,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       const s2sBidders = s2sConfig && s2sConfig.bidders;
 
       if (!(s2sBidders && includes(s2sBidders, alias))) {
-        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
       } else {
         exports.aliasRegistry[alias] = bidderCode;
       }
@@ -453,7 +453,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
           supportedMediaTypes
         });
       } catch (e) {
-        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adapterManager.aliasBidAdapter');
       }
     }
   } else {

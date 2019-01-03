@@ -1,6 +1,6 @@
 import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 
@@ -204,12 +204,12 @@ describe('', function () {
     });
 
     it('should be configurable', function () {
-      adaptermanager.registerAnalyticsAdapter({
+      adapterManager.registerAnalyticsAdapter({
         code: 'adkernelAdn',
         adapter: analyticsAdapter
       });
 
-      adaptermanager.enableAnalytics({
+      adapterManager.enableAnalytics({
         provider: 'adkernelAdn',
         options: {
           pubId: 777,

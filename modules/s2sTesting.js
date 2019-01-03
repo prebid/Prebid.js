@@ -1,5 +1,5 @@
 import { config } from 'src/config';
-import { setS2STestingModule } from 'src/adaptermanager';
+import { setS2STestingModule } from 'src/adapterManager';
 
 export const SERVER = 'server';
 export const CLIENT = 'client';
@@ -85,6 +85,6 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   }
 }
 
-// inject the s2sTesting module into the adaptermanager rather than importing it
+// inject the s2sTesting module into the adapterManager rather than importing it
 // importing it causes the packager to include it even when it's not explicitly included in the build
 setS2STestingModule(exports);

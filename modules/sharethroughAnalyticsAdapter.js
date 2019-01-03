@@ -1,5 +1,5 @@
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 const utils = require('src/utils');
 
 const emptyUrl = '';
@@ -63,7 +63,7 @@ var sharethroughAdapter = Object.assign(adapter(
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: sharethroughAdapter,
   code: 'sharethrough'
 });

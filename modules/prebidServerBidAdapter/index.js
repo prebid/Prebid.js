@@ -3,7 +3,7 @@ import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S, EVENTS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import { config } from 'src/config';
 import { VIDEO } from 'src/mediaTypes';
 import { isValid } from 'src/adapters/bidderFactory';
@@ -206,7 +206,7 @@ function doBidderSync(type, url, bidder, done) {
  */
 function doClientSideSyncs(bidders) {
   bidders.forEach(bidder => {
-    let clientAdapter = adaptermanager.getBidAdapter(bidder);
+    let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
       clientAdapter.registerSyncs([]);
     }
@@ -280,7 +280,7 @@ const LEGACY_PROTOCOL = {
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
-        const adapter = adaptermanager.bidderRegistry[bid.bidder];
+        const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
@@ -426,8 +426,8 @@ const OPEN_RTB_PROTOCOL = {
         bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
 
         // check for and store valid aliases to add to the request
-        if (adaptermanager.aliasRegistry[bid.bidder]) {
-          aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];
+        if (adapterManager.aliasRegistry[bid.bidder]) {
+          aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
         }
       });
 
@@ -461,7 +461,7 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
-        const adapter = adaptermanager.bidderRegistry[bid.bidder];
+        const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
@@ -696,4 +696,4 @@ export function PrebidServer() {
   });
 }
 
-adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
+adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');

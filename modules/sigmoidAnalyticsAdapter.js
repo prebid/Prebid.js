@@ -3,7 +3,7 @@ Updated : 2018-03-28 */
 import includes from 'core-js/library/fn/array/includes';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 
 const utils = require('src/utils');
 
@@ -277,7 +277,7 @@ function pushEvent(eventType, args) {
   }
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: sigmoidAdapter,
   code: 'sigmoid'
 });

@@ -1,6 +1,6 @@
 // RealVu Analytics Adapter
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
 const utils = require('src/utils.js');
@@ -946,7 +946,7 @@ realvuAnalyticsAdapter.disableAnalytics = function () {
   disableAnalyticsSuper.apply(this, arguments);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: realvuAnalyticsAdapter,
   code: 'realvuAnalytics'
 });

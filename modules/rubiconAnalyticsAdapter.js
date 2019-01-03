@@ -1,5 +1,5 @@
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
@@ -322,7 +322,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     switch (eventType) {
       case AUCTION_INIT:
         // set the rubicon aliases
-        setRubiconAliases(adaptermanager.aliasRegistry);
+        setRubiconAliases(adapterManager.aliasRegistry);
         let cacheEntry = _pick(args, [
           'timestamp',
           'timeout'
@@ -485,7 +485,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
   code: 'rubicon'
 });

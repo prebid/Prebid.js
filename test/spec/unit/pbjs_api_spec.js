@@ -27,7 +27,7 @@ var utils = require('src/utils');
 // var bidmanager = require('src/bidmanager');
 var bidfactory = require('src/bidfactory');
 var adloader = require('test/mocks/adloaderStub');
-var adaptermanager = require('src/adaptermanager');
+var adapterManager = require('src/adapterManager');
 var events = require('src/events');
 var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
@@ -415,7 +415,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
-      sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
+      sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => ([{
         'bidderCode': 'appnexus',
         'auctionId': '20882439e3238c',
         'bidderRequestId': '331f3cf3f1d9c8',
@@ -449,7 +449,7 @@ describe('Unit: Prebid Module', function () {
 
     after(function () {
       configObj.setConfig({ priceGranularity: currentPriceBucket });
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     })
 
     beforeEach(function () {
@@ -680,7 +680,7 @@ describe('Unit: Prebid Module', function () {
 
     before(function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
-      sinon.stub(adaptermanager, 'makeBidRequests').callsFake(() => ([{
+      sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => ([{
         'bidderCode': 'appnexus',
         'auctionId': '20882439e3238c',
         'bidderRequestId': '331f3cf3f1d9c8',
@@ -713,7 +713,7 @@ describe('Unit: Prebid Module', function () {
 
     after(function () {
       configObj.setConfig({ priceGranularity: currentPriceBucket });
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     })
 
     afterEach(function () {
@@ -1130,7 +1130,7 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(function () {
       logMessageSpy = sinon.spy(utils, 'logMessage');
-      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
       xhr = sinon.useFakeXMLHttpRequest();
 
@@ -1153,7 +1153,7 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(function () {
       clock.restore();
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
       auctionModule.newAuction.restore();
       utils.logMessage.restore();
       xhr.restore();
@@ -1401,21 +1401,21 @@ describe('Unit: Prebid Module', function () {
         adUnitCodes = ['adUnit-code'];
         configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adaptermanager, 'callBids');
+        spyCallBids = sinon.spy(adapterManager, 'callBids');
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
       })
 
       afterEach(function () {
         auctionModule.newAuction.restore();
-        adaptermanager.callBids.restore();
+        adapterManager.callBids.restore();
       });
 
       it('bidders that support one of the declared formats are allowed to participate', function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledOnce(adaptermanager.callBids);
+        sinon.assert.calledOnce(adapterManager.callBids);
 
-        const spyArgs = adaptermanager.callBids.getCall(0);
+        const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
 
         // appnexus and sampleBidder both support banner
@@ -1426,9 +1426,9 @@ describe('Unit: Prebid Module', function () {
         delete adUnits[0].mediaTypes.banner;
 
         $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledOnce(adaptermanager.callBids);
+        sinon.assert.calledOnce(adapterManager.callBids);
 
-        const spyArgs = adaptermanager.callBids.getCall(0);
+        const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
 
         // only appnexus supports native
@@ -1477,19 +1477,19 @@ describe('Unit: Prebid Module', function () {
       });
 
       beforeEach(function () {
-        spyCallBids = sinon.spy(adaptermanager, 'callBids');
+        spyCallBids = sinon.spy(adapterManager, 'callBids');
       })
 
       afterEach(function () {
-        adaptermanager.callBids.restore();
+        adapterManager.callBids.restore();
       })
 
       it('should callBids if a native adUnit has all native bidders', function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledOnce(adaptermanager.callBids);
+        sinon.assert.calledOnce(adapterManager.callBids);
       });
 
-      it('should call callBids function on adaptermanager', function () {
+      it('should call callBids function on adapterManager', function () {
         let adUnits = [{
           code: 'adUnit-code',
           sizes: [[300, 250], [300, 600]],
@@ -1498,7 +1498,7 @@ describe('Unit: Prebid Module', function () {
           ]
         }];
         $$PREBID_GLOBAL$$.requestBids({adUnits});
-        assert.ok(spyCallBids.called, 'called adaptermanager.callBids');
+        assert.ok(spyCallBids.called, 'called adapterManager.callBids');
       });
 
       it('splits native type to individual native assets', function () {
@@ -1511,7 +1511,7 @@ describe('Unit: Prebid Module', function () {
           ]
         }];
         $$PREBID_GLOBAL$$.requestBids({adUnits});
-        const spyArgs = adaptermanager.callBids.getCall(0);
+        const spyArgs = adapterManager.callBids.getCall(0);
         const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
         expect(nativeRequest).to.deep.equal({
           image: {required: true},
@@ -1574,7 +1574,7 @@ describe('Unit: Prebid Module', function () {
       };
 
       beforeEach(function() {
-        spyCallBids = sinon.spy(adaptermanager, 'callBids');
+        spyCallBids = sinon.spy(adapterManager, 'callBids');
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction');
         auctionManagerStub.onCall(0).returns(auction1);
         auctionManagerStub.onCall(1).returns(auction2);
@@ -1582,7 +1582,7 @@ describe('Unit: Prebid Module', function () {
 
       afterEach(function() {
         auctionManager.createAuction.restore();
-        adaptermanager.callBids.restore();
+        adapterManager.callBids.restore();
       });
 
       it('should not queue bid requests when a previous bid request is in process', function () {
@@ -1681,11 +1681,11 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('registerBidAdapter', function () {
-    it('should register bidAdaptor with adaptermanager', function () {
-      var registerBidAdapterSpy = sinon.spy(adaptermanager, 'registerBidAdapter');
+    it('should register bidAdaptor with adapterManager', function () {
+      var registerBidAdapterSpy = sinon.spy(adapterManager, 'registerBidAdapter');
       $$PREBID_GLOBAL$$.registerBidAdapter(Function, 'biddercode');
-      assert.ok(registerBidAdapterSpy.called, 'called adaptermanager.registerBidAdapter');
-      adaptermanager.registerBidAdapter.restore();
+      assert.ok(registerBidAdapterSpy.called, 'called adapterManager.registerBidAdapter');
+      adapterManager.registerBidAdapter.restore();
     });
 
     it('should catch thrown errors', function () {
@@ -1726,14 +1726,14 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('aliasBidder', function () {
-    it('should call adaptermanager.aliasBidder', function () {
-      const aliasBidAdapterSpy = sinon.spy(adaptermanager, 'aliasBidAdapter');
+    it('should call adapterManager.aliasBidder', function () {
+      const aliasBidAdapterSpy = sinon.spy(adapterManager, 'aliasBidAdapter');
       const bidderCode = 'testcode';
       const alias = 'testalias';
 
       $$PREBID_GLOBAL$$.aliasBidder(bidderCode, alias);
-      assert.ok(aliasBidAdapterSpy.calledWith(bidderCode, alias), 'called adaptermanager.aliasBidAdapterSpy');
-      adaptermanager.aliasBidAdapter.restore();
+      assert.ok(aliasBidAdapterSpy.calledWith(bidderCode, alias), 'called adapterManager.aliasBidAdapterSpy');
+      adapterManager.aliasBidAdapter.restore();
     });
 
     it('should log error when not passed correct arguments', function () {
