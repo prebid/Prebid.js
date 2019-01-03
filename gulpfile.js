@@ -4,14 +4,14 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
-var webserver = require('gulp-webserver');
+var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker');
-var opens = require('open');
+var opens = require('opn');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var concat = require('gulp-concat');
@@ -56,12 +56,11 @@ function e2etestReport() {
   var reportPort = 9010;
   var targetDestinationDir = './e2etest-report';
   helpers.createEnd2EndTestReport(targetDestinationDir);
-  gulp.src('./')
-    .pipe(webserver({
-      port: reportPort,
-      directoryListing: true,
-      livereload: true
-    }));
+  connect.server({
+    port: reportPort,
+    root: './',
+    livereload: true
+  });
 
   setTimeout(function() {
     opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
@@ -91,15 +90,15 @@ function lint(done) {
 function viewCoverage(done) {
   var coveragePort = 1999;
 
-  var stream = gulp.src('./')
-    .pipe(webserver({
-      port: coveragePort,
-      directoryListing: true,
-      livereload: false,
-      open: 'build/coverage/karma_html/index.html'
-    }));
-  stream.on('finish', done);
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/karma_html',
+    livereload: false
+  });
+  opens('http://localhost:' + coveragePort);
+  done();
 };
+
 viewCoverage.displayName = 'view-coverage';
 
 // Watch Task with Live Reload
@@ -115,17 +114,16 @@ function watch(done) {
     'test/spec/loaders/**/*.js'
   ]);
 
-  var stream = gulp.src('./')
-    .pipe(webserver({
-      https: argv.https,
-      port: port,
-      directoryListing: true,
-      livereload: true
-    }));
+  connect.server({
+    https: argv.https,
+    port: port,
+    root: './',
+    livereload: true
+  });
 
   mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
   loaderWatcher.on('all', gulp.series(lint));
-  stream.on('finish', done);
+  done();
 };
 
 function makeDevpackPkg() {
@@ -140,7 +138,8 @@ function makeDevpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(gulp.dest('build/dev'));
+    .pipe(gulp.dest('build/dev'))
+    .pipe(connect.reload());
 }
 
 function makeWebpackPkg() {
