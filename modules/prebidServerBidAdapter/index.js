@@ -147,6 +147,7 @@ function doAllSyncs(bidders) {
  * @param {string} type the type of sync, "image", "redirect", "iframe"
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
+ * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
  */
 function doBidderSync(type, url, bidder, done) {
   if (!url) {

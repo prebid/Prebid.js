@@ -568,6 +568,11 @@ exports.insertElement = function(elm, doc, target) {
   } catch (e) {}
 };
 
+/**
+ * Inserts an image pixel with the specified `url` for cookie sync
+ * @param {string} url URL string of the image pixel to load
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ */
 exports.triggerPixel = function (url, done) {
   const img = new Image();
   if (done && exports.isFn(done)) {
@@ -619,6 +624,7 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  */
 exports.insertUserSyncIframe = function(url, done) {
   let iframeHtml = exports.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
