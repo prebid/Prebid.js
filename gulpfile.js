@@ -80,10 +80,14 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
-    .pipe(eslint())
+  const isFixed = function(file){
+    return file.eslint != null && file.eslint.fixed;
+  }
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'],{base: './'})
+    .pipe(eslint({fix: true}))
     .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError());
+    .pipe(eslint.failAfterError())
+    .pipe(gulpif(isFixed, gulp.dest('./')));
 };
 
 // View the code coverage report in the browser.
