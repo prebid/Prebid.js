@@ -621,7 +621,7 @@ exports.insertUserSyncIframe = function(url) {
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
-  exports.insertElement(iframe);
+  exports.insertElement(iframe, document, 'body');
 };
 
 /**
