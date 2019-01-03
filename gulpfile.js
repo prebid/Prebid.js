@@ -87,7 +87,7 @@ function lint(done) {
     .pipe(eslint({fix: true}))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
-    .pipe(gulpif(isFixed, gulp.dest('./')));;
+    .pipe(gulpif(isFixed, gulp.dest('./')));
 };
 
 // View the code coverage report in the browser.
