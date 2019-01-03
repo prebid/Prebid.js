@@ -274,24 +274,26 @@ export function requestBidHookGetId(config, next) {
   getIdQue.forEach(item => {
     // local value does not exist and submodule getId should be called
     item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
+      const storageKey = item.universalId.storage.name;
+      const storageType = item.universalId.storage.type;
+      const logPrefix = item.logPrefix;
+
       if (response && response.data) {
-        const storageKey = item.universalId.storage.name;
-        const storageType = item.universalId.storage.type;
         const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
 
         if (storageType === STORAGE_TYPE_COOKIE) {
           setCookie(storageKey, responseData, response.expires);
-          utils.logInfo(`${item.logPrefix} set "cookie" value ${storageKey}=${responseData}`);
+          utils.logInfo(`${logPrefix} set "cookie" value ${storageKey}=${responseData}`);
         } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
           localStorage.setItem(storageKey, responseData);
-          utils.logInfo(`${item.logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
+          utils.logInfo(`${logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
         } else {
-          utils.logError(`${item.logPrefix} invalid configuration storage type`);
+          utils.logError(`${logPrefix} invalid configuration storage type`);
         }
 
         extendedBidRequestData.addData(item.submodule.decode(response.data));
       } else {
-        utils.logError(`${item.logPrefix} getId callback response was invalid. response=`, response);
+        utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
       }
     });
   });
