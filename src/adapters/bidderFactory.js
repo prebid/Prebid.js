@@ -1,15 +1,14 @@
-import Adapter from 'src/adapter';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import bidfactory from 'src/bidfactory';
-import { userSync } from 'src/userSync';
-import { nativeBidIsValid } from 'src/native';
-import { isValidVideoBid } from 'src/video';
-import CONSTANTS from 'src/constants.json';
-import events from 'src/events';
+import Adapter from '../adapter';
+import adaptermanager from '../adaptermanager';
+import { config } from '../config';
+import bidfactory from '../bidfactory';
+import { userSync } from '../userSync';
+import { nativeBidIsValid } from '../native';
+import { isValidVideoBid } from '../video';
+import CONSTANTS from '../constants.json';
+import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
-
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from '../utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.

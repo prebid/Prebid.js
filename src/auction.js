@@ -52,10 +52,10 @@ import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest }
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
-import { Renderer } from 'src/Renderer';
-import { config } from 'src/config';
-import { userSync } from 'src/userSync';
-import { createHook } from 'src/hook';
+import { Renderer } from './Renderer';
+import { config } from './config';
+import { userSync } from './userSync';
+import { createHook } from './hook';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import { OUTSTREAM } from './video';
