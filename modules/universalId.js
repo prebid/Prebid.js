@@ -276,7 +276,7 @@ export function requestBidHookGetId(config, next) {
     item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
       const storageKey = item.universalId.storage.name;
       const storageType = item.universalId.storage.type;
-      const logPrefix = item.logPrefix;
+      const logPrefix = `Universal ID Module - ${storageKey}:`;
 
       if (response && response.data) {
         const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
@@ -336,7 +336,6 @@ export function requestBidHook (config, next) {
  * @typedef {Object} GetIdData
  * @property {IdSubmodule} submodule
  * @property {Object} universalId
- * @property {string} logPrefix
  * @property {number} syncDelay
  */
 
@@ -403,7 +402,6 @@ export function initSubmodules (dependencies) {
         // Build que of data to supply to 'getId' that will be executed from a que in requestBidHook
         getIdQue.push({
           submodule: submodule,
-          logPrefix: logPrefix,
           universalId: universalId,
           syncDelay: dependencies.syncDelay,
         });
