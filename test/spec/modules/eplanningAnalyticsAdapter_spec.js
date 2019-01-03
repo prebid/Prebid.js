@@ -2,7 +2,7 @@ import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter';
 import includes from 'core-js/library/fn/array/includes';
 import { expect } from 'chai';
 import {parse as parseURL} from 'src/url';
-let adapterManager = require('src/adapterManager');
+let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 

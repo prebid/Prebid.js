@@ -1,7 +1,7 @@
 import adxcgAnalyticsAdapter from 'modules/adxcgAnalyticsAdapter';
 import { expect } from 'chai';
+import adapterManager from 'src/adapterManager.js';
 
-let adapterManager = require('src/adapterManager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 

@@ -17,7 +17,7 @@ import { isRendererRequired, executeRenderer } from './Renderer';
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
-const adapterManager = require('./adapterManager');
+const adapterManager = require('./adapterManager').default;
 const bidfactory = require('./bidfactory');
 const events = require('./events');
 const { triggerUserSyncs } = userSync;

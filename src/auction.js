@@ -62,7 +62,7 @@ import { OUTSTREAM } from './video';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
-const adapterManager = require('./adapterManager');
+const adapterManager = require('./adapterManager').default;
 const events = require('./events');
 const CONSTANTS = require('./constants.json');
 

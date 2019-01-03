@@ -16,7 +16,7 @@ var assert = require('assert');
 var utils = require('../../src/utils');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
-var adapterManager = require('src/adapterManager');
+var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
 
 const BIDDER_CODE = 'sampleBidder';

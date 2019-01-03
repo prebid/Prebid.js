@@ -1,6 +1,6 @@
 import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter';
 import { expect } from 'chai';
-let adapterManager = require('src/adapterManager');
+let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 

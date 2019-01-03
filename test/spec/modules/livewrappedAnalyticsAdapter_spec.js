@@ -3,7 +3,7 @@ import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
 
 let events = require('src/events');
-let adapterManager = require('src/adapterManager');
+let adapterManager = require('src/adapterManager').default;
 
 const {
   EVENTS: {

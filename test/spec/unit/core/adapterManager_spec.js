@@ -1,6 +1,8 @@
 import { expect } from 'chai';
-import adapterManager from 'src/adapterManager';
-import { checkBidRequestSizes } from 'src/adapterManager';
+import adapterManager, {
+  gdprDataHandler,
+  checkBidRequestSizes
+} from 'src/adapterManager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -1035,7 +1037,7 @@ describe('adapterManager tests', function () {
 
     describe('gdpr consent module', function () {
       it('inserts gdprConsent object to bidRequest only when module was enabled', function () {
-        adapterManager.gdprDataHandler.setConsentData({
+        gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
         });
@@ -1050,7 +1052,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].gdprConsent.consentString).to.equal('abc123def456');
         expect(bidRequests[0].gdprConsent.consentRequired).to.be.true;
 
-        adapterManager.gdprDataHandler.setConsentData(null);
+        gdprDataHandler.setConsentData(null);
 
         bidRequests = adapterManager.makeBidRequests(
           adUnits,

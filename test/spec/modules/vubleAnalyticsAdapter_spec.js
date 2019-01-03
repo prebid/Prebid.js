@@ -1,7 +1,7 @@
 import vubleAnalytics from 'modules/vubleAnalyticsAdapter';
 import { expect } from 'chai';
 let events = require('src/events');
-let adapterManager = require('src/adapterManager');
+let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Vuble Prebid Analytic', function () {
