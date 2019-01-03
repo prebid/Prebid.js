@@ -549,21 +549,29 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-exports.insertElement = function(elm, doc, target) {
+/*
+* Inserts an element(elm) as targets child, by default as last child
+* @param {HTMLElement} elm
+* @param {HTMLElement} [doc]
+* @param {HTMLElement} [target]
+* @param {Boolean} [asFirstChild]
+* @return {HTMLElement}
+*/
+exports.insertElement = function(elm, doc, target, asFirstChild) {
   doc = doc || document;
-  let elToAppend;
-  const head = doc.getElementsByTagName('head');
+  let parentEl;
   if (target) {
-    elToAppend = doc.getElementsByTagName(target);
+    parentEl = doc.getElementsByTagName(target);
   } else {
-    elToAppend = head;
+    parentEl = doc.getElementsByTagName('head');
   }
   try {
-    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
-      return elToAppend.insertBefore(elm, refChild);
+    parentEl = parentEl.length ? parentEl : doc.getElementsByTagName('body');
+    if (parentEl.length) {
+      parentEl = parentEl[0];
+      let insertBeforeEl = asFirstChild ? parentEl.firstChild : null;
+      console.log(insertBeforeEl, elm, 'ine');
+      return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
 };
