@@ -53,7 +53,7 @@ export const extendedBidRequestData = (function () {
     addData: function (data) {
       // activate requestBids hook when adding first item, this prevents unnecessary processing
       if (dataItems.length === 0) {
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 52);
       }
       dataItems.push(data);
     },
@@ -427,13 +427,13 @@ export function init(dependencies) {
       dependencies['universalIds'] = usersync.universalIds;
       const enabledModules = initSubmodules(dependencies);
       utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
+
+      // add requestBidHook if getIdQue contains items
+      if (getIdQue.length) {
+        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 51);
+      }
     }
   });
-
-  // add requestBidHook if getIdQue contains items
-  if (getIdQue.length) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 51);
-  }
 }
 
 init({
