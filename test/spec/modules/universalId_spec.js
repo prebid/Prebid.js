@@ -281,8 +281,7 @@ describe('Universal ID', function () {
           get cookie() {
             return ''
           }
-        },
-        consentData: {}
+        }
       };
       expect(initSubmodules(dependencies)).to.deep.equal([]);
     });
@@ -307,8 +306,7 @@ describe('Universal ID', function () {
           get cookie() {
             return ''
           }
-        },
-        consentData: {}
+        }
       };
       expect(initSubmodules(dependencies).length).to.equal(2);
     });
@@ -340,8 +338,7 @@ describe('Universal ID', function () {
           get cookie() {
             return 'prebid.cookieTest'
           }
-        },
-        consentData: {}
+        }
       };
       expect(initSubmodules(dependencies).length).to.equal(2);
     });
@@ -376,8 +373,7 @@ describe('Universal ID', function () {
           get cookie() {
             return 'prebid.cookieTest'
           }
-        },
-        consentData: {}
+        }
       };
       expect(initSubmodules(dependencies).length).to.equal(1);
     });
@@ -419,8 +415,7 @@ describe('Universal ID', function () {
           get cookie() {
             return 'prebid.cookieTest'
           }
-        },
-        consentData: {}
+        }
       };
       expect(initSubmodules(dependencies).length).to.equal(0);
     });
