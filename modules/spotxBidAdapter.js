@@ -71,7 +71,7 @@ export const spec = {
     const isPageSecure = !!page.match(/^https:/)
 
     const siteId = '';
-    const bid = bidderRequest.bids[0];
+    const bid = bidRequests[0];
     const channelId = utils.getBidIdParameter('channel_id', bid.params);
     let pubcid = null;
 
