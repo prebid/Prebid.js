@@ -416,6 +416,7 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_blocked_autoplay_override_mode')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_video_slot_can_autoplay')).to.equal('1');
+      window.document.getElementById.restore();
     });
   });
 });
