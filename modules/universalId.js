@@ -346,7 +346,7 @@ const getIdQue = [];
 
 /**
  * init submodules if config values are set correctly
- * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, localStorage: {}, consentData: {}, utils: {} }} dependencies
+ * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, localStorage: {}, utils: {} }} dependencies
  * @returns {Array} - returns list of enabled submodules
  */
 export function initSubmodules (dependencies) {
@@ -412,7 +412,7 @@ export function initSubmodules (dependencies) {
 }
 
 /**
- * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}, consentData: {}}} dependencies
+ * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}}} dependencies
  */
 export function init(dependencies) {
   // check for opt out cookie
@@ -441,6 +441,5 @@ init({
   submodules: submodules,
   navigator: window.navigator,
   document: window.document,
-  localStorage: window.localStorage,
-  consentData: gdprDataHandler.getConsentData()
+  localStorage: window.localStorage
 });
