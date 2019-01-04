@@ -620,7 +620,7 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
   iframe.frameBorder = '0';
   iframe.allowtransparency = 'true';
 
-  exports.insertElement(iframe, document, 'body', true);
+  exports.insertElement(iframe, document, 'body');
 
   iframe.contentWindow.document.open();
   iframe.contentWindow.document.write(htmlCode);
@@ -642,7 +642,7 @@ exports.insertUserSyncIframe = function(url, done) {
     iframe.addEventListener('load', done);
     iframe.addEventListener('error', done);
   }
-  exports.insertElement(iframe, document, 'html');
+  exports.insertElement(iframe, document, 'html', true);
 };
 
 /**
