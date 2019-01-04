@@ -406,7 +406,16 @@ describe('the spotx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(scriptTag.outerHTML).to.equal('<script type="text/javascript" src="//js.spotx.tv/easi/v1/12345.js" data-spotx_channel_id="12345" data-spotx_vast_url="//search.spotxchange.com/ad/vast.html?key=cache123" data-spotx_content_page_url="prebid.js" data-spotx_ad_unit="incontent" data-spotx_collapse="0" data-spotx_autoplay="1" data-spotx_blocked_autoplay_override_mode="1" data-spotx_video_slot_can_autoplay="1"></script>');
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_content_page_url')).to.equal('prebid.js');
+      expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
+      expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
+      expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_blocked_autoplay_override_mode')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_video_slot_can_autoplay')).to.equal('1');
     });
   });
 });
