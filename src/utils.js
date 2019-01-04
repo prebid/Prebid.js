@@ -550,14 +550,14 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
 };
 
 /*
-* Inserts an element(elm) as targets child, by default as last child
+* Inserts an element(elm) as targets child, by default as first child
 * @param {HTMLElement} elm
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
-* @param {Boolean} [asFirstChild]
+* @param {Boolean} [asLastChildChild]
 * @return {HTMLElement}
 */
-exports.insertElement = function(elm, doc, target, asFirstChild) {
+exports.insertElement = function(elm, doc, target, asLastChildChild) {
   doc = doc || document;
   let parentEl;
   if (target) {
@@ -569,7 +569,7 @@ exports.insertElement = function(elm, doc, target, asFirstChild) {
     parentEl = parentEl.length ? parentEl : doc.getElementsByTagName('body');
     if (parentEl.length) {
       parentEl = parentEl[0];
-      let insertBeforeEl = asFirstChild ? parentEl.firstChild : null;
+      let insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
       return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
@@ -620,7 +620,7 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
   iframe.frameBorder = '0';
   iframe.allowtransparency = 'true';
 
-  exports.insertElement(iframe, document, 'body');
+  exports.insertElement(iframe, document, 'body', true);
 
   iframe.contentWindow.document.open();
   iframe.contentWindow.document.write(htmlCode);
@@ -642,7 +642,7 @@ exports.insertUserSyncIframe = function(url, done) {
     iframe.addEventListener('load', done);
     iframe.addEventListener('error', done);
   }
-  exports.insertElement(iframe, document, 'body');
+  exports.insertElement(iframe, document, 'html');
 };
 
 /**
