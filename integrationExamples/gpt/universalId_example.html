@@ -61,7 +61,7 @@
                         // globalConsentLocation: './portal.html',
                         // storeConsentGlobally: false,
                         // storePublisherData: false,
-                        logging: 'debug',
+                        logging: 'debug'//,
                         // localization: {},
                         // forceLocale: 'en-us'
                     };
@@ -74,7 +74,7 @@
                 tag.appendChild(t);
             }
         })(window, document);
-        //window.__cmp('showConsentTool');
+        window.__cmp('showConsentTool');
     </script>
 
     <script>
@@ -112,10 +112,16 @@
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
+                // consentManagement: {
+                //     cmpApi: 'iab',
+                //     timeout: 5000,
+                //     allowAuctionWithoutConsent: true
+                // },
                 consentManagement: {
-                    cmpApi: 'iab',
-                    timeout: 5000,
-                    allowAuctionWithoutConsent: true
+                    cmpApi: 'static',
+                    consentData: {
+                        consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+                    }
                 },
                 usersync: {
                     universalIds: [{
