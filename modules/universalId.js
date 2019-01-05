@@ -1,14 +1,49 @@
 /**
  * This module adds Universal ID support to prebid.js
  */
-import {ajax} from 'src/ajax';
-import {config} from 'src/config';
+import { ajax } from 'src/ajax';
+import { config } from 'src/config';
 import events from 'src/events';
 import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
 import { gdprDataHandler } from 'src/adaptermanager';
 
 const CONSTANTS = require('../src/constants.json');
+
+/**
+ * @typedef {Object} StorageConfig
+ * @property {string} type - browser storage type (html5 or cookie)
+ * @property {string} name - key name to use when saving/reading to local storage or cookies
+ * @property {number} expires - time to live for browser cookie
+ */
+
+/**
+ * @typedef {Object} ParamsConfig
+ * @property {string} partner - partner url param value
+ * @property {string} url - webservice request url used to load Id data. The response data from the url is saved to browser storage
+ * and will be passed to bid adapters on subsequent auctions
+ */
+
+/**
+ * @typedef {Object} IdSubmoduleConfig
+ * @property {string} name - the universalId submodule name. The name value is used link a submodule (using submodule.configKey)
+ * with it's configuration data (IdSubmoduleConfig)
+ * @property {StorageConfig} storage - browser storage config
+ * @property {ParamsConfig} params - params config for use by the submodule.getId function
+ * @example
+ * {
+ *   name: "unifiedId",
+ *   params: {
+ *     partner: "prebid",
+ *     url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+ *   },
+ *   storage: {
+ *     type: "cookie",
+ *     name: "unifiedid",
+ *     expires: 60
+ *   }
+ * }
+ */
 
 /**
  * @callback getIdCallback
@@ -20,7 +55,7 @@ const CONSTANTS = require('../src/constants.json');
  * @summary submodule interface for getId function
  * @param {Object} data
  * @param {Object} consentData
- * @param {number} syncDelay
+ * @param {number} syncDelay - delay timer (begins after auction ends) to make any http requests to retrieve user id data
  * @param {getIdCallback} callback - optional callback to execute on id retrieval
  */
 
@@ -33,9 +68,19 @@ const CONSTANTS = require('../src/constants.json');
 
 /**
  * @typedef {Object} IdSubmodule
- * @property {string} configKey - property name within the config universal id object
- * @property {decode} decode - decode a stored value for passing to bid requests
- * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
+ * @property {string} configKey - links the submodule with it's configuration data,
+ * by matching the "configKey" with a submodule config's "name" value:
+ * configKey === userSyncs.universalIds[n].name
+ * @property {decode} decode - decode a stored value for passing to bid requests.
+ * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument.
+ */
+
+/**
+ * @typedef {Object} GetIdData
+ * @property {IdSubmodule} submodule - And object defining an UniversalId submodule.
+ * Submodules must implement the props and methods from {IdSubModule} type: { configKey: string, getId: function, decode: function }.
+ * @property {IdSubmoduleConfig} universalId - config data for the universalId submodule.
+ * @property {number} syncDelay - delay after auction complete to call webservice or perform async ops.
  */
 
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
@@ -43,23 +88,9 @@ const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
- * @typedef {Object} GetIdData
- * @property {IdSubmodule} submodule
- * @property {Object} universalId
- * @property {number} syncDelay
+ * PubCommon ID Submodule
+ * @type {IdSubmodule}
  */
-
-/**
- * @type {Array.<GetIdData>}
- */
-const getIdData = [];
-
-/**
- * data to be added to bid requests
- * @type {Array.<Object>}
- */
-const extendBidData = [];
-
 const pubCommonIdSubmodule = {
   configKey: 'pubCommonId',
   decode: function(idData) {
@@ -78,6 +109,10 @@ const pubCommonIdSubmodule = {
   }
 };
 
+/**
+ * Unified ID Submodule
+ * @type {IdSubmodule}
+ */
 const unifiedIdSubmodule = {
   configKey: 'unifiedId',
   decode: function(idData) {
@@ -88,15 +123,20 @@ const unifiedIdSubmodule = {
     }
   },
   getId: function(data, consentData, syncDelay, callback) {
+    const logPrefix = 'UniversalId';
+
     function callEndpoint() {
+      // validate consentData if consentData exists
       if (consentData && !hasGDPRConsent(consentData)) {
         callback();
         return;
       }
-      // validate config values: params.partner and params.endpoint
+      // @type {string} - validate config values: params.partner and params.endpoint
       const partner = data.params.partner || 'prebid';
+      // @type {string} - endpoint to retrieve user id data
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
-      utils.logInfo('Universal ID Module, call sync endpoint', url);
+
+      utils.logInfo(`${logPrefix} - call sync endpoint: ${url}`);
 
       ajax(url, response => {
         if (response) {
@@ -118,13 +158,13 @@ const unifiedIdSubmodule = {
 
     // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
     if (!syncDelay) {
-      utils.logInfo('Universal ID Module, call endpoint to sync without delay');
+      utils.logInfo(`${logPrefix} - call endpoint without delay`);
       callEndpoint();
     } else {
-      utils.logInfo('Universal ID Module, sync delay exists, set auction end event listener and call with timer');
+      utils.logInfo(`${logPrefix} - has sync delay "${syncDelay}", will listen for "auction-end" and when executed, start a timer to call the endpoint when it completes`);
       // wrap auction end event handler in function so that it can be removed
       const auctionEndHandler = function auctionEndHandler() {
-        utils.logInfo('Universal ID Module, auction end event listener called, set timer for', syncDelay);
+        utils.logInfo(`${logPrefix} - "auction-end" handler executed, create timer "${syncDelay}" that will call endpoint on complete`);
         // remove event handler immediately since we only need to listen for the first auction ending
         events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
         setTimeout(callEndpoint, syncDelay);
@@ -133,17 +173,25 @@ const unifiedIdSubmodule = {
     }
   }
 };
+
 /**
- * @type {IdSubmodule[]}
+ * List of data to apply to submodule.getId function calls in the request bid hook
+ * @type {Array.<GetIdData>}
  */
-const submodules = [pubCommonIdSubmodule, unifiedIdSubmodule];
+const getIdData = [];
+
+/**
+ * data to be added to bid requests in the request bid hook
+ * @type {Array.<Object>}
+ */
+const extendBidData = [];
 
 /**
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
  * @param {Document} document - document passed for easier testing through dependency injection
  * @returns {boolean}
  */
-function browserSupportsCookie (navigator, document) {
+export function browserSupportsCookie (navigator, document) {
   try {
     if (navigator.cookieEnabled === false) {
       return false;
@@ -159,7 +207,7 @@ function browserSupportsCookie (navigator, document) {
  * @param localStorage - localStorage passed for easier testing through dependency injection
  * @returns {boolean}
  */
-function browserSupportsLocalStorage (localStorage) {
+export function browserSupportsLocalStorage (localStorage) {
   try {
     if (typeof localStorage !== 'object' || typeof localStorage.setItem !== 'function') {
       return false;
@@ -264,34 +312,58 @@ export function hasGDPRConsent(consentData) {
 }
 
 /**
- * decorate bid requests with universal id data if it exists
- * hook function is called before the real pbjs.requestBids is invoked, and can modify its parameter
+ * This function is called when bids are requested, but before the bids are passed to bid adapters.
+ * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
+ * 2.) adding universal id data to bid request objects for use in bid adapters
+ *
+ * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
+ *   consentData is REQUIRED if submodule.getId needs to be called
+ *   responsible for handling:
  * @param {{}} config
  * @param next
  * @returns {*}
  */
 export function requestBidHook (config, next) {
-  // Check if getId needs to be called
+  // consentData should exist if the consentManagement module is done initializing
+  const consentData = gdprDataHandler.getConsentData();
+
+  // check if submodule getId methods need to be executed
   if (getIdData.length) {
     getIdData.forEach(item => {
-      // local value does not exist and submodule getId should be called
-      item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
+      // submodule.getId can be called at this time since consentData has been set by the consentManger
+      item.submodule.getId(item.universalId, consentData, item.syncDelay, function (response) {
+        // @type {string} - read from config: userSync.universalIds[n].storage.name
         const storageKey = item.universalId.storage.name;
+
+        // @type {string} - read from config: userSync.universalIds[n].storage.type
         const storageType = item.universalId.storage.type;
-        const logPrefix = `Universal ID Module - ${storageKey}:`;
+
+        // @type {string} - logging prefix used in the bid request hook function
+        const logPrefix = `Universal ID Submodule: ${storageKey} -`;
 
         if (response && response.data) {
+          // valid response, attempt to save ID data to browser storage (localStorage or cookies)
+
+          /**
+           * @type {string}
+           */
           const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
+
           if (storageType === STORAGE_TYPE_COOKIE) {
+            // - COOKIES -
             setCookie(storageKey, responseData, response.expires);
-            utils.logInfo(`${logPrefix} set "cookie" value ${storageKey}=${responseData}`);
+            utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+            // - LOCAL STORAGE -
             localStorage.setItem(storageKey, responseData);
-            utils.logInfo(`${logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
+            utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else {
-            utils.logError(`${logPrefix} invalid configuration storage type`);
+            // - INVALID - storage type
+            utils.logError(`${logPrefix} invalid configuration storage type: ${storageType}`);
           }
 
+          // decode response data and push to array of objs,
+          // and this array will be iterated in this hook function and each item value added to bids for access by bid adapters
           extendBidData.push(item.submodule.decode(response.data));
         } else {
           utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
@@ -325,8 +397,8 @@ export function requestBidHook (config, next) {
 }
 
 /**
- * init submodules if config values are set correctly
- * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, localStorage: {}, utils: {} }} dependencies
+ * validate and initialize all submodules using submodule configuration data
+ * @param {{universalIds: [], syncDelay: number, submodules: [], navigator: Navigator, document: Document, localStorage: Storage}} dependencies
  * @returns {Array} - returns list of enabled submodules
  */
 export function initSubmodules (dependencies) {
@@ -340,7 +412,7 @@ export function initSubmodules (dependencies) {
   const storageTypes = enabledStorageTypes(dependencies);
 
   // process and return list of enabled submodules (used for test validation)
-  return submodules.reduce((carry, submodule) => {
+  return dependencies.submodules.reduce((carry, submodule) => {
     const universalId = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configKey;
     });
@@ -391,24 +463,47 @@ export function initSubmodules (dependencies) {
 }
 
 /**
- * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, utils: {}}} dependencies
+ * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, localStorage: Storage}} dependencies
  */
 export function init(dependencies) {
-  // check for opt out cookie
+  // @type {string} - logging prefix for init function
+  const logPrefix = 'UniversalId';
+
+  // check for opt out cookie, if exists exit immediately
   if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
-    utils.logInfo('Universal ID Module disabled: opt out cookie exists');
+    utils.logInfo(`${logPrefix} - opt-out cookie was found, module is disabled`);
     return;
   }
-  // listen for usersync config change
+
+  // Submodules are disabled by default, so a valid config is REQUIRED to enable/activate any of submodules
+  // wait for configuration prop "usersync" to load before continuing to initialize submodules
   dependencies.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
+      // append dependencies from config; to allow unit testing the nested functions w/ dependency injection
       dependencies['syncDelay'] = usersync.syncDelay || 0;
       dependencies['universalIds'] = usersync.universalIds;
-      const enabledModules = initSubmodules(dependencies);
-      utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
-      // add requestBidHook if getIdData contains items
-      if (getIdData.length || extendBidData.length) {
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+
+      // @type {Array.<string>} list of valid enabled submodules
+      const activeSubmodules = initSubmodules(dependencies);
+
+      // only continue if at least one submodule is configured/enabled
+      if (activeSubmodules.length) {
+        utils.logInfo(`${logPrefix} - init submodules: ${activeSubmodules.reduce((carry, item) => { return carry + ', ' + item.configKey }, '')}`);
+
+        // At least one of following conditions is valid (and needs processing in the bid request hook):
+        //  1.) A submodule getId functions must be queued because consent data is required but is not available until the hook callback is executed
+        //  2.) ID data items found and ready to be appended to bid requests when the hook is executed
+        if (getIdData.length || extendBidData.length) {
+          const processTypes = (getIdData.length && extendBidData.length) ? 'extendBidData and getIdData' : (extendBidData.length ? 'extendBidData' : 'getIdData');
+          utils.logInfo(`${logPrefix} - adding request bid hook to process: ${processTypes}`);
+
+          // Note: the default priority (10) used to ensure consentManagement has been fully initialized
+          $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+        } else {
+          utils.logWarn(`${logPrefix} - failed to init submodules, no data for getIdData or extendBidData`);
+        }
+      } else {
+        utils.logInfo(`${logPrefix} - no valid submodules`);
       }
     }
   });
@@ -416,7 +511,7 @@ export function init(dependencies) {
 
 init({
   config: config,
-  submodules: submodules,
+  submodules: [pubCommonIdSubmodule, unifiedIdSubmodule],
   navigator: window.navigator,
   document: window.document,
   localStorage: window.localStorage
