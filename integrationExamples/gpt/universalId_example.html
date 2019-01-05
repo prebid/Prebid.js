@@ -74,7 +74,7 @@
                 tag.appendChild(t);
             }
         })(window, document);
-        window.__cmp('showConsentTool');
+        // window.__cmp('showConsentTool');
     </script>
 
     <script>
@@ -112,17 +112,17 @@
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
-                // consentManagement: {
-                //     cmpApi: 'iab',
-                //     timeout: 5000,
-                //     allowAuctionWithoutConsent: true
-                // },
                 consentManagement: {
-                    cmpApi: 'static',
-                    consentData: {
-                        consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
-                    }
+                    cmpApi: 'iab',
+                    timeout: 5000,
+                    allowAuctionWithoutConsent: true
                 },
+                // consentManagement: {
+                //     cmpApi: 'static',
+                //     consentData: {
+                //         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+                //     }
+                // },
                 usersync: {
                     universalIds: [{
                         name: "unifiedId",

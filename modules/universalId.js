@@ -43,30 +43,24 @@ const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 
 /**
- * data to be added to bid requests
- * @type {{addData: function, getData: function}}
+ * @typedef {Object} GetIdData
+ * @property {IdSubmodule} submodule
+ * @property {Object} universalId
+ * @property {number} syncDelay
  */
-export const extendedBidRequestData = (function () {
-  // @type {Object[]}
-  const dataItems = [];
-  return {
-    addData: function (data) {
-      // activate requestBids hook when adding first item, this prevents unnecessary processing
-      if (dataItems.length === 0) {
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 52);
-      }
-      dataItems.push(data);
-    },
-    getData: function () {
-      return dataItems;
-    }
-  }
-})();
 
 /**
- * @type {IdSubmodule[]}
+ * @type {Array.<GetIdData>}
  */
-const submodules = [{
+const getIdData = [];
+
+/**
+ * data to be added to bid requests
+ * @type {Array.<Object>}
+ */
+const extendBidData = [];
+
+const pubCommonIdSubmodule = {
   configKey: 'pubCommonId',
   decode: function(idData) {
     return { 'pubcid': idData }
@@ -82,7 +76,9 @@ const submodules = [{
     };
     callback(responseObj);
   }
-}, {
+};
+
+const unifiedIdSubmodule = {
   configKey: 'unifiedId',
   decode: function(idData) {
     try {
@@ -136,7 +132,11 @@ const submodules = [{
       events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
     }
   }
-}];
+};
+/**
+ * @type {IdSubmodule[]}
+ */
+const submodules = [pubCommonIdSubmodule, unifiedIdSubmodule];
 
 /**
  * @param {Navigator} navigator - navigator passed for easier testing through dependency injection
@@ -264,46 +264,6 @@ export function hasGDPRConsent(consentData) {
 }
 
 /**
- * Request bid hook to retrieve consentManagement data and pass to submodule.getId
- * @param config
- * @param next
- * @returns {*}
- */
-export function requestBidHookGetId(config, next) {
-  // Check if getId needs to be called
-  getIdQue.forEach(item => {
-    // local value does not exist and submodule getId should be called
-    item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
-      const storageKey = item.universalId.storage.name;
-      const storageType = item.universalId.storage.type;
-      const logPrefix = `Universal ID Module - ${storageKey}:`;
-
-      if (response && response.data) {
-        const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
-
-        if (storageType === STORAGE_TYPE_COOKIE) {
-          setCookie(storageKey, responseData, response.expires);
-          utils.logInfo(`${logPrefix} set "cookie" value ${storageKey}=${responseData}`);
-        } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
-          localStorage.setItem(storageKey, responseData);
-          utils.logInfo(`${logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
-        } else {
-          utils.logError(`${logPrefix} invalid configuration storage type`);
-        }
-
-        extendedBidRequestData.addData(item.submodule.decode(response.data));
-      } else {
-        utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
-      }
-    });
-  });
-  // remove hook since this is only used once
-  $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHookGetId);
-  // calling next() allows prebid to continue processing
-  return next.apply(this, arguments);
-}
-
-/**
  * decorate bid requests with universal id data if it exists
  * hook function is called before the real pbjs.requestBids is invoked, and can modify its parameter
  * @param {{}} config
@@ -311,11 +271,42 @@ export function requestBidHookGetId(config, next) {
  * @returns {*}
  */
 export function requestBidHook (config, next) {
+  // Check if getId needs to be called
+  if (getIdData.length) {
+    getIdData.forEach(item => {
+      // local value does not exist and submodule getId should be called
+      item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
+        const storageKey = item.universalId.storage.name;
+        const storageType = item.universalId.storage.type;
+        const logPrefix = `Universal ID Module - ${storageKey}:`;
+
+        if (response && response.data) {
+          const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
+          if (storageType === STORAGE_TYPE_COOKIE) {
+            setCookie(storageKey, responseData, response.expires);
+            utils.logInfo(`${logPrefix} set "cookie" value ${storageKey}=${responseData}`);
+          } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+            localStorage.setItem(storageKey, responseData);
+            utils.logInfo(`${logPrefix} set "localStorage" value ${storageKey}=${responseData}`);
+          } else {
+            utils.logError(`${logPrefix} invalid configuration storage type`);
+          }
+
+          extendBidData.push(item.submodule.decode(response.data));
+        } else {
+          utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
+        }
+      });
+    });
+    // empty getIdData since it has been processed
+    getIdData.length = 0;
+  }
+
   // check for and pass universalId data if it exists to bid adapters
-  if (extendedBidRequestData.getData().length) {
+  if (extendBidData.length) {
     const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
     if (adUnits) {
-      const universalID = extendedBidRequestData.getData().reduce((carry, item) => {
+      const universalID = extendBidData.reduce((carry, item) => {
         Object.keys(item).forEach(key => {
           carry[key] = item[key];
         });
@@ -328,21 +319,10 @@ export function requestBidHook (config, next) {
       });
     }
   }
+
   // calling next() allows prebid to continue processing
   return next.apply(this, arguments);
 }
-
-/**
- * @typedef {Object} GetIdData
- * @property {IdSubmodule} submodule
- * @property {Object} universalId
- * @property {number} syncDelay
- */
-
-/**
- * @type {Array.<GetIdData>}
- */
-const getIdQue = [];
 
 /**
  * init submodules if config values are set correctly
@@ -374,7 +354,7 @@ export function initSubmodules (dependencies) {
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule passes "value" object if found in configuration
       carry.push(`${logPrefix} has valid value configuration, pass directly to bid requests`);
-      extendedBidRequestData.addData(universalId.value);
+      extendBidData.push(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
       typeof universalId.storage.type === 'string' && storageTypes.indexOf(universalId.storage.type) !== -1) {
       // submodule uses local storage to get value
@@ -396,11 +376,10 @@ export function initSubmodules (dependencies) {
       // if local value exists pass decoded value to bid requests
       if (storageValue) {
         utils.logInfo(`${logPrefix} found valid "${storageType}" value ${storageKey}=${storageValue}`);
-
-        extendedBidRequestData.addData(submodule.decode(storageValue));
+        extendBidData.push(submodule.decode(storageValue));
       } else {
         // Build que of data to supply to 'getId' that will be executed from a que in requestBidHook
-        getIdQue.push({
+        getIdData.push({
           submodule: submodule,
           universalId: universalId,
           syncDelay: dependencies.syncDelay,
@@ -427,10 +406,9 @@ export function init(dependencies) {
       dependencies['universalIds'] = usersync.universalIds;
       const enabledModules = initSubmodules(dependencies);
       utils.logInfo(`Universal ID Module initialized ${enabledModules.length} submodules`);
-
-      // add requestBidHook if getIdQue contains items
-      if (getIdQue.length) {
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHookGetId, 51);
+      // add requestBidHook if getIdData contains items
+      if (getIdData.length || extendBidData.length) {
+        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
       }
     }
   });
