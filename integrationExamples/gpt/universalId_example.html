@@ -39,7 +39,7 @@
                                 callback: callback
                             });
                         }
-                    }
+                    };
                     cmp.commandQueue = commandQueue;
                     cmp.receiveMessage = function(event) {
                         var data = event && event.data && event.data.__cmpCall;
@@ -70,8 +70,7 @@
                 var t = document.createElement('script');
                 t.async = false;
                 t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
-                var tag = document.getElementsByTagName('head')[0];
-                tag.appendChild(t);
+                document.getElementsByTagName('head')[0].appendChild(t);
             }
         })(window, document);
         // window.__cmp('showConsentTool');
@@ -173,9 +172,7 @@
             var gads = document.createElement('script');
             gads.async = true;
             gads.type = 'text/javascript';
-            var useSSL = 'https:' == document.location.protocol;
-            gads.src = (useSSL ? 'https:' : 'http:') +
-                '//www.googletagservices.com/tag/js/gpt.js';
+            gads.src = ('https:' === document.location.protocol ? 'https:' : 'http:') + '//www.googletagservices.com/tag/js/gpt.js';
             var node = document.getElementsByTagName('script')[0];
             node.parentNode.insertBefore(gads, node);
         })();

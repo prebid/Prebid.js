@@ -97,7 +97,7 @@ const pubCommonIdSubmodule = {
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
-    if (consentData && !hasGDPRConsent(consentData)) {
+    if (!hasGDPRConsent(consentData)) {
       callback();
       return;
     }
@@ -115,19 +115,19 @@ const pubCommonIdSubmodule = {
  */
 const unifiedIdSubmodule = {
   configKey: 'unifiedId',
-  decode: function(idData) {
+  decode: function (idData) {
     try {
       return { 'tdid': idData };
     } catch (e) {
       utils.logError('Universal ID submodule decode error');
     }
   },
-  getId: function(data, consentData, syncDelay, callback) {
+  getId: function (data, consentData, syncDelay, callback) {
     const logPrefix = 'UniversalId';
 
-    function callEndpoint() {
-      // validate consentData if consentData exists
-      if (consentData && !hasGDPRConsent(consentData)) {
+    function callEndpoint () {
+      // validate that consentData contains 'purpose 1' consent
+      if (!hasGDPRConsent(consentData)) {
         callback();
         return;
       }
@@ -224,7 +224,7 @@ export function browserSupportsLocalStorage (localStorage) {
  * @param {string} value
  * @param {?number} expires
  */
-export function setCookie(name, value, expires) {
+export function setCookie (name, value, expires) {
   const expTime = new Date();
   expTime.setTime(expTime.getTime() + (expires || 60) * 1000 * 60);
   window.document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' +
@@ -235,7 +235,7 @@ export function setCookie(name, value, expires) {
  * @param {string} name
  * @returns {any}
  */
-export function getCookie(name) {
+export function getCookie (name) {
   const m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
   return m ? decodeURIComponent(m[2]) : null;
 }
@@ -280,31 +280,19 @@ export function validateConfig (dependencies) {
 }
 
 /**
- * decode base64 encoded consent string to check position for user consents to local storage (purpose 1)
- * @param {string} consentString
- * @returns {boolean}
- */
-export function gdprLocalStorageConsent(consentString) {
-  try {
-    return (atob(consentString).charCodeAt(16) | 247) === 255;
-  } catch (e) {
-    utils.logError('Universal ID Module error decoding gdpr consent string');
-    return false;
-  }
-}
-
-/**
  * test if consent module is present, applies, and is valid for local storage (purpose 1)
  * @returns {boolean}
  */
-export function hasGDPRConsent(consentData) {
-  if (typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+export function hasGDPRConsent (consentData) {
+  console.log('CONSENT DATA %O', consentData);
+  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
     if (!consentData.consentString) {
-      utils.logWarn('Universal ID Module exiting on no GDPR consent string');
+      utils.logWarn('UniversalId - exiting, no GDPR consent string');
       return false;
     }
-    if (!gdprLocalStorageConsent(consentData.consentString)) {
-      utils.logWarn('Universal ID Module exiting on no GDPR consent to local storage (purpose #1)');
+
+    if (consentData.vendorConsents && consentData.vendorConsents.purposeConsents && consentData.vendorConsents.purposeConsents[1] === false) {
+      utils.logWarn('UniversalId - exiting, no GDPR consent for storing data locally (purpose #1)');
       return false;
     }
   }
@@ -465,7 +453,7 @@ export function initSubmodules (dependencies) {
 /**
  * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, localStorage: Storage}} dependencies
  */
-export function init(dependencies) {
+export function init (dependencies) {
   // @type {string} - logging prefix for init function
   const logPrefix = 'UniversalId';
 
