@@ -390,11 +390,11 @@ export function initSubmodules (dependencies) {
   const storageTypes = enabledStorageTypes(dependencies);
 
   // process and return list of enabled submodules
+  /**
+   * config is linked to submodule: if submodule config "name" MATCHES submodule "configName" value
+   * @type {IdSubmodule}
+   */
   return dependencies.submodules.reduce((carry, submodule) => {
-    /**
-     * submodule config data set at nested config prop path "usersync.universalIds",  submodule attributes/behavior are handled by a submodule config object linked if the config prop "name" and the submodule "configName" prop values both match
-     * @type {IdSubmodule}
-     */
     const universalId = find(dependencies.universalIds, universalIdConfig => universalIdConfig.name === submodule.configName);
 
     // skip when config with name matching submodule.configName does not exist
