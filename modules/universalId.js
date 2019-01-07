@@ -291,7 +291,7 @@ export function hasGDPRConsent (consentData) {
       return false;
     }
 
-    if (consentData.vendorConsents && consentData.vendorConsents.purposeConsents && consentData.vendorConsents.purposeConsents[1] === false) {
+    if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents[1] === false) {
       utils.logWarn('UniversalId - exiting, no GDPR consent for storing data locally (purpose #1)');
       return false;
     }
