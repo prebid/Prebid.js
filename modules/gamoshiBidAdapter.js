@@ -56,9 +56,8 @@ export const spec = {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || 'https://rtb.gamoshi.io';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
-      let url = config.getConfig('pageUrl') || bidderRequest &&
-        bidderRequest.refererInfo && bidderRequest.refererInfo.referer ||
-        utils.getTopWindowUrl();
+      let referer = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+      let url = config.getConfig('pageUrl') || referer || utils.getTopWindowUrl();
 
       const rtbBidRequest = {
         'id': auctionId,
