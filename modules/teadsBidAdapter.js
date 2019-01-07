@@ -116,7 +116,7 @@ function buildRequestObject(bid) {
   let placementId = utils.getValue(bid.params, 'placementId');
   let pageId = utils.getValue(bid.params, 'pageId');
 
-  reqObj.sizes = utils.parseSizesInput(bid.sizes);
+  reqObj.sizes = getSizes(bid);
   reqObj.bidId = utils.getBidIdParameter('bidId', bid);
   reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
@@ -125,6 +125,23 @@ function buildRequestObject(bid) {
   reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
   reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
   return reqObj;
+}
+
+function getSizes(bid) {
+  let sizes;
+  if (isVideoBid(bid)) {
+    sizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize') ||
+      utils.deepAccess(bid, 'mediaTypes.video.sizes') ||
+      bid.sizes;
+  } else {
+    sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes;
+  }
+
+  return utils.parseSizesInput(sizes);
+}
+
+function isVideoBid(bid) {
+  return bid.mediaType === 'video' || utils.deepAccess(bid, 'mediaTypes.video');
 }
 
 function _validateId(id) {
