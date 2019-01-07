@@ -391,10 +391,11 @@ export function initSubmodules (dependencies) {
 
   // process and return list of enabled submodules
   return dependencies.submodules.reduce((carry, submodule) => {
-    // find config with a name property that matches the submodule configName property
-    const universalId = find(dependencies.universalIds, universalIdConfig => {
-      return universalIdConfig.name === submodule.configName;
-    });
+    /**
+     * submodule config data set at nested config prop path "usersync.universalIds",  submodule attributes/behavior are handled by a submodule config object linked if the config prop "name" and the submodule "configName" prop values both match
+     * @type {IdSubmodule}
+     */
+    const universalId = find(dependencies.universalIds, universalIdConfig => universalIdConfig.name === submodule.configName);
 
     // skip when config with name matching submodule.configName does not exist
     if (!universalId || typeof universalId !== 'object') {
@@ -407,6 +408,7 @@ export function initSubmodules (dependencies) {
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule passes "value" object if found in configuration
       carry.push(`${logPrefix} has valid value configuration, pass directly to bid requests`);
+
       extendBidData.push(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
       typeof universalId.storage.type === 'string' && storageTypes.indexOf(universalId.storage.type) !== -1) {
@@ -415,10 +417,10 @@ export function initSubmodules (dependencies) {
       // @type {string}
       const storageType = universalId.storage.type;
 
-      carry.push(`${logPrefix} has valid ${storageType} storage configuration, pass decoded value to bid requests`);
+      carry.push(`${universalId.name} has valid ${storageType} storage configuration, pass decoded value to bid requests`);
 
       /**
-       * value loaded from the user's browser storage (cookies or local storage)
+       * value for key in browser storage if it exists (cookies or local storage)
        * @type {string|Object}
        */
       let storageValue;
