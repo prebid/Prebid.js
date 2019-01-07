@@ -185,14 +185,13 @@ describe('AppNexusAdapter', function () {
             rating: {required: true},
             sponsoredBy: {required: true},
             privacyLink: {required: true},
-            clickLabel: {required: true},
+            displayUrl: {required: true},
             address: {required: true},
             downloads: {required: true},
             likes: {required: true},
             phone: {required: true},
             price: {required: true},
-            sale: {required: true},
-            video: {required: true}
+            salePrice: {required: true}
           }
         }
       );
@@ -215,8 +214,7 @@ describe('AppNexusAdapter', function () {
         likes: {required: true},
         phone: {required: true},
         price: {required: true},
-        saleprice: {required: true},
-        video: {required: true}
+        saleprice: {required: true}
       });
     });
 

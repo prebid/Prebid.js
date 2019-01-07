@@ -28,8 +28,8 @@ const NATIVE_MAPPING = {
   },
   sponsoredBy: 'sponsored_by',
   privacyLink: 'privacy_link',
-  sale: 'saleprice',
-  clickLabel: 'displayurl'
+  salePrice: 'saleprice',
+  displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
 
@@ -345,13 +345,12 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       likes: nativeAd.likes,
       phone: nativeAd.phone,
       price: nativeAd.price,
-      sale: nativeAd.saleprice,
+      salePrice: nativeAd.saleprice,
       clickUrl: nativeAd.link.url,
-      clickLabel: nativeAd.displayurl,
+      displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: nativeAd.javascript_trackers,
-      video: nativeAd.video.content
+      javascriptTrackers: nativeAd.javascript_trackers
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
