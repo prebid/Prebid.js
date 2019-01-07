@@ -6,7 +6,7 @@ import { config } from '../src/config';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
-const SONOBI_DIGITRUST_KEY = '';
+const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
 
 export const spec = {
   code: BIDDER_CODE,
