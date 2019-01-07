@@ -577,9 +577,6 @@ describe('AppNexusAdapter', function () {
         'saleprice': 'FREE',
         'phone': '1234567890',
         'address': '28 W 23rd St, New York, NY 10010',
-        'video': {
-          'content': '<!-- VAST Creative -->'
-        },
         'privacy_link': 'http://appnexus.com/?url=privacy_url'
       };
       let bidderRequest = {
