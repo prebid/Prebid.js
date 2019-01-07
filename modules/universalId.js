@@ -83,6 +83,7 @@ const CONSTANTS = require('../src/constants.json');
  * @property {number} syncDelay - delay after auction complete to call webservice or perform async ops.
  */
 
+const MODULE_NAME = 'Universal ID Module';
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
 const STORAGE_TYPE_COOKIE = 'cookie';
 const STORAGE_TYPE_LOCALSTORAGE = 'html5';
@@ -92,12 +93,12 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
  * @type {IdSubmodule}
  */
 const pubCommonIdSubmodule = {
-  configKey: 'pubCommonId',
+  configName: 'pubCommonId',
   decode: function(idData) {
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
-    const logPrefix = `UniversalId ${data.name}.getId`;
+    const logPrefix = `${MODULE_NAME}: ${data.name}.getId`;
 
     if (!hasGDPRConsent(consentData)) {
       utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
@@ -117,16 +118,16 @@ const pubCommonIdSubmodule = {
  * @type {IdSubmodule}
  */
 const unifiedIdSubmodule = {
-  configKey: 'unifiedId',
+  configName: 'unifiedId',
   decode: function (idData) {
     try {
       return { 'tdid': idData };
     } catch (e) {
-      utils.logError(`UniversalId - error thrown by unifiedIdSubmodule.decode: ${e}`);
+      utils.logError(`${MODULE_NAME}: unifiedIdSubmodule.decode - error decoding stored id value. ${e}`);
     }
   },
   getId: function (data, consentData, syncDelay, callback) {
-    const logPrefix = `UniversalId ${data.name}.getId`;
+    const logPrefix = `${MODULE_NAME}: ${data.name}.getId`;
 
     function callEndpoint () {
       // validate that consentData contains 'purpose 1' consent
@@ -135,9 +136,9 @@ const unifiedIdSubmodule = {
         callback();
         return;
       }
-      // @type {string} - validate config values: params.partner and params.endpoint
+      // @type {string}
       const partner = data.params.partner || 'prebid';
-      // @type {string} - endpoint to retrieve user id data
+      // @type {string}
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
 
       utils.logInfo(`${logPrefix} - call sync endpoint: ${url}`);
@@ -272,7 +273,7 @@ export function validateConfig (dependencies) {
   // check that at least one config exists
   return dependencies.submodules.some(submodule => {
     const submoduleConfig = find(dependencies.universalIds, universalIdConfig => {
-      return universalIdConfig.name === submodule.configKey;
+      return universalIdConfig.name === submodule.configName;
     });
     // return true if a valid config exists for submodule
     if (submoduleConfig && typeof submoduleConfig === 'object') {
@@ -323,18 +324,18 @@ export function requestBidHook (config, next) {
         const storageKey = item.universalId.storage.name;
         // @type {string} - read from config: userSync.universalIds[n].storage.type
         const storageType = item.universalId.storage.type;
-        // @type {string} - logging prefix used in the bid request hook function
-        const logPrefix = `UniversalId ${item.universalId.name} -`;
+        // @type {string}
+        const logPrefix = `${MODULE_NAME}: ${item.universalId.name} -`;
 
         if (response && response.data) {
           // @type {string}
           const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
           if (storageType === STORAGE_TYPE_COOKIE) {
-            // using cookie to save response id
+            // cookie
             setCookie(storageKey, responseData, response.expires);
             utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
-            // using local storage to save response id
+            // local storage
             localStorage.setItem(storageKey, responseData);
             utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else {
@@ -348,7 +349,7 @@ export function requestBidHook (config, next) {
         }
       });
     });
-    //  all getId items have been processed, empty getIdData array
+    // completed the processing of the getIdData items, so the array should be emptied
     getIdData.length = 0;
   }
 
@@ -369,7 +370,6 @@ export function requestBidHook (config, next) {
       });
     }
   }
-
   // calling next() allows prebid to continue processing
   return next.apply(this, arguments);
 }
@@ -389,17 +389,20 @@ export function initSubmodules (dependencies) {
   // list of storage types defined submodules that are also enabled in users browser
   const storageTypes = enabledStorageTypes(dependencies);
 
-  // process and return list of enabled submodules (used for test validation)
+  // process and return list of enabled submodules
   return dependencies.submodules.reduce((carry, submodule) => {
+    // find config with a name property that matches the submodule configName property
     const universalId = find(dependencies.universalIds, universalIdConfig => {
-      return universalIdConfig.name === submodule.configKey;
+      return universalIdConfig.name === submodule.configName;
     });
-    const logPrefix = `Universal ID Module - ${universalId.name}:`;
 
-    // skip when config with name matching submodule.configKey does not exist
-    if (!universalId) {
+    // skip when config with name matching submodule.configName does not exist
+    if (!universalId || typeof universalId !== 'object') {
       return carry;
     }
+
+    // @type {string}
+    const logPrefix = `${MODULE_NAME}: ${universalId.name} -`;
 
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule passes "value" object if found in configuration
@@ -407,20 +410,24 @@ export function initSubmodules (dependencies) {
       extendBidData.push(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
       typeof universalId.storage.type === 'string' && storageTypes.indexOf(universalId.storage.type) !== -1) {
-      // submodule uses local storage to get value
+      // @type {string}
       const storageKey = universalId.storage.name;
+      // @type {string}
       const storageType = universalId.storage.type;
 
       carry.push(`${logPrefix} has valid ${storageType} storage configuration, pass decoded value to bid requests`);
 
-      // value retrieved from cookies or local storage
+      /**
+       * value loaded from the user's browser storage (cookies or local storage)
+       * @type {string|Object}
+       */
       let storageValue;
       if (storageType === STORAGE_TYPE_COOKIE) {
         storageValue = getCookie(storageKey);
       } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
         storageValue = dependencies.localStorage.getItem(storageKey);
       } else {
-        utils.logError(`${logPrefix} has invalid storage configuration type "${storageType}"`);
+        utils.logError(`${logPrefix} invalid configuration was set in universalIds config: ${storageType}`);
       }
 
       // if local value exists pass decoded value to bid requests
@@ -444,41 +451,42 @@ export function initSubmodules (dependencies) {
  * @param {{config: {}, submodules: [], navigator: Navigator, document: Document, localStorage: Storage}} dependencies
  */
 export function init (dependencies) {
-  // @type {string} - logging prefix for init function
-  const logPrefix = 'UniversalId';
-
   // check for opt out cookie, if exists exit immediately
   if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
-    utils.logInfo(`${logPrefix} - opt-out cookie was found, module is disabled`);
+    utils.logInfo(`${MODULE_NAME} - opt-out cookie was found, module is disabled`);
     return;
   }
 
-  // Submodules are disabled by default, so a valid config is REQUIRED to enable/activate any of submodules
-  // wait for configuration prop "usersync" to load before continuing to initialize submodules
+  // userSyncs config is required to init, listen for config userSyncs to be set
   dependencies.config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      // append dependencies from config; to allow unit testing the nested functions w/ dependency injection
+      // nested functions that require a "dependencies" arg expects a syncDelay prop
       dependencies['syncDelay'] = usersync.syncDelay || 0;
       dependencies['universalIds'] = usersync.universalIds;
 
-      // @type {Array.<string>} list of valid enabled submodules
+      /**
+       * list of valid enabled submodules
+       * @type {Array.<string>}
+       */
       const activeSubmodules = initSubmodules(dependencies);
 
-      // only continue if at least one submodule is configured/enabled
+      // only continue if at least one submodule is enabled
       if (activeSubmodules.length) {
-        utils.logInfo(`${logPrefix} - init submodules: ${activeSubmodules.reduce((carry, item) => { return carry + ', ' + item.configKey }, '')}`);
-        // At least one of following conditions is valid (and needs processing in the bid request hook):
-        //  1.) A submodule getId functions must be queued because consent data is required but is not available until the hook callback is executed
-        //  2.) ID data items found and ready to be appended to bid requests when the hook is executed
+        utils.logInfo(`${MODULE_NAME} - init submodules: ${activeSubmodules.reduce((carry, item) => { return carry + ', ' + item }, '')}`);
+        // one or more of following conditions must be met to continue initialization
+        //  1. A submodule getId functions must be queued because consent data is required but is not available until the hook callback is executed
+        //  2. ID data items found and ready to be appended to bid requests when the hook is executed
         if (getIdData.length || extendBidData.length) {
+          // @type {string}
           const processTypes = (getIdData.length && extendBidData.length) ? 'extendBidData and getIdData' : (extendBidData.length ? 'extendBidData' : 'getIdData');
-          utils.logInfo(`${logPrefix} - adding requestBid for active submodules: ${processTypes}`);
+          utils.logInfo(`${MODULE_NAME} - adding requestBid for active submodules: ${processTypes}`);
+          // add bidRequest hook
           $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
         } else {
-          utils.logWarn(`${logPrefix} - exiting, missing minimum required data (both arrays "getIdData" and "extendBidData" are empty)`);
+          utils.logWarn(`${MODULE_NAME} - exiting, missing minimum required data (both arrays "getIdData" and "extendBidData" are empty)`);
         }
       } else {
-        utils.logInfo(`${logPrefix} - exiting, no submodules were activated`);
+        utils.logInfo(`${MODULE_NAME} - exiting, no submodules were activated`);
       }
     }
   });

@@ -180,9 +180,9 @@ describe('Universal ID', function () {
 
   describe('validateConfig', function() {
     const submodules = [{
-      configKey: 'pubCommonId'
+      configName: 'pubCommonId'
     }, {
-      configKey: 'unifiedId'
+      configName: 'unifiedId'
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
@@ -217,7 +217,7 @@ describe('Universal ID', function () {
       expect(validateConfig(dependencies)).to.equal(true);
     });
 
-    it('return false if config does not define a configuration with a name matching a submodule configKey', function() {
+    it('return false if config does not define a configuration with a name matching a submodule configName', function() {
       const dependencies = {
         universalIds: [{
           name: 'foo'
@@ -240,7 +240,7 @@ describe('Universal ID', function () {
 
   describe('initSubmodules', function() {
     const submodules = [{
-      configKey: 'pubCommonId',
+      configName: 'pubCommonId',
       expires: Number.MAX_VALUE,
       decode: function(value) {
         return {
@@ -249,7 +249,7 @@ describe('Universal ID', function () {
       },
       getId: function (data, callback) {}
     }, {
-      configKey: 'unifiedId',
+      configName: 'unifiedId',
       expires: Number.MAX_VALUE - 1,
       decode: function(value) {
         return {
