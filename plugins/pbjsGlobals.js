@@ -11,6 +11,8 @@ let identifierToStringLiteral = [
   '$$REPO_AND_VERSION$$'
 ];
 
+let count = 0;
+
 module.exports = function() {
   return {
     visitor: {
@@ -48,7 +50,9 @@ module.exports = function() {
                 t.StringLiteral(replace[name])
               );
             } else {
-              path.scope.rename(name, replace[name]);
+              path.replaceWith(
+                t.Identifier(replace[name])
+              );
             }
           }
         });
