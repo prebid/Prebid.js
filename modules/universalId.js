@@ -391,23 +391,22 @@ export function initSubmodules (dependencies) {
 
   // process and return list of enabled submodules
   /**
-   * config is linked to submodule: if submodule config "name" MATCHES submodule "configName" value
+   * submodule config: if submodule config "name" MATCHES submodule "configName" value
    * @type {IdSubmodule}
    */
   return dependencies.submodules.reduce((carry, submodule) => {
-    const universalId = find(dependencies.universalIds, universalIdConfig => universalIdConfig.name === submodule.configName);
+    const universalId = find(dependencies.universalIds, universalIdConfig => {
+      return universalIdConfig.name === submodule.configName;
+    });
 
-    // skip when config with name matching submodule.configName does not exist
-    if (!universalId || typeof universalId !== 'object') {
+    // skip on config is not found
+    if (!universalId) {
       return carry;
     }
 
-    // @type {string}
-    const logPrefix = `${MODULE_NAME}: ${universalId.name} -`;
-
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule passes "value" object if found in configuration
-      carry.push(`${logPrefix} has valid value configuration, pass directly to bid requests`);
+      carry.push(`${universalId.name} has valid value configuration, pass directly to bid requests`);
 
       extendBidData.push(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
@@ -429,12 +428,12 @@ export function initSubmodules (dependencies) {
       } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
         storageValue = dependencies.localStorage.getItem(storageKey);
       } else {
-        utils.logError(`${logPrefix} invalid configuration was set in universalIds config: ${storageType}`);
+        utils.logError(`${MODULE_NAME}: ${universalId.name} - invalid configuration was set in universalIds config: ${storageType}`);
       }
 
       // if local value exists pass decoded value to bid requests
       if (storageValue) {
-        utils.logInfo(`${logPrefix} found valid "${storageType}" value ${storageKey}=${storageValue}`);
+        utils.logInfo(`${MODULE_NAME}: ${universalId.name} - found valid "${storageType}" value ${storageKey}=${storageValue}`);
         extendBidData.push(submodule.decode(storageValue));
       } else {
         // Build que of data to supply to 'getId' that will be executed from a que in requestBidHook
