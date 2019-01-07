@@ -98,10 +98,8 @@ const pubCommonIdSubmodule = {
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
-    const logPrefix = `${MODULE_NAME}: ${data.name}.getId`;
-
     if (!hasGDPRConsent(consentData)) {
-      utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
+      utils.logWarn(`${MODULE_NAME}: ${data.name}.getId - failed GDPR consent validation`);
       callback();
       return;
     }
@@ -120,25 +118,18 @@ const pubCommonIdSubmodule = {
 const unifiedIdSubmodule = {
   configName: 'unifiedId',
   decode: function (idData) {
-    try {
-      return { 'tdid': idData };
-    } catch (e) {
-      utils.logError(`${MODULE_NAME}: unifiedIdSubmodule.decode - error decoding stored id value. ${e}`);
-    }
+    return { 'tdid': idData };
   },
   getId: function (data, consentData, syncDelay, callback) {
     const logPrefix = `${MODULE_NAME}: ${data.name}.getId`;
 
     function callEndpoint () {
-      // validate that consentData contains 'purpose 1' consent
       if (!hasGDPRConsent(consentData)) {
         utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
         callback();
         return;
       }
-      // @type {string}
       const partner = data.params.partner || 'prebid';
-      // @type {string}
       const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
 
       utils.logInfo(`${logPrefix} - call sync endpoint: ${url}`);
@@ -153,6 +144,7 @@ const unifiedIdSubmodule = {
             };
             callback(responseObj);
           } catch (e) {
+            utils.logError(`${MODULE_NAME}: ${logPrefix} internal function callEndpoint Error: ${e.type}: ${e.message}`);
             callback();
           }
         } else {
@@ -204,6 +196,7 @@ export function browserSupportsCookie (navigator, document) {
     document.cookie = 'prebid.cookieTest';
     return document.cookie.indexOf('prebid.cookieTest') !== -1;
   } catch (e) {
+    utils.logError(`${MODULE_NAME}: browserSupportsCookie Error: ${e.type}: ${e.message}`);
     return false;
   }
 }
@@ -220,6 +213,7 @@ export function browserSupportsLocalStorage (localStorage) {
     localStorage.setItem('prebid.cookieTest', '1');
     return localStorage.getItem('prebid.cookieTest') === '1';
   } catch (e) {
+    utils.logError(`${MODULE_NAME}: browserSupportsLocalStorage Error: ${e.type}: ${e.message}`);
     return false;
   }
 }
@@ -312,17 +306,14 @@ export function hasGDPRConsent (consentData) {
  * @returns {*}
  */
 export function requestBidHook (config, next) {
-  // consentData should exist if the consentManagement module is done initializing
-  const consentData = gdprDataHandler.getConsentData();
-
   // check if submodule getId methods need to be executed
   if (getIdData.length) {
     getIdData.forEach(item => {
       // submodule.getId can be called at this time since consentData has been set by the consentManger
-      item.submodule.getId(item.universalId, consentData, item.syncDelay, function (response) {
-        // @type {string} - read from config: userSync.universalIds[n].storage.name
+      item.submodule.getId(item.universalId, gdprDataHandler.getConsentData(), item.syncDelay, function (response) {
+        // @type {string}
         const storageKey = item.universalId.storage.name;
-        // @type {string} - read from config: userSync.universalIds[n].storage.type
+        // @type {string}
         const storageType = item.universalId.storage.type;
         // @type {string}
         const logPrefix = `${MODULE_NAME}: ${item.universalId.name} -`;
@@ -395,6 +386,7 @@ export function initSubmodules (dependencies) {
    * @type {IdSubmodule}
    */
   return dependencies.submodules.reduce((carry, submodule) => {
+
     const universalId = find(dependencies.universalIds, universalIdConfig => {
       return universalIdConfig.name === submodule.configName;
     });
@@ -404,9 +396,12 @@ export function initSubmodules (dependencies) {
       return carry;
     }
 
+    const logPrefix = `${MODULE_NAME}: ${universalId.name}`;
+
     if (universalId.value && typeof universalId.value === 'object') {
       // submodule passes "value" object if found in configuration
-      carry.push(`${universalId.name} has valid value configuration, pass directly to bid requests`);
+      utils.logInfo(` has valid value configuration, pass directly to bid requests`)
+      carry.push(`${universalId.name}`);
 
       extendBidData.push(universalId.value);
     } else if (universalId.storage && typeof universalId.storage === 'object' &&
