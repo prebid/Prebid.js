@@ -6,7 +6,7 @@ const DEFAULT_BID_HOST = 'pbjs.ayads.co';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.3';
+const SUBLIME_VERSION = '0.3.1';
 let SUBLIME_ZONE = null;
 
 /**
@@ -15,7 +15,7 @@ let SUBLIME_ZONE = null;
  * @param {String} [requestId]
  */
 function sendAntennaPixel(name, requestId) {
-  if (typeof top.sublime !== 'undefined') {
+  if (typeof top.sublime !== 'undefined' && typeof top.sublime.analytics !== 'undefined') {
     let param = {
       qs: {
         z: SUBLIME_ZONE
