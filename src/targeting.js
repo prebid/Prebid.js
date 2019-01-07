@@ -189,7 +189,7 @@ export function newTargeting(auctionManager) {
     const bidsReceived = auctionManager.getBidsReceived()
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
       .filter(isUnusedBid)
-      .filter(exports.isBidNotExpired)
+      .filter(isBidNotExpired)
     ;
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);

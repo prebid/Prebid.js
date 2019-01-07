@@ -1733,7 +1733,7 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$.aliasBidder(bidderCode, alias);
       assert.ok(aliasBidAdapterSpy.calledWith(bidderCode, alias), 'called adapterManager.aliasBidAdapterSpy');
-      adapterManager.aliasBidAdapter.restore();
+      adapterManager.aliasBidAdapter();
     });
 
     it('should log error when not passed correct arguments', function () {

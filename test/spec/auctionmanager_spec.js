@@ -3,6 +3,7 @@ import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { createBid } from 'src/bidfactory';
 import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
@@ -14,7 +15,6 @@ var assert = require('assert');
 
 // TODO refactor to use the spec files
 var utils = require('../../src/utils');
-var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
@@ -332,7 +332,7 @@ describe('auctionmanager.js', function () {
 
     it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        createBid(2),
         fixtures.getBidResponses()[5]
       );
 
@@ -477,7 +477,7 @@ describe('auctionmanager.js', function () {
   describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        createBid(2),
         fixtures.getBidResponses()[5]
       );
 

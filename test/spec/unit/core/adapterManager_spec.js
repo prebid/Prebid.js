@@ -11,7 +11,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { setSizeConfig } from 'src/sizeMapping';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-var s2sTesting = require('../../../../modules/s2sTesting');
+import s2sTesting from 'modules/s2sTesting';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -758,10 +758,10 @@ describe('adapterManager tests', function () {
     it('calls client and server adapters for bidders that go to both', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
-      adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
-      adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
-      adUnits[1].bids[0].finalSource = s2sTesting.BOTH;
-      adUnits[1].bids[1].finalSource = s2sTesting.BOTH;
+      // adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
+      // adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
+      // adUnits[1].bids[0].finalSource = s2sTesting.BOTH;
+      // adUnits[1].bids[1].finalSource = s2sTesting.BOTH;
       callBids(adUnits);
 
       // server adapter

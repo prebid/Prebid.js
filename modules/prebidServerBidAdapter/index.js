@@ -1,5 +1,5 @@
 import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
+import { createBid } from 'src/bidfactory';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S, EVENTS } from 'src/constants';
@@ -346,7 +346,7 @@ const LEGACY_PROTOCOL = {
           const bidRequest = utils.getBidRequest(bidObj.bid_id, bidderRequests);
           const cpm = bidObj.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest);
+          let bidObject = createBid(status, bidRequest);
 
           bidObject.source = TYPE;
           bidObject.creative_id = bidObj.creative_id;
@@ -546,7 +546,7 @@ const OPEN_RTB_PROTOCOL = {
 
           const cpm = bid.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest || {
+          let bidObject = createBid(status, bidRequest || {
             bidder: seatbid.seat,
             src: TYPE
           });

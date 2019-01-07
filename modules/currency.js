@@ -1,4 +1,4 @@
-import bidfactory from 'src/bidfactory';
+import { createBid } from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
@@ -215,7 +215,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = bidfactory.createBid(STATUS.NO_BID, {
+        params[1] = createBid(STATUS.NO_BID, {
           bidder: bid.bidderCode || bid.bidder,
           bidId: bid.adId
         });

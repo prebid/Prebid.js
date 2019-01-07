@@ -13,12 +13,12 @@ import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
 import { isRendererRequired, executeRenderer } from './Renderer';
+import { createBid } from './bidfactory';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
 const adapterManager = require('./adapterManager').default;
-const bidfactory = require('./bidfactory');
 const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
@@ -500,7 +500,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return bidfactory.createBid(statusCode);
+  return createBid(statusCode);
 };
 
 /**

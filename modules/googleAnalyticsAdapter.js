@@ -22,13 +22,15 @@ var _enableDistribution = false;
 var _trackerSend = null;
 var _sampled = true;
 
+let adapter = {};
+
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
  * @param  {object} provider use to set GA global (if renamed);
  * @param  {object} options use to configure adapter;
  * @return {[type]}    [description]
  */
-exports.enableAnalytics = function ({ provider, options }) {
+adapter.enableAnalytics = function ({ provider, options }) {
   _gaGlobal = provider || 'ga';
   _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
   _sampled = typeof options === 'undefined' || typeof options.sampling === 'undefined' ||
@@ -101,7 +103,7 @@ exports.enableAnalytics = function ({ provider, options }) {
   };
 };
 
-exports.getTrackerSend = function getTrackerSend() {
+adapter.getTrackerSend = function getTrackerSend() {
   return _trackerSend;
 };
 
@@ -254,6 +256,8 @@ function sendBidWonToGa(bid) {
 }
 
 adapterManager.registerAnalyticsAdapter({
-  adapter: exports,
+  adapter,
   code: 'ga'
 });
+
+export default adapter;

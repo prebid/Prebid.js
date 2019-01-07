@@ -184,7 +184,7 @@ function interpretResponse(serverResponse) {
   return bidResponses;
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid,
@@ -193,5 +193,3 @@ const spec = {
 };
 
 registerBidder(spec);
-
-module.exports = spec;

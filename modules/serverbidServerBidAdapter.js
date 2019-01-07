@@ -1,5 +1,5 @@
 import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
+import { createBid } from 'src/bidfactory';
 import * as utils from 'src/utils';
 import adapterManager from 'src/adapterManager';
 import { STATUS, S2S } from 'src/constants';
@@ -169,7 +169,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
         bidCode = bidObj.bidder;
         placementCode = bidObj.code;
         let noBid = function(bidObj) {
-          bid = bidfactory.createBid(STATUS.NO_BID, bidObj);
+          bid = createBid(STATUS.NO_BID, bidObj);
           bid.bidderCode = bidCode;
           return bid;
         };
@@ -179,7 +179,7 @@ ServerBidServerAdapter = function ServerBidServerAdapter() {
           const price = decision && decision.pricing && decision.pricing.clearPrice;
 
           if (decision && price) {
-            bid = bidfactory.createBid(STATUS.GOOD, bidObj);
+            bid = createBid(STATUS.GOOD, bidObj);
             bid = Object.assign(bid, {bidderCode: bidCode,
               cpm: price,
               width: decision.width,
@@ -230,4 +230,4 @@ ServerBidServerAdapter.createNew = function() {
 
 adapterManager.registerBidAdapter(new ServerBidServerAdapter(), bidder);
 
-module.exports = ServerBidServerAdapter;
+export default ServerBidServerAdapter;
