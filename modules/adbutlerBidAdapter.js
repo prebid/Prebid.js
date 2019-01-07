@@ -9,6 +9,7 @@ const BIDDER_CODE = 'adbutler';
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
+  aliases: ['divreach'],
 
   isBidRequestValid: function (bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
@@ -98,7 +99,7 @@ export const spec = {
       });
       if (isCorrectCPM && isCorrectSize) {
         bidResponse.requestId = bidObj.bidId;
-        bidResponse.bidderCode = spec.code;
+        bidResponse.bidderCode = bidObj.bidder;
         bidResponse.creativeId = serverResponse.placement_id;
         bidResponse.cpm = CPM;
         bidResponse.width = width;
