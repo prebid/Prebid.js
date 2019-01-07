@@ -230,7 +230,6 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
-      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -332,8 +331,6 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
-
-    addUniversalID(data, bidRequest);
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
@@ -648,18 +645,6 @@ function bidType(bid, log = false) {
       utils.logMessage('Rubicon bid adapter making banner request for adUnit', bid.adUnitCode);
     }
     return 'banner';
-  }
-}
-
-/**
- * Add Universal ID to bid data if it exists
- * @param data
- * @param bidRequest
- */
-function addUniversalID(data, bidRequest) {
-  const universalID = bidRequest.universalID || {};
-  if (universalID.tdid && typeof universalID.tdid === 'string') {
-    data['tpid_tdid'] = universalID.tdid;
   }
 }
 
