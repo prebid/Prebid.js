@@ -97,7 +97,10 @@ const pubCommonIdSubmodule = {
     return { 'pubcid': idData }
   },
   getId: function(data, consentData, syncDelay, callback) {
+    const logPrefix = `UniversalId ${data.name}.getId`;
+
     if (!hasGDPRConsent(consentData)) {
+      utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
       callback();
       return;
     }
@@ -119,15 +122,16 @@ const unifiedIdSubmodule = {
     try {
       return { 'tdid': idData };
     } catch (e) {
-      utils.logError('Universal ID submodule decode error');
+      utils.logError(`UniversalId - error thrown by unifiedIdSubmodule.decode: ${e}`);
     }
   },
   getId: function (data, consentData, syncDelay, callback) {
-    const logPrefix = 'UniversalId';
+    const logPrefix = `UniversalId ${data.name}.getId`;
 
     function callEndpoint () {
       // validate that consentData contains 'purpose 1' consent
       if (!hasGDPRConsent(consentData)) {
+        utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
         callback();
         return;
       }
@@ -161,10 +165,10 @@ const unifiedIdSubmodule = {
       utils.logInfo(`${logPrefix} - call endpoint without delay`);
       callEndpoint();
     } else {
-      utils.logInfo(`${logPrefix} - has sync delay "${syncDelay}", will listen for "auction-end" and when executed, start a timer to call the endpoint when it completes`);
+      utils.logInfo(`${logPrefix} - delay is active: syncDelay=${syncDelay}; the delay timer starts after the auction ends, so a "auction-end" listener has been added`);
       // wrap auction end event handler in function so that it can be removed
       const auctionEndHandler = function auctionEndHandler() {
-        utils.logInfo(`${logPrefix} - "auction-end" handler executed, create timer "${syncDelay}" that will call endpoint on complete`);
+        utils.logInfo(`${logPrefix} - "auction-end" event was fired, start a timer (for ${syncDelay} ms), and on complete make webservice request`);
         // remove event handler immediately since we only need to listen for the first auction ending
         events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
         setTimeout(callEndpoint, syncDelay);
@@ -175,7 +179,7 @@ const unifiedIdSubmodule = {
 };
 
 /**
- * List of data to apply to submodule.getId function calls in the request bid hook
+ * data to be applied as submodule.getId function arguments after consentData is loaded
  * @type {Array.<GetIdData>}
  */
 const getIdData = [];
@@ -284,15 +288,11 @@ export function validateConfig (dependencies) {
  * @returns {boolean}
  */
 export function hasGDPRConsent (consentData) {
-  console.log('CONSENT DATA %O', consentData);
   if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
     if (!consentData.consentString) {
-      utils.logWarn('UniversalId - exiting, no GDPR consent string');
       return false;
     }
-
     if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents[1] === false) {
-      utils.logWarn('UniversalId - exiting, no GDPR consent for storing data locally (purpose #1)');
       return false;
     }
   }
@@ -303,7 +303,6 @@ export function hasGDPRConsent (consentData) {
  * This function is called when bids are requested, but before the bids are passed to bid adapters.
  * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
  * 2.) adding universal id data to bid request objects for use in bid adapters
- *
  * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
  *   consentData is REQUIRED if submodule.getId needs to be called
  *   responsible for handling:
@@ -322,43 +321,34 @@ export function requestBidHook (config, next) {
       item.submodule.getId(item.universalId, consentData, item.syncDelay, function (response) {
         // @type {string} - read from config: userSync.universalIds[n].storage.name
         const storageKey = item.universalId.storage.name;
-
         // @type {string} - read from config: userSync.universalIds[n].storage.type
         const storageType = item.universalId.storage.type;
-
         // @type {string} - logging prefix used in the bid request hook function
-        const logPrefix = `Universal ID Submodule: ${storageKey} -`;
+        const logPrefix = `UniversalId ${item.universalId.name} -`;
 
         if (response && response.data) {
-          // valid response, attempt to save ID data to browser storage (localStorage or cookies)
-
-          /**
-           * @type {string}
-           */
+          // @type {string}
           const responseData = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
-
           if (storageType === STORAGE_TYPE_COOKIE) {
-            // - COOKIES -
+            // using cookie to save response id
             setCookie(storageKey, responseData, response.expires);
             utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
-            // - LOCAL STORAGE -
+            // using local storage to save response id
             localStorage.setItem(storageKey, responseData);
             utils.logInfo(`${logPrefix} saving to ${storageType}: ${storageKey}=${responseData}`);
           } else {
-            // - INVALID - storage type
+            // storage type is invalid and wil not saved
             utils.logError(`${logPrefix} invalid configuration storage type: ${storageType}`);
           }
-
-          // decode response data and push to array of objs,
-          // and this array will be iterated in this hook function and each item value added to bids for access by bid adapters
+          // the requestBidHook callback reads and passes the extendBidData to bid adapters
           extendBidData.push(item.submodule.decode(response.data));
         } else {
           utils.logError(`${logPrefix} getId callback response was invalid. response=`, response);
         }
       });
     });
-    // empty getIdData since it has been processed
+    //  all getId items have been processed, empty getIdData array
     getIdData.length = 0;
   }
 
@@ -477,21 +467,18 @@ export function init (dependencies) {
       // only continue if at least one submodule is configured/enabled
       if (activeSubmodules.length) {
         utils.logInfo(`${logPrefix} - init submodules: ${activeSubmodules.reduce((carry, item) => { return carry + ', ' + item.configKey }, '')}`);
-
         // At least one of following conditions is valid (and needs processing in the bid request hook):
         //  1.) A submodule getId functions must be queued because consent data is required but is not available until the hook callback is executed
         //  2.) ID data items found and ready to be appended to bid requests when the hook is executed
         if (getIdData.length || extendBidData.length) {
           const processTypes = (getIdData.length && extendBidData.length) ? 'extendBidData and getIdData' : (extendBidData.length ? 'extendBidData' : 'getIdData');
-          utils.logInfo(`${logPrefix} - adding request bid hook to process: ${processTypes}`);
-
-          // Note: the default priority (10) used to ensure consentManagement has been fully initialized
+          utils.logInfo(`${logPrefix} - adding requestBid for active submodules: ${processTypes}`);
           $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
         } else {
-          utils.logWarn(`${logPrefix} - failed to init submodules, no data for getIdData or extendBidData`);
+          utils.logWarn(`${logPrefix} - exiting, missing minimum required data (both arrays "getIdData" and "extendBidData" are empty)`);
         }
       } else {
-        utils.logInfo(`${logPrefix} - no valid submodules`);
+        utils.logInfo(`${logPrefix} - exiting, no submodules were activated`);
       }
     }
   });
