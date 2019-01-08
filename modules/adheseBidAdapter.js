@@ -70,7 +70,7 @@ function adResponse(bid, ad) {
   const adDetails = getAdDetails(ad);
   const markup = getAdMarkup(ad);
 
-  const bidResponse = baseAdResponse({
+  const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
     mediaType: getMediaType(markup),
     cpm: Number(price.amount),
@@ -114,7 +114,7 @@ function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
-function baseAdResponse(response) {
+function getbaseAdResponse(response) {
   return Object.assign({ netRevenue: true, ttl: 360 }, response);
 }
 
