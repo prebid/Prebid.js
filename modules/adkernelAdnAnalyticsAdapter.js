@@ -110,10 +110,14 @@ function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
-    ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
-    }, JSON.stringify(req));
+    analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
+
+analyticsAdapter.ajaxCall = function ajaxCall(data) {
+  ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
+  }, data);
+};
 
 function trackAuctionInit() {
   analyticsAdapter.context.auctionTimeStart = Date.now();

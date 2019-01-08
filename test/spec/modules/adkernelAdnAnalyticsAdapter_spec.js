@@ -1,7 +1,6 @@
 import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
-import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
@@ -189,7 +188,7 @@ describe('', function () {
     let timer;
 
     before(function () {
-      ajaxStub = sandbox.stub(ajax, 'ajax');
+      ajaxStub = sandbox.stub(analyticsAdapter, 'ajaxCall');
       timer = sandbox.useFakeTimers(0);
     });
 
@@ -254,7 +253,7 @@ describe('', function () {
       let ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(0);
       expect(ajaxStub.calledOnce).to.be.equal(true);
-      ev = JSON.parse(ajaxStub.firstCall.args[2]).hb_ev;
+      ev = JSON.parse(ajaxStub.firstCall.args[0]).hb_ev;
       expect(ev[3]).to.be.eql({event: 'auctionEnd', time: 0.447});
     });
 
@@ -262,7 +261,7 @@ describe('', function () {
       events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
       timer.tick(4500);
       expect(ajaxStub.calledTwice).to.be.equal(true);
-      let ev = JSON.parse(ajaxStub.secondCall.args[2]).hb_ev;
+      let ev = JSON.parse(ajaxStub.secondCall.args[0]).hb_ev;
       expect(ev[0]).to.be.eql({event: 'bidWon', adapter: 'adapter', tagid: 'container-1', val: 0.015});
     });
   });

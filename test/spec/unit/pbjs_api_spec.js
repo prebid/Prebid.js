@@ -9,12 +9,11 @@ import {
   createBidReceived
 } from 'test/fixtures/fixtures';
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { targeting, newTargeting } from 'src/targeting';
+import { targeting, newTargeting, filters } from 'src/targeting';
 import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import * as targetingModule from 'src/targeting';
 import find from 'core-js/library/fn/array/find';
 
 var assert = require('chai').assert;
@@ -150,12 +149,12 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
   before(function () {
-    bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').callsFake(() => true);
+    bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
   });
 
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
-    targetingModule.isBidNotExpired.restore();
+    bidExpiryStub.restore();
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
