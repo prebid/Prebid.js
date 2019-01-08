@@ -242,11 +242,11 @@ function _parseAdSlot(bid) {
   }
 }
 
-function _initConf(referrerInfo) {
+function _initConf(refererInfo) {
   var conf = {};
   conf.pageURL = utils.getTopWindowUrl();
-  if (referrerInfo && referrerInfo.referrer) {
-    conf.refURL = referrerInfo.referrer;
+  if (refererInfo && refererInfo.referrer) {
+    conf.refURL = referrerInfo.referer;
   } else {
     conf.refURL = '';
   }
@@ -811,11 +811,11 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    var referrerInfo;
-    if (bidderRequest && bidderRequest.referrerInfo) {
-      referrerInfo = bidderRequest.referrerInfo;
+    var refererInfo;
+    if (bidderRequest && bidderRequest.refererInfo) {
+      refererInfo = bidderRequest.refererInfo;
     }
-    var conf = _initConf(referrerInfo);
+    var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
     var dctr = '';
