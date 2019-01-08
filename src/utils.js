@@ -549,21 +549,28 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-exports.insertElement = function(elm, doc, target) {
+/*
+* Inserts an element(elm) as targets child, by default as first child
+* @param {HTMLElement} elm
+* @param {HTMLElement} [doc]
+* @param {HTMLElement} [target]
+* @param {Boolean} [asLastChildChild]
+* @return {HTMLElement}
+*/
+exports.insertElement = function(elm, doc, target, asLastChildChild) {
   doc = doc || document;
-  let elToAppend;
-  const head = doc.getElementsByTagName('head');
+  let parentEl;
   if (target) {
-    elToAppend = doc.getElementsByTagName(target);
+    parentEl = doc.getElementsByTagName(target);
   } else {
-    elToAppend = head;
+    parentEl = doc.getElementsByTagName('head');
   }
   try {
-    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
-      return elToAppend.insertBefore(elm, refChild);
+    parentEl = parentEl.length ? parentEl : doc.getElementsByTagName('body');
+    if (parentEl.length) {
+      parentEl = parentEl[0];
+      let insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
+      return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
 };
@@ -635,7 +642,7 @@ exports.insertUserSyncIframe = function(url, done) {
     iframe.addEventListener('load', done);
     iframe.addEventListener('error', done);
   }
-  exports.insertElement(iframe);
+  exports.insertElement(iframe, document, 'html', true);
 };
 
 /**
