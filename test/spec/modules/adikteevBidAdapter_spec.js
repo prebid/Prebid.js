@@ -8,7 +8,6 @@ import {
   akOverrides,
   akUrl,
   conformBidRequest,
-  conformCookies,
   DEFAULT_ENV,
   ENDPOINT_PATH,
   endpointUrl,
@@ -77,17 +76,8 @@ describe('adikteevBidAdapter', () => {
     });
   });
 
-  describe('conformCookies', () => {
-    it('parse cookie string into an object', () => {
-      expect(conformCookies('ak_id=ebf68e82-75bd-4a11-ad3b-0a4e36cef4e4; _pubcid=f3371d16-4e8b-42b5-a770-7e5be1fdf03d')).to.deep.equal({
-        ak_id: 'ebf68e82-75bd-4a11-ad3b-0a4e36cef4e4',
-        _pubcid: 'f3371d16-4e8b-42b5-a770-7e5be1fdf03d'
-      });
-    })
-  });
-
   describe('conformBidRequest', () => {
-    it('parse cookie string into an object', () => {
+    it('returns a bid-request', () => {
       expect(conformBidRequest(cannedValidBidRequests[0])).to.deep.equal({
         params: cannedValidBidRequests[0].params,
         crumbs: cannedValidBidRequests[0].crumbs,
@@ -211,7 +201,6 @@ describe('adikteevBidAdapter', () => {
       expect(requestData).to.exist.and.have.all.keys(
         'akPbjsVersion',
         'bidRequests',
-        'cookies',
         'currency',
         'debug',
         'iAmOverride',
