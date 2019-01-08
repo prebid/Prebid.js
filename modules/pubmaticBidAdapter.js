@@ -245,8 +245,8 @@ function _parseAdSlot(bid) {
 function _initConf(refererInfo) {
   var conf = {};
   conf.pageURL = utils.getTopWindowUrl();
-  if (refererInfo && refererInfo.referrer) {
-    conf.refURL = referrerInfo.referer;
+  if (refererInfo && refererInfo.referer) {
+    conf.refURL = refererInfo.referer;
   } else {
     conf.refURL = '';
   }
