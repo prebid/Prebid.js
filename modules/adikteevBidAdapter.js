@@ -155,17 +155,6 @@ export const getDeviceInfo = (deviceDimensions, viewDimensions, documentDimensio
 
 const validateSizes = sizes => utils.isArray(sizes) && sizes.some(size => utils.isArray(size) && size.length === 2);
 
-export function conformCookies(documentCookie) {
-  return documentCookie
-    .split('; ')
-    .filter(i => i.indexOf('=') !== -1)
-    .reduce((acc, kv) => {
-      const [k, v] = kv.split('=');
-      acc[k] = v;
-      return acc;
-    }, {});
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -185,7 +174,6 @@ export const spec = {
       {
         akPbjsVersion: AK_PBJS_VERSION,
         bidRequests: validBidRequests.map(conformBidRequest),
-        cookies: conformCookies(document.cookie),
         currency: config.getConfig('currency'),
         debug: akDebug(utils.getParameterByName('akDebug'), config.getConfig('akDebug')),
         language: navigator.language,
