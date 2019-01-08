@@ -180,9 +180,9 @@ describe('Universal ID', function () {
 
   describe('validateConfig', function() {
     const submodules = [{
-      configName: 'pubCommonId'
+      name: 'pubCommonId'
     }, {
-      configName: 'unifiedId'
+      name: 'unifiedId'
     }];
 
     it('return false if config does not define usersync.universalIds', function() {
@@ -217,7 +217,7 @@ describe('Universal ID', function () {
       expect(validateConfig(dependencies)).to.equal(true);
     });
 
-    it('return false if config does not define a configuration with a name matching a submodule configName', function() {
+    it('return false if config does not define a configuration with a name matching a submodule name', function() {
       const dependencies = {
         universalIds: [{
           name: 'foo'
@@ -240,31 +240,17 @@ describe('Universal ID', function () {
 
   describe('initSubmodules', function() {
     const submodules = [{
-      configName: 'pubCommonId',
-      expires: Number.MAX_VALUE,
-      decode: function(value) {
-        return {
-          'pubcid': value
-        }
-      },
-      getId: function (data, callback) {}
+      name: 'pubCommonId',
+      decode: function (value) { return { 'pubcid': value } },
+      getId: function (data, consentData, syncDelay, callback) {}
     }, {
-      configName: 'unifiedId',
-      expires: Number.MAX_VALUE - 1,
-      decode: function(value) {
-        return {
-          'unifiedId': value
-        }
-      },
-      getId: function (data, callback) {}
+      name: 'unifiedId',
+      decode: function (value) { return { 'unifiedId': value } },
+      getId: function (data, consentData, syncDelay, callback) {}
     }];
 
     it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
       const dependencies = {
-        utils: {
-          logInfo: function () {},
-          logError: function () {}
-        },
         universalIds: [{
           name: 'foo'
         }, {
@@ -343,12 +329,8 @@ describe('Universal ID', function () {
       expect(initSubmodules(dependencies).length).to.equal(2);
     });
 
-    it('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
+    it.only('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
       const dependencies = {
-        utils: {
-          logInfo: function () {},
-          logError: function () {}
-        },
         universalIds: [{
           name: 'pubCommonId',
           storage: {
@@ -364,26 +346,18 @@ describe('Universal ID', function () {
         }],
         syncDelay: 0,
         submodules: submodules,
-        navigator: {
-          cookieEnabled: true
-        },
+        navigator: { cookieEnabled: true },
         localStorage: undefined,
         document: {
           set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
+          get cookie() { return 'prebid.cookieTest=1;pubcid=1' }
         }
       };
-      expect(initSubmodules(dependencies).length).to.equal(1);
+      expect(initSubmodules(dependencies).extendBidData.length).to.equal(1);
     });
 
     it('returns empty array when both cookie and local storage are enabled, but the config storage \'type\' is invalid (not cookie or html5)', function() {
       const dependencies = {
-        utils: {
-          logInfo: function () {},
-          logError: function () {}
-        },
         universalIds: [{
           name: 'pubCommonId',
           storage: {
@@ -399,22 +373,16 @@ describe('Universal ID', function () {
         }],
         syncDelay: 0,
         submodules: submodules,
-        navigator: {
-          cookieEnabled: true
-        },
+        navigator: { cookieEnabled: true },
         localStorage: {
           setItem: function (key, value) {},
           getItem: function (key) {
-            if (key === 'prebid.cookieTest') {
-              return '1'
-            }
+            if (key === 'prebid.cookieTest') { return '1' }
           }
         },
         document: {
           set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
+          get cookie() { return 'prebid.cookieTest' }
         }
       };
       expect(initSubmodules(dependencies).length).to.equal(0);
