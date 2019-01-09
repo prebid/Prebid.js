@@ -83,7 +83,7 @@ export function setConfig(config) {
     if (macroLocation !== -1) {
       // get the date to resolve the macro
       const d = new Date();
-      let month = `${(d.getMonth() + 1)}`;
+      let month = `${d.getMonth() + 1}`;
       let day = `${d.getDate()}`;
       if (month.length < 2) month = `0${month}`;
       if (day.length < 2) day = `0${day}`;
