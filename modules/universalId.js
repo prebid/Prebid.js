@@ -264,7 +264,7 @@ export function requestBidHook(config, next) {
 export function initSubmodules (dependencies) {
   if (!validateConfig(dependencies)) {
     utils.logInfo(`${MODULE_NAME} - invalid configuration, exit module`);
-    return [];
+    return;
   }
 
   // storage types validated with browser support tests
