@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adapterManager from 'src/adapterManager';
-import { config } from 'src/config';
-import { ajax } from 'src/ajax';
-import * as utils from 'src/utils';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import { config } from '../src/config';
+import { ajax } from '../src/ajax';
+import * as utils from '../src/utils';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON }

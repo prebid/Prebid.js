@@ -1,8 +1,8 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adapterManager from 'src/adapterManager';
-import CONSTANTS from 'src/constants.json';
-const utils = require('src/utils');
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+const utils = require('../src/utils');
 
 /****
  * PubWise.io Analytics

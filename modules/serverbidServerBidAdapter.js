@@ -1,9 +1,9 @@
-import Adapter from 'src/adapter';
-import { createBid } from 'src/bidfactory';
-import * as utils from 'src/utils';
-import adapterManager from 'src/adapterManager';
-import { STATUS, S2S } from 'src/constants';
-import { config } from 'src/config';
+import Adapter from '../src/adapter';
+import { createBid } from '../src/bidfactory';
+import * as utils from '../src/utils';
+import adapterManager from '../src/adapterManager';
+import { STATUS, S2S } from '../src/constants';
+import { config } from '../src/config';
 
 const TYPE = S2S.SRC;
 const getConfig = config.getConfig;

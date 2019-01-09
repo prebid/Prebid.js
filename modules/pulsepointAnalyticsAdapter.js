@@ -2,8 +2,8 @@
  * pulsepoint.js - Analytics Adapter for PulsePoint
  */
 
-import adapter from 'src/AnalyticsAdapter';
-import adapterManager from 'src/adapterManager';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
 
 var pulsepointAdapter = adapter({
   global: 'PulsePointPrebidAnalytics',

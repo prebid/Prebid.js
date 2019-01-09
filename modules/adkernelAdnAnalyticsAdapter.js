@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adapterManager from 'src/adapterManager';
-import {parse} from 'src/url';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import {parse} from '../src/url';
+import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;

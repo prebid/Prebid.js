@@ -1,9 +1,9 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adapterManager from 'src/adapterManager';
-import * as utils from 'src/utils';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import * as utils from '../src/utils';
 
-const CONSTANTS = require('src/constants.json');
+const CONSTANTS = require('../src/constants.json');
 
 const analyticsType = 'endpoint';
 const EPL_HOST = 'https://ads.us.e-planning.net/hba/1/';

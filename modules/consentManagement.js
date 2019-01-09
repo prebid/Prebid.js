@@ -4,9 +4,9 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { gdprDataHandler } from 'src/adapterManager';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { gdprDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 

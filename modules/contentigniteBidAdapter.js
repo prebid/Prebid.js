@@ -1,6 +1,6 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import * as utils from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'contentignite';
 

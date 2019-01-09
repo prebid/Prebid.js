@@ -2,8 +2,8 @@
  * Analytics Adapter for Adagio
  */
 
-import adapter from 'src/AnalyticsAdapter';
-import adapterManager from 'src/adapterManager';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
 
 // This config makes Prebid.js call this function on each event:
 //   `window['AdagioPrebidAnalytics']('on', eventType, args)`

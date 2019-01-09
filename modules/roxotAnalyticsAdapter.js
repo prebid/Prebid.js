@@ -1,10 +1,10 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adapterManager from 'src/adapterManager';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
-import {ajaxBuilder} from 'src/ajax';
+import {ajaxBuilder} from '../src/ajax';
 
-const utils = require('src/utils');
+const utils = require('../src/utils');
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'pa.rxthdr.com/v3';

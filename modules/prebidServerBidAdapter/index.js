@@ -1,13 +1,13 @@
-import Adapter from 'src/adapter';
-import { createBid } from 'src/bidfactory';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS, S2S, EVENTS } from 'src/constants';
-import adapterManager from 'src/adapterManager';
-import { config } from 'src/config';
-import { VIDEO } from 'src/mediaTypes';
-import { isValid } from 'src/adapters/bidderFactory';
-import events from 'src/events';
+import Adapter from '../../src/adapter';
+import { createBid } from '../../src/bidfactory';
+import * as utils from '../../src/utils';
+import { ajax } from '../../src/ajax';
+import { STATUS, S2S, EVENTS } from '../../src/constants';
+import adapterManager from '../../src/adapterManager';
+import { config } from '../../src/config';
+import { VIDEO } from '../../src/mediaTypes';
+import { isValid } from '../../src/adapters/bidderFactory';
+import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
 
