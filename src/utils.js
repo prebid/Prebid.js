@@ -602,7 +602,7 @@ export function triggerPixel(url, done) {
 
 export function callBurl({ source, burl }) {
   if (source === CONSTANTS.S2S.SRC && burl) {
-    triggerPixel(burl);
+    internal.triggerPixel(burl);
   }
 }
 
