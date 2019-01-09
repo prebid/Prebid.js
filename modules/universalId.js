@@ -378,7 +378,7 @@ init({
               };
               callback(responseObj);
             } catch (e) {
-              utils.logError(`${MODULE_NAME}: ${logPrefix} internal function callEndpoint Error: ${e.type}: ${e.message}`);
+              utils.logError(`${logPrefix} internal function callEndpoint Error: ${e.type}: ${e.message}`);
               callback();
             }
           } else {
