@@ -112,7 +112,7 @@ export const spec = {
 }
 
 function cleanName(name) {
-  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)/g, '_').replace(/^_+|_+$/g, '');
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
