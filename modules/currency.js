@@ -74,26 +74,25 @@ export function setConfig(config) {
       utils.logInfo('currency using override conversionRateFile:', config.conversionRateFile);
       url = config.conversionRateFile;
     }
-    
+
     // see if the url contains a date macro
     // this is a workaround to the fact that jsdelivr doesn't currently support setting a 24-hour HTTP cache header
     // So this is an approach to let the browser cache a copy of the file each day
     // We should remove the macro once the CDN support a day-level HTTP cache setting
-    const macroLocation=url.indexOf("$$TODAY$$");
-    if (macroLocation>=0) {
+    const macroLocation = url.indexOf('$$TODAY$$');
+    if (macroLocation !== -1) {
       // get the date to resolve the macro
-      var d = new Date(),
-       month = '' + (d.getMonth() + 1),
-       day = '' + d.getDate(),
-       year = d.getFullYear();
+      const d = new Date();
+      let month = '' + (d.getMonth() + 1);
+      let day = '' + d.getDate();
       if (month.length < 2) month = '0' + month;
       if (day.length < 2) day = '0' + day;
-      const todaysDate = [year, month, day].join('');
-      
+      const todaysDate = [d.getFullYear(), month, day].join('');
+
       // replace $$TODAY$$ with todaysDate
-      url=url.substring(0,macroLocation)+todaysDate+url.substring(macroLocation+9,url.length);
+      url = url.substring(0, macroLocation) + todaysDate + url.substring(macroLocation + 9, url.length);
     }
-    
+
     initCurrency(url);
   } else {
     // currency support is disabled, setting defaults
