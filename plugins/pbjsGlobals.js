@@ -1,5 +1,5 @@
 
-let t = require('babel-core').types;
+let t = require('@babel/core').types;
 let prebid = require('../package.json');
 
 let replace = {
