@@ -20,7 +20,7 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
   if (window.rivraddon && window.rivraddon.analytics) {
-    window.rivraddon.analytics.enableAnalytics(config, {utils, ajax});
+    window.rivraddon.analytics.enableAnalytics(config, {utils, ajax, pbjsGlobalVariable: $$PREBID_GLOBAL$$});
     rivrAnalytics.originEnableAnalytics(config);
   }
 };
