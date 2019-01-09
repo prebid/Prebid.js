@@ -74,8 +74,15 @@
     "image": "hb_native_image",
     "icon": "hb_native_icon",
     "clickUrl": "hb_native_linkurl",
+    "displayUrl": "hb_native_displayurl",
     "cta": "hb_native_cta",
-    "rating": "hb_native_rating"
+    "rating": "hb_native_rating",
+    "address": "hb_native_address",
+    "downloads": "hb_native_downloads",
+    "likes": "hb_native_likes",
+    "phone": "hb_native_phone",
+    "price": "hb_native_price",
+    "salePrice": "hb_native_saleprice"
   },
   "S2S" : {
     "SRC" : "s2s",
