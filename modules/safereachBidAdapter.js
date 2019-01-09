@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'safereach';
-const URL = '//server3-safereach.com/?c=o&m=multi';
+const URL_MULTI = '//server3-safereach.com/?c=o&m=multi';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,7 +64,7 @@ export const spec = {
       url: URL_MULTI,
       data: request
     };
-},
+  },
 
   /**
    * Unpack the response from the server into a list of bids.
