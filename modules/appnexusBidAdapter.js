@@ -1,18 +1,20 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { NATIVE, VIDEO } from 'src/mediaTypes';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
-const SUPPORTED_AD_TYPES = ['banner', 'video', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const NATIVE_MAPPING = {
   body: 'description',
+  body2: 'desc2',
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
@@ -25,13 +27,16 @@ const NATIVE_MAPPING = {
     minimumParams: { sizes: [{}] },
   },
   sponsoredBy: 'sponsored_by',
+  privacyLink: 'privacy_link',
+  salePrice: 'saleprice',
+  displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia'],
-  supportedMediaTypes: [VIDEO, NATIVE],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -60,6 +65,49 @@ export const spec = {
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
+    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    let appDeviceObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+    }
+
+    const appIdObjBid = find(bidRequests, hasAppId);
+    let appIdObj;
+    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {
+        appid: appIdObjBid.params.app.id
+      };
+    }
+
+    let debugObj = {};
+    let debugObjParams = {};
+    const debugCookieName = 'apn_prebid_debug';
+    const debugCookie = utils.getCookie(debugCookieName) || null;
+
+    if (debugCookie) {
+      try {
+        debugObj = JSON.parse(debugCookie);
+      } catch (e) {
+        utils.logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
+      }
+    } else {
+      const debugBidRequest = find(bidRequests, hasDebug);
+      if (debugBidRequest && debugBidRequest.debug) {
+        debugObj = debugBidRequest.debug;
+      }
+    }
+
+    if (debugObj && debugObj.enabled) {
+      Object.keys(debugObj)
+        .filter(param => includes(DEBUG_PARAMS, param))
+        .forEach(param => {
+          debugObjParams[param] = debugObj[param];
+        });
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -74,6 +122,37 @@ export const spec = {
     if (member > 0) {
       payload.member_id = member;
     }
+
+    if (appDeviceObjBid) {
+      payload.device = appDeviceObj
+    }
+    if (appIdObjBid) {
+      payload.app = appIdObj;
+    }
+
+    if (debugObjParams.enabled) {
+      payload.debug = debugObjParams;
+      utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      // note - objects for impbus use underscore instead of camelCase
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      let refererinfo = {
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        rd_top: bidderRequest.refererInfo.reachedTop,
+        rd_ifs: bidderRequest.refererInfo.numIframes,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+      }
+      payload.referrer_detection = refererinfo;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -103,14 +182,30 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(SUPPORTED_AD_TYPES, rtbBid.ad_type)) {
-            const bid = newBid(serverBid, rtbBid);
+          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+            const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
           }
         }
       });
     }
+
+    if (serverResponse.debug && serverResponse.debug.debug_info) {
+      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
+      let debugText = debugHeader + serverResponse.debug.debug_info
+      debugText = debugText
+        .replace(/(<td>|<th>)/gm, '\t') // Tables
+        .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
+        .replace(/^<br>/gm, '') // Remove leading <br>
+        .replace(/(<br>\n|<br>)/gm, '\n') // <br>
+        .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
+        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
+        .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
+      utils.logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
+      utils.logMessage(debugText);
+    }
+
     return bids;
   },
 
@@ -121,15 +216,54 @@ export const spec = {
         url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
+  },
+
+  transformBidParams: function(params, isOpenRtb) {
+    params = utils.convertTypes({
+      'member': 'string',
+      'invCode': 'string',
+      'placementId': 'number',
+      'keywords': utils.transformBidderParamKeywords
+    }, params);
+
+    if (isOpenRtb) {
+      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
+      if (params.usePaymentRule) { delete params.usePaymentRule; }
+
+      if (isPopulatedArray(params.keywords)) {
+        params.keywords.forEach(deleteValues);
+      }
+
+      Object.keys(params).forEach(paramKey => {
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        if (convertedKey !== paramKey) {
+          params[convertedKey] = params[paramKey];
+          delete params[paramKey];
+        }
+      });
+    }
+
+    return params;
   }
 }
 
-function newRenderer(adUnitCode, rtbBid) {
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
+
+function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
-    config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+    config: rendererOptions,
     loaded: false,
+    adUnitCode
   });
 
   try {
@@ -149,39 +283,15 @@ function newRenderer(adUnitCode, rtbBid) {
   return renderer;
 }
 
-/* Turn keywords parameter into ut-compatible format */
-function getKeywords(keywords) {
-  let arrs = [];
-
-  utils._each(keywords, (v, k) => {
-    if (utils.isArray(v)) {
-      let values = [];
-      utils._each(v, (val) => {
-        val = utils.getValueString('keywords.' + k, val);
-        if (val) { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = utils.getValueString('keywords.' + k, v);
-      if (utils.isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
-}
-
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
  * @param rtbBid
+ * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid) {
+function newBid(serverBid, rtbBid, bidderRequest) {
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -189,7 +299,13 @@ function newBid(serverBid, rtbBid) {
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    adUnitCode: bidRequest.adUnitCode,
+    appnexus: {
+      buyerMemberId: rtbBid.buyer_member_id,
+      dealPriority: rtbBid.deal_priority,
+      dealCode: rtbBid.deal_code
+    }
   };
 
   if (rtbBid.rtb.video) {
@@ -197,39 +313,59 @@ function newBid(serverBid, rtbBid) {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
       vastUrl: rtbBid.rtb.video.asset_url,
-      descriptionUrl: rtbBid.rtb.video.asset_url,
+      vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
+      const rendererOptions = utils.deepAccess(
+        bidderRequest.bids[0],
+        'renderer.options'
+      );
+
       Object.assign(bid, {
         adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid)
+        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
       });
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb['native']) {
-    const nativeAd = rtbBid.rtb['native'];
-    bid['native'] = {
+  } else if (rtbBid.rtb[NATIVE]) {
+    const nativeAd = rtbBid.rtb[NATIVE];
+    bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
+      body2: nativeAd.desc2,
       cta: nativeAd.ctatext,
+      rating: nativeAd.rating,
       sponsoredBy: nativeAd.sponsored,
-      image: {
-        url: nativeAd.main_img && nativeAd.main_img.url,
-        height: nativeAd.main_img && nativeAd.main_img.height,
-        width: nativeAd.main_img && nativeAd.main_img.width,
-      },
-      icon: {
-        url: nativeAd.icon && nativeAd.icon.url,
-        height: nativeAd.icon && nativeAd.icon.height,
-        width: nativeAd.icon && nativeAd.icon.width,
-      },
+      privacyLink: nativeAd.privacy_link,
+      address: nativeAd.address,
+      downloads: nativeAd.downloads,
+      likes: nativeAd.likes,
+      phone: nativeAd.phone,
+      price: nativeAd.price,
+      salePrice: nativeAd.saleprice,
       clickUrl: nativeAd.link.url,
+      displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers
     };
+    if (nativeAd.main_img) {
+      bid['native'].image = {
+        url: nativeAd.main_img.url,
+        height: nativeAd.main_img.height,
+        width: nativeAd.main_img.width,
+      };
+    }
+    if (nativeAd.icon) {
+      bid['native'].icon = {
+        url: nativeAd.icon.url,
+        height: nativeAd.icon.height,
+        width: nativeAd.icon.width,
+      };
+    }
   } else {
     Object.assign(bid, {
       width: rtbBid.rtb.banner.width,
@@ -252,6 +388,7 @@ function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];
+  tag.ad_types = [];
   tag.uuid = bid.bidId;
   if (bid.params.placementId) {
     tag.id = parseInt(bid.params.placementId, 10);
@@ -272,7 +409,7 @@ function bidToTag(bid) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = getSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes);
   }
   if (bid.params.supplyType) {
     tag.supply_type = bid.params.supplyType;
@@ -287,22 +424,32 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!utils.isEmpty(bid.params.keywords)) {
-    tag.keywords = getKeywords(bid.params.keywords);
+    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+    if (keywords.length > 0) {
+      keywords.forEach(deleteValues);
+    }
+    tag.keywords = keywords;
   }
 
-  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
-    tag.ad_types = ['native'];
+  if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+    tag.ad_types.push(NATIVE);
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
-      tag['native'] = {layouts: [nativeRequest]};
+      tag[NATIVE] = {layouts: [nativeRequest]};
     }
   }
 
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
-  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+  if (bid.mediaType === VIDEO || videoMediaType) {
+    tag.ad_types.push(VIDEO);
+  }
+
+  // instream gets vastUrl, outstream gets vastXml
+  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
     tag.require_asset_url = true;
   }
 
@@ -312,6 +459,13 @@ function bidToTag(bid) {
     Object.keys(bid.params.video)
       .filter(param => includes(VIDEO_TARGETING, param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
+  }
+
+  if (
+    (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
+    (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
+  ) {
+    tag.ad_types.push(BANNER);
   }
 
   return tag;
@@ -346,6 +500,23 @@ function hasUserInfo(bid) {
 
 function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
+}
+
+function hasAppDeviceInfo(bid) {
+  if (bid.params) {
+    return !!bid.params.app
+  }
+}
+
+function hasAppId(bid) {
+  if (bid.params && bid.params.app) {
+    return !!bid.params.app.id
+  }
+  return !!bid.params.app
+}
+
+function hasDebug(bid) {
+  return !!bid.debug
 }
 
 function getRtbBid(tag) {
@@ -410,12 +581,12 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
 
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
-  if (adType === 'video') {
-    return 'video';
-  } else if (adType === 'native') {
-    return 'native';
+  if (adType === VIDEO) {
+    return VIDEO;
+  } else if (adType === NATIVE) {
+    return NATIVE;
   } else {
-    return 'banner';
+    return BANNER;
   }
 }
 

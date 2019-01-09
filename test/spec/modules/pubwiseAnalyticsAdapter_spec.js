@@ -4,7 +4,26 @@ let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
+  let xhr;
+
+  before(function () {
+    xhr = sinon.useFakeXMLHttpRequest();
+  });
+
+  after(function () {
+    xhr.restore();
+    pubwiseAnalytics.disableAnalytics();
+  });
+
   describe('enableAnalytics', function () {
+    beforeEach(function () {
+      sinon.stub(events, 'getEvents').returns([]);
+    });
+
+    afterEach(function () {
+      events.getEvents.restore();
+    });
+
     it('should catch all events', function () {
       sinon.spy(pubwiseAnalytics, 'track');
 

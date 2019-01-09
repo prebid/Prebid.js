@@ -1,9 +1,10 @@
-[![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
+[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 [![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
 # Prebid.js
 
@@ -26,13 +27,18 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ yarn install
+    $ npm install
 
-Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
+*Note:* You need to have `NodeJS` 6.x or greater installed.
 
-For more info, see [the Yarn documentation](https://yarnpkg.com).
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
 
-*Note:* You need to have `NodeJS` 4.x or greater installed.
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installd globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
+
+To remove the old package, you can use the command: `npm rm gulp -g`
+
+Once setup, run the following command to globally install the `gulp-cli` package: `npm install gulp-cli -g`
+
 
 <a name="Build"></a>
 
@@ -60,11 +66,8 @@ For example, when running the serve command: `gulp serve --modules=openxBidAdapt
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
 **Build standalone prebid.js**
-Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
 
-For more info about yarn see https://yarnpkg.com
-
-- Clone the repo, run `yarn install`
+- Clone the repo, run `npm install`
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
@@ -82,11 +85,11 @@ With `modules.json` containing the following
 ]
 ```
 
-**Build prebid.js using Yarn for bundling**
+**Build prebid.js using npm for bundling**
 
-In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
 
-- Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
+- Add `prebid.js` as a `npm` dependency of your project: `npm install prebid.js`
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
         $ gulp build --modules=path/to/your/list-of-modules.json
@@ -112,11 +115,6 @@ To run the unit tests:
 
 ```bash
 gulp test
-```
-To run tests for a single file:
-
-```bash
-gulp test --file "path/to/spec/file.js"
 ```
 
 To generate and view the code coverage reports:
@@ -179,7 +177,7 @@ Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidder
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
-Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/PR_REVIEW.md).
 
 ### Add a Bidder Adapter
 
@@ -219,7 +217,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE10+ and modern browsers.
+Prebid.js is supported on IE11 and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { hooks } from 'src/hook.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
+const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
@@ -16,6 +16,7 @@ var adServerCurrency = 'USD';
 export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
+var defaultRates;
 
 /**
  * Configuration function for currency
@@ -33,7 +34,7 @@ var bidderCurrencyDefault = {};
  *  {
  *    rubicon: 'USD'
  *  }
- * @param  {string} [config.conversionRateFile = 'http://currency.prebid.org/latest.json']
+ * @param  {string} [config.conversionRateFile = 'URL pointing to conversion file']
  *  Optional path to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
  *  if not specified.
  * @param  {object} [config.rates]
@@ -45,12 +46,23 @@ var bidderCurrencyDefault = {};
  *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
  *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
  *  }
+ *  @param {object} [config.defaultRates]
+ *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
+ *  there is an error loading the config.conversionRateFile.
  */
 export function setConfig(config) {
   let url = DEFAULT_CURRENCY_RATE_URL;
 
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
+    currencyRatesLoaded = true;
+  }
+
+  if (typeof config.defaultRates === 'object') {
+    defaultRates = config.defaultRates;
+
+    // set up the default rates to be used if the rate file doesn't get loaded in time
+    currencyRates.conversions = defaultRates;
     currencyRatesLoaded = true;
   }
 
@@ -62,6 +74,25 @@ export function setConfig(config) {
       utils.logInfo('currency using override conversionRateFile:', config.conversionRateFile);
       url = config.conversionRateFile;
     }
+
+    // see if the url contains a date macro
+    // this is a workaround to the fact that jsdelivr doesn't currently support setting a 24-hour HTTP cache header
+    // So this is an approach to let the browser cache a copy of the file each day
+    // We should remove the macro once the CDN support a day-level HTTP cache setting
+    const macroLocation = url.indexOf('$$TODAY$$');
+    if (macroLocation !== -1) {
+      // get the date to resolve the macro
+      const d = new Date();
+      let month = `${d.getMonth() + 1}`;
+      let day = `${d.getDate()}`;
+      if (month.length < 2) month = `0${month}`;
+      if (day.length < 2) day = `0${day}`;
+      const todaysDate = `${d.getFullYear()}${month}${day}`;
+
+      // replace $$TODAY$$ with todaysDate
+      url = `${url.substring(0, macroLocation)}${todaysDate}${url.substring(macroLocation + 9, url.length)}`;
+    }
+
     initCurrency(url);
   } else {
     // currency support is disabled, setting defaults
@@ -74,6 +105,15 @@ export function setConfig(config) {
 }
 config.getConfig('currency', config => setConfig(config.currency));
 
+function errorSettingsRates(msg) {
+  if (defaultRates) {
+    utils.logWarn(msg);
+    utils.logWarn('Currency failed loading rates, falling back to currency.defaultRates');
+  } else {
+    utils.logError(msg);
+  }
+}
+
 function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
@@ -83,16 +123,21 @@ function initCurrency(url) {
   hooks['addBidResponse'].addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
-    ajax(url, function (response) {
-      try {
-        currencyRates = JSON.parse(response);
-        utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
-        currencyRatesLoaded = true;
-        processBidResponseQueue();
-      } catch (e) {
-        utils.logError('failed to parse currencyRates response: ' + response);
+    ajax(url,
+      {
+        success: function (response) {
+          try {
+            currencyRates = JSON.parse(response);
+            utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            currencyRatesLoaded = true;
+            processBidResponseQueue();
+          } catch (e) {
+            errorSettingsRates('Failed to parse currencyRates response: ' + response);
+          }
+        },
+        error: errorSettingsRates
       }
-    });
+    );
   }
 }
 
@@ -130,6 +175,14 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
     bid.currency = 'USD';
   }
 
+  let fromCurrency = bid.currency;
+  let cpm = bid.cpm;
+
+  // used for analytics
+  bid.getCpmInNewCurrency = function(toCurrency) {
+    return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+  };
+
   // execute immediately if the bid is already in the desired currency
   if (bid.currency === adServerCurrency) {
     return fn.apply(this, arguments);
@@ -149,11 +202,11 @@ function processBidResponseQueue() {
 
 function wrapFunction(fn, context, params) {
   return function() {
-    var bid = params[1];
+    let bid = params[1];
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
-      var fromCurrency = bid.currency;
+      let fromCurrency = bid.currency;
       try {
-        var conversion = getCurrencyConversion(fromCurrency);
+        let conversion = getCurrencyConversion(fromCurrency);
         bid.originalCpm = bid.cpm;
         bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
@@ -172,24 +225,22 @@ function wrapFunction(fn, context, params) {
   };
 }
 
-function getCurrencyConversion(fromCurrency) {
+function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
-
-  if (fromCurrency in conversionCache) {
-    conversionRate = conversionCache[fromCurrency];
-    utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
+  let cacheKey = `${fromCurrency}->${toCurrency}`;
+  if (cacheKey in conversionCache) {
+    conversionRate = conversionCache[cacheKey];
+    utils.logMessage('Using conversionCache value ' + conversionRate + ' for ' + cacheKey);
   } else if (currencySupportEnabled === false) {
     if (fromCurrency === 'USD') {
       conversionRate = 1;
     } else {
       throw new Error('Prebid currency support has not been enabled and fromCurrency is not USD');
     }
-  } else if (fromCurrency === adServerCurrency) {
+  } else if (fromCurrency === toCurrency) {
     conversionRate = 1;
   } else {
-    var toCurrency = adServerCurrency;
-
     if (fromCurrency in currencyRates.conversions) {
       // using direct conversion rate from fromCurrency to toCurrency
       rates = currencyRates.conversions[fromCurrency];
@@ -228,9 +279,9 @@ function getCurrencyConversion(fromCurrency) {
       utils.logInfo('getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBaseCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     }
   }
-  if (!(fromCurrency in conversionCache)) {
-    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
-    conversionCache[fromCurrency] = conversionRate;
+  if (!(cacheKey in conversionCache)) {
+    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for ' + cacheKey);
+    conversionCache[cacheKey] = conversionRate;
   }
   return conversionRate;
 }
