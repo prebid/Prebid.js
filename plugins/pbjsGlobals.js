@@ -3,6 +3,7 @@ let t = require('babel-core').types;
 let prebid = require('../package.json');
 
 let replace = {
+  '$prebid.version$': prebid.version,
   '$$PREBID_GLOBAL$$': prebid.globalVarName,
   '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`
 };
