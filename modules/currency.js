@@ -83,14 +83,14 @@ export function setConfig(config) {
     if (macroLocation !== -1) {
       // get the date to resolve the macro
       const d = new Date();
-      let month = '' + (d.getMonth() + 1);
-      let day = '' + d.getDate();
-      if (month.length < 2) month = '0' + month;
-      if (day.length < 2) day = '0' + day;
-      const todaysDate = [d.getFullYear(), month, day].join('');
+      let month = `${(d.getMonth() + 1)}`;
+      let day = `${d.getDate()}`;
+      if (month.length < 2) month = `0${month}`;
+      if (day.length < 2) day = `0${day}`;
+      const todaysDate = `${d.getFullYear()}${month}${day}`;
 
       // replace $$TODAY$$ with todaysDate
-      url = url.substring(0, macroLocation) + todaysDate + url.substring(macroLocation + 9, url.length);
+      url = `${url.substring(0, macroLocation)}${todaysDate}${url.substring(macroLocation + 9, url.length)}`;
     }
 
     initCurrency(url);
