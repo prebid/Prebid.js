@@ -132,13 +132,13 @@ function browserSupportsLocalStorage (localStorage) {
 
 function getCookie (document, key) {
   let m = document.cookie.match('(^|;)\\s*' + key + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? m[2] : null;
+  return m ? decodeURIComponent(m[2]) : null;
 }
 
 function setCookie (document, key, value, expires) {
   const expTime = new Date();
   expTime.setTime(expTime.getTime() + (expires || 60) * 1000 * 60);
-  document.cookie = key + '=' + value + ';path=/;expires=' + expTime.toGMTString();
+  document.cookie = key + '=' + encodeURIComponent(value) + ';path=/;expires=' + expTime.toGMTString();
 }
 
 /**
@@ -218,7 +218,7 @@ export function requestBidHook(config, next) {
           const responseStr = (typeof response.data === 'object') ? JSON.stringify(response.data) : response.data;
           if (storageType === STORAGE_TYPE_COOKIE) {
             // cookie
-            setCookie(document, storageKey, encodeURIComponent(responseStr), response.expires);
+            setCookie(document, storageKey, responseStr, response.expires);
             utils.logInfo(`${logPrefix} - saving to ${storageType}: ${storageKey}=${responseStr}`);
           } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
             // local storage
@@ -336,10 +336,11 @@ init({
   submodules: [{
     name: 'pubCommonId',
     decode: function(value) {
-      return { 'pubcid': decodeURIComponent(value) }
+      return { 'pubcid': value }
     },
     getId: function(data, consentData, syncDelay, callback) {
       if (!hasGDPRConsent(consentData)) {
+        utils.logWarn(`${MODULE_NAME}: pubCommonId - no GDPR consent for purpose 1, exit module`);
         callback();
         return;
       }
@@ -352,21 +353,18 @@ init({
   }, {
     name: 'unifiedId',
     decode: function (value) {
-      return { 'tdid': decodeURIComponent(value) };
+      return { 'tdid': value };
     },
     getId: function (data, consentData, syncDelay, callback) {
-      const logPrefix = `${MODULE_NAME}: ${data.name}.getId`;
-
       function callEndpoint () {
         if (!hasGDPRConsent(consentData)) {
-          utils.logWarn(`${logPrefix} - failed GDPR consent validation`);
+          utils.logWarn(`${MODULE_NAME}: unifiedId - no GDPR consent for purpose 1, exit module`);
           callback();
           return;
         }
         const partner = data.params.partner || 'prebid';
         const url = data.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
-
-        utils.logInfo(`${logPrefix} - call sync endpoint: ${url}`);
+        utils.logInfo(`${MODULE_NAME}: unifiedId - call sync endpoint: ${url}`);
 
         ajax(url, response => {
           if (response) {
@@ -378,10 +376,11 @@ init({
               };
               callback(responseObj);
             } catch (e) {
-              utils.logError(`${logPrefix} internal function callEndpoint Error: ${e.type}: ${e.message}`);
+              utils.logError(`${MODULE_NAME}: unifiedId - getId() ajax error loading "${url}" Error: ${e.type}: ${e.message}`);
               callback();
             }
           } else {
+            utils.logError(`${MODULE_NAME}: unifiedId - getId() ajax call received empty response from "${url}"`);
             callback();
           }
         }, undefined, { method: 'GET' });
@@ -389,13 +388,13 @@ init({
 
       // if no sync delay call endpoint immediately, else start a timer after auction ends to call sync
       if (!syncDelay) {
-        utils.logInfo(`${logPrefix} - call endpoint without delay`);
+        utils.logInfo(`${MODULE_NAME}: unifiedId - call endpoint without delay`);
         callEndpoint();
       } else {
-        utils.logInfo(`${logPrefix} - delay is active: syncDelay=${syncDelay}; the delay timer starts after the auction ends, so a "auction-end" listener has been added`);
+        utils.logInfo(`${MODULE_NAME}: unifiedId - delay is active: syncDelay=${syncDelay}; the delay timer starts after the auction ends, so a "auction-end" listener has been added`);
         // wrap auction end event handler in function so that it can be removed
         const auctionEndHandler = function auctionEndHandler() {
-          utils.logInfo(`${logPrefix} - "auction-end" event was fired, start a timer (for ${syncDelay} ms), and on complete make webservice request`);
+          utils.logInfo(`${MODULE_NAME}: unifiedId - "auction-end" event was fired, start a timer (for ${syncDelay} ms), and on complete make webservice request`);
           // remove event handler immediately since we only need to listen for the first auction ending
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
           setTimeout(callEndpoint, syncDelay);
