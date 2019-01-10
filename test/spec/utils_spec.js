@@ -916,11 +916,23 @@ describe('Utils', function () {
     });
 
     describe('insertElement', function () {
-      it('returns a node at bottom of head if no target is given', function () {
+      it('returns a node at the top of the target by default', function () {
         const toInsert = document.createElement('div');
-        const head = document.getElementsByTagName('head')[0];
+        const target = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(target.firstChild);
+      });
+      it('returns a node at bottom of target if 4th argument is true', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('html')[0];
+        const inserted = utils.insertElement(toInsert, document, 'html', true);
+        expect(inserted).to.equal(target.lastChild);
+      });
+      it('returns a node at top of the head if no target is given', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('head')[0];
         const inserted = utils.insertElement(toInsert);
-        expect(inserted).to.equal(head.lastChild);
+        expect(inserted).to.equal(target.firstChild);
       });
     });
   });
