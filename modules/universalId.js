@@ -381,7 +381,6 @@ export function init (config, allSubmodules) {
   submodules = [];
   extendBidData = [];
   submoduleConfigs = [];
-  initializedSubmodules = [];
 
   if (utils.cookiesAreEnabled()) {
     if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
