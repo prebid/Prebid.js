@@ -1,391 +1,107 @@
 import {
-  enabledStorageTypes,
-  validateConfig,
   initSubmodules,
-  requestBidHook,
+  extendBidData,
+  init,
+  submodules,
+  submoduleConfigs,
+  initializedSubmodules,
+  syncDelay,
+  requestBidHook, setStoredValue,
 } from 'modules/universalId';
-import { expect } from 'chai'
+import {expect} from 'chai'
 import sinon from 'sinon'
+import {config} from '../../../src/config';
+import * as utils from '../../../src/utils';
 
 describe('Universal ID', function () {
   let sandbox;
+  let clock;
 
-  beforeEach(function() {
+  before(function () {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  after(function () {
+    clock.restore();
+  });
+
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
-
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
-    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
   });
 
-  describe('enabledStorageTypes', function() {
-    it('returns array with \'localStorage\' and \'cookie\' items, if both local storage and cookies are enabled', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
-        },
-        localStorage: {
-          setItem: function(key, value) {},
-          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-        },
-        document: {
-          cookie: ''
-        }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5', 'cookie']);
+  describe('setConfig tests', function () {
+    before(function () {
+      window.document.cookie = 'unifiedid=33dc7c63-0670-454d-8aae-cccc3040c92c; expires=Thu, 01 Jan 2020 00:00:01 GMT; path=/';
+      window.document.cookie = 'pubcid=33dc7c63-0670-454d-8aae-cccc3040c92c; expires=Thu, 01 Jan 2020 00:00:01 GMT; path=/';
+    });
+    beforeEach(function () {
+      // sinon.stub(utils, 'logInfo');
+    });
+    afterEach(function () {
+      // utils.logInfo.restore();
+      config.resetConfig();
     });
 
-    it('returns array with \'localStorage\' item, if only localStorage is enabled', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: false
-        },
-        localStorage: {
-          setItem: function(key, value) {},
-          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return ''
-          }
+    it('default config should not enable any id submodules', function () {
+      const conf = {
+        getConfigCallback: undefined,
+        getConfig: function (value, callback) {
+          conf.getConfigCallback = callback;
         }
       };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
-    });
 
-    it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred setting test cookie', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
+      init(conf, [{
+        name: 'pubCommonId',
+        decode: function (value) {
+          return { 'pubcid': value }
         },
-        localStorage: {
-          setItem: function(key, value) {},
-          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-        },
-        document: {
-          set cookie(v) {
-            // simulate error setting cookie!!!!
-            throw new Error('error setting test cookie' + v);
-          },
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
+        getId: function (submoduleConfig, consentData, syncDelay) {
+          const pubId = utils.generateUUID();
+          setStoredValue(submoduleConfig.storage, pubId, submoduleConfig.storage.expires || 60);
+          extendBidData.push(this.decode(pubId))
+          // const getIdResponse = {
+          //   data: '19191919191',
+          //   expires: 3939489
+          // };
         }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
-    });
-
-    it('returns array with \'localStorage\' item, if localStorage is enabled but an error occurred getting test cookie', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
+      }, {
+        name: 'unifiedId',
+        decode: function (value) {
+          return { 'pubcid': value }
         },
-        localStorage: {
-          setItem: function(key, value) {},
-          getItem: function(key) { if (key === 'prebid.cookieTest') { return '1' } }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            // simulate error getting cookie!!!!
-            throw new Error('error getting test cookie');
-          }
+        getId: function (data, consentData, syncDelay) {
+          // const getIdResponse = {
+          //   data: '677676677667',
+          //   expires: 'Sat, 09 Feb 2019 06:23:13 GMT'
+          // };
         }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['html5']);
-    });
+      }]);
 
-    it('returns array with \'cookie\' item, if only cookie storage is enabled', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
-        },
-        localStorage: undefined,
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
-    });
-
-    it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred getting local storage test data', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
-        },
-        localStorage: {
-          setItem: function(key, value) {},
-          getItem: function(key) {
-            // simulate error calling localStorage.getItem(key)
-            throw new Error('error getting local storage key: ' + key);
-          }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
-    });
-
-    it('returns array with \'cookie\' item, if cookie storage is enabled but an error occurred setting local storage test data', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: true
-        },
-        localStorage: {
-          setItem: function(key, value) {
-            // simulate error calling localStorage.getItem(key)
-            throw new Error('error setting local storage key: ' + key + ' = ' + value);
-          },
-          getItem: function(key) {
-            if (key === 'prebid.cookieTest') {
-              return '1';
+      conf.getConfigCallback({
+        usersync: {
+          syncDelay: 5,
+          universalIds: [{
+            name: 'pubCommonId',
+            storage: {
+              name: 'pubcid',
+              type: 'cookie',
+              expires: 'Thu, 01 Jan 2020 00:00:01 GMT'
+            },
+            value: {
+              'foo': 'bar'
             }
-          }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
-        }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal(['cookie']);
-    });
-
-    it('returns empty array if neither local storage or cookies are not enabled', function() {
-      const dependencies = {
-        navigator: {
-          cookieEnabled: false
-        },
-        localStorage: undefined,
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return ''
-          }
-        }
-      };
-      expect(enabledStorageTypes(dependencies)).to.deep.equal([]);
-    });
-  });
-
-  describe('validateConfig', function() {
-    const submodules = [{
-      name: 'pubCommonId'
-    }, {
-      name: 'unifiedId'
-    }];
-
-    it('return false if config does not define usersync.universalIds', function() {
-      const dependencies = {
-        universalIds: undefined,
-        submodules: submodules
-      };
-      expect(validateConfig(dependencies)).to.equal(false);
-    });
-
-    it('return true if config defines configurations for both submodules', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId'
-        }, {
-          name: 'unifiedId'
-        }],
-        submodules: submodules
-      };
-      expect(validateConfig(dependencies)).to.equal(true);
-    });
-
-    it('return true if config defines a value configuration for one of the submodules', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId'
-        }, {
-          name: 'foo'
-        }],
-        submodules: submodules
-      };
-      expect(validateConfig(dependencies)).to.equal(true);
-    });
-
-    it('return false if config does not define a configuration with a name matching a submodule name', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'foo'
-        }, {
-          name: 'bar'
-        }],
-        submodules: submodules
-      };
-      expect(validateConfig(dependencies)).to.equal(false);
-    });
-
-    it('return false if config does not define a configuration for any submodule', function() {
-      const dependencies = {
-        universalIds: [],
-        submodules: submodules
-      };
-      expect(validateConfig(dependencies)).to.equal(false);
-    });
-  });
-
-  describe('initSubmodules', function() {
-    const submodules = [{
-      name: 'pubCommonId',
-      decode: function (value) { return { 'pubcid': value } },
-      getId: function (data, consentData, syncDelay, callback) {}
-    }, {
-      name: 'unifiedId',
-      decode: function (value) { return { 'unifiedId': value } },
-      getId: function (data, consentData, syncDelay, callback) {}
-    }];
-
-    it('returns empty array if no storage exists and no submodule config exists with a \'value\' property', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'foo'
-        }, {
-          name: 'bar'
-        }],
-        syncDelay: 0,
-        submodules: submodules,
-        navigator: {
-          cookieEnabled: false
-        },
-        localStorage: undefined,
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return ''
-          }
-        }
-      };
-      expect(initSubmodules(dependencies)).to.deep.equal([]);
-    });
-
-    it('returns array with both submodules enabled, if no storage exists but both submodule configs contain \'value\' property', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId',
-          value: {}
-        }, {
-          name: 'unifiedId',
-          value: {}
-        }],
-        syncDelay: 0,
-        submodules: submodules,
-        navigator: {
-          cookieEnabled: false
-        },
-        localStorage: undefined,
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return ''
-          }
-        }
-      };
-      expect(initSubmodules(dependencies).length).to.equal(2);
-    });
-
-    it('returns array with both submodules enabled, if storage is enabled and both submodule configs contain valid configs', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId',
-          value: {}
-        }, {
-          name: 'unifiedId',
-          value: {}
-        }],
-        syncDelay: 0,
-        submodules: submodules,
-        navigator: {
-          cookieEnabled: true
-        },
-        localStorage: {
-          setItem: function (key, value) {},
-          getItem: function (key) {
-            if (key === 'prebid.cookieTest') {
-              return '1'
+          }, {
+            name: 'unifiedId',
+            storage: {
+              name: 'unifiedid',
+              type: 'cookie',
+              expires: 'Thu, 01 Jan 2020 00:00:01 GMT'
             }
-          }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() {
-            return 'prebid.cookieTest'
-          }
+          }]
         }
-      };
-      expect(initSubmodules(dependencies).length).to.equal(2);
-    });
-
-    it.only('returns array with single item when only cookie storage is enabled, and only one submodule uses that \'type\'', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId',
-          storage: {
-            type: 'cookie',
-            name: 'pubcid'
-          }
-        }, {
-          name: 'unifiedId',
-          storage: {
-            type: 'html5',
-            name: 'unifiedId'
-          }
-        }],
-        syncDelay: 0,
-        submodules: submodules,
-        navigator: { cookieEnabled: true },
-        localStorage: undefined,
-        document: {
-          set cookie(v) {},
-          get cookie() { return 'prebid.cookieTest=1;pubcid=1' }
-        }
-      };
-      expect(initSubmodules(dependencies).extendBidData.length).to.equal(1);
-    });
-
-    it('returns empty array when both cookie and local storage are enabled, but the config storage \'type\' is invalid (not cookie or html5)', function() {
-      const dependencies = {
-        universalIds: [{
-          name: 'pubCommonId',
-          storage: {
-            type: 'nonexistantstoragetype',
-            name: 'pubcid'
-          }
-        }, {
-          name: 'unifiedId',
-          storage: {
-            type: 'nonexistantstoragetype',
-            name: 'unifiedId'
-          }
-        }],
-        syncDelay: 0,
-        submodules: submodules,
-        navigator: { cookieEnabled: true },
-        localStorage: {
-          setItem: function (key, value) {},
-          getItem: function (key) {
-            if (key === 'prebid.cookieTest') { return '1' }
-          }
-        },
-        document: {
-          set cookie(v) {},
-          get cookie() { return 'prebid.cookieTest' }
-        }
-      };
-      expect(initSubmodules(dependencies).length).to.equal(0);
-    });
+      });
+    })
   });
 });
