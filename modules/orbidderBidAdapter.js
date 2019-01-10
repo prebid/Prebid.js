@@ -52,7 +52,7 @@ export const spec = {
     const bidResponses = [];
     serverResponse = serverResponse.body;
     if (serverResponse && (serverResponse.length > 0)) {
-      for (const bid of serverResponse) {
+      serverResponse.forEach((bid) => {
         const bidResponse = {};
         for (const requiredKey of ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency']) {
           if (!bid.hasOwnProperty(requiredKey)) {
@@ -61,7 +61,7 @@ export const spec = {
           bidResponse[requiredKey] = bid[requiredKey];
         }
         bidResponses.push(bidResponse);
-      }
+      });
     }
     return bidResponses;
   },
