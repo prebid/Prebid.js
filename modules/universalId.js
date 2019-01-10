@@ -25,10 +25,15 @@ const CONSTANTS = require('../src/constants.json');
  */
 
 /**
+ * @typedef {Object} ValueConfig
+ */
+
+/**
  * @typedef {Object} IdSubmoduleConfig
  * @property {string} name - the universalId submodule name
  * @property {StorageConfig} storage - browser storage config
  * @property {ParamsConfig} params - params config for use by the submodule.getId function
+ * @property {ValueConfig} value - id data added directly to bids
  * @example
  * {
  *   name: "unifiedId",
@@ -42,11 +47,6 @@ const CONSTANTS = require('../src/constants.json');
  *     expires: 60
  *   }
  * }
- */
-
-/**
- * @callback getIdCallback
- * @param {Object} response - assumed to be a json object
  */
 
 /**
@@ -69,31 +69,28 @@ const CONSTANTS = require('../src/constants.json');
  * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument.
  */
 
-/**
- * @typedef {Object} GetIdData
- * @property {IdSubmodule} submodule - And object defining an UniversalId submodule.
- * @property {IdSubmoduleConfig} submoduleConfig - config data a universalId submodule.
- */
-
 const UNIVERSAL_ID = 'UniversalId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
 
-export let syncDelay = 0;
+export let syncDelay;
 export let submodules;
 export let submoduleConfigs;
 export let initializedSubmodules;
-export let extendBidData = [];
+export let extendBidData;
 
+/**
+ * @type {IdSubmodule}
+ */
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
   decode: function (value) {
     return { 'tdid': value };
   },
   getId: function (submoduleConfig, consentData, syncDelay) {
-    const partner = submoduleConfig.params.partner || 'prebid';
-    const url = submoduleConfig.params.url || `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+    const partner = (submoduleConfig.params && typeof submoduleConfig.params.partner === 'string') ? submoduleConfig.params.partner : 'prebid';
+    const url = (submoduleConfig.params && typeof submoduleConfig.params.url === 'string') ? submoduleConfig.params.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
 
     function auctionEndHandler() {
       events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
@@ -131,6 +128,9 @@ export const unifiedIdSubmodule = {
   }
 };
 
+/**
+ * @type {IdSubmodule}
+ */
 export const pubCommonIdSubmodule = {
   name: 'pubCommonId',
   decode: function(value) {
@@ -158,10 +158,19 @@ export function browserSupportsLocalStorage () {
   }
 }
 
-export function getCookie(sKey) {
-  return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(sKey).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
+/**
+ * @param {string} key
+ * @returns {string | null}
+ */
+export function getCookie(key) {
+  return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(key).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string|number} expires
+ */
 export function setCookie (key, value, expires) {
   let sExpires = '';
   if (expires) {
@@ -178,9 +187,9 @@ export function setCookie (key, value, expires) {
 }
 
 /**
- * @param storage
- * @param value
- * @param expires
+ * @param {StorageConfig} storage
+ * @param {string} value
+ * @param {number|string} expires
  */
 export function setStoredValue(storage, value, expires) {
   try {
@@ -196,8 +205,8 @@ export function setStoredValue(storage, value, expires) {
 }
 
 /**
- * @param storage
- * @returns {*}
+ * @param {StorageConfig} storage
+ * @returns {string}
  */
 export function getStoredValue(storage) {
   let storedValue;
@@ -212,6 +221,7 @@ export function getStoredValue(storage) {
 
 /**
  * test if consent module is present, applies, and is valid for local storage (purpose 1)
+ * @param {Object} consentData
  * @returns {boolean}
  */
 export function hasGDPRConsent (consentData) {
@@ -263,10 +273,10 @@ export function requestBidHook(config, next) {
 }
 
 /**
- * @param submodules
- * @param submoduleConfigs
- * @param consentData
- * @returns {*}
+ * @param {IdSubmodule[]} submodules
+ * @param {IdSubmoduleConfig[]} submoduleConfigs
+ * @param {Object} consentData
+ * @returns {string[]} initialized submodules
  */
 export function initSubmodules (submodules, submoduleConfigs, consentData) {
   return submodules.reduce((carry, submodule) => {
@@ -299,10 +309,80 @@ export function initSubmodules (submodules, submoduleConfigs, consentData) {
 }
 
 /**
- *  * @param config
- *  * @param allSubmodules
+ * @param {IdSubmoduleConfig[]} allSubmoduleConfigs
+ * @param {IdSubmodule[]} submodules
+ * @returns {IdSubmoduleConfig[]}
+ */
+export function getValidSubmoduleConfigs(allSubmoduleConfigs, submodules) {
+  if (!Array.isArray(allSubmoduleConfigs)) {
+    return [];
+  }
+
+  // get all enabled storage types to validate submoduleConfig.storage.type
+  const storageTypes = [];
+  if (browserSupportsLocalStorage()) {
+    storageTypes.push(LOCAL_STORAGE);
+  }
+  if (utils.cookiesAreEnabled()) {
+    storageTypes.push(COOKIE)
+  }
+
+  // get all submodule names to validate submoduleConfig.name
+  const submoduleNames = submodules.reduce((carry, submodule) => {
+    carry.push(submodule.name);
+    return carry;
+  }, []);
+
+  return allSubmoduleConfigs.reduce((carry, submoduleConfig) => {
+    if (!submoduleConfig || typeof submoduleConfig !== 'object' ||
+      typeof submoduleConfig.name !== 'string' || submoduleConfig.name.length === 0 || submoduleNames.indexOf(submoduleConfig.name) === -1) {
+      // invalid
+      return carry;
+    }
+
+    if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
+      typeof submoduleConfig.storage.type === 'string' && typeof submoduleConfig.storage.type.length &&
+      typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name.length &&
+      storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
+      // valid
+      carry.push(submoduleConfig);
+    } else if (submoduleConfig.value && typeof submoduleConfig.value === 'object' && Object.keys(submoduleConfig.value).length) {
+      // valid
+      carry.push(submoduleConfig);
+    }
+    return carry;
+  }, []);
+}
+
+/**
+ * @param {IdSubmodule[]} allSubmodules
+ * @param {IdSubmoduleConfig[]} validSubmoduleConfigs
+ * @returns {IdSubmodule[]}
+ */
+export function getValidSubmodules(allSubmodules, validSubmoduleConfigs) {
+  if (validSubmoduleConfigs.length === 0) {
+    return [];
+  }
+  return allSubmodules.reduce((carry, submodule) => {
+    if (find(validSubmoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name)) {
+      // valid
+      carry.push(submodule);
+    }
+    return carry;
+  }, []);
+}
+
+/**
+ * @param config
+ * @param {IdSubmodule[]} allSubmodules
  */
 export function init (config, allSubmodules) {
+  syncDelay = 0;
+  submodules = [];
+  extendBidData = [];
+  submoduleConfigs = [];
+  initializedSubmodules = [];
+
   if (utils.cookiesAreEnabled()) {
     if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
       utils.logInfo(`${UNIVERSAL_ID} - opt-out cookie found, exit module`);
@@ -311,55 +391,19 @@ export function init (config, allSubmodules) {
   }
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
+    console.log('config.getConfig');
     if (usersync) {
+      console.log('config.getConfig usersync');
       utils.logInfo(`${UNIVERSAL_ID} - usersync config updated`);
 
       syncDelay = usersync.syncDelay || 0;
-      submoduleConfigs = getValidSubmoduleConfigs(usersync.universalIds);
+      submoduleConfigs = getValidSubmoduleConfigs(usersync.universalIds, allSubmodules);
       submodules = getValidSubmodules(allSubmodules, submoduleConfigs);
       if (submodules.length) {
         $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
       }
     }
   });
-}
-function getValidSubmoduleConfigs(allSubmoduleConfigs) {
-  const storageTypes = [];
-  if (browserSupportsLocalStorage()) {
-    storageTypes.push(LOCAL_STORAGE);
-  }
-  if (utils.cookiesAreEnabled()) {
-    storageTypes.push(COOKIE)
-  }
-  if (storageTypes.length === 0) {
-    return [];
-  }
-  return allSubmoduleConfigs.reduce((carry, submoduleConfig) => {
-    if (!submoduleConfig || typeof submoduleConfig !== 'object' || typeof submoduleConfig.name !== 'string') {
-      // invalid
-      return carry;
-    }
-    if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
-      typeof submoduleConfig.storage.type === 'string' && typeof submoduleConfig.storage.name === 'string' &&
-      storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
-      // valid
-      carry.push(submoduleConfig);
-    } else if (submoduleConfig.value && typeof submoduleConfig.value === 'object') {
-      // valid
-      carry.push(submoduleConfig);
-    }
-    return carry;
-  }, []);
-}
-
-function getValidSubmodules(allSubmodules, validSubmoduleConfigs) {
-  return allSubmodules.reduce((carry, submodule) => {
-    if (find(validSubmoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name)) {
-      // valid
-      carry.push(submodule);
-    }
-    return carry;
-  }, []);
 }
 
 init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
