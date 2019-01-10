@@ -109,12 +109,13 @@ function _getGdprConsent(bidderRequest) {
   return consent;
 }
 
-function _setPredictions(predictions) {
+// Extra data returned by Adagio SSP Engine
+function _setData(data) {
   if (window.top.ADAGIO && window.top.ADAGIO.queue) {
     window.top.ADAGIO.queue.push({
-      action: 'set-predictions',
+      action: 'ssp-data',
       ts: Date.now(),
-      predictions: predictions,
+      data: data,
     });
   }
 }
@@ -175,8 +176,8 @@ export const spec = {
     try {
       const response = serverResponse.body;
       if (response) {
-        if (response.predictions) {
-          _setPredictions(response.predictions)
+        if (response.data) {
+          _setData(response.data)
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
