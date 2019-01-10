@@ -219,6 +219,21 @@ describe('Universal ID', function () {
         expect(submodules.length).to.equal(3);
         expect(submoduleConfigs.length).to.equal(3);
       });
+
+      it('config syncDelay updates module correctly', function () {
+        init(config, mockSubmodules);
+        config.setConfig({
+          usersync: {
+            syncDelay: 99,
+            universalIds: [{
+              name: 'unifiedId',
+              storage: { name: 'unifiedid', type: 'cookie' }
+            }]
+          }
+        });
+        expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
+        expect(syncDelay).to.equal(99);
+      });
     });
   });
 });
