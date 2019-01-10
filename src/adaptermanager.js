@@ -10,6 +10,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
+import { createHook } from 'src/hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -161,7 +162,7 @@ exports.gdprDataHandler = {
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
-  adUnits = exports.checkBidRequestSizes(adUnits);
+  adUnits = exports.checkAdUnitSetup(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -253,7 +254,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
   return bidRequests;
 };
 
-exports.checkBidRequestSizes = (adUnits) => {
+exports.checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
   function isArrayOfNums(val) {
     return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
   }
@@ -311,7 +312,7 @@ exports.checkBidRequestSizes = (adUnits) => {
     }
   });
   return adUnits;
-}
+}, 'checkAdUnitSetup');
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
   if (!bidRequests.length) {

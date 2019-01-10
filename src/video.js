@@ -2,6 +2,7 @@ import { videoAdapters } from './adaptermanager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
+import { createHook } from 'src/hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
@@ -29,7 +30,7 @@ export const hasNonVideoBidder = adUnit =>
  * @param {BidRequest[]} bidRequests All bid requests for an auction
  * @return {Boolean} If object is valid
  */
-export function isValidVideoBid(bid, bidRequests) {
+export const isValidVideoBid = createHook('asyncSeries', function(bid, bidRequests) {
   const bidRequest = getBidRequest(bid.adId, bidRequests);
 
   const videoMediaType =
@@ -57,4 +58,4 @@ export function isValidVideoBid(bid, bidRequests) {
   }
 
   return true;
-}
+}, 'isValidVideoBid');

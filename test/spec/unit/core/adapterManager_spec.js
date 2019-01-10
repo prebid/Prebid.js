@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import AdapterManager from 'src/adaptermanager';
-import { checkBidRequestSizes } from 'src/adaptermanager';
+import { checkAdUnitSetup } from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -1095,7 +1095,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        let result = checkBidRequestSizes(fullAdUnit);
+        let result = checkAdUnitSetup(fullAdUnit);
         expect(result[0].sizes).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
@@ -1121,7 +1121,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(noOptnlFieldAdUnit);
+        result = checkAdUnitSetup(noOptnlFieldAdUnit);
         expect(result[0].sizes).to.deep.equal([[300, 250]]);
         expect(result[0].mediaTypes.video).to.exist;
 
@@ -1140,7 +1140,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(mixedAdUnit);
+        result = checkAdUnitSetup(mixedAdUnit);
         expect(result[0].sizes).to.deep.equal([[400, 350]]);
         expect(result[0].mediaTypes.video).to.exist;
 
@@ -1152,7 +1152,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(altVideoPlayerSize);
+        result = checkAdUnitSetup(altVideoPlayerSize);
         expect(result[0].sizes).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
         expect(result[0].mediaTypes.video).to.exist;
@@ -1168,7 +1168,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        let result = checkBidRequestSizes(fullAdUnit);
+        let result = checkAdUnitSetup(fullAdUnit);
         expect(result[0].sizes).to.deep.equal([[300, 250]]);
         expect(result[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
       });
@@ -1192,7 +1192,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        let result = checkBidRequestSizes(badBanner);
+        let result = checkAdUnitSetup(badBanner);
         expect(result[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
         expect(result[0].mediaTypes.banner).to.be.undefined;
         sinon.assert.called(utils.logError);
@@ -1205,7 +1205,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(badVideo1);
+        result = checkAdUnitSetup(badVideo1);
         expect(result[0].sizes).to.deep.equal([[600, 600]]);
         expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
         expect(result[0].mediaTypes.video).to.exist;
@@ -1219,7 +1219,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(badVideo2);
+        result = checkAdUnitSetup(badVideo2);
         expect(result[0].sizes).to.deep.equal([[600, 600]]);
         expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
         expect(result[0].mediaTypes.video).to.exist;
@@ -1234,7 +1234,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(badNativeImgSize);
+        result = checkAdUnitSetup(badNativeImgSize);
         expect(result[0].mediaTypes.native.image.sizes).to.be.undefined;
         expect(result[0].mediaTypes.native.image).to.exist;
         sinon.assert.called(utils.logError);
@@ -1248,7 +1248,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(badNativeImgAspRat);
+        result = checkAdUnitSetup(badNativeImgAspRat);
         expect(result[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
         expect(result[0].mediaTypes.native.image).to.exist;
         sinon.assert.called(utils.logError);
@@ -1262,7 +1262,7 @@ describe('adapterManager tests', function () {
             }
           }
         }];
-        result = checkBidRequestSizes(badNativeIcon);
+        result = checkAdUnitSetup(badNativeIcon);
         expect(result[0].mediaTypes.native.icon.sizes).to.be.undefined;
         expect(result[0].mediaTypes.native.icon).to.exist;
         sinon.assert.called(utils.logError);
