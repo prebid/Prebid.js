@@ -28,6 +28,7 @@ describe('Universal ID', function () {
 
   before(function () {
     clock = sinon.useFakeTimers(Date.now());
+    window.document.cookie = '_pbjs_id_optout=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   });
   after(function () {
     clock.restore();
@@ -41,9 +42,6 @@ describe('Universal ID', function () {
   });
 
   describe('setConfig tests', function () {
-    before(function () {
-      // window.document.cookie = 'unifiedid=33dc7c63-0670-454d-8aae-cccc3040c92c; expires=Thu, 01 Jan 2020 00:00:01 GMT; path=/';
-    });
     beforeEach(function () {
       sinon.stub(utils, 'logInfo');
     });
@@ -56,6 +54,7 @@ describe('Universal ID', function () {
       before(function () {
         window.document.cookie = '_pbjs_id_optout=;';
       });
+
       afterEach(function () {
         window.document.cookie = '_pbjs_id_optout=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       });
