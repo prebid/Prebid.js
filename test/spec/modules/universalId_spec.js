@@ -163,47 +163,62 @@ describe('Universal ID', function () {
         expect(submodules.length).to.equal(0);
         expect(submoduleConfigs.length).to.equal(0);
       });
-    });
 
-    it.skip('initialize all submodules', function () {
-      init(config, [{
-        name: 'pubCommonId',
-        decode: function (value) { return { 'pubcid': value } },
-        getId: function (submoduleConfig, consentData, syncDelay) {
-          const pubId = utils.generateUUID();
-          setStoredValue(submoduleConfig.storage, pubId, submoduleConfig.storage.expires || 60);
-          extendBidData.push(this.decode(pubId))
-        }
-      }, {
-        name: 'unifiedId',
-        decode: function (value) { return { 'pubcid': value } },
-        getId: function (data, consentData, syncDelay) {
-          // data: '677676677667',
-          // expires: 'Sat, 09 Feb 2019 06:23:13 GMT'
-        }
-      }]);
-
-      config.setConfig({
-        usersync: {
-          syncDelay: 0,
-          universalIds: [{
-            name: 'pubCommonId',
-            storage: {
-              name: 'pubcid',
-              type: 'cookie',
-              expires: 'Thu, 01 Jan 2020 00:00:01 GMT'
-            },
-            value: {'foo': 'bar'}
-          }, {
-            name: 'unifiedId',
-            storage: {
-              name: 'unifiedid',
-              type: 'cookie',
-              expires: 'Thu, 01 Jan 2020 00:00:01 GMT'
-            }
-          }]
-        }
+      it('config with 1 configurations should create 1 submodules', function () {
+        init(config, mockSubmodules);
+        config.setConfig({
+          usersync: {
+            syncDelay: 0,
+            universalIds: [{
+              name: 'unifiedId',
+              storage: { name: 'unifiedid', type: 'cookie' }
+            }]
+          }
+        });
+        expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
+        expect(submodules.length).to.equal(1);
+        expect(submoduleConfigs.length).to.equal(1);
       });
-    })
+
+      it('config with 2 configurations should result in 2 submodules add', function () {
+        init(config, mockSubmodules);
+        config.setConfig({
+          usersync: {
+            syncDelay: 0,
+            universalIds: [{
+              name: 'pubCommonId', value: {'pubcid': '11111'}
+            }, {
+              name: 'unifiedId',
+              storage: { name: 'unifiedid', type: 'cookie' }
+            }]
+          }
+        });
+        expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
+        expect(submodules.length).to.equal(2);
+        expect(submoduleConfigs.length).to.equal(2);
+      });
+
+      it('config with 3 configurations should create 3 submodules', function () {
+        init(config, [{name: 'fakeid', getId: function () {}, decode: function () {}}].concat(mockSubmodules));
+        config.setConfig({
+          usersync: {
+            syncDelay: 0,
+            universalIds: [{
+              name: 'unifiedId',
+              storage: { name: 'unifiedid', type: 'cookie' }
+            }, {
+              name: 'pubCommonId',
+              storage: { name: 'pubcid', type: 'cookie' }
+            }, {
+              name: 'fakeid',
+              storage: { name: 'fid1', type: 'cookie' }
+            }]
+          }
+        });
+        expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
+        expect(submodules.length).to.equal(3);
+        expect(submoduleConfigs.length).to.equal(3);
+      });
+    });
   });
 });
