@@ -768,13 +768,13 @@ describe('auctionmanager.js', function () {
       auctionModule.newAuction.restore();
     });
 
-    it('should not alter bid adID', function () {
+    it('should not alter bid requestID', function () {
       auction.callBids();
 
       const addedBid2 = auction.getBidsReceived().pop();
-      assert.equal(addedBid2.adId, bids1[0].requestId);
+      assert.equal(addedBid2.requestId, bids1[0].requestId);
       const addedBid1 = auction.getBidsReceived().pop();
-      assert.equal(addedBid1.adId, bids[0].requestId);
+      assert.equal(addedBid1.requestId, bids[0].requestId);
     });
 
     it('should not add banner bids that have no width or height', function () {
