@@ -42,7 +42,7 @@ export const spec = {
         _cb: cb,
         _slotBidId: slotBidId,
         _cpm: cpm,
-        _cbn: '$$PREBID_GLOBAL$$'
+        _cbn: ''
       };
 
       let queryParamValue = encodeURIComponent(JSON.stringify(pnxReq));
