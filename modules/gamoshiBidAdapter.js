@@ -1,65 +1,70 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { Renderer } from '../src/Renderer';
+import {registerBidder} from 'src/adapters/bidderFactory';
+import {config} from 'src/config';
+import {Renderer} from '../src/Renderer';
 
-function getTopFrame() {
-  try {
-    return window.top === window ? 1 : 0;
-  } catch (e) {
-    return 0;
-  }
-}
+export const helper = {
 
-function startsWith(str, search) {
-  return str.substr(0, search.length) === search;
-}
-
-function getTopWindowDomain() {
-  const url = utils.getTopWindowUrl();
-  const domainStart = url.indexOf('://') + '://'.length;
-  return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
-}
-
-function getTopWindowReferer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    utils.logMessage('Failed obtaining top window\'s referrer: ', e);
+  getTopFrame: function () {
     try {
-      return window.document.referrer;
+      return window.top === window ? 1 : 0;
     } catch (e) {
-      utils.logMessage('Failed obtaining current window\'s referrer: ', e);
-      return '';
     }
+    return 0;
+  },
+
+  startsWith: function (str, search) {
+    return str.substr(0, search.length) === search;
+  },
+
+  getTopWindowDomain: function (url) {
+    const domainStart = url.indexOf('://') + '://'.length;
+    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
+  },
+
+  getTopWindowReferer: function () {
+    try {
+      return window.top.document.referrer;
+    } catch (e) {
+      utils.logMessage('Failed obtaining top window\'s referrer: ', e);
+      try {
+        return window.document.referrer;
+      } catch (e) {
+        utils.logMessage('Failed obtaining current window\'s referrer: ', e);
+      }
+    }
+    return '';
   }
 }
 
 export const spec = {
-  code: 'gambid',
-  aliases: [],
-  supportedMediaTypes: [ 'banner', 'video' ],
+  code: 'gamoshi',
+  aliases: ['gambid', 'cleanmedia'],
+  supportedMediaTypes: ['banner', 'video'],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.supplyPartnerId && typeof bid.params.supplyPartnerId === 'string' &&
-           (typeof bid.params[ 'rtbEndpoint' ] === 'undefined' || typeof bid.params[ 'rtbEndpoint' ] === 'string') &&
-           (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'number') &&
-           (typeof bid.params[ 'adpos' ] === 'undefined' || typeof bid.params[ 'adpos' ] === 'number') &&
-           (typeof bid.params[ 'protocols' ] === 'undefined' || Array.isArray(bid.params[ 'protocols' ])) &&
-           (typeof bid.params.instl === 'undefined' || bid.params.instl === 0 || bid.params.instl === 1);
+      (typeof bid.params['rtbEndpoint'] === 'undefined' || typeof bid.params['rtbEndpoint'] === 'string') &&
+      (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'number') &&
+      (typeof bid.params['adpos'] === 'undefined' || typeof bid.params['adpos'] === 'number') &&
+      (typeof bid.params['protocols'] === 'undefined' || Array.isArray(bid.params['protocols'])) &&
+      (typeof bid.params.instl === 'undefined' || bid.params.instl === 0 || bid.params.instl === 1);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const { adUnitCode, auctionId, mediaTypes, params, sizes, transactionId } = bidRequest;
-      const baseEndpoint = params[ 'rtbEndpoint' ] || 'https://rtb.gambid.io';
+      const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
+      const baseEndpoint = params['rtbEndpoint'] || 'https://rtb.gamoshi.io';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
+      let referer = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+      let url = config.getConfig('pageUrl') || referer || utils.getTopWindowUrl();
+
       const rtbBidRequest = {
         'id': auctionId,
         'site': {
-          'domain': getTopWindowDomain(),
-          'page': config.getConfig('pageUrl') || utils.getTopWindowUrl(),
-          'ref': getTopWindowReferer()
+          'domain': helper.getTopWindowDomain(url),
+          'page': url,
+          'ref': helper.getTopWindowReferer()
         },
         'device': {
           'ua': navigator.userAgent
@@ -80,33 +85,33 @@ export const spec = {
         'tagid': adUnitCode,
         'bidfloor': params.bidfloor || 0,
         'bidfloorcur': 'USD',
-        'secure': startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
+        'secure': helper.startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
       };
 
       if (!mediaTypes || mediaTypes.banner) {
         imp.banner = {
-          w: sizes.length ? sizes[ 0 ][ 0 ] : 300,
-          h: sizes.length ? sizes[ 0 ][ 1 ] : 250,
+          w: sizes.length ? sizes[0][0] : 300,
+          h: sizes.length ? sizes[0][1] : 250,
           pos: params.pos || 0,
-          topframe: getTopFrame()
+          topframe: helper.getTopFrame()
         };
       } else if (mediaTypes.video) {
         imp.video = {
-          w: sizes.length ? sizes[ 0 ][ 0 ] : 300,
-          h: sizes.length ? sizes[ 0 ][ 1 ] : 250,
+          w: sizes.length ? sizes[0][0] : 300,
+          h: sizes.length ? sizes[0][1] : 250,
           protocols: params.protocols || [1, 2, 3, 4, 5, 6],
           pos: params.pos || 0,
-          topframe: getTopFrame()
+          topframe: helper.getTopFrame()
         };
       } else {
         return;
       }
       rtbBidRequest.imp.push(imp);
-      return { method: 'POST', url: rtbEndpoint, data: rtbBidRequest, bidRequest };
+      return {method: 'POST', url: rtbEndpoint, data: rtbBidRequest, bidRequest};
     });
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
     if (!response) {
       utils.logError('empty response');
@@ -127,7 +132,7 @@ export const spec = {
         currency: bid.cur || response.cur
       };
       if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
-        outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
+        outBids.push(Object.assign({}, outBid, {mediaType: 'banner', ad: bid.adm}));
       } else if (bidRequest.bidRequest.mediaTypes.video) {
         const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
         outBids.push(Object.assign({}, outBid, {
@@ -141,27 +146,27 @@ export const spec = {
     return outBids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
     const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
     const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
     serverResponses.forEach(resp => {
       if (resp.body) {
         const bidResponse = resp.body;
-        if (bidResponse.ext && Array.isArray(bidResponse.ext[ 'utrk' ])) {
-          bidResponse.ext[ 'utrk' ].forEach(pixel => {
+        if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
+          bidResponse.ext['utrk'].forEach(pixel => {
             const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-            return syncs.push({ type: pixel.type, url });
+            return syncs.push({type: pixel.type, url});
           });
         }
         if (Array.isArray(bidResponse.seatbid)) {
           bidResponse.seatbid.forEach(seatBid => {
             if (Array.isArray(seatBid.bid)) {
               seatBid.bid.forEach(bid => {
-                if (bid.ext && Array.isArray(bid.ext[ 'utrk' ])) {
-                  bid.ext[ 'utrk' ].forEach(pixel => {
+                if (bid.ext && Array.isArray(bid.ext['utrk'])) {
+                  bid.ext['utrk'].forEach(pixel => {
                     const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-                    return syncs.push({ type: pixel.type, url });
+                    return syncs.push({type: pixel.type, url});
                   });
                 }
               });
