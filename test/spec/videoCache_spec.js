@@ -122,21 +122,35 @@ describe('The video cache', function () {
       assertRequestMade({ vastXml: vastXml, ttl: 25 }, vastXml);
     });
 
-    function assertRequestMade(bid, expectedValue) {
-      store([bid], function() { });
+    it('should make the expected request when store() is called while supplying a custom key param', function () {
+      const customKey = 'keyword_abc_123';
+      const vastXml = '<VAST version="3.0"></VAST>';
+      assertRequestMade({ vastXml: vastXml, ttl: 25 }, vastXml, customKey);
+    });
+
+    function assertRequestMade(bid, expectedValue, customKey) {
+      store([bid], function() { }, {customKey});
 
       const request = requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
 
-      JSON.parse(request.requestBody).should.deep.equal({
+      let payload = (customKey) ? {
+        puts: [{
+          type: 'xml',
+          value: expectedValue,
+          ttlseconds: 25,
+          key: customKey
+        }],
+      } : {
         puts: [{
           type: 'xml',
           value: expectedValue,
           ttlseconds: 25
         }],
-      });
+      };
+      JSON.parse(request.requestBody).should.deep.equal(payload);
     }
 
     function fakeServerCall(bid, responseBody) {

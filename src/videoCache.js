@@ -110,16 +110,28 @@ function shimStorageCallback(done) {
 }
 
 /**
+ * @typedef {object} options
+ * @property {string} customKey A custom string that's pass into the PBC request with the goal to cache the bid
+ * under that key instead of the normally generated UUID
+ */
+
+/**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
- *   the data has been stored in the cache.
+ * the data has been stored in the cache.
+ * @param {object} [options] an optional config param to modify the PBC request
+
  */
-export function store(bids, done) {
+export function store(bids, done, options) {
   const requestData = {
     puts: bids.map(toStorageRequest)
   };
+
+  if (options && options.customKey && typeof options.customKey === 'string' && options.customKey !== '') {
+    requestData.puts.forEach(bid => bid.key = options.customKey);
+  }
 
   ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
