@@ -10,6 +10,9 @@ describe('orbidderBidAdapter', () => {
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
     transactionId: 'd58851660c0c4461e4aa06344fc9c0c6',
     adUnitCode: 'adunit-code',
+    refererInfo: {
+      referer: 'http://localhost:9876/'
+    },
     sizes: [[300, 250], [300, 600]],
     params: {
       'foo': 'bar'
@@ -44,11 +47,12 @@ describe('orbidderBidAdapter', () => {
     });
 
     it('sends correct bid parameters', () => {
-      expect(Object.keys(request.data).length).to.equal(Object.keys(bidRequest).length + 2);
+      expect(Object.keys(request.data).length).to.equal(Object.keys(bidRequest).length);
       expect(request.data.pageUrl).to.equal('http://localhost:9876/');
-      expect(request.data.referrer).to.equal('');
       Object.keys(bidRequest).forEach((key) => {
-        expect(bidRequest[key]).to.equal(request.data[key]);
+        if (key !== 'refererInfo') {
+          expect(bidRequest[key]).to.equal(request.data[key]);
+        }
       });
     });
 

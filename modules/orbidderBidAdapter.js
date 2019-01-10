@@ -1,4 +1,4 @@
-import * as utils from 'src/utils';
+import {detectReferer} from 'src/refererDetection';
 import {ajax} from 'src/ajax';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
@@ -17,14 +17,17 @@ export const spec = {
     return !!(bid.sizes && bid.bidId);
   },
 
-  buildRequests(validBidRequests) {
+  buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map((bidRequest) => {
+      let referer = '';
+      if (bidderRequest.refererInfo) {
+        referer = bidderRequest.refererInfo.referer || '';
+      }
       const ret = {
         url: `${this.orbidderHost}/bid`,
         method: 'POST',
         data: {
-          pageUrl: utils.getTopWindowUrl(),
-          referrer: utils.getTopWindowReferrer(),
+          pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
@@ -64,8 +67,9 @@ export const spec = {
   },
 
   onBidWon(winObj) {
-    winObj.pageUrl = utils.getTopWindowUrl();
-    winObj.referrer = utils.getTopWindowReferrer();
+    const getRefererInfo = detectReferer(window);
+    const refererInfo = getRefererInfo();
+    winObj.pageUrl = refererInfo.referer;
     ajax(`${this.orbidderHost}/win`, null, JSON.stringify(winObj));
   }
 };
