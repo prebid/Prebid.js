@@ -391,9 +391,7 @@ export function init (config, allSubmodules) {
   }
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
-    console.log('config.getConfig');
     if (usersync) {
-      console.log('config.getConfig usersync');
       utils.logInfo(`${UNIVERSAL_ID} - usersync config updated`);
 
       syncDelay = usersync.syncDelay || 0;
