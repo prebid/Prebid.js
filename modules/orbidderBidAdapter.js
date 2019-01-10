@@ -20,7 +20,7 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map((bidRequest) => {
       let referer = '';
-      if (bidderRequest.refererInfo) {
+      if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
       const ret = {
