@@ -104,7 +104,7 @@ function isBidRequestValid (bid) {
       return false;
   }
 
-  if (params.bidfloor && !Number.isFinite(params.bidfloor)) {
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
     utils.logWarn('[GumGum] bidfloor must be a Number');
     return false;
   }
