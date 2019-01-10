@@ -109,7 +109,7 @@ function _parseAdSlot(bid) {
       }
       bid.params.width = parseInt(splits[0]);
       bid.params.height = parseInt(splits[1]);
-      delete bid.sizes;
+      // delete bid.sizes;
     } else {
       if (!(sizesArrayExists)) {
         utils.logWarn('AdSlot Error: adSlot not in required format');
