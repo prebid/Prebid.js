@@ -322,8 +322,6 @@ export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid
   this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
 
-// create a new addBidResponse hook that will transform the iab content categories into the freewheel categories
-
 export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
