@@ -12,9 +12,6 @@ import {expect} from 'chai'
 import sinon from 'sinon'
 import {config} from '../../../src/config';
 import * as utils from '../../../src/utils';
-import { getAdUnits } from 'test/fixtures/fixtures';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
 
 describe('Universal ID', function () {
   let sandbox;
@@ -41,7 +38,6 @@ describe('Universal ID', function () {
     sandbox = sinon.sandbox.create();
   });
   afterEach(function () {
-    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
     sandbox.restore();
   });
 
@@ -141,7 +137,9 @@ describe('Universal ID', function () {
       it('handles config with usersync and universalIds that are empty objs', function () {
         init(config, mockSubmodules);
         config.setConfig({
-          usersync: { universalIds: [{}] }
+          usersync: {
+            universalIds: [{}]
+          }
         });
         expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
         expect(submodules.length).to.equal(0);
@@ -167,30 +165,19 @@ describe('Universal ID', function () {
       });
 
       it('config with 1 configurations should create 1 submodules', function () {
-        let adUnits = getAdUnits();
-        let innerAdUnits;
-
         init(config, mockSubmodules);
         config.setConfig({
           usersync: {
             syncDelay: 0,
             universalIds: [{
               name: 'unifiedId',
-              value: { 'unifiedid': '10000' }
+              storage: { name: 'unifiedid', type: 'cookie' }
             }]
           }
         });
         expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UniversalId - usersync config updated');
         expect(submodules.length).to.equal(1);
         expect(submoduleConfigs.length).to.equal(1);
-
-        requestBidHook({adUnits: adUnits}, (config) => { innerAdUnits = config.adUnits });
-        innerAdUnits.forEach((unit) => {
-          unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.property('universalID.unifiedid');
-            expect(bid.universalID.unifiedid).to.equal('10000');
-          });
-        });
       });
 
       it('config with 2 configurations should result in 2 submodules add', function () {
