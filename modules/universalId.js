@@ -324,7 +324,7 @@ export function getValidSubmoduleConfigs(allSubmoduleConfigs, submodules) {
     storageTypes.push(LOCAL_STORAGE);
   }
   if (utils.cookiesAreEnabled()) {
-    storageTypes.push(COOKIE)
+    storageTypes.push(COOKIE);
   }
 
   // get all submodule names to validate submoduleConfig.name
