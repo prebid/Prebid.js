@@ -10,7 +10,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
-import { createHook } from 'src/hook';
+import { createHook } from '../src/hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');

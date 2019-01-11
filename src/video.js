@@ -2,7 +2,7 @@ import { videoAdapters } from './adaptermanager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from 'src/hook';
+import { createHook } from '../src/hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
