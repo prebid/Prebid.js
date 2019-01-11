@@ -1,12 +1,12 @@
 /**
  * This module adds Universal ID support to prebid.js
  */
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import events from 'src/events';
-import * as utils from 'src/utils';
+import { ajax } from '../src/ajax';
+import { config } from '../src/config';
+import events from '../src/events';
+import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
-import { gdprDataHandler } from 'src/adaptermanager';
+import { gdprDataHandler } from '../src/adaptermanager';
 
 const CONSTANTS = require('../src/constants.json');
 
@@ -163,7 +163,7 @@ export function browserSupportsLocalStorage () {
  * @returns {string | null}
  */
 export function getCookie(key) {
-  return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(key).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
+  return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(key).replace(/[\\\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
 }
 
 /**
@@ -341,7 +341,7 @@ export function getValidSubmoduleConfigs(allSubmoduleConfigs, submodules) {
     }
 
     if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
-      typeof submoduleConfig.storage.type === 'string' && typeof submoduleConfig.storage.type.length &&
+      typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type.length &&
       typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name.length &&
       storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
       // valid
