@@ -1,13 +1,15 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import { BANNER, NATIVE } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '4.4.0',
+  version: '5.0.0',
   code: BIDDER_CODE,
   aliases: ['id'],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -32,7 +34,7 @@ export const spec = {
 
     let idClient = new ImproveDigitalAdServerJSClient('hb');
     let requestParameters = {
-      singleRequestMode: false,
+      singleRequestMode: (config.getConfig('improvedigital.singleRequest') === true),
       returnObjType: idClient.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT,
       libVersion: this.version
     };
@@ -59,21 +61,35 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bids = [];
     utils._each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.price || bidObject.price === null ||
         bidObject.hasOwnProperty('errorCode') ||
-        typeof bidObject.adm !== 'string') {
+        (!bidObject.adm && !bidObject.native)) {
         return;
       }
 
-      let bid = {};
-      let nurl = '';
-      if (bidObject.nurl && bidObject.nurl.length > 0) {
-        nurl = `<img src="${bidObject.nurl}" width="0" height="0" style="display:none">`;
+      const bid = {};
+
+      if (bidObject.native) {
+        // Native
+        bid.native = getNormalizedNativeAd(bidObject.native);
+        if (bidObject.nurl) {
+          bid.native.impressionTrackers.unshift(bidObject.nurl);
+        }
+        bid.mediaType = NATIVE;
+      } else {
+        // Banner
+        let nurl = '';
+        if (bidObject.nurl && bidObject.nurl.length > 0) {
+          nurl = `<img src="${bidObject.nurl}" width="0" height="0" style="display:none">`;
+        }
+        bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
+        bid.mediaType = BANNER;
       }
-      bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
+
+      // Common properties
       bid.adId = bidObject.id;
       bid.cpm = parseFloat(bidObject.price);
       bid.creativeId = bidObject.crid;
@@ -101,6 +117,15 @@ export const spec = {
       bid.requestId = bidObject.id;
       bid.ttl = 300;
       bid.width = bidObject.w;
+
+      if (!bid.width || !bid.height) {
+        bid.width = 1;
+        bid.height = 1;
+        if (bidRequest.sizes) {
+          bid.width = bidRequest.sizes[0][0];
+          bid.height = bidRequest.sizes[0][1];
+        }
+      }
 
       bids.push(bid);
     });
@@ -184,6 +209,56 @@ function getNormalizedBidRequest(bid) {
   }
   return normalizedBidRequest;
 }
+
+function getNormalizedNativeAd(rawNative) {
+  const native = {};
+  if (!rawNative || !utils.isArray(rawNative.assets)) {
+    return null;
+  }
+  // Assets
+  rawNative.assets.forEach(asset => {
+    if (asset.title) {
+      native.title = asset.title.text;
+    } else if (asset.data) {
+      switch (asset.data.type) {
+        case 1:
+          native.sponsoredBy = asset.data.value;
+          break;
+        case 2:
+          native.body = asset.data.value;
+          break;
+        case 12:
+          native.cta = asset.data.value;
+          break;
+      }
+    } else if (asset.img) {
+      switch (asset.img.type) {
+        case 2:
+          native.icon = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+        case 3:
+          native.image = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+      }
+    }
+  });
+  // Trackers
+  native.impressionTrackers = rawNative.imptrackers || [];
+  native.javascriptTrackers = rawNative.jstracker;
+  if (rawNative.link) {
+    native.clickUrl = rawNative.link.url;
+    native.clickTrackers = rawNative.link.clicktrackers;
+  }
+  return native;
+}
 registerBidder(spec);
 
 function ImproveDigitalAdServerJSClient(endPoint) {
@@ -195,7 +270,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ad.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-5.1',
+    CLIENT_VERSION: 'JS-5.2.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -308,7 +383,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
         return {
           method: 'GET',
           url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
-          data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${JSON.stringify(bidRequestObject)}`
+          data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${encodeURIComponent(JSON.stringify(bidRequestObject))}`
         };
       default:
         const baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://` +
@@ -348,7 +423,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.referrer) {
       impressionBidRequestObject.referrer = requestParameters.referrer;
     }
-    if (requestParameters.gdpr) {
+    if (requestParameters.gdpr || requestParameters.gdpr === 0) {
       impressionBidRequestObject.gdpr = requestParameters.gdpr;
     }
     if (extraRequestParameters) {

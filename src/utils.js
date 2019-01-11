@@ -549,27 +549,43 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-exports.insertElement = function(elm, doc, target) {
+/*
+* Inserts an element(elm) as targets child, by default as first child
+* @param {HTMLElement} elm
+* @param {HTMLElement} [doc]
+* @param {HTMLElement} [target]
+* @param {Boolean} [asLastChildChild]
+* @return {HTMLElement}
+*/
+exports.insertElement = function(elm, doc, target, asLastChildChild) {
   doc = doc || document;
-  let elToAppend;
-  const head = doc.getElementsByTagName('head');
+  let parentEl;
   if (target) {
-    elToAppend = doc.getElementsByTagName(target);
+    parentEl = doc.getElementsByTagName(target);
   } else {
-    elToAppend = head;
+    parentEl = doc.getElementsByTagName('head');
   }
   try {
-    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      const refChild = head && head[0] === elToAppend ? null : elToAppend.firstChild;
-      return elToAppend.insertBefore(elm, refChild);
+    parentEl = parentEl.length ? parentEl : doc.getElementsByTagName('body');
+    if (parentEl.length) {
+      parentEl = parentEl[0];
+      let insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
+      return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
 };
 
-exports.triggerPixel = function (url) {
+/**
+ * Inserts an image pixel with the specified `url` for cookie sync
+ * @param {string} url URL string of the image pixel to load
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ */
+exports.triggerPixel = function (url, done) {
   const img = new Image();
+  if (done && exports.isFn(done)) {
+    img.addEventListener('load', done);
+    img.addEventListener('error', done);
+  }
   img.src = url;
 };
 
@@ -615,13 +631,18 @@ exports.insertHtmlIntoIframe = function(htmlCode) {
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  */
-exports.insertUserSyncIframe = function(url) {
+exports.insertUserSyncIframe = function(url, done) {
   let iframeHtml = exports.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
-  exports.insertElement(iframe);
+  if (done && exports.isFn(done)) {
+    iframe.addEventListener('load', done);
+    iframe.addEventListener('error', done);
+  }
+  exports.insertElement(iframe, document, 'html', true);
 };
 
 /**
@@ -844,6 +865,11 @@ export function cookiesAreEnabled() {
   }
   window.document.cookie = 'prebid.cookieTest';
   return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+}
+
+export function getCookie(name) {
+  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+  return m ? decodeURIComponent(m[2]) : null;
 }
 
 /**

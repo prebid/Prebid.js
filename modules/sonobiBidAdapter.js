@@ -1,11 +1,12 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
+const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -59,9 +60,10 @@ export const spec = {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
 
-    if (validBidRequests[0].params.hfa) {
-      payload.hfa = validBidRequests[0].params.hfa;
+    if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? deepAccess(validBidRequests[0], 'params.hfa') : `PRE-${deepAccess(validBidRequests[0], 'crumbs.pubcid')}`;
     }
+
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
@@ -72,6 +74,13 @@ export const spec = {
       if (bidderRequest.gdprConsent.consentString) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
       }
+    }
+
+    const digitrust = _getDigiTrustObject(SONOBI_DIGITRUST_KEY);
+
+    if (digitrust) {
+      payload.digid = digitrust.id;
+      payload.digkeyv = digitrust.keyv;
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -222,6 +231,20 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
+}
+
+// https://github.com/digi-trust/dt-cdn/wiki/Integration-Guide
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return digiTrustId;
 }
 
 registerBidder(spec);

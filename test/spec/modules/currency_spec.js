@@ -17,6 +17,8 @@ var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
+  let sandbox;
+  let clock;
 
   let fn = sinon.spy();
   let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
@@ -30,6 +32,16 @@ describe('currency', function () {
   });
 
   describe('setConfig', function () {
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers(1047010195974);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      clock.restore();
+    });
+
     it('results in currencySupportEnabled = false when currency not configured', function () {
       setConfig({});
       expect(currencySupportEnabled).to.equal(false);
@@ -41,6 +53,40 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       expect(currencyRates.dataAsOf).to.equal('2017-04-25');
       expect(currencySupportEnabled).to.equal(true);
+    });
+
+    it('date macro token $$TODAY$$ is replaced by current date (formatted as yyyymmdd)', function () {
+      // RESET to request currency file (specifically url value for this test)
+      setConfig({ 'adServerCurrency': undefined });
+
+      // date macro should replace $$TODAY$$ with date when DEFAULT_CURRENCY_RATE_URL is used
+      setConfig({ 'adServerCurrency': 'JPY' });
+      fakeCurrencyFileServer.respond();
+      expect(fakeCurrencyFileServer.requests[0].url).to.equal('https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=20030306');
+
+      // date macro should not modify 'conversionRateFile' if TOKEN is not found
+      setConfig({
+        'adServerCurrency': 'JPY',
+        'conversionRateFile': 'http://test.net/currency.json?date=foobar'
+      });
+      fakeCurrencyFileServer.respond();
+      expect(fakeCurrencyFileServer.requests[1].url).to.equal('http://test.net/currency.json?date=foobar');
+
+      // date macro should replace $$TODAY$$ with date for 'conversionRateFile' is configured
+      setConfig({
+        'adServerCurrency': 'JPY',
+        'conversionRateFile': 'http://test.net/currency.json?date=$$TODAY$$'
+      });
+      fakeCurrencyFileServer.respond();
+      expect(fakeCurrencyFileServer.requests[2].url).to.equal('http://test.net/currency.json?date=20030306');
+
+      // MULTIPLE TOKENS used in a url is not supported. Only the TOKEN at left-most position is REPLACED
+      setConfig({
+        'adServerCurrency': 'JPY',
+        'conversionRateFile': 'http://test.net/$$TODAY$$/currency.json?date=$$TODAY$$'
+      });
+      fakeCurrencyFileServer.respond();
+      expect(fakeCurrencyFileServer.requests[3].url).to.equal('http://test.net/20030306/currency.json?date=$$TODAY$$');
     });
   });
 
