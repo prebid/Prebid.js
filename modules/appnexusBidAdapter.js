@@ -27,7 +27,9 @@ const NATIVE_MAPPING = {
     minimumParams: { sizes: [{}] },
   },
   sponsoredBy: 'sponsored_by',
-  privacyLink: 'privacy_link'
+  privacyLink: 'privacy_link',
+  salePrice: 'saleprice',
+  displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
 
@@ -338,10 +340,17 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       rating: nativeAd.rating,
       sponsoredBy: nativeAd.sponsored,
       privacyLink: nativeAd.privacy_link,
+      address: nativeAd.address,
+      downloads: nativeAd.downloads,
+      likes: nativeAd.likes,
+      phone: nativeAd.phone,
+      price: nativeAd.price,
+      salePrice: nativeAd.saleprice,
       clickUrl: nativeAd.link.url,
+      displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: nativeAd.javascript_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
