@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { expect } from 'chai';
+import { stub, sandbox } from 'sinon';
 import {
   QUANTCAST_DOMAIN,
   QUANTCAST_TEST_DOMAIN,
@@ -12,12 +13,13 @@ import {
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
 import { parse } from 'src/url';
+import * as ajax from 'src/ajax';
 
-describe('Quantcast adapter', () => {
+describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
   let bidRequest;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
@@ -32,32 +34,66 @@ describe('Quantcast adapter', () => {
     };
   });
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  function setupVideoBidRequest() {
+    bidRequest.params = {
+      publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
+      // Video object as specified in OpenRTB 2.5
+      video: {
+        mimes: ['video/mp4'], // required
+        minduration: 3, // optional
+        maxduration: 5, // optional
+        protocols: [3], // optional
+        startdelay: 1, // optional
+        linearity: 1, // optinal
+        battr: [1, 2], // optional
+        maxbitrate: 10, // optional
+        playbackmethod: [1], // optional
+        delivery: [1], // optional
+        placement: 1, // optional
+        api: [2, 3] // optional
+      }
+    };
+    bidRequest['mediaTypes'] = {
+      video: {
+        context: 'instream',
+        playerSize: [600, 300]
+      }
+    }
+  };
+
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(quantcastAdapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('`isBidRequestValid`', () => {
-    it('should return `false` when bid is not passed', () => {
+  describe('`isBidRequestValid`', function () {
+    it('should return `false` when bid is not passed', function () {
       expect(qcSpec.isBidRequestValid()).to.equal(false);
     });
 
-    it('should return `false` when bid `mediaType` is `video`', () => {
-      const bidRequest = { mediaType: 'video' };
+    it('should return `false` when bid is for outstream video', function () {
+      const bidRequest = {
+        mediaType: 'video',
+        mediaTypes: {
+          video: {
+            context: 'outstream'
+          }
+        }
+      };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return `true` when bid contains required params', () => {
+    it('should return `true` when bid contains required params', function () {
       const bidRequest = { mediaType: 'banner' };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(true);
     });
   });
 
-  describe('`buildRequests`', () => {
-    it('selects protocol and port', () => {
+  describe('`buildRequests`', function () {
+    it('selects protocol and port', function () {
       switch (window.location.protocol) {
         case 'https:':
           expect(QUANTCAST_PROTOCOL).to.equal('https');
@@ -70,13 +106,13 @@ describe('Quantcast adapter', () => {
       }
     });
 
-    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', () => {
+    it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
       const url = parse(requests[0]['url']);
       expect(url.hostname).to.equal(QUANTCAST_TEST_DOMAIN);
     });
 
-    it('sends bid requests to default endpoint for non standard publisher IDs', () => {
+    it('sends bid requests to default endpoint for non standard publisher IDs', function () {
       const modifiedBidRequest = Object.assign({}, bidRequest, {
         params: Object.assign({}, bidRequest.params, {
           publisherId: 'foo-bar',
@@ -88,19 +124,22 @@ describe('Quantcast adapter', () => {
       );
     });
 
-    it('sends bid requests to Quantcast Header Bidding Endpoints via POST', () => {
+    it('sends bid requests to Quantcast Header Bidding Endpoints via POST', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
 
       expect(requests[0].method).to.equal('POST');
     });
 
-    it('sends bid requests contains all the required parameters', () => {
-      const referrer = utils.getTopWindowUrl();
-      const loc = utils.getTopWindowLocation();
-      const domain = loc.hostname;
+    it('sends banner bid requests contains all the required parameters', function () {
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/hello.html',
+          canonicalUrl: 'http://example.com/hello.html'
+        }
+      };
 
-      const requests = qcSpec.buildRequests([bidRequest]);
-      const expectedBidRequest = {
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      const expectedBannerBidRequest = {
         publisherId: QUANTCAST_TEST_PUBLISHER,
         requestId: '2f7b179d443f14',
         imp: [
@@ -114,19 +153,69 @@ describe('Quantcast adapter', () => {
           }
         ],
         site: {
-          page: loc.href,
-          referrer,
-          domain
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
         },
         bidId: '2f7b179d443f14',
-        gdprSignal: 0
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
       };
 
-      expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
+      expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
+    });
+
+    it('sends video bid requests containing all the required parameters', function () {
+      setupVideoBidRequest();
+
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/hello.html',
+          canonicalUrl: 'http://example.com/hello.html'
+        }
+      };
+
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      const expectedVideoBidRequest = {
+        publisherId: QUANTCAST_TEST_PUBLISHER,
+        requestId: '2f7b179d443f14',
+        imp: [
+          {
+            video: {
+              mimes: ['video/mp4'],
+              minduration: 3,
+              maxduration: 5,
+              protocols: [3],
+              startdelay: 1,
+              linearity: 1,
+              battr: [1, 2],
+              maxbitrate: 10,
+              playbackmethod: [1],
+              delivery: [1],
+              placement: 1,
+              api: [2, 3],
+              w: 600,
+              h: 300
+            },
+            placementCode: 'div-gpt-ad-1438287399331-0',
+            bidFloor: 1e-10
+          }
+        ],
+        site: {
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
+        },
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
+      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
   });
 
-  it('propagates GDPR consent string and signal', () => {
+  it('propagates GDPR consent string and signal', function () {
     const gdprConsent = { gdprApplies: true, consentString: 'consentString' }
     const requests = qcSpec.buildRequests([bidRequest], { gdprConsent });
     const parsed = JSON.parse(requests[0].data)
@@ -134,7 +223,7 @@ describe('Quantcast adapter', () => {
     expect(parsed.gdprConsent).to.equal(gdprConsent.consentString);
   });
 
-  describe('`interpretResponse`', () => {
+  describe('`interpretResponse`', function () {
     // The sample response is from https://wiki.corp.qc/display/adinf/QCX
     const body = {
       bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
@@ -159,25 +248,46 @@ describe('Quantcast adapter', () => {
       headers: {}
     };
 
-    it('should return an empty array if `serverResponse` is `undefined`', () => {
+    const videoBody = {
+      bidderCode: 'qcx',
+      requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+      bids: [
+        {
+          statusCode: 1,
+          placementCode: 'video1',
+          cpm: 4.5,
+          currency: 'USD',
+          videoUrl: 'https://vast.quantserve.com/vast?p=&r=&gdpr=&gdpr_consent=&rand=1337&d=H4sIAAAAAAAAAONi4mIQcrzFqGLi5OzibOzmpGtm4eyia-LoaqDraGRupOtobGJhYuni6GRiYLmLiYWrp5f_BBPDDybGScxcPs7-aRYmpmVVoVJgCSXBkozMYl0gKslI1S1Izk9JBQALkFy_YAAAAA&h=uRnsTjyXbOrXJtBQiaMn239i9GI',
+          width: 600,
+          height: 300
+        }
+      ]
+    };
+
+    const videoResponse = {
+      body: videoBody,
+      headers: {}
+    };
+
+    it('should return an empty array if `serverResponse` is `undefined`', function () {
       const interpretedResponse = qcSpec.interpretResponse();
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should return an empty array if the parsed response does NOT include `bids`', () => {
+    it('should return an empty array if the parsed response does NOT include `bids`', function () {
       const interpretedResponse = qcSpec.interpretResponse({});
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should return an empty array if the parsed response has an empty `bids`', () => {
+    it('should return an empty array if the parsed response has an empty `bids`', function () {
       const interpretedResponse = qcSpec.interpretResponse({ bids: [] });
 
       expect(interpretedResponse.length).to.equal(0);
     });
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const expectedResponse = {
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
         cpm: 4.5,
@@ -195,7 +305,26 @@ describe('Quantcast adapter', () => {
       expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
 
-    it('handles no bid response', () => {
+    it('should get correct bid response for instream video', function() {
+      const expectedResponse = {
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+        cpm: 4.5,
+        width: 600,
+        height: 300,
+        vastUrl: 'https://vast.quantserve.com/vast?p=&r=&gdpr=&gdpr_consent=&rand=1337&d=H4sIAAAAAAAAAONi4mIQcrzFqGLi5OzibOzmpGtm4eyia-LoaqDraGRupOtobGJhYuni6GRiYLmLiYWrp5f_BBPDDybGScxcPs7-aRYmpmVVoVJgCSXBkozMYl0gKslI1S1Izk9JBQALkFy_YAAAAA&h=uRnsTjyXbOrXJtBQiaMn239i9GI',
+        mediaType: 'video',
+        ttl: QUANTCAST_TTL,
+        creativeId: undefined,
+        ad: undefined,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency: 'USD'
+      };
+      const interpretedResponse = qcSpec.interpretResponse(videoResponse);
+
+      expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('handles no bid response', function () {
       const body = {
         bidderCode: 'qcx', // Renaming it to use CamelCase since that is what is used in the Prebid.js variable name
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458', // Added this field. This is not used now but could be useful in troubleshooting later on. Specially for sites using iFrames
@@ -209,6 +338,21 @@ describe('Quantcast adapter', () => {
       const interpretedResponse = qcSpec.interpretResponse(response);
 
       expect(interpretedResponse.length).to.equal(0);
+    });
+  });
+
+  describe('`onTimeout`', function() {
+    it('makes a request to the notify endpoint', function() {
+      const sinonSandbox = sandbox.create();
+      const ajaxStub = sinonSandbox.stub(ajax, 'ajax').callsFake(function() {});
+      const timeoutData = {
+        bidder: 'quantcast'
+      };
+      qcSpec.onTimeout(timeoutData);
+      const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
+      ajaxStub.withArgs(expectedUrl, null, null).calledOnce.should.be.true;
+      ajaxStub.restore();
+      sinonSandbox.restore();
     });
   });
 });

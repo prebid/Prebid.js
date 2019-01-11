@@ -997,7 +997,7 @@ describe('PubMatic adapter', function () {
       });
     });
 
-    it('Request params dctr check', () => {
+    it('Request params dctr check', function () {
       let multipleBidRequests = [
         {
           bidder: 'pubmatic',

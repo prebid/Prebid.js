@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gjirafaBidAdapter';
 
-describe('gjirafaAdapterTest', () => {
-  describe('bidRequestValidity', () => {
-    it('bidRequest with placementId, minCPM and minCPC params', () => {
+describe('gjirafaAdapterTest', function () {
+  describe('bidRequestValidity', function () {
+    it('bidRequest with placementId, minCPM and minCPC params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
         params: {
@@ -14,7 +14,7 @@ describe('gjirafaAdapterTest', () => {
       })).to.equal(true);
     });
 
-    it('bidRequest with only placementId param', () => {
+    it('bidRequest with only placementId param', function () {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
         params: {
@@ -23,7 +23,7 @@ describe('gjirafaAdapterTest', () => {
       })).to.equal(true);
     });
 
-    it('bidRequest with minCPM and minCPC params', () => {
+    it('bidRequest with minCPM and minCPC params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
         params: {
@@ -33,7 +33,7 @@ describe('gjirafaAdapterTest', () => {
       })).to.equal(true);
     });
 
-    it('bidRequest with no placementId, minCPM or minCPC params', () => {
+    it('bidRequest with no placementId, minCPM or minCPC params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
         params: {
@@ -42,7 +42,7 @@ describe('gjirafaAdapterTest', () => {
     });
   });
 
-  describe('bidRequest', () => {
+  describe('bidRequest', function () {
     const bidRequests = [{
       'bidder': 'gjirafa',
       'params': {
@@ -74,14 +74,14 @@ describe('gjirafaAdapterTest', () => {
 	  'consent_required': 'true'
     }];
 
-    it('bidRequest HTTP method', () => {
+    it('bidRequest HTTP method', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
-    it('bidRequest url', () => {
+    it('bidRequest url', function () {
       const endpointUrl = 'https://gjc.gjirafa.com/Home/GetBid';
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
@@ -89,20 +89,20 @@ describe('gjirafaAdapterTest', () => {
       });
     });
 
-    it('bidRequest data', () => {
+    it('bidRequest data', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
         expect(requestItem.data).to.exists;
       });
     });
 
-    it('bidRequest sizes', () => {
+    it('bidRequest sizes', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].data.sizes).to.equal('728x90;980x200;980x150;970x90;970x250');
       expect(requests[1].data.sizes).to.equal('300x250');
     });
 
-    it('should add GDPR data', () => {
+    it('should add GDPR data', function () {
       const requests = spec.buildRequests(bidRequests);
 	  expect(requests[0].data.consent_string).to.exists;
 	  expect(requests[0].data.consent_required).to.exists;
@@ -111,7 +111,7 @@ describe('gjirafaAdapterTest', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const bidRequest = {
       'method': 'GET',
       'url': 'https://gjc.gjirafa.com/Home/GetBid',
@@ -143,7 +143,7 @@ describe('gjirafaAdapterTest', () => {
       headers: {}
     };
 
-    it('all keys present', () => {
+    it('all keys present', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
       let keys = [
