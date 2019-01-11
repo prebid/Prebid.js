@@ -1,6 +1,7 @@
 **Table of Contents**
 - [Release Schedule](#release-schedule)
 - [Release Process](#release-process)
+- [Beta Releases](#beta-releases)
 - [FAQs](#faqs)
 
 ## Release Schedule
@@ -16,7 +17,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 ## Release Process
 
-1. Make Sure all browserstack tests are passing. On PR merge to master travis will run unit tests on browserstack. Checking the last travis build [here](https://travis-ci.org/prebid/Prebid.js/branches) for master branch will show you detailed results. 
+1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid) for master branch will show you detailed results. 
   
    In case of failure do following, 
      - Try to fix the failing tests.
@@ -90,6 +91,21 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
    git commit -m "Increment pre version"
    git push
    ```
+
+## Beta Releases
+
+Prebid.js features may be released as Beta or as Generally Available (GA).
+
+Characteristics of a `Beta` release:
+- May be a partial implementation (e.g. more work needed to flesh out the feature)
+- May not be fully tested with other features
+- Limited documentation, focused on technical aspects
+- Few users
+
+Characteristics of a `GA` release:
+- Complete set of functionality
+- Significant user base with no major issues for at least a month
+- Decent documentation that includes business need, use cases, and examples
 
 
 ## FAQs

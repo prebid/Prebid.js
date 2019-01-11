@@ -4,41 +4,13 @@ import { VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'lkqd';
 const BID_TTL_DEFAULT = 300;
-const ENDPOINT = 'https://ssp.lkqd.net/ad?pid=[PLACEMENT_ID]&sid=[SITE_ID]&output=[OUTPUT]&execution=[EXECUTION]&placement=[PLACEMENT]&playinit=[PLAY_INIT]&volume=[VOLUME]&timeout=[TIMEOUT]&width=[WIDTH]‌&height=[HEIGHT]&pbt=[PREBID_TOKEN]‌&dnt=[DO_NOT_TRACK]‌&pageurl=[PAGEURL]‌&contentid=[CONTENT_ID]‌&contenttitle=[CONTENT_TITLE]‌&contentlength=[CONTENT_LENGTH]‌&contenturl=[CONTENT_URL]&prebid=true';
+const ENDPOINT = 'https://v.lkqd.net/ad';
 
-const PID_KEY = '[PLACEMENT_ID]';
-const SID_KEY = '[SITE_ID]';
-const OUTPUT_KEY = '[OUTPUT]';
-const EXECUTION_KEY = '[EXECUTION]';
-const PLACEMENT_KEY = '[PLACEMENT]';
-const PLAYINIT_KEY = '[PLAY_INIT]';
-const VOLUME_KEY = '[VOLUME]';
-const TIMEOUT_KEY = '[TIMEOUT]';
-const WIDTH_KEY = '[WIDTH]';
-const HEIGHT_KEY = '[HEIGHT]';
-const DNT_KEY = '[DO_NOT_TRACK]';
-const PAGEURL_KEY = '[PAGEURL]';
-const CONTENTID_KEY = '[CONTENT_ID]';
-const CONTENTTITLE_KEY = '[CONTENT_TITLE]';
-const CONTENTLENGTH_KEY = '[CONTENT_LENGTH]';
-const CONTENTURL_KEY = '[CONTENT_URL]';
-
-const PID_DEFAULT = null;
-const SID_DEFAULT = null;
-const OUTPUT_DEFAULT = 'vast';
-const EXECUTION_DEFAULT = 'any';
-const PLACEMENT_DEFAULT = '';
-const PLAYINIT_DEFAULT = 'auto';
-const VOLUME_DEFAULT = '100';
-const TIMEOUT_DEFAULT = '';
-const WIDTH_DEFAULT = null;
-const HEIGHT_DEFAULT = null;
-const DNT_DEFAULT = null;
-const PAGEURL_DEFAULT = null;
-const CONTENTID_DEFAULT = null;
-const CONTENTTITLE_DEFAULT = null;
-const CONTENTLENGTH_DEFAULT = null;
-const CONTENTURL_DEFAULT = null;
+const PARAM_OUTPUT_DEFAULT = 'vast';
+const PARAM_EXECUTION_DEFAULT = 'any';
+const PARAM_SUPPORT_DEFAULT = 'html5';
+const PARAM_PLAYINIT_DEFAULT = 'auto';
+const PARAM_VOLUME_DEFAULT = '100';
 
 function _validateId(id) {
   if (id && typeof id !== 'undefined' && parseInt(id) > 0) {
@@ -56,18 +28,6 @@ function isBidRequestValid(bidRequest) {
   }
 
   return false;
-}
-
-function _replaceMacro(key, paramValue, defaultValue, url) {
-  if (url && typeof url === 'string' && url !== '' && url.indexOf(key) > 0) {
-    if (paramValue) {
-      url = url.replace(key, paramValue);
-    } else if (defaultValue || defaultValue == '') {
-      url = url.replace(key, defaultValue);
-    }
-  }
-
-  return url;
 }
 
 function buildRequests(validBidRequests) {
@@ -101,29 +61,101 @@ function buildRequests(validBidRequests) {
       }
 
       let sspUrl = ENDPOINT.concat();
+      let sspData = {};
 
       // required parameters
-      sspUrl = _replaceMacro(PID_KEY, bidRequest.params.placementId, PID_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(SID_KEY, bidRequest.params.siteId, SID_DEFAULT, sspUrl);
-      // optional parameters
-      sspUrl = _replaceMacro(OUTPUT_KEY, bidRequest.params.output, OUTPUT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(EXECUTION_KEY, bidRequest.params.execution, EXECUTION_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(PLACEMENT_KEY, bidRequest.params.placement, PLACEMENT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(PLAYINIT_KEY, bidRequest.params.playinit, PLAYINIT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(VOLUME_KEY, bidRequest.params.volume, VOLUME_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(TIMEOUT_KEY, bidRequest.params.timeout, TIMEOUT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(WIDTH_KEY, playerWidth, WIDTH_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(HEIGHT_KEY, playerHeight, HEIGHT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(DNT_KEY, bidRequest.params.dnt, DNT_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(PAGEURL_KEY, bidRequest.params.pageurl, PAGEURL_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(CONTENTID_KEY, bidRequest.params.contentId, CONTENTID_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(CONTENTTITLE_KEY, bidRequest.params.contentTitle, CONTENTTITLE_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(CONTENTLENGTH_KEY, bidRequest.params.contentLength, CONTENTLENGTH_DEFAULT, sspUrl);
-      sspUrl = _replaceMacro(CONTENTURL_KEY, bidRequest.params.contentUrl, CONTENTURL_DEFAULT, sspUrl);
-      // random number to prevent caching
-      sspUrl = sspUrl + '‌&rnd=' + Math.floor(Math.random() * 999999999);
+      sspData.pid = bidRequest.params.placementId;
+      sspData.sid = bidRequest.params.siteId;
+      sspData.prebid = true;
 
-      let sspData = {};
+      // optional parameters
+      if (bidRequest.params.hasOwnProperty('output') && bidRequest.params.output != null) {
+        sspData.output = bidRequest.params.output;
+      } else {
+        sspData.output = PARAM_OUTPUT_DEFAULT;
+      }
+      if (bidRequest.params.hasOwnProperty('execution') && bidRequest.params.execution != null) {
+        sspData.execution = bidRequest.params.execution;
+      } else {
+        sspData.execution = PARAM_EXECUTION_DEFAULT;
+      }
+      if (bidRequest.params.hasOwnProperty('support') && bidRequest.params.support != null) {
+        sspData.support = bidRequest.params.support;
+      } else {
+        sspData.support = PARAM_SUPPORT_DEFAULT;
+      }
+      if (bidRequest.params.hasOwnProperty('playinit') && bidRequest.params.playinit != null) {
+        sspData.playinit = bidRequest.params.playinit;
+      } else {
+        sspData.playinit = PARAM_PLAYINIT_DEFAULT;
+      }
+      if (bidRequest.params.hasOwnProperty('volume') && bidRequest.params.volume != null) {
+        sspData.volume = bidRequest.params.volume;
+      } else {
+        sspData.volume = PARAM_VOLUME_DEFAULT;
+      }
+      if (playerWidth) {
+        sspData.width = playerWidth;
+      }
+      if (playerHeight) {
+        sspData.height = playerHeight;
+      }
+      if (bidRequest.params.hasOwnProperty('vpaidmode') && bidRequest.params.vpaidmode != null) {
+        sspData.vpaidmode = bidRequest.params.vpaidmode;
+      }
+      if (bidRequest.params.hasOwnProperty('appname') && bidRequest.params.appname != null) {
+        sspData.appname = bidRequest.params.appname;
+      }
+      if (bidRequest.params.hasOwnProperty('bundleid') && bidRequest.params.bundleid != null) {
+        sspData.bundleid = bidRequest.params.bundleid;
+      }
+      if (bidRequest.params.hasOwnProperty('aid') && bidRequest.params.aid != null) {
+        sspData.aid = bidRequest.params.aid;
+      }
+      if (bidRequest.params.hasOwnProperty('idfa') && bidRequest.params.idfa != null) {
+        sspData.idfa = bidRequest.params.idfa;
+      }
+      if (bidRequest.params.hasOwnProperty('gdpr') && bidRequest.params.gdpr != null) {
+        sspData.gdpr = bidRequest.params.gdpr;
+      }
+      if (bidRequest.params.hasOwnProperty('gdprcs') && bidRequest.params.gdprcs != null) {
+        sspData.gdprcs = bidRequest.params.gdprcs;
+      }
+      if (bidRequest.params.hasOwnProperty('flrd') && bidRequest.params.flrd != null) {
+        sspData.flrd = bidRequest.params.flrd;
+      }
+      if (bidRequest.params.hasOwnProperty('flrmp') && bidRequest.params.flrmp != null) {
+        sspData.flrmp = bidRequest.params.flrmp;
+      }
+      if (bidRequest.params.hasOwnProperty('placement') && bidRequest.params.placement != null) {
+        sspData.placement = bidRequest.params.placement;
+      }
+      if (bidRequest.params.hasOwnProperty('timeout') && bidRequest.params.timeout != null) {
+        sspData.timeout = bidRequest.params.timeout;
+      }
+      if (bidRequest.params.hasOwnProperty('dnt') && bidRequest.params.dnt != null) {
+        sspData.dnt = bidRequest.params.dnt;
+      }
+      if (bidRequest.params.hasOwnProperty('pageurl') && bidRequest.params.pageurl != null) {
+        sspData.pageurl = bidRequest.params.pageurl;
+      }
+      if (bidRequest.params.hasOwnProperty('contentId') && bidRequest.params.contentId != null) {
+        sspData.contentid = bidRequest.params.contentId;
+      }
+      if (bidRequest.params.hasOwnProperty('contentTitle') && bidRequest.params.contentTitle != null) {
+        sspData.contenttitle = bidRequest.params.contentTitle;
+      }
+      if (bidRequest.params.hasOwnProperty('contentLength') && bidRequest.params.contentLength != null) {
+        sspData.contentlength = bidRequest.params.contentLength;
+      }
+      if (bidRequest.params.hasOwnProperty('contentUrl') && bidRequest.params.contentUrl != null) {
+        sspData.contenturl = bidRequest.params.contentUrl;
+      }
+
+      // random number to prevent caching
+      sspData.rnd = Math.floor(Math.random() * 999999999);
+
+      // Prebid.js required properties
       sspData.bidId = bidRequest.bidId;
       sspData.bidWidth = playerWidth;
       sspData.bidHeight = playerHeight;
@@ -149,26 +181,10 @@ function interpretResponse(serverResponse, bidRequest) {
       try {
         let bidResponse = {};
         if (bidRequest && bidRequest.data && bidRequest.data.bidId && bidRequest.data.bidId !== '') {
-          let sspXml = new window.DOMParser().parseFromString(serverResponse.body, 'text/xml');
+          let sspXmlString = serverResponse.body;
+          let sspXml = new window.DOMParser().parseFromString(sspXmlString, 'text/xml');
           if (sspXml && sspXml.getElementsByTagName('parsererror').length == 0) {
             let sspUrl = bidRequest.url.concat();
-            let prebidToken;
-            let extensions = sspXml.getElementsByTagName('Extension');
-
-            if (extensions && extensions.length) {
-              for (let i = 0; i < extensions.length; i++) {
-                if (extensions[i].getAttribute('id') === 'prebidToken') {
-                  prebidToken = extensions[i]
-                }
-              }
-              if (prebidToken) {
-                sspUrl = sspUrl + '&pbt' + prebidToken;
-              } else {
-                utils.logWarn('Warning: Could not determine token, cannot guarantee same ad will be received after auctionEnd');
-              }
-            } else {
-              utils.logWarn('Warning: Response did not contain a token, cannot guarantee same ad will be received after auctionEnd');
-            }
 
             bidResponse.requestId = bidRequest.data.bidId;
             bidResponse.bidderCode = BIDDER_CODE;
@@ -181,6 +197,7 @@ function interpretResponse(serverResponse, bidRequest) {
             bidResponse.currency = sspXml.getElementsByTagName('Pricing')[0].getAttribute('currency');
             bidResponse.netRevenue = true;
             bidResponse.vastUrl = sspUrl;
+            bidResponse.vastXml = sspXmlString;
             bidResponse.mediaType = VIDEO;
 
             bidResponses.push(bidResponse);
