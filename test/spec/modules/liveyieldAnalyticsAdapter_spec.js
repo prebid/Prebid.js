@@ -1,23 +1,25 @@
 import CONSTANTS from 'src/constants.json';
 import liveyield from 'modules/liveyieldAnalyticsAdapter';
 import { expect } from 'chai';
-const chai = require('chai');
-const adaptermanager = require('src/adaptermanager');
 const events = require('src/events');
-const utils = require('src/utils');
 
 const {
-  EVENTS: { BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_WON, AUCTION_INIT }
+  EVENTS: { BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_WON }
 } = CONSTANTS;
 
 describe('liveyield analytics adapter', function() {
   const rtaCalls = [];
 
   window.rta = function() {
-    var eventType = arguments[0];
     rtaCalls.push({ callArgs: arguments });
   };
 
+  beforeEach(function() {
+    sinon.stub(events, 'getEvents').returns([]);
+  });
+  afterEach(function() {
+    events.getEvents.restore();
+  });
   describe('initialization', function() {
     afterEach(function() {
       rtaCalls.length = 0;
@@ -92,14 +94,13 @@ describe('liveyield analytics adapter', function() {
           sessionTimezoneOffset: 12
         }
       });
-
-      liveyield.disableAnalytics();
       expect(rtaCalls[0].callArgs['0']).to.match(/create/);
       expect(rtaCalls[0].callArgs['1']).to.match(
         /d6a6f8da-190f-47d6-ae11-f1a4469083fa/
       );
       expect(rtaCalls[0].callArgs['2']).to.match(/pubocean/);
       expect(rtaCalls[0].callArgs['4']).to.match(/12/);
+      liveyield.disableAnalytics();
     });
     it('should allow to redefine rta function name', function() {
       const keepMe = window.rta;
@@ -125,6 +126,7 @@ describe('liveyield analytics adapter', function() {
       expect(rtaCalls[0].callArgs['4']).to.match(/25/);
 
       window.rta = keepMe;
+      liveyield.disableAnalytics();
     });
     it('should handle custom parameters', function() {
       liveyield.enableAnalytics({
@@ -149,6 +151,7 @@ describe('liveyield analytics adapter', function() {
       expect(rtaCalls[0].callArgs['5'].contentCategory).to.match(
         /testCategory/
       );
+      liveyield.disableAnalytics();
     });
   });
 
@@ -215,11 +218,10 @@ describe('liveyield analytics adapter', function() {
         ]
       };
       events.emit(BID_REQUESTED, bidRequest);
-      expect(rtaCalls[2].callArgs['0']).to.equal('bidRequested');
-      expect(rtaCalls[2].callArgs['1']).to.equal(undefined);
-      expect(rtaCalls[2].callArgs['2']).to.equal(undefined);
-      expect(rtaCalls.length).to.equal(4);
-      expect(rtaCalls[3].callArgs['0']).to.equal('bidRequested');
+      expect(rtaCalls[1].callArgs['0']).to.equal('bidRequested');
+      expect(rtaCalls[1].callArgs['1']).to.equal(undefined);
+      expect(rtaCalls[1].callArgs['2']).to.equal(undefined);
+      expect(rtaCalls[1].callArgs['0']).to.equal('bidRequested');
     });
     it('should handle BID_RESPONSE event', function() {
       const bidResponse = {
@@ -244,12 +246,12 @@ describe('liveyield analytics adapter', function() {
       };
 
       events.emit(BID_RESPONSE, bidResponse);
-      expect(rtaCalls[4].callArgs['0']).to.equal('addBid');
-      expect(rtaCalls[4].callArgs['1']).to.equal('div-gpt-ad-1438287399331-0');
-      expect(rtaCalls[4].callArgs['2']).to.equal('appnexus');
-      expect(rtaCalls[4].callArgs['3']).to.equal(500);
-      expect(rtaCalls[4].callArgs['4']).to.equal(false);
-      expect(rtaCalls[4].callArgs['5']).to.equal(false);
+      expect(rtaCalls[1].callArgs['0']).to.equal('addBid');
+      expect(rtaCalls[1].callArgs['1']).to.equal('div-gpt-ad-1438287399331-0');
+      expect(rtaCalls[1].callArgs['2']).to.equal('appnexus');
+      expect(rtaCalls[1].callArgs['3']).to.equal(500);
+      expect(rtaCalls[1].callArgs['4']).to.equal(false);
+      expect(rtaCalls[1].callArgs['5']).to.equal(false);
     });
     it('should handle BID_RESPONSE event with undefined bidder and cpm', function() {
       const bidResponse = {
@@ -271,10 +273,10 @@ describe('liveyield analytics adapter', function() {
         size: '300x250'
       };
       events.emit(BID_RESPONSE, bidResponse);
-      expect(rtaCalls[5].callArgs['0']).to.equal('addBid');
-      expect(rtaCalls[5].callArgs['2']).to.equal('unknown');
-      expect(rtaCalls[5].callArgs['3']).to.equal(0);
-      expect(rtaCalls[5].callArgs['4']).to.equal(true);
+      expect(rtaCalls[1].callArgs['0']).to.equal('addBid');
+      expect(rtaCalls[1].callArgs['2']).to.equal('unknown');
+      expect(rtaCalls[1].callArgs['3']).to.equal(0);
+      expect(rtaCalls[1].callArgs['4']).to.equal(true);
     });
     it('should handle BID_RESPONSE event with undefined status message and adUnitCode', function() {
       const bidResponse = {
@@ -296,10 +298,10 @@ describe('liveyield analytics adapter', function() {
         size: '300x250'
       };
       events.emit(BID_RESPONSE, bidResponse);
-      expect(rtaCalls['6'].callArgs['0']).to.equal('addBid');
-      expect(rtaCalls['6'].callArgs['1']).to.equal(undefined);
-      expect(rtaCalls['6'].callArgs['3']).to.equal(0);
-      expect(rtaCalls['6'].callArgs['5']).to.equal(true);
+      expect(rtaCalls[1].callArgs['0']).to.equal('addBid');
+      expect(rtaCalls[1].callArgs['1']).to.equal(undefined);
+      expect(rtaCalls[1].callArgs['3']).to.equal(0);
+      expect(rtaCalls[1].callArgs['5']).to.equal(true);
     });
     it('should handle BID_TIMEOUT', function() {
       const bidTimeout = [
@@ -317,8 +319,8 @@ describe('liveyield analytics adapter', function() {
         }
       ];
       events.emit(BID_TIMEOUT, bidTimeout);
-      expect(rtaCalls['7'].callArgs['0']).to.equal('biddersTimeout');
-      expect(rtaCalls['7'].callArgs['1'].length).to.equal(2);
+      expect(rtaCalls[1].callArgs['0']).to.equal('biddersTimeout');
+      expect(rtaCalls[1].callArgs['1'].length).to.equal(2);
     });
     it('should handle BID_WON event', function() {
       const bidWon = {
@@ -341,13 +343,13 @@ describe('liveyield analytics adapter', function() {
         status: 'rendered'
       };
       events.emit(BID_WON, bidWon);
-      expect(rtaCalls['7'].callArgs['0']).to.equal('resolveSlot');
-      expect(rtaCalls['7'].callArgs['1']).to.equal(
+      expect(rtaCalls[1].callArgs['0']).to.equal('resolveSlot');
+      expect(rtaCalls[1].callArgs['1']).to.equal(
         'div-gpt-ad-1438287399331-0'
       );
-      expect(rtaCalls['7'].callArgs['2'].prebidWon).to.equal(true);
-      expect(rtaCalls['7'].callArgs['2'].prebidPartner).to.equal('testbidder4');
-      expect(rtaCalls['7'].callArgs['2'].prebidValue).to.equal(1962);
+      expect(rtaCalls[1].callArgs['2'].prebidWon).to.equal(true);
+      expect(rtaCalls[1].callArgs['2'].prebidPartner).to.equal('testbidder4');
+      expect(rtaCalls[1].callArgs['2'].prebidValue).to.equal(1962);
     });
     it('should throw error, invoking BID_WON event without adUnitCode', function() {
       const bidWon = {
@@ -369,7 +371,7 @@ describe('liveyield analytics adapter', function() {
         status: 'rendered'
       };
       events.emit(BID_WON, bidWon);
-      expect(rtaCalls['8']).to.be.undefined;
+      expect(rtaCalls[1]).to.be.undefined;
     });
     it('should throw error, invoking BID_WON event without bidderCode', function() {
       const bidWon = {
@@ -391,7 +393,7 @@ describe('liveyield analytics adapter', function() {
         status: 'rendered'
       };
       events.emit(BID_WON, bidWon);
-      expect(rtaCalls['8']).to.be.undefined;
+      expect(rtaCalls[1]).to.be.undefined;
     });
   });
 });
