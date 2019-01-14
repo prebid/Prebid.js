@@ -38,13 +38,17 @@ export function createHook(type, fn, hookName) {
         removes = [];
         removeMap.set(fn, removes);
       }
-      removes.push(this[priority >= 0 ? 'before' : 'after'](
-        function partial(...args) {
-          args.push(args.shift());
-          fn.apply(this, args);
-        },
+      this[priority >= 0 ? 'before' : 'after'](
+        partial,
         priority
-      ));
+      );
+
+      removes.push(() => this.getHooks({hook: partial}).remove());
+
+      function partial(...args) {
+        args.push(args.shift());
+        fn.apply(this, args);
+      }
     },
     removeHook(fn) {
       let removes = removeMap.get(fn);

@@ -30,7 +30,7 @@ describe('consentManagement', function () {
     describe('valid setConfig value', function () {
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
       it('results in all user settings overriding system defaults', function () {
         let allConfig = {
@@ -49,7 +49,7 @@ describe('consentManagement', function () {
     describe('static consent string setConfig value', () => {
       afterEach(() => {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
       it('results in user settings overriding system defaults', () => {
         let staticConfig = {
@@ -487,7 +487,7 @@ describe('consentManagement', function () {
         utils.logWarn.restore();
         utils.logError.restore();
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         resetConsentData();
       });
 
@@ -531,7 +531,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         cmpStub.restore();
         delete window.__cmp;
         resetConsentData();
@@ -585,7 +585,7 @@ describe('consentManagement', function () {
       afterEach(function () {
         delete window.$sf;
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         registerStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
@@ -637,7 +637,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         delete window.__cmp;
         utils.logError.restore();
         utils.logWarn.restore();
@@ -709,7 +709,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.getHooks().forEach(hook => hook.remove());
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         cmpStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();

@@ -30,14 +30,14 @@ describe('bid overrides', function () {
         enabled: true
       });
 
-      expect(addBidResponse.getHooks().some(hook => hook.fn === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.getHooks().some(hook => hook.fn === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', function () {
