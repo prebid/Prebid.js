@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { hooks } from 'src/hook.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'https://currency.prebid.org/latest.json';
+const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
@@ -34,7 +34,7 @@ var defaultRates;
  *  {
  *    rubicon: 'USD'
  *  }
- * @param  {string} [config.conversionRateFile = 'http://currency.prebid.org/latest.json']
+ * @param  {string} [config.conversionRateFile = 'URL pointing to conversion file']
  *  Optional path to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
  *  if not specified.
  * @param  {object} [config.rates]
@@ -60,6 +60,10 @@ export function setConfig(config) {
 
   if (typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
+
+    // set up the default rates to be used if the rate file doesn't get loaded in time
+    currencyRates.conversions = defaultRates;
+    currencyRatesLoaded = true;
   }
 
   if (typeof config.adServerCurrency === 'string') {
@@ -70,6 +74,25 @@ export function setConfig(config) {
       utils.logInfo('currency using override conversionRateFile:', config.conversionRateFile);
       url = config.conversionRateFile;
     }
+
+    // see if the url contains a date macro
+    // this is a workaround to the fact that jsdelivr doesn't currently support setting a 24-hour HTTP cache header
+    // So this is an approach to let the browser cache a copy of the file each day
+    // We should remove the macro once the CDN support a day-level HTTP cache setting
+    const macroLocation = url.indexOf('$$TODAY$$');
+    if (macroLocation !== -1) {
+      // get the date to resolve the macro
+      const d = new Date();
+      let month = `${d.getMonth() + 1}`;
+      let day = `${d.getDate()}`;
+      if (month.length < 2) month = `0${month}`;
+      if (day.length < 2) day = `0${day}`;
+      const todaysDate = `${d.getFullYear()}${month}${day}`;
+
+      // replace $$TODAY$$ with todaysDate
+      url = `${url.substring(0, macroLocation)}${todaysDate}${url.substring(macroLocation + 9, url.length)}`;
+    }
+
     initCurrency(url);
   } else {
     // currency support is disabled, setting defaults
@@ -84,8 +107,6 @@ config.getConfig('currency', config => setConfig(config.currency));
 
 function errorSettingsRates(msg) {
   if (defaultRates) {
-    currencyRates.conversions = defaultRates;
-    currencyRatesLoaded = true;
     utils.logWarn(msg);
     utils.logWarn('Currency failed loading rates, falling back to currency.defaultRates');
   } else {
