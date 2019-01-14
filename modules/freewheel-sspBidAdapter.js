@@ -68,6 +68,18 @@ function getPricing(xmlNode) {
   return princingData;
 }
 
+function hashcode(inputString) {
+  var hash = 0;
+  var char;
+  if (inputString.length == 0) return hash;
+  for (var i = 0; i < inputString.length; i++) {
+    char = inputString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
+}
+
 function getCreativeId(xmlNode) {
   var creaId = '';
   var adNodes = xmlNode.querySelectorAll('Ad');
@@ -116,7 +128,7 @@ function getAPIName(componentId) {
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
-  var divHtml = '<div id="freewheelssp_prebid_target"></div>';
+  var divHtml = '<div id="freewheelssp_prebid_target" style="width:' + size[0] + 'px;height:' + size[1] + 'px;"></div>';
 
   var script = '';
   var libUrl = '';
@@ -161,13 +173,15 @@ var getInBannerScript = function(bid, size) {
 };
 
 var getOutstreamScript = function(bid) {
-  var placementCode = bid.adUnitCode;
-
   var config = bid.params;
 
   // default placement if no placement is set
   if (!config.hasOwnProperty('domId') && !config.hasOwnProperty('auto') && !config.hasOwnProperty('p') && !config.hasOwnProperty('article')) {
-    config.domId = placementCode;
+    if (config.format === 'intext-roll') {
+      config.iframeMode = 'dfp';
+    } else {
+      config.domId = 'freewheelssp_prebid_target';
+    }
   }
 
   var script = 'var config = {' +
@@ -216,11 +230,17 @@ export const spec = {
       utils.logMessage('Prebid.JS - freewheel bid adapter: only one ad unit is required.');
     }
 
+    var zone = currentBidRequest.params.zoneId;
+    var timeInMillis = new Date().getTime();
+    var keyCode = hashcode(zone + '' + timeInMillis);
+
     var requestParams = {
       reqType: 'AdsSetup',
       protocolVersion: '2.0',
-      zoneId: currentBidRequest.params.zoneId,
-      componentId: getComponentId(currentBidRequest.params.format)
+      zoneId: zone,
+      componentId: getComponentId(currentBidRequest.params.format),
+      timestamp: timeInMillis,
+      pKey: keyCode
     };
 
     // Add GDPR flag and consent string
@@ -330,6 +350,7 @@ export const spec = {
         url: USER_SYNC_URL
       }];
     }
-  }
+  },
+
 }
 registerBidder(spec);

@@ -3,10 +3,10 @@ import * as url from 'src/url';
 import {spec} from 'modules/adformBidAdapter';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 
-describe('Adform adapter', () => {
+describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'adform',
       'params': {
@@ -14,11 +14,11 @@ describe('Adform adapter', () => {
       }
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       assert(spec.isBidRequestValid(bid));
     });
 
-    it('should return false when required params are missing', () => {
+    it('should return false when required params are missing', function () {
       bid.params = {
         adxDomain: 'adx.adform.net'
       };
@@ -26,14 +26,14 @@ describe('Adform adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    it('should pass multiple bids via single request', () => {
+  describe('buildRequests', function () {
+    it('should pass multiple bids via single request', function () {
       let request = spec.buildRequests(bids);
       let parsedUrl = parseUrl(request.url);
       assert.lengthOf(parsedUrl.items, 7);
     });
 
-    it('should handle global request parameters', () => {
+    it('should handle global request parameters', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
@@ -45,12 +45,12 @@ describe('Adform adapter', () => {
       assert.equal(query.url, encodeURIComponent('some// there'));
     });
 
-    it('should set correct request method', () => {
+    it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'GET');
     });
 
-    it('should correctly form bid items', () => {
+    it('should correctly form bid items', function () {
       let bidList = bids;
       let request = spec.buildRequests(bidList);
       let parsedUrl = parseUrl(request.url);
@@ -93,13 +93,13 @@ describe('Adform adapter', () => {
       ]);
     });
 
-    it('should not change original validBidRequests object', () => {
+    it('should not change original validBidRequests object', function () {
       var resultBids = JSON.parse(JSON.stringify(bids[0]));
       let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
     });
 
-    it('should set gross to the request, if there is any gross priceType', () => {
+    it('should set gross to the request, if there is any gross priceType', function () {
       let request = spec.buildRequests([bids[5], bids[5]]);
       let parsedUrl = parseUrl(request.url);
 
@@ -111,8 +111,8 @@ describe('Adform adapter', () => {
       assert.equal(parsedUrl.query.pt, 'gross');
     });
 
-    describe('gdpr', () => {
-      it('should send GDPR Consent data to adform if gdprApplies', () => {
+    describe('gdpr', function () {
+      it('should send GDPR Consent data to adform if gdprApplies', function () {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
@@ -121,7 +121,7 @@ describe('Adform adapter', () => {
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', () => {
+      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', function () {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
@@ -134,7 +134,7 @@ describe('Adform adapter', () => {
         assert.ok(!parsedUrl.gdpr_consent);
       });
 
-      it('should return GDPR Consent data with request data', () => {
+      it('should return GDPR Consent data with request data', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
 
         assert.deepEqual(request.gdpr, {
@@ -148,12 +148,12 @@ describe('Adform adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should respond with empty response when there is empty serverResponse', () => {
+  describe('interpretResponse', function () {
+    it('should respond with empty response when there is empty serverResponse', function () {
       let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
     });
-    it('should respond with empty response when response from server is not banner', () => {
+    it('should respond with empty response when response from server is not banner', function () {
       serverResponse.body[0].response = 'not banner';
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[0]];
@@ -161,7 +161,7 @@ describe('Adform adapter', () => {
 
       assert.deepEqual(result, []);
     });
-    it('should interpret server response correctly with one bid', () => {
+    it('should interpret server response correctly with one bid', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[0]];
       let result = spec.interpretResponse(serverResponse, bidRequest)[0];
@@ -180,7 +180,7 @@ describe('Adform adapter', () => {
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');
     });
 
-    it('should set correct netRevenue', () => {
+    it('should set correct netRevenue', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[1]];
       bidRequest.netRevenue = 'gross';
@@ -189,22 +189,22 @@ describe('Adform adapter', () => {
       assert.equal(result.netRevenue, false);
     });
 
-    it('should create bid response item for every requested item', () => {
+    it('should create bid response item for every requested item', function () {
       let result = spec.interpretResponse(serverResponse, bidRequest);
       assert.lengthOf(result, 5);
     });
 
-    it('should create bid response with vast xml', () => {
+    it('should create bid response with vast xml', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest)[3];
       assert.equal(result.vastXml, '<vast_xml>');
     });
 
-    it('should create bid response with vast url', () => {
+    it('should create bid response with vast url', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest)[4];
       assert.equal(result.vastUrl, 'vast://url');
     });
 
-    it('should set mediaType on bid response', () => {
+    it('should set mediaType on bid response', function () {
       const expected = [ BANNER, BANNER, BANNER, VIDEO, VIDEO ];
       const result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
@@ -212,7 +212,7 @@ describe('Adform adapter', () => {
       }
     });
 
-    it('should set default netRevenue as gross', () => {
+    it('should set default netRevenue as gross', function () {
       bidRequest.netRevenue = 'gross';
       const result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
@@ -220,7 +220,7 @@ describe('Adform adapter', () => {
       }
     });
 
-    it('should set gdpr if it exist in bidRequest', () => {
+    it('should set gdpr if it exist in bidRequest', function () {
       bidRequest.gdpr = {
         gdpr: true,
         gdpr_consent: 'ERW342EIOWT34234KMGds'
@@ -239,8 +239,8 @@ describe('Adform adapter', () => {
       };
     });
 
-    describe('verifySizes', () => {
-      it('should respond with empty response when sizes doesn\'t match', () => {
+    describe('verifySizes', function () {
+      it('should respond with empty response when sizes doesn\'t match', function () {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 100;
         serverResponse.body[0].height = 150;
@@ -253,7 +253,7 @@ describe('Adform adapter', () => {
         assert.equal(serverResponse.body[0].response, 'banner');
         assert.deepEqual(result, []);
       });
-      it('should respond with empty response when sizes as a strings doesn\'t match', () => {
+      it('should respond with empty response when sizes as a strings doesn\'t match', function () {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 100;
         serverResponse.body[0].height = 150;
@@ -268,7 +268,7 @@ describe('Adform adapter', () => {
         assert.equal(serverResponse.body[0].response, 'banner');
         assert.deepEqual(result, []);
       });
-      it('should support size dimensions as a strings', () => {
+      it('should support size dimensions as a strings', function () {
         serverResponse.body[0].response = 'banner';
         serverResponse.body[0].width = 300;
         serverResponse.body[0].height = 600;
@@ -285,7 +285,7 @@ describe('Adform adapter', () => {
     })
   });
 
-  beforeEach(() => {
+  beforeEach(function () {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];

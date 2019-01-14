@@ -2,7 +2,6 @@
 export const S2S_VENDORS = {
   'appnexus': {
     adapter: 'prebidServer',
-    cookieSet: false,
     enabled: true,
     endpoint: '//prebid.adnxs.com/pbs/v1/openrtb2/auction',
     syncEndpoint: '//prebid.adnxs.com/pbs/v1/cookie_sync',
@@ -10,7 +9,6 @@ export const S2S_VENDORS = {
   },
   'rubicon': {
     adapter: 'prebidServer',
-    cookieSet: false,
     enabled: true,
     endpoint: '//prebid-server.rubiconproject.com/openrtb2/auction',
     syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
