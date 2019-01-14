@@ -60,6 +60,7 @@ export const spec = {
         id: bidRequest.bidId,
         network: network,
         channel: channel,
+        publisher: bidRequest.params.pubId ? bidRequest.params.pubId : 0,
         width: dim[0],
         height: dim[1],
         dimension: bidRequest.params.dimId,
@@ -294,12 +295,13 @@ function getLoggingData(eid, data) {
     channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
     network = channel > 0 ? parseInt(channel / 1000000) : 0;
     dim = utils.deepAccess(adunit, 'params.0.dimId') * 256 || 0;
+    publisher = utils.deepAccess(adunit, 'params.0.pubId') || 0;
     timeToRespond = adunit.timeout ? adunit.timeout : adunit.timeToRespond;
     cpm = adunit.cpm;
   });
   params.n = network;
   params.c = channel;
-  params.s = '0';
+  params.s = publisher;
   params.x = dim;
   params.ai = encodeURI('Prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
   params.pu = encodeURI(utils.getTopWindowUrl()) || '';
