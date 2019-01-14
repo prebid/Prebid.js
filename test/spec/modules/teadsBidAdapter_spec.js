@@ -232,13 +232,31 @@ describe('teadsBidAdapter', function() {
       checkMediaTypesSizes(mediaTypesBannerSize, '46x48')
     });
 
+    it('should use good mediaTypes for both video and banner sizes', function() {
+      const hybridMediaTypes = {
+        'mediaTypes': {
+          'banner': {
+            'sizes': [46, 48]
+          },
+          'video': {
+            'sizes': [[50, 34], [45, 45]]
+          }
+        }
+      };
+      checkMediaTypesSizes(hybridMediaTypes, ['46x48', '50x34', '45x45'])
+    });
+
     function checkMediaTypesSizes(mediaTypes, expectedSizes) {
       const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
       const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderResquestDefault);
       const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);
 
       return payloadWithBannerSizes.data.forEach(bid => {
-        expect(bid.sizes[0]).to.equal(expectedSizes);
+        if (Array.isArray(expectedSizes)) {
+          expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes));
+        } else {
+          expect(bid.sizes[0]).to.equal(expectedSizes);
+        }
       });
     }
   });

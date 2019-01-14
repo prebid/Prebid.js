@@ -129,7 +129,9 @@ function buildRequestObject(bid) {
 
 function getSizes(bid) {
   let sizes;
-  if (isVideoBid(bid)) {
+  if (isHybridBid(bid)) {
+    sizes = concatHybridBidSizes(bid);
+  } else if (isVideoBid(bid)) {
     sizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize') ||
       utils.deepAccess(bid, 'mediaTypes.video.sizes') ||
       bid.sizes;
@@ -142,6 +144,36 @@ function getSizes(bid) {
 
 function isVideoBid(bid) {
   return bid.mediaType === 'video' || utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+function isHybridBid(bid) {
+  return isVideoBid(bid) && utils.deepAccess(bid, 'mediaTypes.banner');
+}
+
+function concatHybridBidSizes(bid) {
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+  let sizes;
+
+  if (utils.isArray(bannerSizes) || utils.isArray(playerSize) || utils.isArray(videoSizes)) {
+    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    sizes = mediaTypesSizes
+      .reduce(function(acc, currSize) {
+        if (utils.isArray(currSize)) {
+          if (utils.isArray(currSize[0])) {
+            currSize.forEach(function (childSize) { acc.push(childSize) })
+          } else {
+            acc.push(currSize);
+          }
+        }
+        return acc;
+      }, [])
+  } else {
+    sizes = bid.sizes;
+  }
+
+  return sizes;
 }
 
 function _validateId(id) {
