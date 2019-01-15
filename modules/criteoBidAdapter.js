@@ -1,7 +1,7 @@
-import { loadExternalScript } from 'src/adloader';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { parse } from 'src/url';
-import * as utils from 'src/utils';
+import { loadExternalScript } from '../src/adloader';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { parse } from '../src/url';
+import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';

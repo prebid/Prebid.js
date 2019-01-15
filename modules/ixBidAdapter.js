@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
-import { config } from 'src/config';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
+import { config } from '../src/config';
 import isArray from 'core-js/library/fn/array/is-array';
 import isInteger from 'core-js/library/fn/number/is-integer';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ix';
 const BANNER_SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
