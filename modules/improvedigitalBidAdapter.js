@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'improvedigital';
 
@@ -261,7 +261,7 @@ function getNormalizedNativeAd(rawNative) {
 }
 registerBidder(spec);
 
-function ImproveDigitalAdServerJSClient(endPoint) {
+export function ImproveDigitalAdServerJSClient(endPoint) {
   this.CONSTANTS = {
     HTTP_SECURITY: {
       STANDARD: 0,
@@ -490,5 +490,3 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     return outputObject;
   };
 }
-
-exports.ImproveDigitalAdServerJSClient = ImproveDigitalAdServerJSClient;

@@ -1,9 +1,9 @@
 /**
  * @file AudienceNetwork adapter.
  */
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { formatQS } from 'src/url';
-import { generateUUID, getTopWindowUrl, convertTypes } from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { formatQS } from '../src/url';
+import { generateUUID, getTopWindowUrl, convertTypes } from '../src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 

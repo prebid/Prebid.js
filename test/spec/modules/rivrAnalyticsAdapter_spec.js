@@ -17,7 +17,7 @@ import {
   activelyWaitForBannersToRender,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 
@@ -59,11 +59,11 @@ describe('RIVR Analytics adapter', () => {
     ajaxStub = sandbox.stub(ajax, 'ajax');
     sinon.stub(events, 'getEvents').returns([]);
 
-    adaptermanager.registerAnalyticsAdapter({
+    adapterManager.registerAnalyticsAdapter({
       code: 'rivr',
       adapter: analyticsAdapter
     });
-    adaptermanager.enableAnalytics({
+    adapterManager.enableAnalytics({
       provider: 'rivr',
       options: {
         clientID: RVR_CLIENT_ID_MOCK,
@@ -86,7 +86,7 @@ describe('RIVR Analytics adapter', () => {
   });
 
   it('enableAnalytics - should call rivraddon enableAnalytics with the correct arguments', () => {
-    // adaptermanager.enableAnalytics() is called in beforeEach. If just called here it doesn't seem to work.
+    // adapterManager.enableAnalytics() is called in beforeEach. If just called here it doesn't seem to work.
     const firstArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[0];
     const secondArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[1];
 

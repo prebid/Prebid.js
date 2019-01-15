@@ -1,11 +1,11 @@
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import {
   cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput,
   getTopWindowReferrer
-} from 'src/utils';
+} from '../src/utils';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 

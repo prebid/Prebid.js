@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
+import { registerBidder } from '../src/adapters/bidderFactory'
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'

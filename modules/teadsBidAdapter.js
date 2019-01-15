@@ -1,5 +1,5 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-const utils = require('src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory';
+const utils = require('../src/utils');
 const BIDDER_CODE = 'teads';
 const ENDPOINT_URL = '//a.teads.tv/hb/bid-request';
 const gdprStatus = {

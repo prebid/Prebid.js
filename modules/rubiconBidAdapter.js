@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
