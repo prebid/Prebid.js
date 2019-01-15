@@ -135,18 +135,30 @@ var createTagAST = function() {
 window.apntag = {
   keywords: [],
   tags: createTagAST(),
-  setKeywords: function(key, params) {
+  setKeywords: function(key, params, options) {
     var self = this;
     if (!self.tags.hasOwnProperty(key)) {
       return;
     }
     self.tags[key].keywords = this.tags[key].keywords || {};
 
-    utils._each(params, function(param, id) {
-      if (!self.tags[key].keywords.hasOwnProperty(id)) { self.tags[key].keywords[id] = param; } else if (!utils.isArray(self.tags[key].keywords[id])) { self.tags[key].keywords[id] = [self.tags[key].keywords[id]].concat(param); } else { self.tags[key].keywords[id] = self.tags[key].keywords[id].concat(param); }
-    });
+    if (typeof options === 'object' && options !== null && options.overrideKeyValue === true) {
+      utils._each(params, function(param, id) {
+        self.tags[key].keywords[id] = param;
+      });
+    } else {
+      utils._each(params, function (param, id) {
+        if (!self.tags[key].keywords.hasOwnProperty(id)) {
+          self.tags[key].keywords[id] = param;
+        } else if (!utils.isArray(self.tags[key].keywords[id])) {
+          self.tags[key].keywords[id] = [self.tags[key].keywords[id]].concat(param);
+        } else {
+          self.tags[key].keywords[id] = self.tags[key].keywords[id].concat(param);
+        }
+      })
+    }
   }
-};
+}
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
