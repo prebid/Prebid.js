@@ -242,10 +242,14 @@ function _parseAdSlot(bid) {
   }
 }
 
-function _initConf() {
+function _initConf(refererInfo) {
   var conf = {};
   conf.pageURL = utils.getTopWindowUrl();
-  conf.refURL = utils.getTopWindowReferrer();
+  if (refererInfo && refererInfo.referer) {
+    conf.refURL = refererInfo.referer;
+  } else {
+    conf.refURL = '';
+  }
   return conf;
 }
 
@@ -807,7 +811,11 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    var conf = _initConf();
+    var refererInfo;
+    if (bidderRequest && bidderRequest.refererInfo) {
+      refererInfo = bidderRequest.refererInfo;
+    }
+    var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
     var dctr = '';
@@ -938,6 +946,7 @@ export const spec = {
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
+              let parsedRequest = JSON.parse(request.data);
               let newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0).toFixed(2),
@@ -948,10 +957,9 @@ export const spec = {
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
-                referrer: utils.getTopWindowUrl(),
+                referrer: parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '',
                 ad: bid.adm
               };
-              let parsedRequest = JSON.parse(request.data);
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id && req.hasOwnProperty('video')) {

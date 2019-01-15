@@ -102,7 +102,7 @@ var adUnits = [
     bids: [{
       bidder: 'pubmatic',
       params: {
-        publisherId: '156209',               // required
+        publisherId: '156295',               // required
         adSlot: 'pubmatic_test2@1x1',       // required
       }
     }]
