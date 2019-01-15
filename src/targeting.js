@@ -230,7 +230,7 @@ export function newTargeting(auctionManager) {
             // pt${n} keys should not be uppercased
             keywordsObj[key] = astTargeting[targetId][key];
           }
-          window.apntag.setKeywords(targetId, keywordsObj);
+          window.apntag.setKeywords(targetId, keywordsObj, { overrideKeyValue: true });
         }
       })
     );
