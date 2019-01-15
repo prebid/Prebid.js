@@ -92,7 +92,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1) || (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') && bid.mediaTypes.banner.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
