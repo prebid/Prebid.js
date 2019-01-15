@@ -957,7 +957,7 @@ export const spec = {
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
-                referrer: parsedRequest.site ? parsedRequest.site.ref : '',
+                referrer: parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '',
                 ad: bid.adm
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
