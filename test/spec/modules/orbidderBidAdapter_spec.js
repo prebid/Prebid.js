@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import * as ajax from 'src/ajax';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -117,7 +116,7 @@ describe('orbidderBidAdapter', () => {
     };
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(spec, 'ajaxCall');
     });
 
     afterEach(() => {
@@ -129,7 +128,7 @@ describe('orbidderBidAdapter', () => {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(winObj));
+      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(winObj));
     });
   });
 
