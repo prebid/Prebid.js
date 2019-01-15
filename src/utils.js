@@ -23,6 +23,7 @@ let consoleErrorExists = Boolean(consoleExists && window.console.error);
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
+  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   getAncestorOrigins,
