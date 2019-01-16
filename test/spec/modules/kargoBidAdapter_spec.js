@@ -1,6 +1,5 @@
 import {expect, assert} from 'chai';
 import {spec} from 'modules/kargoBidAdapter';
-import {registerBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 
 describe('kargo adapter tests', function () {

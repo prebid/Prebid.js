@@ -1,7 +1,7 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER} from 'src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER} from '../src/mediaTypes';
 import * as utils from '../src/utils';
-import {config} from 'src/config';
+import {config} from '../src/config';
 
 export const BIDDER_CODE = 'adikteev';
 export const ENDPOINT_URL = 'https://serve-adserver.adikteev.com/api/prebid/bid';

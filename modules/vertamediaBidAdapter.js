@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {VIDEO, BANNER} from 'src/mediaTypes';
-import {Renderer} from 'src/Renderer';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {VIDEO, BANNER} from '../src/mediaTypes';
+import {Renderer} from '../src/Renderer';
 import findIndex from 'core-js/library/fn/array/find-index';
 
 const URL = '//hb2.vertamedia.com/auction/';
